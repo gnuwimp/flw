@@ -91,13 +91,13 @@ A good life is not measured by any biblical span.”
 
 //------------------------------------------------------------------------------
 flw::FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, 0, 0) {
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 57, flw::PREF_FONTSIZE * 34) {
     _create(font, "", fontsize, label);
 }
 
 //------------------------------------------------------------------------------
 flw::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, 0, 0) {
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 57, flw::PREF_FONTSIZE * 34) {
     _create(0, font, fontsize, label);
 }
 
@@ -190,6 +190,7 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
 
+    resize(0, 0, w(), h());
     FontDialog::LoadFonts();
 
     for (auto name : _FONTDIALOG_NAMES) {
@@ -204,12 +205,12 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
 
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
-        _sizes->topline(fontsize - 5);
+        _sizes->middleline(fontsize - 5);
         ((FontDialogLabel*) _label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
-        _sizes->topline(14 - 5);
+        _sizes->middleline(14 - 5);
         ((FontDialogLabel*) _label)->font = 14;
     }
 
@@ -218,19 +219,18 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     }
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
-        _fonts->topline(font + 1);
+        _fonts->middleline(font + 1);
         ((FontDialogLabel*) _label)->font = font;
     }
     else {
         _fonts->value(1);
-        _fonts->topline(1);
+        _fonts->middleline(1);
     }
 
     resizable(this);
     copy_label(label.c_str());
     callback(flw::FontDialog::Callback, this);
     set_modal();
-    resize(0, 0, flw::PREF_FONTSIZE * 57, flw::PREF_FONTSIZE * 34);
 }
 
 //------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
 
         if (fontname == font_without_style) {
             _fonts->value(count);
-            _fonts->topline(count);
+            _fonts->middleline(count);
             ((FontDialogLabel*) _label)->font = count - 1;
             return;
         }

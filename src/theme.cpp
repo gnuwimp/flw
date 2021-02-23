@@ -555,7 +555,7 @@ namespace flw {
                 _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
                 _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
                 _theme->textsize(flw::PREF_FONTSIZE);
-                size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 28);
+                size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
 
                 if (theme::_NAME == "default") {
                     _theme->value(1);

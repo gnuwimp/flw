@@ -93,8 +93,13 @@ int main(int argc, const char** argv) {
 
         }
 
-        if (run == "" || run == "font" || run == "theme") {
+        if (run == "" || run == "theme") {
             dlg::theme(true, true);
+        }
+
+        if (run == "" || run == "font") {
+            auto dlg = flw::FontDialog("Roboto", 14, "Test Font");
+            dlg.run();
         }
 
         if (run == "" || run == "abort") {

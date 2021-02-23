@@ -90,7 +90,7 @@ namespace flw {
                 end();
 
                 _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _list  = new Fl_Hold_Browser(0, 0, w(), h());
+                _list  = new Fl_Hold_Browser(0, 0, 0, 0);
 
                 add(_close);
                 add(_list);
@@ -98,6 +98,8 @@ namespace flw {
                 _close->callback(_DlgList::Callback, this);
                 _close->labelfont(flw::PREF_FONT);
                 _close->labelsize(flw::PREF_FONTSIZE);
+
+                resize(0, 0, w(), h());
 
                 for (auto& s : list) {
                     _list->add(s.c_str());
@@ -152,7 +154,7 @@ namespace flw {
         //----------------------------------------------------------------------
 
         //----------------------------------------------------------------------
-        class _DlgListSelect : public Fl_Double_Window {
+        class _DlgSelect : public Fl_Double_Window {
             Fl_Button*                      _close;
             Fl_Button*                      _cancel;
             Fl_Browser*                     _list;
@@ -161,7 +163,7 @@ namespace flw {
 
         public:
             //------------------------------------------------------------------
-            _DlgListSelect(const char* title, Fl_Window* parent, const std::vector<std::string>& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
+            _DlgSelect(const char* title, Fl_Window* parent, const std::vector<std::string>& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
             _strings(strings) {
                 end();
@@ -197,6 +199,8 @@ namespace flw {
                     _list->textsize(flw::PREF_FONTSIZE);
                 }
 
+                resize(0, 0, w(), h());
+
                 {
                     auto r = 0;
                     auto f = 0;
@@ -213,11 +217,11 @@ namespace flw {
 
                     if (selected_string_index && selected_string_index <= (int) _strings.size()) {
                         _list->value(selected_string_index);
-                        _list->make_visible(selected_string_index);
+                        _list->middleline(selected_string_index);
                     }
                     else if (r > 0) {
                         _list->value(r);
-                        _list->make_visible(r);
+                        _list->middleline(r);
                     }
                     else {
                         _list->value(1);
@@ -246,7 +250,7 @@ namespace flw {
 
             //------------------------------------------------------------------
             static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgListSelect*) o;
+                auto dlg = (_DlgSelect*) o;
 
                 if (w == dlg || w == dlg->_cancel) {
                     dlg->_list->deselect();
@@ -707,13 +711,13 @@ bool flw::dlg::password4(const std::string& title, std::string& password, std::s
 
 //------------------------------------------------------------------------------
 int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgListSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
+    _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 
 //------------------------------------------------------------------------------
 int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgListSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
+    _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 
