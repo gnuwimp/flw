@@ -9,6 +9,8 @@ There is an amalgamated version of all source files in the top directory.
 
 Most widgets are released under the [GNU General Public License v3.0](LICENSE).
 
+## Screenshots of some of the widgets
+
 Chart widget (flw::Chart)<br>
 <img src="images/chart.png"/>
 
@@ -35,6 +37,8 @@ List selection dialog (flw::dlg::select())<br>
 
 Theme dialog (flw::dlg::theme())<br>
 <img src="images/theme_dialog.png"/>
+
+## Theme examples
 
 Dark blue gleam theme<br>
 <img src="images/darkblue_gleam_theme.png"/>
