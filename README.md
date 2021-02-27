@@ -9,31 +9,31 @@ There is an amalgamated version of all source files in the top directory.
 
 Most widgets are released under the [GNU General Public License v3.0](LICENSE).
 
-Chart widget<br>
+Chart widget (flw::Chart)<br>
 <img src="images/chart.png"/>
 
-Date chooser widget<br>
+Date chooser widget (flw::DateChooser)<br>
 <img src="images/datechooser.png"/>
 
-Table editor widget<br>
+Table editor widget (flw::TableDisplay and flw::TableEditor)<br>
 <img src="images/tableeditor.png"/>
 
-Grid layout widget<br>
+Grid layout widget (flw::GridGroup)<br>
 <img src="images/gridgroup.png"/>
 
-Tab layout widget<br>
+Tab layout widget (flw::TabsGroup)<br>
 <img src="images/tabsgroup.png"/>
 
-Font dialog<br>
+Font dialog (flw::dlg::FontDialog)<br>
 <img src="images/font_dialog.png"/>
 
-Password dialog<br>
+Password dialog (flw::dlg::password4())<br>
 <img src="images/password_dialog.png"/>
 
-List dialog<br>
+List selection dialog (flw::dlg::select())<br>
 <img src="images/list_dialog.png"/>
 
-Theme dialog<br>
+Theme dialog (flw::dlg::theme())<br>
 <img src="images/theme_dialog.png"/>
 
 Dark blue gleam theme<br>
