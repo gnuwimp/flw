@@ -45,9 +45,9 @@ int main(int argc, const char** argv) {
 
         if (run == "loadsmall") {
             #ifdef _WIN32
-                auto font = FontDialog::LoadFont("MS Serif bold");
+                auto font = flw::dlg::FontDialog::LoadFont("MS Serif bold");
             #else
-                auto font = FontDialog::LoadFont("Kinnari bold italic");
+                auto font = flw::dlg::FontDialog::LoadFont("Kinnari bold italic");
             #endif
 
             if (font != -1) {
@@ -56,9 +56,9 @@ int main(int argc, const char** argv) {
             }
 
             #ifdef _WIN32
-                font = FontDialog::LoadFont("Fira Code bold");
+                font = flw::dlg::FontDialog::LoadFont("Fira Code bold");
             #else
-                font = FontDialog::LoadFont("mono bold italic");
+                font = flw::dlg::FontDialog::LoadFont("mono bold italic");
             #endif
 
             if (font != -1) {
@@ -70,9 +70,9 @@ int main(int argc, const char** argv) {
 
         if (run == "loadbig") {
             #ifdef _WIN32
-                auto font = FontDialog::LoadFont("Calibri italic");
+                auto font = flw::dlg::FontDialog::LoadFont("Calibri italic");
             #else
-                auto font = FontDialog::LoadFont("Kinnari bold italic");
+                auto font = flw::dlg::FontDialog::LoadFont("Kinnari bold italic");
             #endif
 
             if (font != -1) {
@@ -81,9 +81,9 @@ int main(int argc, const char** argv) {
             }
 
             #ifdef _WIN32
-                font = FontDialog::LoadFont("Lucida Console");
+                font = flw::dlg::FontDialog::LoadFont("Lucida Console");
             #else
-                font = FontDialog::LoadFont("mono bold italic");
+                font = flw::dlg::FontDialog::LoadFont("mono bold italic");
             #endif
 
             if (font != -1) {
@@ -98,7 +98,7 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "font") {
-            auto dlg = flw::FontDialog("Roboto", 14, "Test Font");
+            auto dlg = flw::dlg::FontDialog("Roboto", 14, "Test Font");
             dlg.run();
         }
 
@@ -170,7 +170,9 @@ int main(int argc, const char** argv) {
             printf("flw::dlg::password2=%d, '%s'\n", ret, password.c_str());
             util::zero_memory((char*) password.data());
 
-            // flw::style::load_theme_gtk();
+            // flw::dlg::PASSWORD_CANCEL = "cancel";
+            // flw::dlg::PASSWORD_OK = "ok";
+
             ret = flw::dlg::password3("test_dlg.cpp - flw::dlg::password3", password, file);
             printf("flw::dlg::password3=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
             util::zero_memory((char*) password.data());
@@ -185,7 +187,7 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "work")  { // flw::dlg::work()
-            auto work  = WorkDialog("WorkDialog", nullptr, true, true);
+            auto work  = flw::dlg::WorkDialog("WorkDialog", nullptr, true, true);
             auto start = util::time();
 
             while (true) {
@@ -200,7 +202,7 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "work") { // flw::dlg::work()
-            auto work = WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
+            auto work = flw::dlg::WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
             auto stop = util::time() + 5.0;
 
             while (true) {

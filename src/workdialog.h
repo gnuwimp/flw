@@ -14,6 +14,7 @@ class Fl_Toggle_Button;
 // MALAGMA_ON
 
 namespace flw {
+    namespace dlg {
         //----------------------------------------------------------------------
         class WorkDialog : public Fl_Double_Window {
         public:
@@ -32,6 +33,7 @@ namespace flw {
             double                      _last;
             std::string                 _message;
         };
+    }
 }
 
 // MALAGMA_OFF

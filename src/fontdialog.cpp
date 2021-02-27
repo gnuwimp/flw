@@ -3,6 +3,7 @@
 
 #include "fontdialog.h"
 #include "util.h"
+#include "widgets.h"
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #include <FL/Fl_Box.H>
@@ -12,19 +13,24 @@
 // MALAGMA_ON
 
 namespace flw {
-    static std::vector<char*>   _FONTDIALOG_NAMES;
-    static char                 _FONTDIALOG_NAME[201];
-    static const std::string    _FONTDIALOG_LABEL = R"(
-ABCDEFGHIJKLMNOPQRSTUVWXYZ
-abcdefghijklmnopqrstuvwxyz
-0123456789
-:;<=>?[\\]^_`{|}~!\"#$%&'()*+,-./
-€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›
-œžŸ¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸
-¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑ
-ÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêë
-ìíîïðñòóôõö÷øùúûüýþÿ
-구두의 汉语 日本語
+    namespace dlg {
+        static std::vector<char*>   _FONTDIALOG_NAMES;
+        static char                 _FONTDIALOG_NAME[201];
+        static const std::string    _FONTDIALOG_LABEL = R"(
+ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
+abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
+–—‘“”„†•…‰™œŠŸž€ ΑΒΓΔΩαβγδω АБВГДабвгд
+∀∂∈ℝ∧∪≡∞ ↑↗↨↻⇣ ┐┼╔╘░►☺♀ ﬁ�⑀₂ἠḂӥẄɐː⍎אԱა
+
+Hello world, Καλημέρα κόσμε, コンニチハ
+
+math: ∮ E⋅da = Q,  n → ∞, ∑ f(i) 2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ
+korean: 구두의
+greek: Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν
+russian: Зарегистрируйтесь сейчас
+thai: แผ่นดินฮั่นเสื่อมโทรมแสนสังเวช
+amharic: ሰማይ አይታረስ ንጉሥ አይከሰስ
+braille: ⡌⠁⠧⠑ ⠼⠁⠒  ⡍⠜⠇⠑⠹⠰⠎ ⡣⠕⠌
 
 “There is nothing else than now.
 There is neither yesterday, certainly,
@@ -39,70 +45,71 @@ A good life is not measured by any biblical span.”
 ― Ernest Hemingway, For Whom the Bell Tolls
 )";
 
-    //--------------------------------------------------------------------------
-    class FontDialogLabel : public Fl_Box {
-    public:
-        int font;
-        int size;
+        //--------------------------------------------------------------------------
+        class _FontDialogLabel : public Fl_Box {
+        public:
+            int font;
+            int size;
 
-        //----------------------------------------------------------------------
-        FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
-            font = FL_HELVETICA;
-            size = 14;
+            //----------------------------------------------------------------------
+            _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
+                font = FL_HELVETICA;
+                size = 14;
 
-            align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-            box(FL_BORDER_BOX);
-            color(FL_BACKGROUND2_COLOR);
-        }
-
-        //----------------------------------------------------------------------
-        void draw() override {
-            draw_box();
-            fl_font((Fl_Font) font, size);
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
-        }
-    };
-
-    //--------------------------------------------------------------------------
-    static std::string _fontdialog_remove_style(const std::string& in) {
-        std::string out = in;
-
-        try {
-            if (out.find("@b@i@.") == 0) {
-                out = out.substr(6);
+                align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                box(FL_BORDER_BOX);
+                color(FL_BACKGROUND2_COLOR);
             }
-            else if (out.find("@i@.") == 0) {
-                out = out.substr(4);
-            }
-            else if (out.find("@b@.") == 0) {
-                out = out.substr(4);
-            }
-            else if (out.find("@.") == 0) {
-                out = out.substr(2);
-            }
-        }
-        catch (...) {
-        }
 
-        return out;
+            //----------------------------------------------------------------------
+            void draw() override {
+                draw_box();
+                fl_font((Fl_Font) font, size);
+                fl_color(FL_FOREGROUND_COLOR);
+                fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
+            }
+        };
+
+        //--------------------------------------------------------------------------
+        static std::string _fontdialog_remove_style(const std::string& in) {
+            std::string out = in;
+
+            try {
+                if (out.find("@b@i@.") == 0) {
+                    out = out.substr(6);
+                }
+                else if (out.find("@i@.") == 0) {
+                    out = out.substr(4);
+                }
+                else if (out.find("@b@.") == 0) {
+                    out = out.substr(4);
+                }
+                else if (out.find("@.") == 0) {
+                    out = out.substr(2);
+                }
+            }
+            catch (...) {
+            }
+
+            return out;
+        }
     }
 }
 
 //------------------------------------------------------------------------------
-flw::FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 57, flw::PREF_FONTSIZE * 34) {
+flw::dlg::FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(font, "", fontsize, label);
 }
 
 //------------------------------------------------------------------------------
-flw::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 57, flw::PREF_FONTSIZE * 34) {
+flw::dlg::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
 
 //------------------------------------------------------------------------------
-void flw::FontDialog::_activate() {
+void flw::dlg::FontDialog::_activate() {
     if (_fonts->value() == 0 || _sizes->value() == 0) {
         _select->deactivate();
     }
@@ -112,7 +119,7 @@ void flw::FontDialog::_activate() {
 }
 
 //------------------------------------------------------------------------------
-void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
+void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
     FontDialog* dlg = (FontDialog*) o;
 
     if (w == dlg) {
@@ -125,7 +132,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row = dlg->_fonts->value();
 
         if (row) {
-            ((FontDialogLabel*) dlg->_label)->font = row - 1;
+            ((_FontDialogLabel*) dlg->_label)->font = row - 1;
         }
 
         dlg->_activate();
@@ -150,7 +157,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row = dlg->_sizes->value();
 
         if (row) {
-            ((FontDialogLabel*) dlg->_label)->size = row + 5;
+            ((_FontDialogLabel*) dlg->_label)->size = row + 5;
         }
 
         dlg->_activate();
@@ -159,14 +166,14 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label) {
+void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label) {
     end();
 
     _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts  = new Fl_Hold_Browser(0, 0, 0, 0);
-    _label  = new flw::FontDialogLabel(0, 0, 0, 0);
+    _fonts  = new flw::ScrollBrowser(12, 0, 0, 0, 0);
+    _label  = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
     _select = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes  = new Fl_Hold_Browser(0, 0, 0, 0);
+    _sizes  = new flw::ScrollBrowser(6, 0, 0, 0, 0);
     _ret    = false;
 
     add(_fonts);
@@ -175,18 +182,18 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     add(_cancel);
     add(_label);
 
-    _cancel->callback(flw::FontDialog::Callback, this);
+    _cancel->callback(flw::dlg::FontDialog::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
     _cancel->labelsize(flw::PREF_FONTSIZE);
-    _fonts->callback(flw::FontDialog::Callback, this);
+    _fonts->callback(flw::dlg::FontDialog::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
-    ((FontDialogLabel*) _label)->font = font;
-    ((FontDialogLabel*) _label)->size = fontsize;
-    _select->callback(flw::FontDialog::Callback, this);
+    ((_FontDialogLabel*) _label)->font = font;
+    ((_FontDialogLabel*) _label)->size = fontsize;
+    _select->callback(flw::dlg::FontDialog::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
-    _sizes->callback(flw::FontDialog::Callback, this);
+    _sizes->callback(flw::dlg::FontDialog::Callback, this);
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
 
@@ -206,12 +213,12 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
         _sizes->middleline(fontsize - 5);
-        ((FontDialogLabel*) _label)->font = fontsize;
+        ((_FontDialogLabel*) _label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
         _sizes->middleline(14 - 5);
-        ((FontDialogLabel*) _label)->font = 14;
+        ((_FontDialogLabel*) _label)->font = 14;
     }
 
     if (fontname != "") {
@@ -220,7 +227,7 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
         _fonts->middleline(font + 1);
-        ((FontDialogLabel*) _label)->font = font;
+        ((_FontDialogLabel*) _label)->font = font;
     }
     else {
         _fonts->value(1);
@@ -229,12 +236,12 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
 
     resizable(this);
     copy_label(label.c_str());
-    callback(flw::FontDialog::Callback, this);
+    callback(flw::dlg::FontDialog::Callback, this);
     set_modal();
 }
 
 //------------------------------------------------------------------------------
-void flw::FontDialog::DeleteFonts() {
+void flw::dlg::FontDialog::DeleteFonts() {
     for (auto f : _FONTDIALOG_NAMES) {
         free(f);
     }
@@ -243,7 +250,7 @@ void flw::FontDialog::DeleteFonts() {
 }
 
 //------------------------------------------------------------------------------
-int flw::FontDialog::LoadFont(const std::string& requested_font) {
+int flw::dlg::FontDialog::LoadFont(const std::string& requested_font) {
     FontDialog::LoadFonts();
 
     auto count = 0;
@@ -264,7 +271,7 @@ int flw::FontDialog::LoadFont(const std::string& requested_font) {
 //------------------------------------------------------------------------------
 // Load fonts only once in the program
 //
-void flw::FontDialog::LoadFonts(bool iso8859_only) {
+void flw::dlg::FontDialog::LoadFonts(bool iso8859_only) {
     if (_FONTDIALOG_NAMES.size() == 0) {
         auto fonts = Fl::set_fonts(iso8859_only ? nullptr : "-*");
 
@@ -292,7 +299,7 @@ void flw::FontDialog::LoadFonts(bool iso8859_only) {
 }
 
 //------------------------------------------------------------------------------
-void flw::FontDialog::resize(int X, int Y, int W, int H) {
+void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
     int fs = flw::PREF_FONTSIZE;
 
     Fl_Double_Window::resize(X, Y, W, H);
@@ -305,7 +312,7 @@ void flw::FontDialog::resize(int X, int Y, int W, int H) {
 }
 
 //--------------------------------------------------------------------------
-bool flw::FontDialog::run(Fl_Window* parent) {
+bool flw::dlg::FontDialog::run(Fl_Window* parent) {
     _ret = false;
 
     _activate();
@@ -321,7 +328,7 @@ bool flw::FontDialog::run(Fl_Window* parent) {
 }
 
 //------------------------------------------------------------------------------
-void flw::FontDialog::_select_name(const std::string& fontname) {
+void flw::dlg::FontDialog::_select_name(const std::string& fontname) {
     auto count = 1;
 
     for (auto font : _FONTDIALOG_NAMES) {
@@ -330,7 +337,7 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
-            ((FontDialogLabel*) _label)->font = count - 1;
+            ((_FontDialogLabel*) _label)->font = count - 1;
             return;
         }
 
@@ -338,7 +345,7 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
     }
 
     _fonts->value(1);
-    ((FontDialogLabel*) _label)->font = 0;
+    ((_FontDialogLabel*) _label)->font = 0;
 }
 
 // MALAGMA_OFF

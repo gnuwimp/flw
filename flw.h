@@ -3,7 +3,7 @@
 //   src/dlg.h src/waitcursor.h src/chart.h src/datechooser.h
 //   src/fontdialog.h src/gridgroup.h src/lcdnumber.h src/logdisplay.h
 //   src/splitgroup.h src/tabledisplay.h src/tableeditor.h src/tabsgroup.h
-//   src/grid.h src/theme.h src/workdialog.h
+//   src/grid.h src/theme.h src/widgets.h src/workdialog.h
 
 // Copyright 2016 - 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
@@ -12,6 +12,7 @@
 #define FLW_H
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Text_Display.H>
 #include <map>
@@ -19,7 +20,6 @@
 #include <vector>
 class Fl_Button;
 class Fl_Toggle_Button;
-class Fl_Hold_Browser;
 
 #define FLW_LINE printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout);
 namespace flw {
@@ -216,6 +216,8 @@ namespace flw {
 }
 namespace flw {
     namespace dlg {
+        extern const char*              PASSWORD_CANCEL;
+        extern const char*              PASSWORD_OK;
         void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(const std::string& title, const std::vector<std::string>& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -369,40 +371,42 @@ namespace flw {
     }
 }
 namespace flw {
-    class FontDialog : public Fl_Double_Window {
-    public:
+    namespace dlg {
+        class FontDialog : public Fl_Double_Window {
+        public:
                                         FontDialog(const FontDialog&) = delete;
                                         FontDialog(FontDialog&&) = delete;
-        FontDialog&                     operator=(const FontDialog&) = delete;
-        FontDialog&                     operator=(FontDialog&&) = delete;
+            FontDialog&                 operator=(const FontDialog&) = delete;
+            FontDialog&                 operator=(FontDialog&&) = delete;
                                         FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
                                         FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label);
-        inline void                     activate_font() { ((Fl_Widget*) _fonts)->activate(); }
-        void                            resize(int X, int Y, int W, int H) override;
-        bool                            run(Fl_Window* parent = nullptr);
-        inline void                     deactivate_font() { ((Fl_Widget*) _fonts)->deactivate(); }
-        inline void                     deactivate_fontsize() { ((Fl_Widget*) _sizes)->deactivate(); }
-        inline int                      font() { return _font; }
-        inline std::string              fontname() { return _fontname; }
-        inline int                      fontsize() { return _fontsize; }
-        static void                     Callback(Fl_Widget* w, void* o);
-        static void                     DeleteFonts();
-        static int                      LoadFont(const std::string& requested_font);
-        static void                     LoadFonts(bool iso8859_only = true);
-    private:
-        void                            _activate();
-        void                            _create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label);
-        void                            _select_name(const std::string& font_name);
-        Fl_Box*                         _label;
-        Fl_Button*                      _cancel;
-        Fl_Button*                      _select;
-        Fl_Hold_Browser*                _fonts;
-        Fl_Hold_Browser*                _sizes;
-        bool                            _ret;
-        int                             _font;
-        int                             _fontsize;
-        std::string                     _fontname;
-    };
+            inline void                 activate_font() { ((Fl_Widget*) _fonts)->activate(); }
+            void                        resize(int X, int Y, int W, int H) override;
+            bool                        run(Fl_Window* parent = nullptr);
+            inline void                 deactivate_font() { ((Fl_Widget*) _fonts)->deactivate(); }
+            inline void                 deactivate_fontsize() { ((Fl_Widget*) _sizes)->deactivate(); }
+            inline int                  font() { return _font; }
+            inline std::string          fontname() { return _fontname; }
+            inline int                  fontsize() { return _fontsize; }
+            static void                 Callback(Fl_Widget* w, void* o);
+            static void                 DeleteFonts();
+            static int                  LoadFont(const std::string& requested_font);
+            static void                 LoadFonts(bool iso8859_only = true);
+        private:
+            void                        _activate();
+            void                        _create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label);
+            void                        _select_name(const std::string& font_name);
+            Fl_Box*                     _label;
+            Fl_Button*                  _cancel;
+            Fl_Button*                  _select;
+            Fl_Hold_Browser*            _fonts;
+            Fl_Hold_Browser*            _sizes;
+            bool                        _ret;
+            int                         _font;
+            int                         _fontsize;
+            std::string                 _fontname;
+        };
+    }
 }
 namespace flw {
     struct _GridGroupChild;
@@ -827,6 +831,20 @@ namespace flw {
     }
 }
 namespace flw {
+    class ScrollBrowser : public Fl_Hold_Browser {
+    public:
+                                        ScrollBrowser(const ScrollBrowser&) = delete;
+                                        ScrollBrowser(ScrollBrowser&&) = delete;
+        ScrollBrowser&                  operator=(const ScrollBrowser&) = delete;
+        ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
+                                        ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0);
+        int                             handle(int event) override;
+    private:
+        int                             _scroll;
+    };
+}
+namespace flw {
+    namespace dlg {
         class WorkDialog : public Fl_Double_Window {
         public:
                                         WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
@@ -842,5 +860,6 @@ namespace flw {
             double                      _last;
             std::string                 _message;
         };
+    }
 }
 #endif // FLW_H

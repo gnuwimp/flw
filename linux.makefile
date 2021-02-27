@@ -1,4 +1,4 @@
-# Makefile generated 2021-02-20 21:27:52 from lmake.conf for linux.opt
+# Makefile generated 2021-02-27 22:31:52 from lmake.conf for linux.opt
 
 all: linux.makefile \
 	obj/abortdialog.o \
@@ -19,6 +19,7 @@ all: linux.makefile \
 	obj/theme.o \
 	obj/util.o \
 	obj/waitcursor.o \
+	obj/widgets.o \
 	obj/workdialog.o \
 	obj/test_chart.o \
 	obj/test_date.o \
@@ -112,6 +113,9 @@ obj/util.o: src/util.cpp src/util.h
 obj/waitcursor.o: src/waitcursor.cpp src/waitcursor.h
 	g++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -Wno-deprecated-declarations -c $< -o $@
 
+obj/widgets.o: src/widgets.cpp src/widgets.h
+	g++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -Wno-deprecated-declarations -c $< -o $@
+
 obj/workdialog.o: src/workdialog.cpp src/workdialog.h
 	g++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -Wno-deprecated-declarations -c $< -o $@
 
@@ -163,7 +167,7 @@ obj/test_theme.o: test/test_theme.cpp obj/libflw.a
 obj/test_util.o: test/test_util.cpp obj/libflw.a
 	g++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -Wno-deprecated-declarations -c $< -o $@
 
-obj/libflw.a: obj/abortdialog.o obj/chart.o obj/date.o obj/datechooser.o obj/dlg.o obj/fontdialog.o obj/grid.o obj/gridgroup.o obj/lcdnumber.o obj/logdisplay.o obj/price.o obj/splitgroup.o obj/tabledisplay.o obj/tableeditor.o obj/tabsgroup.o obj/theme.o obj/util.o obj/waitcursor.o obj/workdialog.o
+obj/libflw.a: obj/abortdialog.o obj/chart.o obj/date.o obj/datechooser.o obj/dlg.o obj/fontdialog.o obj/grid.o obj/gridgroup.o obj/lcdnumber.o obj/logdisplay.o obj/price.o obj/splitgroup.o obj/tabledisplay.o obj/tableeditor.o obj/tabsgroup.o obj/theme.o obj/util.o obj/waitcursor.o obj/widgets.o obj/workdialog.o
 	ar crs $@ $^
 
 test_chart: obj/test_chart.o obj/libflw.a
@@ -234,6 +238,7 @@ clean:
 	obj/theme.o \
 	obj/util.o \
 	obj/waitcursor.o \
+	obj/widgets.o \
 	obj/workdialog.o \
 	obj/test_chart.o \
 	obj/test_date.o \

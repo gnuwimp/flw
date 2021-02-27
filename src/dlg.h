@@ -13,13 +13,9 @@ class Fl_Window;
 namespace flw {
     namespace dlg {
         //----------------------------------------------------------------------
-        // Collection of dialog windows:
-        //   A html message dialog
-        //   Select an string from an list
-        //   Let user enter a password with optional password confirmation
-        //   A text message dialog
-        //   Dialog to show during some computational work
-        //
+        extern const char*              PASSWORD_CANCEL;
+        extern const char*              PASSWORD_OK;
+
         void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(const std::string& title, const std::vector<std::string>& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);

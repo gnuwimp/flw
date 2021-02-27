@@ -448,7 +448,7 @@ namespace flw {
                     dlg->hide();
                 }
                 else if (w == dlg->_fixedfont) {
-                    flw::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
+                    flw::dlg::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
 
                     if (fd.run(Fl::first_window())) {
                         flw::PREF_FIXED_FONT     = fd.font();
@@ -458,7 +458,7 @@ namespace flw {
                     }
                 }
                 else if (w == dlg->_font) {
-                    flw::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
+                    flw::dlg::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
 
                     if (fd.run(Fl::first_window())) {
                         flw::PREF_FONT     = fd.font();

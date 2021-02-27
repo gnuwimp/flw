@@ -3,7 +3,7 @@
 //   src/dlg.cpp src/fontdialog.cpp src/grid.cpp src/gridgroup.cpp
 //   src/lcdnumber.cpp src/logdisplay.cpp src/price.cpp src/splitgroup.cpp
 //   src/tabledisplay.cpp src/tableeditor.cpp src/tabsgroup.cpp src/theme.cpp
-//   src/util.cpp src/waitcursor.cpp src/workdialog.cpp
+//   src/util.cpp src/waitcursor.cpp src/widgets.cpp src/workdialog.cpp
 
 // Copyright 2016 - 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
@@ -17,7 +17,6 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Help_View.H>
-#include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Input_Choice.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Multiline_Output.H>
@@ -2231,12 +2230,13 @@ namespace flw {
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
                 end();
                 _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _list  = new Fl_Hold_Browser(0, 0, w(), h());
+                _list  = new flw::ScrollBrowser();
                 add(_close);
                 add(_list);
                 _close->callback(_DlgList::Callback, this);
                 _close->labelfont(flw::PREF_FONT);
                 _close->labelsize(flw::PREF_FONTSIZE);
+                resize(0, 0, w(), h());
                 for (auto& s : list) {
                     _list->add(s.c_str());
                 }
@@ -2273,21 +2273,21 @@ namespace flw {
                 }
             }
         };
-        class _DlgListSelect : public Fl_Double_Window {
+        class _DlgSelect : public Fl_Double_Window {
             Fl_Button*                      _close;
             Fl_Button*                      _cancel;
-            Fl_Browser*                     _list;
+            Fl_Hold_Browser*                _list;
             Fl_Input*                       _filter;
             const std::vector<std::string>& _strings;
         public:
-            _DlgListSelect(const char* title, Fl_Window* parent, const std::vector<std::string>& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
+            _DlgSelect(const char* title, Fl_Window* parent, const std::vector<std::string>& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
             _strings(strings) {
                 end();
                 _filter = new Fl_Input(0, 0, 0, 0);
                 _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
                 _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _list   = new Fl_Hold_Browser(0, 0, 0, 0);
+                _list   = new flw::ScrollBrowser(0, 0, 0, 0);
                 add(_filter);
                 add(_list);
                 add(_cancel);
@@ -2311,6 +2311,7 @@ namespace flw {
                     _list->textfont(flw::PREF_FONT);
                     _list->textsize(flw::PREF_FONTSIZE);
                 }
+                resize(0, 0, w(), h());
                 {
                     auto r = 0;
                     auto f = 0;
@@ -2323,11 +2324,11 @@ namespace flw {
                     }
                     if (selected_string_index && selected_string_index <= (int) _strings.size()) {
                         _list->value(selected_string_index);
-                        _list->make_visible(selected_string_index);
+                        _list->middleline(selected_string_index);
                     }
                     else if (r > 0) {
                         _list->value(r);
-                        _list->make_visible(r);
+                        _list->middleline(r);
                     }
                     else {
                         _list->value(1);
@@ -2351,7 +2352,7 @@ namespace flw {
                 }
             }
             static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgListSelect*) o;
+                auto dlg = (_DlgSelect*) o;
                 if (w == dlg || w == dlg->_cancel) {
                     dlg->_list->deselect();
                     dlg->hide();
@@ -2439,6 +2440,8 @@ namespace flw {
                 return 0;
             }
         };
+        const char* PASSWORD_CANCEL = "Cancel";
+        const char* PASSWORD_OK     = "Ok";
         class _DlgPassword : public Fl_Double_Window {
         public:
             enum class TYPE {
@@ -2463,8 +2466,8 @@ namespace flw {
                 _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
                 _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter Password Again");
                 _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
-                _cancel    = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _close     = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+                _cancel    = new Fl_Button(0, 0, 0, 0, flw::dlg::PASSWORD_CANCEL);
+                _close     = new Fl_Return_Button(0, 0, 0, 0, flw::dlg::PASSWORD_OK);
                 _file      = new Fl_Output(0, 0, 0, 0, "Key File");
                 _mode      = mode;
                 _ret       = false;
@@ -2715,11 +2718,11 @@ bool flw::dlg::password4(const std::string& title, std::string& password, std::s
     return dlg.run(password, file);
 }
 int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgListSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
+    _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgListSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
+    _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 void flw::dlg::text(const std::string& title, const std::string& text, Fl_Window* parent, bool fixed_font, int W, int H) {
@@ -2727,19 +2730,24 @@ void flw::dlg::text(const std::string& title, const std::string& text, Fl_Window
     dlg.run();
 }
 namespace flw {
-    static std::vector<char*>   _FONTDIALOG_NAMES;
-    static char                 _FONTDIALOG_NAME[201];
-    static const std::string    _FONTDIALOG_LABEL = R"(
-ABCDEFGHIJKLMNOPQRSTUVWXYZ
-abcdefghijklmnopqrstuvwxyz
-0123456789
-:;<=>?[\\]^_`{|}~!\"#$%&'()*+,-./
-€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›
-œžŸ¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸
-¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑ
-ÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêë
-ìíîïðñòóôõö÷øùúûüýþÿ
-구두의 汉语 日本語
+    namespace dlg {
+        static std::vector<char*>   _FONTDIALOG_NAMES;
+        static char                 _FONTDIALOG_NAME[201];
+        static const std::string    _FONTDIALOG_LABEL = R"(
+ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
+abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
+–—‘“”„†•…‰™œŠŸž€ ΑΒΓΔΩαβγδω АБВГДабвгд
+∀∂∈ℝ∧∪≡∞ ↑↗↨↻⇣ ┐┼╔╘░►☺♀ ﬁ�⑀₂ἠḂӥẄɐː⍎אԱა
+
+Hello world, Καλημέρα κόσμε, コンニチハ
+
+math: ∮ E⋅da = Q,  n → ∞, ∑ f(i) 2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ
+korean: 구두의
+greek: Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν
+russian: Зарегистрируйтесь сейчас
+thai: แผ่นดินฮั่นเสื่อมโทรมแสนสังเวช
+amharic: ሰማይ አይታረስ ንጉሥ አይከሰስ
+braille: ⡌⠁⠧⠑ ⠼⠁⠒  ⡍⠜⠇⠑⠹⠰⠎ ⡣⠕⠌
 
 “There is nothing else than now.
 There is neither yesterday, certainly,
@@ -2753,54 +2761,55 @@ you will have a good life.
 A good life is not measured by any biblical span.”
 ― Ernest Hemingway, For Whom the Bell Tolls
 )";
-    class FontDialogLabel : public Fl_Box {
-    public:
-        int font;
-        int size;
-        FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
-            font = FL_HELVETICA;
-            size = 14;
-            align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-            box(FL_BORDER_BOX);
-            color(FL_BACKGROUND2_COLOR);
-        }
-        void draw() override {
-            draw_box();
-            fl_font((Fl_Font) font, size);
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
-        }
-    };
-    static std::string _fontdialog_remove_style(const std::string& in) {
-        std::string out = in;
-        try {
-            if (out.find("@b@i@.") == 0) {
-                out = out.substr(6);
+        class _FontDialogLabel : public Fl_Box {
+        public:
+            int font;
+            int size;
+            _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
+                font = FL_HELVETICA;
+                size = 14;
+                align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                box(FL_BORDER_BOX);
+                color(FL_BACKGROUND2_COLOR);
             }
-            else if (out.find("@i@.") == 0) {
-                out = out.substr(4);
+            void draw() override {
+                draw_box();
+                fl_font((Fl_Font) font, size);
+                fl_color(FL_FOREGROUND_COLOR);
+                fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
             }
-            else if (out.find("@b@.") == 0) {
-                out = out.substr(4);
+        };
+        static std::string _fontdialog_remove_style(const std::string& in) {
+            std::string out = in;
+            try {
+                if (out.find("@b@i@.") == 0) {
+                    out = out.substr(6);
+                }
+                else if (out.find("@i@.") == 0) {
+                    out = out.substr(4);
+                }
+                else if (out.find("@b@.") == 0) {
+                    out = out.substr(4);
+                }
+                else if (out.find("@.") == 0) {
+                    out = out.substr(2);
+                }
             }
-            else if (out.find("@.") == 0) {
-                out = out.substr(2);
+            catch (...) {
             }
+            return out;
         }
-        catch (...) {
-        }
-        return out;
     }
 }
-flw::FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, 0, 0) {
+flw::dlg::FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(font, "", fontsize, label);
 }
-flw::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, 0, 0) {
+flw::dlg::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
-void flw::FontDialog::_activate() {
+void flw::dlg::FontDialog::_activate() {
     if (_fonts->value() == 0 || _sizes->value() == 0) {
         _select->deactivate();
     }
@@ -2808,7 +2817,7 @@ void flw::FontDialog::_activate() {
         _select->activate();
     }
 }
-void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
+void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
     FontDialog* dlg = (FontDialog*) o;
     if (w == dlg) {
         dlg->hide();
@@ -2819,7 +2828,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == dlg->_fonts) {
         auto row = dlg->_fonts->value();
         if (row) {
-            ((FontDialogLabel*) dlg->_label)->font = row - 1;
+            ((_FontDialogLabel*) dlg->_label)->font = row - 1;
         }
         dlg->_activate();
         Fl::redraw();
@@ -2839,39 +2848,40 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == dlg->_sizes) {
         auto row = dlg->_sizes->value();
         if (row) {
-            ((FontDialogLabel*) dlg->_label)->size = row + 5;
+            ((_FontDialogLabel*) dlg->_label)->size = row + 5;
         }
         dlg->_activate();
         Fl::redraw();
     }
 }
-void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label) {
+void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label) {
     end();
     _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts  = new Fl_Hold_Browser(0, 0, 0, 0);
-    _label  = new flw::FontDialogLabel(0, 0, 0, 0);
+    _fonts  = new flw::ScrollBrowser(12, 0, 0, 0, 0);
+    _label  = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
     _select = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes  = new Fl_Hold_Browser(0, 0, 0, 0);
+    _sizes  = new flw::ScrollBrowser(6, 0, 0, 0, 0);
     _ret    = false;
     add(_fonts);
     add(_sizes);
     add(_select);
     add(_cancel);
     add(_label);
-    _cancel->callback(flw::FontDialog::Callback, this);
+    _cancel->callback(flw::dlg::FontDialog::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
     _cancel->labelsize(flw::PREF_FONTSIZE);
-    _fonts->callback(flw::FontDialog::Callback, this);
+    _fonts->callback(flw::dlg::FontDialog::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
-    ((FontDialogLabel*) _label)->font = font;
-    ((FontDialogLabel*) _label)->size = fontsize;
-    _select->callback(flw::FontDialog::Callback, this);
+    ((_FontDialogLabel*) _label)->font = font;
+    ((_FontDialogLabel*) _label)->size = fontsize;
+    _select->callback(flw::dlg::FontDialog::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
-    _sizes->callback(flw::FontDialog::Callback, this);
+    _sizes->callback(flw::dlg::FontDialog::Callback, this);
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
+    resize(0, 0, w(), h());
     FontDialog::LoadFonts();
     for (auto name : _FONTDIALOG_NAMES) {
         _fonts->add(name);
@@ -2883,39 +2893,38 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     }
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
-        _sizes->topline(fontsize - 5);
-        ((FontDialogLabel*) _label)->font = fontsize;
+        _sizes->middleline(fontsize - 5);
+        ((_FontDialogLabel*) _label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
-        _sizes->topline(14 - 5);
-        ((FontDialogLabel*) _label)->font = 14;
+        _sizes->middleline(14 - 5);
+        ((_FontDialogLabel*) _label)->font = 14;
     }
     if (fontname != "") {
         _select_name(fontname);
     }
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
-        _fonts->topline(font + 1);
-        ((FontDialogLabel*) _label)->font = font;
+        _fonts->middleline(font + 1);
+        ((_FontDialogLabel*) _label)->font = font;
     }
     else {
         _fonts->value(1);
-        _fonts->topline(1);
+        _fonts->middleline(1);
     }
     resizable(this);
     copy_label(label.c_str());
-    callback(flw::FontDialog::Callback, this);
+    callback(flw::dlg::FontDialog::Callback, this);
     set_modal();
-    resize(0, 0, flw::PREF_FONTSIZE * 57, flw::PREF_FONTSIZE * 34);
 }
-void flw::FontDialog::DeleteFonts() {
+void flw::dlg::FontDialog::DeleteFonts() {
     for (auto f : _FONTDIALOG_NAMES) {
         free(f);
     }
     _FONTDIALOG_NAMES.clear();
 }
-int flw::FontDialog::LoadFont(const std::string& requested_font) {
+int flw::dlg::FontDialog::LoadFont(const std::string& requested_font) {
     FontDialog::LoadFonts();
     auto count = 0;
     for (auto font : _FONTDIALOG_NAMES) {
@@ -2927,7 +2936,7 @@ int flw::FontDialog::LoadFont(const std::string& requested_font) {
     }
     return -1;
 }
-void flw::FontDialog::LoadFonts(bool iso8859_only) {
+void flw::dlg::FontDialog::LoadFonts(bool iso8859_only) {
     if (_FONTDIALOG_NAMES.size() == 0) {
         auto fonts = Fl::set_fonts(iso8859_only ? nullptr : "-*");
         for (int f = 0; f < fonts; f++) {
@@ -2947,7 +2956,7 @@ void flw::FontDialog::LoadFonts(bool iso8859_only) {
         memset(_FONTDIALOG_NAME, 0, 201);
     }
 }
-void flw::FontDialog::resize(int X, int Y, int W, int H) {
+void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
     int fs = flw::PREF_FONTSIZE;
     Fl_Double_Window::resize(X, Y, W, H);
     _fonts->resize  (4,                 4,                  fs * 25,            H - fs * 2 - 12);
@@ -2956,7 +2965,7 @@ void flw::FontDialog::resize(int X, int Y, int W, int H) {
     _cancel->resize (W - fs * 20 - 8,   H - fs * 2 - 4,     fs * 10,            fs * 2);
     _select->resize (W - fs * 10 - 4,   H - fs * 2 - 4,     fs * 10,            fs * 2);
 }
-bool flw::FontDialog::run(Fl_Window* parent) {
+bool flw::dlg::FontDialog::run(Fl_Window* parent) {
     _ret = false;
     _activate();
     flw::util::center_window(this, parent);
@@ -2967,20 +2976,20 @@ bool flw::FontDialog::run(Fl_Window* parent) {
     }
     return _ret;
 }
-void flw::FontDialog::_select_name(const std::string& fontname) {
+void flw::dlg::FontDialog::_select_name(const std::string& fontname) {
     auto count = 1;
     for (auto font : _FONTDIALOG_NAMES) {
         auto font_without_style = _fontdialog_remove_style(font);
         if (fontname == font_without_style) {
             _fonts->value(count);
-            _fonts->topline(count);
-            ((FontDialogLabel*) _label)->font = count - 1;
+            _fonts->middleline(count);
+            ((_FontDialogLabel*) _label)->font = count - 1;
             return;
         }
         count++;
     }
     _fonts->value(1);
-    ((FontDialogLabel*) _label)->font = 0;
+    ((_FontDialogLabel*) _label)->font = 0;
 }
 namespace flw {
     static int _FLW_GRID_STRING_SIZE = 1000;
@@ -6532,217 +6541,217 @@ namespace flw {
         }
     }
     namespace dlg {
-      class _DlgTheme : public Fl_Double_Window {
-        Fl_Box*                     _font_label;
-        Fl_Box*                     _fixedfont_label;
-        Fl_Browser*                 _theme;
-        Fl_Button*                  _close;
-        Fl_Button*                  _font;
-        Fl_Button*                  _fixedfont;
-        int                         _theme_row;
-      public:
-        _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
-            end();
-            _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-            _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
-            _fixedfont_label = new Fl_Box(0, 0, 0, 0);
-            _font            = new Fl_Button(0, 0, 0, 0, "&Font");
-            _font_label      = new Fl_Box(0, 0, 0, 0);
-            _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
-            _theme_row       = 0;
-            add(_theme);
-            add(_fixedfont);
-            add(_font);
-            add(_close);
-            add(_fixedfont_label);
-            add(_font_label);
-            if (enable_font == false) {
-              _font->deactivate();
+        class _DlgTheme : public Fl_Double_Window {
+            Fl_Box*                     _font_label;
+            Fl_Box*                     _fixedfont_label;
+            Fl_Browser*                 _theme;
+            Fl_Button*                  _close;
+            Fl_Button*                  _font;
+            Fl_Button*                  _fixedfont;
+            int                         _theme_row;
+        public:
+            _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
+                end();
+                _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+                _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+                _fixedfont_label = new Fl_Box(0, 0, 0, 0);
+                _font            = new Fl_Button(0, 0, 0, 0, "&Font");
+                _font_label      = new Fl_Box(0, 0, 0, 0);
+                _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
+                _theme_row       = 0;
+                add(_theme);
+                add(_fixedfont);
+                add(_font);
+                add(_close);
+                add(_fixedfont_label);
+                add(_font_label);
+                if (enable_font == false) {
+                  _font->deactivate();
+                }
+                if (enable_fixedfont == false) {
+                  _fixedfont->deactivate();
+                }
+                _close->callback(Callback, this);
+                _font_label->color(FL_BACKGROUND2_COLOR);
+                _font_label->box(FL_DOWN_BOX);
+                _font->callback(Callback, this);
+                _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                _fixedfont_label->color(FL_BACKGROUND2_COLOR);
+                _fixedfont_label->box(FL_DOWN_BOX);
+                _fixedfont->callback(Callback, this);
+                _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                _theme->callback(Callback, this);
+                _theme->textfont(flw::PREF_FONT);
+                _theme->add("default");
+                _theme->add("gleam");
+                _theme->add("blue gleam");
+                _theme->add("dark blue gleam");
+                _theme->add("dark gleam");
+                _theme->add("tan gleam");
+                _theme->add("gtk");
+                _theme->add("blue gtk");
+                _theme->add("dark blue gtk");
+                _theme->add("dark gtk");
+                _theme->add("tan gtk");
+                _theme->add("plastic");
+                _theme->add("blue plastic");
+                _theme->add("tan plastic");
+                _theme->add("system");
+                resizable(this);
+                callback(Callback, this);
+                set_modal();
+                update_pref();
+                util::center_window(this, parent);
             }
-            if (enable_fixedfont == false) {
-              _fixedfont->deactivate();
+            static void Callback(Fl_Widget* w, void* o) {
+                auto dlg = (_DlgTheme*) o;
+                if (w == dlg) {
+                    dlg->hide();
+                }
+                else if (w == dlg->_fixedfont) {
+                    flw::dlg::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
+                    if (fd.run(Fl::first_window())) {
+                        flw::PREF_FIXED_FONT     = fd.font();
+                        flw::PREF_FIXED_FONTSIZE = fd.fontsize();
+                        flw::PREF_FIXED_FONTNAME = fd.fontname();
+                        dlg->update_pref();
+                    }
+                }
+                else if (w == dlg->_font) {
+                    flw::dlg::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
+                    if (fd.run(Fl::first_window())) {
+                        flw::PREF_FONT     = fd.font();
+                        flw::PREF_FONTSIZE = fd.fontsize();
+                        flw::PREF_FONTNAME = fd.fontname();
+                        dlg->update_pref();
+                    }
+                }
+                else if (w == dlg->_theme) {
+                    auto row = dlg->_theme->value();
+                    if (row == 1) {
+                        theme::_load_default();
+                    }
+                    else if (row == 2) {
+                        theme::_load_gleam();
+                    }
+                    else if (row == 3) {
+                        theme::_load_gleam_blue();
+                    }
+                    else if (row == 4) {
+                        theme::_load_gleam_dark_blue();
+                    }
+                    else if (row == 5) {
+                        theme::_load_gleam_dark();
+                    }
+                    else if (row == 6) {
+                        theme::_load_gleam_tan();
+                    }
+                    else if (row == 7) {
+                        theme::_load_gtk();
+                    }
+                    else if (row == 8) {
+                        theme::_load_gtk_blue();
+                    }
+                    else if (row == 9) {
+                        theme::_load_gtk_dark_blue();
+                    }
+                    else if (row == 10) {
+                        theme::_load_gtk_dark();
+                    }
+                    else if (row == 11) {
+                        theme::_load_gtk_tan();
+                    }
+                    else if (row == 12) {
+                        theme::_load_plastic();
+                    }
+                    else if (row == 13) {
+                        theme::_load_blue_plastic();
+                    }
+                    else if (row == 14) {
+                        theme::_load_tan_plastic();
+                    }
+                    else if (row == 15) {
+                        theme::_load_system();
+                    }
+                    Fl::redraw();
+                }
+                else if (w == dlg->_close) {
+                    dlg->hide();
+                }
             }
-            _close->callback(Callback, this);
-            _font_label->color(FL_BACKGROUND2_COLOR);
-            _font_label->box(FL_DOWN_BOX);
-            _font->callback(Callback, this);
-            _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-            _fixedfont_label->color(FL_BACKGROUND2_COLOR);
-            _fixedfont_label->box(FL_DOWN_BOX);
-            _fixedfont->callback(Callback, this);
-            _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-            _theme->callback(Callback, this);
-            _theme->textfont(flw::PREF_FONT);
-            _theme->add("default");
-            _theme->add("gleam");
-            _theme->add("blue gleam");
-            _theme->add("dark blue gleam");
-            _theme->add("dark gleam");
-            _theme->add("tan gleam");
-            _theme->add("gtk");
-            _theme->add("blue gtk");
-            _theme->add("dark blue gtk");
-            _theme->add("dark gtk");
-            _theme->add("tan gtk");
-            _theme->add("plastic");
-            _theme->add("blue plastic");
-            _theme->add("tan plastic");
-            _theme->add("system");
-            resizable(this);
-            callback(Callback, this);
-            set_modal();
-            update_pref();
-            util::center_window(this, parent);
-        }
-        static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = (_DlgTheme*) o;
-            if (w == dlg) {
-              dlg->hide();
+            void resize(int X, int Y, int W, int H) override {
+                auto fs = flw::PREF_FONTSIZE;
+                Fl_Double_Window::resize(X, Y, W, H);
+                _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 20);
+                _font_label->resize      (4,                 H - fs * 6 - 12,    W - 8,     fs * 2);
+                _fixedfont_label->resize (4,                 H - fs * 4 - 8,     W - 8,     fs * 2);
+                _fixedfont->resize       (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
+                _font->resize            (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
+                _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
             }
-            else if (w == dlg->_fixedfont) {
-              flw::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
-              if (fd.run(Fl::first_window())) {
-                flw::PREF_FIXED_FONT     = fd.font();
-                flw::PREF_FIXED_FONTSIZE = fd.fontsize();
-                flw::PREF_FIXED_FONTNAME = fd.fontname();
-                dlg->update_pref();
-              }
+            void run() {
+                show();
+                while (visible()) {
+                    Fl::wait();
+                    Fl::flush();
+                }
             }
-            else if (w == dlg->_font) {
-              flw::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
-              if (fd.run(Fl::first_window())) {
-                flw::PREF_FONT     = fd.font();
-                flw::PREF_FONTSIZE = fd.fontsize();
-                flw::PREF_FONTNAME = fd.fontname();
-                dlg->update_pref();
-              }
+            void update_pref() {
+                flw::util::labelfont(this);
+                _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
+                _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
+                _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
+                _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
+                _theme->textsize(flw::PREF_FONTSIZE);
+                size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+                if (theme::_NAME == "default") {
+                    _theme->value(1);
+                }
+                else if (theme::_NAME == "gleam") {
+                    _theme->value(2);
+                }
+                else if (theme::_NAME == "blue gleam") {
+                    _theme->value(3);
+                }
+                else if (theme::_NAME == "dark blue gleam") {
+                    _theme->value(4);
+                }
+                else if (theme::_NAME == "dark gleam") {
+                    _theme->value(5);
+                }
+                else if (theme::_NAME == "tan gleam") {
+                    _theme->value(6);
+                }
+                else if (theme::_NAME == "gtk") {
+                    _theme->value(7);
+                }
+                else if (theme::_NAME == "blue gtk") {
+                    _theme->value(8);
+                }
+                else if (theme::_NAME == "dark blue gtk") {
+                    _theme->value(9);
+                }
+                else if (theme::_NAME == "dark gtk") {
+                    _theme->value(10);
+                }
+                else if (theme::_NAME == "tan gtk") {
+                    _theme->value(11);
+                }
+                else if (theme::_NAME == "plastic") {
+                    _theme->value(12);
+                }
+                else if (theme::_NAME == "blue plastic") {
+                    _theme->value(13);
+                }
+                else if (theme::_NAME == "tan plastic") {
+                    _theme->value(14);
+                }
+                else if (theme::_NAME == "system") {
+                    _theme->value(15);
+                }
+                Fl::redraw();
             }
-            else if (w == dlg->_theme) {
-              auto row = dlg->_theme->value();
-              if (row == 1) {
-                theme::_load_default();
-              }
-              else if (row == 2) {
-                theme::_load_gleam();
-              }
-              else if (row == 3) {
-                theme::_load_gleam_blue();
-              }
-              else if (row == 4) {
-                theme::_load_gleam_dark_blue();
-              }
-              else if (row == 5) {
-                theme::_load_gleam_dark();
-              }
-              else if (row == 6) {
-                theme::_load_gleam_tan();
-              }
-              else if (row == 7) {
-                theme::_load_gtk();
-              }
-              else if (row == 8) {
-                theme::_load_gtk_blue();
-              }
-              else if (row == 9) {
-                theme::_load_gtk_dark_blue();
-              }
-              else if (row == 10) {
-                theme::_load_gtk_dark();
-              }
-              else if (row == 11) {
-                theme::_load_gtk_tan();
-              }
-              else if (row == 12) {
-                theme::_load_plastic();
-              }
-              else if (row == 13) {
-                theme::_load_blue_plastic();
-              }
-              else if (row == 14) {
-                theme::_load_tan_plastic();
-              }
-              else if (row == 15) {
-                theme::_load_system();
-              }
-              Fl::redraw();
-            }
-            else if (w == dlg->_close) {
-              dlg->hide();
-            }
-        }
-        void resize(int X, int Y, int W, int H) override {
-            auto fs = flw::PREF_FONTSIZE;
-            Fl_Double_Window::resize(X, Y, W, H);
-            _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 20);
-            _font_label->resize      (4,                 H - fs * 6 - 12,    W - 8,     fs * 2);
-            _fixedfont_label->resize (4,                 H - fs * 4 - 8,     W - 8,     fs * 2);
-            _fixedfont->resize       (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
-            _font->resize            (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
-            _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
-        }
-        void run() {
-            show();
-            while (visible()) {
-              Fl::wait();
-              Fl::flush();
-            }
-        }
-        void update_pref() {
-            flw::util::labelfont(this);
-            _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
-            _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
-            _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
-            _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
-            _theme->textsize(flw::PREF_FONTSIZE);
-            size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 28);
-            if (theme::_NAME == "default") {
-              _theme->value(1);
-            }
-            else if (theme::_NAME == "gleam") {
-              _theme->value(2);
-            }
-            else if (theme::_NAME == "blue gleam") {
-              _theme->value(3);
-            }
-            else if (theme::_NAME == "dark blue gleam") {
-              _theme->value(4);
-            }
-            else if (theme::_NAME == "dark gleam") {
-              _theme->value(5);
-            }
-            else if (theme::_NAME == "tan gleam") {
-              _theme->value(6);
-            }
-            else if (theme::_NAME == "gtk") {
-              _theme->value(7);
-            }
-            else if (theme::_NAME == "blue gtk") {
-              _theme->value(8);
-            }
-            else if (theme::_NAME == "dark blue gtk") {
-              _theme->value(9);
-            }
-            else if (theme::_NAME == "dark gtk") {
-              _theme->value(10);
-            }
-            else if (theme::_NAME == "tan gtk") {
-              _theme->value(11);
-            }
-            else if (theme::_NAME == "plastic") {
-              _theme->value(12);
-            }
-            else if (theme::_NAME == "blue plastic") {
-              _theme->value(13);
-            }
-            else if (theme::_NAME == "tan plastic") {
-              _theme->value(14);
-            }
-            else if (theme::_NAME == "system") {
-              _theme->value(15);
-            }
-            Fl::redraw();
-        }
-      };
+        };
     }
 }
 bool flw::theme::is_dark() {
@@ -6755,46 +6764,46 @@ bool flw::theme::is_dark() {
 }
 bool flw::theme::load(const std::string& name) {
     if (name == "default") {
-      theme::_load_default();
+        theme::_load_default();
     }
     else if (name == "gleam") {
-      theme::_load_gleam();
+        theme::_load_gleam();
     }
     else if (name == "blue gleam" || name == "bluegleam") {
-      theme::_load_gleam_blue();
+        theme::_load_gleam_blue();
     }
     else if (name == "dark blue gleam" || name == "darkbluegleam") {
-      theme::_load_gleam_dark_blue();
+        theme::_load_gleam_dark_blue();
     }
     else if (name == "dark gleam" || name == "darkgleam") {
-      theme::_load_gleam_dark();
+        theme::_load_gleam_dark();
     }
     else if (name == "tan gleam" || name == "tangleam") {
-      theme::_load_gleam_tan();
+        theme::_load_gleam_tan();
     }
     else if (name == "gtk" || name == "gtk+") {
-      theme::_load_gtk();
+        theme::_load_gtk();
     }
     else if (name == "blue gtk" || name == "bluegtk") {
-      theme::_load_gtk_blue();
+        theme::_load_gtk_blue();
     }
     else if (name == "dark blue gtk" || name == "darkbluegtk") {
-      theme::_load_gtk_dark_blue();
+        theme::_load_gtk_dark_blue();
     }
     else if (name == "dark gtk" || name == "darkgtk") {
-      theme::_load_gtk_dark();
+        theme::_load_gtk_dark();
     }
     else if (name == "tan gtk" || name == "tangtk") {
-      theme::_load_gtk_tan();
+        theme::_load_gtk_tan();
     }
     else if (name == "plastic") {
-      theme::_load_plastic();
+        theme::_load_plastic();
     }
     else if (name == "blue plastic" || name == "blueplastic") {
-      theme::_load_blue_plastic();
+        theme::_load_blue_plastic();
     }
     else if (name == "tan plastic" || name == "tanplastic") {
-      theme::_load_tan_plastic();
+        theme::_load_tan_plastic();
     }
     else {
         return false;
@@ -7177,7 +7186,23 @@ flw::WaitCursor::~WaitCursor() {
         fl_cursor(FL_CURSOR_DEFAULT);
     }
 }
-flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H) : Fl_Hold_Browser(X, Y, W, H) {
+    end();
+    _scroll = scroll > 0 ? scroll : 9;
+}
+int flw::ScrollBrowser::handle(int event) {
+    if (event == FL_MOUSEWHEEL) {
+        if (Fl::event_dy() > 0) {
+            topline(topline() + _scroll);
+        }
+        else if (Fl::event_dy() < 0) {
+            topline(topline() - _scroll);
+        }
+        return 1;
+    }
+    return Fl_Hold_Browser::handle(event);
+}
+flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
     end();
     _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
     _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
@@ -7187,11 +7212,11 @@ flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, b
     add(_label);
     add(_pause);
     add(_cancel);
-    _cancel->callback(flw::WorkDialog::Callback, this);
+    _cancel->callback(flw::dlg::WorkDialog::Callback, this);
     _label->box(FL_BORDER_BOX);
     _label->textfont(flw::PREF_FONT);
     _label->textsize(flw::PREF_FONTSIZE);
-    _pause->callback(flw::WorkDialog::Callback, this);
+    _pause->callback(flw::dlg::WorkDialog::Callback, this);
     if (cancel == false) {
         _cancel->deactivate();
     }
@@ -7199,15 +7224,15 @@ flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, b
         _pause->deactivate();
     }
     flw::util::labelfont(this);
-    callback(flw::WorkDialog::Callback, this);
+    callback(flw::dlg::WorkDialog::Callback, this);
     copy_label(title);
     set_modal();
     resizable(this);
     util::center_window(this, parent);
     show();
 }
-void flw::WorkDialog::Callback(Fl_Widget* w, void* o) {
-    auto dlg = (flw::WorkDialog*) o;
+void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
+    auto dlg = (flw::dlg::WorkDialog*) o;
     if (w == dlg) {
     }
     else if (w == dlg->_cancel) {
@@ -7227,13 +7252,13 @@ void flw::WorkDialog::Callback(Fl_Widget* w, void* o) {
         }
     }
 }
-void flw::WorkDialog::resize(int X, int Y, int W, int H) {
+void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
     Fl_Double_Window::resize(X, Y, W, H);
     _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
     _pause->resize(W - flw::PREF_FONTSIZE * 20 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
     _cancel->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
 }
-bool flw::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
+bool flw::dlg::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
     auto now = util::time();
     if (now - _last > update_time) {
         _label->clear();
@@ -7246,7 +7271,7 @@ bool flw::WorkDialog::run(double update_time, const std::vector<std::string>& me
     }
     return _ret;
 }
-bool flw::WorkDialog::run(double update_time, const std::string& message) {
+bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
     auto now = util::time();
     if (now - _last > update_time) {
         _label->clear();

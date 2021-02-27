@@ -2,6 +2,7 @@
 // Released under the GNU General Public License v3.0
 
 #include "dlg.h"
+#include "widgets.h"
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
@@ -90,7 +91,7 @@ namespace flw {
                 end();
 
                 _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _list  = new Fl_Hold_Browser(0, 0, 0, 0);
+                _list  = new flw::ScrollBrowser();
 
                 add(_close);
                 add(_list);
@@ -121,7 +122,7 @@ namespace flw {
                 util::center_window(this, parent);
             }
 
-            //--------------------------------------------------------------------------
+            //------------------------------------------------------------------
             static void Callback(Fl_Widget* w, void* o) {
                 auto dlg = (_DlgList*) o;
 
@@ -138,7 +139,7 @@ namespace flw {
                 _close->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
             }
 
-            //--------------------------------------------------------------------------
+            //------------------------------------------------------------------
             void run() {
                 show();
 
@@ -157,7 +158,7 @@ namespace flw {
         class _DlgSelect : public Fl_Double_Window {
             Fl_Button*                      _close;
             Fl_Button*                      _cancel;
-            Fl_Browser*                     _list;
+            Fl_Hold_Browser*                _list;
             Fl_Input*                       _filter;
             const std::vector<std::string>& _strings;
 
@@ -171,7 +172,7 @@ namespace flw {
                 _filter = new Fl_Input(0, 0, 0, 0);
                 _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
                 _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _list   = new Fl_Hold_Browser(0, 0, 0, 0);
+                _list   = new flw::ScrollBrowser(0, 0, 0, 0);
 
                 add(_filter);
                 add(_list);
@@ -365,6 +366,10 @@ namespace flw {
         //----------------------------------------------------------------------
         //----------------------------------------------------------------------
 
+        const char* PASSWORD_CANCEL = "Cancel";
+        const char* PASSWORD_OK     = "Ok";
+
+
         //----------------------------------------------------------------------
         class _DlgPassword : public Fl_Double_Window {
         public:
@@ -394,8 +399,8 @@ namespace flw {
                 _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
                 _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter Password Again");
                 _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
-                _cancel    = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _close     = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+                _cancel    = new Fl_Button(0, 0, 0, 0, flw::dlg::PASSWORD_CANCEL);
+                _close     = new Fl_Return_Button(0, 0, 0, 0, flw::dlg::PASSWORD_OK);
                 _file      = new Fl_Output(0, 0, 0, 0, "Key File");
                 _mode      = mode;
                 _ret       = false;

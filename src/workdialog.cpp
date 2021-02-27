@@ -9,7 +9,7 @@
 // MALAGMA_ON
 
 //------------------------------------------------------------------------------
-flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
     end();
 
     _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
@@ -22,11 +22,11 @@ flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, b
     add(_pause);
     add(_cancel);
 
-    _cancel->callback(flw::WorkDialog::Callback, this);
+    _cancel->callback(flw::dlg::WorkDialog::Callback, this);
     _label->box(FL_BORDER_BOX);
     _label->textfont(flw::PREF_FONT);
     _label->textsize(flw::PREF_FONTSIZE);
-    _pause->callback(flw::WorkDialog::Callback, this);
+    _pause->callback(flw::dlg::WorkDialog::Callback, this);
 
     if (cancel == false) {
         _cancel->deactivate();
@@ -37,7 +37,7 @@ flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, b
     }
 
     flw::util::labelfont(this);
-    callback(flw::WorkDialog::Callback, this);
+    callback(flw::dlg::WorkDialog::Callback, this);
     copy_label(title);
     set_modal();
     resizable(this);
@@ -46,8 +46,8 @@ flw::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, b
 }
 
 //------------------------------------------------------------------------------
-void flw::WorkDialog::Callback(Fl_Widget* w, void* o) {
-    auto dlg = (flw::WorkDialog*) o;
+void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
+    auto dlg = (flw::dlg::WorkDialog*) o;
 
     if (w == dlg) {
     }
@@ -73,7 +73,7 @@ void flw::WorkDialog::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-void flw::WorkDialog::resize(int X, int Y, int W, int H) {
+void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
     Fl_Double_Window::resize(X, Y, W, H);
 
     _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
@@ -82,7 +82,7 @@ void flw::WorkDialog::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
+bool flw::dlg::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
     auto now = util::time();
 
     if (now - _last > update_time) {
@@ -100,7 +100,7 @@ bool flw::WorkDialog::run(double update_time, const std::vector<std::string>& me
 }
 
 //------------------------------------------------------------------------------
-bool flw::WorkDialog::run(double update_time, const std::string& message) {
+bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
     auto now = util::time();
 
     if (now - _last > update_time) {
