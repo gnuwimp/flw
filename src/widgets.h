@@ -1,15 +1,11 @@
 // Copyright 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#ifndef FLW_WORKDIALOG_H
-#define FLW_WORKDIALOG_H
+#ifndef FLW_SCROLLBROWSER_H
+#define FLW_SCROLLBROWSER_H
 
 #include "util.h"
 #include <FL/Fl_Hold_Browser.H>
-
-class Fl_Button;
-class Fl_Hold_Browser;
-class Fl_Toggle_Button;
 
 // MALAGMA_ON
 
@@ -23,9 +19,15 @@ namespace flw {
         ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
 
                                         ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0);
+        void                            copy_line_to_clipboard() const;
         int                             handle(int event) override;
 
+        void                            activate_page_move(bool move) { _move = move; }
+
+        static std::string              RemoveFormat(const char* text);
+
     private:
+        bool                            _move;
         int                             _scroll;
     };
 }

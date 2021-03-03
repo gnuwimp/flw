@@ -3,14 +3,15 @@
 
 #include "dlg.h"
 #include "widgets.h"
-#include <FL/Fl_Double_Window.H>
+#include <math.h>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
-#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Hor_Fill_Slider.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Toggle_Button.H>
 
 // MALAGMA_ON
 
@@ -60,8 +61,8 @@ namespace flw {
             void resize(int X, int Y, int W, int H) override {
                 Fl_Double_Window::resize(X, Y, W, H);
 
-                _html->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
-                _close->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                _html->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
             //------------------------------------------------------------------
@@ -81,7 +82,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         class _DlgList : public Fl_Double_Window {
-            Fl_Hold_Browser*            _list;
+            flw::ScrollBrowser*         _list;
             Fl_Return_Button*           _close;
 
         public:
@@ -101,6 +102,8 @@ namespace flw {
                 _close->labelsize(flw::PREF_FONTSIZE);
 
                 resize(0, 0, w(), h());
+                _list->activate_page_move(true);
+                _list->take_focus();
 
                 for (auto& s : list) {
                     _list->add(s.c_str());
@@ -135,8 +138,8 @@ namespace flw {
             void resize(int X, int Y, int W, int H) override {
                 Fl_Double_Window::resize(X, Y, W, H);
 
-                _list->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
-                _close->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                _list->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
             //------------------------------------------------------------------
@@ -158,7 +161,7 @@ namespace flw {
         class _DlgSelect : public Fl_Double_Window {
             Fl_Button*                      _close;
             Fl_Button*                      _cancel;
-            Fl_Hold_Browser*                _list;
+            ScrollBrowser*                  _list;
             Fl_Input*                       _filter;
             const std::vector<std::string>& _strings;
 
@@ -185,6 +188,7 @@ namespace flw {
                 _filter->tooltip("Enter text to filter rows that macthes the text");
                 _filter->when(FL_WHEN_CHANGED);
                 _list->callback(Callback, this);
+                _list->activate_page_move(true);
                 _list->tooltip("Use Page Up or Page Down in list to scroll faster");
 
                 if (fixed_font) {
@@ -310,16 +314,6 @@ namespace flw {
 
                         return 1;
                     }
-                    else if (Fl::event_key() == FL_Page_Up) {
-                        _list->value(_list->value() - 10);
-                        _list->show(_list->value());
-                        return 1;
-                    }
-                    else if (Fl::event_key() == FL_Page_Down) {
-                        _list->value(_list->value() + 10);
-                        _list->show(_list->value());
-                        return 1;
-                    }
                 }
 
                 return Fl_Double_Window::handle(event);
@@ -330,9 +324,9 @@ namespace flw {
                 Fl_Double_Window::resize(X, Y, W, H);
 
                 _filter->resize(4, 4, W - 8, flw::PREF_FONTSIZE * 2);
-                _list->resize(4, flw::PREF_FONTSIZE * 2  + 8, W - 8, H - flw::PREF_FONTSIZE * 4 - 16);
-                _cancel->resize(W - flw::PREF_FONTSIZE * 20 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
-                _close->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                _list->resize(4, flw::PREF_FONTSIZE * 2  + 8, W - 8, H - flw::PREF_FONTSIZE * 4 - 20);
+                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
             //------------------------------------------------------------------
@@ -429,28 +423,28 @@ namespace flw {
                     _browse->hide();
                     _file->hide();
                     add(_password1);
-                    resize(0, 0, 30 * flw::PREF_FONTSIZE, 5 * flw::PREF_FONTSIZE + 12);
+                    resize(0, 0, 30 * flw::PREF_FONTSIZE, 5 * flw::PREF_FONTSIZE + 16);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
                     _browse->hide();
                     _file->hide();
                     add(_password1);
                     add(_password2);
-                    resize(0, 0, 30 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 20);
+                    resize(0, 0, 30 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
                 }
                 else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
                     _password2->hide();
                     add(_password1);
                     add(_file);
                     add(_browse);
-                    resize(0, 0, 40 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 20);
+                    resize(0, 0, 40 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
                     add(_password1);
                     add(_password2);
                     add(_file);
                     add(_browse);
-                    resize(0, 0, 40 * flw::PREF_FONTSIZE, 11 * flw::PREF_FONTSIZE + 24);
+                    resize(0, 0, 40 * flw::PREF_FONTSIZE, 11 * flw::PREF_FONTSIZE + 28);
                 }
 
                 add(_cancel);
@@ -537,18 +531,18 @@ namespace flw {
                 }
                 else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
                     _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-                    _file->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - flw::PREF_FONTSIZE * 10 - 12, flw::PREF_FONTSIZE * 2);
-                    _browse->resize(W - flw::PREF_FONTSIZE * 10 - 4, flw::PREF_FONTSIZE * 4 + 12, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                    _file->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
+                    _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 4 + 12, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
                     _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
                     _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-                    _file->resize(4, flw::PREF_FONTSIZE * 7 + 16, W - flw::PREF_FONTSIZE * 10 - 12, flw::PREF_FONTSIZE * 2);
-                    _browse->resize(W - flw::PREF_FONTSIZE * 10 - 4, flw::PREF_FONTSIZE * 7 + 16, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                    _file->resize(4, flw::PREF_FONTSIZE * 7 + 16, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
+                    _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 7 + 16, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
                 }
 
-                _cancel->resize(W - flw::PREF_FONTSIZE * 20 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
-                _close->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
             //------------------------------------------------------------------
@@ -646,8 +640,8 @@ namespace flw {
             void resize(int X, int Y, int W, int H) override {
                 Fl_Double_Window::resize(X, Y, W, H);
 
-                _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
-                _close->resize(W - flw::PREF_FONTSIZE * 10 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 10, flw::PREF_FONTSIZE * 2);
+                _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
             //------------------------------------------------------------------
@@ -730,6 +724,199 @@ int flw::dlg::select(const std::string& title, const std::vector<std::string>& l
 void flw::dlg::text(const std::string& title, const std::string& text, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgText dlg(title.c_str(), text.c_str(), parent, fixed_font, W, H);
     dlg.run();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
+    _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
+    _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
+    _abort    = false;
+    _last     = 0;
+
+    add(_button);
+    add(_progress);
+
+    if (min < max && fabs(max - min) > 0.001) {
+        _progress->range(min, max);
+    }
+    else {
+        _progress->hide();
+    }
+
+    _button->callback(flw::dlg::AbortDialog::Callback, this);
+    _button->labelfont(flw::PREF_FONT);
+    _button->labelsize(flw::PREF_FONTSIZE);
+    _progress->color(FL_SELECTION_COLOR);
+
+    callback(flw::dlg::AbortDialog::Callback, this);
+    set_modal();
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::AbortDialog::Callback(Fl_Widget* w, void* o) {
+    auto dlg = (AbortDialog*) o;
+
+    if (w == dlg->_button) {
+        dlg->_abort = true;
+    }
+}
+
+//------------------------------------------------------------------------------
+bool flw::dlg::AbortDialog::abort(int milliseconds) {
+    auto now = flw::util::time_milli();
+
+    if (now - _last > milliseconds) {
+        Fl::check();
+        _last = now;
+    }
+
+    return _abort;
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::AbortDialog::range(double min, double max) {
+    _progress->range(min, max);
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::AbortDialog::show(const std::string& label, Fl_Window* parent) {
+    _abort = false;
+    _last  = 0;
+
+    if (_progress->visible()) {
+        resize(0, 0, flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 6 + 12);
+        _button->copy_label(label.c_str());
+        _button->resize(4, 4, w() - 8, h() - flw::PREF_FONTSIZE * 2 - 12);
+        _progress->resize(4, h() - flw::PREF_FONTSIZE * 2 - 4, w() - 8, flw::PREF_FONTSIZE * 2);
+    }
+    else {
+        resize(0, 0, flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 4 + 8);
+        _button->copy_label(label.c_str());
+        _button->resize(4, 4, w() - 8, h() - 8);
+    }
+
+    flw::util::center_window(this, parent);
+    Fl_Double_Window::show();
+    Fl::flush();
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::AbortDialog::value(double value) {
+    _progress->value(value);
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+    end();
+
+    _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
+    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
+    _label  = new Fl_Hold_Browser(0, 0, 0, 0);
+    _ret    = true;
+    _last   = 0.0;
+
+    add(_label);
+    add(_pause);
+    add(_cancel);
+
+    _cancel->callback(flw::dlg::WorkDialog::Callback, this);
+    _label->box(FL_BORDER_BOX);
+    _label->textfont(flw::PREF_FONT);
+    _label->textsize(flw::PREF_FONTSIZE);
+    _pause->callback(flw::dlg::WorkDialog::Callback, this);
+
+    if (cancel == false) {
+        _cancel->deactivate();
+    }
+
+    if (pause == false) {
+        _pause->deactivate();
+    }
+
+    flw::util::labelfont(this);
+    callback(flw::dlg::WorkDialog::Callback, this);
+    copy_label(title);
+    set_modal();
+    resizable(this);
+    util::center_window(this, parent);
+    show();
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
+    auto dlg = (flw::dlg::WorkDialog*) o;
+
+    if (w == dlg) {
+    }
+    else if (w == dlg->_cancel) {
+        dlg->_ret = false;
+    }
+    else if (w == dlg->_pause) {
+        bool cancel = dlg->_cancel->active();
+        dlg->_cancel->deactivate();
+        dlg->_pause->label("C&ontinue");
+
+        while (dlg->_pause->value()) {
+            util::time_sleep(10);
+            Fl::check();
+        }
+
+        dlg->_pause->label("&Pause");
+
+        if (cancel) {
+            dlg->_cancel->activate();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
+    Fl_Double_Window::resize(X, Y, W, H);
+
+    _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+    _pause->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+}
+
+//------------------------------------------------------------------------------
+bool flw::dlg::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
+    auto now = util::time();
+
+    if (now - _last > update_time) {
+        _label->clear();
+
+        for (auto& s : messages) {
+            _label->add(s.c_str());
+        }
+        _last = now;
+        Fl::check();
+        Fl::flush();
+    }
+
+    return _ret;
+}
+
+//------------------------------------------------------------------------------
+bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
+    auto now = util::time();
+
+    if (now - _last > update_time) {
+        _label->clear();
+        _label->add(message.c_str());
+        _last = now;
+        Fl::check();
+        Fl::flush();
+    }
+
+    return _ret;
 }
 
 // MALAGMA_OFF

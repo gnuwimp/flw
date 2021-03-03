@@ -457,9 +457,9 @@ namespace flw {
 
                 Fl_Double_Window::resize(X, Y, W, H);
 
-                _date_chooser->resize (4,                 4,                  W - 8,      H - fs * 2 - 12);
-                _cancel->resize       (W - fs * 20 - 8,   H - fs * 2 - 4,     fs * 10,    fs * 2);
-                _ok->resize           (W - fs * 10 - 4,   H - fs * 2 - 4,     fs * 10,    fs * 2);
+                _date_chooser->resize (4,                 4,                  W - 8,    H - fs * 2 - 16);
+                _cancel->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,   fs * 2);
+                _ok->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,   fs * 2);
             }
 
             //------------------------------------------------------------------

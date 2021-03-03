@@ -529,9 +529,9 @@ namespace flw {
 
                 Fl_Double_Window::resize(X, Y, W, H);
 
-                _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 20);
-                _font_label->resize      (4,                 H - fs * 6 - 12,    W - 8,     fs * 2);
-                _fixedfont_label->resize (4,                 H - fs * 4 - 8,     W - 8,     fs * 2);
+                _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
+                _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
+                _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
                 _fixedfont->resize       (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
                 _font->resize            (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
                 _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);

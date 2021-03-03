@@ -1,9 +1,9 @@
 // This file is an amalgamation of these files:
-//   src/util.h src/date.h src/price.h src/abortdialog.h
-//   src/dlg.h src/waitcursor.h src/chart.h src/datechooser.h
-//   src/fontdialog.h src/gridgroup.h src/lcdnumber.h src/logdisplay.h
-//   src/splitgroup.h src/tabledisplay.h src/tableeditor.h src/tabsgroup.h
-//   src/grid.h src/theme.h src/widgets.h src/workdialog.h
+//   src/util.h src/date.h src/price.h src/dlg.h
+//   src/waitcursor.h src/chart.h src/datechooser.h src/fontdialog.h
+//   src/gridgroup.h src/lcdnumber.h src/logdisplay.h src/splitgroup.h
+//   src/tabledisplay.h src/tableeditor.h src/tabsgroup.h src/grid.h
+//   src/theme.h src/widgets.h
 
 // Copyright 2016 - 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
@@ -20,6 +20,7 @@
 #include <vector>
 class Fl_Button;
 class Fl_Toggle_Button;
+class Fl_Hor_Fill_Slider;
 
 #define FLW_LINE printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout);
 namespace flw {
@@ -197,24 +198,6 @@ namespace flw {
     };
 }
 namespace flw {
-    class AbortDialog : public Fl_Double_Window {
-    public:
-                                        AbortDialog(const AbortDialog&) = delete;
-                                        AbortDialog(AbortDialog&&) = delete;
-        AbortDialog&                    operator=(const AbortDialog&) = delete;
-        AbortDialog&                    operator=(AbortDialog&&) = delete;
-                                        AbortDialog();
-        bool                            abort(int milliseconds = 200);
-        void                            show(const std::string& label, Fl_Window* parent = nullptr);
-        inline bool                     aborted() { return _abort; }
-        static void                     Callback(Fl_Widget* w, void* o);
-    private:
-        Fl_Button*                      _button;
-        bool                            _abort;
-        int64_t                         _last;
-    };
-}
-namespace flw {
     namespace dlg {
         extern const char*              PASSWORD_CANCEL;
         extern const char*              PASSWORD_OK;
@@ -229,6 +212,40 @@ namespace flw {
         int                             select(const std::string& title, const std::vector<std::string>& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         int                             select(const std::string& title, const std::vector<std::string>& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        class AbortDialog : public Fl_Double_Window {
+        public:
+                                        AbortDialog(const AbortDialog&) = delete;
+                                        AbortDialog(AbortDialog&&) = delete;
+            AbortDialog&                operator=(const AbortDialog&) = delete;
+            AbortDialog&                operator=(AbortDialog&&) = delete;
+                                        AbortDialog(double min = 0.0, double max = 0.0);
+            bool                        abort(int milliseconds = 200);
+            void                        range(double min, double max);
+            void                        show(const std::string& label, Fl_Window* parent = nullptr);
+            void                        value(double value);
+            inline bool                 aborted() { return _abort; }
+            static void                 Callback(Fl_Widget* w, void* o);
+        private:
+            Fl_Button*                  _button;
+            Fl_Hor_Fill_Slider*         _progress;
+            bool                        _abort;
+            int64_t                     _last;
+        };
+        class WorkDialog : public Fl_Double_Window {
+        public:
+                                        WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
+            void                        resize(int X, int Y, int W, int H) override;
+            bool                        run(double update_time, const std::vector<std::string>& messages);
+            bool                        run(double update_time, const std::string& message);
+            static void                 Callback(Fl_Widget* w, void* o);
+        private:
+            Fl_Button*                  _cancel;
+            Fl_Hold_Browser*            _label;
+            Fl_Toggle_Button*           _pause;
+            bool                        _ret;
+            double                      _last;
+            std::string                 _message;
+        };
     }
 }
 namespace flw {
@@ -371,6 +388,7 @@ namespace flw {
     }
 }
 namespace flw {
+    class ScrollBrowser;
     namespace dlg {
         class FontDialog : public Fl_Double_Window {
         public:
@@ -399,8 +417,8 @@ namespace flw {
             Fl_Box*                     _label;
             Fl_Button*                  _cancel;
             Fl_Button*                  _select;
-            Fl_Hold_Browser*            _fonts;
-            Fl_Hold_Browser*            _sizes;
+            ScrollBrowser*              _fonts;
+            ScrollBrowser*              _sizes;
             bool                        _ret;
             int                         _font;
             int                         _fontsize;
@@ -838,28 +856,13 @@ namespace flw {
         ScrollBrowser&                  operator=(const ScrollBrowser&) = delete;
         ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
                                         ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0);
+        void                            copy_line_to_clipboard() const;
         int                             handle(int event) override;
+        void                            activate_page_move(bool move) { _move = move; }
+        static std::string              RemoveFormat(const char* text);
     private:
+        bool                            _move;
         int                             _scroll;
     };
-}
-namespace flw {
-    namespace dlg {
-        class WorkDialog : public Fl_Double_Window {
-        public:
-                                        WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-            void                        resize(int X, int Y, int W, int H) override;
-            bool                        run(double update_time, const std::vector<std::string>& messages);
-            bool                        run(double update_time, const std::string& message);
-            static void                 Callback(Fl_Widget* w, void* o);
-        private:
-            Fl_Button*                  _cancel;
-            Fl_Hold_Browser*            _label;
-            Fl_Toggle_Button*           _pause;
-            bool                        _ret;
-            double                      _last;
-            std::string                 _message;
-        };
-    }
 }
 #endif // FLW_H

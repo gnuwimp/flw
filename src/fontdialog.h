@@ -9,11 +9,12 @@
 
 class Fl_Box;
 class Fl_Button;
-class Fl_Hold_Browser;
 
 // MALAGMA_ON
 
 namespace flw {
+    class ScrollBrowser;
+
     namespace dlg {
         //----------------------------------------------------------------------
         // Dialog for selecting font and font size
@@ -53,8 +54,8 @@ namespace flw {
             Fl_Box*                     _label;
             Fl_Button*                  _cancel;
             Fl_Button*                  _select;
-            Fl_Hold_Browser*            _fonts;
-            Fl_Hold_Browser*            _sizes;
+            ScrollBrowser*              _fonts;
+            ScrollBrowser*              _sizes;
             bool                        _ret;
             int                         _font;
             int                         _fontsize;

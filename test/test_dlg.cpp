@@ -1,15 +1,12 @@
 // Copyright 2016 - 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "abortdialog.h"
 #include "datechooser.h"
 #include "fontdialog.h"
 #include "dlg.h"
 #include "theme.h"
 #include "waitcursor.h"
-#include "workdialog.h"
 #include "test.h"
-#include <FL/Fl_Double_Window.H>
 
 using namespace flw;
 
@@ -100,14 +97,28 @@ int main(int argc, const char** argv) {
         if (run == "" || run == "font") {
             auto dlg = flw::dlg::FontDialog("Roboto", 14, "Test Font");
             dlg.run();
+            printf("font=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
         }
 
         if (run == "" || run == "abort") {
-            AbortDialog ad;
+            auto dialog = flw::dlg::AbortDialog();
 
-            ad.show("This will never stop until you press the button\nHello World");
+            dialog.show("This will never stop until you press the button\nHello World");
 
-            while (ad.abort() == false) {
+            while (dialog.abort() == false) {
+            }
+        }
+
+        if (run == "" || run == "abort") {
+            auto dialog = flw::dlg::AbortDialog(-100.0, 100.0);
+            auto count  = -100.0;
+
+            dialog.show("This will take some time");
+
+            while (dialog.abort() == false && count <= 100.0) {
+                dialog.value(count);
+                flw::util::time_sleep(100);
+                count += 1.0;
             }
         }
 

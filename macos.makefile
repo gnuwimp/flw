@@ -1,7 +1,6 @@
-# Makefile generated 2021-02-27 22:31:53 from lmake.conf for macos.opt
+# Makefile generated 2021-03-03 19:57:58 from lmake.conf for macos.opt
 
 all: macos.makefile \
-	obj/abortdialog.o \
 	obj/chart.o \
 	obj/date.o \
 	obj/datechooser.o \
@@ -20,7 +19,6 @@ all: macos.makefile \
 	obj/util.o \
 	obj/waitcursor.o \
 	obj/widgets.o \
-	obj/workdialog.o \
 	obj/test_chart.o \
 	obj/test_date.o \
 	obj/test_datechooser.o \
@@ -58,9 +56,6 @@ all: macos.makefile \
 macos.makefile: lmake.conf
 	lmake -m macos.makefile -o macos -c lmake.conf -b opt
 
-
-obj/abortdialog.o: src/abortdialog.cpp src/abortdialog.h src/util.h
-	clang++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc  `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -c $< -o $@
 
 obj/chart.o: src/chart.cpp src/chart.h src/date.h src/price.h src/util.h
 	clang++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc  `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -c $< -o $@
@@ -116,9 +111,6 @@ obj/waitcursor.o: src/waitcursor.cpp src/waitcursor.h
 obj/widgets.o: src/widgets.cpp src/widgets.h
 	clang++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc  `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -c $< -o $@
 
-obj/workdialog.o: src/workdialog.cpp src/workdialog.h
-	clang++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc  `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -c $< -o $@
-
 obj/test_chart.o: test/test_chart.cpp obj/libflw.a
 	clang++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc  `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -c $< -o $@
 
@@ -167,7 +159,7 @@ obj/test_theme.o: test/test_theme.cpp obj/libflw.a
 obj/test_util.o: test/test_util.cpp obj/libflw.a
 	clang++ -O2 -std=c++17 -I.. -DNDEBUG -Isrc  `/usr/local/bin/fltk-config --cxxflags` -Wno-unused-parameter -c $< -o $@
 
-obj/libflw.a: obj/abortdialog.o obj/chart.o obj/date.o obj/datechooser.o obj/dlg.o obj/fontdialog.o obj/grid.o obj/gridgroup.o obj/lcdnumber.o obj/logdisplay.o obj/price.o obj/splitgroup.o obj/tabledisplay.o obj/tableeditor.o obj/tabsgroup.o obj/theme.o obj/util.o obj/waitcursor.o obj/widgets.o obj/workdialog.o
+obj/libflw.a: obj/chart.o obj/date.o obj/datechooser.o obj/dlg.o obj/fontdialog.o obj/grid.o obj/gridgroup.o obj/lcdnumber.o obj/logdisplay.o obj/price.o obj/splitgroup.o obj/tabledisplay.o obj/tableeditor.o obj/tabsgroup.o obj/theme.o obj/util.o obj/waitcursor.o obj/widgets.o
 	ar crs $@ $^
 
 test_chart: obj/test_chart.o obj/libflw.a
@@ -220,7 +212,6 @@ test_util: obj/test_util.o obj/libflw.a
 
 clean:
 	rm -f \
-	obj/abortdialog.o \
 	obj/chart.o \
 	obj/date.o \
 	obj/datechooser.o \
@@ -239,7 +230,6 @@ clean:
 	obj/util.o \
 	obj/waitcursor.o \
 	obj/widgets.o \
-	obj/workdialog.o \
 	obj/test_chart.o \
 	obj/test_date.o \
 	obj/test_datechooser.o \

@@ -15,7 +15,6 @@
 namespace flw {
     namespace dlg {
         static std::vector<char*>   _FONTDIALOG_NAMES;
-        static char                 _FONTDIALOG_NAME[201];
         static const std::string    _FONTDIALOG_LABEL = R"(
 ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
 abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
@@ -45,13 +44,13 @@ A good life is not measured by any biblical span.”
 ― Ernest Hemingway, For Whom the Bell Tolls
 )";
 
-        //--------------------------------------------------------------------------
+        //----------------------------------------------------------------------
         class _FontDialogLabel : public Fl_Box {
         public:
             int font;
             int size;
 
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
             _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
                 font = FL_HELVETICA;
                 size = 14;
@@ -61,7 +60,7 @@ A good life is not measured by any biblical span.”
                 color(FL_BACKGROUND2_COLOR);
             }
 
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
             void draw() override {
                 draw_box();
                 fl_font((Fl_Font) font, size);
@@ -69,30 +68,6 @@ A good life is not measured by any biblical span.”
                 fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
             }
         };
-
-        //--------------------------------------------------------------------------
-        static std::string _fontdialog_remove_style(const std::string& in) {
-            std::string out = in;
-
-            try {
-                if (out.find("@b@i@.") == 0) {
-                    out = out.substr(6);
-                }
-                else if (out.find("@i@.") == 0) {
-                    out = out.substr(4);
-                }
-                else if (out.find("@b@.") == 0) {
-                    out = out.substr(4);
-                }
-                else if (out.find("@.") == 0) {
-                    out = out.substr(2);
-                }
-            }
-            catch (...) {
-            }
-
-            return out;
-        }
     }
 }
 
@@ -145,7 +120,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
         if (row1 && row2) {
             row1--;
 
-            dlg->_fontname = _fontdialog_remove_style(_FONTDIALOG_NAMES[row1]);
+            dlg->_fontname = ScrollBrowser::RemoveFormat(_FONTDIALOG_NAMES[row1]);
             dlg->_font     = row1;
             dlg->_fontsize = row2 + 5;
             dlg->_ret      = true;
@@ -170,14 +145,14 @@ void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl
     end();
 
     _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts  = new flw::ScrollBrowser(12, 0, 0, 0, 0);
+    _fonts  = new flw::ScrollBrowser(12);
     _label  = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
     _select = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes  = new flw::ScrollBrowser(6, 0, 0, 0, 0);
+    _sizes  = new flw::ScrollBrowser(6);
     _ret    = false;
 
-    add(_fonts);
     add(_sizes);
+    add(_fonts);
     add(_select);
     add(_cancel);
     add(_label);
@@ -197,7 +172,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
 
-    resize(0, 0, w(), h());
+    size(w(), h());
     FontDialog::LoadFonts();
 
     for (auto name : _FONTDIALOG_NAMES) {
@@ -238,6 +213,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl
     copy_label(label.c_str());
     callback(flw::dlg::FontDialog::Callback, this);
     set_modal();
+    _fonts->take_focus();
 }
 
 //------------------------------------------------------------------------------
@@ -256,7 +232,7 @@ int flw::dlg::FontDialog::LoadFont(const std::string& requested_font) {
     auto count = 0;
 
     for (auto font : _FONTDIALOG_NAMES) {
-        auto font2 = _fontdialog_remove_style(font);
+        auto font2 = ScrollBrowser::RemoveFormat(font);
 
         if (requested_font == font2) {
             return count;
@@ -293,8 +269,6 @@ void flw::dlg::FontDialog::LoadFonts(bool iso8859_only) {
             _FONTDIALOG_NAMES.push_back(strdup(name2.c_str()));
             // printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
         }
-
-        memset(_FONTDIALOG_NAME, 0, 201);
     }
 }
 
@@ -304,11 +278,11 @@ void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
 
     Fl_Double_Window::resize(X, Y, W, H);
 
-    _fonts->resize  (4,                 4,                  fs * 25,            H - fs * 2 - 12);
-    _sizes->resize  (fs * 25 + 8,       4,                  fs * 6,             H - fs * 2 - 12);
-    _label->resize  (fs * 31 + 12,      4,                  W - fs * 31 - 16,   H - fs * 2 - 12);
-    _cancel->resize (W - fs * 20 - 8,   H - fs * 2 - 4,     fs * 10,            fs * 2);
-    _select->resize (W - fs * 10 - 4,   H - fs * 2 - 4,     fs * 10,            fs * 2);
+    _fonts->resize  (4,                 4,                  fs * 25,            H - fs * 2 - 16);
+    _sizes->resize  (fs * 25 + 8,       4,                  fs * 6,             H - fs * 2 - 16);
+    _label->resize  (fs * 31 + 12,      4,                  W - fs * 31 - 16,   H - fs * 2 - 16);
+    _cancel->resize (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,             fs * 2);
+    _select->resize (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,             fs * 2);
 }
 
 //--------------------------------------------------------------------------
@@ -332,7 +306,7 @@ void flw::dlg::FontDialog::_select_name(const std::string& fontname) {
     auto count = 1;
 
     for (auto font : _FONTDIALOG_NAMES) {
-        auto font_without_style = _fontdialog_remove_style(font);
+        auto font_without_style = ScrollBrowser::RemoveFormat(font);
 
         if (fontname == font_without_style) {
             _fonts->value(count);
