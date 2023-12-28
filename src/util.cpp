@@ -9,6 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <FL/Fl_Window.H>
+#include <FL/Fl.H>
 
 #ifdef _WIN32
     #include <profileapi.h>
@@ -315,14 +316,10 @@ int64_t flw::util::time_micro() {
         StartingTime.QuadPart *= 1000000;
         StartingTime.QuadPart /= Frequency.QuadPart;
         return StartingTime.QuadPart;
-    #elif defined(FLW_LINUX)
+    #else
         timespec t;
         clock_gettime(CLOCK_MONOTONIC, &t);
         return t.tv_sec * 1000000 + t.tv_nsec / 1000;
-    #else
-        struct timeb timeVal;
-        ftime(&timeVal);
-        return timeVal.time * 1000000 + timeVal.millitm * 1000;
     #endif
 }
 

@@ -30,7 +30,7 @@ namespace flw {
             if (event == FL_KEYBOARD) {
                 auto key = Fl::event_key();
 
-                if (Fl::event_ctrl() && key == ' ') {
+                if (Fl::event_ctrl() != 0 && key == ' ') {
                     if (history.size() > 0) {
                         show_menu = true;
                         do_callback();

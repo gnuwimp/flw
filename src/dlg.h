@@ -43,11 +43,12 @@ namespace flw {
                                         AbortDialog(double min = 0.0, double max = 0.0);
             bool                        abort(int milliseconds = 200);
             bool                        abort(double value, double min, double max, int milliseconds = 200);
+            bool                        aborted()
+                                            { return _abort; }
             void                        range(double min, double max);
             void                        show(const std::string& label, Fl_Window* parent = nullptr);
             void                        value(double value);
 
-            inline bool                 aborted() { return _abort; }
 
             static void                 Callback(Fl_Widget* w, void* o);
 

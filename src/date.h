@@ -68,24 +68,46 @@ namespace flw {
                                         Date(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
         Date&                           operator=(const Date& other);
         Date&                           operator=(Date&&);
+        bool                            operator<(const Date& other) const
+                                            { return compare(other) < 0 ? true : false; }
+        bool                            operator<=(const Date& other) const
+                                            { return compare(other) <= 0 ? true : false; }
+        bool                            operator>(const Date& other) const
+                                            { return compare(other) > 0 ? true : false; }
+        bool                            operator>=(const Date& other) const
+                                            { return compare(other) >= 0 ? true : false; }
+        bool                            operator==(const Date& other) const
+                                            { return compare(other) == 0 ? true : false; }
+        bool                            operator!=(const Date& other) const
+                                            { return compare(other) != 0 ? true : false; }
         bool                            add_days(int days);
         bool                            add_months(int months);
         bool                            add_seconds(int64_t seconds);
         int                             compare(const Date& other, Date::COMPARE flag = Date::COMPARE::YYYYMMDDHHMMSS) const;
+        int                             day() const
+                                            { return _day; }
         Date&                           day(int day);
         Date&                           day_last();
         int                             diff_days(const Date& other) const;
         int                             diff_months(const Date& other) const;
         int                             diff_seconds(const Date& other) const;
         std::string                     format(Date::FORMAT format = Date::FORMAT::ISO) const;
+        int                             hour() const
+                                            { return _hour; }
         Date&                           hour(int hour);
         bool                            is_leapyear() const;
+        int                             minute() const
+                                            { return _min; }
         Date&                           minute(int min);
+        int                             month() const
+                                            { return _month; }
         Date&                           month(int month);
         int                             month_days() const;
         const char*                     month_name() const;
         const char*                     month_name_short() const;
         void                            print() const;
+        int                             second() const
+                                            { return _sec; }
         Date&                           second(int sec);
         Date&                           set(const Date& other);
         Date&                           set(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
@@ -95,21 +117,10 @@ namespace flw {
         Date&                           weekday(Date::DAY weekday);
         const char*                     weekday_name() const;
         const char*                     weekday_name_short() const;
+        int                             year() const
+                                            { return _year; }
         Date&                           year(int year);
         int                             yearday() const;
-
-        inline bool                     operator<(const Date& other) const { return compare(other) < 0 ? true : false; }
-        inline bool                     operator<=(const Date& other) const { return compare(other) <= 0 ? true : false; }
-        inline bool                     operator>(const Date& other) const { return compare(other) > 0 ? true : false; }
-        inline bool                     operator>=(const Date& other) const { return compare(other) >= 0 ? true : false; }
-        inline bool                     operator==(const Date& other) const { return compare(other) == 0 ? true : false; }
-        inline bool                     operator!=(const Date& other) const { return compare(other) != 0 ? true : false; }
-        inline int                      day() const { return _day; }
-        inline int                      hour() const { return _hour; }
-        inline int                      minute() const { return _min; }
-        inline int                      month() const { return _month; }
-        inline int                      second() const { return _sec; }
-        inline int                      year() const { return _year; }
 
         static int                      Compare(const void* a, const void* b);
         static bool                     Compare(const Date& a, const Date& b);

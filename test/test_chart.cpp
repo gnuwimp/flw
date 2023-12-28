@@ -5,11 +5,12 @@
 #include "price.h"
 #include "theme.h"
 #include "util.h"
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Menu_Bar.H>
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Menu_Bar.H>
+#include <FL/Fl.H>
 
 using namespace flw;
 

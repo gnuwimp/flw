@@ -31,15 +31,20 @@ namespace flw {
 
                                         FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
                                         FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label);
-            inline void                 activate_font() { ((Fl_Widget*) _fonts)->activate(); }
+            void                        activate_font()
+                                            { ((Fl_Widget*) _fonts)->activate(); }
+            void                        deactivate_font()
+                                            { ((Fl_Widget*) _fonts)->deactivate(); }
+            void                        deactivate_fontsize()
+                                            { ((Fl_Widget*) _sizes)->deactivate(); }
+            int                         font()
+                                            { return _font; }
+            std::string                 fontname()
+                                            { return _fontname; }
+            int                         fontsize()
+                                            { return _fontsize; }
             void                        resize(int X, int Y, int W, int H) override;
             bool                        run(Fl_Window* parent = nullptr);
-
-            inline void                 deactivate_font() { ((Fl_Widget*) _fonts)->deactivate(); }
-            inline void                 deactivate_fontsize() { ((Fl_Widget*) _sizes)->deactivate(); }
-            inline int                  font() { return _font; }
-            inline std::string          fontname() { return _fontname; }
-            inline int                  fontsize() { return _fontsize; }
 
             static void                 Callback(Fl_Widget* w, void* o);
             static void                 DeleteFonts();

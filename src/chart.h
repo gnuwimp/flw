@@ -64,19 +64,23 @@ namespace flw {
         void                            clamp(Chart::AREA area, Chart::LINE line, double clamp_min = MIN, double clamp_max = MAX);
         void                            clear();
         void                            debug() const;
+        void                            font(Fl_Font font, Fl_Fontsize size)
+                                            { _font = font; _fs   = size; }
         void                            draw() override;
         int                             handle(int event) override;
         void                            init(bool calc_dates);
         void                            line(Chart::AREA area, Chart::LINE line, const std::vector<flw::Price>& points, const char* line_label, Chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width);
+        void                            margin(int left = 6, int right = 1)
+                                            { _margin_left = left; _margin_right = right; redraw(); }
         void                            range(Date::RANGE range = Date::RANGE::DAY);
         void                            resize(int X, int Y, int W, int H) override;
+        void                            support_lines(bool hor = false, bool ver = false)
+                                            { _hor_lines = hor; _ver_lines = ver; redraw(); }
         void                            tick_width(int tick_width = 3);
-
-        inline void                     font(Fl_Font font, Fl_Fontsize size) { _font = font; _fs   = size; }
-        inline void                     margin(int left = 6, int right = 1) { _margin_left = left; _margin_right = right; redraw(); }
-        inline void                     support_lines(bool hor = false, bool ver = false) { _hor_lines = hor; _ver_lines = ver; redraw(); }
-        inline void                     tooltip(bool tooltip = false) { _tooltip = tooltip; }
-        inline void                     zoom(bool zoom = false) { _zoom = zoom; }
+        void                            tooltip(bool tooltip = false)
+                                            { _tooltip = tooltip; }
+        void                            zoom(bool zoom = false)
+                                            { _zoom = zoom; }
 
     private:
         void                            _calc_area_height();

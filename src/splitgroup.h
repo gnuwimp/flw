@@ -5,6 +5,7 @@
 #define FLW_SPLITGROUP_H
 
 #include <FL/Fl_Group.H>
+#include <FL/Fl.H>
 
 // MKALGAM_ON
 
@@ -27,20 +28,27 @@ namespace flw {
         };
                                         SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            add(Fl_Widget* widget, SplitGroup::CHILD child);
-        void                            direction(SplitGroup::DIRECTION direction);
+        Fl_Widget*                      child(SplitGroup::CHILD child)
+                                            { return (child == SplitGroup::CHILD::FIRST) ? _widgets[0] : _widgets[1]; }
         void                            clear();
+        DIRECTION                       direction() const
+                                            { return _direction; }
+        void                            direction(SplitGroup::DIRECTION direction);
         int                             handle(int event) override;
+        int                             min_pos() const
+                                            { return _min; }
+        void                            min_pos(int value)
+                                            { _min = value; }
+        void                            resize()
+                                            { Fl::redraw(); SplitGroup::resize(x(), y(), w(), h()); }
         void                            resize(int X, int Y, int W, int H) override;
+        int                             split_pos() const
+                                            { return _split_pos; }
+        void                            split_pos(int split_pos)
+                                            { _split_pos = split_pos; }
         void                            toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
-
-        inline Fl_Widget*               child(SplitGroup::CHILD child) { return child == SplitGroup::CHILD::FIRST ? _widgets[0] : _widgets[1]; }
-        inline DIRECTION                direction() const { return _direction; }
-        inline int                      min_pos() const { return _min; }
-        inline void                     min_pos(int value) { _min = value; }
-        inline void                     resize() { SplitGroup::resize(x(), y(), w(), h()); }
-        inline int                      split_pos() const { return _split_pos; }
-        inline void                     split_pos(int split_pos) { _split_pos = split_pos; }
-        inline void                     toggle(SplitGroup::CHILD child, int second_size = -1) { toggle(child, _direction, second_size); }
+        void                            toggle(SplitGroup::CHILD child, int second_size = -1)
+                                            { toggle(child, _direction, second_size); }
 
     private:
         Fl_Widget*                      _widgets[2];

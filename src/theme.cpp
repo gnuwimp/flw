@@ -10,6 +10,11 @@
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Preferences.H>
+#include <FL/x.H>
+
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 
 // MKALGAM_ON
 
@@ -723,12 +728,20 @@ void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent)
 //------------------------------------------------------------------------------
 // Load gui preferences and if window is set resize and show it
 //
-void flw::util::load_pref(Fl_Preferences& pref, Fl_Window* window) {
+void flw::util::pref_load(Fl_Preferences& pref, Fl_Window* window, int resource) {
     auto val = 0;
     char buffer[4000];
 
     if (window != nullptr) {
         int x, y, w, h, f;
+
+#ifdef _WIN32
+        if (resource != 0) {
+            window->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(resource)));
+        }
+#else
+        (void) resource;
+#endif
 
         pref.get("gui.x", x, 80);
         pref.get("gui.y", y, 60);
@@ -786,7 +799,7 @@ void flw::util::load_pref(Fl_Preferences& pref, Fl_Window* window) {
 //------------------------------------------------------------------------------
 // Save theme and fontnames and optionally window size
 //
-void flw::util::save_pref(Fl_Preferences& pref, Fl_Window* window) {
+void flw::util::pref_save(Fl_Preferences& pref, Fl_Window* window) {
     if (window != nullptr) {
         pref.set("gui.x", window->x());
         pref.set("gui.y", window->y());

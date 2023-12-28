@@ -3,6 +3,7 @@
 
 #include "waitcursor.h"
 #include <FL/fl_draw.H>
+#include <FL/Fl.H>
 
 // MKALGAM_ON
 

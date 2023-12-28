@@ -6,6 +6,7 @@
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/fl_draw.H>
+#include <FL/Fl.H>
 
 // MKALGAM_ON
 
@@ -139,7 +140,7 @@ namespace flw {
             flw::util::center_window(this, parent);
             show();
 
-            while (visible()) {
+            while (visible() != 0) {
                 Fl::wait();
                 Fl::flush();
             }
@@ -148,6 +149,10 @@ namespace flw {
         }
     };
 }
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
@@ -300,13 +305,13 @@ void flw::TableDisplay::draw() {
     _update_scrollbars();
     Fl_Group::draw();
 
-    if (_ver->visible() && _hor->visible()) {
+    if (_ver->visible() != 0 && _hor->visible() != 0) {
         fl_push_clip(x() + 1, y() + 1, w() - 2 - _ver->w(), h() - 2 - _hor->h());
     }
-    else if (_ver->visible()) {
+    else if (_ver->visible() != 0) {
         fl_push_clip(x() + 1, y() + 1, w() - 2 - _ver->w(), h() - 2);
     }
-    else if (_hor->visible()) {
+    else if (_hor->visible() != 0) {
         fl_push_clip(x() + 1, y() + 1, w() - 2, h() - 2 - _hor->h());
     }
     else {
@@ -534,18 +539,18 @@ int flw::TableDisplay::_ev_mouse_click () {
         }
 
         if (row == 0 && col >= 1) { // Mouse click on top header cells
-            _set_event(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+            _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
             do_callback();
         }
         else if (col == 0 && row >= 1) { // Mouse click on left header cells
-            _set_event(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+            _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
             do_callback();
         }
         else if (row == -1 || col == -1) { // Mouse click outside cell
-            if (row == -1 && _hor->visible() && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
+            if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
                 ;
             }
-            else if (col == -1 && _ver->visible() && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
+            else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
                 ;
             }
             else { // If clicked in whitespace then deselect cell
@@ -641,7 +646,7 @@ void flw::TableDisplay::_get_cell_below_mouse(int& row, int& col) {
     auto my = Fl::event_y();
     auto mx = Fl::event_x();
 
-    if (!((_ver->visible() && mx >= _ver->x()) || (_hor->visible() && my >= _hor->y()))) { // Dont click on scrollbars
+    if (!((_ver->visible() != 0 && mx >= _ver->x()) || (_hor->visible() != 0 && my >= _hor->y()))) { // Dont click on scrollbars
         if (_show_col_header && (my - y()) < _height) {
             row = 0;
         }
@@ -899,7 +904,7 @@ void flw::TableDisplay::size(int rows, int cols) {
 //------------------------------------------------------------------------------
 void flw::TableDisplay::_update_scrollbars() {
     if (_rows > 0 && _cols > 0) {
-        if (_disable_hor) {
+        if (_disable_hor == true) {
             _hor->hide();
         }
         else {
@@ -932,7 +937,7 @@ void flw::TableDisplay::_update_scrollbars() {
         }
 
 
-        if (_disable_ver) {
+        if (_disable_ver == true) {
             _ver->hide();
         }
         else {
@@ -957,15 +962,15 @@ void flw::TableDisplay::_update_scrollbars() {
         _hor->hide();
     }
 
-    if (_ver->visible() && _hor->visible()) {
+    if (_ver->visible() != 0 && _hor->visible() != 0) {
         _ver->resize(x() + w() - Fl::scrollbar_size() - 1, y() + 1, Fl::scrollbar_size(), h() - Fl::scrollbar_size() - 2);
         _hor->resize(x() + 1, y() + h() - Fl::scrollbar_size() - 1, w() - Fl::scrollbar_size() - 2, Fl::scrollbar_size());
     }
-    else if (_ver->visible()) {
+    else if (_ver->visible() != 0) {
         _ver->resize(x() + w() - Fl::scrollbar_size() - 1, y() + 1, Fl::scrollbar_size(), h() - 2);
         _hor->resize(0, 0, 0, 0);
     }
-    else if (_hor->visible()) {
+    else if (_hor->visible() != 0) {
         _hor->resize(x() + 1, y() + h() - Fl::scrollbar_size() - 1, w() - 2, Fl::scrollbar_size());
         _ver->resize(0, 0, 0, 0);
     }

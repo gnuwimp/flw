@@ -7,6 +7,7 @@
 #include <FL/Fl_Menu_Bar.H>
 #include <stdarg.h>
 #include <FL/Fl_Color_Chooser.H>
+#include <FL/Fl.H>
 
 using namespace flw;
 

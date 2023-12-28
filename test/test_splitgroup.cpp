@@ -5,6 +5,7 @@
 #include "theme.h"
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
+#include <FL/Fl.H>
 
 using namespace flw;
 

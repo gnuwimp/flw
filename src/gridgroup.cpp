@@ -112,6 +112,10 @@ void flw::GridGroup::resize() {
 void flw::GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
+    if (W == 0 || H == 0) {
+        return;
+    }
+
     #ifdef DEBUG
         // fprintf(stderr, "\n%-20s (x=%4d y=%4d)  (w=%4d h=%4d)  (x2=%4d y2=%4d)\n", "GridGroup: ", X, Y, W, H, X + W, Y + H);
         // fprintf(stderr, "%-20s (%4s, %4s)  (%4s, %4s)  (%4s, %4s) <=> (%3s, %3s, %3s, %3s)\n", "", "x", "y", "w", "h", "x+w", "y+h", "lx", "ly", "lw", "lh");

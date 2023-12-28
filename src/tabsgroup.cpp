@@ -122,7 +122,7 @@ void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
             self->value()->take_focus();
         }
 
-        Fl::redraw();
+        self->resize();
     }
 }
 
@@ -152,18 +152,24 @@ int flw::TabsGroup::handle(int event) {
     if (_widgets.size() == 0) {
         return Fl_Group::handle(event);
     }
-    else if (_tabs == TABS::WEST || _tabs == TABS::EAST) {
+
+    if (_tabs == TABS::WEST || _tabs == TABS::EAST) {
         if (event == FL_DRAG) {
-            if (_drag) {
+            if (_drag == true) {
+                auto pos = 0;
+
                 if (_tabs == TABS::WEST) {
-                    _pos = Fl::event_x() - x();
+                    pos = Fl::event_x() - x();
                 }
                 else {
-                    _pos = x() + w() - Fl::event_x();
+                    pos = x() + w() - Fl::event_x();
                 }
 
-                resize();
-                Fl::flush();
+                if (pos != _pos) {
+                    _pos = pos;
+                    resize();
+                }
+
                 return 1;
             }
         }
@@ -199,13 +205,13 @@ int flw::TabsGroup::handle(int event) {
                 }
             }
 
-            if (_drag) {
+            if (_drag == true) {
                 _drag = false;
                 fl_cursor(FL_CURSOR_DEFAULT);
             }
         }
         else if (event == FL_PUSH) {
-            if (_drag) {
+            if (_drag == true) {
                 return 1;
             }
         }
@@ -214,35 +220,34 @@ int flw::TabsGroup::handle(int event) {
     if (_buttons.size() > 1) {
         if (event == FL_KEYBOARD) {
             auto key   = Fl::event_key();
-            auto alt   = Fl::event_alt();
-            auto ctrl  = Fl::event_ctrl();
-            auto shift = Fl::event_shift();
+            auto alt   = Fl::event_alt() != 0;
+            auto shift = Fl::event_shift() != 0;
 
-            if (alt && key >= '0' && key <= '9') {
+            if (alt == true && key >= '0' && key <= '9') {
                 auto tab = key - '0';
-                tab = tab == 0 ? 9 : tab - 1;
+                tab = (tab == 0) ? 9 : tab - 1;
 
                 if (tab < (int) _buttons.size()) {
                     flw::TabsGroup::Callback(_buttons[tab], this);
                 }
                 return 1;
             }
-            else if (!ctrl && alt && shift && key == FL_Left) {
+            else if (alt == true && shift == true && key == FL_Left) {
                 swap(_active, _active - 1);
                 flw::TabsGroup::Callback(_button(), this);
                 return 1;
             }
-            else if (!ctrl && alt && shift && key == FL_Right) {
+            else if (alt == true && shift == true && key == FL_Right) {
                 swap(_active, _active + 1);
                 flw::TabsGroup::Callback(_button(), this);
                 return 1;
             }
-            else if (!shift && alt && key == FL_Left) {
+            else if (alt == true && key == FL_Left) {
                 _active = _active == 0 ? (int) _widgets.size() - 1 : _active - 1;
                 flw::TabsGroup::Callback(_button(), this);
                 return 1;
             }
-            else if (!shift && alt && key == FL_Right) {
+            else if (alt == true && key == FL_Right) {
                 _active = _active == (int) _widgets.size() - 1 ? 0 : _active + 1;
                 flw::TabsGroup::Callback(_button(), this);
                 return 1;
@@ -251,7 +256,7 @@ int flw::TabsGroup::handle(int event) {
     }
 
     if (event == FL_FOCUS) {
-        if (value() && Fl::focus() != value()) {
+        if (value() != nullptr && Fl::focus() != value()) {
             value()->take_focus();
         }
     }
@@ -298,16 +303,14 @@ Fl_Widget* flw::TabsGroup::remove(int num) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::resize() {
-    resize(x(), y(), w(), h());
-    Fl::redraw();
-}
-
-//------------------------------------------------------------------------------
 void flw::TabsGroup::resize(int X, int Y, int W, int H) {
-    Fl_Group::resize(X, Y, W, H);
+    Fl_Widget::resize(X, Y, W, H);
 
-    if (visible() && _widgets.size()) {
+    if (W == 0 || H == 0) {
+        return;
+    }
+
+    if (visible() != 0 && _widgets.size() > 0) {
         auto height = flw::PREF_FONTSIZE + 8;
 
         if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
@@ -321,8 +324,9 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
             for (auto b : _buttons) { // Calc total width of buttons
                 b->_tw = 0;
                 fl_measure(b->label(), b->_tw, th);
+
                 b->_tw += _TabsGroupButton::_BORDER;
-                w += b->_tw + space;
+                w      += b->_tw + space;
             }
 
             if (w > W) { // If width is too large then divide equal
@@ -333,7 +337,7 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
             }
 
             for (auto b : _buttons) { // Resize buttons
-                auto bw = w ? w : b->_tw;
+                auto bw = (w != 0) ? w : b->_tw;
 
                 if (_tabs == TABS::NORTH) {
                     b->resize(X + x, Y, bw, height);
@@ -346,7 +350,7 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
                 x += space;
             }
         }
-        else { // TABS::WEST / TABS::EAST
+        else { // TABS::WEST, TABS::EAST
             auto y        = Y;
             auto h        = height;
             auto shrinked = false;
@@ -356,7 +360,6 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
                 h = (H - _buttons.size()) / _buttons.size();
                 shrinked = true;
             }
-
 
             if (_pos < flw::PREF_FONTSIZE * space) { // Set min size for widgets on the left
                 _pos = flw::PREF_FONTSIZE * space;
@@ -378,7 +381,9 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
         }
 
         for (auto w : _widgets) { // Resize widgets
-            if (_tabs == TABS::NORTH) {
+            if (w->visible() == 0) {
+            }
+            else if (_tabs == TABS::NORTH) {
                 w->resize(X, Y + height, W, H - height);
             }
             else if (_tabs == TABS::SOUTH) {
@@ -402,7 +407,7 @@ void flw::TabsGroup::swap(int from, int to) {
         return;
     }
     else {
-        bool active = _active == from;
+        bool active = (_active == from);
 
         if (from == 0 && to == -1) {
             auto widget = _widgets[0];

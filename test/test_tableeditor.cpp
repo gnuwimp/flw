@@ -4,9 +4,10 @@
 #include "tableeditor.h"
 #include "fontdialog.h"
 #include "theme.h"
+#include <stdarg.h>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <stdarg.h>
+#include <FL/Fl.H>
 
 using namespace flw;
 

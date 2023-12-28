@@ -6,9 +6,11 @@
 #include "util.h"
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_draw.H>
+#include <FL/Fl.H>
 #include <algorithm>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include <unistd.h>
 
 // MKALGAM_ON

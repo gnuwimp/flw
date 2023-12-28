@@ -3,6 +3,7 @@
 
 #include "splitgroup.h"
 #include <FL/fl_draw.H>
+#include <FL/Fl.H>
 
 // MKALGAM_ON
 
@@ -55,16 +56,21 @@ void flw::SplitGroup::direction(SplitGroup::DIRECTION direction) {
 //------------------------------------------------------------------------------
 int flw::SplitGroup::handle(int event) {
     if (event == FL_DRAG) {
-        if (_drag) {
+        if (_drag == true) {
+            auto pos = 0;
+
             if (_direction == SplitGroup::DIRECTION::VERTICAL) {
-                _split_pos = Fl::event_x() - x();
+                pos = Fl::event_x() - x();
             }
             else {
-                _split_pos = Fl::event_y() - y();
+                pos = Fl::event_y() - y();
             }
 
-            resize();
-            Fl::flush();
+            if (pos != _split_pos) {
+                _split_pos = pos;
+                resize();
+            }
+
             return 1;
         }
     }
@@ -83,11 +89,12 @@ int flw::SplitGroup::handle(int event) {
         }
     }
     else if (event == FL_MOVE) {
-        if (_widgets[0] && _widgets[1] && _widgets[0]->visible() && _widgets[1]->visible()) {
+        if (_widgets[0] != nullptr && _widgets[1] != nullptr && _widgets[0]->visible() != 0 && _widgets[1]->visible() != 0) {
             if (_direction == SplitGroup::DIRECTION::VERTICAL) {
+                auto mx  = Fl::event_x();
                 auto pos = x() + _split_pos;
 
-                if (Fl::event_x() > (pos - 3) && Fl::event_x() <= (pos + 3)) {
+                if (mx > (pos - 3) && mx <= (pos + 3)) {
                     if (_drag == false) {
                         _drag = true;
                         fl_cursor(FL_CURSOR_WE);
@@ -97,9 +104,10 @@ int flw::SplitGroup::handle(int event) {
                 }
             }
             else {
+                auto my  = Fl::event_y();
                 auto pos = y() + _split_pos;
 
-                if (Fl::event_y() > (pos - 3) && Fl::event_y() <= (pos + 3)) {
+                if (my > (pos - 3) && my <= (pos + 3)) {
                     if (_drag == false) {
                         _drag = true;
                         fl_cursor(FL_CURSOR_NS);
@@ -110,13 +118,13 @@ int flw::SplitGroup::handle(int event) {
             }
         }
 
-        if (_drag) {
+        if (_drag == true) {
             _drag = false;
             fl_cursor(FL_CURSOR_DEFAULT);
         }
     }
     else if (event == FL_PUSH) {
-        if (_drag) {
+        if (_drag == true) {
             return 1;
         }
     }
@@ -127,7 +135,10 @@ int flw::SplitGroup::handle(int event) {
 //------------------------------------------------------------------------------
 void flw::SplitGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
-    Fl::redraw();
+
+    if (W == 0 || H == 0) {
+        return;
+    }
 
     auto currx = X;
     auto curry = Y;
@@ -135,80 +146,74 @@ void flw::SplitGroup::resize(int X, int Y, int W, int H) {
     auto currw = W;
 
     if (_direction == SplitGroup::DIRECTION::VERTICAL) {
-        if (currw > 0 && currh > 0) {
-            if (_widgets[0] && _widgets[1] && _widgets[0]->visible() && _widgets[1]->visible()) {
-                if (_split_pos == -1) {
-                    _split_pos = W / 2;
-                }
-                else if (_split_pos >= W - _min) {
-                    _split_pos = W - _min;
-                }
-                else if (_split_pos <= _min) {
-                    _split_pos = _min;
-                }
-
-                auto max = (X + W) - 4;
-                auto pos = _split_pos + X;
-
-                if (pos < X) {
-                    pos = X;
-                }
-                else if (pos > max) {
-                    pos = max;
-                }
-
-                auto w1 = pos - (X + 2);
-                auto w2 = (X + W) - (pos + 2);
-
-                _widgets[0]->resize(currx, curry, w1, currh);
-                _widgets[1]->resize(currx + w1 + 4, curry, w2, currh);
+        if (_widgets[0] != nullptr && _widgets[1] != nullptr && _widgets[0]->visible() != 0 && _widgets[1]->visible() != 0) {
+            if (_split_pos == -1) {
+                _split_pos = W / 2;
             }
-            else if (_widgets[0] && _widgets[0]->visible()) {
-                _widgets[0]->resize(currx, curry, currw, currh);
+            else if (_split_pos >= W - _min) {
+                _split_pos = W - _min;
             }
-            else if (_widgets[1] && _widgets[1]->visible()) {
-                _widgets[1]->resize(currx, curry, currw, currh);
+            else if (_split_pos <= _min) {
+                _split_pos = _min;
             }
+
+            auto max = (X + W) - 4;
+            auto pos = _split_pos + X;
+
+            if (pos < X) {
+                pos = X;
+            }
+            else if (pos > max) {
+                pos = max;
+            }
+
+            auto w1 = pos - (X + 2);
+            auto w2 = (X + W) - (pos + 2);
+
+            _widgets[0]->resize(currx, curry, w1, currh);
+            _widgets[1]->resize(currx + w1 + 4, curry, w2, currh);
+        }
+        else if (_widgets[0] && _widgets[0]->visible()) {
+            _widgets[0]->resize(currx, curry, currw, currh);
+        }
+        else if (_widgets[1] && _widgets[1]->visible()) {
+            _widgets[1]->resize(currx, curry, currw, currh);
         }
     }
-    else {
-        if (currw > 0 && currh > 0) {
-            if (_widgets[0] && _widgets[1] && _widgets[0]->visible() && _widgets[1]->visible()) {
-                if (_split_pos == -1) {
-                    _split_pos = H / 2;
-                }
-                else if (_split_pos >= H - _min) {
-                    _split_pos = H - _min;
-                }
-                else if (_split_pos <= _min) {
-                    _split_pos = _min;
-                }
-
-                auto max = (Y + H) - 4;
-                auto pos = _split_pos + Y;
-
-                if (pos < Y) {
-                    pos = Y;
-                }
-                else if (pos > max) {
-                    pos = max;
-                }
-
-                auto h1 = pos - (Y + 2);
-                auto h2 = (Y + H) - (pos + 2);
-
-                _widgets[0]->resize(currx, curry, currw, h1);
-                _widgets[1]->resize(currx, curry + h1 + 4, currw, h2);
-                // fprintf(stderr, "%s %4d - %4d <=> %4d - %4d\n", _widgets[0]->label(), _widgets[0]->x(), _widgets[0]->y(), _widgets[0]->w(), _widgets[0]->h());
-                // fprintf(stderr, "%s %4d - %4d <=> %4d - %4d\n", _widgets[1]->label(), _widgets[1]->x(), _widgets[1]->y(), _widgets[1]->w(), _widgets[1]->h());
-            }
-            else if (_widgets[0] && _widgets[0]->visible()) {
-                _widgets[0]->resize(currx, curry, currw, currh);
-            }
-            else if (_widgets[1] && _widgets[1]->visible()) {
-                _widgets[1]->resize(currx, curry, currw, currh);
-            }
+    else if (_widgets[0] != nullptr && _widgets[1] != nullptr && _widgets[0]->visible() != 0 && _widgets[1]->visible() != 0) { // SplitGroup::DIRECTION::HORIZONTAL
+        if (_split_pos == -1) {
+            _split_pos = H / 2;
         }
+        else if (_split_pos >= H - _min) {
+            _split_pos = H - _min;
+        }
+        else if (_split_pos <= _min) {
+            _split_pos = _min;
+        }
+
+        auto max = (Y + H) - 4;
+        auto pos = _split_pos + Y;
+
+        if (pos < Y) {
+            pos = Y;
+        }
+        else if (pos > max) {
+            pos = max;
+        }
+
+        auto h1 = pos - (Y + 2);
+        auto h2 = (Y + H) - (pos + 2);
+
+        _widgets[0]->resize(currx, curry, currw, h1);
+        _widgets[1]->resize(currx, curry + h1 + 4, currw, h2);
+        // fprintf(stderr, "%s %4d - %4d <=> %4d - %4d\n", _widgets[0]->label(), _widgets[0]->x(), _widgets[0]->y(), _widgets[0]->w(), _widgets[0]->h());
+        // fprintf(stderr, "%s %4d - %4d <=> %4d - %4d\n", _widgets[1]->label(), _widgets[1]->x(), _widgets[1]->y(), _widgets[1]->w(), _widgets[1]->h());
+    }
+    else if (_widgets[0] != nullptr && _widgets[0]->visible() != 0) {
+        _widgets[0]->resize(currx, curry, currw, currh);
+    }
+    else if (_widgets[1] != nullptr && _widgets[1]->visible() != 0) {
+        _widgets[1]->resize(currx, curry, currw, currh);
     }
 }
 
@@ -218,27 +223,26 @@ void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION dire
     if (_widgets[0] == nullptr || _widgets[1] == nullptr) {
         return;
     }
+
+    auto num = (child == SplitGroup::CHILD::FIRST) ? 0 : 1;
+
+    if (_widgets[num]->visible() && _direction == direction) { // Direction is the same so hide widget
+        _widgets[num]->hide();
+    }
     else {
-        auto num = child == SplitGroup::CHILD::FIRST ? 0 : 1;
+        _widgets[num]->show();
 
-        if (_widgets[num]->visible() && _direction == direction) { // Direction is the same so hide widget
-            _widgets[num]->hide();
-        }
-        else {
-            _widgets[num]->show();
+        if (_direction != direction || split_pos() == -1) { // Direction has changed or has no size so resize widgets
+            _direction = direction;
 
-            if (_direction != direction || split_pos() == -1) { // Direction has changed or has no size so resize widgets
-                _direction = direction;
-
-                if (second_size == -1) {
-                    split_pos(-1);
-                }
-                else if (_direction == SplitGroup::DIRECTION::VERTICAL) {
-                    split_pos(w() - second_size);
-                }
-                else {
-                    split_pos(h() - second_size);
-                }
+            if (second_size == -1) {
+                split_pos(-1);
+            }
+            else if (_direction == SplitGroup::DIRECTION::VERTICAL) {
+                split_pos(w() - second_size);
+            }
+            else {
+                split_pos(h() - second_size);
             }
         }
     }

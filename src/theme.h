@@ -25,8 +25,8 @@ namespace flw {
     }
 
     namespace util {
-        void                            load_pref(Fl_Preferences& pref, Fl_Window* window = nullptr);
-        void                            save_pref(Fl_Preferences& pref, Fl_Window* window = nullptr);
+        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr, int resource = 0);
+        void                            pref_save(Fl_Preferences& pref, Fl_Window* window = nullptr);
     }
 }
 

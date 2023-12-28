@@ -3,6 +3,7 @@
 
 #include "grid.h"
 #include <stdarg.h>
+#include <string.h>
 
 // MKALGAM_ON
 

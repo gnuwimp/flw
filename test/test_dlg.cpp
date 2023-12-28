@@ -7,6 +7,7 @@
 #include "theme.h"
 #include "waitcursor.h"
 #include "test.h"
+#include <FL/Fl.H>
 
 using namespace flw;
 

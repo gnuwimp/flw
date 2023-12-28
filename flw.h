@@ -18,7 +18,7 @@ class Fl_Input;
 class Fl_Menu_Button;
 
 
-#define FLW_LINE printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout);
+#define FLW_LINE { printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout); }
 
 namespace flw {
     typedef std::vector<std::string>    StringVector;
@@ -125,24 +125,46 @@ namespace flw {
                                         Date(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
         Date&                           operator=(const Date& other);
         Date&                           operator=(Date&&);
+        bool                            operator<(const Date& other) const
+                                            { return compare(other) < 0 ? true : false; }
+        bool                            operator<=(const Date& other) const
+                                            { return compare(other) <= 0 ? true : false; }
+        bool                            operator>(const Date& other) const
+                                            { return compare(other) > 0 ? true : false; }
+        bool                            operator>=(const Date& other) const
+                                            { return compare(other) >= 0 ? true : false; }
+        bool                            operator==(const Date& other) const
+                                            { return compare(other) == 0 ? true : false; }
+        bool                            operator!=(const Date& other) const
+                                            { return compare(other) != 0 ? true : false; }
         bool                            add_days(int days);
         bool                            add_months(int months);
         bool                            add_seconds(int64_t seconds);
         int                             compare(const Date& other, Date::COMPARE flag = Date::COMPARE::YYYYMMDDHHMMSS) const;
+        int                             day() const
+                                            { return _day; }
         Date&                           day(int day);
         Date&                           day_last();
         int                             diff_days(const Date& other) const;
         int                             diff_months(const Date& other) const;
         int                             diff_seconds(const Date& other) const;
         std::string                     format(Date::FORMAT format = Date::FORMAT::ISO) const;
+        int                             hour() const
+                                            { return _hour; }
         Date&                           hour(int hour);
         bool                            is_leapyear() const;
+        int                             minute() const
+                                            { return _min; }
         Date&                           minute(int min);
+        int                             month() const
+                                            { return _month; }
         Date&                           month(int month);
         int                             month_days() const;
         const char*                     month_name() const;
         const char*                     month_name_short() const;
         void                            print() const;
+        int                             second() const
+                                            { return _sec; }
         Date&                           second(int sec);
         Date&                           set(const Date& other);
         Date&                           set(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
@@ -152,21 +174,10 @@ namespace flw {
         Date&                           weekday(Date::DAY weekday);
         const char*                     weekday_name() const;
         const char*                     weekday_name_short() const;
+        int                             year() const
+                                            { return _year; }
         Date&                           year(int year);
         int                             yearday() const;
-
-        inline bool                     operator<(const Date& other) const { return compare(other) < 0 ? true : false; }
-        inline bool                     operator<=(const Date& other) const { return compare(other) <= 0 ? true : false; }
-        inline bool                     operator>(const Date& other) const { return compare(other) > 0 ? true : false; }
-        inline bool                     operator>=(const Date& other) const { return compare(other) >= 0 ? true : false; }
-        inline bool                     operator==(const Date& other) const { return compare(other) == 0 ? true : false; }
-        inline bool                     operator!=(const Date& other) const { return compare(other) != 0 ? true : false; }
-        inline int                      day() const { return _day; }
-        inline int                      hour() const { return _hour; }
-        inline int                      minute() const { return _min; }
-        inline int                      month() const { return _month; }
-        inline int                      second() const { return _sec; }
-        inline int                      year() const { return _year; }
 
         static int                      Compare(const void* a, const void* b);
         static bool                     Compare(const Date& a, const Date& b);
@@ -258,11 +269,12 @@ namespace flw {
                                         AbortDialog(double min = 0.0, double max = 0.0);
             bool                        abort(int milliseconds = 200);
             bool                        abort(double value, double min, double max, int milliseconds = 200);
+            bool                        aborted()
+                                            { return _abort; }
             void                        range(double min, double max);
             void                        show(const std::string& label, Fl_Window* parent = nullptr);
             void                        value(double value);
 
-            inline bool                 aborted() { return _abort; }
 
             static void                 Callback(Fl_Widget* w, void* o);
 
@@ -368,19 +380,23 @@ namespace flw {
         void                            clamp(Chart::AREA area, Chart::LINE line, double clamp_min = MIN, double clamp_max = MAX);
         void                            clear();
         void                            debug() const;
+        void                            font(Fl_Font font, Fl_Fontsize size)
+                                            { _font = font; _fs   = size; }
         void                            draw() override;
         int                             handle(int event) override;
         void                            init(bool calc_dates);
         void                            line(Chart::AREA area, Chart::LINE line, const std::vector<flw::Price>& points, const char* line_label, Chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width);
+        void                            margin(int left = 6, int right = 1)
+                                            { _margin_left = left; _margin_right = right; redraw(); }
         void                            range(Date::RANGE range = Date::RANGE::DAY);
         void                            resize(int X, int Y, int W, int H) override;
+        void                            support_lines(bool hor = false, bool ver = false)
+                                            { _hor_lines = hor; _ver_lines = ver; redraw(); }
         void                            tick_width(int tick_width = 3);
-
-        inline void                     font(Fl_Font font, Fl_Fontsize size) { _font = font; _fs   = size; }
-        inline void                     margin(int left = 6, int right = 1) { _margin_left = left; _margin_right = right; redraw(); }
-        inline void                     support_lines(bool hor = false, bool ver = false) { _hor_lines = hor; _ver_lines = ver; redraw(); }
-        inline void                     tooltip(bool tooltip = false) { _tooltip = tooltip; }
-        inline void                     zoom(bool zoom = false) { _zoom = zoom; }
+        void                            tooltip(bool tooltip = false)
+                                            { _tooltip = tooltip; }
+        void                            zoom(bool zoom = false)
+                                            { _zoom = zoom; }
 
     private:
         void                            _calc_area_height();
@@ -489,15 +505,20 @@ namespace flw {
 
                                         FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
                                         FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label);
-            inline void                 activate_font() { ((Fl_Widget*) _fonts)->activate(); }
+            void                        activate_font()
+                                            { ((Fl_Widget*) _fonts)->activate(); }
+            void                        deactivate_font()
+                                            { ((Fl_Widget*) _fonts)->deactivate(); }
+            void                        deactivate_fontsize()
+                                            { ((Fl_Widget*) _sizes)->deactivate(); }
+            int                         font()
+                                            { return _font; }
+            std::string                 fontname()
+                                            { return _fontname; }
+            int                         fontsize()
+                                            { return _fontsize; }
             void                        resize(int X, int Y, int W, int H) override;
             bool                        run(Fl_Window* parent = nullptr);
-
-            inline void                 deactivate_font() { ((Fl_Widget*) _fonts)->deactivate(); }
-            inline void                 deactivate_fontsize() { ((Fl_Widget*) _sizes)->deactivate(); }
-            inline int                  font() { return _font; }
-            inline std::string          fontname() { return _fontname; }
-            inline int                  fontsize() { return _fontsize; }
 
             static void                 Callback(Fl_Widget* w, void* o);
             static void                 DeleteFonts();
@@ -542,9 +563,10 @@ namespace flw {
         void                            remove(Fl_Widget* widget);
         void                            resize();
         void                            resize(int X, int Y, int W, int H) override;
-
-        inline int                      size() const { return _size; }
-        inline void                     size(int size) { _size = size; }
+        int                             size() const
+                                            { return _size; }
+        void                            size(int size)
+                                            { _size = size; }
 
     private:
         _GridGroupChild*                _widgets[MAX_WIDGETS];
@@ -554,33 +576,52 @@ namespace flw {
 
 
 
-namespace flw {
+namespace flw
+                                    {
     //--------------------------------------------------------------------------
     // A 7 segment number label widget
     //
-    class LcdNumber : public Fl_Box {
+    class LcdNumber : public Fl_Box
+                                        {
     public:
                                         LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            draw() override;
         void                            value(const char* value);
 
-        inline Fl_Align                 align() const { return _align; }
-        inline void                     align(Fl_Align align) { _align = align; Fl::redraw(); }
-        inline int                      dot_size() const { return _dot_size; }
-        inline void                     dot_size(int size) { _dot_size = size; Fl::redraw(); }
-        inline Fl_Color                 segment_color() const { return _seg_color; }
-        inline void                     segment_color(Fl_Color color) { _seg_color = color; Fl::redraw(); }
-        inline int                      segment_gap() const { return _seg_gap; }
-        inline void                     segment_gap(int gap) { _seg_gap = gap; Fl::redraw(); }
-        inline int                      thickness() const { return _thick; }
-        inline void                     thickness(int thickness) { _thick = thickness; Fl::redraw(); }
-        inline int                      unit_gap() { return _unit_gap; }
-        inline void                     unit_gap(int gap) { _unit_gap = gap; Fl::redraw(); }
-        inline int                      unit_h() const { return _unit_h; }
-        inline void                     unit_h(int height) { _unit_h = height; Fl::redraw(); }
-        inline int                      unit_w() const { return _unit_w; }
-        inline void                     unit_w(int width) { _unit_w = width; Fl::redraw(); }
-        inline const char*              value() const { return _value; }
+        Fl_Align                        align() const
+                                            { return _align; }
+        void                            align(Fl_Align align)
+                                            { _align = align; Fl::redraw(); }
+        int                             dot_size() const
+                                            { return _dot_size; }
+        void                            dot_size(int size)
+                                            { _dot_size = size; Fl::redraw(); }
+        Fl_Color                        segment_color() const
+                                            { return _seg_color; }
+        void                            segment_color(Fl_Color color)
+                                            { _seg_color = color; Fl::redraw(); }
+        int                             segment_gap() const
+                                            { return _seg_gap; }
+        void                            segment_gap(int gap)
+                                            { _seg_gap = gap; Fl::redraw(); }
+        int                             thickness() const
+                                            { return _thick; }
+        void                            thickness(int thickness)
+                                            { _thick = thickness; Fl::redraw(); }
+        int                             unit_gap()
+                                            { return _unit_gap; }
+        void                            unit_gap(int gap)
+                                            { _unit_gap = gap; Fl::redraw(); }
+        int                             unit_h() const
+                                            { return _unit_h; }
+        void                            unit_h(int height)
+                                            { _unit_h = height; Fl::redraw(); }
+        int                             unit_w() const
+                                            { return _unit_w; }
+        void                            unit_w(int width)
+                                            { _unit_w = width; Fl::redraw(); }
+        const char*                     value() const
+                                            { return _value; }
 
     private:
         void                            _draw_seg(uchar a, int x, int y, int w, int h);
@@ -703,20 +744,27 @@ namespace flw {
         };
                                         SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            add(Fl_Widget* widget, SplitGroup::CHILD child);
-        void                            direction(SplitGroup::DIRECTION direction);
+        Fl_Widget*                      child(SplitGroup::CHILD child)
+                                            { return (child == SplitGroup::CHILD::FIRST) ? _widgets[0] : _widgets[1]; }
         void                            clear();
+        DIRECTION                       direction() const
+                                            { return _direction; }
+        void                            direction(SplitGroup::DIRECTION direction);
         int                             handle(int event) override;
+        int                             min_pos() const
+                                            { return _min; }
+        void                            min_pos(int value)
+                                            { _min = value; }
+        void                            resize()
+                                            { Fl::redraw(); SplitGroup::resize(x(), y(), w(), h()); }
         void                            resize(int X, int Y, int W, int H) override;
+        int                             split_pos() const
+                                            { return _split_pos; }
+        void                            split_pos(int split_pos)
+                                            { _split_pos = split_pos; }
         void                            toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
-
-        inline Fl_Widget*               child(SplitGroup::CHILD child) { return child == SplitGroup::CHILD::FIRST ? _widgets[0] : _widgets[1]; }
-        inline DIRECTION                direction() const { return _direction; }
-        inline int                      min_pos() const { return _min; }
-        inline void                     min_pos(int value) { _min = value; }
-        inline void                     resize() { SplitGroup::resize(x(), y(), w(), h()); }
-        inline int                      split_pos() const { return _split_pos; }
-        inline void                     split_pos(int split_pos) { _split_pos = split_pos; }
-        inline void                     toggle(SplitGroup::CHILD child, int second_size = -1) { toggle(child, _direction, second_size); }
+        void                            toggle(SplitGroup::CHILD child, int second_size = -1)
+                                            { toggle(child, _direction, second_size); }
 
     private:
         Fl_Widget*                      _widgets[2];
@@ -961,21 +1009,26 @@ namespace flw {
                                         TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            add(const std::string& label, Fl_Widget* widget);
         Fl_Widget*                      child(int num) const;
+        int                             children() const
+                                            { return (int) _widgets.size(); }
         int                             find(Fl_Widget* widget) const;
         int                             handle(int event) override;
         void                            label(const std::string& label, Fl_Widget* widget);
         Fl_Widget*                      remove(int num);
-        void                            resize();
+        Fl_Widget*                      remove(Fl_Widget* widget)
+                                            { return remove(find(widget)); }
+        void                            resize()
+                                            { Fl::redraw(); resize(x(), y(), w(), h()); }
         void                            resize(int X, int Y, int W, int H) override;
         void                            swap(int from, int to);
+        TABS                            tabs()
+                                            { return _tabs; }
+        void                            tabs(TABS value)
+                                            { _tabs = value; }
         Fl_Widget*                      value() const;
         void                            value(int num);
-
-        inline int                      children() const { return (int) _widgets.size(); }
-        inline void                     value(Fl_Widget* widget) { value(find(widget)); }
-        inline Fl_Widget*               remove(Fl_Widget* widget) { return remove(find(widget)); }
-        inline TABS                     tabs() { return _tabs; }
-        inline void                     tabs(TABS value) { _tabs = value; }
+        void                            value(Fl_Widget* widget)
+                                            { value(find(widget)); }
 
         static void                     BoxColor(Fl_Color boxcolor);
         static void                     BoxSelectionColor(Fl_Color boxcolor);
@@ -1070,8 +1123,8 @@ namespace flw {
     }
 
     namespace util {
-        void                            load_pref(Fl_Preferences& pref, Fl_Window* window = nullptr);
-        void                            save_pref(Fl_Preferences& pref, Fl_Window* window = nullptr);
+        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr, int resource = 0);
+        void                            pref_save(Fl_Preferences& pref, Fl_Window* window = nullptr);
     }
 }
 
@@ -1093,15 +1146,16 @@ namespace flw {
                                         InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            clear();
         StringVector                    get_history() const;
+        Fl_Input*                       input()
+                                            { return (Fl_Input*) _input; }
         void                            insert(const std::string& string, int max_list_len);
+        Fl_Menu_Button*                 menu()
+                                            { return _menu; }
         void                            resize(int X, int Y, int W, int H) override;
         void                            set(const StringVector& list, bool copy_first_to_input = true);
         void                            update_pref(Fl_Font text_font = flw::PREF_FIXED_FONT, Fl_Fontsize text_size = flw::PREF_FIXED_FONTSIZE);
         const char*                     value() const;
         void                            value(const char* string);
-
-        inline Fl_Input*                input() { return (Fl_Input*) _input; }
-        inline Fl_Menu_Button*          menu() { return _menu; }
 
         static void                     Callback(Fl_Widget*, void*);
 
@@ -1122,12 +1176,14 @@ namespace flw {
         ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
 
                                         ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        void                            enable_menu(bool menu)
+                                            { _flag_menu = menu; }
+        void                            enable_pagemove(bool move)
+                                            { _flag_move = move; }
         int                             handle(int event) override;
+        Fl_Menu_Button*                 menu()
+                                            { return _menu; }
         void                            update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
-
-        inline void                     enable_menu(bool menu) { _flag_menu = menu; }
-        inline void                     enable_pagemove(bool move) { _flag_move = move; }
-        inline Fl_Menu_Button*          menu() { return _menu; }
 
         static void                     Callback(Fl_Widget*, void*);
         static std::string              RemoveFormat(const char* text);

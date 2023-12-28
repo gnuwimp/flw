@@ -26,9 +26,10 @@ namespace flw {
         void                            remove(Fl_Widget* widget);
         void                            resize();
         void                            resize(int X, int Y, int W, int H) override;
-
-        inline int                      size() const { return _size; }
-        inline void                     size(int size) { _size = size; }
+        int                             size() const
+                                            { return _size; }
+        void                            size(int size)
+                                            { _size = size; }
 
     private:
         _GridGroupChild*                _widgets[MAX_WIDGETS];
