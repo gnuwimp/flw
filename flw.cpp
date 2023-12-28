@@ -16,7 +16,6 @@ namespace flw {
         static const char* const        SHOW_VLINES     = "Show vertical lines";
         static const char* const        RESET_SELECT    = "Reset line selection and visibility";
         static const char* const        SAVE_PNG        = "Save png to file...";
-        static const char* const        PRINT_DEBUG     = "Debug";
         size_t bsearch(const PriceVector& prices, const Price& key) {
             auto it = std::lower_bound(prices.begin(), prices.end(), key);
             if (it == prices.end() || *it != key) {
@@ -598,7 +597,7 @@ flw::Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W,
     _menu->add(chart::RESET_SELECT, 0, Chart::_CallbackReset, this);
     _menu->add(chart::SAVE_PNG, 0, Chart::_CallbackSavePng, this);
 #ifdef DEBUG
-    _menu->add(chart::PRINT_DEBUG, 0, Chart::_CallbackDebug, this);
+    _menu->add("Debug", 0, Chart::_CallbackDebug, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
     _areas.push_back(chart::Area());
@@ -2165,146 +2164,145 @@ int flw::Date::yearday() const {
 #include <FL/fl_draw.H>
 #include <time.h>
 namespace flw {
-    class _DateChooserCanvas : public Fl_Widget {
-        Date                    _date[7][8];
-        char                    _text[7][8][30];
-        int                     _col;
-        int                     _row;
-    public:
-        _DateChooserCanvas() : Fl_Widget(0, 0, 0, 0, 0) {
-            _row   = 1;
-            _col   = 1;
-            strncpy(_text[0][0], "Week", 20);
-            strncpy(_text[0][1], "Mon", 20);
-            strncpy(_text[0][2], "Tue", 20);
-            strncpy(_text[0][3], "Wed", 20);
-            strncpy(_text[0][4], "Thu", 20);
-            strncpy(_text[0][5], "Fri", 20);
-            strncpy(_text[0][6], "Sat", 20);
-            strncpy(_text[0][7], "Sun", 20);
-        }
-        void draw() override {
-            int cw  = w() / 8;
-            int ch  = h() / 7;
-            int d   = 99;
-            int col = 0;
-            fl_rectf(x(), y(), w(), h(), FL_BACKGROUND_COLOR);
-            for (int r = 0; r < 7; r++) {
-                for (int c  = 0; c < 8; c++) {
-                    auto t  = _text[r][c];
-                    auto x1 = x() + (c * cw) + 1;
-                    auto y1 = y() + (r * ch) + 1;
-                    auto w1 = (c == 7) ? x() + w() - x1 : cw - 2;
-                    auto h1 = (r == 6) ? y() + h() - y1 : ch - 2;
-                    auto bg = FL_BACKGROUND_COLOR;
-                    auto fg = FL_FOREGROUND_COLOR;
-                    if (r == 0 || c == 0) {
-                        ;
+class _DateChooserCanvas : public Fl_Widget {
+    Date                    _date[7][8];
+    char                    _text[7][8][30];
+    int                     _col;
+    int                     _row;
+public:
+    _DateChooserCanvas() : Fl_Widget(0, 0, 0, 0, 0) {
+        _row   = 1;
+        _col   = 1;
+        strncpy(_text[0][0], "Week", 20);
+        strncpy(_text[0][1], "Mon", 20);
+        strncpy(_text[0][2], "Tue", 20);
+        strncpy(_text[0][3], "Wed", 20);
+        strncpy(_text[0][4], "Thu", 20);
+        strncpy(_text[0][5], "Fri", 20);
+        strncpy(_text[0][6], "Sat", 20);
+        strncpy(_text[0][7], "Sun", 20);
+    }
+    void draw() override {
+        int cw  = w() / 8;
+        int ch  = h() / 7;
+        int d   = 99;
+        int col = 0;
+        fl_rectf(x(), y(), w(), h(), FL_BACKGROUND_COLOR);
+        for (int r = 0; r < 7; r++) {
+            for (int c  = 0; c < 8; c++) {
+                auto t  = _text[r][c];
+                auto x1 = x() + (c * cw) + 1;
+                auto y1 = y() + (r * ch) + 1;
+                auto w1 = (c == 7) ? x() + w() - x1 : cw - 2;
+                auto h1 = (r == 6) ? y() + h() - y1 : ch - 2;
+                auto bg = FL_BACKGROUND_COLOR;
+                auto fg = FL_FOREGROUND_COLOR;
+                if (r == 0 || c == 0) {
+                    ;
+                }
+                else {
+                    int v = atoi(t);
+                    if (v <= d && col < 3) {
+                        d = v;
+                        col++;
+                    }
+                    if (r == _row && c == _col) {
+                        bg = FL_SELECTION_COLOR;
+                    }
+                    else if (col == 2) {
+                        bg = FL_BACKGROUND2_COLOR;
                     }
                     else {
-                        int v = atoi(t);
-                        if (v <= d && col < 3) {
-                            d = v;
-                            col++;
-                        }
-                        if (r == _row && c == _col) {
-                            bg = FL_SELECTION_COLOR;
-                        }
-                        else if (col == 2) {
-                            bg = FL_BACKGROUND2_COLOR;
-                        }
-                        else {
-                            bg = FL_DARK2;
-                        }
-                    }
-                    fl_rectf(x1, y1, w1, h1, bg);
-                    fl_color(fg);
-                    fl_font(r == 0 || c == 0 ? FL_HELVETICA_BOLD : FL_HELVETICA, flw::PREF_FONTSIZE);
-                    fl_draw(t, x1, y1, w1, h1, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-                    fl_rect(x1, y1, w1, h1, FL_DARK3);
-                }
-            }
-        }
-        Date& get() {
-            return _date[_row][_col];
-        }
-        int handle(int event) override {
-            if (event == FL_PUSH) {
-                take_focus();
-                auto cw = (int) (w() / 8);
-                auto ch = (int) (h() / 7);
-                for (auto r = 1; r < 7; r++) {
-                    for (auto c = 1; c < 8; c++) {
-                        auto x1 = (int) (x() + (c * cw));
-                        auto y1 = (int) (y() + (r * ch));
-                        if (Fl::event_x() >= x1 && Fl::event_x() < x1 + cw && Fl::event_y() >= y1 && Fl::event_y() < y1 + ch) {
-                            _row = r;
-                            _col = c;
-                            do_callback();
-                            redraw();
-                            break;
-                        }
+                        bg = FL_DARK2;
                     }
                 }
-                return 1;
+                fl_rectf(x1, y1, w1, h1, bg);
+                fl_color(fg);
+                fl_font(r == 0 || c == 0 ? FL_HELVETICA_BOLD : FL_HELVETICA, flw::PREF_FONTSIZE);
+                fl_draw(t, x1, y1, w1, h1, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+                fl_rect(x1, y1, w1, h1, FL_DARK3);
             }
-            else if (event == FL_FOCUS) {
-                return 1;
-            }
-            else if (event == FL_KEYDOWN) {
-                if (Fl::event_command() == 0) {
-                    int num = Fl::event_key();
-                    if (num == FL_Up) {
-                        if (_row > 1) {
-                            _row--;
-                            redraw();
-                            do_callback();
-                        }
-                        return 1;
-                    }
-                    else if (num == FL_Down) {
-                        if (_row < 6) {
-                            _row++;
-                            redraw();
-                            do_callback();
-                        }
-                        return 1;
-                    }
-                    else if (num == FL_Left) {
-                        if (_col > 1) {
-                            _col--;
-                            redraw();
-                            do_callback();
-                        }
-                        return 1;
-                    }
-                    else if (num == FL_Right) {
-                        if (_col < 7) {
-                            _col++;
-                            redraw();
-                            do_callback();
-                        }
-                        return 1;
+        }
+    }
+    Date& get() {
+        return _date[_row][_col];
+    }
+    int handle(int event) override {
+        if (event == FL_PUSH) {
+            take_focus();
+            auto cw = (int) (w() / 8);
+            auto ch = (int) (h() / 7);
+            for (auto r = 1; r < 7; r++) {
+                for (auto c = 1; c < 8; c++) {
+                    auto x1 = (int) (x() + (c * cw));
+                    auto y1 = (int) (y() + (r * ch));
+                    if (Fl::event_x() >= x1 && Fl::event_x() < x1 + cw && Fl::event_y() >= y1 && Fl::event_y() < y1 + ch) {
+                        _row = r;
+                        _col = c;
+                        do_callback();
+                        redraw();
+                        break;
                     }
                 }
             }
-            return Fl_Widget::handle(event);
+            return 1;
         }
-        void set_current(int row, int col) {
-            if (row != _row || col != _col) {
-                _row = row;
-                _col = col;
-                do_callback();
+        else if (event == FL_FOCUS) {
+            return 1;
+        }
+        else if (event == FL_KEYDOWN) {
+            if (Fl::event_command() == 0) {
+                int num = Fl::event_key();
+                if (num == FL_Up) {
+                    if (_row > 1) {
+                        _row--;
+                        redraw();
+                        do_callback();
+                    }
+                    return 1;
+                }
+                else if (num == FL_Down) {
+                    if (_row < 6) {
+                        _row++;
+                        redraw();
+                        do_callback();
+                    }
+                    return 1;
+                }
+                else if (num == FL_Left) {
+                    if (_col > 1) {
+                        _col--;
+                        redraw();
+                        do_callback();
+                    }
+                    return 1;
+                }
+                else if (num == FL_Right) {
+                    if (_col < 7) {
+                        _col++;
+                        redraw();
+                        do_callback();
+                    }
+                    return 1;
+                }
             }
         }
-        void set_date(int row, int col, const Date& date) {
-            _date[row][col] = date;
+        return Fl_Widget::handle(event);
+    }
+    void set_current(int row, int col) {
+        if (row != _row || col != _col) {
+            _row = row;
+            _col = col;
+            do_callback();
         }
-        void set_text(int row, int col, const char* text) {
-            strncpy(_text[row][col], text, 30);
-        }
-    };
-}
+    }
+    void set_date(int row, int col, const Date& date) {
+        _date[row][col] = date;
+    }
+    void set_text(int row, int col, const char* text) {
+        strncpy(_text[row][col], text, 30);
+    }
+};
 flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     _h           = -1;
@@ -2472,6 +2470,72 @@ void flw::DateChooser::_set_label() {
     auto string = date.format(Date::FORMAT::YEAR_MONTH_LONG);
     _month_label->copy_label(string.c_str());
 }
+class _DateChooserDlg : public Fl_Double_Window {
+    DateChooser*            _date_chooser;
+    Date&                   _value;
+    Fl_Button*              _cancel;
+    Fl_Button*              _ok;
+    bool                    _res;
+public:
+    _DateChooserDlg(const char* title, Date& date) : Fl_Double_Window(0, 0, 0, 0), _value(date) {
+        end();
+        _date_chooser = new DateChooser();
+        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _res          = false;
+        add(_date_chooser);
+        add(_ok);
+        add(_cancel);
+        _cancel->callback(Callback, this);
+        _date_chooser->focus();
+        _date_chooser->set(_value);
+        _ok->callback(Callback, this);
+        util::labelfont(this);
+        callback(Callback, this);
+        copy_label(title);
+        size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
+        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
+        set_modal();
+        resizable(this);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        _DateChooserDlg* dlg = (_DateChooserDlg*) o;
+        if (w == dlg) {
+            ;
+        }
+        else if (w == dlg->_cancel) {
+            dlg->hide();
+        }
+        else if (w == dlg->_ok) {
+            dlg->hide();
+            dlg->_res = true;
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        auto fs = flw::PREF_FONTSIZE;
+        Fl_Double_Window::resize(X, Y, W, H);
+        _date_chooser->resize (4,                 4,                  W - 8,    H - fs * 2 - 16);
+        _cancel->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,   fs * 2);
+        _ok->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,   fs * 2);
+    }
+    bool run(Fl_Window* parent) {
+        flw::util::center_window(this, parent);
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        if (_res == true) {
+            _value = _date_chooser->get();
+        }
+        return _res;
+    }
+};
+bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
+    flw::_DateChooserDlg dlg(title.c_str(), date);
+    return dlg.run(parent);
+}
+}
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -2521,67 +2585,6 @@ namespace flw {
         #endif
             return mem;
         }
-        class _DlgDate : public Fl_Double_Window {
-            DateChooser*            _date_chooser;
-            Date&                   _value;
-            Fl_Button*              _cancel;
-            Fl_Button*              _ok;
-            bool                    _res;
-        public:
-            _DlgDate(const char* title, Date& date) : Fl_Double_Window(0, 0, 0, 0), _value(date) {
-                end();
-                _date_chooser = new DateChooser();
-                _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-                _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _res          = false;
-                add(_date_chooser);
-                add(_ok);
-                add(_cancel);
-                _cancel->callback(Callback, this);
-                _date_chooser->focus();
-                _date_chooser->set(_value);
-                _ok->callback(Callback, this);
-                util::labelfont(this);
-                callback(Callback, this);
-                copy_label(title);
-                size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
-                size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
-                set_modal();
-                resizable(this);
-            }
-            static void Callback(Fl_Widget* w, void* o) {
-                _DlgDate* dlg = (_DlgDate*) o;
-                if (w == dlg) {
-                    ;
-                }
-                else if (w == dlg->_cancel) {
-                    dlg->hide();
-                }
-                else if (w == dlg->_ok) {
-                    dlg->hide();
-                    dlg->_res = true;
-                }
-            }
-            void resize(int X, int Y, int W, int H) override {
-                auto fs = flw::PREF_FONTSIZE;
-                Fl_Double_Window::resize(X, Y, W, H);
-                _date_chooser->resize (4,                 4,                  W - 8,    H - fs * 2 - 16);
-                _cancel->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,   fs * 2);
-                _ok->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,   fs * 2);
-            }
-            bool run(Fl_Window* parent) {
-                flw::util::center_window(this, parent);
-                show();
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-                if (_res == true) {
-                    _value = _date_chooser->get();
-                }
-                return _res;
-            }
-        };
         class _DlgHtml  : public Fl_Double_Window {
             Fl_Help_View*               _html;
             Fl_Return_Button*           _close;
@@ -3293,10 +3296,6 @@ namespace flw {
         };
     }
 }
-bool flw::dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
-    flw::dlg::_DlgDate dlg(title.c_str(), date);
-    return dlg.run(parent);
-}
 void flw::dlg::html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
     _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
     dlg.run();
@@ -3830,31 +3829,49 @@ flw::Buf::Buf() {
     p = nullptr;
     s = 0;
 }
-flw::Buf::Buf(size_t s_) {
-    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
+flw::Buf::Buf(size_t S) {
+    p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
     s = 0;
     if (p != nullptr) {
-        s = s_;
+        s = S;
     }
 }
-flw::Buf::Buf(char* p_, size_t s_) {
-    p = p_;
-    s = s_;
+flw::Buf::Buf(char* P, size_t S) {
+    p = P;
+    s = S;
 }
-flw::Buf::Buf(const char* p_, size_t s_) {
-    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        memcpy(p, p_, s_);
-        s = s_;
+flw::Buf::Buf(const char* P, size_t S) {
+    if (P == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
+        s = 0;
+        if (p == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(p, P, S);
+            s = S;
+        }
     }
 }
 flw::Buf::Buf(const Buf& b) {
-    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        memcpy(p, b.p, b.s);
-        s = b.s;
+    if (b.p == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        s = 0;
+        if (p == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(p, b.p, b.s);
+            s = b.s;
+        }
     }
 }
 flw::Buf::Buf(Buf&& b) {
@@ -3863,12 +3880,22 @@ flw::Buf::Buf(Buf&& b) {
     b.p = nullptr;
 }
 flw::Buf& flw::Buf::operator=(const Buf& b) {
-    free(p);
-    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        memcpy(p, b.p, b.s);
-        s = b.s;
+    if (b.p == nullptr) {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        free(p);
+        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        s = 0;
+        if (p == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(p, b.p, b.s);
+            s = b.s;
+        }
     }
     return *this;
 }
@@ -3880,18 +3907,23 @@ flw::Buf& flw::Buf::operator=(Buf&& b) {
     return *this;
 }
 flw::Buf& flw::Buf::operator+=(const Buf& b) {
-    auto t = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    if (t != nullptr) {
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
+    if (b.p == nullptr) {
+    }
+    else if (p == nullptr) {
+        *this = b;
     }
     else {
-        free(p);
-        p = nullptr;
-        s = 0;
+        auto t = (b.s < SIZE_MAX) ? (char*) calloc(s + b.s + 1, 1) : nullptr;
+        if (t == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(t, p, s);
+            memcpy(t + s, b.p, b.s);
+            free(p);
+            p = t;
+            s += b.s;
+        }
     }
     return *this;
 }
@@ -4756,7 +4788,7 @@ void flw::theme::load_theme_pref(Fl_Preferences& pref) {
     if (val >= 6 && val <= 72) {
         flw::PREF_FIXED_FONTSIZE = val;
     }
-    pref.get("theme", buffer, "gtk", 4000);
+    pref.get("theme", buffer, "oxy", 4000);
     flw::theme::load(buffer);
 }
 void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
@@ -6581,7 +6613,6 @@ namespace flw {
         static const char* const        SHOW_HLINES     = "Show horizontal lines";
         static const char* const        SHOW_VLINES     = "Show vertical lines";
         static const char* const        SAVE_FILE       = "Save to png file...";
-        static const char* const        PRINT_DEBUG     = "Debug";
         int count_decimals(double number) {
             number = fabs(number);
             int    res     = 0;
@@ -6950,7 +6981,7 @@ flw::Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H
     _menu->add(flw::plot::SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
     _menu->add(flw::plot::SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
-    _menu->add(flw::plot::PRINT_DEBUG, 0, Plot::_CallbackDebug, this);
+    _menu->add("Debug", 0, Plot::_CallbackDebug, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
     clear();
@@ -10061,3 +10092,4 @@ flw::WaitCursor::~WaitCursor() {
         fl_cursor(FL_CURSOR_DEFAULT);
     }
 }
+

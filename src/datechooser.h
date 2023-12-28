@@ -45,6 +45,10 @@ namespace flw {
         int                             _h;
         int                             _w;
     };
+
+    namespace dlg {
+        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
+    }
 }
 
 // MKALGAM_OFF

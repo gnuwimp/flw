@@ -13,13 +13,8 @@ endif
 ifeq ($(OS), Windows)
 	FLTO    =
 	STATIC  = -static
-	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800
-	#-fdiagnostics-color=always
+	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always
 else ifeq ($(OS), Linux)
-	FLTO    = -flto
-	STATIC  =
-	OSFLAGS =
-else ifeq ($(OS), macOS)
 	FLTO    = -flto
 	STATIC  =
 	OSFLAGS =
@@ -55,8 +50,13 @@ FLTK_CXXFLAGS = $(shell /usr/local/bin/fltk-config --cxxflags)
 FLTK_LDFLAGS  = $(shell /usr/local/bin/fltk-config --ldflags)
 FLTKI_LDFLAGS = $(shell /usr/local/bin/fltk-config --ldflags --use-images)
 
-CXX = g++
-CC  = gcc
+ifeq ($(OS), macOS)
+	CXX = clang++
+	CC  = clang
+else
+	CXX = g++
+	CC  = gcc
+endif
 
 CXXFLAGS += -std=c++17
 CXXFLAGS += -W

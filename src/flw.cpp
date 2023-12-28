@@ -132,40 +132,58 @@ flw::Buf::Buf() {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(size_t s_) {
-    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
+flw::Buf::Buf(size_t S) {
+    p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
     s = 0;
 
     if (p != nullptr) {
-        s = s_;
+        s = S;
     }
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(char* p_, size_t s_) {
-    p = p_;
-    s = s_;
+flw::Buf::Buf(char* P, size_t S) {
+    p = P;
+    s = S;
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(const char* p_, size_t s_) {
-    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
-    s = 0;
+flw::Buf::Buf(const char* P, size_t S) {
+    if (P == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
+        s = 0;
 
-    if (p != nullptr) {
-        memcpy(p, p_, s_);
-        s = s_;
+        if (p == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(p, P, S);
+            s = S;
+        }
     }
 }
 
 //------------------------------------------------------------------------------
 flw::Buf::Buf(const Buf& b) {
-    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    s = 0;
+    if (b.p == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        s = 0;
 
-    if (p != nullptr) {
-        memcpy(p, b.p, b.s);
-        s = b.s;
+        if (p == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(p, b.p, b.s);
+            s = b.s;
+        }
     }
 }
 
@@ -178,13 +196,23 @@ flw::Buf::Buf(Buf&& b) {
 
 //------------------------------------------------------------------------------
 flw::Buf& flw::Buf::operator=(const Buf& b) {
-    free(p);
-    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    s = 0;
+    if (b.p == nullptr) {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        free(p);
+        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        s = 0;
 
-    if (p != nullptr) {
-        memcpy(p, b.p, b.s);
-        s = b.s;
+        if (p == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(p, b.p, b.s);
+            s = b.s;
+        }
     }
 
     return *this;
@@ -201,19 +229,24 @@ flw::Buf& flw::Buf::operator=(Buf&& b) {
 
 //------------------------------------------------------------------------------
 flw::Buf& flw::Buf::operator+=(const Buf& b) {
-    auto t = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-
-    if (t != nullptr) {
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
+    if (b.p == nullptr) {
+    }
+    else if (p == nullptr) {
+        *this = b;
     }
     else {
-        free(p);
-        p = nullptr;
-        s = 0;
+        auto t = (b.s < SIZE_MAX) ? (char*) calloc(s + b.s + 1, 1) : nullptr;
+
+        if (t == nullptr) {
+            throw "error: memory allocation failed";
+        }
+        else {
+            memcpy(t, p, s);
+            memcpy(t + s, b.p, b.s);
+            free(p);
+            p = t;
+            s += b.s;
+        }
     }
 
     return *this;
@@ -1329,7 +1362,7 @@ void flw::theme::load_theme_pref(Fl_Preferences& pref) {
         flw::PREF_FIXED_FONTSIZE = val;
     }
 
-    pref.get("theme", buffer, "gtk", 4000);
+    pref.get("theme", buffer, "oxy", 4000);
     flw::theme::load(buffer);
 }
 

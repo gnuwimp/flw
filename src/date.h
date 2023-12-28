@@ -6,6 +6,7 @@
 
 // MKALGAM_ON
 
+#include <cstdint>
 #include <string>
 
 namespace flw {

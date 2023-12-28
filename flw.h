@@ -4,29 +4,38 @@
 // -DFLW_USE_PNG
 #ifndef FLW_H
 #define FLW_H
+
+
 #include <string>
 #include <vector>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
+
 namespace flw {
-    extern int                          PREF_FIXED_FONT;
-    extern std::string                  PREF_FIXED_FONTNAME;
-    extern int                          PREF_FIXED_FONTSIZE;
-    extern int                          PREF_FONT;
-    extern int                          PREF_FONTSIZE;
-    extern std::string                  PREF_FONTNAME;
-    extern std::vector<char*>           PREF_FONTNAMES;
-    extern std::string                  PREF_THEME;
-    extern const char* const            PREF_THEMES[];
-    extern int                          PREF_SCROLLBAR;
+    extern int                          PREF_FIXED_FONT;        // Fixed font - FL_COURIER
+    extern std::string                  PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
+    extern int                          PREF_FIXED_FONTSIZE;    // Fixed font size - default 14
+    extern int                          PREF_FONT;              // Default font - FL_HELVETICA
+    extern int                          PREF_FONTSIZE;          // Default font size - 14
+    extern std::string                  PREF_FONTNAME;          // Default font name - "FL_HELVETICA"
+    extern std::vector<char*>           PREF_FONTNAMES;         // List of font names - used internally - load with theme::load_fonts()
+    extern std::string                  PREF_THEME;             // Name of theme - default "default"
+    extern const char* const            PREF_THEMES[];          // Name of themes
+    extern int                          PREF_SCROLLBAR;         // Extra pixel width for scrollbar depending what theme are active - used internally
+
     typedef std::vector<std::string>    StringVector;
+
+    //--------------------------------------------------------------------------
+    // Buffer container that frees memory automatically
+    //
     struct Buf {
         char*                           p;
         size_t                          s;
+
                                         Buf();
-                                        Buf(size_t s);
-                                        Buf(char* p, size_t s);
-                                        Buf(const char* p, size_t s);
+                                        Buf(size_t S);
+                                        Buf(char* P, size_t S);
+                                        Buf(const char* P, size_t S);
                                         Buf(const Buf& b);
                                         Buf(Buf&& b);
         Buf&                            operator=(const Buf& b);
@@ -35,10 +44,18 @@ namespace flw {
         bool                            operator==(const Buf& other) const;
         virtual                         ~Buf();
     };
+
+    //--------------------------------------------------------------------------
+    // Print widget sizes
+    //
     namespace debug {
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
     }
+
+    //--------------------------------------------------------------------------
+    // Menu item functions
+    //
     namespace menu {
         void                            enable_item(Fl_Menu_* menu, const char* text, bool value);
         Fl_Menu_Item*                   get_item(Fl_Menu_* menu, const char* text);
@@ -46,6 +63,10 @@ namespace flw {
         void                            set_item(Fl_Menu_* menu, const char* text, bool value);
         void                            setonly_item(Fl_Menu_* menu, const char* text);
     }
+
+    //--------------------------------------------------------------------------
+    // Assorted utility functions
+    //
     namespace util {
         void                            center_window(Fl_Window* window, Fl_Window* parent = nullptr);
         double                          clock();
@@ -62,6 +83,10 @@ namespace flw {
         void                            sleep(int milli);
         StringVector                    split(const std::string& string, std::string split);
     }
+
+    //--------------------------------------------------------------------------
+    // Load different themes and save/load window preferences
+    //
     namespace theme {
         bool                            is_dark();
         bool                            load(std::string name);
@@ -73,6 +98,10 @@ namespace flw {
         bool                            parse(int argc, const char** argv);
         void                            save_theme_pref(Fl_Preferences& pref);
         void                            save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
+
+        //----------------------------------------------------------------------
+        // Internal usage only
+        //
         enum {
                                         THEME_DEFAULT,
                                         THEME_OXY,
@@ -97,6 +126,10 @@ namespace flw {
                                         THEME_NIL,
         };
     }
+
+    //--------------------------------------------------------------------------
+    // Drawing colors
+    //
     namespace color {
         extern Fl_Color                 AZURE;
         extern Fl_Color                 BEIGE;
@@ -118,8 +151,17 @@ namespace flw {
         extern Fl_Color                 YELLOW;
     }
 }
+
+
+
+#include <cstdint>
 #include <string>
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // An date and time class
+    // Date range is from 1-1-1 00:00:00 to 9999-12-31 23:59:59
+    //
     class Date {
     public:
         enum class COMPARE {
@@ -130,6 +172,7 @@ namespace flw {
                                         YYYYMMDDHHMMSS,
                                         LAST = YYYYMMDDHHMMSS,
         };
+
         enum class DAY {
                                         INVALID,
                                         MONDAY,
@@ -141,6 +184,7 @@ namespace flw {
                                         SUNDAY,
                                         LAST = SUNDAY,
         };
+
         enum class FORMAT {
                                         ISO,
                                         ISO_LONG,
@@ -154,6 +198,7 @@ namespace flw {
                                         YEAR_MONTH_LONG,
                                         LAST = YEAR_MONTH_LONG,
         };
+
         enum class RANGE {
                                         DAY,
                                         WEEKDAY,
@@ -165,9 +210,11 @@ namespace flw {
                                         SEC,
                                         LAST = SEC,
         };
+
         static const int                SECS_PER_HOUR;
         static const int                SECS_PER_DAY;
         static const int                SECS_PER_WEEK;
+
                                         Date(bool utc = false);
                                         Date(const Date& other);
                                         Date(Date&&);
@@ -227,11 +274,13 @@ namespace flw {
                                             { return _year; }
         Date&                           year(int year);
         int                             yearday() const;
+
         static int                      Compare(const void* a, const void* b);
         static bool                     Compare(const Date& a, const Date& b);
         static void                     Del(void* self);
         static Date                     FromString(const char* string, bool us = false);
         static Date                     FromTime(int64_t seconds, bool utc = false);
+
     private:
         short                           _year;
         char                            _month;
@@ -241,18 +290,24 @@ namespace flw {
         char                            _sec;
     };
 }
+
+
+
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <vector>
+
 namespace flw {
     class Chart;
+
     struct Price {
         std::string                     date;
         double                          close;
         double                          high;
         double                          low;
         double                          vol;
+
                                         Price();
                                         Price(const std::string& date_value, double value = 0.0);
                                         Price(const std::string& date, double high, double low, double close, double vol = 0.0);
@@ -261,25 +316,32 @@ namespace flw {
         bool                            operator==(const Price& price) const { return date == price.date; }
         bool                            operator!=(const Price& price) const { return date != price.date; }
     };
+
     typedef std::vector<Price>          PriceVector;
+
     namespace chart {
         struct Area;
         struct Line;
         enum class TYPE;
+
         const int                       MIN_TICK  = 3;
         const int                       MAX_TICK  = 100;
         const size_t                    MAX_AREA  = 3;
         const size_t                    MAX_LINE  = 10;
         const double                    MIN_VAL   = -999'999'999'999'999.0;
         const double                    MAX_VAL   =  999'999'999'999'999.0;
+
         typedef std::vector<chart::Line> LineVector;
         typedef std::vector<chart::Area> AreaVector;
+
         size_t                          bsearch(const PriceVector& prices, const Price& key);
         bool                            has_high_low(TYPE chart_type);
         bool                            has_resizable_width(TYPE chart_type);
         bool                            has_time(Date::RANGE date_range);
         bool                            load_data(Chart* chart, std::string filename);
         bool                            save_data(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
+
+        //----------------------------------------------------------------------
         enum class TYPE {
                                         LINE,
                                         BAR,
@@ -290,6 +352,10 @@ namespace flw {
                                         EXPAND_HORIZONTAL,
                                         LAST = EXPAND_HORIZONTAL,
         };
+
+        //----------------------------------------------------------------------
+        // Data for one chart line
+        //
         struct Line {
             Fl_Align                    align;
             TYPE                        type;
@@ -302,6 +368,7 @@ namespace flw {
             double                      max;
             double                      min;
             PriceVector                 points;
+
                                         Line();
                                         ~Line()
                                             { clear(); }
@@ -309,11 +376,16 @@ namespace flw {
             void                        debug(int num) const;
             bool                        set(const PriceVector& points, std::string label, TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
         };
+
+        //----------------------------------------------------------------------
+        // Each chart area can have an scale on the left and right side
+        //
         struct Scale {
             double                      max;
             double                      min;
             double                      pixel;
             double                      tick;
+
                                         Scale();
             void                        calc(int height);
             void                        clear();
@@ -322,6 +394,11 @@ namespace flw {
                                             { return max - min; }
             void                        fix_height();
         };
+
+        //----------------------------------------------------------------------
+        // Data for one chart area, currently max 3 areas in one widget can be shown at the same time
+        // All are using the same date range
+        //
         struct Area {
             size_t                      count;
             double                      h;
@@ -333,6 +410,7 @@ namespace flw {
             double                      w;
             double                      x;
             double                      y;
+
                                         Area();
             void                        clear(bool clear_data);
             void                        debug(int num) const;
@@ -342,8 +420,17 @@ namespace flw {
                                             { return (int) (y + h); }
         };
     }
+
+    //--------------------------------------------------------------------------
+    // Chart widget that is using dates for the x scale
+    // It has an popup menu for a few settings and option to save chart to png image
+    // It can also use date + hours/minutes/seconds
+    // Use block_dates() to set an date list that removes those dates
+    // Line types BAR, VERTICAL and CLAMP_VERTICAL can use line width of -1 which means it will expand to tick width - 1
+    //
     class Chart : public Fl_Group {
         friend bool                     chart::save_data(const Chart*, std::string, double);
+
     public:
                                         Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         bool                            add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, chart::TYPE chart_type = chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = chart::MIN_VAL, double clamp_max = chart::MAX_VAL);
@@ -368,6 +455,7 @@ namespace flw {
         void                            update_pref();
         void                            view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
                                             { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
+
     private:
         void                            _calc_area_height();
         void                            _calc_area_width();
@@ -383,16 +471,19 @@ namespace flw {
         void                            _draw_xlabels();
         void                            _draw_ylabels(int X, double Y1, double Y2, const chart::Scale& scale, bool left);
         chart::Area*                    _inside_area(int X, int Y);
+
         static void                     _CallbackDebug(Fl_Widget* widget, void* chart_object);
         static void                     _CallbackReset(Fl_Widget* widget, void* chart_object);
         static void                     _CallbackSavePng(Fl_Widget* widget, void* chart_object);
         static void                     _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
         static void                     _CallbackToggle(Fl_Widget* widget, void* chart_object);
+
         struct {
             bool                        horizontal;
             bool                        labels;
             bool                        vertical;
         }                               _view;
+
         chart::Area*                    _area;
         chart::AreaVector               _areas;
         PriceVector                     _block_dates;
@@ -415,10 +506,19 @@ namespace flw {
         int                             _ver_pos[101];
     };
 }
+
+
+
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Group.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // An date chooser widget
+    // User can navigate with mouse or arrow keys within a month
+    // Or use buttons to jump 1 month/1 year/10 years
+    //
     class DateChooser : public Fl_Group {
     public:
                                         DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -428,9 +528,12 @@ namespace flw {
         int                             handle(int event) override;
         void                            resize(int X, int Y, int W, int H) override;
         void                            set(const Date& date);
+
+
     private:
         static void                     _Callback(Fl_Widget* w, void* o);
         void                            _set_label();
+
         Fl_Box*                         _month_label;
         Fl_Button*                      _b1;
         Fl_Button*                      _b2;
@@ -443,19 +546,29 @@ namespace flw {
         int                             _h;
         int                             _w;
     };
+
+    namespace dlg {
+        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
+    }
 }
+
+
+
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Hor_Fill_Slider.H>
 #include <FL/Fl_Toggle_Button.H>
+
 namespace flw {
     class ScrollBrowser;
+
     namespace dlg {
+        //----------------------------------------------------------------------
         extern const char*              PASSWORD_CANCEL;
         extern const char*              PASSWORD_OK;
-        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
+
         void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -470,12 +583,17 @@ namespace flw {
         void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
+
+        //----------------------------------------------------------------------
         class AbortDialog : public Fl_Double_Window {
+            using Fl_Double_Window::show;
+
         public:
                                         AbortDialog(const AbortDialog&) = delete;
                                         AbortDialog(AbortDialog&&) = delete;
             AbortDialog&                operator=(const AbortDialog&) = delete;
             AbortDialog&                operator=(AbortDialog&&) = delete;
+
                                         AbortDialog(double min = 0.0, double max = 0.0);
             bool                        check(int milliseconds = 200);
             bool                        check(double value, double min, double max, int milliseconds = 200);
@@ -485,19 +603,30 @@ namespace flw {
             void                        resize(int X, int Y, int W, int H) override;
             void                        show(const std::string& label, Fl_Window* parent = nullptr);
             void                        value(double value);
+
+
             static void                 Callback(Fl_Widget* w, void* o);
+
         private:
             Fl_Button*                  _button;
             Fl_Hor_Fill_Slider*         _progress;
             bool                        _abort;
             int64_t                     _last;
         };
+
+        //----------------------------------------------------------------------
+        // Dialog for selecting font and font size
+        // FontDialog::LoadFonts() will be called automatically (or do it manually)
+        // It is only needed once
+        // Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied)
+        //
         class FontDialog : public Fl_Double_Window {
         public:
                                         FontDialog(const FontDialog&) = delete;
                                         FontDialog(FontDialog&&) = delete;
             FontDialog&                 operator=(const FontDialog&) = delete;
             FontDialog&                 operator=(FontDialog&&) = delete;
+
                                         FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
                                         FontDialog(std::string font, Fl_Fontsize fontsize, std::string label);
             void                        activate_font()
@@ -514,11 +643,14 @@ namespace flw {
                                             { return _fontsize; }
             void                        resize(int X, int Y, int W, int H) override;
             bool                        run(Fl_Window* parent = nullptr);
+
             static void                 Callback(Fl_Widget* w, void* o);
+
         private:
             void                        _activate();
             void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label);
             void                        _select_name(std::string font_name);
+
             Fl_Box*                     _label;
             Fl_Button*                  _cancel;
             Fl_Button*                  _select;
@@ -529,13 +661,17 @@ namespace flw {
             int                         _fontsize;
             std::string                 _fontname;
         };
+
+        //----------------------------------------------------------------------
         class WorkDialog : public Fl_Double_Window {
         public:
                                         WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
             void                        resize(int X, int Y, int W, int H) override;
             bool                        run(double update_time, const StringVector& messages);
             bool                        run(double update_time, const std::string& message);
+
             static void                 Callback(Fl_Widget* w, void* o);
+
         private:
             Fl_Button*                  _cancel;
             Fl_Hold_Browser*            _label;
@@ -546,12 +682,22 @@ namespace flw {
         };
     }
 }
+
+
+
 #include <FL/Fl_Group.H>
+
 namespace flw {
     struct _GridGroupChild;
+
+    //--------------------------------------------------------------------------
+    // A simple layout widget that uses a grid for placing widgets
+    // One cell is set to labelsize() at start, use set_size() to change it
+    //
     class GridGroup : public Fl_Group {
     public:
         static const int                MAX_WIDGETS = 100;
+
                                         GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         virtual                         ~GridGroup();
         void                            add(Fl_Widget* widget, int X, int Y, int W, int H);
@@ -563,22 +709,32 @@ namespace flw {
                                             { return _size; }
         void                            size(int size)
                                             { _size = size; }
+
     private:
         _GridGroupChild*                _widgets[MAX_WIDGETS];
         int                             _size;
     };
 }
+
+
+
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Menu_Button.H>
+
 namespace flw {
     class _InputMenu;
+
+    //--------------------------------------------------------------------------
+    // First string in a vector is the latest pushed in
+    //
     class InputMenu : public Fl_Group {
     public:
                                         InputMenu(const InputMenu&) = delete;
                                         InputMenu(InputMenu&&) = delete;
         InputMenu&                      operator=(const InputMenu&) = delete;
         InputMenu&                      operator=(InputMenu&&) = delete;
+
                                         InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            clear();
         StringVector                    get_history() const;
@@ -592,25 +748,39 @@ namespace flw {
         void                            update_pref(Fl_Font text_font = flw::PREF_FIXED_FONT, Fl_Fontsize text_size = flw::PREF_FIXED_FONTSIZE);
         const char*                     value() const;
         void                            value(const char* string);
+
         static void                     Callback(Fl_Widget*, void*);
+
     private:
         void                            _add(bool insert, const std::string& string, int max_list_len);
         void                            _add(bool insert, const StringVector& list);
+
         _InputMenu*                     _input;
         Fl_Menu_Button*                 _menu;
     };
 }
+
+
+
 #include <string>
 #include <vector>
+
 namespace flw {
 namespace json {
+    //----------------------------------------------------------------------
+    // Very simple json parser
+    // Don't use it for arbitrary data download from internet
+
+    // Macros for creating json
     #define FLW_JSON_START(VEC, X)                      { json::NodeVector& V = VEC; int D = 0; char B[50]; X; (void) B; size_t I = 0; for (auto& n : V) n.index = I++; }
     #define FLW_JSON_START_OBJECT(X)                    { V.push_back(json::Node(json::OBJECT, "", "", D++)); X; V.push_back(json::Node(json::END_OBJECT, "", "", --D)); }
     #define FLW_JSON_START_ARRAY(X)                     { V.push_back(json::Node(json::ARRAY, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
     #define FLW_JSON_START_ARRAY_NL(X)                  { V.push_back(json::Node(json::ARRAY_NL, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
+
     #define FLW_JSON_ADD_OBJECT(NAME,X)                 { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::OBJECT, N, "", D++)); X; V.push_back(json::Node(json::END_OBJECT, N, "", --D)); }
     #define FLW_JSON_ADD_ARRAY(NAME,X)                  { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
     #define FLW_JSON_ADD_ARRAY_NL(NAME,X)               { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY_NL, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
+
     #define FLW_JSON_ADD_STRING(NAME,VALUE)             { V.push_back(json::Node(json::STRING, json::escape_string(NAME), json::escape_string(VALUE), D)); }
     #define FLW_JSON_ADD_NUMBER(NAME,VALUE)             { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
     #define FLW_JSON_ADD_NUMBER2(NAME,VALUE)            { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
@@ -618,6 +788,7 @@ namespace json {
     #define FLW_JSON_ADD_UINT(NAME,VALUE)               { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
     #define FLW_JSON_ADD_BOOL(NAME,VALUE)               { V.push_back(json::Node(json::BOOL, json::escape_string(NAME), VALUE == true ? "true" : "false", D)); }
     #define FLW_JSON_ADD_NIL(NAME)                      { V.push_back(json::Node(json::NIL, json::escape_string(NAME), "", D)); }
+
     #define FLW_JSON_ADD_STRING_TO_ARRAY(VALUE)         { V.push_back(json::Node(json::STRING, "", json::escape_string(VALUE), D)); }
     #define FLW_JSON_ADD_NUMBER_TO_ARRAY(VALUE)         { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
     #define FLW_JSON_ADD_NUMBER2_TO_ARRAY(VALUE)        { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
@@ -625,6 +796,7 @@ namespace json {
     #define FLW_JSON_ADD_UINT_TO_ARRAY(VALUE)           { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
     #define FLW_JSON_ADD_BOOL_TO_ARRAY(VALUE)           { V.push_back(json::Node(json::BOOL, "", VALUE == true ? "true" : "false", D)); }
     #define FLW_JSON_ADD_NIL_TO_ARRAY()                 { V.push_back(json::Node(json::NIL, "", "", D)); }
+
     struct Err {
         ssize_t                         pos;
         ssize_t                         line;
@@ -633,6 +805,7 @@ namespace json {
                                         Err(ssize_t pos, ssize_t line)
                                             { this->pos = pos; this->line = line; }
     };
+
     enum TYPE {
                                         NA,
                                         OBJECT,
@@ -643,12 +816,15 @@ namespace json {
                                         NUMBER,
                                         BOOL,
                                         NIL,
-                                        COLON,
-                                        COMMA,
-                                        ARRAY_NL,
+
+                                        COLON, // Only for tokenizer
+                                        COMMA, // Only for tokenizer
+                                        ARRAY_NL, // Only for creating json
     };
+
     std::string                         escape_string(const std::string& string);
     std::string                         unescape_string(const std::string& string);
+
     struct Node {
         TYPE                            type;
         int                             depth;
@@ -656,6 +832,7 @@ namespace json {
         std::string                     value;
         std::string                     name;
         size_t                          textpos;
+
                                         Node(TYPE type = TYPE::NA, const std::string& name = "", const std::string& value = "", int depth = 0, size_t textpos = 0)
                                             { this->type = type; this->name = name; this->value = value; this->depth = depth; this->textpos = textpos; }
         bool                            operator==(const Node& other) const
@@ -690,8 +867,10 @@ namespace json {
         std::string                     unescape_name() const
                                             { return unescape_string(name); }
     };
+
     typedef std::vector<Node>           NodeVector;
     typedef std::vector<size_t>         SizeTVector;
+
     NodeVector                          find_children(const NodeVector& nodes, const Node& start, bool grandchildren = false);
     NodeVector                          find_nodes(const NodeVector& nodes, std::string name, TYPE type = TYPE::NA);
     NodeVector                          find_siblings(const NodeVector& nodes, const Node& start);
@@ -701,10 +880,17 @@ namespace json {
     std::string                         tostring(const NodeVector& nodes);
     Err                                 validate(const char* json);
     Err                                 validate(std::string json);
-}
-}
+} // json
+} // flw
+
+
+
 #include <FL/Fl_Box.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // A 7 segment number label widget
+    //
     class LcdNumber : public Fl_Box {
     public:
                                         LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -744,8 +930,10 @@ namespace flw {
         const char*                     value() const
                                             { return _value; }
         void                            value(const char* value);
+
     private:
         void                            _draw_seg(uchar a, int x, int y, int w, int h);
+
         Fl_Align                        _align;
         Fl_Color                        _seg_color;
         char                            _value[100];
@@ -757,8 +945,12 @@ namespace flw {
         int                             _unit_w;
     };
 }
+
+
+
 #include <FL/Fl_Text_Display.H>
 #include <string>
+
 namespace flw {
     namespace logdisplay {
         enum class COLOR {
@@ -796,12 +988,30 @@ namespace flw {
                                         BG_BOLD_CYAN        = '`',
                                         LAST                = '`',
         };
+
         static const size_t             ALL_STRINGS = 0;
         extern Fl_Color                 BG_COLOR;
         extern Fl_Color                 BG_DARK_COLOR;
         extern size_t                   MAX_LINE_LEN;
         extern size_t                   TURN_WRAP_ON;
     }
+
+    //--------------------------------------------------------------------------
+    // A static text display widget with line based text coloring
+    // LogDisplay will manage text and style buffers
+    // Search text with ctrl + 'f', F3, shift + F3
+    //
+    // Implement line_cb() method which will be called for every line
+    // If you are doing more then one color call per line,
+    //   you can disable changing colors that has already been set
+    //   by calling lock_color(true)
+    //
+    // If json string is used then line_cb() doesn't have to be overidden
+    // But it is less flexible
+    // Edit json string in the widget with ctrl + 'e'
+    //
+    // BG colors only work in fltk 1.4
+    //
     class LogDisplay : public Fl_Text_Display {
     public:
                                         LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -815,6 +1025,7 @@ namespace flw {
         void                            style(std::string json = "");
         void                            update_pref();
         void                            value(const char* text);
+
     protected:
         virtual void                    line_cb(size_t row, const std::string& line)
                                             { (void) row; (void) line; }
@@ -826,18 +1037,22 @@ namespace flw {
         void                            style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
         void                            style_rstring(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
         void                            style_string(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
+
     private:
         const char*                     _check_text(const char* text);
         char                            _style_char(size_t pos) const
                                             { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; }
+
         struct Tmp {
             char*                       buf;
             size_t                      len;
             size_t                      pos;
             size_t                      size;
+
                                         Tmp();
                                         ~Tmp();
         };
+
         Fl_Text_Buffer*                 _buffer;
         std::string                     _find;
         bool                            _lock_colors;
@@ -846,17 +1061,25 @@ namespace flw {
         Tmp*                            _tmp;
     };
 }
+
+
+
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
+
 namespace flw {
     class Plot;
+
     namespace plot {
         struct Point;
         enum class TYPE;
+
         const double                    MAX        =  999'999'999'999'999.0;
         const double                    MIN        = -999'999'999'999'999.0;
         const size_t                    MAX_LINES  = 10;
+
         typedef std::vector<plot::Point> PointVector;
+
         bool                            has_pairs(flw::plot::TYPE type);
         bool                            has_radius(flw::plot::TYPE type);
         bool                            load_data(flw::Plot* plot, std::string filename);
@@ -864,6 +1087,8 @@ namespace flw {
         bool                            save_data(const flw::Plot* plot, std::string filename);
         TYPE                            string_to_type(std::string name);
         std::string                     type_to_string(TYPE type);
+
+        //----------------------------------------------------------------------
         enum class TYPE {
                                         LINE,
                                         LINE_DASH,
@@ -874,19 +1099,25 @@ namespace flw {
                                         FILLED_CIRCLE,
                                         SQUARE,
         };
+
+        //----------------------------------------------------------------------
         struct Point {
             double                      x;
             double                      y;
+
                                         Point(double x = 0.0, double y = 0.0) {
                                             this->x = x;
                                             this->y = y;
                                         }
         };
+
+        //----------------------------------------------------------------------
         struct Area {
             int                         x;
             int                         y;
             int                         w;
             int                         h;
+
                                         Area(int x = 0, int y = 0, int w = 0, int h = 0) {
                                             this->x = x;
                                             this->y = y;
@@ -898,6 +1129,8 @@ namespace flw {
             int                         y2() const
                                             { return y + h; }
         };
+
+        //----------------------------------------------------------------------
         struct Scale {
             Fl_Color                    color;
             int                         fr;
@@ -910,12 +1143,15 @@ namespace flw {
             double                      pixel;
             int                         text;
             double                      tick;
+
                                         Scale();
             void                        calc(double canvas_size);
             void                        debug(const char* s) const;
             void                        measure_text(int cw);
             void                        reset_min_max();
         };
+
+        //----------------------------------------------------------------------
         struct Line {
             Fl_Color                    color;
             unsigned                    width;
@@ -926,8 +1162,12 @@ namespace flw {
                                         Line();
         };
     }
+
+    //--------------------------------------------------------------------------
+    //
     class Plot : public Fl_Group {
         friend bool                     plot::save_data(const Plot*, std::string);
+
     public:
                                         Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         bool                            add_line(const plot::PointVector& points, plot::TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
@@ -955,6 +1195,7 @@ namespace flw {
                                             { return x() + w(); }
         int                             y2() const
                                             { return y() + h(); }
+
     private:
         void                            _calc_min_max();
         void                            _create_tooltip(bool ctrl);
@@ -967,14 +1208,17 @@ namespace flw {
         void                            _draw_xlabels2();
         void                            _draw_ylabels();
         void                            _draw_ylabels2();
+
         static void                     _CallbackDebug(Fl_Widget*, void* plot_object);
         static void                     _CallbackSave(Fl_Widget*, void* plot_object);
         static void                     _CallbackToggle(Fl_Widget*, void* plot_object);
+
         struct {
             bool                        horizontal;
             bool                        labels;
             bool                        vertical;
         }                               _view;
+
         plot::Area                      _area;
         bool                            _calc;
         int                             _ch;
@@ -990,11 +1234,17 @@ namespace flw {
         int                             _w;
         plot::Scale                     _x;
         plot::Scale                     _y;
+
     };
 }
+
+
+
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
     class RecentMenu {
     public:
                                         RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label = "&File/Open recent", std::string clear_label = "/Clear");
@@ -1011,10 +1261,12 @@ namespace flw {
                                             { return _menu; }
         void                            load_pref(Fl_Preferences& pref, std::string base_name = "files");
         void                            save_pref(Fl_Preferences& pref, std::string base_name = "files");
+
     private:
         void                            _add(std::string file, bool append);
         size_t                          _add_string(StringVector& in, size_t max_size, std::string string);
         size_t                          _insert_string(StringVector& in, size_t max_size, std::string string);
+
         std::string                     _base;
         Fl_Callback*                    _callback;
         std::string                     _clear;
@@ -1024,15 +1276,21 @@ namespace flw {
         void*                           _user;
     };
 }
+
+
+
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Menu_Button.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
     class ScrollBrowser : public Fl_Hold_Browser {
     public:
                                         ScrollBrowser(const ScrollBrowser&) = delete;
                                         ScrollBrowser(ScrollBrowser&&) = delete;
         ScrollBrowser&                  operator=(const ScrollBrowser&) = delete;
         ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
+
                                         ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            enable_menu(bool menu)
                                             { _flag_menu = menu; }
@@ -1042,7 +1300,9 @@ namespace flw {
         Fl_Menu_Button*                 menu()
                                             { return _menu; }
         void                            update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
+
         static void                     Callback(Fl_Widget*, void*);
+
     private:
         Fl_Menu_Button*                 _menu;
         bool                            _flag_menu;
@@ -1050,15 +1310,25 @@ namespace flw {
         int                             _scroll;
     };
 }
+
+
+
 #include <FL/Fl_Group.H>
 #include <FL/Fl.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // A split view widget for two child widgets
+    // That can be resized by dragging the border between the widgets
+    // By default it places widgets in LAYOUT::VERTICAL direction (child widgets get full height)
+    //
     class SplitGroup : public Fl_Group {
     public:
         enum class CHILD {
                                         FIRST,
                                         SECOND,
         };
+
         enum class DIRECTION {
                                         HORIZONTAL,
                                         VERTICAL,
@@ -1086,6 +1356,7 @@ namespace flw {
         void                            toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
         void                            toggle(SplitGroup::CHILD child, int second_size = -1)
                                             { toggle(child, _direction, second_size); }
+
     private:
         Fl_Widget*                      _widgets[2];
         DIRECTION                       _direction;
@@ -1094,18 +1365,27 @@ namespace flw {
         int                             _split_pos;
     };
 }
+
+
+
 #include <map>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scrollbar.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // A table display widget
+    //
     class TableDisplay : public Fl_Group {
         friend class _TableDisplayFindDialog;
+
     public:
         enum class SELECT {
                                         NO,
                                         CELL,
                                         ROW,
         };
+
         enum class EVENT {
                                         UNDEFINED,
                                         CHANGED,
@@ -1116,6 +1396,7 @@ namespace flw {
                                         ROW_CTRL,
                                         SIZE,
         };
+
                                         TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            active_cell(int row = -1, int col = -1, bool show = false);
         virtual Fl_Align                cell_align(int row, int col)
@@ -1167,6 +1448,7 @@ namespace flw {
                                             { _select = select; }
         void                            show_cell(int row, int col);
         virtual void                    size(int rows, int cols);
+
     protected:
         enum class _TABLEDISPLAY_MOVE {
                                         DOWN,
@@ -1184,6 +1466,7 @@ namespace flw {
                                         SCROLL_UP,
                                         UP,
         };
+
         int                             _cell_height(int Y = -1);
         int                             _cell_width(int col, int X = -1);
         virtual void                    _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false);
@@ -1198,8 +1481,10 @@ namespace flw {
         void                            _update_scrollbars();
         void                            _set_event(int row, int col, TableDisplay::EVENT event)
                                             { _event_row = row; _event_col = col; _event = event; }
+
         static void                     _CallbackHor(Fl_Widget* w, void* v);
         static void                     _CallbackVer(Fl_Widget* w, void* v);
+
         TableDisplay::EVENT             _event;
         TableDisplay::SELECT            _select;
         Fl_Scrollbar*                   _hor;
@@ -1228,7 +1513,13 @@ namespace flw {
         int                             _start_row;
     };
 }
+
+
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // A table editing widget
+    //
     class TableEditor : public TableDisplay {
     public:
         enum class FORMAT {
@@ -1251,6 +1542,7 @@ namespace flw {
                                         SECRET_DEF,
                                         SECRET_DOT,
         };
+
         enum class REND {
                                         TEXT,
                                         INTEGER,
@@ -1267,10 +1559,12 @@ namespace flw {
                                         DLG_DATE,
                                         DLG_LIST,
         };
+
         static const char*              SELECT_DATE;
         static const char*              SELECT_DIR;
         static const char*              SELECT_FILE;
         static const char*              SELECT_LIST;
+
                                         TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            send_changed_event_always(bool value)
                                             { _send_changed_event_always = value; }
@@ -1286,7 +1580,9 @@ namespace flw {
                                             { (void) row; (void) col; (void) value; return false; }
         void                            clear() override;
         virtual int                     handle(int event) override;
+
         static const char*              FormatSlider(double val, double min, double max, double step);
+
     private:
         bool                            _send_changed_event_always;
         void                            _delete_current_cell();
@@ -1300,16 +1596,26 @@ namespace flw {
         int                             _ev_mouse_click();
         int                             _ev_paste();
         void                            _update_scrollbars();
+
         Fl_Widget*                      _edit2;
         Fl_Widget*                      _edit3;
     };
 }
+
+
+
 #include <string>
 #include <map>
+
 namespace flw {
     typedef std::map<std::string, std::string> StringMap;
+
+    //--------------------------------------------------------------------------
+    // A Table editing widget with built in data storage
+    //
     class Grid : public TableEditor {
         friend class                    _TableChoice;
+
     public:
                                         Grid(int rows, int cols, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         virtual                         ~Grid();
@@ -1333,12 +1639,14 @@ namespace flw {
         int                             cell_width(int col) override;
         void                            cell_width(int col, int width) override;
         void                            size(int rows, int cols) override;
+
     private:
         int                             _get_int(StringMap& map, int row, int col, int def = 0);
         const char*                     _get_key(int row, int col);
         const char*                     _get_string(StringMap& map, int row, int col, const char* def = "");
         void                            _set_int(StringMap& map, int row, int col, int value);
         void                            _set_string(StringMap& map, int row, int col, const char* value);
+
         char*                           _buffer;
         StringMap                       _cell_align;
         StringMap                       _cell_choice;
@@ -1353,12 +1661,22 @@ namespace flw {
         char                            _key[100];
     };
 }
+
+
+
 #include <string>
 #include <vector>
 #include <FL/Fl_Group.H>
 #include <FL/Fl.H>
+
 namespace flw {
     class _TabsGroupButton;
+
+    //--------------------------------------------------------------------------
+    // Group widget that uses tabs for labels
+    // You can move between tabs using alt + left/right
+    // And move tabs around by using alt + up/down
+    //
     class TabsGroup : public Fl_Group {
     public:
         enum class TABS {
@@ -1367,6 +1685,7 @@ namespace flw {
                                         WEST,
                                         EAST,
         };
+
                                         TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            add(const std::string& label, Fl_Widget* widget);
         Fl_Widget*                      child(int num) const;
@@ -1396,13 +1715,16 @@ namespace flw {
         void                            value(int num);
         void                            value(Fl_Widget* widget)
                                             { value(find(widget)); }
+
         static void                     BoxColor(Fl_Color boxcolor);
         static void                     BoxSelectionColor(Fl_Color boxcolor);
         static void                     BoxType(Fl_Boxtype boxtype);
         static void                     Callback(Fl_Widget* sender, void* object);
+
     private:
         Fl_Widget*                      _button();
         void                            _hide_tab_buttons(bool hide);
+
         int                             _active;
         std::vector<_TabsGroupButton*>  _buttons;
         bool                            _drag;
@@ -1412,16 +1734,25 @@ namespace flw {
         std::vector<Fl_Widget*>         _widgets;
     };
 }
+
+
+
 namespace flw {
+    //--------------------------------------------------------------------------
+    // Show an wait mouse pointer until object is deleted
+    //
     class WaitCursor {
         static WaitCursor*              WAITCURSOR;
+
     public:
                                         WaitCursor(const WaitCursor&) = delete;
                                         WaitCursor(WaitCursor&&) = delete;
                                         WaitCursor& operator=(const WaitCursor&) = delete;
                                         WaitCursor& operator=(WaitCursor&&) = delete;
+
                                         WaitCursor();
                                         ~WaitCursor();
     };
 }
+
 #endif

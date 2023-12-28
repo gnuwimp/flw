@@ -33,9 +33,9 @@ namespace flw {
         size_t                          s;
 
                                         Buf();
-                                        Buf(size_t s);
-                                        Buf(char* p, size_t s);
-                                        Buf(const char* p, size_t s);
+                                        Buf(size_t S);
+                                        Buf(char* P, size_t S);
+                                        Buf(const char* P, size_t S);
                                         Buf(const Buf& b);
                                         Buf(Buf&& b);
         Buf&                            operator=(const Buf& b);

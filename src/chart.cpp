@@ -24,7 +24,6 @@ namespace flw {
         static const char* const        SHOW_VLINES     = "Show vertical lines";
         static const char* const        RESET_SELECT    = "Reset line selection and visibility";
         static const char* const        SAVE_PNG        = "Save png to file...";
-        static const char* const        PRINT_DEBUG     = "Debug";
 
         //----------------------------------------------------------------------
         size_t bsearch(const PriceVector& prices, const Price& key) {
@@ -755,7 +754,7 @@ flw::Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W,
     _menu->add(chart::RESET_SELECT, 0, Chart::_CallbackReset, this);
     _menu->add(chart::SAVE_PNG, 0, Chart::_CallbackSavePng, this);
 #ifdef DEBUG
-    _menu->add(chart::PRINT_DEBUG, 0, Chart::_CallbackDebug, this);
+    _menu->add("Debug", 0, Chart::_CallbackDebug, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
 

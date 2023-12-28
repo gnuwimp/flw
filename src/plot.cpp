@@ -18,8 +18,7 @@ namespace flw {
         static const char* const        SHOW_HLINES     = "Show horizontal lines";
         static const char* const        SHOW_VLINES     = "Show vertical lines";
         static const char* const        SAVE_FILE       = "Save to png file...";
-        static const char* const        PRINT_DEBUG     = "Debug";
-
+        
         //----------------------------------------------------------------------
         int count_decimals(double number) {
             number = fabs(number);
@@ -476,7 +475,7 @@ flw::Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H
     _menu->add(flw::plot::SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
     _menu->add(flw::plot::SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
-    _menu->add(flw::plot::PRINT_DEBUG, 0, Plot::_CallbackDebug, this);
+    _menu->add("Debug", 0, Plot::_CallbackDebug, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
 

@@ -24,7 +24,6 @@ namespace flw {
         extern const char*              PASSWORD_CANCEL;
         extern const char*              PASSWORD_OK;
 
-        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
         void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -42,6 +41,8 @@ namespace flw {
 
         //----------------------------------------------------------------------
         class AbortDialog : public Fl_Double_Window {
+            using Fl_Double_Window::show;
+
         public:
                                         AbortDialog(const AbortDialog&) = delete;
                                         AbortDialog(AbortDialog&&) = delete;
