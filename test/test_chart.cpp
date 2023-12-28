@@ -75,7 +75,7 @@ public:
 
         add(mb);
         add(chart);
-        chart->view_options();
+
         mb->add("&Data/Autorun", 0, CallbackAuto, this, FL_MENU_DIVIDER);
         mb->add("&Data/save", 0, CallbackSave, this);
         mb->add("&Data/Load", 0, CallbackLoad, this, FL_MENU_DIVIDER);

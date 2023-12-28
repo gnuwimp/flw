@@ -5,89 +5,118 @@
 #define FLW_LOGDISPLAY_H
 
 #include <FL/Fl_Text_Display.H>
+#include <string>
 
 // MKALGAM_ON
 
 namespace flw {
+    namespace logdisplay {
+        enum class COLOR {
+                                        FOREGROUND          = 'A',
+                                        GRAY                = 'B',
+                                        RED                 = 'C',
+                                        GREEN               = 'D',
+                                        BLUE                = 'E',
+                                        MAGENTA             = 'F',
+                                        YELLOW              = 'G',
+                                        CYAN                = 'H',
+                                        BOLD_FOREGROUND     = 'I',
+                                        BOLD_GRAY           = 'J',
+                                        BOLD_RED            = 'K',
+                                        BOLD_GREEN          = 'L',
+                                        BOLD_BLUE           = 'M',
+                                        BOLD_MAGENTA        = 'N',
+                                        BOLD_YELLOW         = 'O',
+                                        BOLD_CYAN           = 'P',
+                                        BG_FOREGROUND       = 'Q',
+                                        BG_GRAY             = 'R',
+                                        BG_RED              = 'S',
+                                        BG_GREEN            = 'T',
+                                        BG_BLUE             = 'U',
+                                        BG_MAGENTA          = 'V',
+                                        BG_YELLOW           = 'W',
+                                        BG_CYAN             = 'X',
+                                        BG_BOLD_FOREGROUND  = 'Y',
+                                        BG_BOLD_GRAY        = 'Z',
+                                        BG_BOLD_RED         = '[',
+                                        BG_BOLD_GREEN       = '\\',
+                                        BG_BOLD_BLUE        = ']',
+                                        BG_BOLD_MAGENTA     = '^',
+                                        BG_BOLD_YELLOW      = '_',
+                                        BG_BOLD_CYAN        = '`',
+                                        LAST                = '`',
+        };
+
+        static const size_t             ALL_STRINGS = 0;
+        extern Fl_Color                 BG_COLOR;
+        extern Fl_Color                 BG_DARK_COLOR;
+        extern size_t                   MAX_LINE_LEN;
+        extern size_t                   TURN_WRAP_ON;
+    }
+
     //--------------------------------------------------------------------------
     // A static text display widget with line based text coloring
-    // Implement line() method which will be called for every line when you set text with value()
     // LogDisplay will manage text and style buffers
+    // Search text with ctrl + 'f', F3, shift + F3
+    //
+    // Implement line_cb() method which will be called for every line
+    // If you are doing more then one color call per line,
+    //   you can disable changing colors that has already been set
+    //   by calling lock_color(true)
+    //
+    // If json string is used then line_cb() doesn't have to be overidden
+    // But it is less flexible
+    // Edit json string in the widget with ctrl + 'e'
+    //
+    // BG colors only work in fltk 1.4
     //
     class LogDisplay : public Fl_Text_Display {
     public:
-        enum class COLOR {
-                                        FOREGROUND             = 'A',
-                                        GRAY                   = 'B',
-                                        RED                    = 'C',
-                                        GREEN                  = 'D',
-                                        BLUE                   = 'E',
-                                        DARK_RED               = 'F',
-                                        DARK_GREEN             = 'G',
-                                        DARK_BLUE              = 'H',
-                                        ORANGE                 = 'I',
-                                        MAGENTA                = 'J',
-                                        YELLOW                 = 'K',
-                                        CYAN                   = 'L',
-                                        DARK_MAGENTA           = 'M',
-                                        DARK_YELLOW            = 'N',
-                                        DARK_CYAN              = 'O',
-                                        BLACK                  = 'P',
-                                        WHITE                  = 'Q',
-                                        BOLD_FOREGROUND        = 'R',
-                                        BOLD_GRAY              = 'S',
-                                        BOLD_RED               = 'T',
-                                        BOLD_GREEN             = 'U',
-                                        BOLD_BLUE              = 'V',
-                                        BOLD_DARK_RED          = 'W',
-                                        BOLD_DARK_GREEN        = 'X',
-                                        BOLD_DARK_BLUE         = 'Y',
-                                        BOLD_ORANGE            = 'Z',
-                                        BOLD_MAGENTA           = '[',
-                                        BOLD_YELLOW            = '\\',
-                                        BOLD_CYAN              = ']',
-                                        BOLD_DARK_MAGENTA      = '`',
-                                        BOLD_DARK_YELLOW       = '^',
-                                        BOLD_DARK_CYAN         = '_',
-                                        BOLD_BLACK             = 'a',
-                                        BOLD_WHITE             = 'b',
-                                        ITALIC_FOREGROUND      = 'c',
-                                        ITALIC_RED             = 'd',
-                                        ITALIC_GREEN           = 'e',
-                                        ITALIC_BLUE            = 'f',
-                                        ITALIC_ORANGE          = 'g',
-                                        ITALIC_MAGENTA         = 'h',
-                                        ITALIC_YELLOW          = 'i',
-                                        ITALIC_CYAN            = 'j',
-                                        BOLD_ITALIC_FOREGROUND = 'k',
-                                        BOLD_ITALIC_RED        = 'l',
-                                        BOLD_ITALIC_GREEN      = 'm',
-                                        BOLD_ITALIC_BLUE       = 'n',
-                                        BOLD_ITALIC_ORANGE     = 'o',
-                                        BOLD_ITALIC_MAGENTA    = 'p',
-                                        BOLD_ITALIC_YELLOW     = 'q',
-                                        BOLD_ITALIC_CYAN       = 'r',
-                                        LAST                   = 'r',
-        };
-
                                         LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                         ~LogDisplay();
-        void                            find(const char* text, bool select);
-        virtual void                    line(int count, const char* line, int len);
-        void                            style_size(Fl_Fontsize textsize);
+        void                            edit_styles();
+        void                            find(bool next, bool force_ask);
+        int                             handle(int event) override;
+        void                            lock_colors(bool lock)
+                                            { _lock_colors = lock; }
+        void                            save_file();
+        void                            style(std::string json = "");
+        void                            update_pref();
         void                            value(const char* text);
 
     protected:
-        void                            color_word(const char* string, const char* word, LogDisplay::COLOR color);
-        int                             str_index(const char* string, const char* find1, int* index1, const char* find2 = nullptr, int* index2 = nullptr, const char* find3 = nullptr, int* index3 = nullptr);
-        void                            style(int start, int stop, LogDisplay::COLOR c);
+        virtual void                    line_cb(size_t row, const std::string& line)
+                                            { (void) row; (void) line; }
+        virtual void                    line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, logdisplay::COLOR color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0)
+                                            { (void) row; (void) line; (void) word1; (void) word2; (void) color;  (void) inclusive;  (void) start;  (void) stop;  (void) count; }
+        void                            style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color);
+        void                            style_line(size_t start, size_t stop, logdisplay::COLOR c);
+        void                            style_num(const std::string& line, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
+        void                            style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
+        void                            style_rstring(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
+        void                            style_string(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
 
     private:
-        char*                           _tmp;
-        int                             _tmp_pos;
-        int                             _tmp_size;
+        const char*                     _check_text(const char* text);
+        char                            _style_char(size_t pos) const
+                                            { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; }
+
+        struct Tmp {
+            char*                       buf;
+            size_t                      len;
+            size_t                      pos;
+            size_t                      size;
+
+                                        Tmp();
+                                        ~Tmp();
+        };
+
         Fl_Text_Buffer*                 _buffer;
+        std::string                     _find;
+        bool                            _lock_colors;
+        std::string                     _json;
         Fl_Text_Buffer*                 _style;
+        Tmp*                            _tmp;
     };
 }
 

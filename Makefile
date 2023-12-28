@@ -13,7 +13,7 @@ endif
 ifeq ($(findstring MINGW64,$(OS)), MINGW64)
 	RES = res/test.res
 
-	CXX = g++ $(FLAGS) -std=c++17 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+	CXX = g++ $(FLAGS) -std=c++17 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
 	LD  = g++ $(FLAGS) -o $@ $^ -Isrc `/usr/local/bin/fltk-config --cxxflags --ldflags --use-images`
 else
 	RES =
@@ -31,6 +31,7 @@ OBJ=obj/chart.o \
 	obj/inputmenu.o \
 	obj/lcdnumber.o \
 	obj/logdisplay.o \
+	obj/plot.o \
 	obj/price.o \
 	obj/recentmenu.o \
 	obj/scrollbrowser.o \
@@ -53,6 +54,7 @@ EXE=test_chart.exe \
 	test_gridgroup2.exe \
 	test_lcdnumber.exe \
 	test_logdisplay.exe \
+	test_plot.exe \
 	test_price.exe \
 	test_recentmenu.exe \
 	test_splitgroup.exe \
@@ -101,6 +103,9 @@ obj/lcdnumber.o: src/lcdnumber.cpp src/lcdnumber.h src/util.h
 	$(CXX)
 
 obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/util.h
+	$(CXX)
+
+obj/plot.o: src/plot.cpp src/plot.h src/util.h
 	$(CXX)
 
 obj/price.o: src/price.cpp src/price.h
@@ -163,6 +168,9 @@ test_lcdnumber.exe: test/test_lcdnumber.cpp obj/libflw.a
 	$(LD)
 
 test_logdisplay.exe: test/test_logdisplay.cpp obj/libflw.a
+	$(LD)
+
+test_plot.exe: test/test_plot.cpp obj/libflw.a
 	$(LD)
 
 test_price.exe: test/test_price.cpp obj/libflw.a

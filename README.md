@@ -12,15 +12,16 @@ Most widgets are released under the [GNU General Public License v3.0](LICENSE).
 Widgets:
 * Chart - Chart widget with dates as x data.
 * DateChooser - Show month date view.
+* Grid - Edit data in TableEditor with build in storage.
+* GridGroup - An layout widget using a grid.
+* InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list and use arrow keys in the input widget to switch between strings.
+* LcdNumber - Number widget in lcd style.
+* Plot - Numerical chart with numbers.
+* ScrollBrowser - Scroll faster and let user copy a line to clipboard.
+* SplitGroup - An layout widget for two widgets that can be resized with mouse.
 * TableDisplay - Show data in a grid.
 * TableEditor - Edit data in a grid.
-* Grid - Edit data in TableEditor with build in storage.
-* LcdNumber - Number widget in lcd style.
-* GridGroup - An layout widget using a grid.
-* SplitGroup - An layout widget for two widgets that can be resized with mouse.
 * TabsGroup - An tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
-* InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list and use arrow keys in the input widget to switch between strings.
-* ScrollBrowser - Scroll faster and let user copy a line to clipboard.
 
 Dialogs:
 * FontDialog - Select a font.
@@ -41,26 +42,29 @@ Chart widget (flw::Chart)<br>
 Date chooser widget (flw::DateChooser)<br>
 <img src="images/datechooser.png"/>
 
-Table editor widget (flw::TableDisplay and flw::TableEditor)<br>
-<img src="images/tableeditor.png"/>
+Font dialog (flw::dlg::FontDialog)<br>
+<img src="images/font_dialog.png"/>
 
 Grid layout widget (flw::GridGroup)<br>
 <img src="images/gridgroup.png"/>
 
-Tab layout widget (flw::TabsGroup)<br>
-<img src="images/tabsgroup.png"/>
-
 Input menu (flw::InputMenu)<br>
 <img src="images/input_menu.png"/>
 
-Font dialog (flw::dlg::FontDialog)<br>
-<img src="images/font_dialog.png"/>
+List selection dialog (flw::dlg::select())<br>
+<img src="images/list_dialog.png"/>
 
 Password dialog (flw::dlg::password4())<br>
 <img src="images/password_dialog.png"/>
 
-List selection dialog (flw::dlg::select())<br>
-<img src="images/list_dialog.png"/>
+Plot widget (flw::Plot)<br>
+<img src="images/plot.png"/>
+
+Table editor widget (flw::TableDisplay and flw::TableEditor)<br>
+<img src="images/tableeditor.png"/>
+
+Tab layout widget (flw::TabsGroup)<br>
+<img src="images/tabsgroup.png"/>
 
 Theme dialog (flw::dlg::theme())<br>
 <img src="images/theme_dialog.png"/>

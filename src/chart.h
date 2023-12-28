@@ -151,8 +151,8 @@ namespace flw {
         void                            resize(int X, int Y, int W, int H) override;
         bool                            tick_width(int tick_width_from_3_to_100 = chart::MIN_TICK);
         void                            update_pref();
-        void                            view_options(bool labels = true, bool hor = true, bool ver = true)
-                                            { _view.labels = labels; _view.horizontal = hor; _view.vertical = ver; redraw(); }
+        void                            view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
+                                            { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
 
     private:
         void                            _calc_area_height();

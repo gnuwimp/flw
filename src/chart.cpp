@@ -556,6 +556,7 @@ flw::Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W,
 
     clear();
     update_pref();
+    view_options();
 }
 
 //------------------------------------------------------------------------------
@@ -973,17 +974,17 @@ void flw::Chart::debug() const {
     fprintf(stderr, "\tdate_start:      %19d\n", _date_start);
     fprintf(stderr, "\tdates:           %19d\n", (int) _dates.size());
     fprintf(stderr, "\th:               %19d\n", h());
-    fprintf(stderr, "\thorizontal:      %19d\n", _view.horizontal);
-    fprintf(stderr, "\tlabels:          %19d\n", _view.labels);
     fprintf(stderr, "\tmargin_left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
     fprintf(stderr, "\tmargin_right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
     fprintf(stderr, "\ttick_width:      %19d\n", _tick_width);
     fprintf(stderr, "\tticks:           %19d\n", _ticks);
     fprintf(stderr, "\ttop_space:       %19d\n", _top_space);
-    fprintf(stderr, "\tvertical:        %19d\n", _view.vertical);
     fprintf(stderr, "\tw:               %19d\n", w());
     fprintf(stderr, "\tx:               %19d\n", x());
     fprintf(stderr, "\ty:               %19d\n", y());
+    fprintf(stderr, "\tview_labels:     %19d\n", _view.labels);
+    fprintf(stderr, "\tview_horizontal: %19d\n", _view.horizontal);
+    fprintf(stderr, "\tview_vertical:   %19d\n", _view.vertical);
     fprintf(stderr, "\tfirst date:      %19s\n", first.date.c_str());
     fprintf(stderr, "\tlast date:       %19s\n", last.date.c_str());
     fprintf(stderr, "\tfirst visible:   %19s\n", start.date.c_str());
