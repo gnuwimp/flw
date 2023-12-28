@@ -77,8 +77,8 @@ namespace flw {
         std::string                     format(const char* format, ...);
         std::string                     format_double(double number, int decimals, char sep = ' ');
         std::string                     format_int(int64_t number, char sep = ' ');
-        Buf                             file_load(std::string filename, bool alert = true);
-        bool                            file_save(std::string filename, const void* data, size_t size, bool alert = true);
+        Buf                             load_file(std::string filename, bool alert = true);
+        void                            menu_item_enable(Fl_Menu_* menu, const char* text, bool value);
         Fl_Menu_Item*                   menu_item_get(Fl_Menu_* menu, const char* text);
         void                            menu_item_set(Fl_Menu_* menu, const char* text, bool value);
         void                            menu_item_set_only(Fl_Menu_* menu, const char* text);
@@ -87,6 +87,7 @@ namespace flw {
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
         int                             replace(std::string& string, std::string find, std::string replace);
+        bool                            save_file(std::string filename, const void* data, size_t size, bool alert = true);
         StringVector                    split(const std::string& string, std::string split);
         bool                            test(bool val, int line, const char* func);
         bool                            test(const char* ref, const char* val, int line, const char* func);

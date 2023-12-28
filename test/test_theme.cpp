@@ -1,4 +1,4 @@
-// Copyright 2021 gnuwimp@gmail.com
+// Copyright 2021 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "datechooser.h"
@@ -241,6 +241,17 @@ public:
         menu->add("Edit/Copy");
         menu->add("Edit/Cut");
         menu->add("Edit/Paste");
+        menu->add("Test/Toggle on", 0, nullptr, nullptr, FL_MENU_TOGGLE);
+        menu->add("Test/Toggle off", 0, nullptr, nullptr, FL_MENU_TOGGLE);
+        menu->add("Test/Enabled");
+        menu->add("Test/Disabled");
+
+        util::menu_item_set(menu, "Test/Toggle on", true);
+        util::menu_item_set(menu, "Test/Toggle off", true);
+        util::menu_item_set(menu, "Test/Toggle off", false);
+        util::menu_item_enable(menu, "Test/Enabled", false);
+        util::menu_item_enable(menu, "Test/Disabled", false);
+        util::menu_item_enable(menu, "Test/Enabled", true);
     }
 
     static void CallbackButton(Fl_Widget* w, void*) {
@@ -474,11 +485,14 @@ int main(int argc, const char** argv) {
     auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
     flw::theme::parse(argc, argv);
     flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
-    flw::theme::pref_load(pref, &win);
+    flw::theme::load_theme_pref(pref);
+    flw::theme::load_win_pref(pref, &win);
     win.create();
     win.update_pref();
     Fl::run();
-    flw::theme::pref_save(pref, &win);
+    pref.clear();
+    flw::theme::save_theme_pref(pref);
+    flw::theme::save_win_pref(pref, &win);
 
     return 0;
 }

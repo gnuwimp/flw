@@ -1,4 +1,4 @@
-// Copyright 2019 - 2021 gnuwimp@gmail.com
+// Copyright 2019 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #ifndef FLW_LOGDISPLAY_H

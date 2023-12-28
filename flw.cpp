@@ -107,7 +107,7 @@ namespace flw {
                 flw::PriceVector prices;
             };
 
-            flw::Buf buf = flw::util::file_load(filename);
+            flw::Buf buf = flw::util::load_file(filename);
 
             if (buf.p == nullptr) {
                 return false;
@@ -122,20 +122,20 @@ namespace flw {
 
             chart->clear();
 
-            auto lines = flw::util::split(str, "\n");
-            auto state = 0;
-            auto count = 0;
-            auto data  = ChartData { true, true, true, (int) flw::Date::RANGE::DAY, 6, 1, 100, 0, 0, 1, PriceVector(), } ;
-            auto line  = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
+            auto lines    = flw::util::split(str, "\n");
+            auto state    = 0;
+            auto count    = 0;
+            auto data     = ChartData { true, true, true, (int) flw::Date::RANGE::DAY, 6, 1, 100, 0, 0, 1, PriceVector(), } ;
+            auto linedata = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
 
-            for (const auto& l : lines) {
+            for (const auto& line : lines) {
                 count++;
 
-                if (l == "") {
+                if (line == "") {
                     continue;
                 }
 
-                auto columns = flw::util::split(l, "\t");
+                auto columns = flw::util::split(line, "\t");
 
                 if (columns.size() == 0) {
                     continue;
@@ -155,8 +155,8 @@ namespace flw {
                         state = 2;
                     }
                     if (key == "start_line") {
-                         state = 3;
-                         line = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
+                         state    = 3;
+                         linedata = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
                     }
                     else if (key == "start_block") {
                          state = 4;
@@ -188,10 +188,6 @@ namespace flw {
                         if (columns.size() < 2) goto ERR;
                         data.margin_right = (int) flw::util::to_int(columns[1].c_str());
                     }
-                    else if (key == "margin_right") {
-                        if (columns.size() < 2) goto ERR;
-                        data.margin_right = (int) flw::util::to_int(columns[1].c_str());
-                    }
                     else if (key == "labels") {
                         if (columns.size() < 2) goto ERR;
                         data.labels = (int) flw::util::to_int(columns[1].c_str());
@@ -216,35 +212,35 @@ namespace flw {
                 else if (state == 3) {
                     if (key == "area") {
                         if (columns.size() < 2) goto ERR;
-                        line.area = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.area = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "type") {
                         if (columns.size() < 2) goto ERR;
-                        line.type = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.type = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "color") {
                         if (columns.size() < 2) goto ERR;
-                        line.color = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.color = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "width") {
                         if (columns.size() < 2) goto ERR;
-                        line.width = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.width = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "align") {
                         if (columns.size() < 2) goto ERR;
-                        line.align = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.align = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "clamp_max") {
                         if (columns.size() < 2) goto ERR;
-                        line.clamp_max = flw::util::to_double(columns[1].c_str());
+                        linedata.clamp_max = flw::util::to_double(columns[1].c_str());
                     }
                     else if (key == "clamp_min") {
                         if (columns.size() < 2) goto ERR;
-                        line.clamp_min = flw::util::to_double(columns[1].c_str());
+                        linedata.clamp_min = flw::util::to_double(columns[1].c_str());
                     }
                     else if (key == "label") {
-                        if (columns.size() >= 2) line.label = columns[1];
-                        else line.label = "";
+                        if (columns.size() >= 2) linedata.label = columns[1];
+                        else linedata.label = "";
                     }
                     else if (key == "p") {
                         auto date = flw::Date::FromString((columns.size() > 1) ? columns[1].c_str() : "");
@@ -256,18 +252,20 @@ namespace flw {
                             auto h = flw::util::to_double(columns[2].c_str());
                             auto l = flw::util::to_double(columns[3].c_str());
                             auto c = flw::util::to_double(columns[4].c_str());
-                            line.prices.push_back(Price(date.format(chart->_date_format), h, l, c));
+
+                            linedata.prices.push_back(Price(date.format(chart->_date_format), h, l, c));
                         }
                         else if (columns.size() > 2) {
                             auto c = flw::util::to_double(columns[2].c_str());
-                            line.prices.push_back(Price(date.format(chart->_date_format), c));
+
+                            linedata.prices.push_back(Price(date.format(chart->_date_format), c));
                         }
                         else {
                             goto ERR;
                         }
                     }
                     else if (key == "end_line") {
-                        if (chart->add_line(line.area, line.prices, line.label, (flw::chart::TYPE) line.type, line.align, line.color, line.width, line.clamp_min, line.clamp_max) == false) {
+                        if (chart->add_line(linedata.area, linedata.prices, linedata.label, (flw::chart::TYPE) linedata.type, linedata.align, linedata.color, linedata.width, linedata.clamp_min, linedata.clamp_max) == false) {
                             goto ERR;
                         }
 
@@ -358,7 +356,7 @@ namespace flw {
             }
             res += flw::util::format("end_block\n");
 
-            return flw::util::file_save(filename, res.c_str(), res.length());
+            return flw::util::save_file(filename, res.c_str(), res.length());
         }
     }
 }
@@ -2977,7 +2975,7 @@ void flw::DateChooser::set(const Date& date) {
         date2.month(2);
     }
 
-    auto  start_cell  = 0;
+    auto start_cell   = 0;
     auto first_date   = Date(date2.year(), date2.month(), 1);
     auto current_date = Date();
     char tmp[30];
@@ -3204,10 +3202,10 @@ namespace flw {
                 _list->take_focus();
 
                 for (auto& s : list) {
-                    _list->add(s.c_str());size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+                    _list->add(s.c_str());
                 }
 
-                if (fixed_font) {
+                if (fixed_font == true) {
                     _list->textfont(flw::PREF_FIXED_FONT);
                     _list->textsize(flw::PREF_FIXED_FONTSIZE);
                 }
@@ -4185,6 +4183,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     _label    = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
     _select   = new Fl_Button(0, 0, 0, 0, "&Select");
     _sizes    = new flw::ScrollBrowser(6);
+    _font     = -1;
     _fontsize = -1;
     _ret      = false;
 
@@ -4372,7 +4371,7 @@ flw::Grid::Grid(int rows, int cols, int X, int Y, int W, int H, const char* l) :
     cols    = cols < 1 ? 1 : cols;
     _buffer = (char*) calloc(_FLW_GRID_STRING_SIZE + 1, 1);
 
-    size(rows, cols);
+    Grid::size(rows, cols);
     lines(true, true);
     header(true, true);
     select_mode(TableDisplay::SELECT::CELL);
@@ -4388,20 +4387,20 @@ flw::Grid::~Grid() {
 
 //------------------------------------------------------------------------------
 Fl_Align flw::Grid::cell_align(int row, int col) {
-    return (Fl_Align) _get_int(_align, row, col, TableEditor::cell_align(row, col));
+    return (Fl_Align) _get_int(_cell_align, row, col, TableEditor::cell_align(row, col));
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_align(int row, int col, Fl_Align align) {
-    _set_int(_align, row, col, (int) align);
+    _set_int(_cell_align, row, col, (int) align);
 }
 
 //------------------------------------------------------------------------------
 flw::StringVector flw::Grid::cell_choice(int row, int col) {
-    _choices.clear();
-    auto choices = _get_string(_choice, row, col);
+    _cell_choices.clear();
+    auto choices = _get_string(_cell_choice, row, col);
 
-    if (*choices) {
+    if (*choices != 0) {
         auto tmp   = strdup(choices);
         auto start = tmp;
         auto iter  = tmp;
@@ -4409,7 +4408,7 @@ flw::StringVector flw::Grid::cell_choice(int row, int col) {
         while (*iter) {
             if (*iter == '\t') {
                 *iter = 0;
-                _choices.push_back(start);
+                _cell_choices.push_back(start);
                 start = iter + 1;
             }
 
@@ -4419,72 +4418,72 @@ flw::StringVector flw::Grid::cell_choice(int row, int col) {
         free(tmp);
     }
 
-    return _choices;
+    return _cell_choices;
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_choice(int row, int col, const char* value) {
-    _set_string(_choice, row, col, value);
+    _set_string(_cell_choice, row, col, value);
 }
 
 //------------------------------------------------------------------------------
 Fl_Color flw::Grid::cell_color(int row, int col) {
-    return (Fl_Color) _get_int(_color, row, col, TableEditor::cell_color(row, col));
+    return (Fl_Color) _get_int(_cell_color, row, col, TableEditor::cell_color(row, col));
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_color(int row, int col, Fl_Color color) {
-    _set_int(_color, row, col, (int) color);
+    _set_int(_cell_color, row, col, (int) color);
 }
 
 //------------------------------------------------------------------------------
 bool flw::Grid::cell_edit(int row, int col) {
-    return (bool) _get_int(_edit, row, col, 0);
+    return (bool) _get_int(_cell_edit, row, col, 0);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_edit(int row, int col, bool value) {
-    _set_int(_edit, row, col, (int) value);
+    _set_int(_cell_edit, row, col, (int) value);
 }
 
 //------------------------------------------------------------------------------
 flw::TableEditor::FORMAT flw::Grid::cell_format(int row, int col) {
-    return (TableEditor::FORMAT) _get_int(_format, row, col, (int) TableEditor::FORMAT::DEFAULT);
+    return (TableEditor::FORMAT) _get_int(_cell_format, row, col, (int) TableEditor::FORMAT::DEFAULT);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_format(int row, int col, TableEditor::FORMAT value) {
-    _set_int(_format, row, col, (int) value);
+    _set_int(_cell_format, row, col, (int) value);
 }
 
 //------------------------------------------------------------------------------
 flw::TableEditor::REND flw::Grid::cell_rend(int row, int col) {
-    return (TableEditor::REND) _get_int(_rend, row, col, (int) TableEditor::REND::TEXT);
+    return (TableEditor::REND) _get_int(_cell_rend, row, col, (int) TableEditor::REND::TEXT);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_rend(int row, int col, TableEditor::REND rend) {
-    _set_int(_rend, row, col, (int) rend);
+    _set_int(_cell_rend, row, col, (int) rend);
 }
 
 //------------------------------------------------------------------------------
 Fl_Color flw::Grid::cell_textcolor(int row, int col) {
-    return (Fl_Color) _get_int(_textcolor, row, col, TableEditor::cell_textcolor(row, col));
+    return (Fl_Color) _get_int(_cell_textcolor, row, col, TableEditor::cell_textcolor(row, col));
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_textcolor(int row, int col, Fl_Color color) {
-    _set_int(_textcolor, row, col, (int) color);
+    _set_int(_cell_textcolor, row, col, (int) color);
 }
 
 //------------------------------------------------------------------------------
 const char* flw::Grid::cell_value(int row, int col) {
-    return _get_string(_cell, row, col);
+    return _get_string(_cell_value, row, col);
 }
 
 //------------------------------------------------------------------------------
 bool flw::Grid::cell_value(int row, int col, const char* value) {
-    _set_string(_cell, row, col, value);
+    _set_string(_cell_value, row, col, value);
     return true;
 }
 
@@ -4506,13 +4505,13 @@ void flw::Grid::cell_value2(int row, int col, const char* format, ...) {
 
 //------------------------------------------------------------------------------
 int flw::Grid::cell_width(int col) {
-    int W = _get_int(_width, 0, col, 80);
+    int W = _get_int(_cell_width, 0, col, 80);
     return W >= 10 ? W : TableEditor::cell_width(col);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_width(int col, int width) {
-    _set_int(_width, 0, col, (int) width);
+    _set_int(_cell_width, 0, col, (int) width);
 }
 
 //------------------------------------------------------------------------------
@@ -4983,120 +4982,68 @@ void flw::LcdNumber::value(const char *value) {
 
 
 
-namespace flw {
 #if FL_MINOR_VERSION == 4
-    Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
-        { FL_FOREGROUND_COLOR,          FL_COURIER,             14, 0, 0 }, // FOREGROUND
-        { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, 0, 0 }, // GRAY
-        { fl_rgb_color(255, 64, 64),    FL_COURIER,             14, 0, 0 }, // RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER,             14, 0, 0 }, // GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER,             14, 0, 0 }, // BLUE
-        { fl_rgb_color(192, 0, 0),      FL_COURIER,             14, 0, 0 }, // DARK_RED
-        { fl_rgb_color(0, 128, 0),      FL_COURIER,             14, 0, 0 }, // DARK_GREEN
-        { fl_rgb_color(0, 0, 255),      FL_COURIER,             14, 0, 0 }, // DARK_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER,             14, 0, 0 }, // ORANGE
-        { FL_MAGENTA,                   FL_COURIER,             14, 0, 0 }, // MAGENTA
-        { FL_YELLOW,                    FL_COURIER,             14, 0, 0 }, // YELLOW
-        { FL_CYAN,                      FL_COURIER,             14, 0, 0 }, // CYAN
-        { FL_DARK_MAGENTA,              FL_COURIER,             14, 0, 0 }, // DARK_MAGENTA
-        { FL_DARK_YELLOW,               FL_COURIER,             14, 0, 0 }, // DARK_YELLOW
-        { FL_DARK_CYAN,                 FL_COURIER,             14, 0, 0 }, // DARK_CYAN
-        { FL_BLACK,                     FL_COURIER,             14, 0, 0 }, // BLACK
-        { FL_WHITE,                     FL_COURIER,             14, 0, 0 }, // WHITE
-
-        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_FOREGROUND
-        { fl_rgb_color(115, 115, 115),  FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_GRAY
-        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_BLUE
-        { fl_rgb_color(192, 0, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_RED
-        { fl_rgb_color(0, 128, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_GREEN
-        { fl_rgb_color(0, 0, 255),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_ORANGE
-        { FL_MAGENTA,                   FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_MAGENTA
-        { FL_YELLOW,                    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_YELLOW
-        { FL_CYAN,                      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_CYAN
-        { FL_DARK_MAGENTA,              FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_MAGENTA
-        { FL_DARK_YELLOW,               FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_YELLOW
-        { FL_DARK_CYAN,                 FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_CYAN
-        { FL_BLACK,                     FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_BLACK
-        { FL_WHITE,                     FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_WHITE
-
-        { FL_FOREGROUND_COLOR,          FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_FOREGROUND
-        { fl_rgb_color(255, 64, 64),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_ORANGE
-        { FL_MAGENTA,                   FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_MAGENTA
-        { FL_YELLOW,                    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_YELLOW
-        { FL_CYAN,                      FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_CYAN
-
-        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_FOREGROUND
-        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_ORANGE
-        { FL_MAGENTA,                   FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_MAGENTA
-        { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_YELLOW
-        { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_CYAN
-    };
+    #define _LOGDISPLAY_ATTRIBUTE 0, 0
 #else
-    Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
-        { FL_FOREGROUND_COLOR,          FL_COURIER,             14, 0 }, // FOREGROUND
-        { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, 0 }, // GRAY
-        { fl_rgb_color(255, 64, 64),    FL_COURIER,             14, 0 }, // RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER,             14, 0 }, // GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER,             14, 0 }, // BLUE
-        { fl_rgb_color(192, 0, 0),      FL_COURIER,             14, 0 }, // DARK_RED
-        { fl_rgb_color(0, 128, 0),      FL_COURIER,             14, 0 }, // DARK_GREEN
-        { fl_rgb_color(0, 0, 255),      FL_COURIER,             14, 0 }, // DARK_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER,             14, 0 }, // ORANGE
-        { FL_MAGENTA,                   FL_COURIER,             14, 0 }, // MAGENTA
-        { FL_YELLOW,                    FL_COURIER,             14, 0 }, // YELLOW
-        { FL_CYAN,                      FL_COURIER,             14, 0 }, // CYAN
-        { FL_DARK_MAGENTA,              FL_COURIER,             14, 0 }, // DARK_MAGENTA
-        { FL_DARK_YELLOW,               FL_COURIER,             14, 0 }, // DARK_YELLOW
-        { FL_DARK_CYAN,                 FL_COURIER,             14, 0 }, // DARK_CYAN
-        { FL_BLACK,                     FL_COURIER,             14, 0 }, // BLACK
-        { FL_WHITE,                     FL_COURIER,             14, 0 }, // WHITE
-
-        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD,        14, 0 }, // BOLD_FOREGROUND
-        { fl_rgb_color(115, 115, 115),  FL_COURIER_BOLD,        14, 0 }, // BOLD_GRAY
-        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD,        14, 0 }, // BOLD_RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD,        14, 0 }, // BOLD_GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD,        14, 0 }, // BOLD_BLUE
-        { fl_rgb_color(192, 0, 0),      FL_COURIER_BOLD,        14, 0 }, // BOLD_DARK_RED
-        { fl_rgb_color(0, 128, 0),      FL_COURIER_BOLD,        14, 0 }, // BOLD_DARK_GREEN
-        { fl_rgb_color(0, 0, 255),      FL_COURIER_BOLD,        14, 0 }, // BOLD_DARK_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD,        14, 0 }, // BOLD_ORANGE
-        { FL_MAGENTA,                   FL_COURIER_BOLD,        14, 0 }, // BOLD_MAGENTA
-        { FL_YELLOW,                    FL_COURIER_BOLD,        14, 0 }, // BOLD_YELLOW
-        { FL_CYAN,                      FL_COURIER_BOLD,        14, 0 }, // BOLD_CYAN
-        { FL_DARK_MAGENTA,              FL_COURIER_BOLD,        14, 0 }, // BOLD_DARK_MAGENTA
-        { FL_DARK_YELLOW,               FL_COURIER_BOLD,        14, 0 }, // BOLD_DARK_YELLOW
-        { FL_DARK_CYAN,                 FL_COURIER_BOLD,        14, 0 }, // BOLD_DARK_CYAN
-        { FL_BLACK,                     FL_COURIER_BOLD,        14, 0 }, // BOLD_BLACK
-        { FL_WHITE,                     FL_COURIER_BOLD,        14, 0 }, // BOLD_WHITE
-
-        { FL_FOREGROUND_COLOR,          FL_COURIER_ITALIC,      14, 0 }, // ITALIC_FOREGROUND
-        { fl_rgb_color(255, 64, 64),    FL_COURIER_ITALIC,      14, 0 }, // ITALIC_RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER_ITALIC,      14, 0 }, // ITALIC_GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER_ITALIC,      14, 0 }, // ITALIC_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER_ITALIC,      14, 0 }, // ITALIC_ORANGE
-        { FL_MAGENTA,                   FL_COURIER_ITALIC,      14, 0 }, // ITALIC_MAGENTA
-        { FL_YELLOW,                    FL_COURIER_ITALIC,      14, 0 }, // ITALIC_YELLOW
-        { FL_CYAN,                      FL_COURIER_ITALIC,      14, 0 }, // ITALIC_CYAN
-
-        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_FOREGROUND
-        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_RED
-        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_GREEN
-        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_BLUE
-        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_ORANGE
-        { FL_MAGENTA,                   FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_MAGENTA
-        { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_YELLOW
-        { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_CYAN
-    };
+    #define _LOGDISPLAY_ATTRIBUTE 0
 #endif
+
+namespace flw {
+    Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
+        { FL_FOREGROUND_COLOR,          FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // FOREGROUND
+        { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // GRAY
+        { fl_rgb_color(255, 64, 64),    FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // BLUE
+        { fl_rgb_color(192, 0, 0),      FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // DARK_RED
+        { fl_rgb_color(0, 128, 0),      FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // DARK_GREEN
+        { fl_rgb_color(0, 0, 255),      FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // DARK_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // ORANGE
+        { FL_MAGENTA,                   FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // MAGENTA
+        { FL_YELLOW,                    FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // YELLOW
+        { FL_CYAN,                      FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // CYAN
+        { FL_DARK_MAGENTA,              FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // DARK_MAGENTA
+        { FL_DARK_YELLOW,               FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // DARK_YELLOW
+        { FL_DARK_CYAN,                 FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // DARK_CYAN
+        { FL_BLACK,                     FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // BLACK
+        { FL_WHITE,                     FL_COURIER,             14, _LOGDISPLAY_ATTRIBUTE }, // WHITE
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_FOREGROUND
+        { fl_rgb_color(115, 115, 115),  FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_GRAY
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_BLUE
+        { fl_rgb_color(192, 0, 0),      FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_DARK_RED
+        { fl_rgb_color(0, 128, 0),      FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_DARK_GREEN
+        { fl_rgb_color(0, 0, 255),      FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_DARK_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_YELLOW
+        { FL_CYAN,                      FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_CYAN
+        { FL_DARK_MAGENTA,              FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_DARK_MAGENTA
+        { FL_DARK_YELLOW,               FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_DARK_YELLOW
+        { FL_DARK_CYAN,                 FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_DARK_CYAN
+        { FL_BLACK,                     FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_BLACK
+        { FL_WHITE,                     FL_COURIER_BOLD,        14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_WHITE
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_FOREGROUND
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_YELLOW
+        { FL_CYAN,                      FL_COURIER_ITALIC,      14, _LOGDISPLAY_ATTRIBUTE }, // ITALIC_CYAN
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_FOREGROUND
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_YELLOW
+        { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, _LOGDISPLAY_ATTRIBUTE }, // BOLD_ITALIC_CYAN
+    };
 }
 
 //------------------------------------------------------------------------------
@@ -6335,7 +6282,7 @@ AGAIN:
                     col = 1;
                 }
 
-                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
+                if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
                     col = row = 1;
                     goto AGAIN;
                 }
@@ -6355,7 +6302,7 @@ AGAIN:
                     col = _table->columns();
                 }
 
-                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
+                if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
                     row = _table->rows();
                     col = _table->columns();
                     goto AGAIN;
@@ -6412,7 +6359,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     selection_color(FL_SELECTION_COLOR);
     clip_children(1);
     flw::theme::labelfont(this);
-    clear();
+    TableDisplay::clear();
 }
 
 //------------------------------------------------------------------------------
@@ -6676,11 +6623,10 @@ void flw::TableDisplay::_draw_text(const char* string, int X, int Y, int W, int 
 //------------------------------------------------------------------------------
 int flw::TableDisplay::_ev_keyboard_down() {
     auto key   = Fl::event_key();
-    auto text  = std::string(Fl::event_text());
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
 
-    // printf("key=%d <%s>, alt=%d, cmd=%d, shift=%d\n", key, text.c_str(), alt, cmd, shift); fflush(stdout);
+    // printf("key=%d, alt=%d, cmd=%d, shift=%d\n", key, alt, cmd, shift); fflush(stdout);
 
     if (cmd == true && key == FL_Up) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
@@ -7235,7 +7181,7 @@ const char* flw::TableEditor::SELECT_LIST = "Select String";
 
 //------------------------------------------------------------------------------
 flw::TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
-    clear();
+    TableEditor::clear();
 }
 
 //------------------------------------------------------------------------------
@@ -7250,11 +7196,12 @@ void flw::TableEditor::clear() {
 //------------------------------------------------------------------------------
 void flw::TableEditor::_delete_current_cell() {
     if (_curr_row > 0 && _curr_col > 0) {
-        auto rend = cell_rend(_curr_row, _curr_col);
         auto edit = cell_edit(_curr_row, _curr_col);
-        auto set  = false;
 
         if (edit == true) {
+            auto rend = cell_rend(_curr_row, _curr_col);
+            auto set  = false;
+
             switch (rend) {
                 case flw::TableEditor::REND::TEXT:
                 case flw::TableEditor::REND::SECRET:
@@ -7307,6 +7254,8 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
     auto textfont  = cell_textfont(row, col);
     auto textsize  = cell_textsize(row, col);
     auto val       = ((TableDisplay*) this)->cell_value(row, col);
+
+    assert(val);
 
     if (row > 0 && col > 0) { // Draw normal cell
         auto format = cell_format(row, col);
@@ -7407,7 +7356,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
         }
         else if (rend == flw::TableEditor::REND::NUMBER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-            auto num = util::to_double_l(val);
+            auto num = util::to_double(val);
 
             if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
@@ -7418,34 +7367,34 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
 
             if (format == flw::TableEditor::FORMAT::DEC_0) {
-                snprintf(buffer, 100, "%.0Lf", num);
+                snprintf(buffer, 100, "%.0f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_1) {
-                snprintf(buffer, 100, "%.1Lf", num);
+                snprintf(buffer, 100, "%.1f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_2) {
-                snprintf(buffer, 100, "%.2Lf", num);
+                snprintf(buffer, 100, "%.2f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_3) {
-                snprintf(buffer, 100, "%.3Lf", num);
+                snprintf(buffer, 100, "%.3f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_4) {
-                snprintf(buffer, 100, "%.4Lf", num);
+                snprintf(buffer, 100, "%.4f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_5) {
-                snprintf(buffer, 100, "%.5Lf", num);
+                snprintf(buffer, 100, "%.5f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_6) {
-                snprintf(buffer, 100, "%.6Lf", num);
+                snprintf(buffer, 100, "%.6f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_7) {
-                snprintf(buffer, 100, "%.7Lf", num);
+                snprintf(buffer, 100, "%.7f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_8) {
-                snprintf(buffer, 100, "%.8Lf", num);
+                snprintf(buffer, 100, "%.8f", num);
             }
             else {
-                snprintf(buffer, 100, "%.19Lg", num);
+                snprintf(buffer, 100, "%f", num);
             }
 
             fl_font(textfont, textsize);
@@ -8253,13 +8202,13 @@ namespace flw {
 //------------------------------------------------------------------------------
 flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
+    clip_children(1);
 
     _active = -1;
+    _drag   = false;
+    _hide   = false;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
-    _hide   = false;
-
-    clip_children(1);
 }
 
 //------------------------------------------------------------------------------
@@ -9491,6 +9440,87 @@ void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_re
 }
 
 //------------------------------------------------------------------------------
+// Load theme and font data
+//
+void flw::theme::load_theme_pref(Fl_Preferences& pref) {
+    auto val = 0;
+    char buffer[4000];
+
+    pref.get("fontname", buffer, "", 4000);
+
+    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
+        auto font = dlg::FontDialog::LoadFont(buffer);
+
+        if (font != -1) {
+            flw::PREF_FONT     = font;
+            flw::PREF_FONTNAME = buffer;
+        }
+    }
+
+    pref.get("fontsize", val, flw::PREF_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FONTSIZE = val;
+    }
+
+    pref.get("fixedfontname", buffer, "", 1000);
+
+    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
+        auto font = dlg::FontDialog::LoadFont(buffer);
+
+        if (font != -1) {
+            flw::PREF_FIXED_FONT     = font;
+            flw::PREF_FIXED_FONTNAME = buffer;
+        }
+    }
+
+    pref.get("fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FIXED_FONTSIZE = val;
+    }
+
+    pref.get("theme", buffer, "gtk", 4000);
+    flw::theme::load(buffer);
+}
+
+//------------------------------------------------------------------------------
+// Load window size
+//
+void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename, bool show) {
+    assert(window);
+
+    int  x, y, w, h, f;
+
+    pref.get((basename + "x").c_str(), x, 80);
+    pref.get((basename + "y").c_str(), y, 60);
+    pref.get((basename + "w").c_str(), w, 800);
+    pref.get((basename + "h").c_str(), h, 600);
+    pref.get((basename + "fullscreen").c_str(), f, 0);
+
+    if (w == 0 || h == 0) {
+        w = 800;
+        h = 600;
+    }
+
+    if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
+        x = 80;
+        y = 60;
+    }
+
+    window->resize(x, y, w, h);
+
+    if (show == true) {
+        window->show();
+        window->resize(x, y, w, h);
+    }
+
+    if (f == 1) {
+        window->fullscreen();
+    }
+}
+
+//------------------------------------------------------------------------------
 std::string flw::theme::name() {
     return _NAME;
 }
@@ -9516,95 +9546,27 @@ bool flw::theme::parse(int argc, const char** argv) {
 }
 
 //------------------------------------------------------------------------------
-// Load gui preferences and if window is set resize and show it
+// Save theme and font data
 //
-void flw::theme::pref_load(Fl_Preferences& pref, Fl_Window* window) {
-    auto val = 0;
-    char buffer[4000];
-
-    if (window != nullptr) {
-        int x, y, w, h, f;
-
-        pref.get("gui.x", x, 80);
-        pref.get("gui.y", y, 60);
-        pref.get("gui.w", w, 800);
-        pref.get("gui.h", h, 600);
-        pref.get("gui.fullscreen", f, 0);
-
-        if (w == 0 || h == 0) {
-            w = 800;
-            h = 600;
-        }
-
-        if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
-            x = 80;
-            y = 60;
-        }
-
-        window->resize(x, y, w, h);
-        window->show();
-        window->resize(x, y, w, h);
-
-        if (f == 1) {
-            window->fullscreen();
-        }
-    }
-
-    pref.get("gui.fontname", buffer, "", 4000);
-
-    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
-        auto font = dlg::FontDialog::LoadFont(buffer);
-
-        if (font != -1) {
-            flw::PREF_FONT     = font;
-            flw::PREF_FONTNAME = buffer;
-        }
-    }
-
-    pref.get("gui.fontsize", val, flw::PREF_FONTSIZE);
-
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FONTSIZE = val;
-    }
-
-    pref.get("gui.fixedfontname", buffer, "", 1000);
-
-    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
-        auto font = dlg::FontDialog::LoadFont(buffer);
-
-        if (font != -1) {
-            flw::PREF_FIXED_FONT     = font;
-            flw::PREF_FIXED_FONTNAME = buffer;
-        }
-    }
-
-    pref.get("gui.fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
-
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FIXED_FONTSIZE = val;
-    }
-
-    pref.get("gui.theme", buffer, "gtk", 4000);
-    flw::theme::load(buffer);
+void flw::theme::save_theme_pref(Fl_Preferences& pref) {
+    pref.set("theme", flw::theme::name().c_str());
+    pref.set("fontname", flw::PREF_FONTNAME.c_str());
+    pref.set("fontsize", flw::PREF_FONTSIZE);
+    pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
 }
 
 //------------------------------------------------------------------------------
-// Save theme and fontnames and optionally window size
+// Save window size
 //
-void flw::theme::pref_save(Fl_Preferences& pref, Fl_Window* window) {
-    if (window != nullptr) {
-        pref.set("gui.x", window->x());
-        pref.set("gui.y", window->y());
-        pref.set("gui.w", window->w());
-        pref.set("gui.h", window->h());
-        pref.set("gui.fullscreen", window->fullscreen_active() ? 1 : 0);
-    }
+void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
+    assert(window);
 
-    pref.set("gui.theme", flw::theme::name().c_str());
-    pref.set("gui.fontname", flw::PREF_FONTNAME.c_str());
-    pref.set("gui.fontsize", flw::PREF_FONTSIZE);
-    pref.set("gui.fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
-    pref.set("gui.fixedfontsize", flw::PREF_FIXED_FONTSIZE);
+    pref.set((basename + "x").c_str(), window->x());
+    pref.set((basename + "y").c_str(), window->y());
+    pref.set((basename + "w").c_str(), window->w());
+    pref.set((basename + "h").c_str(), window->h());
+    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
 }
 
 
@@ -9834,7 +9796,7 @@ std::string flw::util::format_int(int64_t number, char sep) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf flw::util::file_load(std::string filename, bool alert) {
+flw::Buf flw::util::load_file(std::string filename, bool alert) {
     auto stat = flw::Stat(filename);
 
     if (stat.mode != 2) {
@@ -9873,38 +9835,34 @@ flw::Buf flw::util::file_load(std::string filename, bool alert) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::util::file_save(std::string filename, const void* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
+void flw::util::menu_item_enable(Fl_Menu_* menu, const char* text, bool value) {
+    assert(menu && text);
 
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
+    auto item = flw::_util_menu_item(menu, text);
 
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-
-            return false;
-        }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
+    if (item == nullptr) {
+        return;
     }
 
-    return true;
+    if (value == true) {
+        item->activate();
+    }
+    else {
+        item->deactivate();
+    }
 }
 
 //------------------------------------------------------------------------------
 Fl_Menu_Item* flw::util::menu_item_get(Fl_Menu_* menu, const char* text) {
-    assert(menu);
+    assert(menu && text);
+
     return flw::_util_menu_item(menu, text);
 }
 
 //------------------------------------------------------------------------------
 void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
-    assert(menu);
+    assert(menu && text);
+
     auto item = flw::_util_menu_item(menu, text);
 
     if (item == nullptr) {
@@ -9921,7 +9879,8 @@ void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
 
 //------------------------------------------------------------------------------
 void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
-    assert(menu);
+    assert(menu && text);
+
     auto item = flw::_util_menu_item(menu, text);
 
     if (item == nullptr) {
@@ -9933,7 +9892,8 @@ void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
 
 //------------------------------------------------------------------------------
 bool flw::util::menu_item_value(Fl_Menu_* menu, const char* text) {
-    assert(menu);
+    assert(menu && text);
+
     auto item = flw::_util_menu_item(menu, text);
 
     if (item == nullptr) {
@@ -10051,6 +10011,30 @@ int flw::util::replace(std::string& string, std::string find, std::string replac
     catch(...) {
         return -1;
     }
+}
+
+//------------------------------------------------------------------------------
+bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+
+            return false;
+        }
+    }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+
+    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -10191,97 +10175,67 @@ void flw::util::time_sleep(int milli) {
 }
 
 //------------------------------------------------------------------------------
-double flw::util::to_double(const char* string, double def) {
-    assert(string);
-
-    auto result = def;
-    auto first  = (string[0] == '-') ? 1 : 0;
-    first = (string[first] == '.') ? first + 1 : first;
-
-    if (string[first] >= '0' && string[first] <= '9') {
-        errno  = 0;
-        result = strtod(string, nullptr);
-        result = (errno == ERANGE) ? def : result;
+double flw::util::to_double(std::string string, double def) {
+    try {
+        return std::stod(string.c_str(), 0);
     }
-
-    return result;
-}
-
-//------------------------------------------------------------------------------
-long double flw::util::to_double_l(const char* string, long double def) {
-    assert(string);
-
-    auto result = def;
-    auto first  = (string[0] == '-') ? 1 : 0;
-    first = (string[first] == '.') ? first + 1 : first;
-
-    if (string[first] >= '0' && string[first] <= '9') {
-        errno  = 0;
-        result = strtold(string, nullptr);
-        result = (errno == ERANGE) ? def : result;
+    catch (...) {
+        return def;
     }
-
-    return result;
 }
 
 //------------------------------------------------------------------------------
 // Convert double numbers in string to actual numbers
 // Return number of set doubles
 //
-int flw::util::to_doubles(const char* string, double numbers[], size_t size) {
-    assert(string);
-
+int flw::util::to_doubles(std::string string, double numbers[], size_t size) {
     auto end = (char*) nullptr;
+    auto in  = string.c_str();
     auto f   = (size_t) 0;
+
     errno = 0;
 
     for (; f < size; f++) {
-        numbers[f] = strtod(string, &end);
+        numbers[f] = strtod(in, &end);
 
-        if (errno != 0 || string == end) {
+        if (errno != 0 || in == end) {
             return f;
         }
 
-        string = end;
+        in = end;
     }
 
     return f;
 }
 
 //------------------------------------------------------------------------------
-int64_t flw::util::to_int(const char* string, int64_t def) {
-    assert(string);
-
-    auto res = def;
-    auto first  = (string[0] == '-') ? 1 : 0;
-
-    if (string[first] >= '0' && string[first] <= '9') {
-        errno  = 0;
-        res = strtoll(string, nullptr, 0);
-        res = (errno == ERANGE) ? def : res;
+int64_t flw::util::to_int(std::string string, int64_t def) {
+    try {
+        return std::stoll(string.c_str(), 0, 0);
     }
-
-    return res;
+    catch (...) {
+        return def;
+    }
 }
 
 //------------------------------------------------------------------------------
 // Return number of set integers
 //
-int flw::util::to_ints(const char* string, int64_t numbers[], size_t size) {
-    assert(string);
-
+int flw::util::to_ints(std::string string, int64_t numbers[], size_t size) {
     auto end = (char*) nullptr;
+    auto in  = string.c_str();
     auto f   = (size_t) 0;
+
     errno = 0;
 
     for (; f < size; f++) {
-        numbers[f] = strtoll(string, &end, 10);
+        numbers[f] = strtoll(in, &end, 10);
 
-        if (errno != 0 || string == end) {
+        if (errno != 0 || in == end) {
             return f;
         }
 
-        string = end;
+        in = end;
     }
 
     return f;
@@ -10488,6 +10442,8 @@ namespace flw {
         //----------------------------------------------------------------------
         _InputMenu() : Fl_Input(0, 0, 0, 0) {
             tooltip(_INPUTMENU_TOOLTIP.c_str());
+
+            index     = -1;
             show_menu = false;
         }
 
@@ -10504,25 +10460,20 @@ namespace flw {
 
                     return 1;
                 }
-                else if (key == FL_Up && history.size()) {
+                else if (key == FL_Up && history.size() > 0) {
                     if (index <= 0) {
                         value("");
                         index = -1;
                     }
                     else {
                         index--;
-
-                        if (index < 0) {
-                            index = 0;
-                        }
-
-                        value(history[index].c_str());
                         show_menu = false;
+                        value(history[index].c_str());
                     }
 
                     return 1;
                 }
-                else if (key == FL_Down && history.size() && index < (int) history.size() - 1) {
+                else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
                     index++;
 
                     value(history[index].c_str());

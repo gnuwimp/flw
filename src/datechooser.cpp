@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "datechooser.h"
@@ -357,7 +357,7 @@ void flw::DateChooser::set(const Date& date) {
         date2.month(2);
     }
 
-    auto  start_cell  = 0;
+    auto start_cell   = 0;
     auto first_date   = Date(date2.year(), date2.month(), 1);
     auto current_date = Date();
     char tmp[30];

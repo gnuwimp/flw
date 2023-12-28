@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "dlg.h"
@@ -105,10 +105,10 @@ namespace flw {
                 _list->take_focus();
 
                 for (auto& s : list) {
-                    _list->add(s.c_str());size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+                    _list->add(s.c_str());
                 }
 
-                if (fixed_font) {
+                if (fixed_font == true) {
                     _list->textfont(flw::PREF_FIXED_FONT);
                     _list->textsize(flw::PREF_FIXED_FONTSIZE);
                 }

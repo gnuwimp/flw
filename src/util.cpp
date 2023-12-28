@@ -250,7 +250,7 @@ std::string flw::util::format_int(int64_t number, char sep) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf flw::util::file_load(std::string filename, bool alert) {
+flw::Buf flw::util::load_file(std::string filename, bool alert) {
     auto stat = flw::Stat(filename);
 
     if (stat.mode != 2) {
@@ -289,38 +289,34 @@ flw::Buf flw::util::file_load(std::string filename, bool alert) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::util::file_save(std::string filename, const void* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
+void flw::util::menu_item_enable(Fl_Menu_* menu, const char* text, bool value) {
+    assert(menu && text);
 
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
+    auto item = flw::_util_menu_item(menu, text);
 
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-
-            return false;
-        }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
+    if (item == nullptr) {
+        return;
     }
 
-    return true;
+    if (value == true) {
+        item->activate();
+    }
+    else {
+        item->deactivate();
+    }
 }
 
 //------------------------------------------------------------------------------
 Fl_Menu_Item* flw::util::menu_item_get(Fl_Menu_* menu, const char* text) {
-    assert(menu);
+    assert(menu && text);
+
     return flw::_util_menu_item(menu, text);
 }
 
 //------------------------------------------------------------------------------
 void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
-    assert(menu);
+    assert(menu && text);
+
     auto item = flw::_util_menu_item(menu, text);
 
     if (item == nullptr) {
@@ -337,7 +333,8 @@ void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
 
 //------------------------------------------------------------------------------
 void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
-    assert(menu);
+    assert(menu && text);
+
     auto item = flw::_util_menu_item(menu, text);
 
     if (item == nullptr) {
@@ -349,7 +346,8 @@ void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
 
 //------------------------------------------------------------------------------
 bool flw::util::menu_item_value(Fl_Menu_* menu, const char* text) {
-    assert(menu);
+    assert(menu && text);
+
     auto item = flw::_util_menu_item(menu, text);
 
     if (item == nullptr) {
@@ -467,6 +465,30 @@ int flw::util::replace(std::string& string, std::string find, std::string replac
     catch(...) {
         return -1;
     }
+}
+
+//------------------------------------------------------------------------------
+bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+
+            return false;
+        }
+    }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+
+    return true;
 }
 
 //------------------------------------------------------------------------------

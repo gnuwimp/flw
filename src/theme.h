@@ -29,10 +29,12 @@ namespace flw {
         void                            labelfont(Fl_Widget* widget);
         bool                            load(std::string name);
         void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+        void                            load_theme_pref(Fl_Preferences& pref);
+        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.", bool show = true);
         std::string                     name();
         bool                            parse(int argc, const char** argv);
-        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr);
-        void                            pref_save(Fl_Preferences& pref, Fl_Window* window = nullptr);
+        void                            save_theme_pref(Fl_Preferences& pref);
+        void                            save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
     }
 
     //--------------------------------------------------------------------------

@@ -50,6 +50,9 @@ Grid layout widget (flw::GridGroup)<br>
 Tab layout widget (flw::TabsGroup)<br>
 <img src="images/tabsgroup.png"/>
 
+Input menu (flw::InputMenu)<br>
+<img src="images/input_menu.png"/>
+
 Font dialog (flw::dlg::FontDialog)<br>
 <img src="images/font_dialog.png"/>
 

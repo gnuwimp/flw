@@ -804,6 +804,87 @@ void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_re
 }
 
 //------------------------------------------------------------------------------
+// Load theme and font data
+//
+void flw::theme::load_theme_pref(Fl_Preferences& pref) {
+    auto val = 0;
+    char buffer[4000];
+
+    pref.get("fontname", buffer, "", 4000);
+
+    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
+        auto font = dlg::FontDialog::LoadFont(buffer);
+
+        if (font != -1) {
+            flw::PREF_FONT     = font;
+            flw::PREF_FONTNAME = buffer;
+        }
+    }
+
+    pref.get("fontsize", val, flw::PREF_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FONTSIZE = val;
+    }
+
+    pref.get("fixedfontname", buffer, "", 1000);
+
+    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
+        auto font = dlg::FontDialog::LoadFont(buffer);
+
+        if (font != -1) {
+            flw::PREF_FIXED_FONT     = font;
+            flw::PREF_FIXED_FONTNAME = buffer;
+        }
+    }
+
+    pref.get("fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FIXED_FONTSIZE = val;
+    }
+
+    pref.get("theme", buffer, "gtk", 4000);
+    flw::theme::load(buffer);
+}
+
+//------------------------------------------------------------------------------
+// Load window size
+//
+void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename, bool show) {
+    assert(window);
+
+    int  x, y, w, h, f;
+
+    pref.get((basename + "x").c_str(), x, 80);
+    pref.get((basename + "y").c_str(), y, 60);
+    pref.get((basename + "w").c_str(), w, 800);
+    pref.get((basename + "h").c_str(), h, 600);
+    pref.get((basename + "fullscreen").c_str(), f, 0);
+
+    if (w == 0 || h == 0) {
+        w = 800;
+        h = 600;
+    }
+
+    if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
+        x = 80;
+        y = 60;
+    }
+
+    window->resize(x, y, w, h);
+
+    if (show == true) {
+        window->show();
+        window->resize(x, y, w, h);
+    }
+
+    if (f == 1) {
+        window->fullscreen();
+    }
+}
+
+//------------------------------------------------------------------------------
 std::string flw::theme::name() {
     return _NAME;
 }
@@ -829,95 +910,27 @@ bool flw::theme::parse(int argc, const char** argv) {
 }
 
 //------------------------------------------------------------------------------
-// Load gui preferences and if window is set resize and show it
+// Save theme and font data
 //
-void flw::theme::pref_load(Fl_Preferences& pref, Fl_Window* window) {
-    auto val = 0;
-    char buffer[4000];
-
-    if (window != nullptr) {
-        int x, y, w, h, f;
-
-        pref.get("gui.x", x, 80);
-        pref.get("gui.y", y, 60);
-        pref.get("gui.w", w, 800);
-        pref.get("gui.h", h, 600);
-        pref.get("gui.fullscreen", f, 0);
-
-        if (w == 0 || h == 0) {
-            w = 800;
-            h = 600;
-        }
-
-        if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
-            x = 80;
-            y = 60;
-        }
-
-        window->resize(x, y, w, h);
-        window->show();
-        window->resize(x, y, w, h);
-
-        if (f == 1) {
-            window->fullscreen();
-        }
-    }
-
-    pref.get("gui.fontname", buffer, "", 4000);
-
-    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
-        auto font = dlg::FontDialog::LoadFont(buffer);
-
-        if (font != -1) {
-            flw::PREF_FONT     = font;
-            flw::PREF_FONTNAME = buffer;
-        }
-    }
-
-    pref.get("gui.fontsize", val, flw::PREF_FONTSIZE);
-
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FONTSIZE = val;
-    }
-
-    pref.get("gui.fixedfontname", buffer, "", 1000);
-
-    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
-        auto font = dlg::FontDialog::LoadFont(buffer);
-
-        if (font != -1) {
-            flw::PREF_FIXED_FONT     = font;
-            flw::PREF_FIXED_FONTNAME = buffer;
-        }
-    }
-
-    pref.get("gui.fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
-
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FIXED_FONTSIZE = val;
-    }
-
-    pref.get("gui.theme", buffer, "gtk", 4000);
-    flw::theme::load(buffer);
+void flw::theme::save_theme_pref(Fl_Preferences& pref) {
+    pref.set("theme", flw::theme::name().c_str());
+    pref.set("fontname", flw::PREF_FONTNAME.c_str());
+    pref.set("fontsize", flw::PREF_FONTSIZE);
+    pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
 }
 
 //------------------------------------------------------------------------------
-// Save theme and fontnames and optionally window size
+// Save window size
 //
-void flw::theme::pref_save(Fl_Preferences& pref, Fl_Window* window) {
-    if (window != nullptr) {
-        pref.set("gui.x", window->x());
-        pref.set("gui.y", window->y());
-        pref.set("gui.w", window->w());
-        pref.set("gui.h", window->h());
-        pref.set("gui.fullscreen", window->fullscreen_active() ? 1 : 0);
-    }
+void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
+    assert(window);
 
-    pref.set("gui.theme", flw::theme::name().c_str());
-    pref.set("gui.fontname", flw::PREF_FONTNAME.c_str());
-    pref.set("gui.fontsize", flw::PREF_FONTSIZE);
-    pref.set("gui.fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
-    pref.set("gui.fixedfontsize", flw::PREF_FIXED_FONTSIZE);
+    pref.set((basename + "x").c_str(), window->x());
+    pref.set((basename + "y").c_str(), window->y());
+    pref.set((basename + "w").c_str(), window->w());
+    pref.set((basename + "h").c_str(), window->h());
+    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
 }
 
 // MKALGAM_OFF

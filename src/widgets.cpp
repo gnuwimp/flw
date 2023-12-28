@@ -24,6 +24,8 @@ namespace flw {
         //----------------------------------------------------------------------
         _InputMenu() : Fl_Input(0, 0, 0, 0) {
             tooltip(_INPUTMENU_TOOLTIP.c_str());
+
+            index     = -1;
             show_menu = false;
         }
 
@@ -40,25 +42,20 @@ namespace flw {
 
                     return 1;
                 }
-                else if (key == FL_Up && history.size()) {
+                else if (key == FL_Up && history.size() > 0) {
                     if (index <= 0) {
                         value("");
                         index = -1;
                     }
                     else {
                         index--;
-
-                        if (index < 0) {
-                            index = 0;
-                        }
-
-                        value(history[index].c_str());
                         show_menu = false;
+                        value(history[index].c_str());
                     }
 
                     return 1;
                 }
-                else if (key == FL_Down && history.size() && index < (int) history.size() - 1) {
+                else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
                     index++;
 
                     value(history[index].c_str());

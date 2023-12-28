@@ -90,7 +90,7 @@ namespace flw {
                 flw::PriceVector prices;
             };
 
-            flw::Buf buf = flw::util::file_load(filename);
+            flw::Buf buf = flw::util::load_file(filename);
 
             if (buf.p == nullptr) {
                 return false;
@@ -105,20 +105,20 @@ namespace flw {
 
             chart->clear();
 
-            auto lines = flw::util::split(str, "\n");
-            auto state = 0;
-            auto count = 0;
-            auto data  = ChartData { true, true, true, (int) flw::Date::RANGE::DAY, 6, 1, 100, 0, 0, 1, PriceVector(), } ;
-            auto line  = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
+            auto lines    = flw::util::split(str, "\n");
+            auto state    = 0;
+            auto count    = 0;
+            auto data     = ChartData { true, true, true, (int) flw::Date::RANGE::DAY, 6, 1, 100, 0, 0, 1, PriceVector(), } ;
+            auto linedata = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
 
-            for (const auto& l : lines) {
+            for (const auto& line : lines) {
                 count++;
 
-                if (l == "") {
+                if (line == "") {
                     continue;
                 }
 
-                auto columns = flw::util::split(l, "\t");
+                auto columns = flw::util::split(line, "\t");
 
                 if (columns.size() == 0) {
                     continue;
@@ -138,8 +138,8 @@ namespace flw {
                         state = 2;
                     }
                     if (key == "start_line") {
-                         state = 3;
-                         line = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
+                         state    = 3;
+                         linedata = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
                     }
                     else if (key == "start_block") {
                          state = 4;
@@ -171,10 +171,6 @@ namespace flw {
                         if (columns.size() < 2) goto ERR;
                         data.margin_right = (int) flw::util::to_int(columns[1].c_str());
                     }
-                    else if (key == "margin_right") {
-                        if (columns.size() < 2) goto ERR;
-                        data.margin_right = (int) flw::util::to_int(columns[1].c_str());
-                    }
                     else if (key == "labels") {
                         if (columns.size() < 2) goto ERR;
                         data.labels = (int) flw::util::to_int(columns[1].c_str());
@@ -199,35 +195,35 @@ namespace flw {
                 else if (state == 3) {
                     if (key == "area") {
                         if (columns.size() < 2) goto ERR;
-                        line.area = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.area = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "type") {
                         if (columns.size() < 2) goto ERR;
-                        line.type = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.type = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "color") {
                         if (columns.size() < 2) goto ERR;
-                        line.color = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.color = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "width") {
                         if (columns.size() < 2) goto ERR;
-                        line.width = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.width = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "align") {
                         if (columns.size() < 2) goto ERR;
-                        line.align = (int) flw::util::to_int(columns[1].c_str());
+                        linedata.align = (int) flw::util::to_int(columns[1].c_str());
                     }
                     else if (key == "clamp_max") {
                         if (columns.size() < 2) goto ERR;
-                        line.clamp_max = flw::util::to_double(columns[1].c_str());
+                        linedata.clamp_max = flw::util::to_double(columns[1].c_str());
                     }
                     else if (key == "clamp_min") {
                         if (columns.size() < 2) goto ERR;
-                        line.clamp_min = flw::util::to_double(columns[1].c_str());
+                        linedata.clamp_min = flw::util::to_double(columns[1].c_str());
                     }
                     else if (key == "label") {
-                        if (columns.size() >= 2) line.label = columns[1];
-                        else line.label = "";
+                        if (columns.size() >= 2) linedata.label = columns[1];
+                        else linedata.label = "";
                     }
                     else if (key == "p") {
                         auto date = flw::Date::FromString((columns.size() > 1) ? columns[1].c_str() : "");
@@ -239,18 +235,20 @@ namespace flw {
                             auto h = flw::util::to_double(columns[2].c_str());
                             auto l = flw::util::to_double(columns[3].c_str());
                             auto c = flw::util::to_double(columns[4].c_str());
-                            line.prices.push_back(Price(date.format(chart->_date_format), h, l, c));
+
+                            linedata.prices.push_back(Price(date.format(chart->_date_format), h, l, c));
                         }
                         else if (columns.size() > 2) {
                             auto c = flw::util::to_double(columns[2].c_str());
-                            line.prices.push_back(Price(date.format(chart->_date_format), c));
+
+                            linedata.prices.push_back(Price(date.format(chart->_date_format), c));
                         }
                         else {
                             goto ERR;
                         }
                     }
                     else if (key == "end_line") {
-                        if (chart->add_line(line.area, line.prices, line.label, (flw::chart::TYPE) line.type, line.align, line.color, line.width, line.clamp_min, line.clamp_max) == false) {
+                        if (chart->add_line(linedata.area, linedata.prices, linedata.label, (flw::chart::TYPE) linedata.type, linedata.align, linedata.color, linedata.width, linedata.clamp_min, linedata.clamp_max) == false) {
                             goto ERR;
                         }
 
@@ -341,7 +339,7 @@ namespace flw {
             }
             res += flw::util::format("end_block\n");
 
-            return flw::util::file_save(filename, res.c_str(), res.length());
+            return flw::util::save_file(filename, res.c_str(), res.length());
         }
     }
 }

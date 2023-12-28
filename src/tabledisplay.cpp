@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "tabledisplay.h"
@@ -253,7 +253,7 @@ AGAIN:
                     col = 1;
                 }
 
-                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
+                if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
                     col = row = 1;
                     goto AGAIN;
                 }
@@ -273,7 +273,7 @@ AGAIN:
                     col = _table->columns();
                 }
 
-                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
+                if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
                     row = _table->rows();
                     col = _table->columns();
                     goto AGAIN;
@@ -330,7 +330,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     selection_color(FL_SELECTION_COLOR);
     clip_children(1);
     flw::theme::labelfont(this);
-    clear();
+    TableDisplay::clear();
 }
 
 //------------------------------------------------------------------------------
@@ -594,11 +594,10 @@ void flw::TableDisplay::_draw_text(const char* string, int X, int Y, int W, int 
 //------------------------------------------------------------------------------
 int flw::TableDisplay::_ev_keyboard_down() {
     auto key   = Fl::event_key();
-    auto text  = std::string(Fl::event_text());
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
 
-    // printf("key=%d <%s>, alt=%d, cmd=%d, shift=%d\n", key, text.c_str(), alt, cmd, shift); fflush(stdout);
+    // printf("key=%d, alt=%d, cmd=%d, shift=%d\n", key, alt, cmd, shift); fflush(stdout);
 
     if (cmd == true && key == FL_Up) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);

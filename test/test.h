@@ -2,6 +2,7 @@
 #define FLW_TEST_H
 
 const std::string HAMLET_LIST = R"(@l@bTo be, or not to be: that is the question:
+
 @mWhether 'tis nobler in the mind to suffer
 @sThe slings and arrows of outrageous fortune,
 @bOr to take arms against a sea of troubles,
@@ -41,6 +42,7 @@ Be all my sins remember'd!
 )";
 
 const std::string HAMLET_TEXT = R"(To be, or not to be: that is the question:
+
 Whether 'tis nobler in the mind to suffer
 The slings and arrows of outrageous fortune,
 Or to take arms against a sea of troubles,

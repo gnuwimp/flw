@@ -1,4 +1,4 @@
-// Copyright 2019 - 2021 gnuwimp@gmail.com
+// Copyright 2019 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "grid.h"
@@ -17,7 +17,7 @@ flw::Grid::Grid(int rows, int cols, int X, int Y, int W, int H, const char* l) :
     cols    = cols < 1 ? 1 : cols;
     _buffer = (char*) calloc(_FLW_GRID_STRING_SIZE + 1, 1);
 
-    size(rows, cols);
+    Grid::size(rows, cols);
     lines(true, true);
     header(true, true);
     select_mode(TableDisplay::SELECT::CELL);
@@ -33,20 +33,20 @@ flw::Grid::~Grid() {
 
 //------------------------------------------------------------------------------
 Fl_Align flw::Grid::cell_align(int row, int col) {
-    return (Fl_Align) _get_int(_align, row, col, TableEditor::cell_align(row, col));
+    return (Fl_Align) _get_int(_cell_align, row, col, TableEditor::cell_align(row, col));
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_align(int row, int col, Fl_Align align) {
-    _set_int(_align, row, col, (int) align);
+    _set_int(_cell_align, row, col, (int) align);
 }
 
 //------------------------------------------------------------------------------
 flw::StringVector flw::Grid::cell_choice(int row, int col) {
-    _choices.clear();
-    auto choices = _get_string(_choice, row, col);
+    _cell_choices.clear();
+    auto choices = _get_string(_cell_choice, row, col);
 
-    if (*choices) {
+    if (*choices != 0) {
         auto tmp   = strdup(choices);
         auto start = tmp;
         auto iter  = tmp;
@@ -54,7 +54,7 @@ flw::StringVector flw::Grid::cell_choice(int row, int col) {
         while (*iter) {
             if (*iter == '\t') {
                 *iter = 0;
-                _choices.push_back(start);
+                _cell_choices.push_back(start);
                 start = iter + 1;
             }
 
@@ -64,72 +64,72 @@ flw::StringVector flw::Grid::cell_choice(int row, int col) {
         free(tmp);
     }
 
-    return _choices;
+    return _cell_choices;
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_choice(int row, int col, const char* value) {
-    _set_string(_choice, row, col, value);
+    _set_string(_cell_choice, row, col, value);
 }
 
 //------------------------------------------------------------------------------
 Fl_Color flw::Grid::cell_color(int row, int col) {
-    return (Fl_Color) _get_int(_color, row, col, TableEditor::cell_color(row, col));
+    return (Fl_Color) _get_int(_cell_color, row, col, TableEditor::cell_color(row, col));
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_color(int row, int col, Fl_Color color) {
-    _set_int(_color, row, col, (int) color);
+    _set_int(_cell_color, row, col, (int) color);
 }
 
 //------------------------------------------------------------------------------
 bool flw::Grid::cell_edit(int row, int col) {
-    return (bool) _get_int(_edit, row, col, 0);
+    return (bool) _get_int(_cell_edit, row, col, 0);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_edit(int row, int col, bool value) {
-    _set_int(_edit, row, col, (int) value);
+    _set_int(_cell_edit, row, col, (int) value);
 }
 
 //------------------------------------------------------------------------------
 flw::TableEditor::FORMAT flw::Grid::cell_format(int row, int col) {
-    return (TableEditor::FORMAT) _get_int(_format, row, col, (int) TableEditor::FORMAT::DEFAULT);
+    return (TableEditor::FORMAT) _get_int(_cell_format, row, col, (int) TableEditor::FORMAT::DEFAULT);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_format(int row, int col, TableEditor::FORMAT value) {
-    _set_int(_format, row, col, (int) value);
+    _set_int(_cell_format, row, col, (int) value);
 }
 
 //------------------------------------------------------------------------------
 flw::TableEditor::REND flw::Grid::cell_rend(int row, int col) {
-    return (TableEditor::REND) _get_int(_rend, row, col, (int) TableEditor::REND::TEXT);
+    return (TableEditor::REND) _get_int(_cell_rend, row, col, (int) TableEditor::REND::TEXT);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_rend(int row, int col, TableEditor::REND rend) {
-    _set_int(_rend, row, col, (int) rend);
+    _set_int(_cell_rend, row, col, (int) rend);
 }
 
 //------------------------------------------------------------------------------
 Fl_Color flw::Grid::cell_textcolor(int row, int col) {
-    return (Fl_Color) _get_int(_textcolor, row, col, TableEditor::cell_textcolor(row, col));
+    return (Fl_Color) _get_int(_cell_textcolor, row, col, TableEditor::cell_textcolor(row, col));
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_textcolor(int row, int col, Fl_Color color) {
-    _set_int(_textcolor, row, col, (int) color);
+    _set_int(_cell_textcolor, row, col, (int) color);
 }
 
 //------------------------------------------------------------------------------
 const char* flw::Grid::cell_value(int row, int col) {
-    return _get_string(_cell, row, col);
+    return _get_string(_cell_value, row, col);
 }
 
 //------------------------------------------------------------------------------
 bool flw::Grid::cell_value(int row, int col, const char* value) {
-    _set_string(_cell, row, col, value);
+    _set_string(_cell_value, row, col, value);
     return true;
 }
 
@@ -151,13 +151,13 @@ void flw::Grid::cell_value2(int row, int col, const char* format, ...) {
 
 //------------------------------------------------------------------------------
 int flw::Grid::cell_width(int col) {
-    int W = _get_int(_width, 0, col, 80);
+    int W = _get_int(_cell_width, 0, col, 80);
     return W >= 10 ? W : TableEditor::cell_width(col);
 }
 
 //------------------------------------------------------------------------------
 void flw::Grid::cell_width(int col, int width) {
-    _set_int(_width, 0, col, (int) width);
+    _set_int(_cell_width, 0, col, (int) width);
 }
 
 //------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// Copyright 2021 gnuwimp@gmail.com
+// Copyright 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #ifndef FLW_FONTDIALOG_H

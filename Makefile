@@ -15,7 +15,19 @@ else
 	BUILD_NAME = _d
 endif
 
-ifeq ($(OS),Linux)
+ifeq ($(findstring MINGW64,$(OS)), MINGW64)
+	EXT = $(BUILD_NAME).exe
+	RES = res/test.res
+
+	ifeq ($(BUILD),release)
+		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
+	else
+		CXX = g++ -std=c++17 -DDEBUG -DFLW_USE_PNG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall -Wno-unused-parameter -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
+	endif
+
+else
 	EXT = $(BUILD_NAME)
 	RES =
 
@@ -27,20 +39,6 @@ ifeq ($(OS),Linux)
 		LD  = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags --use-images`
 	endif
 
-else ifeq ($(findstring MINGW64,$(OS)), MINGW64)
-	EXT = $(BUILD_NAME).exe
-	RES = res/test.res
-
-	ifeq ($(BUILD),release)
-		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -DPCRE_STATIC=1 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
-	else
-		CXX = g++ -std=c++17 -DDEBUG -DFLW_USE_PNG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -W -Wall -Wno-unused-parameter -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
-	endif
-
-else
-    $(error error: unknown compiler)
 endif
 
 OBJ=$(BUILD_DIR)/chart.o \

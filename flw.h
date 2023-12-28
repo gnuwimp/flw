@@ -80,8 +80,8 @@ namespace flw {
         std::string                     format(const char* format, ...);
         std::string                     format_double(double number, int decimals, char sep = ' ');
         std::string                     format_int(int64_t number, char sep = ' ');
-        Buf                             file_load(std::string filename, bool alert = true);
-        bool                            file_save(std::string filename, const void* data, size_t size, bool alert = true);
+        Buf                             load_file(std::string filename, bool alert = true);
+        void                            menu_item_enable(Fl_Menu_* menu, const char* text, bool value);
         Fl_Menu_Item*                   menu_item_get(Fl_Menu_* menu, const char* text);
         void                            menu_item_set(Fl_Menu_* menu, const char* text, bool value);
         void                            menu_item_set_only(Fl_Menu_* menu, const char* text);
@@ -90,6 +90,7 @@ namespace flw {
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
         int                             replace(std::string& string, std::string find, std::string replace);
+        bool                            save_file(std::string filename, const void* data, size_t size, bool alert = true);
         StringVector                    split(const std::string& string, std::string split);
         bool                            test(bool val, int line, const char* func);
         bool                            test(const char* ref, const char* val, int line, const char* func);
@@ -99,11 +100,10 @@ namespace flw {
         int64_t                         time_micro();
         int32_t                         time_milli();
         void                            time_sleep(int milli);
-        double                          to_double(const char* string, double def = 0.0);
-        long double                     to_double_l(const char* string, long double def = 0.0);
-        int                             to_doubles(const char* string, double numbers[], size_t size);
-        int64_t                         to_int(const char* string, int64_t def = 0);
-        int                             to_ints(const char* string, int64_t numbers[], size_t size);
+        double                          to_double(std::string, double def = 0.0);
+        int                             to_doubles(std::string string, double numbers[], size_t size);
+        int64_t                         to_int(std::string string, int64_t def = 0);
+        int                             to_ints(std::string string, int64_t numbers[], size_t size);
         void*                           zero_memory(char* string);
         void*                           zero_memory(void* Buf, size_t size);
         void*                           zero_memory(std::string& string);
@@ -145,10 +145,12 @@ namespace flw {
         void                            labelfont(Fl_Widget* widget);
         bool                            load(std::string name);
         void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+        void                            load_theme_pref(Fl_Preferences& pref);
+        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.", bool show = true);
         std::string                     name();
         bool                            parse(int argc, const char** argv);
-        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr);
-        void                            pref_save(Fl_Preferences& pref, Fl_Window* window = nullptr);
+        void                            save_theme_pref(Fl_Preferences& pref);
+        void                            save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
     }
 
     //--------------------------------------------------------------------------
@@ -1267,12 +1269,12 @@ namespace flw {
         Fl_Widget*                      _button();
         void                            _hide_tab_buttons(bool hide);
 
-        TABS                            _tabs;
-        bool                            _hide;
         int                             _active;
-        int                             _drag;
-        int                             _pos;
         std::vector<_TabsGroupButton*>  _buttons;
+        bool                            _drag;
+        bool                            _hide;
+        int                             _pos;
+        TABS                            _tabs;
         std::vector<Fl_Widget*>         _widgets;
     };
 }
@@ -1319,18 +1321,18 @@ namespace flw {
         void                            _set_int(StringMap& map, int row, int col, int value);
         void                            _set_string(StringMap& map, int row, int col, const char* value);
 
-        char                            _key[100];
         char*                           _buffer;
-        StringMap                       _align;
-        StringMap                       _cell;
-        StringMap                       _choice;
-        StringMap                       _color;
-        StringMap                       _edit;
-        StringMap                       _format;
-        StringMap                       _rend;
-        StringMap                       _textcolor;
-        StringMap                       _width;
-        StringVector                    _choices;
+        StringMap                       _cell_align;
+        StringMap                       _cell_choice;
+        StringVector                    _cell_choices;
+        StringMap                       _cell_color;
+        StringMap                       _cell_edit;
+        StringMap                       _cell_format;
+        StringMap                       _cell_rend;
+        StringMap                       _cell_textcolor;
+        StringMap                       _cell_value;
+        StringMap                       _cell_width;
+        char                            _key[100];
     };
 }
 

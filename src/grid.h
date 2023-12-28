@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #ifndef FLW_GRID_H
@@ -50,18 +50,18 @@ namespace flw {
         void                            _set_int(StringMap& map, int row, int col, int value);
         void                            _set_string(StringMap& map, int row, int col, const char* value);
 
-        char                            _key[100];
         char*                           _buffer;
-        StringMap                       _align;
-        StringMap                       _cell;
-        StringMap                       _choice;
-        StringMap                       _color;
-        StringMap                       _edit;
-        StringMap                       _format;
-        StringMap                       _rend;
-        StringMap                       _textcolor;
-        StringMap                       _width;
-        StringVector                    _choices;
+        StringMap                       _cell_align;
+        StringMap                       _cell_choice;
+        StringVector                    _cell_choices;
+        StringMap                       _cell_color;
+        StringMap                       _cell_edit;
+        StringMap                       _cell_format;
+        StringMap                       _cell_rend;
+        StringMap                       _cell_textcolor;
+        StringMap                       _cell_value;
+        StringMap                       _cell_width;
+        char                            _key[100];
     };
 }
 

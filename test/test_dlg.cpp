@@ -150,8 +150,8 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "list") {
-            dlg::list("List View", HAMLET_TEXT);
-            dlg::list("List View", HAMLET_LIST, nullptr, true);
+            dlg::list("List View - STRING", HAMLET_TEXT);
+            dlg::list("List View - LIST", HAMLET_LIST, nullptr, true);
         }
 
         if (run == "" || run == "select") {

@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "tableeditor.h"
@@ -25,7 +25,7 @@ const char* flw::TableEditor::SELECT_LIST = "Select String";
 
 //------------------------------------------------------------------------------
 flw::TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
-    clear();
+    TableEditor::clear();
 }
 
 //------------------------------------------------------------------------------
@@ -40,11 +40,12 @@ void flw::TableEditor::clear() {
 //------------------------------------------------------------------------------
 void flw::TableEditor::_delete_current_cell() {
     if (_curr_row > 0 && _curr_col > 0) {
-        auto rend = cell_rend(_curr_row, _curr_col);
         auto edit = cell_edit(_curr_row, _curr_col);
-        auto set  = false;
 
         if (edit == true) {
+            auto rend = cell_rend(_curr_row, _curr_col);
+            auto set  = false;
+
             switch (rend) {
                 case flw::TableEditor::REND::TEXT:
                 case flw::TableEditor::REND::SECRET:
