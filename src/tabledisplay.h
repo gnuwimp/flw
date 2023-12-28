@@ -4,8 +4,7 @@
 #ifndef FLW_TABLEDISPLAY_H
 #define FLW_TABLEDISPLAY_H
 
-#include "util.h"
-#include "theme.h"
+#include "flw.h"
 
 // MKALGAM_ON
 

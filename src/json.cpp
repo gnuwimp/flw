@@ -6,6 +6,7 @@
 // MKALGAM_ON
 
 #include <string.h>
+#include <errno.h>
 
 namespace flw {
 namespace json {

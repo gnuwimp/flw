@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <FL/Fl_Menu_.H>
+#include <FL/Fl_Preferences.H>
 namespace flw {
     extern int                          PREF_FIXED_FONT;
     extern std::string                  PREF_FIXED_FONTNAME;
@@ -14,6 +15,10 @@ namespace flw {
     extern int                          PREF_FONT;
     extern int                          PREF_FONTSIZE;
     extern std::string                  PREF_FONTNAME;
+    extern std::vector<char*>           PREF_FONTNAMES;
+    extern std::string                  PREF_THEME;
+    extern const char* const            PREF_THEMES[];
+    extern int                          PREF_SCROLLBAR;
     typedef std::vector<std::string>    StringVector;
     struct Buf {
         char*                           p;
@@ -51,10 +56,66 @@ namespace flw {
         Buf                             load_file(std::string filename, bool alert = true);
         int32_t                         milliseconds();
         void                            png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+        std::string                     remove_browser_format(std::string text);
         std::string&                    replace(std::string& string, std::string find, std::string replace);
         bool                            save_file(std::string filename, const void* data, size_t size, bool alert = true);
         void                            sleep(int milli);
         StringVector                    split(const std::string& string, std::string split);
+    }
+    namespace theme {
+        bool                            is_dark();
+        bool                            load(std::string name);
+        int                             load_font(std::string requested_font);
+        void                            load_fonts(bool iso8859_only = true);
+        void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+        void                            load_theme_pref(Fl_Preferences& pref);
+        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
+        bool                            parse(int argc, const char** argv);
+        void                            save_theme_pref(Fl_Preferences& pref);
+        void                            save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
+        enum {
+                                        THEME_DEFAULT,
+                                        THEME_OXY,
+                                        THEME_OXY_BLUE,
+                                        THEME_OXY_TAN,
+                                        THEME_GLEAM,
+                                        THEME_GLEAM_BLUE,
+                                        THEME_GLEAM_DARK_BLUE,
+                                        THEME_GLEAM_DARK,
+                                        THEME_GLEAM_DARKER,
+                                        THEME_GLEAM_TAN,
+                                        THEME_GTK,
+                                        THEME_GTK_BLUE,
+                                        THEME_GTK_DARK_BLUE,
+                                        THEME_GTK_DARK,
+                                        THEME_GTK_DARKER,
+                                        THEME_GTK_TAN,
+                                        THEME_PLASTIC,
+                                        THEME_PLASTIC_BLUE,
+                                        THEME_PLASTIC_TAN,
+                                        THEME_SYSTEM,
+                                        THEME_NIL,
+        };
+    }
+    namespace color {
+        extern Fl_Color                 AZURE;
+        extern Fl_Color                 BEIGE;
+        extern Fl_Color                 BLUE;
+        extern Fl_Color                 BROWN;
+        extern Fl_Color                 CYAN;
+        extern Fl_Color                 GRAY;
+        extern Fl_Color                 GREEN;
+        extern Fl_Color                 LIME;
+        extern Fl_Color                 MAGENTA;
+        extern Fl_Color                 MAROON;
+        extern Fl_Color                 NAVY;
+        extern Fl_Color                 OLIVE;
+        extern Fl_Color                 PINK;
+        extern Fl_Color                 PURPLE;
+        extern Fl_Color                 RED;
+        extern Fl_Color                 SILVER;
+        extern Fl_Color                 TEAL;
+        extern Fl_Color                 YELLOW;
     }
 }
 #include <string>
@@ -382,19 +443,19 @@ namespace flw {
         int                             _h;
         int                             _w;
     };
-    namespace dlg {
-        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
-    }
 }
+#include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Hor_Fill_Slider.H>
 #include <FL/Fl_Toggle_Button.H>
 namespace flw {
+    class ScrollBrowser;
     namespace dlg {
         extern const char*              PASSWORD_CANCEL;
         extern const char*              PASSWORD_OK;
+        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
         void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -408,6 +469,7 @@ namespace flw {
         int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+        void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
         class AbortDialog : public Fl_Double_Window {
         public:
                                         AbortDialog(const AbortDialog&) = delete;
@@ -430,30 +492,6 @@ namespace flw {
             bool                        _abort;
             int64_t                     _last;
         };
-        class WorkDialog : public Fl_Double_Window {
-        public:
-                                        WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-            void                        resize(int X, int Y, int W, int H) override;
-            bool                        run(double update_time, const StringVector& messages);
-            bool                        run(double update_time, const std::string& message);
-            static void                 Callback(Fl_Widget* w, void* o);
-        private:
-            Fl_Button*                  _cancel;
-            Fl_Hold_Browser*            _label;
-            Fl_Toggle_Button*           _pause;
-            bool                        _ret;
-            double                      _last;
-            std::string                 _message;
-        };
-    }
-}
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Button.H>
-#include <FL/Fl_Double_Window.H>
-#include <string>
-namespace flw {
-    class ScrollBrowser;
-    namespace dlg {
         class FontDialog : public Fl_Double_Window {
         public:
                                         FontDialog(const FontDialog&) = delete;
@@ -477,9 +515,6 @@ namespace flw {
             void                        resize(int X, int Y, int W, int H) override;
             bool                        run(Fl_Window* parent = nullptr);
             static void                 Callback(Fl_Widget* w, void* o);
-            static void                 DeleteFonts();
-            static int                  LoadFont(std::string requested_font);
-            static void                 LoadFonts(bool iso8859_only = true);
         private:
             void                        _activate();
             void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label);
@@ -493,6 +528,21 @@ namespace flw {
             int                         _font;
             int                         _fontsize;
             std::string                 _fontname;
+        };
+        class WorkDialog : public Fl_Double_Window {
+        public:
+                                        WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
+            void                        resize(int X, int Y, int W, int H) override;
+            bool                        run(double update_time, const StringVector& messages);
+            bool                        run(double update_time, const std::string& message);
+            static void                 Callback(Fl_Widget* w, void* o);
+        private:
+            Fl_Button*                  _cancel;
+            Fl_Hold_Browser*            _label;
+            Fl_Toggle_Button*           _pause;
+            bool                        _ret;
+            double                      _last;
+            std::string                 _message;
         };
     }
 }
@@ -993,7 +1043,6 @@ namespace flw {
                                             { return _menu; }
         void                            update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
         static void                     Callback(Fl_Widget*, void*);
-        static std::string              RemoveFormat(const char* text);
     private:
         Fl_Menu_Button*                 _menu;
         bool                            _flag_menu;
@@ -1304,6 +1353,8 @@ namespace flw {
         char                            _key[100];
     };
 }
+#include <string>
+#include <vector>
 #include <FL/Fl_Group.H>
 #include <FL/Fl.H>
 namespace flw {
@@ -1360,44 +1411,6 @@ namespace flw {
         TABS                            _tabs;
         std::vector<Fl_Widget*>         _widgets;
     };
-}
-#include <string>
-#include <FL/fl_draw.H>
-namespace flw {
-    namespace theme {
-        bool                            is_dark();
-        bool                            load(std::string name);
-        void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
-        void                            load_theme_pref(Fl_Preferences& pref);
-        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
-        std::string                     name();
-        bool                            parse(int argc, const char** argv);
-        void                            save_theme_pref(Fl_Preferences& pref);
-        void                            save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
-    }
-    namespace color {
-        extern Fl_Color                 AZURE;
-        extern Fl_Color                 BEIGE;
-        extern Fl_Color                 BLUE;
-        extern Fl_Color                 BROWN;
-        extern Fl_Color                 CYAN;
-        extern Fl_Color                 GRAY;
-        extern Fl_Color                 GREEN;
-        extern Fl_Color                 LIME;
-        extern Fl_Color                 MAGENTA;
-        extern Fl_Color                 MAROON;
-        extern Fl_Color                 NAVY;
-        extern Fl_Color                 OLIVE;
-        extern Fl_Color                 PINK;
-        extern Fl_Color                 PURPLE;
-        extern Fl_Color                 RED;
-        extern Fl_Color                 SILVER;
-        extern Fl_Color                 TEAL;
-        extern Fl_Color                 YELLOW;
-    }
-    namespace dlg {
-        void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
-    }
 }
 namespace flw {
     class WaitCursor {

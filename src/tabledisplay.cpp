@@ -10,6 +10,7 @@
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

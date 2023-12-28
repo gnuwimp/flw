@@ -1,14 +1,17 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "plot.h"
-#include "theme.h"
-#include "util.h"
-#include <time.h>
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "plot.h"
+#endif
+
+#include <FL/Fl.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl.H>
+#include <time.h>
 
 using namespace flw;
 

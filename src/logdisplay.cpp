@@ -4,8 +4,6 @@
 #include "logdisplay.h"
 #include "dlg.h"
 #include "json.h"
-#include "util.h"
-#include "theme.h"
 
 // MKALGAM_ON
 

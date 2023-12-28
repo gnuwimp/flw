@@ -1,7 +1,10 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "util.h"
+#ifndef FLW_RECENTMENU_H
+#define FLW_RECENTMENU_H
+
+#include "flw.h"
 
 // MKALGAM_ON
 
@@ -43,3 +46,5 @@ namespace flw {
 }
 
 // MKALGAM_OFF
+
+#endif

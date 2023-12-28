@@ -1,13 +1,16 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "tableeditor.h"
-#include "fontdialog.h"
-#include "theme.h"
-#include <stdarg.h>
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "tableeditor.h"
+#endif
+
+#include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl.H>
+#include <stdarg.h>
 
 using namespace flw;
 

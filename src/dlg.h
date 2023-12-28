@@ -4,10 +4,12 @@
 #ifndef FLW_DLG_H
 #define FLW_DLG_H
 
-#include "util.h"
+#include "flw.h"
+#include "date.h"
 
 // MKALGAM_ON
 
+#include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Hold_Browser.H>
@@ -15,11 +17,14 @@
 #include <FL/Fl_Toggle_Button.H>
 
 namespace flw {
+    class ScrollBrowser;
+
     namespace dlg {
         //----------------------------------------------------------------------
         extern const char*              PASSWORD_CANCEL;
         extern const char*              PASSWORD_OK;
 
+        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
         void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -33,6 +38,7 @@ namespace flw {
         int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+        void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
 
         //----------------------------------------------------------------------
         class AbortDialog : public Fl_Double_Window {
@@ -60,6 +66,54 @@ namespace flw {
             Fl_Hor_Fill_Slider*         _progress;
             bool                        _abort;
             int64_t                     _last;
+        };
+
+        //----------------------------------------------------------------------
+        // Dialog for selecting font and font size
+        // FontDialog::LoadFonts() will be called automatically (or do it manually)
+        // It is only needed once
+        // Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied)
+        //
+        class FontDialog : public Fl_Double_Window {
+        public:
+                                        FontDialog(const FontDialog&) = delete;
+                                        FontDialog(FontDialog&&) = delete;
+            FontDialog&                 operator=(const FontDialog&) = delete;
+            FontDialog&                 operator=(FontDialog&&) = delete;
+
+                                        FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
+                                        FontDialog(std::string font, Fl_Fontsize fontsize, std::string label);
+            void                        activate_font()
+                                            { ((Fl_Widget*) _fonts)->activate(); }
+            void                        deactivate_font()
+                                            { ((Fl_Widget*) _fonts)->deactivate(); }
+            void                        deactivate_fontsize()
+                                            { ((Fl_Widget*) _sizes)->deactivate(); }
+            int                         font()
+                                            { return _font; }
+            std::string                 fontname()
+                                            { return _fontname; }
+            int                         fontsize()
+                                            { return _fontsize; }
+            void                        resize(int X, int Y, int W, int H) override;
+            bool                        run(Fl_Window* parent = nullptr);
+
+            static void                 Callback(Fl_Widget* w, void* o);
+
+        private:
+            void                        _activate();
+            void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label);
+            void                        _select_name(std::string font_name);
+
+            Fl_Box*                     _label;
+            Fl_Button*                  _cancel;
+            Fl_Button*                  _select;
+            ScrollBrowser*              _fonts;
+            ScrollBrowser*              _sizes;
+            bool                        _ret;
+            int                         _font;
+            int                         _fontsize;
+            std::string                 _fontname;
         };
 
         //----------------------------------------------------------------------

@@ -4,6 +4,7 @@
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 #include <algorithm>
 #include <math.h>
 namespace flw {
@@ -2161,6 +2162,7 @@ int flw::Date::yearday() const {
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Repeat_Button.H>
 #include <FL/Fl_Return_Button.H>
+#include <FL/fl_draw.H>
 #include <time.h>
 namespace flw {
     class _DateChooserCanvas : public Fl_Widget {
@@ -2470,8 +2472,55 @@ void flw::DateChooser::_set_label() {
     auto string = date.format(Date::FORMAT::YEAR_MONTH_LONG);
     _month_label->copy_label(string.c_str());
 }
+#ifdef _WIN32
+    #include <windows.h>
+#else
+#endif
+#include <math.h>
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Help_View.H>
+#include <FL/Fl_Secret_Input.H>
+#include <FL/Fl_Output.H>
+#include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Text_Editor.H>
 namespace flw {
+    namespace theme {
+        void _load_default();
+        void _load_oxy();
+        void _load_oxy_blue();
+        void _load_oxy_tan();
+        void _load_gleam();
+        void _load_gleam_blue();
+        void _load_gleam_dark();
+        void _load_gleam_darker();
+        void _load_gleam_dark_blue();
+        void _load_gleam_tan();
+        void _load_gtk();
+        void _load_gtk_blue();
+        void _load_gtk_dark();
+        void _load_gtk_darker();
+        void _load_gtk_dark_blue();
+        void _load_gtk_tan();
+        void _load_plastic();
+        void _load_blue_plastic();
+        void _load_tan_plastic();
+        void _load_system();
+        void _scrollbar();
+    }
     namespace dlg {
+        void* zero_memory(void* mem, size_t size) {
+            if (mem == nullptr || size == 0) return mem;
+        #ifdef _WIN32
+            RtlSecureZeroMemory(mem, size);
+        #else
+            auto p = (volatile unsigned char*) mem;
+            while (size--) {
+                *p = 0;
+                p++;
+            }
+        #endif
+            return mem;
+        }
         class _DlgDate : public Fl_Double_Window {
             DateChooser*            _date_chooser;
             Date&                   _value;
@@ -2533,34 +2582,6 @@ namespace flw {
                 return _res;
             }
         };
-        bool date(const std::string& title, flw::Date& date, Fl_Window* parent) {
-            flw::dlg::_DlgDate dlg(title.c_str(), date);
-            return dlg.run(parent);
-        }
-    }
-}
-#include <math.h>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Help_View.H>
-#include <FL/Fl_Secret_Input.H>
-#include <FL/Fl_Output.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Text_Editor.H>
-namespace flw {
-    namespace dlg {
-        void* zero_memory(void* mem, size_t size) {
-            if (mem == nullptr || size == 0) return mem;
-        #ifdef _WIN32
-            RtlSecureZeroMemory(mem, size);
-        #else
-            auto p = (volatile unsigned char*) mem;
-            while (size--) {
-                *p = 0;
-                p++;
-            }
-        #endif
-            return mem;
-        }
         class _DlgHtml  : public Fl_Double_Window {
             Fl_Help_View*               _html;
             Fl_Return_Button*           _close;
@@ -3086,7 +3107,195 @@ namespace flw {
                 return _res;
             }
         };
+        class _DlgTheme : public Fl_Double_Window {
+            Fl_Box*                     _font_label;
+            Fl_Box*                     _fixedfont_label;
+            Fl_Browser*                 _theme;
+            Fl_Button*                  _close;
+            Fl_Button*                  _font;
+            Fl_Button*                  _fixedfont;
+            int                         _theme_row;
+        public:
+            _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
+                end();
+                _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+                _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+                _fixedfont_label = new Fl_Box(0, 0, 0, 0);
+                _font            = new Fl_Button(0, 0, 0, 0, "&Font");
+                _font_label      = new Fl_Box(0, 0, 0, 0);
+                _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
+                _theme_row       = 0;
+                add(_theme);
+                add(_fixedfont);
+                add(_font);
+                add(_close);
+                add(_fixedfont_label);
+                add(_font_label);
+                if (enable_font == false) {
+                  _font->deactivate();
+                }
+                if (enable_fixedfont == false) {
+                  _fixedfont->deactivate();
+                }
+                _close->callback(Callback, this);
+                _font_label->color(FL_BACKGROUND2_COLOR);
+                _font_label->box(FL_DOWN_BOX);
+                _font->callback(Callback, this);
+                _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                _fixedfont_label->color(FL_BACKGROUND2_COLOR);
+                _fixedfont_label->box(FL_DOWN_BOX);
+                _fixedfont->callback(Callback, this);
+                _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                _theme->callback(Callback, this);
+                _theme->textfont(flw::PREF_FONT);
+                for (size_t f = 0; f < 100; f++) {
+                    auto theme = flw::PREF_THEMES[f];
+                    if (theme != nullptr) _theme->add(theme);
+                    else break;
+                }
+                resizable(this);
+                callback(Callback, this);
+                set_modal();
+                update_pref();
+                util::center_window(this, parent);
+            }
+            static void Callback(Fl_Widget* w, void* o) {
+                auto dlg = (_DlgTheme*) o;
+                if (w == dlg) {
+                    dlg->hide();
+                }
+                else if (w == dlg->_fixedfont) {
+                    flw::dlg::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
+                    if (fd.run(Fl::first_window()) == true) {
+                        flw::PREF_FIXED_FONT     = fd.font();
+                        flw::PREF_FIXED_FONTSIZE = fd.fontsize();
+                        flw::PREF_FIXED_FONTNAME = fd.fontname();
+                        if (dlg->_font->active() == 0) {
+                            flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
+                        }
+                        dlg->update_pref();
+                    }
+                }
+                else if (w == dlg->_font) {
+                    flw::dlg::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
+                    if (fd.run(Fl::first_window()) == true) {
+                        flw::PREF_FONT     = fd.font();
+                        flw::PREF_FONTSIZE = fd.fontsize();
+                        flw::PREF_FONTNAME = fd.fontname();
+                        if (dlg->_fixedfont->active() == 0) {
+                            flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+                        }
+                        dlg->update_pref();
+                    }
+                }
+                else if (w == dlg->_theme) {
+                    auto row = dlg->_theme->value() - 1;
+                    if (row == theme::THEME_OXY) {
+                        theme::_load_oxy();
+                    }
+                    else if (row == theme::THEME_OXY_BLUE) {
+                        theme::_load_oxy_blue();
+                    }
+                    else if (row == theme::THEME_OXY_TAN) {
+                        theme::_load_oxy_tan();
+                    }
+                    else if (row == theme::THEME_GLEAM) {
+                        theme::_load_gleam();
+                    }
+                    else if (row == theme::THEME_GLEAM_BLUE) {
+                        theme::_load_gleam_blue();
+                    }
+                    else if (row == theme::THEME_GLEAM_DARK_BLUE) {
+                        theme::_load_gleam_dark_blue();
+                    }
+                    else if (row == theme::THEME_GLEAM_DARK) {
+                        theme::_load_gleam_dark();
+                    }
+                    else if (row == theme::THEME_GLEAM_DARKER) {
+                        theme::_load_gleam_darker();
+                    }
+                    else if (row == theme::THEME_GLEAM_TAN) {
+                        theme::_load_gleam_tan();
+                    }
+                    else if (row == theme::THEME_GTK) {
+                        theme::_load_gtk();
+                    }
+                    else if (row == theme::THEME_GTK_BLUE) {
+                        theme::_load_gtk_blue();
+                    }
+                    else if (row == theme::THEME_GTK_DARK_BLUE) {
+                        theme::_load_gtk_dark_blue();
+                    }
+                    else if (row == theme::THEME_GTK_DARK) {
+                        theme::_load_gtk_dark();
+                    }
+                    else if (row == theme::THEME_GTK_DARKER) {
+                        theme::_load_gtk_darker();
+                    }
+                    else if (row == theme::THEME_GTK_TAN) {
+                        theme::_load_gtk_tan();
+                    }
+                    else if (row == theme::THEME_PLASTIC) {
+                        theme::_load_plastic();
+                    }
+                    else if (row == theme::THEME_PLASTIC_BLUE) {
+                        theme::_load_blue_plastic();
+                    }
+                    else if (row == theme::THEME_PLASTIC_TAN) {
+                        theme::_load_tan_plastic();
+                    }
+                    else if (row == theme::THEME_SYSTEM) {
+                        theme::_load_system();
+                    }
+                    else {
+                        theme::_load_default();
+                    }
+                    dlg->update_pref();
+                }
+                else if (w == dlg->_close) {
+                    dlg->hide();
+                }
+            }
+            void resize(int X, int Y, int W, int H) override {
+                auto fs = flw::PREF_FONTSIZE;
+                Fl_Double_Window::resize(X, Y, W, H);
+                _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
+                _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
+                _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
+                _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
+                _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
+                _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
+            }
+            void run() {
+                show();
+                while (visible()) {
+                    Fl::wait();
+                    Fl::flush();
+                }
+            }
+            void update_pref() {
+                util::labelfont(this);
+                _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
+                _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
+                _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
+                _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
+                _theme->textsize(flw::PREF_FONTSIZE);
+                size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+                theme::_scrollbar();
+                for (int f = 0; f <= theme::THEME_SYSTEM; f++) {
+                    if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
+                        _theme->value(f + 1);
+                        break;
+                    }
+                }
+                Fl::redraw();
+            }
+        };
     }
+}
+bool flw::dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
+    flw::dlg::_DlgDate dlg(title.c_str(), date);
+    return dlg.run(parent);
 }
 void flw::dlg::html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
     _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
@@ -3148,6 +3357,10 @@ bool flw::dlg::text_edit(std::string title, std::string& text, Fl_Window* parent
     text = res;
     free(res);
     return true;
+}
+void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
+    auto dlg = dlg::_DlgTheme(enable_font, enable_fixedfont, parent);
+    dlg.run();
 }
 flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
@@ -3224,91 +3437,8 @@ void flw::dlg::AbortDialog::show(const std::string& label, Fl_Window* parent) {
 void flw::dlg::AbortDialog::value(double value) {
     _progress->value(value);
 }
-flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
-    end();
-    _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
-    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
-    _label  = new Fl_Hold_Browser(0, 0, 0, 0);
-    _ret    = true;
-    _last   = 0.0;
-    add(_label);
-    add(_pause);
-    add(_cancel);
-    _cancel->callback(WorkDialog::Callback, this);
-    _label->box(FL_BORDER_BOX);
-    _label->textfont(flw::PREF_FONT);
-    _label->textsize(flw::PREF_FONTSIZE);
-    _pause->callback(WorkDialog::Callback, this);
-    if (cancel == false) {
-        _cancel->deactivate();
-    }
-    if (pause == false) {
-        _pause->deactivate();
-    }
-    util::labelfont(this);
-    callback(WorkDialog::Callback, this);
-    copy_label(title);
-    size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
-    set_modal();
-    resizable(this);
-    flw::util::center_window(this, parent);
-    show();
-}
-void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
-    auto dlg = (flw::dlg::WorkDialog*) o;
-    if (w == dlg) {
-    }
-    else if (w == dlg->_cancel) {
-        dlg->_ret = false;
-    }
-    else if (w == dlg->_pause) {
-        bool cancel = dlg->_cancel->active();
-        dlg->_cancel->deactivate();
-        dlg->_pause->label("C&ontinue");
-        while (dlg->_pause->value() != 0) {
-            flw::util::sleep(10);
-            Fl::check();
-        }
-        dlg->_pause->label("&Pause");
-        if (cancel) {
-            dlg->_cancel->activate();
-        }
-    }
-}
-void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
-    Fl_Double_Window::resize(X, Y, W, H);
-    _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-    _pause->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-    _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-}
-bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = flw::util::clock();
-    if (now - _last > update_time) {
-        _label->clear();
-        for (auto& s : messages) {
-            _label->add(s.c_str());
-        }
-        _last = now;
-        Fl::check();
-        Fl::flush();
-    }
-    return _ret;
-}
-bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
-    auto now = flw::util::clock();
-    if (now - _last > update_time) {
-        _label->clear();
-        _label->add(message.c_str());
-        _last = now;
-        Fl::check();
-        Fl::flush();
-    }
-    return _ret;
-}
-#include <FL/fl_draw.H>
 namespace flw {
     namespace dlg {
-        static std::vector<char*>   _FONTDIALOG_NAMES;
         static const std::string    _FONTDIALOG_LABEL = R"(
 ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
 abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
@@ -3394,7 +3524,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row2 = dlg->_sizes->value();
         if (row1 > 0 && row2 > 0) {
             row1--;
-            dlg->_fontname = ScrollBrowser::RemoveFormat(_FONTDIALOG_NAMES[row1]);
+            dlg->_fontname = util::remove_browser_format(flw::PREF_FONTNAMES[row1]);
             dlg->_font     = row1;
             dlg->_fontsize = row2 + 5;
             dlg->_ret      = true;
@@ -3440,8 +3570,8 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
     size(w(), h());
-    FontDialog::LoadFonts();
-    for (auto name : _FONTDIALOG_NAMES) {
+    theme::load_fonts();
+    for (auto name : flw::PREF_FONTNAMES) {
         _fonts->add(name);
     }
     for (auto f = 6; f <= 72; f++) {
@@ -3478,43 +3608,6 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     set_modal();
     _fonts->take_focus();
 }
-void flw::dlg::FontDialog::DeleteFonts() {
-    for (auto f : _FONTDIALOG_NAMES) {
-        free(f);
-    }
-    _FONTDIALOG_NAMES.clear();
-}
-int flw::dlg::FontDialog::LoadFont(std::string requested_font) {
-    FontDialog::LoadFonts();
-    auto count = 0;
-    for (auto font : _FONTDIALOG_NAMES) {
-        auto font2 = ScrollBrowser::RemoveFormat(font);
-        if (requested_font == font2) {
-            return count;
-        }
-        count++;
-    }
-    return -1;
-}
-void flw::dlg::FontDialog::LoadFonts(bool iso8859_only) {
-    if (_FONTDIALOG_NAMES.size() == 0) {
-        auto fonts = Fl::set_fonts(iso8859_only ? nullptr : "-*");
-        for (int f = 0; f < fonts; f++) {
-            auto attr  = 0;
-            auto name1 = Fl::get_font_name((Fl_Font) f, &attr);
-            auto name2 = std::string();
-            if (attr & FL_BOLD) {
-                name2 = std::string("@b");
-            }
-            if (attr & FL_ITALIC) {
-                name2 += std::string("@i");
-            }
-            name2 += std::string("@.");
-            name2 += name1;
-            _FONTDIALOG_NAMES.push_back(strdup(name2.c_str()));
-        }
-    }
-}
 void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
     int fs = flw::PREF_FONTSIZE;
     Fl_Double_Window::resize(X, Y, W, H);
@@ -3537,8 +3630,8 @@ bool flw::dlg::FontDialog::run(Fl_Window* parent) {
 }
 void flw::dlg::FontDialog::_select_name(std::string fontname) {
     auto count = 1;
-    for (auto font : _FONTDIALOG_NAMES) {
-        auto font_without_style = ScrollBrowser::RemoveFormat(font);
+    for (auto font : flw::PREF_FONTNAMES) {
+        auto font_without_style = util::remove_browser_format(font);
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
@@ -3549,6 +3642,1178 @@ void flw::dlg::FontDialog::_select_name(std::string fontname) {
     }
     _fonts->value(1);
     ((_FontDialogLabel*) _label)->font = 0;
+}
+flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+    end();
+    _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
+    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
+    _label  = new Fl_Hold_Browser(0, 0, 0, 0);
+    _ret    = true;
+    _last   = 0.0;
+    add(_label);
+    add(_pause);
+    add(_cancel);
+    _cancel->callback(WorkDialog::Callback, this);
+    _label->box(FL_BORDER_BOX);
+    _label->textfont(flw::PREF_FONT);
+    _label->textsize(flw::PREF_FONTSIZE);
+    _pause->callback(WorkDialog::Callback, this);
+    if (cancel == false) {
+        _cancel->deactivate();
+    }
+    if (pause == false) {
+        _pause->deactivate();
+    }
+    util::labelfont(this);
+    callback(WorkDialog::Callback, this);
+    copy_label(title);
+    size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+    set_modal();
+    resizable(this);
+    flw::util::center_window(this, parent);
+    show();
+}
+void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
+    auto dlg = (flw::dlg::WorkDialog*) o;
+    if (w == dlg) {
+    }
+    else if (w == dlg->_cancel) {
+        dlg->_ret = false;
+    }
+    else if (w == dlg->_pause) {
+        bool cancel = dlg->_cancel->active();
+        dlg->_cancel->deactivate();
+        dlg->_pause->label("C&ontinue");
+        while (dlg->_pause->value() != 0) {
+            flw::util::sleep(10);
+            Fl::check();
+        }
+        dlg->_pause->label("&Pause");
+        if (cancel) {
+            dlg->_cancel->activate();
+        }
+    }
+}
+void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
+    Fl_Double_Window::resize(X, Y, W, H);
+    _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+    _pause->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+}
+bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
+    auto now = flw::util::clock();
+    if (now - _last > update_time) {
+        _label->clear();
+        for (auto& s : messages) {
+            _label->add(s.c_str());
+        }
+        _last = now;
+        Fl::check();
+        Fl::flush();
+    }
+    return _ret;
+}
+bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
+    auto now = flw::util::clock();
+    if (now - _last > update_time) {
+        _label->clear();
+        _label->add(message.c_str());
+        _last = now;
+        Fl::check();
+        Fl::flush();
+    }
+    return _ret;
+}
+#include <algorithm>
+#include <assert.h>
+#include <math.h>
+#include <stdarg.h>
+#include <time.h>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
+#ifdef _WIN32
+    #include <FL/x.H>
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
+#ifdef FLW_USE_PNG
+    #include <FL/Fl_PNG_Image.H>
+    #include <FL/fl_draw.H>
+#endif
+namespace flw {
+    std::vector<char*>          PREF_FONTNAMES;
+    int                         PREF_FIXED_FONT         = FL_COURIER;
+    std::string                 PREF_FIXED_FONTNAME     = "FL_COURIER";
+    int                         PREF_FIXED_FONTSIZE     = 14;
+    int                         PREF_FONT               = FL_HELVETICA;
+    int                         PREF_FONTSIZE           = 14;
+    std::string                 PREF_FONTNAME           = "FL_HELVETICA";
+    int                         PREF_SCROLLBAR          = 2;
+    std::string                 PREF_THEME              = "default";
+    const char* const           PREF_THEMES[]           = {
+                                    "default",
+                                    "oxy",
+                                    "blue oxy",
+                                    "tan oxy",
+                                    "gleam",
+                                    "blue gleam",
+                                    "dark blue gleam",
+                                    "dark gleam",
+                                    "darker gleam",
+                                    "tan gleam",
+                                    "gtk",
+                                    "blue gtk",
+                                    "dark blue gtk",
+                                    "dark gtk",
+                                    "darker gtk",
+                                    "tan gtk",
+                                    "plastic",
+                                    "blue plastic",
+                                    "tan plastic",
+                                    "system",
+                                    nullptr,
+    };
+    struct Stat {
+        int64_t                         size;
+        int64_t                         mtime;
+        int                             mode;
+         Stat()
+            { size = mtime = 0; mode = 0; }
+         Stat(std::string filename) {
+            size  = 0;
+            mtime = 0;
+            mode  = 0;
+        #ifdef _WIN32
+            wchar_t wbuffer[1025];
+            struct __stat64 st;
+            while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+                filename.pop_back();
+            }
+            fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
+            if (_wstat64(wbuffer, &st) == 0) {
+                size  = st.st_size;
+                mtime = st.st_mtime;
+                if (S_ISDIR(st.st_mode)) {
+                    mode = 1;
+                }
+                else if (S_ISREG(st.st_mode)) {
+                    mode = 2;
+                }
+                else {
+                    mode = 3;
+                }
+            }
+        #else
+            struct stat st;
+            if (stat(filename.c_str(), &st) == 0) {
+                size  = st.st_size;
+                mtime = st.st_mtime;
+                if (S_ISDIR(st.st_mode)) {
+                    mode = 1;
+                }
+                else if (S_ISREG(st.st_mode)) {
+                    mode = 2;
+                }
+                else {
+                    mode = 3;
+                }
+            }
+        #endif
+        }
+   };
+}
+flw::Buf::Buf() {
+    p = nullptr;
+    s = 0;
+}
+flw::Buf::Buf(size_t s_) {
+    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
+    s = 0;
+    if (p != nullptr) {
+        s = s_;
+    }
+}
+flw::Buf::Buf(char* p_, size_t s_) {
+    p = p_;
+    s = s_;
+}
+flw::Buf::Buf(const char* p_, size_t s_) {
+    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
+    s = 0;
+    if (p != nullptr) {
+        memcpy(p, p_, s_);
+        s = s_;
+    }
+}
+flw::Buf::Buf(const Buf& b) {
+    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+    s = 0;
+    if (p != nullptr) {
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+}
+flw::Buf::Buf(Buf&& b) {
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+}
+flw::Buf& flw::Buf::operator=(const Buf& b) {
+    free(p);
+    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+    s = 0;
+    if (p != nullptr) {
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+    return *this;
+}
+flw::Buf& flw::Buf::operator=(Buf&& b) {
+    free(p);
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+    return *this;
+}
+flw::Buf& flw::Buf::operator+=(const Buf& b) {
+    auto t = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+    if (t != nullptr) {
+        memcpy(t, p, s);
+        memcpy(t + s, b.p, b.s);
+        free(p);
+        p = t;
+        s += b.s;
+    }
+    else {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
+    return *this;
+}
+bool flw::Buf::operator==(const Buf& other) const {
+    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
+}
+flw::Buf::~Buf() {
+    free(p);
+}
+void flw::debug::print(Fl_Widget* widget, bool tab) {
+    assert(widget);
+    printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
+    fflush(stdout);
+}
+void flw::debug::print(Fl_Group* group) {
+    assert(group);
+    puts("");
+    debug::print((Fl_Widget*) group);
+    for (int f = 0; f < group->children(); f++) {
+        debug::print(group->child(f), true);
+    }
+}
+namespace flw {
+    namespace menu {
+        static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
+            assert(menu && text);
+            auto item = menu->find_item(text);
+        #ifdef DEBUG
+            if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
+        #endif
+            return (Fl_Menu_Item*) item;
+        }
+        void enable_item(Fl_Menu_* menu, const char* text, bool value) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return;
+            if (value == true) item->activate();
+            else item->deactivate();
+        }
+        Fl_Menu_Item* get_item(Fl_Menu_* menu, const char* text) {
+            return _item(menu, text);
+        }
+        bool item_value(Fl_Menu_* menu, const char* text) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return false;
+            return item->value();
+        }
+        void set_item(Fl_Menu_* menu, const char* text, bool value) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return;
+            if (value == true) item->set();
+            else item->clear();
+        }
+        void setonly_item(Fl_Menu_* menu, const char* text) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return;
+            menu->setonly(item);
+        }
+    }
+}
+void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
+    if (parent != nullptr) {
+        int x = parent->x() + parent->w() / 2;
+        int y = parent->y() + parent->h() / 2;
+        window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
+    }
+    else {
+        window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
+    }
+}
+double flw::util::clock() {
+#ifdef _WIN32
+    struct timeb timeVal;
+    ftime(&timeVal);
+    return (double) timeVal.time + (double) (timeVal.millitm / 1000.0);
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
+#endif
+}
+void flw::util::labelfont(Fl_Widget* widget) {
+    assert(widget);
+    widget->labelfont(flw::PREF_FONT);
+    widget->labelsize(flw::PREF_FONTSIZE);
+    auto group = widget->as_group();
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            util::labelfont(group->child(f));
+        }
+    }
+}
+std::string flw::util::fix_menu_string(std::string in) {
+    std::string res = in;
+    util::replace(res, "\\", "\\\\");
+    util::replace(res, "_", "\\_");
+    util::replace(res, "/", "\\/");
+    util::replace(res, "&", "&&");
+    return res;
+}
+std::string flw::util::format(const char* format, ...) {
+    if (format == nullptr || *format == 0) return "";
+    int         l   = 128;
+    int         n   = 0;
+    char*       buf = (char*) calloc(l, 1);
+    std::string res;
+    va_list     args;
+    va_start(args, format);
+    n = vsnprintf(buf, l, format, args);
+    va_end(args);
+    if (n < 0) {
+        free(buf);
+        return res;
+    }
+    if (n < l) {
+        res = buf;
+        free(buf);
+        return res;
+    }
+    free(buf);
+    l = n + 1;
+    buf = (char*) calloc(l, 1);
+    if (buf == nullptr) return res;
+    va_start(args, format);
+    n = vsnprintf(buf, l, format, args);
+    va_end(args);
+    res = buf;
+    free(buf);
+    return res;
+}
+std::string flw::util::format_int(int64_t num, char del) {
+    auto pos = 0;
+    char tmp1[32];
+    char tmp2[32];
+    if (del < 1) {
+        del = 32;
+    }
+    memset(tmp2, 0, 32);
+    snprintf(tmp1, 32, "%lld", (long long int) num);
+    auto len = strlen(tmp1);
+    for (int f = len - 1, i = 0; f >= 0 && pos < 32; f--, i++) {
+        char c = tmp1[f];
+        if ((i % 3) == 0 && i > 0 && c != '-') {
+            tmp2[pos++] = del;
+        }
+        tmp2[pos++] = c;
+    }
+    std::string r = tmp2;
+    std::reverse(r.begin(), r.end());
+    return r;
+}
+flw::Buf flw::util::load_file(std::string filename, bool alert) {
+    auto stat = flw::Stat(filename);
+    if (stat.mode != 2) {
+        if (alert == true) {
+            fl_alert("error: file %s is missing or not an file", filename.c_str());
+        }
+        return Buf();
+    }
+    auto file = fl_fopen(filename.c_str(), "rb");
+    if (file == nullptr) {
+        if (alert == true) {
+            fl_alert("error: can't open %s", filename.c_str());
+        }
+        return Buf();
+    }
+    auto buf  = Buf(stat.size);
+    auto read = fread(buf.p, 1, (size_t) stat.size, file);
+    fclose(file);
+    if (read != (size_t) stat.size) {
+        if (alert == true) {
+            fl_alert("error: failed to read %s", filename.c_str());
+        }
+        return Buf();
+    }
+    return buf;
+}
+int32_t flw::util::milliseconds() {
+#if defined(_WIN32)
+    LARGE_INTEGER StartingTime;
+    LARGE_INTEGER Frequency;
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
+    StartingTime.QuadPart *= 1000000;
+    StartingTime.QuadPart /= Frequency.QuadPart;
+    return StartingTime.QuadPart / 1000;
+#else
+    timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (t.tv_sec * 1000000 + t.tv_nsec / 1000) / 1000;
+#endif
+}
+void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+#ifdef FLW_USE_PNG
+    auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
+    if (filename != nullptr) {
+        window->make_current();
+        if (X == 0 && Y == 0 && W == 0 && H == 0) {
+            X = window->x();
+            Y = window->y();
+            W = window->w();
+            H = window->h();
+        }
+        auto image = fl_read_image(nullptr, X, Y, W, H);
+        if (image != nullptr) {
+            auto ret = fl_write_png(filename, image, W, H);
+            if (ret == 0) {
+            }
+            else if (ret == -1) {
+                fl_alert("%s", "error: missing libraries");
+            }
+            else if (ret == -1) {
+                fl_alert("error: failed to save image to %s", filename);
+            }
+            delete []image;
+        }
+        else {
+            fl_alert("%s", "error: failed to grab image");
+        }
+    }
+#else
+    (void) opt_name;
+    (void) window;
+    (void) X;
+    (void) Y;
+    (void) W;
+    (void) H;
+    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
+#endif
+}
+std::string flw::util::remove_browser_format(std::string text) {
+    auto res = text;
+    auto f   = res.find_last_of("@");
+    if (f != std::string::npos) {
+        auto tmp = res.substr(f + 1);
+        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
+            res = tmp.substr(1);
+        }
+        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
+            auto s = std::string();
+            auto e = false;
+            tmp = tmp.substr(f + 1);
+            for (auto c : tmp) {
+                if (e == false && c >= '0' && c <= '9') {
+                }
+                else {
+                    e = true;
+                    s += c;
+                }
+            }
+            res = s;
+        }
+        else {
+            res = res.substr(f);
+        }
+    }
+    return res;
+}
+std::string& flw::util::replace(std::string& string, std::string find, std::string replace) {
+    if (find == "") return string;
+    size_t start = 0;
+    while ((start = string.find(find, start)) != std::string::npos) {
+        string.replace(start, find.length(), replace);
+        start += replace.length();
+    }
+    return string;
+}
+bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+            return false;
+        }
+    }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+    return true;
+}
+void flw::util::sleep(int milli) {
+#ifdef _WIN32
+    Sleep(milli);
+#else
+    usleep(milli * 1000);
+#endif
+}
+flw::StringVector flw::util::split(const std::string& string, std::string split) {
+    auto res = StringVector();
+    try {
+        if (split != "") {
+            auto pos1 = (std::string::size_type) 0;
+            auto pos2 = string.find(split);
+            while (pos2 != std::string::npos) {
+                res.push_back(string.substr(pos1, pos2 - pos1));
+                pos1 = pos2 + split.size();
+                pos2 = string.find(split, pos1);
+            }
+            if (pos1 <= string.size()) {
+                res.push_back(string.substr(pos1));
+            }
+        }
+    }
+    catch(...) {
+        res.clear();
+    }
+    return res;
+}
+namespace flw {
+    namespace color {
+        Fl_Color RED     = fl_rgb_color(255, 0, 0);
+        Fl_Color LIME    = fl_rgb_color(0, 255, 0);
+        Fl_Color BLUE    = fl_rgb_color(0, 0, 255);
+        Fl_Color YELLOW  = fl_rgb_color(255, 255, 0);
+        Fl_Color CYAN    = fl_rgb_color(0, 255, 255);
+        Fl_Color MAGENTA = fl_rgb_color(255, 0, 255);
+        Fl_Color SILVER  = fl_rgb_color(192, 192, 192);
+        Fl_Color GRAY    = fl_rgb_color(128, 128, 128);
+        Fl_Color MAROON  = fl_rgb_color(128, 0, 0);
+        Fl_Color OLIVE   = fl_rgb_color(128, 128, 0);
+        Fl_Color GREEN   = fl_rgb_color(0, 128, 0);
+        Fl_Color PURPLE  = fl_rgb_color(128, 0, 128);
+        Fl_Color TEAL    = fl_rgb_color(0, 128, 128);
+        Fl_Color NAVY    = fl_rgb_color(0, 0, 128);
+        Fl_Color BROWN   = fl_rgb_color(210, 105, 30);
+        Fl_Color PINK    = fl_rgb_color(255, 192, 203);
+        Fl_Color BEIGE   = fl_rgb_color(245, 245, 220);
+        Fl_Color AZURE   = fl_rgb_color(240, 255, 250);
+    }
+    namespace theme {
+        static unsigned char _OLD_R[256]  = { 0 };
+        static unsigned char _OLD_G[256]  = { 0 };
+        static unsigned char _OLD_B[256]  = { 0 };
+        static unsigned char _SYS_R[256]  = { 0 };
+        static unsigned char _SYS_G[256]  = { 0 };
+        static unsigned char _SYS_B[256]  = { 0 };
+        static bool          _IS_DARK     = false;
+        static bool          _SAVED_COLOR = false;
+        static bool          _SAVED_SYS   = false;
+        static void _colors(bool dark) {
+            (void) dark;
+            color::AZURE   = fl_rgb_color(240, 255, 250);
+            color::BEIGE   = fl_rgb_color(245, 245, 220);
+            color::BLUE    = fl_rgb_color(0, 0, 255);
+            color::BLUE    = fl_rgb_color(0, 0, 255);
+            color::BROWN   = fl_rgb_color(210, 105, 30);
+            color::CYAN    = fl_rgb_color(0, 255, 255);
+            color::GRAY    = fl_rgb_color(128, 128, 128);
+            color::GREEN   = fl_rgb_color(0, 128, 0);
+            color::LIME    = fl_rgb_color(0, 255, 0);
+            color::MAGENTA = fl_rgb_color(255, 0, 255);
+            color::MAROON  = fl_rgb_color(128, 0, 0);
+            color::NAVY    = fl_rgb_color(0, 0, 128);
+            color::OLIVE   = fl_rgb_color(128, 128, 0);
+            color::PINK    = fl_rgb_color(255, 192, 203);
+            color::PURPLE  = fl_rgb_color(128, 0, 128);
+            color::RED     = fl_rgb_color(255, 0, 0);
+            color::SILVER  = fl_rgb_color(192, 192, 192);
+            color::TEAL    = fl_rgb_color(0, 128, 128);
+            color::YELLOW  = fl_rgb_color(255, 255, 0);
+        }
+        static void _make_default_colors_darker() {
+            Fl::set_color(60,    0,  63,   0);
+            Fl::set_color(63,    0, 110,   0);
+            Fl::set_color(72,   55,   0,   0);
+            Fl::set_color(76,   55,  63,   0);
+            Fl::set_color(88,  110,   0,   0);
+            Fl::set_color(95,  140, 140, 100);
+            Fl::set_color(136,   0,   0,  55);
+            Fl::set_color(140,   0,  63,  55);
+            Fl::set_color(152,  55,   0,  55);
+            Fl::set_color(216,   0,   0, 110);
+            Fl::set_color(223,   0, 110, 110);
+            Fl::set_color(248, 110,   0, 110);
+        }
+        static void _blue_colors() {
+            Fl::set_color(0,     0,   0,   0);
+            Fl::set_color(7,   255, 255, 255);
+            Fl::set_color(8,   130, 149, 166);
+            Fl::set_color(15,  255, 160,  63);
+            Fl::set_color(255, 244, 244, 244);
+            Fl::background(170, 189, 206);
+        }
+        static void _dark_blue_colors() {
+            Fl::set_color(0,   255, 255, 255);
+            Fl::set_color(7,    31,  47,  55);
+            Fl::set_color(8,   108, 113, 125);
+            Fl::set_color(15,   68, 138, 255);
+            Fl::set_color(56,    0,   0,   0);
+            Fl::background(64, 80, 87);
+        }
+        static void _dark_colors() {
+            Fl::set_color(0,   240, 240, 240);
+            Fl::set_color(7,    55,  55,  55);
+            Fl::set_color(8,   100, 100, 100);
+            Fl::set_color(15,  149,  75,  37);
+            Fl::set_color(56,    0,   0,   0);
+            Fl::background(85, 85, 85);
+            Fl::background(64, 64, 64);
+        }
+        static void _darker_colors() {
+            Fl::set_color(0,   164, 164, 164);
+            Fl::set_color(7,    16,  16,  16);
+            Fl::set_color(7,    28,  28,  28);
+            Fl::set_color(8,   100, 100, 100);
+            Fl::set_color(15,  133,  59,  21);
+            Fl::set_color(56,    0,   0,   0);
+            Fl::background(32, 32, 32);
+            Fl::background(38, 38, 38);
+        }
+        static void _tan_colors() {
+            Fl::set_color(0,     0,   0,   0);
+            Fl::set_color(7,   255, 255, 255);
+            Fl::set_color(8,    85,  85,  85);
+            Fl::set_color(15,  255, 160,  63);
+            Fl::set_color(255, 244, 244, 244);
+            Fl::background(206, 202, 187);
+        }
+        static void _restore_colors() {
+            if (_SAVED_COLOR == true) {
+                for (int f = 0; f < 256; f++) {
+                    Fl::set_color(f, flw::theme::_OLD_R[f], flw::theme::_OLD_G[f], flw::theme::_OLD_B[f]);
+                }
+            }
+        }
+        static void _restore_sys() {
+            if (_SAVED_SYS == true) {
+                for (int f = 0; f < 256; f++) {
+                    Fl::set_color(f, flw::theme::_SYS_R[f], flw::theme::_SYS_G[f], flw::theme::_SYS_B[f]);
+                }
+            }
+        }
+        static void _save_colors() {
+            if (_SAVED_COLOR == false) {
+                for (int f = 0; f < 256; f++) {
+                    unsigned char r1, g1, b1;
+                    Fl::get_color(f, r1, g1, b1);
+                    flw::theme::_OLD_R[f] = r1;
+                    flw::theme::_OLD_G[f] = g1;
+                    flw::theme::_OLD_B[f] = b1;
+                }
+                _SAVED_COLOR = true;
+            }
+        }
+        static void _save_sys() {
+            if (_SAVED_SYS == false) {
+                for (int f = 0; f < 256; f++) {
+                    unsigned char r1, g1, b1;
+                    Fl::get_color(f, r1, g1, b1);
+                    flw::theme::_SYS_R[f] = r1;
+                    flw::theme::_SYS_G[f] = g1;
+                    flw::theme::_SYS_B[f] = b1;
+                }
+                _SAVED_SYS = true;
+            }
+        }
+        void _load_default() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::scheme("none");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
+            _IS_DARK = false;
+        }
+        void _load_oxy() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_oxy_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_blue_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_oxy_tan() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_tan_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gleam() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gleam");
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gleam_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_blue_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gleam");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gleam_dark() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_dark_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
+            Fl::set_color(255, 125, 125, 125);
+            Fl::scheme("gleam");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
+            _IS_DARK = true;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gleam_darker() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
+            Fl::set_color(255, 125, 125, 125);
+            Fl::scheme("gleam");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
+            _IS_DARK = true;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gleam_dark_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_dark_blue_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
+            Fl::set_color(255, 101, 117, 125);
+            Fl::scheme("gleam");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
+            _IS_DARK = true;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gleam_tan() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_tan_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gleam");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gtk() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gtk+");
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gtk_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_blue_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gtk+");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gtk_dark() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_dark_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
+            Fl::set_color(255, 185, 185, 185);
+            Fl::scheme("gtk+");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
+            _IS_DARK = true;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gtk_darker() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
+            Fl::set_color(255, 125, 125, 125);
+            Fl::scheme("gtk+");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
+            _IS_DARK = true;
+        }
+        void _load_gtk_dark_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_dark_blue_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
+            Fl::set_color(255, 161, 177, 185);
+            Fl::scheme("gtk+");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
+            _IS_DARK = true;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_gtk_tan() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_tan_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gtk+");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _load_plastic() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::scheme("plastic");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 2;
+        }
+        void _load_blue_plastic() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_blue_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("plastic");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 2;
+        }
+        void _load_tan_plastic() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_tan_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("plastic");
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 2;
+        }
+        void _load_system() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("gtk+");
+            if (theme::_SAVED_SYS) {
+              flw::theme::_restore_sys();
+            }
+            else {
+              Fl::get_system_colors();
+              flw::theme::_save_sys();
+            }
+            Fl::redraw();
+            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_SYSTEM];
+            _IS_DARK = false;
+            flw::PREF_SCROLLBAR = 1;
+        }
+        void _scrollbar() {
+            auto s = (flw::PREF_FONTSIZE > flw::PREF_FIXED_FONTSIZE) ? flw::PREF_FONTSIZE : flw::PREF_FIXED_FONTSIZE;
+            Fl::scrollbar_size(s + flw::PREF_SCROLLBAR);
+        }
+    }
+}
+bool flw::theme::is_dark() {
+    if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] ||
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER] ||
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARK] ||
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARKER]) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+bool flw::theme::load(std::string name) {
+    if (name == flw::PREF_THEMES[theme::THEME_DEFAULT]) {
+        flw::theme::_load_default();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_OXY]) {
+        flw::theme::_load_oxy();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_OXY_BLUE]) {
+        flw::theme::_load_oxy_blue();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_OXY_TAN]) {
+        flw::theme::_load_oxy_tan();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM]) {
+        flw::theme::_load_gleam();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE]) {
+        flw::theme::_load_gleam_blue();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE]) {
+        flw::theme::_load_gleam_dark_blue();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK]) {
+        flw::theme::_load_gleam_dark();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER]) {
+        flw::theme::_load_gleam_darker();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_TAN]) {
+        flw::theme::_load_gleam_tan();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK]) {
+        flw::theme::_load_gtk();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_BLUE]) {
+        flw::theme::_load_gtk_blue();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE]) {
+        flw::theme::_load_gtk_dark_blue();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
+        flw::theme::_load_gtk_dark();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARKER]) {
+        flw::theme::_load_gtk_darker();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_TAN]) {
+        flw::theme::_load_gtk_tan();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC]) {
+        flw::theme::_load_plastic();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE]) {
+        flw::theme::_load_blue_plastic();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN]) {
+        flw::theme::_load_tan_plastic();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_SYSTEM]) {
+        flw::theme::_load_system();
+    }
+    else {
+        return false;
+    }
+    theme::_scrollbar();
+    return true;
+}
+int flw::theme::load_font(std::string requested_font) {
+    theme::load_fonts();
+    auto count = 0;
+    for (auto font : flw::PREF_FONTNAMES) {
+        auto font2 = util::remove_browser_format(font);
+        if (requested_font == font2) {
+            return count;
+        }
+        count++;
+    }
+    return -1;
+}
+void flw::theme::load_fonts(bool iso8859_only) {
+    if (flw::PREF_FONTNAMES.size() == 0) {
+        auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
+        for (int f = 0; f < fonts; f++) {
+            auto attr  = 0;
+            auto name1 = Fl::get_font_name((Fl_Font) f, &attr);
+            auto name2 = std::string();
+            if (attr & FL_BOLD) {
+                name2 = std::string("@b");
+            }
+            if (attr & FL_ITALIC) {
+                name2 += std::string("@i");
+            }
+            name2 += std::string("@.");
+            name2 += name1;
+            flw::PREF_FONTNAMES.push_back(strdup(name2.c_str()));
+        }
+    }
+}
+void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
+    assert(win);
+    if (win->shown() != 0) {
+        fl_alert("%s", "warning: load icon before showing window!");
+    }
+#if defined(_WIN32)
+    win->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(win_resource)));
+    (void) name;
+    (void) xpm_resource;
+    (void) name;
+#elif defined(__linux__)
+    assert(xpm_resource);
+    Fl_Pixmap    pix(xpm_resource);
+    Fl_RGB_Image rgb(&pix, Fl_Color(0));
+    win->icon(&rgb);
+    win->xclass((name != nullptr) ? name : "FLTK");
+    (void) win_resource;
+#else
+    (void) win;
+    (void) win_resource;
+    (void) xpm_resource;
+    (void) name;
+#endif
+}
+void flw::theme::load_theme_pref(Fl_Preferences& pref) {
+    auto val = 0;
+    char buffer[4000];
+    pref.get("fontname", buffer, "", 4000);
+    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
+        auto font = theme::load_font(buffer);
+        if (font != -1) {
+            flw::PREF_FONT     = font;
+            flw::PREF_FONTNAME = buffer;
+        }
+    }
+    pref.get("fontsize", val, flw::PREF_FONTSIZE);
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FONTSIZE = val;
+    }
+    pref.get("fixedfontname", buffer, "", 1000);
+    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
+        auto font = theme::load_font(buffer);
+        if (font != -1) {
+            flw::PREF_FIXED_FONT     = font;
+            flw::PREF_FIXED_FONTNAME = buffer;
+        }
+    }
+    pref.get("fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FIXED_FONTSIZE = val;
+    }
+    pref.get("theme", buffer, "gtk", 4000);
+    flw::theme::load(buffer);
+}
+void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
+    assert(window);
+    int  x, y, w, h, f;
+    pref.get((basename + "x").c_str(), x, 80);
+    pref.get((basename + "y").c_str(), y, 60);
+    pref.get((basename + "w").c_str(), w, defw);
+    pref.get((basename + "h").c_str(), h, defh);
+    pref.get((basename + "fullscreen").c_str(), f, 0);
+    if (w == 0 || h == 0) {
+        w = 800;
+        h = 600;
+    }
+    if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
+        x = 80;
+        y = 60;
+    }
+    if (show == true && window->shown() == 0) {
+        window->resize(x, y, w, h);
+        window->show();
+    }
+    else {
+        window->resize(x, y, w, h);
+    }
+    if (f == 1) {
+        window->fullscreen();
+    }
+}
+bool flw::theme::parse(int argc, const char** argv) {
+    auto res = false;
+    for (auto f = 1; f < argc; f++) {
+        if (res == false) {
+            res = flw::theme::load(argv[f]);
+        }
+        auto fontsize = atoi(argv[f]);
+        if (fontsize >= 6 && fontsize <= 72) {
+            flw::PREF_FONTSIZE = fontsize;
+        }
+    }
+    flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+    return res;
+}
+void flw::theme::save_theme_pref(Fl_Preferences& pref) {
+    pref.set("theme", flw::PREF_THEME.c_str());
+    pref.set("fontname", flw::PREF_FONTNAME.c_str());
+    pref.set("fontsize", flw::PREF_FONTSIZE);
+    pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
+}
+void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
+    assert(window);
+    pref.set((basename + "x").c_str(), window->x());
+    pref.set((basename + "y").c_str(), window->y());
+    pref.set((basename + "w").c_str(), window->w());
+    pref.set((basename + "h").c_str(), window->h());
+    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
 }
 #include <stdarg.h>
 namespace flw {
@@ -3960,6 +5225,7 @@ void flw::InputMenu::value(const char* string) {
     _input->value(string ? string : "");
 }
 #include <string.h>
+#include <errno.h>
 namespace flw {
 namespace json {
     #define _FLW_JSON_RETURN(X,Y)           return Err((ssize_t) (X - Y), line);
@@ -5308,6 +6574,7 @@ void flw::LogDisplay::value(const char* text) {
 #include <assert.h>
 #include <math.h>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 namespace flw {
     namespace plot {
         static const char* const        SHOW_LABELS     = "Show line labels";
@@ -6328,12 +7595,12 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     clip.reserve(self->size() * 40 + 100);
     if (label == _SCROLLBROWSER_MENU_LINE) {
         if (self->value() != 0) {
-            clip = ScrollBrowser::RemoveFormat(self->text(self->value()));
+            clip = util::remove_browser_format(self->text(self->value()));
         }
     }
     else if (label == _SCROLLBROWSER_MENU_ALL) {
         for (auto f = 1; f <= self->size(); f++) {
-            auto s = ScrollBrowser::RemoveFormat(self->text(f));
+            auto s = util::remove_browser_format(self->text(f));
             clip += s;
             clip += "\n";
         }
@@ -6394,34 +7661,6 @@ int flw::ScrollBrowser::handle(int event) {
         }
     }
     return Fl_Hold_Browser::handle(event);
-}
-std::string flw::ScrollBrowser::RemoveFormat(const char* text) {
-    auto res = std::string(text);
-    auto f   = res.find_last_of("@");
-    if (f != std::string::npos) {
-        auto tmp = res.substr(f + 1);
-        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
-            res = tmp.substr(1);
-        }
-        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
-            auto s = std::string();
-            auto e = false;
-            tmp = tmp.substr(f + 1);
-            for (auto c : tmp) {
-                if (e == false && c >= '0' && c <= '9') {
-                }
-                else {
-                    e = true;
-                    s += c;
-                }
-            }
-            res = s;
-        }
-        else {
-            res = res.substr(f);
-        }
-    }
-    return res;
 }
 void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
@@ -6627,6 +7866,7 @@ void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION dire
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 namespace flw {
     class _TableDisplay_Scrollbar : public Fl_Scrollbar {
     public:
@@ -7528,6 +8768,7 @@ void flw::TableDisplay::_update_scrollbars() {
     _hor->Fl_Valuator::value(_start_col);
 }
 #include <assert.h>
+#include <errno.h>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_File_Chooser.H>
@@ -7536,6 +8777,7 @@ void flw::TableDisplay::_update_scrollbars() {
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
+#include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
 const char* flw::TableEditor::SELECT_DATE = "Select Date";
 const char* flw::TableEditor::SELECT_DIR  = "Select Directory";
@@ -8412,6 +9654,7 @@ int flw::TableEditor::handle(int event) {
     }
 }
 #include <FL/Fl_Toggle_Button.H>
+#include <FL/fl_draw.H>
 namespace flw {
     class _TabsGroupButton : public Fl_Toggle_Button {
     public:
@@ -8800,1252 +10043,6 @@ void flw::TabsGroup::value(int num) {
     if (num >= 0 && num < (int) _buttons.size()) {
         flw::TabsGroup::Callback(_buttons[num], this);
     }
-}
-#include <assert.h>
-#include <FL/Fl.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Hold_Browser.H>
-#include <FL/fl_ask.H>
-#ifdef _WIN32
-    #include <FL/x.H>
-#elif defined(__linux__)
-#endif
-namespace flw {
-    namespace color {
-        Fl_Color RED     = fl_rgb_color(255, 0, 0);
-        Fl_Color LIME    = fl_rgb_color(0, 255, 0);
-        Fl_Color BLUE    = fl_rgb_color(0, 0, 255);
-        Fl_Color YELLOW  = fl_rgb_color(255, 255, 0);
-        Fl_Color CYAN    = fl_rgb_color(0, 255, 255);
-        Fl_Color MAGENTA = fl_rgb_color(255, 0, 255);
-        Fl_Color SILVER  = fl_rgb_color(192, 192, 192);
-        Fl_Color GRAY    = fl_rgb_color(128, 128, 128);
-        Fl_Color MAROON  = fl_rgb_color(128, 0, 0);
-        Fl_Color OLIVE   = fl_rgb_color(128, 128, 0);
-        Fl_Color GREEN   = fl_rgb_color(0, 128, 0);
-        Fl_Color PURPLE  = fl_rgb_color(128, 0, 128);
-        Fl_Color TEAL    = fl_rgb_color(0, 128, 128);
-        Fl_Color NAVY    = fl_rgb_color(0, 0, 128);
-        Fl_Color BROWN   = fl_rgb_color(210, 105, 30);
-        Fl_Color PINK    = fl_rgb_color(255, 192, 203);
-        Fl_Color BEIGE   = fl_rgb_color(245, 245, 220);
-        Fl_Color AZURE   = fl_rgb_color(240, 255, 250);
-    }
-    namespace theme {
-        static const char* _NAMES[] = {
-            "default",
-            "oxy",
-            "blue oxy",
-            "tan oxy",
-            "gleam",
-            "blue gleam",
-            "dark blue gleam",
-            "dark gleam",
-            "darker gleam",
-            "tan gleam",
-            "gtk",
-            "blue gtk",
-            "dark blue gtk",
-            "dark gtk",
-            "darker gtk",
-            "tan gtk",
-            "plastic",
-            "blue plastic",
-            "tan plastic",
-            "system"
-        };
-        enum {
-            _NAME_DEFAULT,
-            _NAME_OXY,
-            _NAME_OXY_BLUE,
-            _NAME_OXY_TAN,
-            _NAME_GLEAM,
-            _NAME_GLEAM_BLUE,
-            _NAME_GLEAM_DARK_BLUE,
-            _NAME_GLEAM_DARK,
-            _NAME_GLEAM_DARKER,
-            _NAME_GLEAM_TAN,
-            _NAME_GTK,
-            _NAME_GTK_BLUE,
-            _NAME_GTK_DARK_BLUE,
-            _NAME_GTK_DARK,
-            _NAME_GTK_DARKER,
-            _NAME_GTK_TAN,
-            _NAME_PLASTIC,
-            _NAME_PLASTIC_BLUE,
-            _NAME_PLASTIC_TAN,
-            _NAME_SYSTEM,
-        };
-        static unsigned char _OLD_R[256]  = { 0 };
-        static unsigned char _OLD_G[256]  = { 0 };
-        static unsigned char _OLD_B[256]  = { 0 };
-        static unsigned char _SYS_R[256]  = { 0 };
-        static unsigned char _SYS_G[256]  = { 0 };
-        static unsigned char _SYS_B[256]  = { 0 };
-        static bool          _IS_DARK     = false;
-        static bool          _SAVED_COLOR = false;
-        static bool          _SAVED_SYS   = false;
-        static int           _SCROLLBAR   = 2;
-        static std::string   _NAME        = _NAMES[_NAME_DEFAULT];
-        static void _colors(bool dark) {
-            (void) dark;
-            color::AZURE   = fl_rgb_color(240, 255, 250);
-            color::BEIGE   = fl_rgb_color(245, 245, 220);
-            color::BLUE    = fl_rgb_color(0, 0, 255);
-            color::BLUE    = fl_rgb_color(0, 0, 255);
-            color::BROWN   = fl_rgb_color(210, 105, 30);
-            color::CYAN    = fl_rgb_color(0, 255, 255);
-            color::GRAY    = fl_rgb_color(128, 128, 128);
-            color::GREEN   = fl_rgb_color(0, 128, 0);
-            color::LIME    = fl_rgb_color(0, 255, 0);
-            color::MAGENTA = fl_rgb_color(255, 0, 255);
-            color::MAROON  = fl_rgb_color(128, 0, 0);
-            color::NAVY    = fl_rgb_color(0, 0, 128);
-            color::OLIVE   = fl_rgb_color(128, 128, 0);
-            color::PINK    = fl_rgb_color(255, 192, 203);
-            color::PURPLE  = fl_rgb_color(128, 0, 128);
-            color::RED     = fl_rgb_color(255, 0, 0);
-            color::SILVER  = fl_rgb_color(192, 192, 192);
-            color::TEAL    = fl_rgb_color(0, 128, 128);
-            color::YELLOW  = fl_rgb_color(255, 255, 0);
-        }
-        static void _make_default_colors_darker() {
-            Fl::set_color(60,    0,  63,   0);
-            Fl::set_color(63,    0, 110,   0);
-            Fl::set_color(72,   55,   0,   0);
-            Fl::set_color(76,   55,  63,   0);
-            Fl::set_color(88,  110,   0,   0);
-            Fl::set_color(95,  140, 140, 100);
-            Fl::set_color(136,   0,   0,  55);
-            Fl::set_color(140,   0,  63,  55);
-            Fl::set_color(152,  55,   0,  55);
-            Fl::set_color(216,   0,   0, 110);
-            Fl::set_color(223,   0, 110, 110);
-            Fl::set_color(248, 110,   0, 110);
-        }
-        static void _blue_colors() {
-            Fl::set_color(0,     0,   0,   0);
-            Fl::set_color(7,   255, 255, 255);
-            Fl::set_color(8,   130, 149, 166);
-            Fl::set_color(15,  255, 160,  63);
-            Fl::set_color(255, 244, 244, 244);
-            Fl::background(170, 189, 206);
-        }
-        static void _dark_blue_colors() {
-            Fl::set_color(0,   255, 255, 255);
-            Fl::set_color(7,    31,  47,  55);
-            Fl::set_color(8,   108, 113, 125);
-            Fl::set_color(15,   68, 138, 255);
-            Fl::set_color(56,    0,   0,   0);
-            Fl::background(64, 80, 87);
-        }
-        static void _dark_colors() {
-            Fl::set_color(0,   240, 240, 240);
-            Fl::set_color(7,    55,  55,  55);
-            Fl::set_color(8,   100, 100, 100);
-            Fl::set_color(15,  149,  75,  37);
-            Fl::set_color(56,    0,   0,   0);
-            Fl::background(85, 85, 85);
-            Fl::background(64, 64, 64);
-        }
-        static void _darker_colors() {
-            Fl::set_color(0,   164, 164, 164);
-            Fl::set_color(7,    16,  16,  16);
-            Fl::set_color(7,    28,  28,  28);
-            Fl::set_color(8,   100, 100, 100);
-            Fl::set_color(15,  133,  59,  21);
-            Fl::set_color(56,    0,   0,   0);
-            Fl::background(32, 32, 32);
-            Fl::background(38, 38, 38);
-        }
-        static void _tan_colors() {
-            Fl::set_color(0,     0,   0,   0);
-            Fl::set_color(7,   255, 255, 255);
-            Fl::set_color(8,    85,  85,  85);
-            Fl::set_color(15,  255, 160,  63);
-            Fl::set_color(255, 244, 244, 244);
-            Fl::background(206, 202, 187);
-        }
-        static void _restore_colors() {
-            if (_SAVED_COLOR == true) {
-                for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, flw::theme::_OLD_R[f], flw::theme::_OLD_G[f], flw::theme::_OLD_B[f]);
-                }
-            }
-        }
-        static void _restore_sys() {
-            if (_SAVED_SYS == true) {
-                for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, flw::theme::_SYS_R[f], flw::theme::_SYS_G[f], flw::theme::_SYS_B[f]);
-                }
-            }
-        }
-        static void _save_colors() {
-            if (_SAVED_COLOR == false) {
-                for (int f = 0; f < 256; f++) {
-                    unsigned char r1, g1, b1;
-                    Fl::get_color(f, r1, g1, b1);
-                    flw::theme::_OLD_R[f] = r1;
-                    flw::theme::_OLD_G[f] = g1;
-                    flw::theme::_OLD_B[f] = b1;
-                }
-                _SAVED_COLOR = true;
-            }
-        }
-        static void _save_sys() {
-            if (_SAVED_SYS == false) {
-                for (int f = 0; f < 256; f++) {
-                    unsigned char r1, g1, b1;
-                    Fl::get_color(f, r1, g1, b1);
-                    flw::theme::_SYS_R[f] = r1;
-                    flw::theme::_SYS_G[f] = g1;
-                    flw::theme::_SYS_B[f] = b1;
-                }
-                _SAVED_SYS = true;
-            }
-        }
-        static void _load_default() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::scheme("none");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_DEFAULT];
-            _IS_DARK = false;
-        }
-        static void _load_oxy() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_OXY];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_oxy_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_OXY_BLUE];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_oxy_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_OXY_TAN];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gleam() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GLEAM];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gleam_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GLEAM_BLUE];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gleam_dark() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GLEAM_DARK];
-            _IS_DARK = true;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gleam_darker() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_darker_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GLEAM_DARKER];
-            _IS_DARK = true;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gleam_dark_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_blue_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 101, 117, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GLEAM_DARK_BLUE];
-            _IS_DARK = true;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gleam_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GLEAM_TAN];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gtk() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GTK];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gtk_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GTK_BLUE];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gtk_dark() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 185, 185, 185);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GTK_DARK];
-            _IS_DARK = true;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gtk_darker() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_darker_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GTK_DARKER];
-            _IS_DARK = true;
-        }
-        static void _load_gtk_dark_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_blue_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 161, 177, 185);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GTK_DARK_BLUE];
-            _IS_DARK = true;
-            _SCROLLBAR = 1;
-        }
-        static void _load_gtk_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_GTK_TAN];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _load_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_PLASTIC];
-            _IS_DARK = false;
-            _SCROLLBAR = 2;
-        }
-        static void _load_blue_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_PLASTIC_BLUE];
-            _IS_DARK = false;
-            _SCROLLBAR = 2;
-        }
-        static void _load_tan_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_PLASTIC_TAN];
-            _IS_DARK = false;
-            _SCROLLBAR = 2;
-        }
-        static void _load_system() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            if (theme::_SAVED_SYS) {
-              flw::theme::_restore_sys();
-            }
-            else {
-              Fl::get_system_colors();
-              flw::theme::_save_sys();
-            }
-            Fl::redraw();
-            _NAME = _NAMES[_NAME_SYSTEM];
-            _IS_DARK = false;
-            _SCROLLBAR = 1;
-        }
-        static void _scrollbar() {
-            auto s = (flw::PREF_FONTSIZE > flw::PREF_FIXED_FONTSIZE) ? flw::PREF_FONTSIZE : flw::PREF_FIXED_FONTSIZE;
-            Fl::scrollbar_size(s + _SCROLLBAR);
-        }
-    }
-    namespace dlg {
-        class _DlgTheme : public Fl_Double_Window {
-            Fl_Box*                     _font_label;
-            Fl_Box*                     _fixedfont_label;
-            Fl_Browser*                 _theme;
-            Fl_Button*                  _close;
-            Fl_Button*                  _font;
-            Fl_Button*                  _fixedfont;
-            int                         _theme_row;
-        public:
-            _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
-                end();
-                _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
-                _fixedfont_label = new Fl_Box(0, 0, 0, 0);
-                _font            = new Fl_Button(0, 0, 0, 0, "&Font");
-                _font_label      = new Fl_Box(0, 0, 0, 0);
-                _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
-                _theme_row       = 0;
-                add(_theme);
-                add(_fixedfont);
-                add(_font);
-                add(_close);
-                add(_fixedfont_label);
-                add(_font_label);
-                if (enable_font == false) {
-                  _font->deactivate();
-                }
-                if (enable_fixedfont == false) {
-                  _fixedfont->deactivate();
-                }
-                _close->callback(Callback, this);
-                _font_label->color(FL_BACKGROUND2_COLOR);
-                _font_label->box(FL_DOWN_BOX);
-                _font->callback(Callback, this);
-                _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-                _fixedfont_label->color(FL_BACKGROUND2_COLOR);
-                _fixedfont_label->box(FL_DOWN_BOX);
-                _fixedfont->callback(Callback, this);
-                _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-                _theme->callback(Callback, this);
-                _theme->textfont(flw::PREF_FONT);
-                for (int f = 0; f <= flw::theme::_NAME_SYSTEM; f++) {
-                    _theme->add(theme::_NAMES[f]);
-                }
-                resizable(this);
-                callback(Callback, this);
-                set_modal();
-                update_pref();
-                util::center_window(this, parent);
-            }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgTheme*) o;
-                if (w == dlg) {
-                    dlg->hide();
-                }
-                else if (w == dlg->_fixedfont) {
-                    flw::dlg::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
-                    if (fd.run(Fl::first_window()) == true) {
-                        flw::PREF_FIXED_FONT     = fd.font();
-                        flw::PREF_FIXED_FONTSIZE = fd.fontsize();
-                        flw::PREF_FIXED_FONTNAME = fd.fontname();
-                        if (dlg->_font->active() == 0) {
-                            flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
-                        }
-                        dlg->update_pref();
-                    }
-                }
-                else if (w == dlg->_font) {
-                    flw::dlg::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
-                    if (fd.run(Fl::first_window()) == true) {
-                        flw::PREF_FONT     = fd.font();
-                        flw::PREF_FONTSIZE = fd.fontsize();
-                        flw::PREF_FONTNAME = fd.fontname();
-                        if (dlg->_fixedfont->active() == 0) {
-                            flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
-                        }
-                        dlg->update_pref();
-                    }
-                }
-                else if (w == dlg->_theme) {
-                    auto row = dlg->_theme->value() - 1;
-                    if (row == flw::theme::_NAME_OXY) {
-                        flw::theme::_load_oxy();
-                    }
-                    else if (row == flw::theme::_NAME_OXY_BLUE) {
-                        flw::theme::_load_oxy_blue();
-                    }
-                    else if (row == flw::theme::_NAME_OXY_TAN) {
-                        flw::theme::_load_oxy_tan();
-                    }
-                    else if (row == flw::theme::_NAME_GLEAM) {
-                        flw::theme::_load_gleam();
-                    }
-                    else if (row == flw::theme::_NAME_GLEAM_BLUE) {
-                        flw::theme::_load_gleam_blue();
-                    }
-                    else if (row == flw::theme::_NAME_GLEAM_DARK_BLUE) {
-                        flw::theme::_load_gleam_dark_blue();
-                    }
-                    else if (row == flw::theme::_NAME_GLEAM_DARK) {
-                        flw::theme::_load_gleam_dark();
-                    }
-                    else if (row == flw::theme::_NAME_GLEAM_DARKER) {
-                        flw::theme::_load_gleam_darker();
-                    }
-                    else if (row == flw::theme::_NAME_GLEAM_TAN) {
-                        flw::theme::_load_gleam_tan();
-                    }
-                    else if (row == flw::theme::_NAME_GTK) {
-                        flw::theme::_load_gtk();
-                    }
-                    else if (row == flw::theme::_NAME_GTK_BLUE) {
-                        flw::theme::_load_gtk_blue();
-                    }
-                    else if (row == flw::theme::_NAME_GTK_DARK_BLUE) {
-                        flw::theme::_load_gtk_dark_blue();
-                    }
-                    else if (row == flw::theme::_NAME_GTK_DARK) {
-                        flw::theme::_load_gtk_dark();
-                    }
-                    else if (row == flw::theme::_NAME_GTK_DARKER) {
-                        flw::theme::_load_gtk_darker();
-                    }
-                    else if (row == flw::theme::_NAME_GTK_TAN) {
-                        flw::theme::_load_gtk_tan();
-                    }
-                    else if (row == flw::theme::_NAME_PLASTIC) {
-                        flw::theme::_load_plastic();
-                    }
-                    else if (row == flw::theme::_NAME_PLASTIC_BLUE) {
-                        flw::theme::_load_blue_plastic();
-                    }
-                    else if (row == flw::theme::_NAME_PLASTIC_TAN) {
-                        flw::theme::_load_tan_plastic();
-                    }
-                    else if (row == flw::theme::_NAME_SYSTEM) {
-                        flw::theme::_load_system();
-                    }
-                    else {
-                        flw::theme::_load_default();
-                    }
-                    dlg->update_pref();
-                }
-                else if (w == dlg->_close) {
-                    dlg->hide();
-                }
-            }
-            void resize(int X, int Y, int W, int H) override {
-                auto fs = flw::PREF_FONTSIZE;
-                Fl_Double_Window::resize(X, Y, W, H);
-                _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
-                _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
-                _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
-                _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
-                _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
-                _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
-            }
-            void run() {
-                show();
-                while (visible()) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-            }
-            void update_pref() {
-                util::labelfont(this);
-                _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
-                _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
-                _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
-                _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
-                _theme->textsize(flw::PREF_FONTSIZE);
-                size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
-                theme::_scrollbar();
-                for (int f = 0; f <= flw::theme::_NAME_SYSTEM; f++) {
-                    if (theme::_NAME == flw::theme::_NAMES[f]) {
-                        _theme->value(f + 1);
-                        break;
-                    }
-                }
-                Fl::redraw();
-            }
-        };
-    }
-}
-void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
-    auto dlg = dlg::_DlgTheme(enable_font, enable_fixedfont, parent);
-    dlg.run();
-}
-bool flw::theme::is_dark() {
-    if (theme::_NAME == flw::theme::_NAMES[_NAME_GLEAM_DARK_BLUE] ||
-        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GLEAM_DARK] ||
-        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GLEAM_DARKER] ||
-        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GTK_DARK_BLUE] ||
-        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GTK_DARK] ||
-        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GTK_DARKER]) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-bool flw::theme::load(std::string name) {
-    if (name == flw::theme::_NAMES[_NAME_DEFAULT]) {
-        flw::theme::_load_default();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_OXY]) {
-        flw::theme::_load_oxy();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_OXY_BLUE]) {
-        flw::theme::_load_oxy_blue();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_OXY_TAN]) {
-        flw::theme::_load_oxy_tan();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GLEAM]) {
-        flw::theme::_load_gleam();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GLEAM_BLUE]) {
-        flw::theme::_load_gleam_blue();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GLEAM_DARK_BLUE]) {
-        flw::theme::_load_gleam_dark_blue();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GLEAM_DARK]) {
-        flw::theme::_load_gleam_dark();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GLEAM_DARKER]) {
-        flw::theme::_load_gleam_darker();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GLEAM_TAN]) {
-        flw::theme::_load_gleam_tan();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GTK]) {
-        flw::theme::_load_gtk();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GTK_BLUE]) {
-        flw::theme::_load_gtk_blue();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GTK_DARK_BLUE]) {
-        flw::theme::_load_gtk_dark_blue();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GTK_DARK]) {
-        flw::theme::_load_gtk_dark();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GTK_DARKER]) {
-        flw::theme::_load_gtk_darker();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_GTK_TAN]) {
-        flw::theme::_load_gtk_tan();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_PLASTIC]) {
-        flw::theme::_load_plastic();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_PLASTIC_BLUE]) {
-        flw::theme::_load_blue_plastic();
-    }
-    else if (name == flw::theme::_NAMES[_NAME_PLASTIC_TAN]) {
-        flw::theme::_load_tan_plastic();
-    }
-    else {
-        return false;
-    }
-    theme::_scrollbar();
-    return true;
-}
-void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
-    assert(win);
-    if (win->shown() != 0) {
-        fl_alert("%s", "warning: load icon before showing window!");
-    }
-#if defined(_WIN32)
-    win->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(win_resource)));
-    (void) name;
-    (void) xpm_resource;
-    (void) name;
-#elif defined(__linux__)
-    assert(xpm_resource);
-    Fl_Pixmap    pix(xpm_resource);
-    Fl_RGB_Image rgb(&pix, Fl_Color(0));
-    win->icon(&rgb);
-    win->xclass((name != nullptr) ? name : "FLTK");
-    (void) win_resource;
-#else
-    (void) win;
-    (void) win_resource;
-    (void) xpm_resource;
-    (void) name;
-#endif
-}
-void flw::theme::load_theme_pref(Fl_Preferences& pref) {
-    auto val = 0;
-    char buffer[4000];
-    pref.get("fontname", buffer, "", 4000);
-    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
-        auto font = dlg::FontDialog::LoadFont(buffer);
-        if (font != -1) {
-            flw::PREF_FONT     = font;
-            flw::PREF_FONTNAME = buffer;
-        }
-    }
-    pref.get("fontsize", val, flw::PREF_FONTSIZE);
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FONTSIZE = val;
-    }
-    pref.get("fixedfontname", buffer, "", 1000);
-    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
-        auto font = dlg::FontDialog::LoadFont(buffer);
-        if (font != -1) {
-            flw::PREF_FIXED_FONT     = font;
-            flw::PREF_FIXED_FONTNAME = buffer;
-        }
-    }
-    pref.get("fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FIXED_FONTSIZE = val;
-    }
-    pref.get("theme", buffer, "gtk", 4000);
-    flw::theme::load(buffer);
-}
-void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
-    assert(window);
-    int  x, y, w, h, f;
-    pref.get((basename + "x").c_str(), x, 80);
-    pref.get((basename + "y").c_str(), y, 60);
-    pref.get((basename + "w").c_str(), w, defw);
-    pref.get((basename + "h").c_str(), h, defh);
-    pref.get((basename + "fullscreen").c_str(), f, 0);
-    if (w == 0 || h == 0) {
-        w = 800;
-        h = 600;
-    }
-    if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
-        x = 80;
-        y = 60;
-    }
-    if (show == true && window->shown() == 0) {
-        window->resize(x, y, w, h);
-        window->show();
-    }
-    else {
-        window->resize(x, y, w, h);
-    }
-    if (f == 1) {
-        window->fullscreen();
-    }
-}
-std::string flw::theme::name() {
-    return _NAME;
-}
-bool flw::theme::parse(int argc, const char** argv) {
-    auto res = false;
-    for (auto f = 1; f < argc; f++) {
-        if (res == false) {
-            res = flw::theme::load(argv[f]);
-        }
-        auto fontsize = atoi(argv[f]);
-        if (fontsize >= 6 && fontsize <= 72) {
-            flw::PREF_FONTSIZE = fontsize;
-        }
-    }
-    flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
-    return res;
-}
-void flw::theme::save_theme_pref(Fl_Preferences& pref) {
-    pref.set("theme", flw::theme::name().c_str());
-    pref.set("fontname", flw::PREF_FONTNAME.c_str());
-    pref.set("fontsize", flw::PREF_FONTSIZE);
-    pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
-    pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
-}
-void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
-    assert(window);
-    pref.set((basename + "x").c_str(), window->x());
-    pref.set((basename + "y").c_str(), window->y());
-    pref.set((basename + "w").c_str(), window->w());
-    pref.set((basename + "h").c_str(), window->h());
-    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
-}
-#include <algorithm>
-#include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <time.h>
-#include <FL/Fl_Window.H>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/fl_ask.H>
-#ifdef FLW_USE_PNG
-    #include <FL/Fl_PNG_Image.H>
-    #include <FL/fl_draw.H>
-#endif
-#ifdef _WIN32
-    #include <windows.h>
-#else
-    #include <unistd.h>
-#endif
-namespace flw {
-    int         PREF_FIXED_FONT         = FL_COURIER;
-    std::string PREF_FIXED_FONTNAME     = "FL_COURIER";
-    int         PREF_FIXED_FONTSIZE     = 14;
-    int         PREF_FONT               = FL_HELVETICA;
-    int         PREF_FONTSIZE           = 14;
-    std::string PREF_FONTNAME           = "FL_HELVETICA";
-    struct Stat {
-        int64_t                         size;
-        int64_t                         mtime;
-        int                             mode;
-         Stat()
-            { size = mtime = 0; mode = 0; }
-         Stat(std::string filename) {
-            size  = 0;
-            mtime = 0;
-            mode  = 0;
-        #ifdef _WIN32
-            wchar_t wbuffer[1025];
-            struct __stat64 st;
-            while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-                filename.pop_back();
-            }
-            fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-            if (_wstat64(wbuffer, &st) == 0) {
-                size  = st.st_size;
-                mtime = st.st_mtime;
-                if (S_ISDIR(st.st_mode)) {
-                    mode = 1;
-                }
-                else if (S_ISREG(st.st_mode)) {
-                    mode = 2;
-                }
-                else {
-                    mode = 3;
-                }
-            }
-        #else
-            struct stat st;
-            if (stat(filename.c_str(), &st) == 0) {
-                size  = st.st_size;
-                mtime = st.st_mtime;
-                if (S_ISDIR(st.st_mode)) {
-                    mode = 1;
-                }
-                else if (S_ISREG(st.st_mode)) {
-                    mode = 2;
-                }
-                else {
-                    mode = 3;
-                }
-            }
-        #endif
-        }
-   };
-}
-flw::Buf::Buf() {
-    p = nullptr;
-    s = 0;
-}
-flw::Buf::Buf(size_t s_) {
-    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        s = s_;
-    }
-}
-flw::Buf::Buf(char* p_, size_t s_) {
-    p = p_;
-    s = s_;
-}
-flw::Buf::Buf(const char* p_, size_t s_) {
-    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        memcpy(p, p_, s_);
-        s = s_;
-    }
-}
-flw::Buf::Buf(const Buf& b) {
-    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-}
-flw::Buf::Buf(Buf&& b) {
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-}
-flw::Buf& flw::Buf::operator=(const Buf& b) {
-    free(p);
-    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-    return *this;
-}
-flw::Buf& flw::Buf::operator=(Buf&& b) {
-    free(p);
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-    return *this;
-}
-flw::Buf& flw::Buf::operator+=(const Buf& b) {
-    auto t = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
-    if (t != nullptr) {
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
-    }
-    else {
-        free(p);
-        p = nullptr;
-        s = 0;
-    }
-    return *this;
-}
-bool flw::Buf::operator==(const Buf& other) const {
-    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
-}
-flw::Buf::~Buf() {
-    free(p);
-}
-void flw::debug::print(Fl_Widget* widget, bool tab) {
-    assert(widget);
-    printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
-    fflush(stdout);
-}
-void flw::debug::print(Fl_Group* group) {
-    assert(group);
-    puts("");
-    debug::print((Fl_Widget*) group);
-    for (int f = 0; f < group->children(); f++) {
-        debug::print(group->child(f), true);
-    }
-}
-namespace flw {
-    namespace menu {
-        static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
-            assert(menu && text);
-            auto item = menu->find_item(text);
-        #ifdef DEBUG
-            if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
-        #endif
-            return (Fl_Menu_Item*) item;
-        }
-        void enable_item(Fl_Menu_* menu, const char* text, bool value) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            if (value == true) item->activate();
-            else item->deactivate();
-        }
-        Fl_Menu_Item* get_item(Fl_Menu_* menu, const char* text) {
-            return _item(menu, text);
-        }
-        bool item_value(Fl_Menu_* menu, const char* text) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return false;
-            return item->value();
-        }
-        void set_item(Fl_Menu_* menu, const char* text, bool value) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            if (value == true) item->set();
-            else item->clear();
-        }
-        void setonly_item(Fl_Menu_* menu, const char* text) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            menu->setonly(item);
-        }
-    }
-}
-void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
-    if (parent != nullptr) {
-        int x = parent->x() + parent->w() / 2;
-        int y = parent->y() + parent->h() / 2;
-        window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
-    }
-    else {
-        window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
-    }
-}
-double flw::util::clock() {
-#ifdef _WIN32
-    struct timeb timeVal;
-    ftime(&timeVal);
-    return (double) timeVal.time + (double) (timeVal.millitm / 1000.0);
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
-#endif
-}
-void flw::util::labelfont(Fl_Widget* widget) {
-    assert(widget);
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
-    auto group = widget->as_group();
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            util::labelfont(group->child(f));
-        }
-    }
-}
-std::string flw::util::fix_menu_string(std::string in) {
-    std::string res = in;
-    util::replace(res, "\\", "\\\\");
-    util::replace(res, "_", "\\_");
-    util::replace(res, "/", "\\/");
-    util::replace(res, "&", "&&");
-    return res;
-}
-std::string flw::util::format(const char* format, ...) {
-    if (format == nullptr || *format == 0) return "";
-    int         l   = 128;
-    int         n   = 0;
-    char*       buf = (char*) calloc(l, 1);
-    std::string res;
-    va_list     args;
-    va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
-    va_end(args);
-    if (n < 0) {
-        free(buf);
-        return res;
-    }
-    if (n < l) {
-        res = buf;
-        free(buf);
-        return res;
-    }
-    free(buf);
-    l = n + 1;
-    buf = (char*) calloc(l, 1);
-    if (buf == nullptr) return res;
-    va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
-    va_end(args);
-    res = buf;
-    free(buf);
-    return res;
-}
-std::string flw::util::format_int(int64_t num, char del) {
-    auto pos = 0;
-    char tmp1[32];
-    char tmp2[32];
-    if (del < 1) {
-        del = 32;
-    }
-    memset(tmp2, 0, 32);
-    snprintf(tmp1, 32, "%lld", (long long int) num);
-    auto len = strlen(tmp1);
-    for (int f = len - 1, i = 0; f >= 0 && pos < 32; f--, i++) {
-        char c = tmp1[f];
-        if ((i % 3) == 0 && i > 0 && c != '-') {
-            tmp2[pos++] = del;
-        }
-        tmp2[pos++] = c;
-    }
-    std::string r = tmp2;
-    std::reverse(r.begin(), r.end());
-    return r;
-}
-flw::Buf flw::util::load_file(std::string filename, bool alert) {
-    auto stat = flw::Stat(filename);
-    if (stat.mode != 2) {
-        if (alert == true) {
-            fl_alert("error: file %s is missing or not an file", filename.c_str());
-        }
-        return Buf();
-    }
-    auto file = fl_fopen(filename.c_str(), "rb");
-    if (file == nullptr) {
-        if (alert == true) {
-            fl_alert("error: can't open %s", filename.c_str());
-        }
-        return Buf();
-    }
-    auto buf  = Buf(stat.size);
-    auto read = fread(buf.p, 1, (size_t) stat.size, file);
-    fclose(file);
-    if (read != (size_t) stat.size) {
-        if (alert == true) {
-            fl_alert("error: failed to read %s", filename.c_str());
-        }
-        return Buf();
-    }
-    return buf;
-}
-int32_t flw::util::milliseconds() {
-#if defined(_WIN32)
-    LARGE_INTEGER StartingTime;
-    LARGE_INTEGER Frequency;
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&StartingTime);
-    StartingTime.QuadPart *= 1000000;
-    StartingTime.QuadPart /= Frequency.QuadPart;
-    return StartingTime.QuadPart / 1000;
-#else
-    timespec t;
-    clock_gettime(CLOCK_MONOTONIC, &t);
-    return (t.tv_sec * 1000000 + t.tv_nsec / 1000) / 1000;
-#endif
-}
-void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
-#ifdef FLW_USE_PNG
-    auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
-    if (filename != nullptr) {
-        window->make_current();
-        if (X == 0 && Y == 0 && W == 0 && H == 0) {
-            X = window->x();
-            Y = window->y();
-            W = window->w();
-            H = window->h();
-        }
-        auto image = fl_read_image(nullptr, X, Y, W, H);
-        if (image != nullptr) {
-            auto ret = fl_write_png(filename, image, W, H);
-            if (ret == 0) {
-            }
-            else if (ret == -1) {
-                fl_alert("%s", "error: missing libraries");
-            }
-            else if (ret == -1) {
-                fl_alert("error: failed to save image to %s", filename);
-            }
-            delete []image;
-        }
-        else {
-            fl_alert("%s", "error: failed to grab image");
-        }
-    }
-#else
-    (void) opt_name;
-    (void) window;
-    (void) X;
-    (void) Y;
-    (void) W;
-    (void) H;
-    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
-#endif
-}
-std::string& flw::util::replace(std::string& string, std::string find, std::string replace) {
-    if (find == "") return string;
-    size_t start = 0;
-    while ((start = string.find(find, start)) != std::string::npos) {
-        string.replace(start, find.length(), replace);
-        start += replace.length();
-    }
-    return string;
-}
-bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-            return false;
-        }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
-    }
-    return true;
-}
-void flw::util::sleep(int milli) {
-#ifdef _WIN32
-    Sleep(milli);
-#else
-    usleep(milli * 1000);
-#endif
-}
-flw::StringVector flw::util::split(const std::string& string, std::string split) {
-    auto res = StringVector();
-    try {
-        if (split != "") {
-            auto pos1 = (std::string::size_type) 0;
-            auto pos2 = string.find(split);
-            while (pos2 != std::string::npos) {
-                res.push_back(string.substr(pos1, pos2 - pos1));
-                pos1 = pos2 + split.size();
-                pos2 = string.find(split, pos1);
-            }
-            if (pos1 <= string.size()) {
-                res.push_back(string.substr(pos1));
-            }
-        }
-    }
-    catch(...) {
-        res.clear();
-    }
-    return res;
 }
 #include <FL/fl_draw.H>
 #include <FL/Fl.H>

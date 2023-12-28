@@ -2,15 +2,15 @@
 // Released under the GNU General Public License v3.0
 
 #include "plot.h"
-#include "util.h"
+#include "flw.h"
 #include "json.h"
-#include "theme.h"
 
 // MKALGAM_ON
 
 #include <assert.h>
 #include <math.h>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 
 namespace flw {
     namespace plot {

@@ -8,6 +8,7 @@
 // MKALGAM_ON
 
 #include <assert.h>
+#include <errno.h>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_File_Chooser.H>
@@ -16,6 +17,7 @@
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
+#include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
 
 const char* flw::TableEditor::SELECT_DATE = "Select Date";

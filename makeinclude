@@ -4,6 +4,8 @@ ifeq ($(findstring MINGW64, $(OS)), MINGW64)
 	OS = Windows
 else ifeq ($(findstring inux, $(OS)), inux)
 	OS = Linux
+else ifeq ($(findstring arwin, $(OS)), arwin)
+	OS = macOS
 else
 $(error Unknow operating system $(OS))
 endif
@@ -14,6 +16,10 @@ ifeq ($(OS), Windows)
 	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800
 	#-fdiagnostics-color=always
 else ifeq ($(OS), Linux)
+	FLTO    = -flto
+	STATIC  =
+	OSFLAGS =
+else ifeq ($(OS), macOS)
 	FLTO    = -flto
 	STATIC  =
 	OSFLAGS =

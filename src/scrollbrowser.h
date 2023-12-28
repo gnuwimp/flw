@@ -4,7 +4,7 @@
 #ifndef FLW_SCROLLBROWSER_H
 #define FLW_SCROLLBROWSER_H
 
-#include "util.h"
+#include "flw.h"
 
 // MKALGAM_ON
 
@@ -31,7 +31,6 @@ namespace flw {
         void                            update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
 
         static void                     Callback(Fl_Widget*, void*);
-        static std::string              RemoveFormat(const char* text);
 
     private:
         Fl_Menu_Button*                 _menu;

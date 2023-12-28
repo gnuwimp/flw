@@ -4,10 +4,10 @@
 #ifndef FLW_TABSGROUP_H
 #define FLW_TABSGROUP_H
 
-#include "util.h"
-
 // MKALGAM_ON
 
+#include <string>
+#include <vector>
 #include <FL/Fl_Group.H>
 #include <FL/Fl.H>
 

@@ -1,12 +1,15 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "gridgroup.h"
-#include "theme.h"
-#include "util.h"
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "gridgroup.h"
+#endif
+
+#include <FL/Fl.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
-#include <FL/Fl.H>
 
 using namespace flw;
 

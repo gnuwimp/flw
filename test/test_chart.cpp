@@ -1,9 +1,12 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "chart.h"
-#include "theme.h"
-#include "util.h"
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "chart.h"
+#endif
+
 #include <math.h>
 #include <string.h>
 #include <time.h>

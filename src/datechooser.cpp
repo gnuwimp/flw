@@ -2,14 +2,14 @@
 // Released under the GNU General Public License v3.0
 
 #include "datechooser.h"
-#include "util.h"
-#include "theme.h"
+#include "flw.h"
 
 // MKALGAM_ON
 
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Repeat_Button.H>
 #include <FL/Fl_Return_Button.H>
+#include <FL/fl_draw.H>
 #include <time.h>
 
 namespace flw {
@@ -398,97 +398,5 @@ void flw::DateChooser::_set_label() {
 
     _month_label->copy_label(string.c_str());
 }
-
-namespace flw {
-    namespace dlg {
-        //----------------------------------------------------------------------
-        class _DlgDate : public Fl_Double_Window {
-            DateChooser*            _date_chooser;
-            Date&                   _value;
-            Fl_Button*              _cancel;
-            Fl_Button*              _ok;
-            bool                    _res;
-
-        public:
-            //------------------------------------------------------------------
-            _DlgDate(const char* title, Date& date) : Fl_Double_Window(0, 0, 0, 0), _value(date) {
-                end();
-
-                _date_chooser = new DateChooser();
-                _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-                _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _res          = false;
-
-                add(_date_chooser);
-                add(_ok);
-                add(_cancel);
-
-                _cancel->callback(Callback, this);
-                _date_chooser->focus();
-                _date_chooser->set(_value);
-                _ok->callback(Callback, this);
-
-                util::labelfont(this);
-                callback(Callback, this);
-                copy_label(title);
-                size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
-                size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
-                set_modal();
-                resizable(this);
-            }
-
-            //------------------------------------------------------------------
-            static void Callback(Fl_Widget* w, void* o) {
-                _DlgDate* dlg = (_DlgDate*) o;
-
-                if (w == dlg) {
-                    ;
-                }
-                else if (w == dlg->_cancel) {
-                    dlg->hide();
-                }
-                else if (w == dlg->_ok) {
-                    dlg->hide();
-                    dlg->_res = true;
-                }
-            }
-
-            //------------------------------------------------------------------
-            void resize(int X, int Y, int W, int H) override {
-                auto fs = flw::PREF_FONTSIZE;
-
-                Fl_Double_Window::resize(X, Y, W, H);
-
-                _date_chooser->resize (4,                 4,                  W - 8,    H - fs * 2 - 16);
-                _cancel->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,   fs * 2);
-                _ok->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,   fs * 2);
-            }
-
-            //------------------------------------------------------------------
-            bool run(Fl_Window* parent) {
-                flw::util::center_window(this, parent);
-                show();
-
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-
-                if (_res == true) {
-                    _value = _date_chooser->get();
-                }
-
-                return _res;
-            }
-        };
-
-        //----------------------------------------------------------------------
-        bool date(const std::string& title, flw::Date& date, Fl_Window* parent) {
-            flw::dlg::_DlgDate dlg(title.c_str(), date);
-            return dlg.run(parent);
-        }
-    }
-}
-
 
 // MKALGAM_OFF

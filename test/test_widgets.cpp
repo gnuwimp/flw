@@ -1,10 +1,13 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "inputmenu.h"
-#include "scrollbrowser.h"
-#include "util.h"
-#include "theme.h"
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "inputmenu.h"
+    #include "scrollbrowser.h"
+#endif
+
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>

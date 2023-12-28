@@ -1,8 +1,12 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "date.h"
-#include "util.h"
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "date.h"
+#endif
+
 #include <assert.h>
 #include <string.h>
 

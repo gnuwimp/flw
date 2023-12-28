@@ -1,11 +1,14 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "datechooser.h"
-#include "fontdialog.h"
-#include "dlg.h"
-#include "theme.h"
-#include "waitcursor.h"
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "datechooser.h"
+    #include "dlg.h"
+    #include "waitcursor.h"
+#endif
+
 #include "test.h"
 #include <FL/Fl.H>
 
@@ -39,13 +42,13 @@ int main(int argc, const char** argv) {
             else {
                 run = argv[f];
             }
-         }
+        }
 
         if (run == "loadsmall") {
 #ifdef _WIN32
-            auto font = dlg::FontDialog::LoadFont("MS Serif bold");
+            auto font = theme::load_font("MS Serif bold");
 #else
-            auto font = dlg::FontDialog::LoadFont("Kinnari bold italic");
+            auto font = theme::load_font("Kinnari bold italic");
 #endif
 
             if (font != -1) {
@@ -54,9 +57,9 @@ int main(int argc, const char** argv) {
             }
 
 #ifdef _WIN32
-            font = dlg::FontDialog::LoadFont("Fira Code bold");
+            font = theme::load_font("Fira Code bold");
 #else
-            font = dlg::FontDialog::LoadFont("mono bold italic");
+            font = theme::load_font("mono bold italic");
 #endif
 
             if (font != -1) {
@@ -64,13 +67,14 @@ int main(int argc, const char** argv) {
                 PREF_FIXED_FONTSIZE = 12;
             }
 
+            run = "";
         }
 
         if (run == "loadbig") {
 #ifdef _WIN32
-            auto font = dlg::FontDialog::LoadFont("Calibri italic");
+            auto font = theme::load_font("Calibri italic");
 #else
-            auto font = dlg::FontDialog::LoadFont("Kinnari bold italic");
+            auto font = theme::load_font("Kinnari bold italic");
 #endif
 
             if (font != -1) {
@@ -79,9 +83,9 @@ int main(int argc, const char** argv) {
             }
 
 #ifdef _WIN32
-            font = dlg::FontDialog::LoadFont("Lucida Console");
+            font = theme::load_font("Lucida Console");
 #else
-            font = dlg::FontDialog::LoadFont("mono bold italic");
+            font = theme::load_font("mono bold italic");
 #endif
 
             if (font != -1) {
@@ -89,6 +93,7 @@ int main(int argc, const char** argv) {
                 PREF_FIXED_FONTSIZE = 20;
             }
 
+            run = "";
         }
 
         if (run == "" || run == "theme") {
@@ -252,7 +257,6 @@ int main(int argc, const char** argv) {
         }
     }
 
-    dlg::FontDialog::DeleteFonts();
     printf("\nTests Finished\n");
     return 0;
 }

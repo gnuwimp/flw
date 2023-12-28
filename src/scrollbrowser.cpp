@@ -39,12 +39,12 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
 
     if (label == _SCROLLBROWSER_MENU_LINE) {
         if (self->value() != 0) {
-            clip = ScrollBrowser::RemoveFormat(self->text(self->value()));
+            clip = util::remove_browser_format(self->text(self->value()));
         }
     }
     else if (label == _SCROLLBROWSER_MENU_ALL) {
         for (auto f = 1; f <= self->size(); f++) {
-            auto s = ScrollBrowser::RemoveFormat(self->text(f));
+            auto s = util::remove_browser_format(self->text(f));
             clip += s;
             clip += "\n";
         }
@@ -115,42 +115,6 @@ int flw::ScrollBrowser::handle(int event) {
     }
 
     return Fl_Hold_Browser::handle(event);
-}
-
-//------------------------------------------------------------------------------
-std::string flw::ScrollBrowser::RemoveFormat(const char* text) {
-    auto res = std::string(text);
-    auto f   = res.find_last_of("@");
-
-    if (f != std::string::npos) {
-        auto tmp = res.substr(f + 1);
-
-        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
-            res = tmp.substr(1);
-        }
-        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
-            auto s = std::string();
-            auto e = false;
-
-            tmp = tmp.substr(f + 1);
-
-            for (auto c : tmp) {
-                if (e == false && c >= '0' && c <= '9') {
-                }
-                else {
-                    e = true;
-                    s += c;
-                }
-            }
-
-            res = s;
-        }
-        else {
-            res = res.substr(f);
-        }
-    }
-
-    return res;
 }
 
 //------------------------------------------------------------------------------

@@ -2,16 +2,16 @@
 // Released under the GNU General Public License v3.0
 
 #include "chart.h"
-#include "util.h"
+#include "flw.h"
 #include "json.h"
 #include "waitcursor.h"
-#include "theme.h"
 
 // MKALGAM_ON
 
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 #include <algorithm>
 #include <math.h>
 

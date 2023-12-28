@@ -125,7 +125,7 @@ namespace json {
     Err                                 validate(const char* json);
     Err                                 validate(std::string json);
 } // json
-} // gw2
+} // flw
 
 // MKALGAM_OFF
 

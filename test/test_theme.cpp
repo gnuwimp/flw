@@ -1,11 +1,14 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "datechooser.h"
-#include "theme.h"
-#include "util.h"
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "datechooser.h"
+    #include "dlg.h"
+#endif
+
 #include "icon.xpm"
-#include <FL/fl_show_colormap.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Check_Button.H>
@@ -21,6 +24,7 @@
 #include <FL/Fl_Round_Button.H>
 #include <FL/Fl_Slider.H>
 #include <FL/Fl_Tree.H>
+#include <FL/fl_show_colormap.H>
 
 using namespace flw;
 
@@ -289,7 +293,7 @@ public:
         TEST->clear();
         TEST->create();
         TEST->update_pref();
-        TEST->input->value(flw::theme::name().c_str());
+        TEST->input->value(flw::PREF_THEME.c_str());
         TEST->button2(TEST->color_red, color::RED);
         TEST->button2(TEST->color_lime, color::LIME);
         TEST->button2(TEST->color_yellow, color::YELLOW);

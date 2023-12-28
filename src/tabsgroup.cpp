@@ -2,11 +2,12 @@
 // Released under the GNU General Public License v3.0
 
 #include "tabsgroup.h"
-#include "theme.h"
+#include "flw.h"
 
 // MKALGAM_ON
 
 #include <FL/Fl_Toggle_Button.H>
+#include <FL/fl_draw.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

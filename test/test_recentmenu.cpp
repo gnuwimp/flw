@@ -1,11 +1,16 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include <FL/Fl_Return_Button.H>
+#include "flw.h"
+
+#ifndef FLW_AMALGAM
+    #include "recentmenu.h"
+#endif
+
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_Preferences.H>
-#include "recentmenu.h"
+#include <FL/Fl_Return_Button.H>
 
 //------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
