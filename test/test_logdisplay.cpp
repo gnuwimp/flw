@@ -82,104 +82,124 @@ const char* TEXT =
 "64.242.88.10 - - [07/Mar/2004:17:53:45 -0800] \"GET /twiki/bin/search/Main/SearchResult?scope=text®ex=on&search=Office%20*Locations[^A-Za-z] HTTP/1.1\" 200 7771\r"
 ;
 
-static const std::string JSON1 = R"({
-    "line": {
+static const std::string JSON1 = R"(
+[
+    {
+        "style": "line",
         "start": 0,
         "stop": 1,
         "color": "RED"
     },
-    "lock": {
+    {
+        "style": "lock",
         "on": true
     },
-    "line": {
+    {
+        "style": "line",
         "start": 0,
         "stop": 3,
         "color": "GREEN"
     },
-    "num": {
+    {
+        "style": "num",
         "color": "MAGENTA",
         "count": 5
     },
-    "string": {
+    {
+        "style": "string",
         "word1": "GET",
         "color": "BLUE",
         "count": 0
     },
-    "rstring": {
+    {
+        "style": "rstring",
         "word1": "00",
         "color": "BG_BLUE",
         "count": 1
     },
-    "range": {
+    {
+        "style": "range",
         "word1": "[",
         "word2": "]",
         "inclusive": false,
         "color": "BLUE",
         "count": 1
     },
-    "between": {
+    {
+        "style": "between",
         "word1": "\"",
         "word2": "\"",
         "inclusive": true,
         "color": "BG_GREEN"
     },
-    "range": {
+    {
+        "style": "range",
         "word1": "||",
         "word2": "||",
         "inclusive": false,
         "color": "BG_BOLD_YELLOW",
         "count": 0
     }
-}
+]
 )";
 
-static const std::string JSON2 = R"({
-    "line": {
+static const std::string JSON2 = R"(
+[
+    {
+        "style": "line",
         "start": 0,
         "stop": 1,
         "color": "RED"
     },
-    "range": {
+    {
+        "style": "range",
         "word1": "\"",
         "word2": "\"",
         "inclusive": false,
         "color": "BLUE",
         "count": 0
     },
-    "between": {
+    {
+        "style": "between",
         "word1": "[",
         "word2": "]",
         "inclusive": false,
         "color": "BG_GREEN"
     }
-}
+]
 )";
 
-static const std::string JSON3 = R"({
-    "range": {
+static const std::string JSON3 = R"(
+[
+    {
+        "style": "range",
         "word1": "[",
         "word2": "]",
         "inclusive": true,
         "color": "BOLD_BLUE",
         "count": 1
     },
-    "between": {
+    {
+        "style": "between",
         "word1": "\"",
         "word2": "\"",
         "inclusive": true,
         "color": "BOLD_GREEN"
     },
-    "lock": {
+    {
+        "style": "lock",
         "on": true
     },
-    "num": {
+    {
+        "style": "num",
         "color": "BG_RED"
     },
-    "custom": {
+    {
+        "style": "custom",
         "word1": "|A|",
         "color": "BG_BOLD_CYAN"
     }
-}
+]
 )";
 
 class MyDisplay : public LogDisplay {
@@ -191,81 +211,81 @@ public:
         // fprintf(stderr, "%5d: %5d: |%s|\n", (int) row, (int) line.length(), line.c_str());
 
         if (row < 3) {
-            auto c = logdisplay::COLOR::FOREGROUND;
+            auto c = LogDisplay::COLOR::FOREGROUND;
 
             for (int f = 0; f < 96; f += 3) {
                 style_line(f, f + 2, c);
 
-                if (c < logdisplay::COLOR::LAST) {
-                    c = (logdisplay::COLOR) ((int) c + 1);
+                if (c < LogDisplay::COLOR::LAST) {
+                    c = (LogDisplay::COLOR) ((int) c + 1);
                 }
                 else {
-                    c = logdisplay::COLOR::FOREGROUND;
+                    c = LogDisplay::COLOR::FOREGROUND;
                 }
             }
 
-            style_line(96, line.length() - 2, logdisplay::COLOR::RED);
+            style_line(96, line.length() - 2, LogDisplay::COLOR::RED);
         }
         else if (row == 3) {
-            style_string(line, "Hello", logdisplay::COLOR::BOLD_RED);
-            style_string(line, "World", logdisplay::COLOR::BOLD_BLUE);
-            style_string(line, "", logdisplay::COLOR::BG_BOLD_MAGENTA);
+            style_string(line, "Hello", LogDisplay::COLOR::BOLD_RED);
+            style_string(line, "World", LogDisplay::COLOR::BOLD_BLUE);
+            style_string(line, "", LogDisplay::COLOR::BG_BOLD_MAGENTA);
         }
         else if (row == 4) {
-            style_string(line, "Hello", logdisplay::COLOR::BOLD_RED, 5);
-            style_string(line, "World", logdisplay::COLOR::BOLD_BLUE, 1);
+            style_string(line, "Hello", LogDisplay::COLOR::BOLD_RED, 5);
+            style_string(line, "World", LogDisplay::COLOR::BOLD_BLUE, 1);
         }
         else if (row == 5) {
-            style_rstring(line, "Hello", logdisplay::COLOR::BOLD_RED, 5);
-            style_rstring(line, "World", logdisplay::COLOR::BOLD_BLUE, 3);
+            style_rstring(line, "Hello", LogDisplay::COLOR::BOLD_RED, 5);
+            style_rstring(line, "World", LogDisplay::COLOR::BOLD_BLUE, 3);
         }
         else if (row == 6) {
-            style_range(line, "\"", "\"", false, logdisplay::COLOR::GREEN);
-            style_range(line, "[", "]", false, logdisplay::COLOR::BOLD_MAGENTA);
-            style_num(line, logdisplay::COLOR::RED);
+            style_range(line, "\"", "\"", false, LogDisplay::COLOR::GREEN);
+            style_range(line, "[", "]", false, LogDisplay::COLOR::BOLD_MAGENTA);
+            style_num(line, LogDisplay::COLOR::RED);
         }
         else if (row == 7) {
             lock_colors(true);
-            style_range(line, "\"", "\"", false, logdisplay::COLOR::GREEN);
-            style_range(line, "[", "]", false, logdisplay::COLOR::BOLD_MAGENTA);
-            style_num(line, logdisplay::COLOR::RED);
+            style_range(line, "\"", "\"", false, LogDisplay::COLOR::GREEN);
+            style_range(line, "[", "]", false, LogDisplay::COLOR::BOLD_MAGENTA);
+            style_num(line, LogDisplay::COLOR::RED);
         }
         else if (row == 8) {
-            style_range(line, "[", "]", true, logdisplay::COLOR::YELLOW);
-            style_num(line, logdisplay::COLOR::RED, 2);
+            style_range(line, "[", "]", true, LogDisplay::COLOR::YELLOW);
+            style_num(line, LogDisplay::COLOR::RED, 2);
         }
         else if (row == 9) {
-            style_between(line, "[", "]", false, logdisplay::COLOR::BLUE);
-            style_num(line, logdisplay::COLOR::RED, 5);
+            style_between(line, "[", "]", false, LogDisplay::COLOR::BLUE);
+            style_num(line, LogDisplay::COLOR::RED, 5);
         }
         else if (row == 61) {
-            style_range(line, "\"", "\"", false, logdisplay::COLOR::YELLOW);
+            style_range(line, "\"", "\"", false, LogDisplay::COLOR::YELLOW);
         }
         else if (row == 62) {
-            style_range(line, "\"\"", "\"\"", true, logdisplay::COLOR::RED, 2);
+            style_range(line, "\"\"", "\"\"", true, LogDisplay::COLOR::RED, 2);
         }
         else if (row == 63) {
-            style_range(line, "||", "||", false, logdisplay::COLOR::RED);
+            style_range(line, "||", "||", false, LogDisplay::COLOR::RED);
         }
         else if (row == 64) {
-            style_range(line, "||", "||", true, logdisplay::COLOR::RED);
+            style_range(line, "||", "||", true, LogDisplay::COLOR::RED);
         }
         else if (row == 65) {
-            style_range(line, "||", "||", true, logdisplay::COLOR::RED, 1);
+            style_range(line, "||", "||", true, LogDisplay::COLOR::RED, 1);
         }
         else {
-            style_string(line, "", logdisplay::COLOR::BG_BOLD_MAGENTA);
-            style_rstring(line, "", logdisplay::COLOR::BG_BOLD_MAGENTA);
-            style_range(line, "", "", false, logdisplay::COLOR::BG_BOLD_MAGENTA);
-            style_between(line, "", "", false, logdisplay::COLOR::BG_BOLD_MAGENTA);
+            style_string(line, "", LogDisplay::COLOR::BG_BOLD_MAGENTA);
+            style_rstring(line, "", LogDisplay::COLOR::BG_BOLD_MAGENTA);
+            style_range(line, "", "", false, LogDisplay::COLOR::BG_BOLD_MAGENTA);
+            style_between(line, "", "", false, LogDisplay::COLOR::BG_BOLD_MAGENTA);
 
-            style_range(line, "[", "]", false, logdisplay::COLOR::BG_BOLD_CYAN);
-            style_range(line, "\"", "\"", false, logdisplay::COLOR::GREEN);
-            style_num(line, logdisplay::COLOR::MAGENTA);
+            style_range(line, "[", "]", false, LogDisplay::COLOR::BG_BOLD_CYAN);
+            style_range(line, "\"", "\"", false, LogDisplay::COLOR::GREEN);
+            style_num(line, LogDisplay::COLOR::MAGENTA);
         }
     }
 
-    void line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, logdisplay::COLOR color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0) override {
+    void line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::COLOR color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0) override {
         (void) row;
         (void) word2;
         (void) inclusive;

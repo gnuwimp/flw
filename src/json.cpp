@@ -5,562 +5,1015 @@
 
 // MKALGAM_ON
 
-#include <string.h>
 #include <errno.h>
+#include <cstring>
+#include <cmath>
 
 namespace flw {
-namespace json {
-    #define _FLW_JSON_RETURN(X,Y)           return Err((ssize_t) (X - Y), line);
-    #define _FLW_JSON_RETURN_POS(X)         return Err(X.pos, X.line);
-    #define _FLW_JSON_CHECK_SEPARATOR(X)    if (X > 32 && X != ',' && X != ':' && X != '}' && X != ']' && X != '{' && X != '[') return Err((ssize_t) (text - json), line);
 
-    static const char* _TYPE_NAMES[] = { "NA", "OBJECT", "END_OBJECT", "ARRAY","END_ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "COLON", "COMMA", "ARRAY_NL" };
+/***
+ *                 _            _
+ *                (_)          | |
+ *      _ __  _ __ ___   ____ _| |_ ___
+ *     | '_ \| '__| \ \ / / _` | __/ _ \
+ *     | |_) | |  | |\ V / (_| | ||  __/
+ *     | .__/|_|  |_| \_/ \__,_|\__\___|
+ *     | |
+ *     |_|
+ */
 
-    //--------------------------------------------------------------------------
-    static bool _convert_num(const char* s, double& d) {
-        errno = 0;
-        d = strtod(s, nullptr);
-        return errno != ERANGE;
+#define JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
+#define JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
+
+static const char* const _JSON_BOM = "\xef\xbb\xbf";
+
+//------------------------------------------------------------------------------
+static void _json_debug(const JS* js, std::string t) {
+    if (js->is_array() == true) {
+        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        t += "\t";
+        for (auto js2 : *js->va()) _json_debug(js2, t);
+        t.pop_back();
+    }
+    else if (js->is_object() == true) {
+        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        t += "\t";
+        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
+        t.pop_back();
+    }
+    else if (js->is_null()) printf("%s%s(%u): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c());
+    else if (js->is_string()) printf("%s%s(%u): \"%s\": \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vs_c());
+    else if (js->is_number()) printf("%s%s(%u): \"%s\": %f\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vn());
+    else if (js->is_bool()) printf("%s%s(%u): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vb() ? "true" : "false");
+    fflush(stdout);
+}
+
+//------------------------------------------------------------------------------
+static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
+    char buf[256];
+    snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
+    return buf;
+}
+
+//------------------------------------------------------------------------------
+static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
+    bool        res = false;
+    std::string n1;
+    std::string n2;
+
+    nVal = NAN;
+
+    while (pos < len) {
+        unsigned char c = json[pos];
+
+        if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
+            n1 += c;
+            pos++;
+        }
+        else {
+            break;
+        }
     }
 
-    //--------------------------------------------------------------------------
-    static std::string _remove_last(std::vector<std::string>& v) {
-        if (v.size() > 0) {
-            auto res = v.back();
-            v.pop_back();
-            return res;
+    while (pos < len) {
+        unsigned char c = json[pos];
+
+        if (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
+            n2 += c;
+            pos++;
+        }
+        else {
+            break;
+        }
+    }
+
+    int dot1  = 0;
+    int dot2  = 0;
+    int minus = 0;
+    int plus  = 0;
+    int E     = 0;
+    int term  = json[pos];
+
+    for (auto c : n1) {
+        dot1  += (c =='.');
+        minus += (c =='-');
+        plus  += (c =='+');
+        E     += (c =='e');
+        E     += (c =='E');
+    }
+
+    if (dot1 > 1 || minus > 1 || n1 == "-") {
+        return false;
+    }
+    else if (n1.back() == '.') {
+        return false;
+    }
+    else if (n1[0] == '-' && n1[1] == '0' && n1[2] != '.' && n1[2] != 0) {
+        return false;
+    }
+    else if (n1[0] == '-' && n1[1] == '.') {
+        return false;
+    }
+    else if (n1[0] == '0' && n1[1] != 0 && n1[1] != '.') {
+        return false;
+    }
+    else if (minus > 0 && n1[0] != '-') {
+        return false;
+    }
+
+    if (n2 != "") {
+        if (n2.length() == 1) {
+            return false;
+        }
+        else {
+            dot2 = minus = plus = E = 0;
+            for (auto c : n2) {
+                dot2  += (c =='.');
+                minus += (c =='-');
+                plus  += (c =='+');
+                E     += (c =='e');
+                E     += (c =='E');
+            }
+
+            if (plus + minus > 1 || E > 1) {
+                return false;
+            }
+            else if (plus > 0 && n2.back() == '+') {
+                return false;
+            }
+            else if (plus > 0 && n2[1] != '+') {
+                return false;
+            }
+            else if (minus > 0 && n2.back() == '-') {
+                return false;
+            }
+            else if (minus > 0 && n2[1] != '-') {
+                return false;
+            }
+        }
+    }
+
+    if (term > 32 && term != ',' && term != ':' && term != '}' && term != ']' && term != '{' && term != '[') {
+        return false;
+    }
+
+    errno = 0;
+
+    if (E > 0 || dot1 > 0) {
+        nVal = strtod((n1 + n2).c_str(), nullptr);
+    }
+    else {
+        nVal = strtoll((n1 + n2).c_str(), nullptr, 0);
+    }
+
+    res   = (errno == 0);
+    pos--;
+    return res;
+}
+
+//------------------------------------------------------------------------------
+static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
+    std::string str   = "";
+    bool        term  = false;
+    unsigned    c     = 0;
+    unsigned    p     = 0;
+
+    pos++;
+
+    while (pos < len) {
+        c = json[pos];
+
+        if (p == '\\' && c == '\\') {
+            str += c;
+            c = 0;
+        }
+        else if (p == '\\' && c == '"') {
+            str += c;
+        }
+        else if (c == '"') {
+            pos++;
+            term = true;
+            break;
+        }
+        else if (c < 32) {
+            return false;
+        }
+        else {
+            str += c;
         }
 
-        return "";
+        p = c;
+        pos++;
     }
 
-    // ----------------------------------------------------------------------
-    // ----------------------------------------------------------------------
-    // ----------------------------------------------------------------------
+    auto ulen = (ignore_utf_check == false) ? JS::CountUtf8(str.c_str()) : 1;
 
-    struct _Token {
-        TYPE                            type;
-        int                             depth;
-        std::string                     value;
-        size_t                          pos;
-        size_t                          line;
-                                        _Token()
-                                            { type = json::NA; pos = 0; depth = 0; line = 0; }
-                                        _Token(TYPE type, const std::string& value = "", size_t pos = 0, size_t depth = 0, size_t line = 0)
-                                            { this->type = type; this->value = value; this->pos = pos; this->depth = depth; this->line = line; }
-        bool                            is_end() const
-                                            { return type == json::END_ARRAY || type == json::END_OBJECT; }
-        bool                            is_start() const
-                                            { return type == json::ARRAY || type == json::OBJECT; }
-    };
+    if (term == false) {
+        return false;
+    }
+    else if (ulen == 0 && str.length() > 0) {
+        return false;
+    }
 
-    typedef std::vector<_Token>         _TokenVector;
+    if (*sVal1 == nullptr) {
+        *sVal1 = strdup(str.c_str());
+    }
+    else if (*sVal2 == nullptr) {
+        *sVal2 = strdup(str.c_str());
+    }
+    else {
+        return false;
+    }
 
-    //--------------------------------------------------------------------------
-    static void _tokenize_count_dot_minus_plus_e(const std::string& s, int& dot, int& minus, int& plus, int& E) {
-        dot = 0; minus = 0; plus = 0; E = 0;
-        for (auto c : s) {
-            dot   += (c =='.');
-            minus += (c =='-');
-            plus  += (c =='+');
-            E     += (c =='e');
-            E     += (c =='E');
+    pos--;
+    return true;
+}
+
+/***
+ *           _  _____
+ *          | |/ ____|
+ *          | | (___
+ *      _   | |\___ \
+ *     | |__| |____) |
+ *      \____/|_____/
+ *
+ *
+ */
+
+ssize_t JS::COUNT = 0;
+
+//------------------------------------------------------------------------------
+bool JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeBool("", b, this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
+    }
+
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+
+//------------------------------------------------------------------------------
+bool JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeNil("", this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
+    }
+
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+
+//------------------------------------------------------------------------------
+bool JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+
+    if (is_array() == true && std::isnan(nVal) == false) {
+        _va->push_back(JS::_MakeNumber("", nVal, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && std::isnan(nVal) == false) {
+        res = _set_object(*sVal1, JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
+    }
+
+    free(*sVal1);
+    *sVal1 = nullptr;
+    nVal = NAN;
+    return res;
+}
+
+//------------------------------------------------------------------------------
+bool JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+
+    if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
+        _va->push_back(JS::_MakeString("", *sVal1, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
+        res = _set_object(*sVal1, JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
+    }
+
+    free(*sVal1);
+    free(*sVal2);
+
+    *sVal1 = nullptr;
+    *sVal2 = nullptr;
+
+    return res;
+}
+
+//------------------------------------------------------------------------------
+void JS::_clear(bool name) {
+    if (_type == ARRAY) {
+        for (auto js : *_va) {
+            delete js;
         }
+
+        delete _va;
+        _va = nullptr;
+    }
+    else if (_type == OBJECT) {
+        for (auto js : *_vo) {
+            delete js.second;
+        }
+
+        delete _vo;
+        _vo = nullptr;
+    }
+    else if (_type == STRING) {
+        free(_vs);
+        _vs = nullptr;
     }
 
-    //----------------------------------------------------------------------
-    static Err _tokenize(const char* json, size_t len, _TokenVector& tokens) {
-        tokens.clear();
+    if (name == true) {
+        free(_name);
+        _name   = nullptr;
+    }
 
-        auto text  = json;
-        auto end   = text + len;
-        auto value = std::string();
-        auto num   = std::string();
-        auto depth = 0;
-        auto line  = 1;
-        auto DUMMY = _Token();
+    _type   = NIL;
+    _vb     = false;
+    _parent = nullptr;
+}
 
-        num.reserve(50);
-        value.reserve(200);
 
-        while (text < end) {
-            auto  c  = (unsigned char) *text;
-            // auto& T0 = (tokens.size() > 0) ? tokens.back() : DUMMY;
+//------------------------------------------------------------------------------
+std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+    auto colon   = 0;
+    auto comma   = 0;
+    auto count_a = 0;
+    auto count_o = 0;
+    auto current = (JS*) nullptr;
+    auto line    = (unsigned) 1;
+    auto n       = (JS*) nullptr;
+    auto nVal    = (double) NAN;
+    auto pos     = (size_t) 0;
+    auto pos2    = (size_t) 0;
+    auto posn    = (size_t) 0;
+    auto sVal1   = (char*) nullptr;
+    auto sVal2   = (char*) nullptr;
+    auto tmp     = JS();
 
-            if (c == 10) {
+    try {
+        _clear(true);
+        _name = strdup("");
+
+        tmp._type = JS::ARRAY;
+        tmp._va   = new JSArray();
+        current   = &tmp;
+
+        if (strncmp(json, _JSON_BOM, 3) == 0) {
+            pos += 3;
+        }
+
+        while (pos < len) {
+            auto start = pos;
+            auto c     = (unsigned) json[pos];
+
+            if (c == '\t' || c == '\r' || c == ' ') {
+                pos++;
+            }
+            else if (c == '\n') {
                 line++;
-            }
-
-            if (c < 33) {
-                text++;
-            }
-            else if (c == ',') {
-                tokens.push_back(_Token(json::COMMA, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == ':') {
-                tokens.push_back(_Token(json::COLON, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == '{') {
-                tokens.push_back(_Token(json::OBJECT, "", (size_t) text - (size_t) json, depth, line));
-                depth++;
-                text++;
-            }
-            else if (c == '}') {
-                depth--;
-                tokens.push_back(_Token(json::END_OBJECT, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == '[') {
-                tokens.push_back(_Token(json::ARRAY, "", (size_t) text - (size_t) json, depth, line));
-                depth++;
-                text++;
-            }
-            else if (c == ']') {
-                depth--;
-                tokens.push_back(_Token(json::END_ARRAY, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == 't' && strncmp(text, "true", 4) == 0) {
-                tokens.push_back(_Token(json::BOOL, "true", (size_t) text - (size_t) json, depth, line));
-                text += 4;
-                c = *text;
-                _FLW_JSON_CHECK_SEPARATOR(c)
-            }
-            else if (c == 'f' && strncmp(text, "false", 5) == 0) {
-                tokens.push_back(_Token(json::BOOL, "false", (size_t) text - (size_t) json, depth, line));
-                text += 5;
-                c = *text;
-                _FLW_JSON_CHECK_SEPARATOR(c)
-            }
-            else if (c == 'n' && strncmp(text, "null", 4) == 0) {
-                tokens.push_back(_Token(json::NIL, "", (size_t) text - (size_t) json, depth, line));
-                text += 4;
-                c = *text;
-                _FLW_JSON_CHECK_SEPARATOR(c)
+                pos++;
             }
             else if (c == '"') {
-                auto p = (unsigned char) *text;
-                auto start = text;
-                text++;
-                auto c = (unsigned char) *text;
-                value = "";
+                pos2 = pos;
+                if (sVal1 == nullptr) posn = pos;
+                if (_json_parse_string(ignore_utf_check, json, len, pos, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
 
-                while (text < end) {
-                    if (c < 32) _FLW_JSON_RETURN(text, json)
-                    else if (p == '\\' && c == '"') {
+                auto add_object = (current->is_object() == true && sVal2 != nullptr);
+                auto add_array = (current->is_array() == true);
+
+                if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (add_object == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (add_object == true || add_array == true) {
+                    pos2 = (sVal2 == nullptr) ? pos2 : posn;
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                    colon = 0;
+                    comma = 0;
+                }
+
+                pos++;
+            }
+            else if ((c >= '0' && c <= '9') || c == '-') {
+                pos2 = (sVal1 == nullptr) ? pos : posn;
+                if (_json_parse_number(json, len, pos, nVal) == false) throw JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+
+                colon = 0;
+                comma = 0;
+                pos++;
+            }
+            else if (c == ',') {
+                if (comma > 0) throw JSON_ERROR(pos, line);
+                else if (current == &tmp) throw JSON_ERROR(pos, line);
+
+                comma++;
+                pos++;
+            }
+            else if (c == ':') {
+                if (colon > 0) throw JSON_ERROR(pos, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
+                else if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+
+                colon++;
+                pos++;
+            }
+            else if (c == '[') {
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                else if (current->is_array() == true) {
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
+
+                    n = JS::_MakeArray("", current, pos);
+                    current->_va->push_back(n);
+                }
+                else {
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                    else if (colon != 1) throw JSON_ERROR(pos, line);
+
+                    n = JS::_MakeArray(sVal1, current, pos2);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    JSON_FREE_STRINGS(sVal1, sVal2)
+                }
+
+                current = n;
+                colon = 0;
+                comma = 0;
+                count_a++;
+                pos++;
+            }
+            else if (c == ']') {
+                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
+                else if (current->is_array() == false) throw JSON_ERROR(pos, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
+                else if (count_a < 0) throw JSON_ERROR(pos, line);
+
+                current = current->_parent;
+                comma = 0;
+                count_a--;
+                pos++;
+            }
+            else if (c == '{') {
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                else if (current->is_array() == true) {
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
+
+                    n = JS::_MakeObject("", current, pos);
+                    current->_va->push_back(n);
+                }
+                else {
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                    else if (colon != 1) throw JSON_ERROR(pos, line);
+
+                    n = JS::_MakeObject(sVal1, current, posn);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    JSON_FREE_STRINGS(sVal1, sVal2)
+                }
+
+                current = n;
+                colon = 0;
+                comma = 0;
+                count_o++;
+                pos++;
+            }
+            else if (c == '}') {
+                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
+                else if (count_o < 0) throw JSON_ERROR(pos, line);
+
+                current = current->_parent;
+                comma = 0;
+                count_o--;
+                pos++;
+            }
+            else if ((c == 't' && json[pos + 1] == 'r' && json[pos + 2] == 'u' && json[pos + 3] == 'e') ||
+                    (c == 'f' && json[pos + 1] == 'a' && json[pos + 2] == 'l' && json[pos + 3] == 's' && json[pos + 4] == 'e')) {
+                pos2 = (sVal1 == nullptr) ? pos : posn;
+                if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+
+                colon = 0;
+                comma = 0;
+                pos += 4;
+                pos += (c == 'f');
+            }
+            else if (c == 'n' && json[pos + 1] == 'u' && json[pos + 2] == 'l' && json[pos + 3] == 'l') {
+                pos2 = (sVal1 == nullptr) ? pos : posn;
+                if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos) == false) throw JSON_ERROR(start, line);
+
+                colon = 0;
+                comma = 0;
+                pos += 4;
+            }
+            else {
+                throw JSON_ERROR(pos, line);
+            }
+
+            if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
+                throw JSON_ERROR(pos, line);
+            }
+        }
+
+        if (count_a != 0 || count_o != 0) {
+            throw JSON_ERROR(len, 1);
+        }
+        else if (tmp.size() != 1) {
+            throw JSON_ERROR(len, 1);
+        }
+        else if (tmp[0]->_type == JS::ARRAY) {
+            _type = JS::ARRAY;
+            _va = tmp[0]->_va;
+            ((JS*) tmp[0])->_type = JS::NIL;
+
+            for (auto o : *_va) {
+                o->_parent = this;
+            }
+        }
+        else if (tmp[0]->_type == JS::OBJECT) {
+            _type = JS::OBJECT;
+            _vo = tmp[0]->_vo;
+            ((JS*) tmp[0])->_type = JS::NIL;
+
+            for (auto& it : *_vo) {
+                it.second->_parent = this;
+            }
+        }
+        else if (tmp[0]->_type == JS::BOOL) {
+            _type = JS::BOOL;
+            _vb   = tmp[0]->_vb;
+        }
+        else if (tmp[0]->_type == JS::NUMBER) {
+            _type = JS::NUMBER;
+            _vn   = tmp[0]->_vn;
+        }
+        else if (tmp[0]->_type == JS::STRING) {
+            _type = JS::STRING;
+            _vs   = tmp[0]->_vs;
+            ((JS*) tmp[0])->_type = JS::NIL;
+        }
+        else if (tmp[0]->_type == JS::NIL) {
+            _type = JS::NIL;
+        }
+        else {
+            throw JSON_ERROR(0, 1);
+        }
+    }
+    catch(std::string err) {
+        JSON_FREE_STRINGS(sVal1, sVal2)
+        _clear(false);
+        return err;
+    }
+
+    return "";
+}
+
+//------------------------------------------------------------------------------
+void JS::debug() const {
+    std::string t;
+    _json_debug(this, t);
+}
+
+//------------------------------------------------------------------------------
+std::string JS::encode(int skip) const {
+    std::string t;
+    std::string j;
+
+    try {
+        if (is_array() == true || is_object() == true) {
+            JS::_Encode(this, j, t, false, skip);
+        }
+        else {
+            return _encode(true, skip);
+        }
+    }
+    catch (std::string e) {
+        j = e;
+    }
+
+    return j;
+}
+
+//------------------------------------------------------------------------------
+std::string JS::_encode(bool ignore_name, int skip) const {
+    static const std::string QUOTE = "\"";
+
+    std::string res;
+    std::string arr = (skip == 0) ? "\": [" : "\":[";
+    std::string obj = (skip == 0) ? "\": {" : "\":{";
+    std::string name = (skip == 0) ? "\": " : "\":";
+    bool object = (_parent != nullptr && _parent->is_object() == true);
+
+    if (_type == ARRAY) {
+        res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
+    }
+    else if (_type == OBJECT) {
+        res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
+    }
+    else {
+        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name);
+
+        if (_type == STRING) {
+            res += QUOTE + _vs + QUOTE;
+        }
+        else if (_type == NIL) {
+            res += "null";
+        }
+        else if (_type == BOOL && _vb == true) {
+            res += "true";
+        }
+        else if (_type == BOOL && _vb == false) {
+            res += "false";
+        }
+        else if (_type == NUMBER) {
+            char b[500];
+
+            auto n   = snprintf(b, 500, "%f", _vn);
+            auto dot = strstr(b, ".");
+
+            if (n < 1 || n >= 500) {
+                strcpy(b, "0.0");
+            }
+            else if (dot != nullptr) {
+                auto zero = b + strlen(b) - 1;
+
+                while (zero >= dot) { // Remove trailing decimal zeros
+                    if (*zero == '0' || *zero == '.') {
+                        *zero = 0;
                     }
-                    else if (c == '"') {
-                        tokens.push_back(_Token(json::STRING, value, (size_t) start - (size_t) json, depth, line));
-                        text++;
+                    else {
                         break;
                     }
-                    value += c;
-                    p = c;
-                    text++;
-                    c = *text;
+
+                    zero--;
                 }
-                c = *text;
-                if (text == end) _FLW_JSON_RETURN(text, json)
-                _FLW_JSON_CHECK_SEPARATOR(c)
             }
-            else if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-                auto start = text;
-                std::string n1, n2;
-                int dot, minus, plus, E;
 
-                while (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-                    n1 += c; text++; c = *text;
-                }
-                _tokenize_count_dot_minus_plus_e(n1, dot, minus, plus, E);
-                if (dot > 1 || minus > 1) _FLW_JSON_RETURN(start, json)
-                if (n1[0] == '.' || n1.back() == '.') _FLW_JSON_RETURN(start, json)
-                if (n1[0] == '-' && n1[1] == '.') _FLW_JSON_RETURN(start, json)
-                if (n1[0] == '-' && n1[1] == '0' && n1.length() > 2 && n1[2] != '.') _FLW_JSON_RETURN(start, json)
-                if (n1 == "-") _FLW_JSON_RETURN(start, json)
-                if (minus > 0 && n1[0] != '-') _FLW_JSON_RETURN(start, json)
+            res += b;
+        }
+    }
 
-                while (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
-                    n2 += c; text++; c = *text;
-                }
-                if (n2.empty() == false) {
-                    if (n2.length() == 1) _FLW_JSON_RETURN(start, json)
-                    _tokenize_count_dot_minus_plus_e(n2, dot, minus, plus, E);
-                    if (plus + minus > 1 || E > 1) _FLW_JSON_RETURN(start, json)
-                    if (plus > 0 && n2.back() == '+') _FLW_JSON_RETURN(start, json)
-                    if (plus > 0 && n2[1] != '+') _FLW_JSON_RETURN(start, json)
-                    if (minus > 0 && n2.back() == '-') _FLW_JSON_RETURN(start, json)
-                    if (minus > 0 && n2[1] != '-') _FLW_JSON_RETURN(start, json)
-                }
-                else if (n1[0] == '0' && n1.length() > 1 && n1[1] != '.') _FLW_JSON_RETURN(start, json)
+    return res;
+}
 
-                tokens.push_back(_Token(json::NUMBER, n1 + n2, (size_t) start - (size_t) json, depth, line));
-                _FLW_JSON_CHECK_SEPARATOR(c)
+//------------------------------------------------------------------------------
+const JS* JS::find(std::string name, bool rec) const {
+    if (is_object() == true) {
+        auto find = _vo->find(name);
+
+        if (find != _vo->end()) {
+            return find->second;
+        }
+        else if (rec == true) {
+            for (auto o : *_vo) {
+                if (o.second->is_object() == true) {
+                    return o.second->find(name, rec);
+                }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+//------------------------------------------------------------------------------
+const JS* JS::_get_object(const char* name, bool escape) const {
+    if (is_object() == true) {
+        auto key  = (escape == true) ? JS::Escape(name) : name;
+        auto find = _vo->find(key);
+        return (find != _vo->end()) ? find->second : nullptr;
+    }
+
+    return nullptr;
+}
+
+//------------------------------------------------------------------------------
+// Delete existing object before setting new.
+//
+bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
+    if (is_object() == true) {
+        auto find = _vo->find(name);
+
+        if (find != _vo->end()) {
+            if (ignore_duplicates == false) {
+                delete js;
+                return false;
             }
             else {
-                _FLW_JSON_RETURN(text, json);
+                delete find->second;
             }
         }
 
-        return Err();
+        (*_vo)[name] = js;
     }
 
-    // ----------------------------------------------------------------------
-    // ----------------------------------------------------------------------
-    // ----------------------------------------------------------------------
+    return true;
+}
 
-    // ----------------------------------------------------------------------
-    void Node::print() const {
-        printf("%5u| %5u| %2d| %*s %-10s <%s>", (unsigned) index, (unsigned) textpos, depth, depth * 4, "", _TYPE_NAMES[(int) type], name.c_str());
-        if (type == json::STRING || type == json::NUMBER || type == json::BOOL) printf(" => <%s>\n", value.c_str());
-        else printf("\n");
-        fflush(stdout);
-    }
+//------------------------------------------------------------------------------
+const JSArray JS::vo_to_va() const {
+    JSArray res;
 
-    //--------------------------------------------------------------------------
-    //--------------------------------------------------------------------------
-    //--------------------------------------------------------------------------
-
-    //--------------------------------------------------------------------------
-    std::string escape_string(const std::string& string) {
-        std::string res;
-
-        for (unsigned char c : string) {
-            if (c == 9) res += "\\t";
-            else if (c == 10) res += "\\n";
-            else if (c == 13) res += "\\r";
-            else if (c == 8) res += "\\b";
-            else if (c == 14) res += "\\f";
-            else if (c == 34) res += "\\\"";
-            else if (c == 92) res += "\\\\";
-            else res += c;
+    if (_type == OBJECT) {
+        for (auto& m : *_vo) {
+            res.push_back(m.second);
         }
-
-        return res;
     }
 
-    //--------------------------------------------------------------------------
-    NodeVector find_children(const NodeVector& nodes, const Node& start, bool grandchildren) {
-        auto res = NodeVector();
-        if (start.index + 1 >= nodes.size()) return res;
+    return res;
+}
 
-        for (size_t f = start.index + 1; f < nodes.size(); f++) {
-            auto& node = nodes[f];
+/***
+ *           _  _____     _____ _        _   _
+ *          | |/ ____|   / ____| |      | | (_)
+ *          | | (___    | (___ | |_ __ _| |_ _  ___
+ *      _   | |\___ \    \___ \| __/ _` | __| |/ __|
+ *     | |__| |____) |   ____) | || (_| | |_| | (__
+ *      \____/|_____/   |_____/ \__\__,_|\__|_|\___|
+ *
+ *
+ */
 
-            if (node.depth <= start.depth) break;
-            else if (grandchildren == true) res.push_back(node);
-            else if (node.depth == start.depth + 1 && node.is_end() == false) res.push_back(node);
-        }
-        return res;
-    }
+//------------------------------------------------------------------------------
+size_t JS::CountUtf8(const char* p) {
+    auto count = (size_t) 0;
+    auto f     = (size_t) 0;
+    auto u     = (const unsigned char*) p;
+    auto c     = (unsigned) u[0];
 
-    //--------------------------------------------------------------------------
-    NodeVector find_nodes(const NodeVector& nodes, std::string name, TYPE type) {
-        auto res = NodeVector();
-
-        for (size_t f = 0; f < nodes.size(); f++) {
-            auto& node = nodes[f];
-
-            if (name == "") {
-                if (type == json::NA) res.push_back(node);
-                else if (node.type == type) res.push_back(node);
+    while (c != 0) {
+        if (c >= 128) {
+            if (c >= 194 && c <= 223) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
             }
-            else if (node.name == name) {
-                if (type == json::NA) res.push_back(node);
-                else if (node.type == type) res.push_back(node);
+            else if (c >= 224 && c <= 239) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
             }
-        }
-        return res;
-    }
-
-    //--------------------------------------------------------------------------
-    NodeVector find_siblings(const NodeVector& nodes, const Node& start) {
-        auto res = NodeVector();
-        if (start.index >= nodes.size()) return res;
-
-        for (size_t f = start.index; f < nodes.size(); f++) {
-            auto& node = nodes[f];
-
-            if (node.depth < start.depth) break;
-            else if (node.depth == start.depth && node.is_end() == false) res.push_back(node);
-        }
-        return res;
-    }
-
-    //--------------------------------------------------------------------------
-    Err parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma) {
-        auto tokens      = _TokenVector();
-        auto len         = strlen(json);
-        auto err         = _tokenize(json, len, tokens);
-        auto size        = tokens.size();
-        auto obj         = 0;
-        auto arr         = 0;
-        auto num         = 0.0;
-        auto arr_name    = std::vector<std::string>();
-        auto obj_name    = std::vector<std::string>();
-        auto containers  = std::vector<std::string>();
-        auto const DUMMY = _Token();
-
-        nodes.clear();
-
-        if (err.pos >= 0) return err;
-        else if (size < 2) return Err(size, 1);
-
-        for (size_t f = 0; f < size; f++) {
-            auto& t  = tokens[f];
-            auto& T0 = (f > 0) ? tokens[f - 1] : DUMMY;
-            auto& T1 = (f < size - 1) ? tokens[f + 1] : DUMMY;
-            auto& T2 = (f < size - 2) ? tokens[f + 2] : DUMMY;
-
-            if ((T0.type == json::STRING || T0.type == json::NUMBER || T0.type == json::NIL || T0.type == json::BOOL) &&
-                (t.type != json::COMMA && t.type != json::END_ARRAY && t.type != json::END_OBJECT)) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (obj == 0 && arr == 0 && nodes.size() > 0) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (obj == 0 && arr == 0 && t.type != json::OBJECT && t.type != json::ARRAY) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::COMMA && T0.type == json::COMMA) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::COMMA && T0.type == json::ARRAY) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::COLON && T0.type != json::STRING) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::END_OBJECT) {
-                if (ignore_trailing_comma == false && T0.type == json::COMMA) _FLW_JSON_RETURN_POS(t)
-                containers.pop_back();
-                obj--;
-                if (obj < 0) _FLW_JSON_RETURN_POS(t)
-               nodes.push_back(Node(json::END_OBJECT, _remove_last(obj_name), "", t.depth, t.pos));
-            }
-            else if (t.type == json::OBJECT) {
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-                if (T0.is_end() == true && T0.depth == t.depth) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("O");
-                obj++;
-                nodes.push_back(Node(json::OBJECT, "", "", t.depth, t.pos));
-                obj_name.push_back("");
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::OBJECT) {
-                if (T0.is_end() == true && T0.depth == T2.depth) _FLW_JSON_RETURN_POS(t)
-                if (obj == 0) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("O");
-                obj++;
-                nodes.push_back(Node(json::OBJECT, t.value, "", T2.depth, t.pos));
-                obj_name.push_back(t.value);
-                f += 2;
-            }
-            else if (t.type == json::END_ARRAY) {
-                if (ignore_trailing_comma == false && T0.type == json::COMMA) _FLW_JSON_RETURN_POS(t)
-                containers.pop_back();
-                arr--;
-                if (arr < 0) _FLW_JSON_RETURN_POS(t)
-                nodes.push_back(Node(json::END_ARRAY, _remove_last(arr_name), "", t.depth, t.pos));
-            }
-            else if (t.type == json::ARRAY) {
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-                if (T0.is_end() == true && T0.depth == t.depth) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("A");
-                arr++;
-                nodes.push_back(Node(json::ARRAY, "", "", t.depth, t.pos));
-                arr_name.push_back("");
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::ARRAY) {
-                if (T0.is_end() == true && T0.depth == T2.depth) _FLW_JSON_RETURN_POS(t)
-                if (obj == 0) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("A");
-                arr++;
-                nodes.push_back(Node(json::ARRAY, t.value, "", T2.depth, t.pos));
-                arr_name.push_back(t.value);
-                f += 2;
-            }
-            else if (t.type == json::BOOL) {
-                nodes.push_back(Node(json::BOOL, "", t.value, t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::BOOL) {
-                nodes.push_back(Node(json::BOOL, t.value, T2.value, T2.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::NIL) {
-                nodes.push_back(Node(json::NIL, "", "", t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::NIL) {
-                nodes.push_back(Node(json::NIL, t.value, "", T2.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::NUMBER) {
-                if (_convert_num(t.value.c_str(), num) == false) _FLW_JSON_RETURN_POS(t)
-                nodes.push_back(Node(json::NUMBER, "", t.value, t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::NUMBER) {
-                if (_convert_num(T2.value.c_str(), num) == false) _FLW_JSON_RETURN_POS(t)
-                nodes.push_back(Node(json::NUMBER, t.value, T2.value, t.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::STRING) {
-                nodes.push_back(Node(json::STRING, t.value, T2.value, t.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING) {
-                nodes.push_back(Node(json::STRING, "", t.value, t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-
-            if (nodes.size() > 0) nodes.back().index   = nodes.size() - 1;
-            if (arr < 0 || obj < 0) _FLW_JSON_RETURN_POS(t)
-        }
-
-        if (arr != 0 || obj != 0) return Err(len, -1);
-        return Err();
-    }
-
-    //--------------------------------------------------------------------------
-    Err parse(std::string json, NodeVector& nodes, bool ignore_trailing_commas) {
-        return parse(json.c_str(), nodes, ignore_trailing_commas);
-    }
-
-    // ----------------------------------------------------------------------
-    void print(const NodeVector& nodes) {
-        auto c = 0;
-
-        printf("\n%d Node objects\n", (int) nodes.size());
-        printf("%6s| %6s| %6s| %6s| %s\n", "COUNT", "INDEX", "POS", "DEPTH", "VALUES");
-        printf("-------------------------------------------------------\n");
-        for (auto& node : nodes) {
-            printf("%6d| %6u| %6u| %6d|%*s  %-10s <%s>", c, (unsigned) node.index, (unsigned) node.textpos, node.depth, node.depth * 4, "", _TYPE_NAMES[(int) node.type], node.name.c_str());
-            if (node.type == json::STRING || node.type == json::NUMBER || node.type == json::BOOL) printf(" => <%s>", node.value.c_str());
-            printf("\n");
-            c++;
-        }
-        fflush(stdout);
-    }
-
-    //--------------------------------------------------------------------------
-    std::string tostring(const NodeVector& nodes) {
-        if (nodes.size() < 2) return "";
-
-        auto res    = std::string();
-        auto DUMMY  = Node();
-        auto last   = nodes.size() - 1;
-        auto indent = std::string();
-        auto arr    = json::NA;
-
-        res.reserve(20 * nodes.size());
-
-        for (size_t f = 0; f <= last; f++) {
-            auto& node = nodes[f];
-            auto& next = (f < last) ? nodes[f + 1] : DUMMY;
-            auto  nl   = std::string("\n");
-            auto  nl2  = std::string("");
-
-            if (node.is_data() && next.is_end() == false) {
-                nl  = ",\n";
-                nl2 = ",";
-            }
-            else if (node.is_end() && (next.is_start() == true || next.is_data() == true)) {
-                nl  = ",\n";
-                nl2 = ",";
-            }
-
-            if (node.type == json::END_OBJECT) {
-                indent.pop_back();
-                res += indent;
-                res += "}";
-            }
-            else if (node.type == json::END_ARRAY) {
-                indent.pop_back();
-                if (arr != json::ARRAY) res += indent;
-                res += "]";
-                arr = json::NA;
+            else if (c >= 240 && c <= 244) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
             }
             else {
-                if (arr != json::ARRAY) res += indent;
-
-                if (node.type == json::OBJECT) {
-                    indent += "\t";
-                    if (node.name == "") res += "{";
-                    else res += "\"" + node.name + "\": {";
-                }
-                else if (node.type == json::ARRAY || node.type == json::ARRAY_NL) {
-                    indent += "\t";
-                    if (node.name == "") res += "[";
-                    else res += "\"" + node.name + "\": [";
-                    arr = (node.type == json::ARRAY_NL) ? json::ARRAY : json::NA;
-                }
-                else if (node.type == json::STRING) {
-                    if (node.name == "") res += "\"" + node.value + "\"";
-                    else res += "\"" + node.name + "\": \"" + node.value + "\"";
-                }
-                else if (node.type == json::NUMBER) {
-                    if (node.name == "") res += node.value;
-                    else res += "\"" + node.name + "\": " + node.value;
-                }
-                else if (node.type == json::BOOL) {
-                    if (node.name == "") res += node.value;
-                    else res += "\"" + node.name + "\": " + node.value;
-                }
-                else if (node.type == json::NIL) {
-                    if (node.name == "") res += "null";
-                    else res += "\"" + node.name + "\": null";
-                }
+                return 0;
             }
-
-            if (arr != json::ARRAY) res += nl;
-            else res += nl2;
         }
 
-        return res;
+        count++;
+        c = u[++f];
     }
 
-    //--------------------------------------------------------------------------
-    std::string unescape_string(const std::string& string) {
-        std::string res;
+    return count;
+}
 
-        for (size_t f = 0; f < string.length(); f++) {
-            unsigned char c = string[f];
-            unsigned char n = string[f + 1];
+//------------------------------------------------------------------------------
+void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int skip) {
+    std::string c = (comma == true) ? "," : "";
+    std::string n = (skip > 1) ? "" : "\n";
+    size_t      f = 0;
 
-            if (c == '\\') {
-                if (n == 't') res += '\t';
-                else if (n == 'n') res += '\n';
-                else if (n == 'r') res += '\r';
-                else if (n == 'b') res += '\b';
-                else if (n == 'f') res += '\f';
-                else if (n == '\"') res += '"';
-                else if (n == '\\') res += '\\';
-                f++;
-            }
-            else res += c;
+    if (js->is_array() == true) {
+        j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
+
+        for (auto n : *js->_va) {
+            if (skip == 0) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
+            else JS::_Encode(n, j, t, f < (js->_va->size() - 1), skip);
+            if (skip == 0) t.pop_back();
+            f++;
         }
 
-        return res;
+        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
+    }
+    else if (js->is_object() == true) {
+        j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
+
+        for (auto& n : *js->_vo) {
+            if (skip == 0) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
+            else JS::_Encode(n.second, j, t, f < (js->_vo->size() - 1), skip);
+            if (skip == 0) t.pop_back();
+            f++;
+        }
+
+        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
+    }
+    else {
+        j += t + js->_encode(false, skip) + c + n;
+    }
+}
+
+//------------------------------------------------------------------------------
+void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
+    std::string c = (comma == true) ? "," : "";
+    size_t      f = 0;
+
+    if (*js == ARRAY) {
+        j += js->_encode(false, skip);
+
+        for (auto n : *js->_va) {
+            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
+            f++;
+        }
+
+        j += "]" + c;
+    }
+    else if (*js == OBJECT) {
+        j += js->_encode(false, skip);
+
+        for (auto& n : *js->_vo) {
+            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
+            f++;
+        }
+
+        j += "}" + c;
+    }
+    else {
+        j += js->_encode(false, skip) + c;
+    }
+}
+
+//------------------------------------------------------------------------------
+std::string JS::Escape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string) + 5);
+
+    while (*string != 0) {
+        auto c = *string;
+
+        if (c == 9) res += "\\t";
+        else if (c == 10) res += "\\n";
+        else if (c == 13) res += "\\r";
+        else if (c == 8) res += "\\b";
+        else if (c == 14) res += "\\f";
+        else if (c == 34) res += "\\\"";
+        else if (c == 92) res += "\\\\";
+        else res += c;
+
+        string++;
     }
 
-    //--------------------------------------------------------------------------
-     Err validate(const char* json) {
-        auto nodes = NodeVector();
-        return parse(json, nodes);
+    return res;
+}
+
+//------------------------------------------------------------------------------
+std::string JS::Unescape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string));
+
+    while (*string != 0) {
+        unsigned char c = *string;
+        unsigned char n = *(string + 1);
+
+        if (c == '\\') {
+            if (n == 't') res += '\t';
+            else if (n == 'n') res += '\n';
+            else if (n == 'r') res += '\r';
+            else if (n == 'b') res += '\b';
+            else if (n == 'f') res += '\f';
+            else if (n == '\"') res += '"';
+            else if (n == '\\') res += '\\';
+            else if (n == 0) break;
+            string++;
+        }
+        else {
+            res += c;
+        }
+
+        string++;
     }
 
-    //--------------------------------------------------------------------------
-     Err validate(std::string json) {
-        auto nodes = NodeVector();
-        return parse(json.c_str(), nodes);
+    return res;
+}
+
+/***
+ *           _  _____ ____
+ *          | |/ ____|  _ \
+ *          | | (___ | |_) |
+ *      _   | |\___ \|  _ <
+ *     | |__| |____) | |_) |
+ *      \____/|_____/|____/
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
+JSB& JSB::add(JS* js) {
+    auto name = js->name();
+
+    if (_current == nullptr) {
+        if (name != "") {
+            delete js;
+            throw std::string("error: root object must be nameless <" + name + ">");
+        }
+        else {
+            _root = _current = js;
+        }
     }
-} // json
+    else {
+        js->_parent = _current;
+
+        if (_current->is_array() == true) {
+            if (name != "") {
+                delete js;
+                throw std::string("error: values added to array are nameless <" + name + ">");
+            }
+            else if (*js == JS::ARRAY || *js == JS::OBJECT) {
+                _current->_va->push_back(js);
+                _current = js;
+            }
+            else {
+                _current->_va->push_back(js);
+            }
+        }
+        else if (_current->is_object() == true) {
+            if (_current->find(name) != nullptr) {
+                delete js;
+                throw std::string("error: duplicate name <" + name + ">");
+            }
+            else if (js->is_array() == true || js->is_object() == true) {
+                (*_current->_vo)[name] = js;
+                _current = js;
+            }
+            else {
+                (*_current->_vo)[name] = js;
+            }
+        }
+        else {
+            delete js;
+            throw std::string("error: missing container");
+        }
+    }
+
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+std::string JSB::encode() const {
+    if (_root == nullptr) {
+        throw std::string("error: empty json");
+    }
+    else if (_name != "") {
+        throw std::string("error: unused name value <" + _name + ">");
+    }
+
+    auto j = _root->encode();
+
+    if (j.find("error") == 0) {
+        throw j;
+    }
+
+    return j;
+}
+
+//------------------------------------------------------------------------------
+JSB& JSB::end() {
+    if (_current == nullptr) {
+        throw std::string("error: empty json");
+    }
+    else if (_current == _root) {
+        throw std::string("error: already at the top level");
+    }
+
+    _current = _current->parent();
+    return *this;
+}
+
 } // flw
 
 // MKALGAM_OFF

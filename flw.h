@@ -11,6 +11,30 @@
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
 
+#ifdef DEBUG
+#include <iostream>
+#include <iomanip>
+#define FLW_LINE                        { printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_RED                         { printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_GREEN                       { printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_BLUE                        { printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
+#define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << std::endl; fflush(stdout); }
+#define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << std::endl; fflush(stdout); }
+#define FLW_PRINT3(A,B,C)               { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << std::endl; fflush(stdout); }
+#define FLW_PRINT4(A,B,C,D)             { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << std::endl; fflush(stdout); }
+#define FLW_PRINT5(A,B,C,D,E)           { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << std::endl; fflush(stdout); }
+#define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
+#define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
+#define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#else
+#define FLW_LINE
+#define FLW_RED
+#define FLW_GREEN
+#define FLW_BLUE
+#define FLW_PRINT(...)
+#endif
+
 namespace flw {
     extern int                          PREF_FIXED_FONT;        // Fixed font - FL_COURIER
     extern std::string                  PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
@@ -24,6 +48,7 @@ namespace flw {
     extern int                          PREF_SCROLLBAR;         // Extra pixel width for scrollbar depending what theme are active - used internally
 
     typedef std::vector<std::string>    StringVector;
+    typedef std::vector<Fl_Widget*>     WidgetVector;
 
     //--------------------------------------------------------------------------
     // Buffer container that frees memory automatically
@@ -42,7 +67,8 @@ namespace flw {
         Buf&                            operator=(Buf&& b);
         Buf&                            operator+=(const Buf& b);
         bool                            operator==(const Buf& other) const;
-        virtual                         ~Buf();
+        virtual                         ~Buf()
+                                            { free(p); }
     };
 
     //--------------------------------------------------------------------------
@@ -299,212 +325,138 @@ namespace flw {
 #include <vector>
 
 namespace flw {
-    class Chart;
 
-    struct Price {
-        std::string                     date;
-        double                          close;
-        double                          high;
-        double                          low;
-        double                          vol;
+//--------------------------------------------------------------------------
+// Chart data
+//
+struct Price {
+    std::string                 date;
+    double                      close;
+    double                      high;
+    double                      low;
+    double                      vol;
 
-                                        Price();
-                                        Price(const std::string& date_value, double value = 0.0);
-                                        Price(const std::string& date, double high, double low, double close, double vol = 0.0);
-        bool                            operator<(const Price& price) const { return date < price.date; }
-        bool                            operator<=(const Price& price) const { return date <= price.date; }
-        bool                            operator==(const Price& price) const { return date == price.date; }
-        bool                            operator!=(const Price& price) const { return date != price.date; }
+                                Price();
+                                Price(const std::string& date_value, double value = 0.0);
+                                Price(const std::string& date, double high, double low, double close, double vol = 0.0);
+    bool                        operator<(const Price& price) const { return date < price.date; }
+    bool                        operator<=(const Price& price) const { return date <= price.date; }
+    bool                        operator==(const Price& price) const { return date == price.date; }
+    bool                        operator!=(const Price& price) const { return date != price.date; }
+};
+
+struct ChartArea;
+struct ChartLine;
+struct ChartScale;
+
+typedef std::vector<Price>      PriceVector;
+typedef std::vector<ChartLine>  LineVector;
+typedef std::vector<ChartArea>  AreaVector;
+
+//--------------------------------------------------------------------------
+// Chart widget that is using dates for the x scale
+// It has an popup menu for a few settings and option to save chart to png image
+// It can also use date + hours/minutes/seconds
+// Use block_dates() to set an date list that removes those dates
+// ChartLine types BAR, VERTICAL and CLAMP_VERTICAL can use line width of -1 which means it will expand to tick width - 1
+//
+class Chart : public Fl_Group {
+public:
+    //----------------------------------------------------------------------
+    enum TYPE {
+                                LINE,
+                                BAR,
+                                VERTICAL,
+                                CLAMP_VERTICAL,
+                                HORIZONTAL,
+                                EXPAND_VERTICAL,
+                                EXPAND_HORIZONTAL,
+                                LAST = EXPAND_HORIZONTAL,
     };
 
-    typedef std::vector<Price>          PriceVector;
+    static const int            MIN_TICK  = 3;
+    static const int            MAX_TICK  = 100;
+    static const size_t         MAX_AREA  = 3;
+    static const size_t         MAX_LINE  = 10;
+    static constexpr double     MIN_VAL = -999'999'999'999'999.0;
+    static constexpr double     MAX_VAL =  999'999'999'999'999.0;
 
-    namespace chart {
-        struct Area;
-        struct Line;
-        enum class TYPE;
+                                Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    bool                        add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, Chart::TYPE chart_type = Chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = Chart::MIN_VAL, double clamp_max = Chart::MAX_VAL);
+    bool                        area_size(int area1 = 100, int area2 = 0, int area3 = 0);
+    void                        block_dates(const PriceVector& block_dates)
+                                    { _block_dates = block_dates; }
+    void                        clear();
+    Date::FORMAT                date_format() const
+                                    { return _date_format; }
+    bool                        date_range(Date::RANGE range = Date::RANGE::DAY);
+    void                        debug() const;
+    void                        draw() override;
+    int                         handle(int event) override;
+    bool                        has_time() const;
+    void                        init(bool calc_dates);
+    bool                        margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
+    void                        resize()
+                                    { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
+    void                        resize(int X, int Y, int W, int H) override;
+    bool                        tick_width(int tick_width_from_3_to_100 = Chart::MIN_TICK);
+    void                        update_pref();
+    void                        view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
+                                    { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
 
-        const int                       MIN_TICK  = 3;
-        const int                       MAX_TICK  = 100;
-        const size_t                    MAX_AREA  = 3;
-        const size_t                    MAX_LINE  = 10;
-        const double                    MIN_VAL   = -999'999'999'999'999.0;
-        const double                    MAX_VAL   =  999'999'999'999'999.0;
+    static bool                 Load(Chart* chart, std::string filename);
+    static bool                 Save(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
 
-        typedef std::vector<chart::Line> LineVector;
-        typedef std::vector<chart::Area> AreaVector;
+private:
+    void                        _calc_area_height();
+    void                        _calc_area_width();
+    void                        _calc_dates();
+    void                        _calc_ymin_ymax();
+    void                        _calc_yscale();
+    void                        _create_tooltip(bool ctrl);
+    void                        _draw_area(const ChartArea& area);
+    void                        _draw_line(const ChartLine& line, const ChartScale& scale, int X, int Y, int W, int H);
+    void                        _draw_line_labels(const ChartArea& area);
+    void                        _draw_tooltip();
+    void                        _draw_ver_lines(const ChartArea& area);
+    void                        _draw_xlabels();
+    void                        _draw_ylabels(int X, double Y1, double Y2, const ChartScale& scale, bool left);
+    ChartArea*                  _inside_area(int X, int Y);
 
-        size_t                          bsearch(const PriceVector& prices, const Price& key);
-        bool                            has_high_low(TYPE chart_type);
-        bool                            has_resizable_width(TYPE chart_type);
-        bool                            has_time(Date::RANGE date_range);
-        bool                            load_data(Chart* chart, std::string filename);
-        bool                            save_data(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
+    static void                 _CallbackDebug(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackReset(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackSavePng(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackToggle(Fl_Widget* widget, void* chart_object);
 
-        //----------------------------------------------------------------------
-        enum class TYPE {
-                                        LINE,
-                                        BAR,
-                                        VERTICAL,
-                                        CLAMP_VERTICAL,
-                                        HORIZONTAL,
-                                        EXPAND_VERTICAL,
-                                        EXPAND_HORIZONTAL,
-                                        LAST = EXPAND_HORIZONTAL,
-        };
+    struct {
+        bool                    horizontal;
+        bool                    labels;
+        bool                    vertical;
+    }                           _view;
 
-        //----------------------------------------------------------------------
-        // Data for one chart line
-        //
-        struct Line {
-            Fl_Align                    align;
-            TYPE                        type;
-            Fl_Color                    color;
-            bool                        visible;
-            int                         width;
-            double                      clamp_max;
-            double                      clamp_min;
-            std::string                 label;
-            double                      max;
-            double                      min;
-            PriceVector                 points;
+    ChartArea*                  _area;
+    AreaVector                  _areas;
+    PriceVector                 _block_dates;
+    int                         _bottom_space;
+    int                         _cw;
+    Date::FORMAT                _date_format;
+    Date::RANGE                 _date_range;
+    int                         _date_start;
+    PriceVector                 _dates;
+    int                         _margin_left;
+    int                         _margin_right;
+    Fl_Menu_Button*             _menu;
+    int                         _old_height;
+    int                         _old_width;
+    Fl_Scrollbar*               _scroll;
+    int                         _tick_width;
+    int                         _ticks;
+    std::string                 _tooltip;
+    int                         _top_space;
+    int                         _ver_pos[101];
+};
 
-                                        Line();
-                                        ~Line()
-                                            { clear(); }
-            void                        clear();
-            void                        debug(int num) const;
-            bool                        set(const PriceVector& points, std::string label, TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
-        };
-
-        //----------------------------------------------------------------------
-        // Each chart area can have an scale on the left and right side
-        //
-        struct Scale {
-            double                      max;
-            double                      min;
-            double                      pixel;
-            double                      tick;
-
-                                        Scale();
-            void                        calc(int height);
-            void                        clear();
-            void                        debug(const char* name) const;
-            double                      diff() const
-                                            { return max - min; }
-            void                        fix_height();
-        };
-
-        //----------------------------------------------------------------------
-        // Data for one chart area, currently max 3 areas in one widget can be shown at the same time
-        // All are using the same date range
-        //
-        struct Area {
-            size_t                      count;
-            double                      h;
-            Scale                       left;
-            LineVector                  lines;
-            int                         percent;
-            Scale                       right;
-            size_t                      selected;
-            double                      w;
-            double                      x;
-            double                      y;
-
-                                        Area();
-            void                        clear(bool clear_data);
-            void                        debug(int num) const;
-            int                         x2() const
-                                            { return (int) (x + w); }
-            int                         y2() const
-                                            { return (int) (y + h); }
-        };
-    }
-
-    //--------------------------------------------------------------------------
-    // Chart widget that is using dates for the x scale
-    // It has an popup menu for a few settings and option to save chart to png image
-    // It can also use date + hours/minutes/seconds
-    // Use block_dates() to set an date list that removes those dates
-    // Line types BAR, VERTICAL and CLAMP_VERTICAL can use line width of -1 which means it will expand to tick width - 1
-    //
-    class Chart : public Fl_Group {
-        friend bool                     chart::save_data(const Chart*, std::string, double);
-
-    public:
-                                        Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        bool                            add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, chart::TYPE chart_type = chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = chart::MIN_VAL, double clamp_max = chart::MAX_VAL);
-        bool                            area_size(int area1 = 100, int area2 = 0, int area3 = 0);
-        void                            block_dates(const PriceVector& block_dates)
-                                            { _block_dates = block_dates; }
-        void                            clear();
-        Date::FORMAT                    date_format() const
-                                            { return _date_format; }
-        bool                            date_range(Date::RANGE range = Date::RANGE::DAY);
-        void                            debug() const;
-        void                            draw() override;
-        int                             handle(int event) override;
-        bool                            has_time() const
-                                            { return chart::has_time(_date_range); }
-        void                            init(bool calc_dates);
-        bool                            margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
-        void                            resize()
-                                            { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
-        void                            resize(int X, int Y, int W, int H) override;
-        bool                            tick_width(int tick_width_from_3_to_100 = chart::MIN_TICK);
-        void                            update_pref();
-        void                            view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
-                                            { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
-
-    private:
-        void                            _calc_area_height();
-        void                            _calc_area_width();
-        void                            _calc_dates();
-        void                            _calc_ymin_ymax();
-        void                            _calc_yscale();
-        void                            _create_tooltip(bool ctrl);
-        void                            _draw_area(const chart::Area& area);
-        void                            _draw_line(const chart::Line& line, const chart::Scale& scale, int X, int Y, int W, int H);
-        void                            _draw_line_labels(const chart::Area& area);
-        void                            _draw_tooltip();
-        void                            _draw_ver_lines(const chart::Area& area);
-        void                            _draw_xlabels();
-        void                            _draw_ylabels(int X, double Y1, double Y2, const chart::Scale& scale, bool left);
-        chart::Area*                    _inside_area(int X, int Y);
-
-        static void                     _CallbackDebug(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackReset(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackSavePng(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackToggle(Fl_Widget* widget, void* chart_object);
-
-        struct {
-            bool                        horizontal;
-            bool                        labels;
-            bool                        vertical;
-        }                               _view;
-
-        chart::Area*                    _area;
-        chart::AreaVector               _areas;
-        PriceVector                     _block_dates;
-        int                             _bottom_space;
-        int                             _cw;
-        Date::FORMAT                    _date_format;
-        Date::RANGE                     _date_range;
-        int                             _date_start;
-        PriceVector                     _dates;
-        int                             _margin_left;
-        int                             _margin_right;
-        Fl_Menu_Button*                 _menu;
-        int                             _old_height;
-        int                             _old_width;
-        Fl_Scrollbar*                   _scroll;
-        int                             _tick_width;
-        int                             _ticks;
-        std::string                     _tooltip;
-        int                             _top_space;
-        int                             _ver_pos[101];
-    };
 }
 
 
@@ -762,125 +714,206 @@ namespace flw {
 
 
 
+#include <assert.h>
+#include <string.h>
+#include <map>
 #include <string>
 #include <vector>
 
 namespace flw {
-namespace json {
-    //----------------------------------------------------------------------
-    // Very simple json parser
-    // Don't use it for arbitrary data download from internet
 
-    // Macros for creating json
-    #define FLW_JSON_START(VEC, X)                      { json::NodeVector& V = VEC; int D = 0; char B[50]; X; (void) B; size_t I = 0; for (auto& n : V) n.index = I++; }
-    #define FLW_JSON_START_OBJECT(X)                    { V.push_back(json::Node(json::OBJECT, "", "", D++)); X; V.push_back(json::Node(json::END_OBJECT, "", "", --D)); }
-    #define FLW_JSON_START_ARRAY(X)                     { V.push_back(json::Node(json::ARRAY, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
-    #define FLW_JSON_START_ARRAY_NL(X)                  { V.push_back(json::Node(json::ARRAY_NL, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
+class JS;
 
-    #define FLW_JSON_ADD_OBJECT(NAME,X)                 { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::OBJECT, N, "", D++)); X; V.push_back(json::Node(json::END_OBJECT, N, "", --D)); }
-    #define FLW_JSON_ADD_ARRAY(NAME,X)                  { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
-    #define FLW_JSON_ADD_ARRAY_NL(NAME,X)               { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY_NL, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
+typedef std::map<std::string, JS*> JSObject;
+typedef std::vector<JS*> JSArray;
 
-    #define FLW_JSON_ADD_STRING(NAME,VALUE)             { V.push_back(json::Node(json::STRING, json::escape_string(NAME), json::escape_string(VALUE), D)); }
-    #define FLW_JSON_ADD_NUMBER(NAME,VALUE)             { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_NUMBER2(NAME,VALUE)            { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_INT(NAME,VALUE)                { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_UINT(NAME,VALUE)               { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_BOOL(NAME,VALUE)               { V.push_back(json::Node(json::BOOL, json::escape_string(NAME), VALUE == true ? "true" : "false", D)); }
-    #define FLW_JSON_ADD_NIL(NAME)                      { V.push_back(json::Node(json::NIL, json::escape_string(NAME), "", D)); }
+//------------------------------------------------------------------------------
+// JSON object.
+//
+class JS {
+    friend class JSB;
 
-    #define FLW_JSON_ADD_STRING_TO_ARRAY(VALUE)         { V.push_back(json::Node(json::STRING, "", json::escape_string(VALUE), D)); }
-    #define FLW_JSON_ADD_NUMBER_TO_ARRAY(VALUE)         { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_NUMBER2_TO_ARRAY(VALUE)        { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_INT_TO_ARRAY(VALUE)            { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_UINT_TO_ARRAY(VALUE)           { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_BOOL_TO_ARRAY(VALUE)           { V.push_back(json::Node(json::BOOL, "", VALUE == true ? "true" : "false", D)); }
-    #define FLW_JSON_ADD_NIL_TO_ARRAY()                 { V.push_back(json::Node(json::NIL, "", "", D)); }
-
-    struct Err {
-        ssize_t                         pos;
-        ssize_t                         line;
-                                        Err()
-                                            { pos = -1; line = -1; }
-                                        Err(ssize_t pos, ssize_t line)
-                                            { this->pos = pos; this->line = line; }
-    };
+public:
+    static const size_t         MAX_DEPTH = 32;
 
     enum TYPE {
-                                        NA,
-                                        OBJECT,
-                                        END_OBJECT,
-                                        ARRAY,
-                                        END_ARRAY,
-                                        STRING,
-                                        NUMBER,
-                                        BOOL,
-                                        NIL,
-
-                                        COLON, // Only for tokenizer
-                                        COMMA, // Only for tokenizer
-                                        ARRAY_NL, // Only for creating json
+                                OBJECT,
+                                ARRAY,
+                                STRING,
+                                NUMBER,
+                                BOOL,
+                                NIL,
     };
 
-    std::string                         escape_string(const std::string& string);
-    std::string                         unescape_string(const std::string& string);
+                                JS(const JS&) = delete;
+                                JS(JS&&) = delete;
+    JS&                         operator=(const JS&) = delete;
+    JS&                         operator=(JS&&) = delete;
 
-    struct Node {
-        TYPE                            type;
-        int                             depth;
-        size_t                          index;
-        std::string                     value;
-        std::string                     name;
-        size_t                          textpos;
+                                JS()
+                                    { JS::COUNT++; _type = NIL; _name = strdup(""); _vb = false; _parent = nullptr; _enc_flag = 0; _pos = 0; }
+                                ~JS()
+                                    { JS::COUNT--; _clear(true); }
+    bool                        operator==(TYPE type) const
+                                    { return _type == type; }
+    bool                        operator!=(TYPE type) const
+                                    { return _type != type; }
+    const JS*                   operator[](std::string name) const
+                                    { return _get_object(name.c_str(), true); }
+    const JS*                   operator[](size_t index) const
+                                    { return (_type == ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
+    const JS*                   find(std::string name, bool rec = false) const;
+    std::string                 decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
+    std::string                 decode(std::string json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false)
+                                    { return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check); }
+    void                        debug() const;
+    std::string                 encode(int skip = 0) const;
+    const JS*                   get(std::string name, bool escape_name = true) const
+                                    { return _get_object(name.c_str(), escape_name); }
+    const JS*                   get(size_t index) const
+                                    { return (*this) [index]; }
+    bool                        is_array() const
+                                    { return _type == ARRAY; }
+    bool                        is_bool() const
+                                    { return _type == BOOL; }
+    bool                        is_null() const
+                                    { return _type == NIL; }
+    bool                        is_number() const
+                                    { return _type == NUMBER; }
+    bool                        is_object() const
+                                    { return _type == OBJECT; }
+    bool                        is_string() const
+                                    { return _type == STRING; }
+    std::string                 name() const
+                                    { return _name; }
+    const char*                 name_c() const
+                                    { return _name; }
+    std::string                 name_u() const
+                                    { return JS::Unescape(_name); }
+    JS*                         parent()
+                                    { return _parent; }
+    unsigned                    pos() const
+                                    { return _pos; }
+    size_t                      size() const
+                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
+    TYPE                        type() const
+                                    { return (TYPE) _type; }
+    std::string                 type_name() const
+                                    { assert(_type >= 0 && _type < (int) 6); return TYPE_NAMES[(unsigned) _type]; }
+    const JSArray*              va() const
+                                    { return (_type == ARRAY) ? _va : nullptr; }
+    bool                        vb() const
+                                    { assert(_type == BOOL); return (_type == BOOL) ? _vb : false; }
+    double                      vn() const
+                                    { assert(_type == NUMBER); return (_type == NUMBER) ? _vn : 0.0; }
+    long long int               vn_i() const
+                                    { assert(_type == NUMBER); return (_type == NUMBER) ? (long long int) _vn : 0; }
+    const JSObject*             vo() const
+                                    { return (_type == OBJECT) ? _vo : nullptr; }
+    const JSArray               vo_to_va() const;
+    std::string                 vs() const
+                                    { assert(_type == STRING); return (_type == STRING) ? _vs : ""; }
+    const char*                 vs_c() const
+                                    { assert(_type == STRING); return (_type == STRING) ? _vs : ""; }
+    std::string                 vs_u() const
+                                    { assert(_type == STRING); return (_type == STRING) ? JS::Unescape(_vs) : ""; }
 
-                                        Node(TYPE type = TYPE::NA, const std::string& name = "", const std::string& value = "", int depth = 0, size_t textpos = 0)
-                                            { this->type = type; this->name = name; this->value = value; this->depth = depth; this->textpos = textpos; }
-        bool                            operator==(const Node& other) const
-                                            { return (type == other.type || (type == TYPE::ARRAY && other.type == TYPE::ARRAY_NL) || (type == TYPE::ARRAY_NL && other.type == TYPE::ARRAY)) && depth == other.depth && value == other.value && name == other.name; }
-        bool                            is_array() const
-                                            { return type == json::ARRAY; }
-        bool                            is_bool() const
-                                            { return type == json::BOOL; }
-        bool                            is_data() const
-                                            { return type == json::STRING || type == json::NUMBER || type == json::BOOL || type == json::NIL; }
-        bool                            is_end() const
-                                            { return type == json::END_ARRAY || type == json::END_OBJECT; }
-        bool                            is_nil() const
-                                            { return type == json::NIL; }
-        bool                            is_number() const
-                                            { return type == json::NUMBER; }
-        bool                            is_object() const
-                                            { return type == json::OBJECT; }
-        bool                            is_start() const
-                                            { return type == json::ARRAY || type == json::ARRAY_NL || type == json::OBJECT; }
-        bool                            is_string() const
-                                            { return type == json::STRING; }
-        void                            print() const;
-        bool                            tobool() const
-                                            { return value == "true"; }
-        long long                       toint() const
-                                            { return (type == json::NUMBER) ? strtoll(value.c_str(), nullptr, 0) : 0; }
-        double                          tonumber() const
-                                            { return (type == json::NUMBER) ? strtod(value.c_str(), nullptr) : 0.0; }
-        std::string                     tostring() const
-                                            { return unescape_string(value); }
-        std::string                     unescape_name() const
-                                            { return unescape_string(name); }
+    static inline ssize_t       Count()
+                                    { return JS::COUNT; }
+    static size_t               CountUtf8(const char* p);
+    static std::string          Escape(const char* string);
+    static std::string          Unescape(const char* string);
+
+private:
+                                JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
+                                    { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
+    bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
+    bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);
+    bool                        _add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos);
+    bool                        _add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos);
+    void                        _clear(bool name);
+    std::string                 _encode(bool ignore_name, int skip) const;
+    const JS*                   _get_object(const char* name, bool escape) const;
+    bool                        _set_object(const char* name, JS* js, bool ignore_duplicates);
+
+    static void                 _Encode(const JS* js, std::string& j, std::string& t, bool comma, int skip);
+    static void                 _EncodeInline(const JS* js, std::string& j, bool comma, int skip);
+    static inline JS*           _MakeArray(const char* name, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = ARRAY; r->_va = new JSArray(); return r; }
+    static inline JS*           _MakeBool(const char* name, bool vb, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = BOOL; r->_vb = vb; return r; }
+    static inline JS*           _MakeNil(const char* name, JS* parent, unsigned pos)
+                                    { return new JS(name, parent, pos); }
+    static inline JS*           _MakeNumber(const char* name, double vn, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = NUMBER; r->_vn = vn; return r; }
+    static inline JS*           _MakeObject(const char* name, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = OBJECT; r->_vo = new JSObject(); return r; }
+    static inline JS*           _MakeString(const char* name, const char* vs, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = STRING; r->_vs = strdup(vs); return r; }
+
+    static constexpr const char* TYPE_NAMES[7] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", };
+    static ssize_t              COUNT;
+
+    char                        _type;
+    char                        _enc_flag;
+    unsigned                    _pos;
+    JS*                         _parent;
+    char*                       _name;
+
+    union {
+        JSArray*                _va;
+        JSObject*               _vo;
+        bool                    _vb;
+        double                  _vn;
+        char*                   _vs;
     };
+};
 
-    typedef std::vector<Node>           NodeVector;
-    typedef std::vector<size_t>         SizeTVector;
+//------------------------------------------------------------------------------
+// Create JSON structure.
+// It will throw exception (std::string) for any error.
+//
+class JSB {
+public:
+                                JSB()
+                                    { _root = _current = nullptr; }
+    virtual                     ~JSB()
+                                    { delete _root; }
+    JSB&                        operator<<(JS* json)
+                                    { return add(json); }
+    JSB&                        add(JS* json);
+    void                        clear()
+                                    { delete _root; _root = _current = nullptr; _name = ""; }
+    std::string                 encode() const;
+    JSB&                        end();
+    const JS*                   root() const
+                                    { return _root; }
 
-    NodeVector                          find_children(const NodeVector& nodes, const Node& start, bool grandchildren = false);
-    NodeVector                          find_nodes(const NodeVector& nodes, std::string name, TYPE type = TYPE::NA);
-    NodeVector                          find_siblings(const NodeVector& nodes, const Node& start);
-    Err                                 parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma = false);
-    Err                                 parse(std::string json, NodeVector& nodes, bool ignore_trailing_comma = false);
-    void                                print(const NodeVector& nodes);
-    std::string                         tostring(const NodeVector& nodes);
-    Err                                 validate(const char* json);
-    Err                                 validate(std::string json);
-} // json
+    static inline JS*           MakeArray(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); return r; }
+    static inline JS*           MakeArrayInline(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); r->_enc_flag = 1; return r; }
+    static inline JS*           MakeBool(bool vb, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::BOOL; r->_vb = vb; return r; }
+    static inline JS*           MakeNull(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NIL; return r; }
+    static inline JS*           MakeNumber(double vn, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NUMBER; r->_vn = vn; return r; }
+    static inline JS*           MakeObject(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); return r; }
+    static inline JS*           MakeObjectInline(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); r->_enc_flag = 1; return r; }
+    static inline JS*           MakeString(const char* vs, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs).c_str() : vs); return r; }
+    static inline JS*           MakeString(std::string vs, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs.c_str()).c_str() : vs.c_str()); return r; }
+
+private:
+    JS*                         _current;
+    JS*                         _root;
+    std::string                 _name;
+};
+
 } // flw
 
 
@@ -952,114 +985,107 @@ namespace flw {
 #include <string>
 
 namespace flw {
-    namespace logdisplay {
-        enum class COLOR {
-                                        FOREGROUND          = 'A',
-                                        GRAY                = 'B',
-                                        RED                 = 'C',
-                                        GREEN               = 'D',
-                                        BLUE                = 'E',
-                                        MAGENTA             = 'F',
-                                        YELLOW              = 'G',
-                                        CYAN                = 'H',
-                                        BOLD_FOREGROUND     = 'I',
-                                        BOLD_GRAY           = 'J',
-                                        BOLD_RED            = 'K',
-                                        BOLD_GREEN          = 'L',
-                                        BOLD_BLUE           = 'M',
-                                        BOLD_MAGENTA        = 'N',
-                                        BOLD_YELLOW         = 'O',
-                                        BOLD_CYAN           = 'P',
-                                        BG_FOREGROUND       = 'Q',
-                                        BG_GRAY             = 'R',
-                                        BG_RED              = 'S',
-                                        BG_GREEN            = 'T',
-                                        BG_BLUE             = 'U',
-                                        BG_MAGENTA          = 'V',
-                                        BG_YELLOW           = 'W',
-                                        BG_CYAN             = 'X',
-                                        BG_BOLD_FOREGROUND  = 'Y',
-                                        BG_BOLD_GRAY        = 'Z',
-                                        BG_BOLD_RED         = '[',
-                                        BG_BOLD_GREEN       = '\\',
-                                        BG_BOLD_BLUE        = ']',
-                                        BG_BOLD_MAGENTA     = '^',
-                                        BG_BOLD_YELLOW      = '_',
-                                        BG_BOLD_CYAN        = '`',
-                                        LAST                = '`',
-        };
 
-        static const size_t             ALL_STRINGS = 0;
-        extern Fl_Color                 BG_COLOR;
-        extern Fl_Color                 BG_DARK_COLOR;
-        extern size_t                   MAX_LINE_LEN;
-        extern size_t                   TURN_WRAP_ON;
-    }
-
-    //--------------------------------------------------------------------------
-    // A static text display widget with line based text coloring
-    // LogDisplay will manage text and style buffers
-    // Search text with ctrl + 'f', F3, shift + F3
-    //
-    // Implement line_cb() method which will be called for every line
-    // If you are doing more then one color call per line,
-    //   you can disable changing colors that has already been set
-    //   by calling lock_color(true)
-    //
-    // If json string is used then line_cb() doesn't have to be overidden
-    // But it is less flexible
-    // Edit json string in the widget with ctrl + 'e'
-    //
-    // BG colors only work in fltk 1.4
-    //
-    class LogDisplay : public Fl_Text_Display {
-    public:
-                                        LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-                                        ~LogDisplay();
-        void                            edit_styles();
-        void                            find(bool next, bool force_ask);
-        int                             handle(int event) override;
-        void                            lock_colors(bool lock)
-                                            { _lock_colors = lock; }
-        void                            save_file();
-        void                            style(std::string json = "");
-        void                            update_pref();
-        void                            value(const char* text);
-
-    protected:
-        virtual void                    line_cb(size_t row, const std::string& line)
-                                            { (void) row; (void) line; }
-        virtual void                    line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, logdisplay::COLOR color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0)
-                                            { (void) row; (void) line; (void) word1; (void) word2; (void) color;  (void) inclusive;  (void) start;  (void) stop;  (void) count; }
-        void                            style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color);
-        void                            style_line(size_t start, size_t stop, logdisplay::COLOR c);
-        void                            style_num(const std::string& line, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
-        void                            style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
-        void                            style_rstring(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
-        void                            style_string(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count = logdisplay::ALL_STRINGS);
-
-    private:
-        const char*                     _check_text(const char* text);
-        char                            _style_char(size_t pos) const
-                                            { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; }
-
-        struct Tmp {
-            char*                       buf;
-            size_t                      len;
-            size_t                      pos;
-            size_t                      size;
-
-                                        Tmp();
-                                        ~Tmp();
-        };
-
-        Fl_Text_Buffer*                 _buffer;
-        std::string                     _find;
-        bool                            _lock_colors;
-        std::string                     _json;
-        Fl_Text_Buffer*                 _style;
-        Tmp*                            _tmp;
+//--------------------------------------------------------------------------
+// A static text display widget with line based text coloring
+// LogDisplay will manage text and style buffers
+// Search text with ctrl + 'f', F3, shift + F3
+//
+// Implement line_cb() method which will be called for every line
+// If you are doing more then one color call per line,
+//   you can disable changing colors that has already been set
+//   by calling lock_color(true)
+//
+// If json string is used then line_cb() doesn't have to be overidden
+// But it is less flexible
+// Edit json string in the widget with ctrl + 'e'
+//
+// BG colors only work in fltk 1.4
+//
+class LogDisplay : public Fl_Text_Display {
+public:
+    enum COLOR {
+                                FOREGROUND          = 'A',
+                                GRAY                = 'B',
+                                RED                 = 'C',
+                                GREEN               = 'D',
+                                BLUE                = 'E',
+                                MAGENTA             = 'F',
+                                YELLOW              = 'G',
+                                CYAN                = 'H',
+                                BOLD_FOREGROUND     = 'I',
+                                BOLD_GRAY           = 'J',
+                                BOLD_RED            = 'K',
+                                BOLD_GREEN          = 'L',
+                                BOLD_BLUE           = 'M',
+                                BOLD_MAGENTA        = 'N',
+                                BOLD_YELLOW         = 'O',
+                                BOLD_CYAN           = 'P',
+                                BG_FOREGROUND       = 'Q',
+                                BG_GRAY             = 'R',
+                                BG_RED              = 'S',
+                                BG_GREEN            = 'T',
+                                BG_BLUE             = 'U',
+                                BG_MAGENTA          = 'V',
+                                BG_YELLOW           = 'W',
+                                BG_CYAN             = 'X',
+                                BG_BOLD_FOREGROUND  = 'Y',
+                                BG_BOLD_GRAY        = 'Z',
+                                BG_BOLD_RED         = '[',
+                                BG_BOLD_GREEN       = '\\',
+                                BG_BOLD_BLUE        = ']',
+                                BG_BOLD_MAGENTA     = '^',
+                                BG_BOLD_YELLOW      = '_',
+                                BG_BOLD_CYAN        = '`',
+                                LAST                = '`',
     };
+                                LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+                                ~LogDisplay();
+    void                        edit_styles();
+    void                        find(bool next, bool force_ask);
+    int                         handle(int event) override;
+    void                        lock_colors(bool lock)
+                                    { _lock_colors = lock; }
+    void                        save_file();
+    void                        style(std::string json = "");
+    void                        update_pref();
+    void                        value(const char* text);
+
+protected:
+    virtual void                line_cb(size_t row, const std::string& line)
+                                    { (void) row; (void) line; }
+    virtual void                line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::COLOR color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0)
+                                    { (void) row; (void) line; (void) word1; (void) word2; (void) color;  (void) inclusive;  (void) start;  (void) stop;  (void) count; }
+    void                        style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color);
+    void                        style_line(size_t start, size_t stop, LogDisplay::COLOR c);
+    void                        style_num(const std::string& line, LogDisplay::COLOR color, size_t count = 0);
+    void                        style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count = 0);
+    void                        style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count = 0);
+    void                        style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count = 0);
+
+private:
+    const char*                 _check_text(const char* text);
+    char                        _style_char(size_t pos) const
+                                    { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; }
+
+    struct Tmp {
+        char*                   buf;
+        size_t                  len;
+        size_t                  pos;
+        size_t                  size;
+
+                                Tmp();
+                                ~Tmp();
+    };
+
+    Fl_Text_Buffer*             _buffer;
+    std::string                 _find;
+    bool                        _lock_colors;
+    std::string                 _json;
+    Fl_Text_Buffer*             _style;
+    Tmp*                        _tmp;
+};
+
 }
 
 
@@ -1068,174 +1094,109 @@ namespace flw {
 #include <FL/Fl_Menu_Button.H>
 
 namespace flw {
-    class Plot;
 
-    namespace plot {
-        struct Point;
-        enum class TYPE;
+//----------------------------------------------------------------------
+struct Point {
+    double                      x;
+    double                      y;
 
-        const double                    MAX        =  999'999'999'999'999.0;
-        const double                    MIN        = -999'999'999'999'999.0;
-        const size_t                    MAX_LINES  = 10;
+                                Point(double x = 0.0, double y = 0.0) {
+                                    this->x = x;
+                                    this->y = y;
+                                }
+};
 
-        typedef std::vector<plot::Point> PointVector;
+typedef std::vector<Point>      PointVector;
 
-        bool                            has_pairs(flw::plot::TYPE type);
-        bool                            has_radius(flw::plot::TYPE type);
-        bool                            load_data(flw::Plot* plot, std::string filename);
-        void                            print(const flw::plot::PointVector& points);
-        bool                            save_data(const flw::Plot* plot, std::string filename);
-        TYPE                            string_to_type(std::string name);
-        std::string                     type_to_string(TYPE type);
+struct PlotArea;
+struct PlotLine;
+struct PlotScale;
 
-        //----------------------------------------------------------------------
-        enum class TYPE {
-                                        LINE,
-                                        LINE_DASH,
-                                        LINE_DOT,
-                                        LINE_WITH_SQUARE,
-                                        VECTOR,
-                                        CIRCLE,
-                                        FILLED_CIRCLE,
-                                        SQUARE,
-        };
+//--------------------------------------------------------------------------
+//
+class Plot : public Fl_Group {
+public:
+    static constexpr double     MAX        =  999'999'999'999'999.0;
+    static constexpr double     MIN        = -999'999'999'999'999.0;
+    static const size_t         MAX_LINES  = 10;
 
-        //----------------------------------------------------------------------
-        struct Point {
-            double                      x;
-            double                      y;
-
-                                        Point(double x = 0.0, double y = 0.0) {
-                                            this->x = x;
-                                            this->y = y;
-                                        }
-        };
-
-        //----------------------------------------------------------------------
-        struct Area {
-            int                         x;
-            int                         y;
-            int                         w;
-            int                         h;
-
-                                        Area(int x = 0, int y = 0, int w = 0, int h = 0) {
-                                            this->x = x;
-                                            this->y = y;
-                                            this->w = w;
-                                            this->h = h;
-                                        }
-            int                         x2() const
-                                            { return x + w; }
-            int                         y2() const
-                                            { return y + h; }
-        };
-
-        //----------------------------------------------------------------------
-        struct Scale {
-            Fl_Color                    color;
-            int                         fr;
-            std::string                 label;
-            flw::StringVector           labels;
-            double                      max;
-            double                      max2;
-            double                      min;
-            double                      min2;
-            double                      pixel;
-            int                         text;
-            double                      tick;
-
-                                        Scale();
-            void                        calc(double canvas_size);
-            void                        debug(const char* s) const;
-            void                        measure_text(int cw);
-            void                        reset_min_max();
-        };
-
-        //----------------------------------------------------------------------
-        struct Line {
-            Fl_Color                    color;
-            unsigned                    width;
-            bool                        visible;
-            std::string                 label;
-            PointVector                 points;
-            TYPE                        type;
-                                        Line();
-        };
-    }
-
-    //--------------------------------------------------------------------------
-    //
-    class Plot : public Fl_Group {
-        friend bool                     plot::save_data(const Plot*, std::string);
-
-    public:
-                                        Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        bool                            add_line(const plot::PointVector& points, plot::TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
-        bool                            add_line(const plot::Line& line);
-        void                            clear();
-        void                            clear_points();
-        void                            custom_xlabels_for_points0(const flw::StringVector& xlabels = StringVector())
-                                            { _x.labels = xlabels; }
-        void                            custom_ylabels_for_points0(const flw::StringVector& ylabels = StringVector())
-                                            { _y.labels = ylabels; }
-        void                            debug() const;
-        void                            draw() override;
-        int                             handle(int event) override;
-        void                            label_colors(Fl_Color x, Fl_Color y)
-                                            { _x.color = x; _y.color = y; }
-        void                            labels(std::string x, std::string y)
-                                            { _x.label = x; _y.label = y; }
-        void                            resize()
-                                            { _calc = true; _w = _h = 0; resize(x(), y(), w(), h()); redraw(); }
-        void                            resize(int X, int Y, int W, int H) override;
-        void                            update_pref();
-        void                            view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
-                                            { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
-        int                             x2() const
-                                            { return x() + w(); }
-        int                             y2() const
-                                            { return y() + h(); }
-
-    private:
-        void                            _calc_min_max();
-        void                            _create_tooltip(bool ctrl);
-        void                            _draw_labels();
-        void                            _draw_line_labels();
-        void                            _draw_lines();
-        void                            _draw_lines_style(flw::plot::TYPE type, int size);
-        void                            _draw_tooltip();
-        void                            _draw_xlabels();
-        void                            _draw_xlabels2();
-        void                            _draw_ylabels();
-        void                            _draw_ylabels2();
-
-        static void                     _CallbackDebug(Fl_Widget*, void* plot_object);
-        static void                     _CallbackSave(Fl_Widget*, void* plot_object);
-        static void                     _CallbackToggle(Fl_Widget*, void* plot_object);
-
-        struct {
-            bool                        horizontal;
-            bool                        labels;
-            bool                        vertical;
-        }                               _view;
-
-        plot::Area                      _area;
-        bool                            _calc;
-        int                             _ch;
-        int                             _ct;
-        int                             _cw;
-        int                             _h;
-        plot::Line                      _lines[10];
-        Fl_Menu_Button*                 _menu;
-        size_t                          _selected_point;
-        size_t                          _selected_line;
-        size_t                          _size;
-        std::string                     _tooltip;
-        int                             _w;
-        plot::Scale                     _x;
-        plot::Scale                     _y;
-
+    enum TYPE {
+                                LINE,
+                                LINE_DASH,
+                                LINE_DOT,
+                                LINE_WITH_SQUARE,
+                                VECTOR,
+                                CIRCLE,
+                                FILLED_CIRCLE,
+                                SQUARE,
     };
+
+                                Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    virtual                     ~Plot();
+    bool                        add_line(const PointVector& points, TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
+    void                        clear();
+    void                        custom_xlabels_for_points0(const flw::StringVector& xlabels = StringVector());
+    void                        custom_ylabels_for_points0(const flw::StringVector& ylabels = StringVector());
+    void                        debug() const;
+    void                        draw() override;
+    int                         handle(int event) override;
+    void                        labels(std::string x, std::string y);
+    void                        label_colors(Fl_Color x, Fl_Color y);
+    void                        resize()
+                                    { _calc = true; _w = _h = 0; resize(x(), y(), w(), h()); redraw(); }
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        update_pref();
+    void                        view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
+                                    { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
+    int                         x2() const
+                                    { return x() + w(); }
+    int                         y2() const
+                                    { return y() + h(); }
+
+    static bool                 Load(Plot* plot, std::string filename);
+    static bool                 Save(const Plot* plot, std::string filename);
+
+private:
+    void                        _calc_min_max();
+    void                        _create_tooltip(bool ctrl);
+    void                        _draw_labels();
+    void                        _draw_line_labels();
+    void                        _draw_lines();
+    void                        _draw_lines_style(Plot::TYPE type, int size);
+    void                        _draw_tooltip();
+    void                        _draw_xlabels();
+    void                        _draw_xlabels2();
+    void                        _draw_ylabels();
+    void                        _draw_ylabels2();
+
+    static void                 _CallbackDebug(Fl_Widget*, void* plot_object);
+    static void                 _CallbackSave(Fl_Widget*, void* plot_object);
+    static void                 _CallbackToggle(Fl_Widget*, void* plot_object);
+
+    struct {
+        bool                    horizontal;
+        bool                    labels;
+        bool                    vertical;
+    }                           _view;
+
+    Fl_Menu_Button*             _menu;
+    PlotArea*                   _area;
+    PlotLine*                   _lines[Plot::MAX_LINES];
+    PlotScale*                  _x;
+    PlotScale*                  _y;
+    bool                        _calc;
+    int                         _ch;
+    int                         _ct;
+    int                         _cw;
+    int                         _h;
+    int                         _w;
+    size_t                      _selected_line;
+    size_t                      _selected_point;
+    size_t                      _size;
+    std::string                 _tooltip;
+
+};
+
 }
 
 
@@ -1664,76 +1625,75 @@ namespace flw {
 
 
 
-#include <string>
-#include <vector>
 #include <FL/Fl_Group.H>
-#include <FL/Fl.H>
 
 namespace flw {
-    class _TabsGroupButton;
 
-    //--------------------------------------------------------------------------
-    // Group widget that uses tabs for labels
-    // You can move between tabs using alt + left/right
-    // And move tabs around by using alt + up/down
-    //
-    class TabsGroup : public Fl_Group {
-    public:
-        enum class TABS {
-                                        NORTH,
-                                        SOUTH,
-                                        WEST,
-                                        EAST,
-        };
-
-                                        TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        void                            add(const std::string& label, Fl_Widget* widget);
-        Fl_Widget*                      child(int num) const;
-        int                             children() const
-                                            { return (int) _widgets.size(); }
-        int                             find(Fl_Widget* widget) const;
-        int                             handle(int event) override;
-        void                            hide_tabs()
-                                            { _hide_tab_buttons(true); }
-        void                            label(const std::string& label, Fl_Widget* widget);
-        Fl_Widget*                      remove(int num);
-        Fl_Widget*                      remove(Fl_Widget* widget)
-                                            { return remove(find(widget)); }
-        void                            resize()
-                                            { Fl::redraw(); resize(x(), y(), w(), h()); }
-        void                            resize(int X, int Y, int W, int H) override;
-        void                            show_tabs()
-                                            { _hide_tab_buttons(false); }
-        void                            swap(int from, int to);
-        TABS                            tabs()
-                                            { return _tabs; }
-        void                            tabs(TABS value)
-                                            { _tabs = value; }
-        bool                            tabs_visible() const
-                                            { return _hide == false; }
-        Fl_Widget*                      value() const;
-        void                            value(int num);
-        void                            value(Fl_Widget* widget)
-                                            { value(find(widget)); }
-
-        static void                     BoxColor(Fl_Color boxcolor);
-        static void                     BoxSelectionColor(Fl_Color boxcolor);
-        static void                     BoxType(Fl_Boxtype boxtype);
-        static void                     Callback(Fl_Widget* sender, void* object);
-
-    private:
-        Fl_Widget*                      _button();
-        void                            _hide_tab_buttons(bool hide);
-
-        int                             _active;
-        std::vector<_TabsGroupButton*>  _buttons;
-        bool                            _drag;
-        bool                            _hide;
-        int                             _pos;
-        TABS                            _tabs;
-        std::vector<Fl_Widget*>         _widgets;
+//--------------------------------------------------------------------------
+// Group widget that uses tabs for labels.
+// You can move between tabs using alt (or command key on macOS) + left/right.
+// Move tabs around by using alt + up/down.
+// Use shortcut keys (alt/command + 0-9).
+//
+class TabsGroup : public Fl_Group {
+public:
+    enum class TABS {
+                                NORTH,
+                                SOUTH,
+                                WEST,
+                                EAST,
     };
-}
+
+                                TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    void                        add(const std::string& label, Fl_Widget* widget);
+    Fl_Widget*                  child(int num) const;
+    int                         children() const
+                                    { return (int) _widgets.size(); }
+    int                         find(Fl_Widget* widget) const;
+    int                         handle(int event) override;
+    void                        hide_tabs()
+                                    { _hide_tab_buttons(true); }
+    void                        label(const std::string& label, Fl_Widget* widget);
+    Fl_Widget*                  remove(int num);
+    Fl_Widget*                  remove(Fl_Widget* widget)
+                                    { return remove(find(widget)); }
+    void                        resize()
+                                    { Fl::redraw(); resize(x(), y(), w(), h()); }
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        show_tabs()
+                                    { _hide_tab_buttons(false); }
+    void                        swap(int from, int to);
+    TABS                        tabs()
+                                    { return _tabs; }
+    void                        tabs(TABS value)
+                                    { _tabs = value; }
+    bool                        tabs_visible() const
+                                    { return _hide == false; }
+    Fl_Widget*                  value() const;
+    void                        value(int num);
+    void                        value(Fl_Widget* widget)
+                                    { value(find(widget)); }
+
+    static void                 BoxColor(Fl_Color boxcolor);
+    static void                 BoxSelectionColor(Fl_Color boxcolor);
+    static void                 BoxType(Fl_Boxtype boxtype);
+    static void                 Callback(Fl_Widget* sender, void* object);
+    static const char*          Help();
+
+private:
+    Fl_Widget*                  _button();
+    void                        _hide_tab_buttons(bool hide);
+
+    TABS                        _tabs;
+    WidgetVector                _buttons;
+    WidgetVector                _widgets;
+    bool                        _drag;
+    bool                        _hide;
+    int                         _active;
+    int                         _pos;
+};
+
+} // flw
 
 
 

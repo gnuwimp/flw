@@ -200,14 +200,14 @@ int RAND = 0;
 
 void callback_timer(void *data);
 void create_chart(Test* w);
-void test1(Chart* chart, const char* label, double start, double change, Date::RANGE range, chart::TYPE type, bool left, int tick, int width, double min = chart::MIN_VAL, double max = chart::MAX_VAL);
+void test1(Chart* chart, const char* label, double start, double change, Date::RANGE range, Chart::TYPE type, bool left, int tick, int width, double min = Chart::MIN_VAL, double max = Chart::MAX_VAL);
 void test2(Chart* chart, double start, double change, const Date::RANGE range);
 void test3(Chart* chart, const char* label, const Date::RANGE range, bool block = false);
 void test4(Chart* chart, double start, double change);
 void test5(Chart* chart, bool three);
 void test6(Chart* chart, Date::RANGE what);
 void test7(Chart* chart);
-void test8(Chart* chart, const char* label, Date::RANGE range, chart::TYPE type, int tick, int width);
+void test8(Chart* chart, const char* label, Date::RANGE range, Chart::TYPE type, int tick, int width);
 void test9(Chart* chart);
 
 class Test : public Fl_Double_Window {
@@ -287,12 +287,12 @@ public:
 
     static void CallbackLoad(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        chart::load_data(w->chart, "chart.json");
+        Chart::Load(w->chart, "chart.json");
     }
 
     static void CallbackSave(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        chart::save_data(w->chart, "chart.json");
+        Chart::Save(w->chart, "chart.json");
     }
 
     static void CallbackTest(Fl_Widget*, void* v) {
@@ -360,20 +360,20 @@ void create_chart(Test* w) {
 
     w->chart->clear();
 
-    if (TEST == DATA_LEFT_ALL)                test1(w->chart, "All Days (LINE)", 100.0, 2.0, Date::RANGE::DAY, chart::TYPE::LINE, true, 3, 2);
-    else if (TEST == DATA_LEFT_STEP)          test8(w->chart, "Step (LINE)", Date::RANGE::DAY, chart::TYPE::LINE, 80, 4);
+    if (TEST == DATA_LEFT_ALL)                test1(w->chart, "All Days (LINE)", 100.0, 2.0, Date::RANGE::DAY, Chart::LINE, true, 3, 2);
+    else if (TEST == DATA_LEFT_STEP)          test8(w->chart, "Step (LINE)", Date::RANGE::DAY, Chart::LINE, 80, 4);
     else if (TEST == DATA_RIGHT_10)           test9(w->chart);
-    else if (TEST == DATA_LEFT_WEEKDAY)       test1(w->chart, "Weekdays (VERTICAL)", 100.0, 2.0, Date::RANGE::WEEKDAY, chart::TYPE::VERTICAL, true, 11, 6);
-    else if (TEST == DATA_LEFT_FRIDAY)        test1(w->chart, "Fridays (CLAMP_VERTICAL)", 100.0, 1.0, Date::RANGE::FRIDAY, chart::TYPE::CLAMP_VERTICAL, true, 5, 3, -50.0, 200.0);
-    else if (TEST == DATA_LEFT_SUNDAY)        test1(w->chart, "Sundays (CLAMP_VERTICAL)", 100.0, 2.0, Date::RANGE::SUNDAY, chart::TYPE::CLAMP_VERTICAL, true, 5, 3);
-    else if (TEST == DATA_LEFT_MONTH)         test1(w->chart, "Month", 100.0, 2.0, Date::RANGE::MONTH, chart::TYPE::LINE, true, 10, 3);
-    else if (TEST == DATA_LEFT_SMALL_VALUE)   test1(w->chart, "Small Values (VERTICAL)", 0.1, 1.0, Date::RANGE::DAY, chart::TYPE::VERTICAL, true, 5, 4);
-    else if (TEST == DATA_LEFT_SMALL_VALUE2)  test1(w->chart, "Small Values (VERTICAL) -1", 0.1, 1.0, Date::RANGE::DAY, chart::TYPE::VERTICAL, true, 5, -1);
-    else if (TEST == DATA_LEFT_LARGE_VALUE)   test1(w->chart, "Large Values (BAR)", 1000000000.0, 3.0, Date::RANGE::DAY, chart::TYPE::BAR, true, 10, 6);
-    else if (TEST == DATA_LEFT_LARGE_VALUE2)  test1(w->chart, "Large Values (BAR)", 1000000000.0, 3.0, Date::RANGE::DAY, chart::TYPE::BAR, true, 10, -1);
-    else if (TEST == DATA_LEFT_SMALL_VALUE3)  test1(w->chart, "Small Values (HORIZONTAL))", 0.1, 1.0, Date::RANGE::DAY, chart::TYPE::HORIZONTAL, true, 15, 2);
+    else if (TEST == DATA_LEFT_WEEKDAY)       test1(w->chart, "Weekdays (VERTICAL)", 100.0, 2.0, Date::RANGE::WEEKDAY, Chart::VERTICAL, true, 11, 6);
+    else if (TEST == DATA_LEFT_FRIDAY)        test1(w->chart, "Fridays (CLAMP_VERTICAL)", 100.0, 1.0, Date::RANGE::FRIDAY, Chart::CLAMP_VERTICAL, true, 5, 3, -50.0, 200.0);
+    else if (TEST == DATA_LEFT_SUNDAY)        test1(w->chart, "Sundays (CLAMP_VERTICAL)", 100.0, 2.0, Date::RANGE::SUNDAY, Chart::CLAMP_VERTICAL, true, 5, 3);
+    else if (TEST == DATA_LEFT_MONTH)         test1(w->chart, "Month", 100.0, 2.0, Date::RANGE::MONTH, Chart::LINE, true, 10, 3);
+    else if (TEST == DATA_LEFT_SMALL_VALUE)   test1(w->chart, "Small Values (VERTICAL)", 0.1, 1.0, Date::RANGE::DAY, Chart::VERTICAL, true, 5, 4);
+    else if (TEST == DATA_LEFT_SMALL_VALUE2)  test1(w->chart, "Small Values (VERTICAL) -1", 0.1, 1.0, Date::RANGE::DAY, Chart::VERTICAL, true, 5, -1);
+    else if (TEST == DATA_LEFT_LARGE_VALUE)   test1(w->chart, "Large Values (BAR)", 1000000000.0, 3.0, Date::RANGE::DAY, Chart::BAR, true, 10, 6);
+    else if (TEST == DATA_LEFT_LARGE_VALUE2)  test1(w->chart, "Large Values (BAR)", 1000000000.0, 3.0, Date::RANGE::DAY, Chart::BAR, true, 10, -1);
+    else if (TEST == DATA_LEFT_SMALL_VALUE3)  test1(w->chart, "Small Values (HORIZONTAL))", 0.1, 1.0, Date::RANGE::DAY, Chart::HORIZONTAL, true, 15, 2);
     else if (TEST == DATA_LEFT_LARGE_DATASET) test4(w->chart, 1000.0, 0.5);
-    else if (TEST == DATA_RIGHT_ALL)          test1(w->chart, "Right Negative Values (VERTICAL)", -50000.0, 2.0, Date::RANGE::DAY, chart::TYPE::VERTICAL, false, 3, 1);
+    else if (TEST == DATA_RIGHT_ALL)          test1(w->chart, "Right Negative Values (VERTICAL)", -50000.0, 2.0, Date::RANGE::DAY, Chart::VERTICAL, false, 3, 1);
     else if (TEST == DATA_RIGHT_SMALL_VALUE)  test7(w->chart);
     else if (TEST == DATA_LEFT_RIGHT_ALL)     test2(w->chart, 1000.0, 3.0, Date::RANGE::DAY);
     else if (TEST == DATA_REF_ALL)            test3(w->chart, "Ref Data All", Date::RANGE::DAY);
@@ -461,7 +461,7 @@ PriceVector create_serie2(const char* start, const char* stop, double d = 1.0) {
     return res;
 }
 
-void test1(Chart* chart, const char* label, const double start, const double change, const Date::RANGE range, const chart::TYPE type, const bool left, const int tick, const int width, const double min, const double max) {
+void test1(Chart* chart, const char* label, const double start, const double change, const Date::RANGE range, const Chart::TYPE type, const bool left, const int tick, const int width, const double min, const double max) {
     PriceVector prices1 = create_serie("20010101", "20191231", start, change, range);
 
     if (left == true) {
@@ -491,8 +491,8 @@ void test2(Chart* chart, const double start, const double change, const Date::RA
     PriceVector prices1 = create_serie("20010101", "20091231", start, change, range);
     PriceVector prices2 = create_serie("20010201", "20091130", start, change, range);
 
-    chart->add_line(0, prices1, "Line Chart", chart::TYPE::LINE, FL_ALIGN_LEFT, color::BLUE, 2);
-    chart->add_line(0, prices2, "Bar Chart", chart::TYPE::BAR, FL_ALIGN_RIGHT, color::RED, 2);
+    chart->add_line(0, prices1, "Line Chart", Chart::LINE, FL_ALIGN_LEFT, color::BLUE, 2);
+    chart->add_line(0, prices2, "Bar Chart", Chart::BAR, FL_ALIGN_RIGHT, color::RED, 2);
     chart->margin(6, 6);
     chart->date_range(range);
     chart->tick_width(10);
@@ -540,7 +540,7 @@ void test3(Chart* chart, const char* label, const Date::RANGE range, const bool 
         chart->tick_width(6);
     }
 
-    chart->add_line(0, prices2, label, chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, 6);
+    chart->add_line(0, prices2, label, Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 6);
     chart->date_range(range);
     chart->margin(6, 1);
     chart->block_dates(prices3);
@@ -552,9 +552,9 @@ void test4(Chart* chart, const double start, const double change) {
     PriceVector prices2 = create_serie("18100101", "20291231", start, change, Date::RANGE::DAY);
     PriceVector prices3 = create_serie("18200101", "19991231", start, change, Date::RANGE::DAY);
 
-    chart->add_line(0, prices1, "18000101 - 20191231", chart::TYPE::LINE, FL_ALIGN_LEFT, color::BLUE, 1);
-    chart->add_line(0, prices2, "18100101 - 20291231", chart::TYPE::LINE, FL_ALIGN_LEFT, FL_GREEN, 1);
-    chart->add_line(0, prices3, "18200101 - 19991231", chart::TYPE::LINE, FL_ALIGN_LEFT, color::RED, 1);
+    chart->add_line(0, prices1, "18000101 - 20191231", Chart::LINE, FL_ALIGN_LEFT, color::BLUE, 1);
+    chart->add_line(0, prices2, "18100101 - 20291231", Chart::LINE, FL_ALIGN_LEFT, FL_GREEN, 1);
+    chart->add_line(0, prices3, "18200101 - 19991231", Chart::LINE, FL_ALIGN_LEFT, color::RED, 1);
     chart->margin(6, 1);
     chart->date_range(Date::RANGE::DAY);
     chart->tick_width(3);
@@ -569,18 +569,18 @@ void test5(Chart* chart, const bool three) {
 
     if (three == true) {
         chart->area_size(40, 40, 20);
-        chart->add_line(0, prices1, "Bar Chart", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, 3);
-        chart->add_line(1, prices2, "Line Chart", chart::TYPE::LINE, FL_ALIGN_LEFT, color::RED, 3);
-        chart->add_line(2, prices3, "Volume", chart::TYPE::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, 3, 0.0);
+        chart->add_line(0, prices1, "Bar Chart", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 3);
+        chart->add_line(1, prices2, "Line Chart", Chart::LINE, FL_ALIGN_LEFT, color::RED, 3);
+        chart->add_line(2, prices3, "Volume", Chart::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, 3, 0.0);
         chart->margin(7, 1);
     }
     else {
         prices4 = moving_average(prices3, 20);
         chart->area_size(70, 30, 0);
-        chart->add_line(0, prices1, "Bar Chart", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, -1);
-        chart->add_line(0, prices2, "Line Chart", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::RED, 3);
-        chart->add_line(1, prices3, "Volume", chart::TYPE::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, -1);
-        chart->add_line(1, prices4, "AVG", chart::TYPE::LINE, FL_ALIGN_LEFT, color::BLUE, 3);
+        chart->add_line(0, prices1, "Bar Chart", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, -1);
+        chart->add_line(0, prices2, "Line Chart", Chart::LINE, FL_ALIGN_RIGHT, color::RED, 3);
+        chart->add_line(1, prices3, "Volume", Chart::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, -1);
+        chart->add_line(1, prices4, "AVG", Chart::LINE, FL_ALIGN_LEFT, color::BLUE, 3);
         chart->margin(7, 7);
     }
 
@@ -594,15 +594,15 @@ void test6(Chart* chart, const Date::RANGE range) {
     // fprintf(stderr, "size=%d\n", prices1.size());
 
     if (range == Date::RANGE::HOUR) {
-        chart->add_line(0, prices1, "Hour", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
+        chart->add_line(0, prices1, "Hour", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
         chart->margin(6, 1);
     }
     else if (range == Date::RANGE::MIN) {
-        chart->add_line(0, prices1, "Minutes", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
+        chart->add_line(0, prices1, "Minutes", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
         chart->margin(6, 1);
     }
     else if (range == Date::RANGE::SEC) {
-        chart->add_line(0, prices1, "Seconds", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
+        chart->add_line(0, prices1, "Seconds", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
         chart->margin(6, 1);
     }
 
@@ -629,14 +629,14 @@ void test7(Chart* chart) {
         }
     }
 
-    chart->add_line(0, prices1, "Small (LINE)", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::BLUE, 2);
+    chart->add_line(0, prices1, "Small (LINE)", Chart::LINE, FL_ALIGN_RIGHT, color::BLUE, 2);
     chart->margin(3, 6);
     chart->date_range(Date::RANGE::DAY);
     chart->tick_width(6);
     chart->init(true);
 }
 
-void test8(Chart* chart, const char* label, const Date::RANGE range, const chart::TYPE type, const int tick, const int width) {
+void test8(Chart* chart, const char* label, const Date::RANGE range, const Chart::TYPE type, const int tick, const int width) {
     auto prices1 = create_serie("20010101", "20011231", 10.0, 1.0, Date::RANGE::DAY);
     auto start   = 1.0;
     auto even    = 0;
@@ -677,16 +677,16 @@ void test9(Chart* chart) {
     PriceVector prices9  = create_serie2("20010101", "20021231", 9.0);
     PriceVector prices10 = create_serie2("20010101", "20021231", 10.0);
 
-    chart->add_line(0, prices1, "One", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::BLUE, 4);
-    chart->add_line(0, prices2, "Two", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::RED, 4);
-    chart->add_line(0, prices3, "Three", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::LIME, 4);
-    chart->add_line(0, prices4, "Four", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::MAGENTA, 4);
-    chart->add_line(0, prices5, "Five", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::CYAN, 4);
-    chart->add_line(0, prices6, "Six", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::YELLOW, 2);
-    chart->add_line(0, prices7, "Seven", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::OLIVE, 4);
-    chart->add_line(0, prices8, "Eight", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::BROWN, 4);
-    chart->add_line(0, prices9, "Nine", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::PINK, 4);
-    chart->add_line(0, prices10, "Ten", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::TEAL, 4);
+    chart->add_line(0, prices1, "One", Chart::LINE, FL_ALIGN_RIGHT, color::BLUE, 4);
+    chart->add_line(0, prices2, "Two", Chart::LINE, FL_ALIGN_RIGHT, color::RED, 4);
+    chart->add_line(0, prices3, "Three", Chart::LINE, FL_ALIGN_RIGHT, color::LIME, 4);
+    chart->add_line(0, prices4, "Four", Chart::LINE, FL_ALIGN_RIGHT, color::MAGENTA, 4);
+    chart->add_line(0, prices5, "Five", Chart::LINE, FL_ALIGN_RIGHT, color::CYAN, 4);
+    chart->add_line(0, prices6, "Six", Chart::LINE, FL_ALIGN_RIGHT, color::YELLOW, 2);
+    chart->add_line(0, prices7, "Seven", Chart::LINE, FL_ALIGN_RIGHT, color::OLIVE, 4);
+    chart->add_line(0, prices8, "Eight", Chart::LINE, FL_ALIGN_RIGHT, color::BROWN, 4);
+    chart->add_line(0, prices9, "Nine", Chart::LINE, FL_ALIGN_RIGHT, color::PINK, 4);
+    chart->add_line(0, prices10, "Ten", Chart::LINE, FL_ALIGN_RIGHT, color::TEAL, 4);
     chart->margin(3, 5);
     chart->date_range(Date::RANGE::DAY);
     chart->tick_width(30);

@@ -12,94 +12,105 @@
 #include <FL/Fl_File_Chooser.H>
 
 namespace flw {
-    namespace logdisplay {
-        #define STYLE_ATTRIBUTE 0, 0
-        #define STYLE_ATTRIBUTE2 Fl_Text_Display::ATTR_BGCOLOR, 0
 
-        Fl_Color BG_COLOR      = fl_lighter(FL_GRAY);
-        Fl_Color BG_DARK_COLOR = FL_WHITE;
-        size_t   MAX_LINE_LEN  = 1000;
-        size_t   TURN_WRAP_ON  =  300;
+/***
+ *                 _            _
+ *                (_)          | |
+ *      _ __  _ __ ___   ____ _| |_ ___
+ *     | '_ \| '__| \ \ / / _` | __/ _ \
+ *     | |_) | |  | |\ V / (_| | ||  __/
+ *     | .__/|_|  |_| \_/ \__,_|\__\___|
+ *     | |
+ *     |_|
+ */
 
-        Fl_Text_Display::Style_Table_Entry STYLE_TABLE[] = {
-            { FL_FOREGROUND_COLOR,  FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_GRAY,              FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_RED,               FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_DARK_GREEN,        FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_BLUE,              FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_MAGENTA,           FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_DARK_YELLOW,       FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_CYAN,              FL_COURIER,         14, STYLE_ATTRIBUTE },
+Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE_TABLE[] = {
+    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, 0, 0 },
+    { FL_GRAY,              FL_COURIER,         14, 0, 0 },
+    { FL_RED,               FL_COURIER,         14, 0, 0 },
+    { FL_DARK_GREEN,        FL_COURIER,         14, 0, 0 },
+    { FL_BLUE,              FL_COURIER,         14, 0, 0 },
+    { FL_MAGENTA,           FL_COURIER,         14, 0, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER,         14, 0, 0 },
+    { FL_CYAN,              FL_COURIER,         14, 0, 0 },
 
-            { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_GRAY,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_RED,               FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_BLUE,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_MAGENTA,           FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_CYAN,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
+    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_GRAY,              FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_RED,               FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_BLUE,              FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_MAGENTA,           FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_CYAN,              FL_COURIER_BOLD,    14, 0, 0 },
 
-            { FL_FOREGROUND_COLOR,  FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_GRAY,              FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_RED,               FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_GREEN,        FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_BLUE,              FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_MAGENTA,           FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_YELLOW,       FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_CYAN,              FL_COURIER,         14, STYLE_ATTRIBUTE2 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_GRAY,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_RED,               FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_GREEN,        FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_BLUE,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_MAGENTA,           FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_CYAN,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
 
-            { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_GRAY,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_RED,               FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_BLUE,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_MAGENTA,           FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_CYAN,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-        };
+    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_GRAY,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_RED,               FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_BLUE,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_MAGENTA,           FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_CYAN,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+};
 
-        static const std::string JSON_EXAMPLE = R"(Example json string
+static const std::string _LOGDISPLAY_JSON_EXAMPLE = R"(Example json string
 All available options are below.
 Use one or all.
-{
-    "lock": {
+[
+    {
+        "style": "lock",
         "on": true
     },
-    "line": {
+    {
+        "style": "line",
         "start": 0,
         "stop": 10,
         "color": "RED"
     },
-    "num": {
+    {
+        "style": "num",
         "color": "MAGENTA",
         "count": 0
     },
-    "string": {
+    {
+        "style": "string",
         "word1": "find_text_from_left",
         "color": "BLUE",
         "count": 0
     },
-    "rstring": {
+    {
+        "style": "rstring",
         "word1": "find_text_from_right",
         "color": "BLUE",
         "count": 1
     },
-    "range": {
+    {
+        "style": "range",
         "word1": "from_string",
         "word2": "to_string",
         "inclusive": true,
         "color": "BLUE",
         "count": 0
     },
-    "between": {
+    {
+        "style": "between",
         "word1": "from_first_string",
         "word2": "to_last_string",
         "inclusive": true,
         "color": "BLUE",
         "count": 0
     },
-    "custom": {
+    {
+        "style": "custom",
         "word1": "string_1",
         "word2": "string_2",
         "start": 0,
@@ -108,49 +119,55 @@ Use one or all.
         "color": "BLUE",
         "count": 0
     }
-}
-    )";
+]
+)";
 
-        static const std::string HELP = R"(@bSet style colors
+static const std::string _LOGDISPLAY_HELP = R"(@bSet style colors
 All options will be called for every line.
 Text must be valid JSON wrapped within [].
 Count property is how many strings to color, 0 means all.
 If inclusive is set to false only characters between found strings will be colored.
 
 If lock is true then never change colors that have been set.
-@f"lock": {
+@f{
+@f    "style": "lock",
 @f    "on": true
 @f}
 
 Color characters by using index in line.
-@f"line": {
+@f{
+@f    "style": "line",
 @f    "start": 0,
 @f    "stop": 10,
 @f    "color": "RED"
 @f}
 
 Color all numbers.
-@f"num": {
+@f{
+@f    "style": "num",
 @f    "color": "MAGENTA",
 @f    "count": 0
 @f}
 
 Color strings.
-@f"string": {
+@f{
+@f    "style": "string",
 @f    "word1": "find_text_from_left",
 @f    "color": "BLUE",
 @f    "count": 0
 @f}
 
 Color string but start from the right.
-@f"rstring": {
+@f{
+@f    "style": "rstring",
 @f    "word1": "find_text_from_right",
 @f    "color": "BLUE",
 @f    "count": 0
 @f}
 
 Color text between two strings.
-@f"range": {
+@f{
+@f    "style": "range",
 @f    "word1": "from_string",
 @f    "word2": "to_string",
 @f    "inclusive": true,
@@ -159,7 +176,8 @@ Color text between two strings.
 @f}
 
 Color text from first found string to the last found string.
-@f"between": {
+@f{
+@f    "style": "between",
 @f    "word1": "from_first_string",
 @f    "word2": "to_last_string",
 @f    "inclusive": true,
@@ -167,7 +185,8 @@ Color text from first found string to the last found string.
 @f}
 
 This property will call LogDisplay::line_custom_cb() which does nothing so override it.
-@f"custom": {
+@f{
+@f    "style": "custom",
 @f    "word1": "string_1",
 @f    "word2": "string_2",
 @f    "start": 0,
@@ -212,212 +231,176 @@ BG_BOLD_CYAN
 
     )";
 
-        static const std::string TOOLTIP = R"(Ctrl + 'f' for enter search text.
+static const std::string _LOGDISPLAY_TOOLTIP = R"(Ctrl + 'f' for enter search text.
 F3 to search for next word.
 Shift + F3 to search for previous word.
 Ctrl + 'h' to display style string help.
 Ctrl + 'e' to edit style string.
-    )";
+)";
 
-        //----------------------------------------------------------------------
-        enum class STYLE {
-            EMPTY,
-            LOCK,
-            LINE,
-            STRING,
-            RSTRING,
-            RANGE,
-            NUM,
-            BETWEEN,
-            CUSTOM,
-        };
+//----------------------------------------------------------------------
+struct _LogDisplayStyle {
+    enum STYLE {
+                                EMPTY,
+                                BETWEEN,
+                                CUSTOM,
+                                LINE,
+                                LOCK,
+                                NUM,
+                                RANGE,
+                                RSTRING,
+                                STRING,
+    };
 
-        //----------------------------------------------------------------------
-        struct Style {
-            COLOR               color;
-            size_t              count;
-            bool                inclusive;
-            bool                on;
-            size_t              start;
-            size_t              stop;
-            STYLE               style;
-            std::string         word1;
-            std::string         word2;
+    LogDisplay::COLOR           color;
+    STYLE                       style;
+    bool                        inclusive;
+    bool                        on;
+    size_t                      count;
+    size_t                      start;
+    size_t                      stop;
+    std::string                 word1;
+    std::string                 word2;
 
-            //------------------------------------------------------------------
-            Style() {
-                color     = COLOR::FOREGROUND;
-                count     = ALL_STRINGS;
-                inclusive = false;
-                on        = false;
-                start     = 0;
-                stop      = 0;
-                style     = STYLE::EMPTY;
+    //------------------------------------------------------------------
+    _LogDisplayStyle() {
+        color     = LogDisplay::FOREGROUND;
+        count     = 0;
+        inclusive = false;
+        on        = false;
+        start     = 0;
+        stop      = 0;
+        style     = _LogDisplayStyle::EMPTY;
+    }
+};
+
+//----------------------------------------------------------------------
+static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
+    if (name == "GRAY") return LogDisplay::GRAY;
+    else if (name == "RED") return LogDisplay::RED;
+    else if (name == "GREEN") return LogDisplay::GREEN;
+    else if (name == "BLUE") return LogDisplay::BLUE;
+    else if (name == "MAGENTA") return LogDisplay::MAGENTA;
+    else if (name == "YELLOW") return LogDisplay::YELLOW;
+    else if (name == "CYAN") return LogDisplay::CYAN;
+    else if (name == "BOLD_FOREGROUND") return LogDisplay::BOLD_FOREGROUND;
+    else if (name == "BOLD_GRAY") return LogDisplay::BOLD_GRAY;
+    else if (name == "BOLD_RED") return LogDisplay::BOLD_RED;
+    else if (name == "BOLD_GREEN") return LogDisplay::BOLD_GREEN;
+    else if (name == "BOLD_BLUE") return LogDisplay::BOLD_BLUE;
+    else if (name == "BOLD_MAGENTA") return LogDisplay::BOLD_MAGENTA;
+    else if (name == "BOLD_YELLOW") return LogDisplay::BOLD_YELLOW;
+    else if (name == "BOLD_CYAN") return LogDisplay::BOLD_CYAN;
+    else if (name == "BG_FOREGROUND") return LogDisplay::BG_FOREGROUND;
+    else if (name == "BG_GRAY") return LogDisplay::BG_GRAY;
+    else if (name == "BG_RED") return LogDisplay::BG_RED;
+    else if (name == "BG_GREEN") return LogDisplay::BG_GREEN;
+    else if (name == "BG_BLUE") return LogDisplay::BG_BLUE;
+    else if (name == "BG_MAGENTA") return LogDisplay::BG_MAGENTA;
+    else if (name == "BG_YELLOW") return LogDisplay::BG_YELLOW;
+    else if (name == "BG_CYAN") return LogDisplay::BG_CYAN;
+    else if (name == "BG_BOLD_FOREGROUND") return LogDisplay::BG_BOLD_FOREGROUND;
+    else if (name == "BG_BOLD_GRAY") return LogDisplay::BG_BOLD_GRAY;
+    else if (name == "BG_BOLD_RED") return LogDisplay::BG_BOLD_RED;
+    else if (name == "BG_BOLD_GREEN") return LogDisplay::BG_BOLD_GREEN;
+    else if (name == "BG_BOLD_BLUE") return LogDisplay::BG_BOLD_BLUE;
+    else if (name == "BG_BOLD_MAGENTA") return LogDisplay::BG_BOLD_MAGENTA;
+    else if (name == "BG_BOLD_YELLOW") return LogDisplay::BG_BOLD_YELLOW;
+    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
+    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
+    else return LogDisplay::GRAY;
+}
+
+//----------------------------------------------------------------------
+static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
+    #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
+
+    auto res = std::vector<_LogDisplayStyle>();
+    auto js  = JS();
+    auto err = js.decode(json.c_str(), json.length());
+
+    if (err != "") {
+        fl_alert("error: failed to parse json\n%s", err.c_str());
+        return res;
+    }
+
+    if (js.is_array() == false) FLW_LOGDISPLAY_ERROR(&js)
+
+    for (auto j : *js.va()) {
+        if (j->is_object() == false) FLW_LOGDISPLAY_ERROR(j);
+        auto style = _LogDisplayStyle();
+
+        for (auto j2 : j->vo_to_va()) {
+            if (j2->name() == "color" && j2->is_string() == true)           style.color     = _logdisplay_convert_color(j2->vs());
+            else if (j2->name() == "count" && j2->is_number() == true)      style.count     = (size_t) j2->vn_i();
+            else if (j2->name() == "inclusive" && j2->is_bool() == true)    style.inclusive = j2->vb();
+            else if (j2->name() == "on" && j2->is_bool() == true)           style.on        = j2->vb();
+            else if (j2->name() == "start" && j2->is_number() == true)      style.start     = (size_t) j2->vn_i();
+            else if (j2->name() == "stop" && j2->is_number() == true)       style.stop      = (size_t) j2->vn_i();
+            else if (j2->name() == "word1" && j2->is_string() == true)      style.word1     = j2->vs_u();
+            else if (j2->name() == "word2" && j2->is_string() == true)      style.word2     = j2->vs_u();
+            else if (j2->name() == "style" && j2->is_string() == true) {
+                if (j2->vs() == "between")      style.style = _LogDisplayStyle::BETWEEN;
+                else if (j2->vs() == "custom")  style.style = _LogDisplayStyle::CUSTOM;
+                else if (j2->vs() == "line")    style.style = _LogDisplayStyle::LINE;
+                else if (j2->vs() == "lock")    style.style = _LogDisplayStyle::LOCK;
+                else if (j2->vs() == "num")     style.style = _LogDisplayStyle::NUM;
+                else if (j2->vs() == "range")   style.style = _LogDisplayStyle::RANGE;
+                else if (j2->vs() == "rstring") style.style = _LogDisplayStyle::RSTRING;
+                else if (j2->vs() == "string")  style.style = _LogDisplayStyle::STRING;
+                else FLW_LOGDISPLAY_ERROR(j2)
             }
-
-        };
-
-        //----------------------------------------------------------------------
-        static COLOR convert_color_string(std::string name) {
-            if (name == "GRAY") return COLOR::GRAY;
-            else if (name == "RED") return COLOR::RED;
-            else if (name == "GREEN") return COLOR::GREEN;
-            else if (name == "BLUE") return COLOR::BLUE;
-            else if (name == "MAGENTA") return COLOR::MAGENTA;
-            else if (name == "YELLOW") return COLOR::YELLOW;
-            else if (name == "CYAN") return COLOR::CYAN;
-            else if (name == "BOLD_FOREGROUND") return COLOR::BOLD_FOREGROUND;
-            else if (name == "BOLD_GRAY") return COLOR::BOLD_GRAY;
-            else if (name == "BOLD_RED") return COLOR::BOLD_RED;
-            else if (name == "BOLD_GREEN") return COLOR::BOLD_GREEN;
-            else if (name == "BOLD_BLUE") return COLOR::BOLD_BLUE;
-            else if (name == "BOLD_MAGENTA") return COLOR::BOLD_MAGENTA;
-            else if (name == "BOLD_YELLOW") return COLOR::BOLD_YELLOW;
-            else if (name == "BOLD_CYAN") return COLOR::BOLD_CYAN;
-            else if (name == "BG_FOREGROUND") return COLOR::BG_FOREGROUND;
-            else if (name == "BG_GRAY") return COLOR::BG_GRAY;
-            else if (name == "BG_RED") return COLOR::BG_RED;
-            else if (name == "BG_GREEN") return COLOR::BG_GREEN;
-            else if (name == "BG_BLUE") return COLOR::BG_BLUE;
-            else if (name == "BG_MAGENTA") return COLOR::BG_MAGENTA;
-            else if (name == "BG_YELLOW") return COLOR::BG_YELLOW;
-            else if (name == "BG_CYAN") return COLOR::BG_CYAN;
-            else if (name == "BG_BOLD_FOREGROUND") return COLOR::BG_BOLD_FOREGROUND;
-            else if (name == "BG_BOLD_GRAY") return COLOR::BG_BOLD_GRAY;
-            else if (name == "BG_BOLD_RED") return COLOR::BG_BOLD_RED;
-            else if (name == "BG_BOLD_GREEN") return COLOR::BG_BOLD_GREEN;
-            else if (name == "BG_BOLD_BLUE") return COLOR::BG_BOLD_BLUE;
-            else if (name == "BG_BOLD_MAGENTA") return COLOR::BG_BOLD_MAGENTA;
-            else if (name == "BG_BOLD_YELLOW") return COLOR::BG_BOLD_YELLOW;
-            else if (name == "BG_BOLD_CYAN") return COLOR::BG_BOLD_CYAN;
-            else if (name == "BG_BOLD_CYAN") return COLOR::BG_BOLD_CYAN;
-            else return COLOR::GRAY;
+            else FLW_LOGDISPLAY_ERROR(j2)
         }
 
-        //----------------------------------------------------------------------
-        static std::vector<Style> parse_json(std::string json) {
-            auto nv  = json::NodeVector();
-            auto err = json::parse(json, nv);
-            auto res = std::vector<Style>();
-
-            if (err.pos >= 0) {
-                fl_alert("error: failed to parse json string at line %d and byte %d", (int) err.line, (int) err.pos);
-                return res;
-            }
-            else if (nv.size() < 3) {
-                fl_alert("error: nothing to parse");
-                return res;
-            }
-
-            for (const auto& n : json::find_children(nv, nv[0])) {
-                if (n.is_object() == true) {
-                    auto style = Style();
-
-                    if (n.name == "lock") {
-                        style.style = STYLE::LOCK;
-                    }
-                    else if (n.name == "line") {
-                        style.style = STYLE::LINE;
-                    }
-                    else if (n.name == "num") {
-                        style.style = STYLE::NUM;
-                    }
-                    else if (n.name == "string") {
-                        style.style = STYLE::STRING;
-                    }
-                    else if (n.name == "rstring") {
-                        style.style = STYLE::RSTRING;
-                    }
-                    else if (n.name == "between") {
-                        style.style = STYLE::BETWEEN;
-                    }
-                    else if (n.name == "range") {
-                        style.style = STYLE::RANGE;
-                    }
-                    else if (n.name == "custom") {
-                        style.style = STYLE::CUSTOM;
-                    }
-
-                    auto children = json::find_children(nv, n);
-
-                    for (const auto& n2 : children) {
-                        if (n2.name == "on" && n2.is_bool() == true) {
-                            style.on = n2.tobool();
-                        }
-                        else if (n2.name == "inclusive" && n2.is_bool() == true) {
-                            style.inclusive = n2.tobool();
-                        }
-                        else if (n2.name == "start" && n2.is_number() == true) {
-                            style.start = (size_t) n2.toint();
-                        }
-                        else if (n2.name == "stop" && n2.is_number() == true) {
-                            style.stop = (size_t) n2.toint();
-                        }
-                        else if (n2.name == "count" && n2.is_number() == true) {
-                            style.count = (size_t) n2.toint();
-                        }
-                        else if (n2.name == "color" && n2.is_string() == true) {
-                            style.color = convert_color_string(n2.value);
-                        }
-                        else if (n2.name == "word1" && n2.is_string() == true) {
-                            style.word1 = n2.tostring();
-                        }
-                        else if (n2.name == "word2" && n2.is_string() == true) {
-                            style.word2 = n2.tostring();
-                        }
-                    }
-
-                    if (style.style != STYLE::EMPTY) {
-                        res.push_back(style);
-                    }
-                }
-            }
-
-            return res;
+        if (style.style != _LogDisplayStyle::EMPTY) {
+            res.push_back(style);
         }
+    }
 
-        //----------------------------------------------------------------------
-        // Returns new converted buffer if it does contain \r
-        // Otherwise it returns nullptr
-        //
-        char* win_to_unix(const char* string) {
-            auto r = false;
-            auto b = string;
+    return res;
+}
 
-            while (*b != 0) {
-                if (*b++ == '\r') {
-                    r = true;
-                    break;
-                }
-            }
+//----------------------------------------------------------------------
+// Returns new converted buffer if it does contain \r.
+// Otherwise it returns nullptr.
+//
+static char* _logdisplay_win_to_unix(const char* string) {
+    auto r = false;
+    auto b = string;
 
-            if (r == false) {
-                return nullptr;
-            }
-
-            auto len = strlen(string);
-            auto res = (char*) calloc(len + 1, 1);
-            auto pos = 0;
-
-            if (res != nullptr) {
-                b = string;
-
-                while (*b != 0) {
-                    if (*b != '\r') {
-                        res[pos++] = *b;
-                    }
-
-                    b++;
-                }
-            }
-
-            return res;
+    while (*b != 0) {
+        if (*b++ == '\r') {
+            r = true;
+            break;
         }
-    } // logdisplay
-} // flw
+    }
+
+    if (r == false) {
+        return nullptr;
+    }
+
+    auto len = strlen(string);
+    auto res = (char*) calloc(len + 1, 1);
+    auto pos = 0;
+
+    if (res != nullptr) {
+        b = string;
+
+        while (*b != 0) {
+            if (*b != '\r') {
+                res[pos++] = *b;
+            }
+
+            b++;
+        }
+    }
+
+    return res;
+}
 
 //------------------------------------------------------------------------------
-flw::LogDisplay::LogDisplay::Tmp::Tmp() {
+LogDisplay::LogDisplay::Tmp::Tmp() {
     buf  = nullptr;
     len  = 0;
     pos  = 0;
@@ -425,16 +408,23 @@ flw::LogDisplay::LogDisplay::Tmp::Tmp() {
 }
 
 //------------------------------------------------------------------------------
-flw::LogDisplay::LogDisplay::Tmp::~Tmp() {
+LogDisplay::LogDisplay::Tmp::~Tmp() {
     free(buf);
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+/***
+ *      _                 _____  _           _
+ *     | |               |  __ \(_)         | |
+ *     | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _
+ *     | |    / _ \ / _` | |  | | / __| '_ \| |/ _` | | | |
+ *     | |___| (_) | (_| | |__| | \__ \ |_) | | (_| | |_| |
+ *     |______\___/ \__, |_____/|_|___/ .__/|_|\__,_|\__, |
+ *                   __/ |            | |             __/ |
+ *                  |___/             |_|            |___/
+ */
 
 //------------------------------------------------------------------------------
-flw::LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Display(x, y, w, h, l) {
+LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Display(x, y, w, h, l) {
     _buffer      = new Fl_Text_Buffer();
     _style       = new Fl_Text_Buffer();
     _lock_colors = false;
@@ -444,11 +434,11 @@ flw::LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text
     linenumber_align(FL_ALIGN_RIGHT);
     linenumber_format("%5d");
     update_pref();
-    tooltip(logdisplay::TOOLTIP.c_str());
+    tooltip(_LOGDISPLAY_TOOLTIP.c_str());
 }
 
 //------------------------------------------------------------------------------
-flw::LogDisplay::~LogDisplay() {
+LogDisplay::~LogDisplay() {
     buffer(nullptr);
     delete _buffer;
     delete _style;
@@ -456,8 +446,8 @@ flw::LogDisplay::~LogDisplay() {
 }
 
 //------------------------------------------------------------------------------
-void flw::LogDisplay::edit_styles() {
-    auto json    = (_json == "") ? logdisplay::JSON_EXAMPLE : _json;
+void LogDisplay::edit_styles() {
+    auto json    = (_json == "") ? _LOGDISPLAY_JSON_EXAMPLE : _json;
     auto changed = dlg::text_edit("Edit JSON Style String", json, top_window(), 40, 50);
 
     if (changed == false) {
@@ -468,7 +458,7 @@ void flw::LogDisplay::edit_styles() {
 }
 
 //------------------------------------------------------------------------------
-void flw::LogDisplay::find(bool next, bool force_ask) {
+void LogDisplay::find(bool next, bool force_ask) {
     if (_find == "" || force_ask) {
         auto s = fl_input("Enter search string", _find.c_str());
 
@@ -519,7 +509,7 @@ void flw::LogDisplay::find(bool next, bool force_ask) {
 }
 
 //------------------------------------------------------------------------------
-int flw::LogDisplay::handle(int event) {
+int LogDisplay::handle(int event) {
     if (event == FL_KEYBOARD) {
         auto key = Fl::event_key();
 
@@ -538,7 +528,7 @@ int flw::LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("Style Help", logdisplay::HELP, top_window(), false, 40, 30);
+                dlg::list("Style Help", _LOGDISPLAY_HELP, top_window(), false, 40, 30);
                 return 1;
             }
         }
@@ -554,7 +544,7 @@ int flw::LogDisplay::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
-void flw::LogDisplay::save_file() {
+void LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
 
     if (filename != nullptr && _buffer->savefile(filename) != 0) {
@@ -566,9 +556,9 @@ void flw::LogDisplay::save_file() {
 // Parse string and style text
 // If input string is empty then LogDisplay::line_cb() is called (must be overriden)
 //
-void flw::LogDisplay::style(std::string json) {
+void LogDisplay::style(std::string json) {
     auto row = 1;
-    auto ds  = (json != "") ? logdisplay::parse_json(json) : std::vector<logdisplay::Style>();
+    auto ds  = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
 
     _json      = json;
     _tmp       = new Tmp();
@@ -590,29 +580,29 @@ void flw::LogDisplay::style(std::string json) {
                 lock_colors(false);
 
                 for (const auto& d : ds) {
-                    if (d.style == logdisplay::STYLE::LOCK) {
-                        lock_colors(d.on);
-                    }
-                    else if (d.style == logdisplay::STYLE::LINE) {
-                        style_line(d.start, d.stop, d.color);
-                    }
-                    else if (d.style == logdisplay::STYLE::STRING) {
-                        style_string(line, d.word1, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::RSTRING) {
-                        style_rstring(line, d.word1, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::RANGE) {
-                        style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::NUM) {
-                        style_num(line, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::BETWEEN) {
+                    if (d.style == _LogDisplayStyle::BETWEEN) {
                         style_range(line, d.word1, d.word2, d.inclusive, d.color);
                     }
-                    else if (d.style == logdisplay::STYLE::CUSTOM) {
+                    else if (d.style == _LogDisplayStyle::CUSTOM) {
                         line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::LINE) {
+                        style_line(d.start, d.stop, d.color);
+                    }
+                    else if (d.style == _LogDisplayStyle::LOCK) {
+                        lock_colors(d.on);
+                    }
+                    else if (d.style == _LogDisplayStyle::NUM) {
+                        style_num(line, d.color, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::RANGE) {
+                        style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::RSTRING) {
+                        style_rstring(line, d.word1, d.color, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::STRING) {
+                        style_string(line, d.word1, d.color, d.count);
                     }
                 }
             }
@@ -623,7 +613,7 @@ void flw::LogDisplay::style(std::string json) {
         }
 
         _style->text(_tmp->buf);
-        highlight_data(_style, logdisplay::STYLE_TABLE, sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]), (char) logdisplay::COLOR::FOREGROUND, nullptr, 0);
+        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), (char) LogDisplay::FOREGROUND, nullptr, 0);
     }
 
     delete _tmp;
@@ -631,7 +621,7 @@ void flw::LogDisplay::style(std::string json) {
 }
 
 //------------------------------------------------------------------------------
-void flw::LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color) {
+void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -652,14 +642,14 @@ void flw::LogDisplay::style_between(const std::string& line, const std::string& 
 //------------------------------------------------------------------------------
 // Start and stop are positions in current line
 //
-void flw::LogDisplay::style_line(size_t start, size_t stop, logdisplay::COLOR c) {
+void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::COLOR c) {
     assert(_tmp);
 
     start += _tmp->pos;
     stop  += _tmp->pos;
 
     while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->len) {
-        if (_lock_colors == false || _tmp->buf[start] == (char) logdisplay::COLOR::FOREGROUND) {
+        if (_lock_colors == false || _tmp->buf[start] == (char) LogDisplay::LogDisplay::FOREGROUND) {
             _tmp->buf[start] = (char) c;
         }
 
@@ -670,7 +660,7 @@ void flw::LogDisplay::style_line(size_t start, size_t stop, logdisplay::COLOR c)
 //------------------------------------------------------------------------------
 // Color all numbers
 //
-void flw::LogDisplay::style_num(const std::string& line, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_num(const std::string& line, LogDisplay::COLOR color, size_t count) {
     if (count == 0) {
         count = 999;
     }
@@ -688,7 +678,7 @@ void flw::LogDisplay::style_num(const std::string& line, logdisplay::COLOR color
 //------------------------------------------------------------------------------
 // Color text between from and to string
 //
-void flw::LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -727,7 +717,7 @@ void flw::LogDisplay::style_range(const std::string& line, const std::string& wo
 //------------------------------------------------------------------------------
 // Color string - start from the end
 //
-void flw::LogDisplay::style_rstring(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -753,7 +743,7 @@ void flw::LogDisplay::style_rstring(const std::string& line, const std::string& 
 //------------------------------------------------------------------------------
 // Color string - start from the beginning
 //
-void flw::LogDisplay::style_string(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -772,7 +762,7 @@ void flw::LogDisplay::style_string(const std::string& line, const std::string& w
 }
 
 //------------------------------------------------------------------------------
-void flw::LogDisplay::update_pref() {
+void LogDisplay::update_pref() {
     labelsize(flw::PREF_FIXED_FONTSIZE);
     linenumber_bgcolor(FL_BACKGROUND_COLOR);
     linenumber_fgcolor(FL_FOREGROUND_COLOR);
@@ -782,28 +772,26 @@ void flw::LogDisplay::update_pref() {
     textfont(flw::PREF_FIXED_FONT);
     textsize(flw::PREF_FIXED_FONTSIZE);
 
-    for (size_t f = 0; f < sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]); f++) {
-        logdisplay::STYLE_TABLE[f].size = flw::PREF_FIXED_FONTSIZE;
+    for (size_t f = 0; f < sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]); f++) {
+        _LOGDISPLAY_STYLE_TABLE[f].size = flw::PREF_FIXED_FONTSIZE;
 
-#if FL_MINOR_VERSION == 4
         if (theme::is_dark() == true) {
-            logdisplay::STYLE_TABLE[f].bgcolor = logdisplay::BG_DARK_COLOR;
+            _LOGDISPLAY_STYLE_TABLE[f].bgcolor = FL_WHITE;
         }
         else {
-            logdisplay::STYLE_TABLE[f].bgcolor = logdisplay::BG_COLOR;
+            _LOGDISPLAY_STYLE_TABLE[f].bgcolor = fl_lighter(FL_GRAY);
         }
-#endif
     }
 }
 
 //------------------------------------------------------------------------------
-void flw::LogDisplay::value(const char* text) {
+void LogDisplay::value(const char* text) {
     assert(text);
 
     _buffer->text("");
     _style->text("");
 
-    auto win = logdisplay::win_to_unix(text);
+    auto win = _logdisplay_win_to_unix(text);
 
     if (win != nullptr) {
         _buffer->text(win);
@@ -813,5 +801,7 @@ void flw::LogDisplay::value(const char* text) {
         _buffer->text(text);
     }
 }
+
+} // flw
 
 // MKALGAM_OFF

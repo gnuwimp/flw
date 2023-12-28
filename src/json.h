@@ -6,125 +6,206 @@
 
 // MKALGAM_ON
 
+#include <assert.h>
+#include <string.h>
+#include <map>
 #include <string>
 #include <vector>
 
 namespace flw {
-namespace json {
-    //----------------------------------------------------------------------
-    // Very simple json parser
-    // Don't use it for arbitrary data download from internet
 
-    // Macros for creating json
-    #define FLW_JSON_START(VEC, X)                      { json::NodeVector& V = VEC; int D = 0; char B[50]; X; (void) B; size_t I = 0; for (auto& n : V) n.index = I++; }
-    #define FLW_JSON_START_OBJECT(X)                    { V.push_back(json::Node(json::OBJECT, "", "", D++)); X; V.push_back(json::Node(json::END_OBJECT, "", "", --D)); }
-    #define FLW_JSON_START_ARRAY(X)                     { V.push_back(json::Node(json::ARRAY, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
-    #define FLW_JSON_START_ARRAY_NL(X)                  { V.push_back(json::Node(json::ARRAY_NL, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
+class JS;
 
-    #define FLW_JSON_ADD_OBJECT(NAME,X)                 { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::OBJECT, N, "", D++)); X; V.push_back(json::Node(json::END_OBJECT, N, "", --D)); }
-    #define FLW_JSON_ADD_ARRAY(NAME,X)                  { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
-    #define FLW_JSON_ADD_ARRAY_NL(NAME,X)               { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY_NL, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
+typedef std::map<std::string, JS*> JSObject;
+typedef std::vector<JS*> JSArray;
 
-    #define FLW_JSON_ADD_STRING(NAME,VALUE)             { V.push_back(json::Node(json::STRING, json::escape_string(NAME), json::escape_string(VALUE), D)); }
-    #define FLW_JSON_ADD_NUMBER(NAME,VALUE)             { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_NUMBER2(NAME,VALUE)            { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_INT(NAME,VALUE)                { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_UINT(NAME,VALUE)               { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
-    #define FLW_JSON_ADD_BOOL(NAME,VALUE)               { V.push_back(json::Node(json::BOOL, json::escape_string(NAME), VALUE == true ? "true" : "false", D)); }
-    #define FLW_JSON_ADD_NIL(NAME)                      { V.push_back(json::Node(json::NIL, json::escape_string(NAME), "", D)); }
+//------------------------------------------------------------------------------
+// JSON object.
+//
+class JS {
+    friend class JSB;
 
-    #define FLW_JSON_ADD_STRING_TO_ARRAY(VALUE)         { V.push_back(json::Node(json::STRING, "", json::escape_string(VALUE), D)); }
-    #define FLW_JSON_ADD_NUMBER_TO_ARRAY(VALUE)         { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_NUMBER2_TO_ARRAY(VALUE)        { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_INT_TO_ARRAY(VALUE)            { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_UINT_TO_ARRAY(VALUE)           { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
-    #define FLW_JSON_ADD_BOOL_TO_ARRAY(VALUE)           { V.push_back(json::Node(json::BOOL, "", VALUE == true ? "true" : "false", D)); }
-    #define FLW_JSON_ADD_NIL_TO_ARRAY()                 { V.push_back(json::Node(json::NIL, "", "", D)); }
-
-    struct Err {
-        ssize_t                         pos;
-        ssize_t                         line;
-                                        Err()
-                                            { pos = -1; line = -1; }
-                                        Err(ssize_t pos, ssize_t line)
-                                            { this->pos = pos; this->line = line; }
-    };
+public:
+    static const size_t         MAX_DEPTH = 32;
 
     enum TYPE {
-                                        NA,
-                                        OBJECT,
-                                        END_OBJECT,
-                                        ARRAY,
-                                        END_ARRAY,
-                                        STRING,
-                                        NUMBER,
-                                        BOOL,
-                                        NIL,
-
-                                        COLON, // Only for tokenizer
-                                        COMMA, // Only for tokenizer
-                                        ARRAY_NL, // Only for creating json
+                                OBJECT,
+                                ARRAY,
+                                STRING,
+                                NUMBER,
+                                BOOL,
+                                NIL,
     };
 
-    std::string                         escape_string(const std::string& string);
-    std::string                         unescape_string(const std::string& string);
+                                JS(const JS&) = delete;
+                                JS(JS&&) = delete;
+    JS&                         operator=(const JS&) = delete;
+    JS&                         operator=(JS&&) = delete;
 
-    struct Node {
-        TYPE                            type;
-        int                             depth;
-        size_t                          index;
-        std::string                     value;
-        std::string                     name;
-        size_t                          textpos;
+                                JS()
+                                    { JS::COUNT++; _type = NIL; _name = strdup(""); _vb = false; _parent = nullptr; _enc_flag = 0; _pos = 0; }
+                                ~JS()
+                                    { JS::COUNT--; _clear(true); }
+    bool                        operator==(TYPE type) const
+                                    { return _type == type; }
+    bool                        operator!=(TYPE type) const
+                                    { return _type != type; }
+    const JS*                   operator[](std::string name) const
+                                    { return _get_object(name.c_str(), true); }
+    const JS*                   operator[](size_t index) const
+                                    { return (_type == ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
+    const JS*                   find(std::string name, bool rec = false) const;
+    std::string                 decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
+    std::string                 decode(std::string json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false)
+                                    { return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check); }
+    void                        debug() const;
+    std::string                 encode(int skip = 0) const;
+    const JS*                   get(std::string name, bool escape_name = true) const
+                                    { return _get_object(name.c_str(), escape_name); }
+    const JS*                   get(size_t index) const
+                                    { return (*this) [index]; }
+    bool                        is_array() const
+                                    { return _type == ARRAY; }
+    bool                        is_bool() const
+                                    { return _type == BOOL; }
+    bool                        is_null() const
+                                    { return _type == NIL; }
+    bool                        is_number() const
+                                    { return _type == NUMBER; }
+    bool                        is_object() const
+                                    { return _type == OBJECT; }
+    bool                        is_string() const
+                                    { return _type == STRING; }
+    std::string                 name() const
+                                    { return _name; }
+    const char*                 name_c() const
+                                    { return _name; }
+    std::string                 name_u() const
+                                    { return JS::Unescape(_name); }
+    JS*                         parent()
+                                    { return _parent; }
+    unsigned                    pos() const
+                                    { return _pos; }
+    size_t                      size() const
+                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
+    TYPE                        type() const
+                                    { return (TYPE) _type; }
+    std::string                 type_name() const
+                                    { assert(_type >= 0 && _type < (int) 6); return TYPE_NAMES[(unsigned) _type]; }
+    const JSArray*              va() const
+                                    { return (_type == ARRAY) ? _va : nullptr; }
+    bool                        vb() const
+                                    { assert(_type == BOOL); return (_type == BOOL) ? _vb : false; }
+    double                      vn() const
+                                    { assert(_type == NUMBER); return (_type == NUMBER) ? _vn : 0.0; }
+    long long int               vn_i() const
+                                    { assert(_type == NUMBER); return (_type == NUMBER) ? (long long int) _vn : 0; }
+    const JSObject*             vo() const
+                                    { return (_type == OBJECT) ? _vo : nullptr; }
+    const JSArray               vo_to_va() const;
+    std::string                 vs() const
+                                    { assert(_type == STRING); return (_type == STRING) ? _vs : ""; }
+    const char*                 vs_c() const
+                                    { assert(_type == STRING); return (_type == STRING) ? _vs : ""; }
+    std::string                 vs_u() const
+                                    { assert(_type == STRING); return (_type == STRING) ? JS::Unescape(_vs) : ""; }
 
-                                        Node(TYPE type = TYPE::NA, const std::string& name = "", const std::string& value = "", int depth = 0, size_t textpos = 0)
-                                            { this->type = type; this->name = name; this->value = value; this->depth = depth; this->textpos = textpos; }
-        bool                            operator==(const Node& other) const
-                                            { return (type == other.type || (type == TYPE::ARRAY && other.type == TYPE::ARRAY_NL) || (type == TYPE::ARRAY_NL && other.type == TYPE::ARRAY)) && depth == other.depth && value == other.value && name == other.name; }
-        bool                            is_array() const
-                                            { return type == json::ARRAY; }
-        bool                            is_bool() const
-                                            { return type == json::BOOL; }
-        bool                            is_data() const
-                                            { return type == json::STRING || type == json::NUMBER || type == json::BOOL || type == json::NIL; }
-        bool                            is_end() const
-                                            { return type == json::END_ARRAY || type == json::END_OBJECT; }
-        bool                            is_nil() const
-                                            { return type == json::NIL; }
-        bool                            is_number() const
-                                            { return type == json::NUMBER; }
-        bool                            is_object() const
-                                            { return type == json::OBJECT; }
-        bool                            is_start() const
-                                            { return type == json::ARRAY || type == json::ARRAY_NL || type == json::OBJECT; }
-        bool                            is_string() const
-                                            { return type == json::STRING; }
-        void                            print() const;
-        bool                            tobool() const
-                                            { return value == "true"; }
-        long long                       toint() const
-                                            { return (type == json::NUMBER) ? strtoll(value.c_str(), nullptr, 0) : 0; }
-        double                          tonumber() const
-                                            { return (type == json::NUMBER) ? strtod(value.c_str(), nullptr) : 0.0; }
-        std::string                     tostring() const
-                                            { return unescape_string(value); }
-        std::string                     unescape_name() const
-                                            { return unescape_string(name); }
+    static inline ssize_t       Count()
+                                    { return JS::COUNT; }
+    static size_t               CountUtf8(const char* p);
+    static std::string          Escape(const char* string);
+    static std::string          Unescape(const char* string);
+
+private:
+                                JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
+                                    { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
+    bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
+    bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);
+    bool                        _add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos);
+    bool                        _add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos);
+    void                        _clear(bool name);
+    std::string                 _encode(bool ignore_name, int skip) const;
+    const JS*                   _get_object(const char* name, bool escape) const;
+    bool                        _set_object(const char* name, JS* js, bool ignore_duplicates);
+
+    static void                 _Encode(const JS* js, std::string& j, std::string& t, bool comma, int skip);
+    static void                 _EncodeInline(const JS* js, std::string& j, bool comma, int skip);
+    static inline JS*           _MakeArray(const char* name, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = ARRAY; r->_va = new JSArray(); return r; }
+    static inline JS*           _MakeBool(const char* name, bool vb, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = BOOL; r->_vb = vb; return r; }
+    static inline JS*           _MakeNil(const char* name, JS* parent, unsigned pos)
+                                    { return new JS(name, parent, pos); }
+    static inline JS*           _MakeNumber(const char* name, double vn, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = NUMBER; r->_vn = vn; return r; }
+    static inline JS*           _MakeObject(const char* name, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = OBJECT; r->_vo = new JSObject(); return r; }
+    static inline JS*           _MakeString(const char* name, const char* vs, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = STRING; r->_vs = strdup(vs); return r; }
+
+    static constexpr const char* TYPE_NAMES[7] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", };
+    static ssize_t              COUNT;
+
+    char                        _type;
+    char                        _enc_flag;
+    unsigned                    _pos;
+    JS*                         _parent;
+    char*                       _name;
+
+    union {
+        JSArray*                _va;
+        JSObject*               _vo;
+        bool                    _vb;
+        double                  _vn;
+        char*                   _vs;
     };
+};
 
-    typedef std::vector<Node>           NodeVector;
-    typedef std::vector<size_t>         SizeTVector;
+//------------------------------------------------------------------------------
+// Create JSON structure.
+// It will throw exception (std::string) for any error.
+//
+class JSB {
+public:
+                                JSB()
+                                    { _root = _current = nullptr; }
+    virtual                     ~JSB()
+                                    { delete _root; }
+    JSB&                        operator<<(JS* json)
+                                    { return add(json); }
+    JSB&                        add(JS* json);
+    void                        clear()
+                                    { delete _root; _root = _current = nullptr; _name = ""; }
+    std::string                 encode() const;
+    JSB&                        end();
+    const JS*                   root() const
+                                    { return _root; }
 
-    NodeVector                          find_children(const NodeVector& nodes, const Node& start, bool grandchildren = false);
-    NodeVector                          find_nodes(const NodeVector& nodes, std::string name, TYPE type = TYPE::NA);
-    NodeVector                          find_siblings(const NodeVector& nodes, const Node& start);
-    Err                                 parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma = false);
-    Err                                 parse(std::string json, NodeVector& nodes, bool ignore_trailing_comma = false);
-    void                                print(const NodeVector& nodes);
-    std::string                         tostring(const NodeVector& nodes);
-    Err                                 validate(const char* json);
-    Err                                 validate(std::string json);
-} // json
+    static inline JS*           MakeArray(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); return r; }
+    static inline JS*           MakeArrayInline(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); r->_enc_flag = 1; return r; }
+    static inline JS*           MakeBool(bool vb, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::BOOL; r->_vb = vb; return r; }
+    static inline JS*           MakeNull(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NIL; return r; }
+    static inline JS*           MakeNumber(double vn, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NUMBER; r->_vn = vn; return r; }
+    static inline JS*           MakeObject(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); return r; }
+    static inline JS*           MakeObjectInline(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); r->_enc_flag = 1; return r; }
+    static inline JS*           MakeString(const char* vs, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs).c_str() : vs); return r; }
+    static inline JS*           MakeString(std::string vs, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs.c_str()).c_str() : vs.c_str()); return r; }
+
+private:
+    JS*                         _current;
+    JS*                         _root;
+    std::string                 _name;
+};
+
 } // flw
 
 // MKALGAM_OFF

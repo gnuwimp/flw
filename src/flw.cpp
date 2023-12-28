@@ -154,16 +154,15 @@ flw::Buf::Buf(const char* P, size_t S) {
         s = 0;
     }
     else {
-        p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
+        p = (char*) calloc(S + 1, 1);
         s = 0;
 
         if (p == nullptr) {
-            throw "error: memory allocation failed";
+            return;
         }
-        else {
-            memcpy(p, P, S);
-            s = S;
-        }
+
+        memcpy(p, P, S);
+        s = S;
     }
 }
 
@@ -174,16 +173,15 @@ flw::Buf::Buf(const Buf& b) {
         s = 0;
     }
     else {
-        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        p = (char*) calloc(b.s + 1, 1);
         s = 0;
 
         if (p == nullptr) {
-            throw "error: memory allocation failed";
+            return;
         }
-        else {
-            memcpy(p, b.p, b.s);
-            s = b.s;
-        }
+
+        memcpy(p, b.p, b.s);
+        s = b.s;
     }
 }
 
@@ -203,16 +201,15 @@ flw::Buf& flw::Buf::operator=(const Buf& b) {
     }
     else {
         free(p);
-        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        p = (char*) calloc(b.s + 1, 1);
         s = 0;
 
         if (p == nullptr) {
-            throw "error: memory allocation failed";
+            return *this;
         }
-        else {
-            memcpy(p, b.p, b.s);
-            s = b.s;
-        }
+
+        memcpy(p, b.p, b.s);
+        s = b.s;
     }
 
     return *this;
@@ -235,18 +232,17 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
         *this = b;
     }
     else {
-        auto t = (b.s < SIZE_MAX) ? (char*) calloc(s + b.s + 1, 1) : nullptr;
+        auto t = (char*) calloc(s + b.s + 1, 1);
 
         if (t == nullptr) {
-            throw "error: memory allocation failed";
+            return *this;
         }
-        else {
-            memcpy(t, p, s);
-            memcpy(t + s, b.p, b.s);
-            free(p);
-            p = t;
-            s += b.s;
-        }
+
+        memcpy(t, p, s);
+        memcpy(t + s, b.p, b.s);
+        free(p);
+        p = t;
+        s += b.s;
     }
 
     return *this;
@@ -255,11 +251,6 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
 //------------------------------------------------------------------------------
 bool flw::Buf::operator==(const Buf& other) const {
     return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
-}
-
-//------------------------------------------------------------------------------
-flw::Buf::~Buf() {
-    free(p);
 }
 
 //------------------------------------------------------------------------------

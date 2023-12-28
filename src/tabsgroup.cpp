@@ -2,7 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "tabsgroup.h"
-#include "flw.h"
 
 // MKALGAM_ON
 
@@ -10,42 +9,64 @@
 #include <FL/fl_draw.H>
 
 namespace flw {
-    //--------------------------------------------------------------------------
-    class _TabsGroupButton : public Fl_Toggle_Button {
-    public:
-        static int                      _BORDER;
-        static Fl_Boxtype               _BOXTYPE;
-        static Fl_Color                 _BOXSELCOLOR;
-        static Fl_Color                 _BOXCOLOR;
 
-        int _tw;
-
-        //----------------------------------------------------------------------
-        _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
-            _tw = 0;
-            copy_label(label);
-            copy_tooltip(label);
-        }
-
-        //----------------------------------------------------------------------
-        void draw() override {
-            fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
-            fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
-        }
-    };
-
-    int        _TabsGroupButton::_BORDER      = 6;
-    Fl_Boxtype _TabsGroupButton::_BOXTYPE     = FL_FLAT_BOX;
-    Fl_Color   _TabsGroupButton::_BOXSELCOLOR = FL_SELECTION_COLOR;
-    Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
-}
+/***
+ *        _______    _          _____                       ____        _   _
+ *       |__   __|  | |        / ____|                     |  _ \      | | | |
+ *          | | __ _| |__  ___| |  __ _ __ ___  _   _ _ __ | |_) |_   _| |_| |_ ___  _ __
+ *          | |/ _` | '_ \/ __| | |_ | '__/ _ \| | | | '_ \|  _ <| | | | __| __/ _ \| '_ \
+ *          | | (_| | |_) \__ \ |__| | | | (_) | |_| | |_) | |_) | |_| | |_| || (_) | | | |
+ *          |_|\__,_|_.__/|___/\_____|_|  \___/ \__,_| .__/|____/ \__,_|\__|\__\___/|_| |_|
+ *      ______                                       | |
+ *     |______|                                      |_|
+ */
 
 //------------------------------------------------------------------------------
-flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+class _TabsGroupButton : public Fl_Toggle_Button {
+public:
+    static int                  _BORDER;
+    static Fl_Boxtype           _BOXTYPE;
+    static Fl_Color             _BOXSELCOLOR;
+    static Fl_Color             _BOXCOLOR;
+    int                         _tw;
+
+    //--------------------------------------------------------------------------
+    _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
+        _tw = 0;
+        copy_label(label);
+        copy_tooltip(label);
+    }
+
+    //----------------------------------------------------------------------
+    void draw() override {
+        fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
+        fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+    }
+};
+
+int        _TabsGroupButton::_BORDER      = 6;
+Fl_Boxtype _TabsGroupButton::_BOXTYPE     = FL_FLAT_BOX;
+Fl_Color   _TabsGroupButton::_BOXSELCOLOR = FL_SELECTION_COLOR;
+Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
+
+/***
+ *      _______    _          _____
+ *     |__   __|  | |        / ____|
+ *        | | __ _| |__  ___| |  __ _ __ ___  _   _ _ __
+ *        | |/ _` | '_ \/ __| | |_ | '__/ _ \| | | | '_ \
+ *        | | (_| | |_) \__ \ |__| | | | (_) | |_| | |_) |
+ *        |_|\__,_|_.__/|___/\_____|_|  \___/ \__,_| .__/
+ *                                                 | |
+ *                                                 |_|
+ */
+
+//------------------------------------------------------------------------------
+TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    tooltip(TabsGroup::Help());
 
     _active = -1;
     _drag   = false;
@@ -55,12 +76,12 @@ flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::add(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
     auto button = new _TabsGroupButton(label.c_str());
 
     button->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     button->box(FL_THIN_UP_BOX);
-    button->callback(flw::TabsGroup::Callback, this);
+    button->callback(TabsGroup::Callback, this);
     button->when(FL_WHEN_CHANGED);
 
     Fl_Group::add(widget);
@@ -75,67 +96,21 @@ void flw::TabsGroup::add(const std::string& label, Fl_Widget* widget) {
         _buttons.insert(_buttons.begin() + _active + 1, button);
     }
 
-    flw::TabsGroup::Callback(button, this);
+    TabsGroup::Callback(button, this);
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::BoxColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
-}
-
-//------------------------------------------------------------------------------
-void flw::TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
-}
-
-//------------------------------------------------------------------------------
-void flw::TabsGroup::BoxType(Fl_Boxtype boxtype) {
-    flw::_TabsGroupButton::_BOXTYPE = boxtype;
-}
-
-//------------------------------------------------------------------------------
-Fl_Widget* flw::TabsGroup::_button() {
+Fl_Widget* TabsGroup::_button() {
     return (_active >= 0 && _active < (int) _buttons.size()) ? _buttons[_active] : nullptr;
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    if (sender) {
-        auto button = (_TabsGroupButton*) sender;
-        auto self   = (TabsGroup*) object;
-        auto count  = 0;
-
-        self->_active = -1;
-
-        for (auto b : self->_buttons) {
-            if (b == button) {
-                ((Fl_Button*) b)->value(1);
-                self->_active = count;
-                self->_widgets[count]->show();
-            }
-            else {
-                ((Fl_Button*) b)->value(0);
-                self->_widgets[count]->hide();
-            }
-
-            count++;
-        }
-
-        if (self->value() != nullptr && Fl::focus() != self->value()) {
-            self->value()->take_focus();
-        }
-
-        self->resize();
-    }
-}
-
-//------------------------------------------------------------------------------
-Fl_Widget* flw::TabsGroup::child(int num) const {
+Fl_Widget* TabsGroup::child(int num) const {
     return (num >= 0 && num < (int) _widgets.size()) ? _widgets[num] : nullptr;
 }
 
 //------------------------------------------------------------------------------
-int flw::TabsGroup::find(Fl_Widget* widget) const{
+int TabsGroup::find(Fl_Widget* widget) const{
     auto num = 0;
 
     for (auto w : _widgets) {
@@ -151,7 +126,7 @@ int flw::TabsGroup::find(Fl_Widget* widget) const{
 }
 
 //------------------------------------------------------------------------------
-int flw::TabsGroup::handle(int event) {
+int TabsGroup::handle(int event) {
     if (_widgets.size() == 0) {
         return Fl_Group::handle(event);
     }
@@ -224,35 +199,40 @@ int flw::TabsGroup::handle(int event) {
         if (event == FL_KEYBOARD) {
             auto key   = Fl::event_key();
             auto alt   = Fl::event_alt() != 0;
+            auto alt2  = alt;
             auto shift = Fl::event_shift() != 0;
 
-            if (alt == true && key >= '0' && key <= '9') {
+#ifdef __APPLE__
+            alt2 = Fl::event_command() != 0;
+#endif
+
+            if (alt2 == true && key >= '0' && key <= '9') {
                 auto tab = key - '0';
                 tab = (tab == 0) ? 9 : tab - 1;
 
                 if (tab < (int) _buttons.size()) {
-                    flw::TabsGroup::Callback(_buttons[tab], this);
+                    TabsGroup::Callback(_buttons[tab], this);
                 }
                 return 1;
             }
             else if (alt == true && shift == true && key == FL_Left) {
                 swap(_active, _active - 1);
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
             else if (alt == true && shift == true && key == FL_Right) {
                 swap(_active, _active + 1);
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
             else if (alt == true && key == FL_Left) {
                 _active = _active == 0 ? (int) _widgets.size() - 1 : _active - 1;
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
             else if (alt == true && key == FL_Right) {
                 _active = _active == (int) _widgets.size() - 1 ? 0 : _active + 1;
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
         }
@@ -269,7 +249,7 @@ int flw::TabsGroup::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::_hide_tab_buttons(bool hide) {
+void TabsGroup::_hide_tab_buttons(bool hide) {
     _hide = hide;
 
     for (auto b : _buttons) {
@@ -285,7 +265,7 @@ void flw::TabsGroup::_hide_tab_buttons(bool hide) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::label(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num != -1) {
@@ -295,7 +275,7 @@ void flw::TabsGroup::label(const std::string& label, Fl_Widget* widget) {
 }
 
 //------------------------------------------------------------------------------
-Fl_Widget* flw::TabsGroup::remove(int num) {
+Fl_Widget* TabsGroup::remove(int num) {
     if (num >= 0 && num < (int) _widgets.size()) {
         auto w = _widgets[num];
         auto b = _buttons[num];
@@ -314,7 +294,7 @@ Fl_Widget* flw::TabsGroup::remove(int num) {
             _active = (int) _widgets.size() - 1;
         }
 
-        flw::TabsGroup::Callback(_button(), this);
+        TabsGroup::Callback(_button(), this);
         return w;
     }
     else {
@@ -323,7 +303,7 @@ Fl_Widget* flw::TabsGroup::remove(int num) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::resize(int X, int Y, int W, int H) {
+void TabsGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (W == 0 || H == 0) {
@@ -356,7 +336,8 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
 
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
 
-        for (auto b : _buttons) { // Calc total width of buttons
+        for (auto widget : _buttons) { // Calc total width of buttons
+            auto b = (_TabsGroupButton*) widget;
             b->_tw = 0;
             fl_measure(b->label(), b->_tw, th);
 
@@ -371,7 +352,8 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
             w = 0;
         }
 
-        for (auto b : _buttons) { // Resize buttons
+        for (auto widget : _buttons) { // Resize buttons
+            auto b  = (_TabsGroupButton*) widget;
             auto bw = (w != 0) ? w : b->_tw;
 
             if (_tabs == TABS::NORTH) {
@@ -434,70 +416,139 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::swap(int from, int to) {
+void TabsGroup::swap(int from, int to) {
     auto last = (int) _widgets.size() - 1;
 
     if (_widgets.size() < 2 || to < -1 || to > (int) _widgets.size()) {
         return;
     }
-    else {
-        bool active = (_active == from);
 
-        if (from == 0 && to == -1) {
-            auto widget = _widgets[0];
-            auto button = _buttons[0];
+    bool active = (_active == from);
 
-            for (int f = 1; f <= last; f++) {
-                _widgets[f - 1] = _widgets[f];
-                _buttons[f - 1] = _buttons[f];
-            }
+    if (from == 0 && to == -1) {
+        auto widget = _widgets[0];
+        auto button = _buttons[0];
 
-            from           = last;
-            _widgets[from] = widget;
-            _buttons[from] = button;
-        }
-        else if (from == last && to == (int) _widgets.size()) {
-            auto widget = _widgets[last];
-            auto button = _buttons[last];
-
-            for (int f = last - 1; f >= 0; f--) {
-                _widgets[f + 1] = _widgets[f];
-                _buttons[f + 1] = _buttons[f];
-            }
-
-            from           = 0;
-            _widgets[from] = widget;
-            _buttons[from] = button;
-        }
-        else {
-            auto widget = _widgets[from];
-            auto button = _buttons[from];
-
-            _widgets[from] = _widgets[to];
-            _buttons[from] = _buttons[to];
-            _widgets[to]   = widget;
-            _buttons[to]   = button;
-            from           = to;
+        for (int f = 1; f <= last; f++) {
+            _widgets[f - 1] = _widgets[f];
+            _buttons[f - 1] = _buttons[f];
         }
 
-        if (active) {
-            _active = from;
-        }
-
-        resize();
+        from           = last;
+        _widgets[from] = widget;
+        _buttons[from] = button;
     }
+    else if (from == last && to == (int) _widgets.size()) {
+        auto widget = _widgets[last];
+        auto button = _buttons[last];
+
+        for (int f = last - 1; f >= 0; f--) {
+            _widgets[f + 1] = _widgets[f];
+            _buttons[f + 1] = _buttons[f];
+        }
+
+        from           = 0;
+        _widgets[from] = widget;
+        _buttons[from] = button;
+    }
+    else {
+        auto widget = _widgets[from];
+        auto button = _buttons[from];
+
+        _widgets[from] = _widgets[to];
+        _buttons[from] = _buttons[to];
+        _widgets[to]   = widget;
+        _buttons[to]   = button;
+        from           = to;
+    }
+
+    if (active) {
+        _active = from;
+    }
+
+    resize();
 }
 
 //------------------------------------------------------------------------------
-Fl_Widget* flw::TabsGroup::value() const {
+Fl_Widget* TabsGroup::value() const {
     return (_active >= 0 && _active < (int) _widgets.size()) ? _widgets[_active] : nullptr;
 }
 
 //------------------------------------------------------------------------------
-void flw::TabsGroup::value(int num) {
+void TabsGroup::value(int num) {
     if (num >= 0 && num < (int) _buttons.size()) {
-        flw::TabsGroup::Callback(_buttons[num], this);
+        TabsGroup::Callback(_buttons[num], this);
     }
 }
+
+
+
+/***
+ *      _______    _          _____                           _____ _        _   _
+ *     |__   __|  | |        / ____|                         / ____| |      | | (_)
+ *        | | __ _| |__  ___| |  __ _ __ ___  _   _ _ __    | (___ | |_ __ _| |_ _  ___
+ *        | |/ _` | '_ \/ __| | |_ | '__/ _ \| | | | '_ \    \___ \| __/ _` | __| |/ __|
+ *        | | (_| | |_) \__ \ |__| | | | (_) | |_| | |_) |   ____) | || (_| | |_| | (__
+ *        |_|\__,_|_.__/|___/\_____|_|  \___/ \__,_| .__/   |_____/ \__\__,_|\__|_|\___|
+ *                                                 | |
+ *                                                 |_|
+ */
+
+//------------------------------------------------------------------------------
+void TabsGroup::BoxColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::BoxType(Fl_Boxtype boxtype) {
+    flw::_TabsGroupButton::_BOXTYPE = boxtype;
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::Callback(Fl_Widget* sender, void* object) {
+    if (sender) {
+        auto button = (_TabsGroupButton*) sender;
+        auto self   = (TabsGroup*) object;
+        auto count  = 0;
+
+        self->_active = -1;
+
+        for (auto b : self->_buttons) {
+            if (b == button) {
+                ((Fl_Button*) b)->value(1);
+                self->_active = count;
+                self->_widgets[count]->show();
+            }
+            else {
+                ((Fl_Button*) b)->value(0);
+                self->_widgets[count]->hide();
+            }
+
+            count++;
+        }
+
+        if (self->value() != nullptr && Fl::focus() != self->value()) {
+            self->value()->take_focus();
+        }
+
+        self->resize();
+    }
+}
+
+//------------------------------------------------------------------------------
+const char* TabsGroup::Help() {
+    static const char* const HELP =
+    "Use alt + left/right to move between tabs.\n"
+    "Or alt (command key) + [1 - 9] to select tab.\n"
+    "And alt + shift + left/right to move tabs.";
+    return HELP;
+}
+
+} // flw
 
 // MKALGAM_OFF

@@ -42,7 +42,7 @@ public:
         tabs->add("SOUTH", s);
         tabs->add("WEST", w);
         tabs->add("EAST", e);
-        tabs->add("START", new Fl_Button(0, 0, 0, 0, "Use alt+left/right to move between tabs\nOr alt+[1-9] to select tab\nAnd alt+shift+left/right to move tabs"));
+        tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
         // tabs->set(7);
         // TabsGroup::BoxType(FL_UP_BOX);
         // TabsGroup::BoxType(FL_ENGRAVED_BOX);

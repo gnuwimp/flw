@@ -20,69 +20,69 @@ static std::string TEST     = "";
 
 void callback_timer(void *data);
 
-#define MENU_10LINEs    "10 Lines (TYPE::LINE)"
+#define MENU_10LINEs    "10 Lines (Plot::LINE)"
 #define MENU_AUTORUN    "Autorun"
-#define MENU_BAR        "Bar (TYPE::VECTOR)"
-#define MENU_DAYS       "Custom Y (TYPE::VECTOR)"
-#define MENU_LARGE      "Large (TYPE::LINE)"
-#define MENU_LINE       "Lines (TYPE::LINE_WITH_SQUARE)"
-#define MENU_MLINE      "1'000 (TYPE::LINE)"
-#define MENU_MONTHS     "Custom X (TYPE::VECTOR && TYPE::LINE_DASH)"
+#define MENU_BAR        "Bar (Plot::VECTOR)"
+#define MENU_DAYS       "Custom Y (Plot::VECTOR)"
+#define MENU_LARGE      "Large (Plot::LINE)"
+#define MENU_LINE       "Lines (Plot::LINE_WITH_SQUARE)"
+#define MENU_MLINE      "1'000 (Plot::LINE)"
+#define MENU_MONTHS     "Custom X (Plot::VECTOR && Plot::LINE_DASH)"
 #define MENU_NA         "NA"
-#define MENU_NP         "Negative && Positive (TYPE::SQUARE)"
-#define MENU_REF        "Ref (TYPE::CIRCLE && TYPE::SQUARE)"
-#define MENU_SMALL      "Small (TYPE::FILLED_CIRCLE && TYPE::SQUARE)"
+#define MENU_NP         "Negative && Positive (Plot::SQUARE)"
+#define MENU_REF        "Ref (Plot::CIRCLE && Plot::SQUARE)"
+#define MENU_SMALL      "Small (Plot::FILLED_CIRCLE && Plot::SQUARE)"
 #define MENU_SRAND666   "Srand(666)"
 #define MENU_SRANDTIME  "Srand(time)"
-#define MENU_VECTOR     "Random pairs (TYPE::VECTOR)"
-#define MENU_VSMALL     "Very Small (TYPE::CIRCLE)"
+#define MENU_VECTOR     "Random pairs (Plot::VECTOR)"
+#define MENU_VSMALL     "Very Small (Plot::CIRCLE)"
 
-plot::PointVector create_bar(int y) {
-    plot::PointVector res;
+PointVector create_bar(int y) {
+    PointVector res;
 
-    res.push_back(plot::Point(0.0, 0.0));
-    res.push_back(plot::Point(0.0, 0.0));
+    res.push_back(Point(0.0, 0.0));
+    res.push_back(Point(0.0, 0.0));
 
     for (int f = 1; f <= 10; f++) {
-        // res.push_back(plot::Point(f, -4.0));
-        res.push_back(plot::Point(f, 0.0));
-        res.push_back(plot::Point(f, rand() % y));
+        // res.push_back(Point(f, -4.0));
+        res.push_back(Point(f, 0.0));
+        res.push_back(Point(f, rand() % y));
     }
 
-    res.push_back(plot::Point(11.0, 0.0));
-    res.push_back(plot::Point(11.0, 0.0));
+    res.push_back(Point(11.0, 0.0));
+    res.push_back(Point(11.0, 0.0));
 
-    // plot::print(res);
+    // print(res);
     return res;
 }
 
-plot::PointVector create_big_line() {
-    plot::PointVector res;
+PointVector create_big_line() {
+    PointVector res;
 
     auto maxy = 1'000;
 
     for (int f = 1; f <= 1'000; f++) {
-        res.push_back(plot::Point(f, rand() % maxy * 2 - maxy));
+        res.push_back(Point(f, rand() % maxy * 2 - maxy));
     }
 
     return res;
 }
 
-plot::PointVector create_days() {
-    plot::PointVector res;
+PointVector create_days() {
+    PointVector res;
 
-    res.push_back(plot::Point(0.0, 0.0));
-    res.push_back(plot::Point(0.0, 0.0));
+    res.push_back(Point(0.0, 0.0));
+    res.push_back(Point(0.0, 0.0));
 
     for (int f = 1; f <= 7; f++) {
-        res.push_back(plot::Point(rand() % 100, f));
-        res.push_back(plot::Point(0.0, f));
+        res.push_back(Point(rand() % 100, f));
+        res.push_back(Point(0.0, f));
     }
 
-    res.push_back(plot::Point(0, 8));
-    res.push_back(plot::Point(0, 8));
+    res.push_back(Point(0, 8));
+    res.push_back(Point(0, 8));
 
-    // plot::print(res);
+    // print(res);
     return res;
 }
 
@@ -100,34 +100,34 @@ StringVector create_days2() {
     return res;
 }
 
-plot::PointVector create_line(int x) {
-    plot::PointVector res;
+PointVector create_line(int x) {
+    PointVector res;
 
     auto maxy = 1'000;
 
     for (int f = x; f <= 30; f += 2) {
-        res.push_back(plot::Point(f, rand() % maxy * 2 - maxy));
+        res.push_back(Point(f, rand() % maxy * 2 - maxy));
     }
 
-    // plot::print(res);
+    // print(res);
     return res;
 }
 
-plot::PointVector create_months() {
-    plot::PointVector res;
+PointVector create_months() {
+    PointVector res;
 
-    res.push_back(plot::Point(0.0, 0.0));
-    res.push_back(plot::Point(0.0, 0.0));
+    res.push_back(Point(0.0, 0.0));
+    res.push_back(Point(0.0, 0.0));
 
     for (int f = 1; f <= 12; f++) {
-        res.push_back(plot::Point(f + 0.0, 0.0));
-        res.push_back(plot::Point(f + 0.0, rand() % 100));
+        res.push_back(Point(f + 0.0, 0.0));
+        res.push_back(Point(f + 0.0, rand() % 100));
     }
 
-    res.push_back(plot::Point(13.0, 0.0));
-    res.push_back(plot::Point(13.0, 0.0));
+    res.push_back(Point(13.0, 0.0));
+    res.push_back(Point(13.0, 0.0));
 
-    // plot::print(res);
+    // print(res);
     return res;
 }
 
@@ -151,40 +151,40 @@ StringVector create_months2() {
     return res;
 }
 
-plot::PointVector create_neg() {
-    plot::PointVector res;
+PointVector create_neg() {
+    PointVector res;
 
     auto maxx = 12'500;
     auto maxy = 25'000;
 
     for (int f = 0; f < 50; f++) {
-        res.push_back(plot::Point(rand() % maxx * 2 - maxx, rand() % maxy * 2 - maxy));
+        res.push_back(Point(rand() % maxx * 2 - maxx, rand() % maxy * 2 - maxy));
     }
 
     return res;
 }
 
-plot::PointVector create_point(double x, double y) {
-    plot::PointVector res;
-    res.push_back(plot::Point(x, y));
+PointVector create_point(double x, double y) {
+    PointVector res;
+    res.push_back(Point(x, y));
     return res;
 }
 
-plot::PointVector create_random_small() {
-    plot::PointVector res;
+PointVector create_random_small() {
+    PointVector res;
 
     auto maxx = 1'250;
     auto maxy = 2'440;
 
     for (int f = 0; f < 20; f++) {
-        res.push_back(plot::Point(rand() % maxx, rand() % maxy));
+        res.push_back(Point(rand() % maxx, rand() % maxy));
     }
 
     return res;
 }
 
-plot::PointVector create_random_large() {
-    plot::PointVector res;
+PointVector create_random_large() {
+    PointVector res;
 
     auto maxx =  5'250'100;
     auto maxy = 222'125'000;
@@ -192,59 +192,59 @@ plot::PointVector create_random_large() {
 
     for (int f = 0; f < 50; f++) {
 #ifdef _WIN32
-        res.push_back(plot::Point(f * x, (rand() % maxy) * (rand() % maxx)));
+        res.push_back(Point(f * x, (rand() % maxy) * (rand() % maxx)));
 #else
-        res.push_back(plot::Point(f * x, rand() % maxy));
+        res.push_back(Point(f * x, rand() % maxy));
 #endif
     }
 
-    // plot::print(res);
+    // print(res);
     return res;
 }
 
-plot::PointVector create_random_very_small() {
-    plot::PointVector res;
+PointVector create_random_very_small() {
+    PointVector res;
 
     auto maxx = 123'250;
     auto maxy = 222'125'000;
 
     for (int f = 0; f < 100; f++) {
 #ifdef _WIN32
-        res.push_back(plot::Point((double) (rand() % maxx) / (double) (maxx * maxx), (double) ((rand() * rand()) % maxy) / (double) (maxy * maxy)));
+        res.push_back(Point((double) (rand() % maxx) / (double) (maxx * maxx), (double) ((rand() * rand()) % maxy) / (double) (maxy * maxy)));
 #else
-        res.push_back(plot::Point((double) (rand() % maxx) / (double) (maxx * maxx), (double) (rand() % maxy) / (double) (maxx * maxx)));
+        res.push_back(Point((double) (rand() % maxx) / (double) (maxx * maxx), (double) (rand() % maxy) / (double) (maxx * maxx)));
 #endif
     }
 
     return res;
 }
 
-plot::PointVector create_ref() {
-    plot::PointVector res;
+PointVector create_ref() {
+    PointVector res;
 
     for (int f = -10; f <= 10; f++) {
-        res.push_back(plot::Point(f * 10, f * 10));
+        res.push_back(Point(f * 10, f * 10));
     }
 
     return res;
 }
 
-plot::PointVector create_vector() {
-    plot::PointVector res;
+PointVector create_vector() {
+    PointVector res;
 
     auto maxx = 100;
     auto maxy = 100;
 
     for (int f = 0; f <= 20; f++) {
-        auto p = plot::Point((double) (rand() % maxx), (double) (rand() % maxy));
+        auto p = Point((double) (rand() % maxx), (double) (rand() % maxy));
         auto x = (rand() % 20) - 10;
         auto y = (rand() % 20) - 10;
 
         res.push_back(p);
-        res.push_back(plot::Point(p.x + x, p.y += y));
+        res.push_back(Point(p.x + x, p.y += y));
     }
 
-    // plot::print(res);
+    // print(res);
     return res;
 }
 
@@ -294,12 +294,12 @@ public:
 
     static void CallbackLoad(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        plot::load_data(w->plot, "plot.json");
+        Plot::Load(w->plot, "plot.json");
     }
 
     static void CallbackSave(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        plot::save_data(w->plot, "plot.json");
+        Plot::Save(w->plot, "plot.json");
     }
 
     int handle(int event) override {
@@ -328,16 +328,16 @@ public:
         else if (s == "" || s == MENU_10LINEs) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_line(-10), plot::TYPE::LINE, 3, "1 TYPE::LINE", color::RED);
-            plot->add_line(create_line(-9), plot::TYPE::LINE, 3, "2 TYPE::LINE", color::LIME);
-            plot->add_line(create_line(-8), plot::TYPE::LINE, 3, "3 TYPE::LINE", color::TEAL);
-            plot->add_line(create_line(-7), plot::TYPE::LINE, 3, "4 TYPE::LINE", color::YELLOW);
-            plot->add_line(create_line(-6), plot::TYPE::LINE, 3, "5 TYPE::LINE", color::CYAN);
-            plot->add_line(create_line(-5), plot::TYPE::LINE, 3, "6 TYPE::LINE", color::BEIGE);
-            plot->add_line(create_line(-4), plot::TYPE::LINE, 3, "7 TYPE::LINE", color::MAROON);
-            plot->add_line(create_line(-3), plot::TYPE::LINE, 3, "8 TYPE::LINE", color::OLIVE);
-            plot->add_line(create_line(-2), plot::TYPE::LINE, 3, "9 TYPE::LINE", color::BROWN);
-            plot->add_line(create_line(-1), plot::TYPE::LINE, 3, "10 TYPE::LINE", color::PINK);
+            plot->add_line(create_line(-10), Plot::LINE, 3, "1 Plot::LINE", color::RED);
+            plot->add_line(create_line(-9), Plot::LINE, 3, "2 Plot::LINE", color::LIME);
+            plot->add_line(create_line(-8), Plot::LINE, 3, "3 Plot::LINE", color::TEAL);
+            plot->add_line(create_line(-7), Plot::LINE, 3, "4 Plot::LINE", color::YELLOW);
+            plot->add_line(create_line(-6), Plot::LINE, 3, "5 Plot::LINE", color::CYAN);
+            plot->add_line(create_line(-5), Plot::LINE, 3, "6 Plot::LINE", color::BEIGE);
+            plot->add_line(create_line(-4), Plot::LINE, 3, "7 Plot::LINE", color::MAROON);
+            plot->add_line(create_line(-3), Plot::LINE, 3, "8 Plot::LINE", color::OLIVE);
+            plot->add_line(create_line(-2), Plot::LINE, 3, "9 Plot::LINE", color::BROWN);
+            plot->add_line(create_line(-1), Plot::LINE, 3, "10 Plot::LINE", color::PINK);
             plot->labels(MENU_10LINEs, MENU_10LINEs);
             plot->label_colors(color::RED, color::TEAL);
             plot->resize();
@@ -345,7 +345,7 @@ public:
         else if (s == MENU_BAR) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_bar(100), plot::TYPE::VECTOR, 21, "TYPE::VECTOR", color::TEAL);
+            plot->add_line(create_bar(100), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
             plot->labels(MENU_BAR, MENU_BAR);
             plot->label_colors(color::RED, color::TEAL);
             plot->resize();
@@ -353,7 +353,7 @@ public:
         else if (s=="1" || s == MENU_DAYS) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_days(), plot::TYPE::VECTOR, 21, "TYPE::VECTOR", color::TEAL);
+            plot->add_line(create_days(), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
             plot->custom_ylabels_for_points0(create_days2());
             plot->labels(MENU_DAYS, "Sum");
             plot->label_colors(color::RED, color::TEAL);
@@ -362,16 +362,16 @@ public:
         else if (s == MENU_LARGE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_random_large(), plot::TYPE::LINE, 3, "TYPE::LINE", color::TEAL);
-            plot->add_line(create_random_large(), plot::TYPE::LINE_DASH, 3, "TYPE::LINE_DASH", color::GREEN);
-            plot->add_line(create_random_large(), plot::TYPE::LINE_DOT, 3, "TYPE::LINE_DOT", color::RED);
+            plot->add_line(create_random_large(), Plot::LINE, 3, "Plot::LINE", color::TEAL);
+            plot->add_line(create_random_large(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::GREEN);
+            plot->add_line(create_random_large(), Plot::LINE_DOT, 3, "Plot::LINE_DOT", color::RED);
             plot->labels(MENU_LARGE, MENU_LARGE);
             plot->resize();
         }
         else if (s == MENU_LINE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_line(-10), plot::TYPE::LINE_WITH_SQUARE, 1, "TYPE::LINE_WITH_SQUARE", color::TEAL);
+            plot->add_line(create_line(-10), Plot::LINE_WITH_SQUARE, 1, "Plot::LINE_WITH_SQUARE", color::TEAL);
             plot->labels(MENU_LINE, MENU_LINE);
             plot->label_colors(color::RED, color::TEAL);
             plot->resize();
@@ -379,7 +379,7 @@ public:
         else if (s == MENU_MLINE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_big_line(), plot::TYPE::LINE, 1, "TYPE::LINE", color::TEAL);
+            plot->add_line(create_big_line(), Plot::LINE, 1, "Plot::LINE", color::TEAL);
             plot->labels("", MENU_MLINE);
             plot->label_colors(color::RED, color::TEAL);
             plot->resize();
@@ -387,8 +387,8 @@ public:
         else if (s=="1" || s == MENU_MONTHS) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_months(), plot::TYPE::VECTOR, 21, "TYPE::VECTOR", color::TEAL);
-            plot->add_line(create_months(), plot::TYPE::LINE_DASH, 3, "TYPE::LINE_DASH", color::RED);
+            plot->add_line(create_months(), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
+            plot->add_line(create_months(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::RED);
             plot->custom_xlabels_for_points0(create_months2());
             plot->labels(MENU_MONTHS, "Y-Sum");
             plot->label_colors(color::RED, color::TEAL);
@@ -397,7 +397,7 @@ public:
         else if (s == MENU_NP) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_neg(), plot::TYPE::SQUARE, 7, "TYPE::SQUARE", color::TEAL);
+            plot->add_line(create_neg(), Plot::SQUARE, 7, "Plot::SQUARE", color::TEAL);
             plot->labels(MENU_NP, MENU_NP);
             plot->label_colors(color::RED, color::TEAL);
             plot->resize();
@@ -405,30 +405,30 @@ public:
         else if (s == MENU_SMALL) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_random_small(), plot::TYPE::FILLED_CIRCLE, 21, "TYPE::FILLED_CIRCLE", color::TEAL);
-            plot->add_line(create_random_small(), plot::TYPE::SQUARE, 7, "TYPE::SQUARE", color::RED);
+            plot->add_line(create_random_small(), Plot::FILLED_CIRCLE, 21, "Plot::FILLED_CIRCLE", color::TEAL);
+            plot->add_line(create_random_small(), Plot::SQUARE, 7, "Plot::SQUARE", color::RED);
             plot->labels(MENU_SMALL, MENU_SMALL);
             plot->resize();
         }
         else if (s == MENU_VECTOR) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_vector(), plot::TYPE::VECTOR, 2, "TYPE::VECTOR", color::TEAL);
+            plot->add_line(create_vector(), Plot::VECTOR, 2, "Plot::VECTOR", color::TEAL);
             plot->labels(MENU_VECTOR, MENU_VECTOR);
             plot->resize();
         }
         else if (s == MENU_VSMALL) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_random_very_small(), plot::TYPE::CIRCLE, 9, "TYPE::CIRCLE", color::TEAL);
+            plot->add_line(create_random_very_small(), Plot::CIRCLE, 9, "Plot::CIRCLE", color::TEAL);
             plot->labels(MENU_VSMALL, MENU_VSMALL);
             plot->resize();
         }
         else {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_ref(), plot::TYPE::CIRCLE, 11, "TYPE::CIRCLE", color::TEAL);
-            plot->add_line(create_point(0.0, 0.0), plot::TYPE::SQUARE, 7, "TYPE::SQUARE", color::RED);
+            plot->add_line(create_ref(), Plot::CIRCLE, 11, "Plot::CIRCLE", color::TEAL);
+            plot->add_line(create_point(0.0, 0.0), Plot::SQUARE, 7, "Plot::SQUARE", color::RED);
             plot->labels(MENU_REF, MENU_REF);
             plot->label_colors(color::RED, color::TEAL);
             plot->resize();

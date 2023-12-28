@@ -8,447 +8,228 @@
 #include <algorithm>
 #include <math.h>
 namespace flw {
-    namespace chart {
-        static const int                MAX_VLINES      = 100;
-        static const int                MAX_LINE_WIDTH  = 100;
-        static const char* const        SHOW_LABELS     = "Show line labels";
-        static const char* const        SHOW_HLINES     = "Show horizontal lines";
-        static const char* const        SHOW_VLINES     = "Show vertical lines";
-        static const char* const        RESET_SELECT    = "Reset line selection and visibility";
-        static const char* const        SAVE_PNG        = "Save png to file...";
-        size_t bsearch(const PriceVector& prices, const Price& key) {
-            auto it = std::lower_bound(prices.begin(), prices.end(), key);
-            if (it == prices.end() || *it != key) {
-                return (size_t) -1;
+static const int                _CHART_MAX_VLINES      = 100;
+static const int                _CHART_MAX_LINE_WIDTH  = 100;
+static const char* const        _CHART_SHOW_LABELS     = "Show line labels";
+static const char* const        _CHART_SHOW_HLINES     = "Show horizontal lines";
+static const char* const        _CHART_SHOW_VLINES     = "Show vertical lines";
+static const char* const        _CHART_RESET_SELECT    = "Reset line selection and visibility";
+static const char* const        _CHART_SAVE_PNG        = "Save png to file...";
+static size_t _chart_bsearch(const PriceVector& prices, const Price& key) {
+    auto it = std::lower_bound(prices.begin(), prices.end(), key);
+    if (it == prices.end() || *it != key) {
+        return (size_t) -1;
+    }
+    else {
+        return std::distance(prices.begin(), it);
+    }
+}
+static int _chart_count_decimals(double number) {
+    number = fabs(number);
+    int    res     = 0;
+    int    len     = 0;
+    char*  end     = 0;
+    double inumber = (int64_t) number;
+    double fnumber = number - inumber;
+    char   buffer[100];
+    if (number > 999999999999999) {
+        snprintf(buffer, 100, "%.1f", fnumber);
+    }
+    else if (number > 9999999999999) {
+        snprintf(buffer, 100, "%.2f", fnumber);
+    }
+    else if (number > 999999999999) {
+        snprintf(buffer, 100, "%.3f", fnumber);
+    }
+    else if (number > 99999999999) {
+        snprintf(buffer, 100, "%.4f", fnumber);
+    }
+    else if (number > 9999999999) {
+        snprintf(buffer, 100, "%.5f", fnumber);
+    }
+    else if (number > 999999999) {
+        snprintf(buffer, 100, "%.6f", fnumber);
+    }
+    else if (number > 99999999) {
+        snprintf(buffer, 100, "%.7f", fnumber);
+    }
+    else if (number > 9999999) {
+        snprintf(buffer, 100, "%.8f", fnumber);
+    }
+    else {
+        snprintf(buffer, 100, "%.9f", fnumber);
+    }
+    len = strlen(buffer);
+    end = buffer + len - 1;
+    while (*end == '0') {
+        *end = 0;
+        end--;
+    }
+    res = strlen(buffer) - 2;
+    return res;
+}
+static PriceVector _chart_create_date_serie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
+    int         month   = -1;
+    Date        current = Date::FromString(start_date);
+    Date        stop    = Date::FromString(stop_date);
+    PriceVector res;
+    if (range == Date::RANGE::HOUR && current.year() < 1970) {
+        return res;
+    }
+    if (range == Date::RANGE::FRIDAY) {
+        while (current.weekday() != Date::DAY::FRIDAY)
+            current.add_days(1);
+    }
+    else if (range == Date::RANGE::SUNDAY) {
+        while (current.weekday() != Date::DAY::SUNDAY) {
+            current.add_days(1);
+        }
+    }
+    while (current <= stop) {
+        Date date(1, 1, 1);
+        if (range == Date::RANGE::DAY) {
+            date = Date(current);
+            current.add_days(1);
+        }
+        else if (range == Date::RANGE::WEEKDAY) {
+            Date::DAY weekday = current.weekday();
+            if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
+                date = Date(current);
+            }
+            current.add_days(1);
+        }
+        else if (range == Date::RANGE::FRIDAY || range == Date::RANGE::SUNDAY) {
+            date = Date(current);
+            current.add_days(7);
+        }
+        else if (range == Date::RANGE::MONTH) {
+            if (current.month() != month) {
+                current.day(current.month_days());
+                date = Date(current);
+                month = current.month();
+            }
+            current.add_months(1);
+        }
+        else if (range == Date::RANGE::HOUR) {
+            date = Date(current);
+            current.add_seconds(3600);
+        }
+        else if (range == Date::RANGE::MIN) {
+            date = Date(current);
+            current.add_seconds(60);
+        }
+        else if (range == Date::RANGE::SEC) {
+            date = Date(current);
+            current.add_seconds(1);
+        }
+        if (date.year() > 1) {
+            Price price;
+            if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
+                price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
             }
             else {
-                return std::distance(prices.begin(), it);
+                price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
             }
-        }
-        int count_decimals(double number) {
-            number = fabs(number);
-            int    res     = 0;
-            int    len     = 0;
-            char*  end     = 0;
-            double inumber = (int64_t) number;
-            double fnumber = number - inumber;
-            char   buffer[100];
-            if (number > 999999999999999) {
-                snprintf(buffer, 100, "%.1f", fnumber);
-            }
-            else if (number > 9999999999999) {
-                snprintf(buffer, 100, "%.2f", fnumber);
-            }
-            else if (number > 999999999999) {
-                snprintf(buffer, 100, "%.3f", fnumber);
-            }
-            else if (number > 99999999999) {
-                snprintf(buffer, 100, "%.4f", fnumber);
-            }
-            else if (number > 9999999999) {
-                snprintf(buffer, 100, "%.5f", fnumber);
-            }
-            else if (number > 999999999) {
-                snprintf(buffer, 100, "%.6f", fnumber);
-            }
-            else if (number > 99999999) {
-                snprintf(buffer, 100, "%.7f", fnumber);
-            }
-            else if (number > 9999999) {
-                snprintf(buffer, 100, "%.8f", fnumber);
-            }
-            else {
-                snprintf(buffer, 100, "%.9f", fnumber);
-            }
-            len = strlen(buffer);
-            end = buffer + len - 1;
-            while (*end == '0') {
-                *end = 0;
-                end--;
-            }
-            res = strlen(buffer) - 2;
-            return res;
-        }
-        flw::PriceVector create_date_serie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
-            int         month   = -1;
-            Date        current = Date::FromString(start_date);
-            Date        stop    = Date::FromString(stop_date);
-            PriceVector res;
-            if (range == Date::RANGE::HOUR && current.year() < 1970) {
-                return res;
-            }
-            if (range == Date::RANGE::FRIDAY) {
-                while (current.weekday() != Date::DAY::FRIDAY)
-                    current.add_days(1);
-            }
-            else if (range == Date::RANGE::SUNDAY) {
-                while (current.weekday() != Date::DAY::SUNDAY) {
-                    current.add_days(1);
-                }
-            }
-            while (current <= stop) {
-                Date date(1, 1, 1);
-                if (range == Date::RANGE::DAY) {
-                    date = Date(current);
-                    current.add_days(1);
-                }
-                else if (range == Date::RANGE::WEEKDAY) {
-                    Date::DAY weekday = current.weekday();
-                    if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
-                        date = Date(current);
-                    }
-                    current.add_days(1);
-                }
-                else if (range == Date::RANGE::FRIDAY || range == Date::RANGE::SUNDAY) {
-                    date = Date(current);
-                    current.add_days(7);
-                }
-                else if (range == Date::RANGE::MONTH) {
-                    if (current.month() != month) {
-                        current.day(current.month_days());
-                        date = Date(current);
-                        month = current.month();
-                    }
-                    current.add_months(1);
-                }
-                else if (range == Date::RANGE::HOUR) {
-                    date = Date(current);
-                    current.add_seconds(3600);
-                }
-                else if (range == Date::RANGE::MIN) {
-                    date = Date(current);
-                    current.add_seconds(60);
-                }
-                else if (range == Date::RANGE::SEC) {
-                    date = Date(current);
-                    current.add_seconds(1);
-                }
-                if (date.year() > 1) {
-                    Price price;
-                    if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
-                        price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
-                    }
-                    else {
-                        price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
-                    }
-                    if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
-                        res.push_back(price);
-                    }
-                }
-            }
-            return res;
-        }
-        std::string format_date(const Price& price, Date::FORMAT format) {
-            auto date = flw::Date::FromString(price.date.c_str());
-            return date.format(format);
-        }
-        std::string format_double(double num, int decimals, char del) {
-            char res[100];
-            *res = 0;
-            if (decimals < 0) {
-                decimals = chart::count_decimals(num);
-            }
-            if (decimals == 0) {
-                return util::format_int((int64_t) num, del);
-            }
-            if (fabs(num) < 9223372036854775807.0) {
-                char fr_str[100];
-                auto int_num    = (int64_t) fabs(num);
-                auto double_num = (double) (fabs(num) - int_num);
-                auto int_str    = util::format_int(int_num, del);
-                auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
-                if (len > 0 && len < 100) {
-                    if (num < 0.0) {
-                        res[0] = '-';
-                        res[1] = 0;
-                    }
-                    strncat(res, int_str.c_str(), 99);
-                    strncat(res, fr_str + 1, 99);
-                }
-            }
-            return res;
-        }
-        bool has_high_low(chart::TYPE chart_type) {
-            return chart_type == chart::TYPE::BAR || chart_type == chart::TYPE::VERTICAL || chart_type == chart::TYPE::CLAMP_VERTICAL;
-        }
-        bool has_resizable_width(chart::TYPE chart_type) {
-            return chart_type == chart::TYPE::BAR || chart_type == chart::TYPE::VERTICAL || chart_type == chart::TYPE::CLAMP_VERTICAL;
-        }
-        bool has_time(Date::RANGE date_range) {
-            return date_range == Date::RANGE::HOUR || date_range == Date::RANGE::MIN || date_range == Date::RANGE::SEC;
-        }
-        bool load_data(Chart* chart, std::string filename) {
-            auto wc  = WaitCursor();
-            auto buf = util::load_file(filename);
-            auto nv  = json::NodeVector();
-            auto ok  = 0;
-            chart->clear();
-            chart->redraw();
-            if (buf.p == nullptr) {
-                fl_alert("error: failed to load %s", filename.c_str());
-                return false;
-            }
-            auto err = json::parse(buf.p, nv, true);
-            if (err.pos >= 0) {
-                fl_alert("error: failed to parse %s (line %d and byte %d)", filename.c_str(), (int) err.line, (int) err.pos);
-                return false;
-            }
-            for (const auto& n : json::find_children(nv, nv[0])) {
-                auto children = json::find_children(nv, n);
-                if (n.name == "descr" && n.is_object() == true) {
-                    for (auto& n2 : children) {
-                        if ((n2.name == "type" && n2.value == "flw::chart") || (n2.name == "version" && n2.value == "1")) {
-                            ok++;
-                        }
-                    }
-                }
-                else if (ok != 2) {
-                    fl_alert("error: unknown file format");
-                    return false;
-                }
-                else if (n.name == "area" && n.is_object() == true) {
-                    int data[12] = { 0 };
-                    for (auto& n2 : children) {
-                        if (n2.name == "area0")             data[0] = (int) n2.toint();
-                        else if (n2.name == "area1")        data[1] = (int) n2.toint();
-                        else if (n2.name == "area2")        data[2] = (int) n2.toint();
-                        else if (n2.name == "tick_width")   data[3] = (int) n2.toint();
-                        else if (n2.name == "date_range")   data[4] = (int) n2.toint();
-                        else if (n2.name == "margin_left")  data[5] = (int) n2.toint();
-                        else if (n2.name == "margin_right") data[6] = (int) n2.toint();
-                        else if (n2.name == "labels")       data[7] = n2.tobool();
-                        else if (n2.name == "horizontal")   data[8] = n2.tobool();
-                        else if (n2.name == "vertical")     data[9] = n2.tobool();
-                    }
-                    data[10] += chart->area_size(data[0], data[1], data[2]) == false;
-                    data[10] += chart->tick_width(data[3]) == false;
-                    data[10] += chart->date_range((Date::RANGE) data[4]) == false;
-                    data[10] += chart->margin(data[5], data[6]) == false;
-                    chart->view_options(data[7], data[8], data[9]);
-                    if (data[10] != 0) {
-                        fl_alert("error: failed to set area data started on position %u", (unsigned) n.textpos);
-                        chart->clear();
-                        return false;
-                    }
-                }
-                else if (n.name == "line" && n.is_object() == true) {
-                    int         area[6]  = { 0 };
-                    double      clamp[3] = { 0.0 };
-                    std::string label;
-                    PriceVector prices;
-                    for (auto& n2 : children) {
-                        if (n2.name == "label" && n2.is_string() == true)          label = n2.value;
-                        else if (n2.name == "area" && n2.is_number() == true)      area[0] = (int) n2.toint();
-                        else if (n2.name == "type" && n2.is_number() == true)      area[1] = (int) n2.toint();
-                        else if (n2.name == "align" && n2.is_number() == true)     area[2] = (int) n2.toint();
-                        else if (n2.name == "color" && n2.is_number() == true)     area[3] = (int) n2.toint();
-                        else if (n2.name == "width" && n2.is_number() == true)     area[4] = (int) n2.toint();
-                        else if (n2.name == "clamp_min" && n2.is_number() == true) clamp[0] = n2.tonumber();
-                        else if (n2.name == "clamp_max" && n2.is_number() == true) clamp[1] = n2.tonumber();
-                        else if (n2.name == "p" && n2.is_array() == true) {
-                            auto pv   = json::find_children(nv, n2);
-                            auto date = Date::FromString(pv[0].value.c_str()).year() > 1;
-                            if (pv.size() == 2 && date == true && pv[1].is_number() == true) {
-                                prices.push_back(Price(pv[0].value, pv[1].tonumber()));
-                            }
-                            else if (pv.size() == 4 && date == true && pv[1].is_number() == true && pv[2].is_number() == true && pv[3].is_number() == true) {
-                                prices.push_back(Price(pv[0].value, pv[1].tonumber(), pv[2].tonumber(), pv[3].tonumber()));
-                            }
-                            else {
-                                fl_alert("error: failed to add price data that started on position %u", (unsigned) pv[0].textpos);
-                                chart->clear();
-                                return false;
-                            }
-                        }
-                    }
-                    if (chart->add_line(area[0], prices, label, (chart::TYPE) area[1], area[2], area[3], area[4], clamp[0], clamp[1]) == false) {
-                        fl_alert("error: failed to add line that started on position %u", (unsigned) n.textpos);
-                        chart->clear();
-                        return false;
-                    }
-                }
-                else if (n.name == "blockdates" && n.is_array() == true) {
-                    PriceVector dates;
-                    for (auto& n2 : children) {
-                        if (n2.name == "" && n2.is_string() == true) {
-                            auto d = Date::FromString(n2.value.c_str());
-                            if (d.year() > 1) {
-                                dates.push_back(Price(n2.value, 0.0));
-                            }
-                            else {
-                                fl_alert("error: failed to add block date that started on position %u", (unsigned) n2.textpos);
-                                chart->clear();
-                                return false;
-                            }
-                        }
-                    }
-                    chart->block_dates(dates);
-                }
-            }
-            chart->init(true);
-            return true;
-        }
-        bool save_data(const Chart* chart, std::string filename, double max_diff_high_low) {
-            auto nv = json::NodeVector();
-            auto ac = 0;
-            FLW_JSON_START(nv,
-                FLW_JSON_START_OBJECT(
-                    FLW_JSON_ADD_OBJECT("descr",
-                        FLW_JSON_ADD_STRING("type", "flw::chart")
-                        FLW_JSON_ADD_INT("version", 1)
-                    )
-                    FLW_JSON_ADD_OBJECT("area",
-                        for (auto& area : chart->_areas) {
-                        FLW_JSON_ADD_INT(util::format("area%d", ac++), area.percent)
-                        }
-                        FLW_JSON_ADD_UINT("tick_width", chart->_tick_width)
-                        FLW_JSON_ADD_UINT("date_range", chart->_date_range)
-                        FLW_JSON_ADD_UINT("margin_left", chart->_margin_left)
-                        FLW_JSON_ADD_UINT("margin_right", chart->_margin_right)
-                        FLW_JSON_ADD_BOOL("labels", chart->_view.labels)
-                        FLW_JSON_ADD_BOOL("horizontal", chart->_view.horizontal)
-                        FLW_JSON_ADD_BOOL("vertical", chart->_view.vertical)
-                    )
-                    ac = 0;
-                    for (const auto& area : chart->_areas) {
-                    for (const auto& line : area.lines) {
-                    if (line.points.size() > 0) {
-                    FLW_JSON_ADD_OBJECT("line",
-                        FLW_JSON_ADD_STRING("label", line.label)
-                        FLW_JSON_ADD_UINT("area", ac)
-                        FLW_JSON_ADD_UINT("type", line.type)
-                        FLW_JSON_ADD_UINT("align", line.align)
-                        FLW_JSON_ADD_UINT("color", line.color)
-                        FLW_JSON_ADD_INT("width", line.width)
-                        FLW_JSON_ADD_NUMBER("clamp_min", line.clamp_min)
-                        FLW_JSON_ADD_NUMBER("clamp_max", line.clamp_max)
-                        for (auto& price : line.points) {
-                        FLW_JSON_ADD_ARRAY_NL("p",
-                            FLW_JSON_ADD_STRING_TO_ARRAY(chart::format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO))
-                            if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
-                            FLW_JSON_ADD_NUMBER_TO_ARRAY(price.high)
-                            FLW_JSON_ADD_NUMBER_TO_ARRAY(price.low)
-                            }
-                            FLW_JSON_ADD_NUMBER_TO_ARRAY(price.close)
-                        )
-                        }
-                    )
-                    }
-                    }
-                    ac++;
-                    }
-                    if (chart->_block_dates.size() > 0) {
-                    FLW_JSON_ADD_ARRAY("blockdates",
-                        for (auto& price : chart->_block_dates) {
-                        FLW_JSON_ADD_STRING_TO_ARRAY(price.date)
-                        }
-                    )
-                    }
-                )
-            )
-            auto js = json::tostring(nv);
-            return util::save_file(filename, js.c_str(), js.length());
-        }
-    }
-}
-flw::Price::Price() {
-    high  = 0.0;
-    low   = 0.0;
-    close = 0.0;
-    vol   = 0.0;
-}
-flw::Price::Price(const std::string& date, double value) {
-    this->date = date;
-    high       = value;
-    low        = value;
-    close      = value;
-    vol        = value;
-}
-flw::Price::Price(const std::string& date, double high, double low, double close, double vol) {
-    this->date  = date;
-    this->high  = high;
-    this->low   = low;
-    this->close = close;
-    this->vol   = vol;
-#ifdef DEBUG
-    if (close > high || close < low || high < low) {
-        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
-    }
-#endif
-}
-flw::chart::Area::Area() {
-    for (size_t f = 0; f < chart::MAX_LINE; f++) {
-        lines.push_back(chart::Line());
-    }
-    clear(false);
-}
-void flw::chart::Area::clear(bool clear_data) {
-    count    = 0;
-    x        = 0.0;
-    y        = 0.0;
-    w        = 0.0;
-    h        = 0.0;
-    selected = 0;
-    left.clear();
-    right.clear();
-    if (clear_data == true) {
-        percent = 0;
-        for (size_t f = 0; f < chart::MAX_LINE; f++) {
-            lines[f] = chart::Line();
-        }
-    }
-}
-void flw::chart::Area::debug(int num) const {
-#ifdef DEBUG
-    auto count = 1;
-    for (const auto& line : lines) {
-        if (line.points.size() > 0) {
-            count = 0;
-        }
-    }
-    if (count == 0 || num == 0) {
-        fprintf(stderr, "\t----------------------\n");
-        fprintf(stderr, "\tflw::chart::Area: %d\n", num);
-        fprintf(stderr, "\t\tcount:    %d\n", (int) count);
-        fprintf(stderr, "\t\tx:        %4.0f\n", x);
-        fprintf(stderr, "\t\ty:        %4.0f\n", y);
-        fprintf(stderr, "\t\tw:        %4.0f\n", w);
-        fprintf(stderr, "\t\th:        %4.0f\n", h);
-        fprintf(stderr, "\t\tpercent:  %4d\n", percent);
-        fprintf(stderr, "\t\tselected: %4d\n", (int) selected);
-        left.debug("left");
-        right.debug("right");
-        count = 0;
-        for (const auto& line : lines) {
-            if (line.points.size() > 0) {
-                line.debug(count++);
+            if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
+                res.push_back(price);
             }
         }
     }
-#else
-    (void) num;
-#endif
+    return res;
 }
-flw::chart::Line::Line() {
+static std::string _chart_format_date(const Price& price, Date::FORMAT format) {
+    auto date = Date::FromString(price.date.c_str());
+    return date.format(format);
+}
+static std::string _chart_format_double(double num, int decimals, char del) {
+    char res[100];
+    *res = 0;
+    if (decimals < 0) {
+        decimals = _chart_count_decimals(num);
+    }
+    if (decimals == 0) {
+        return util::format_int((int64_t) num, del);
+    }
+    if (fabs(num) < 9223372036854775807.0) {
+        char fr_str[100];
+        auto int_num    = (int64_t) fabs(num);
+        auto double_num = (double) (fabs(num) - int_num);
+        auto int_str    = util::format_int(int_num, del);
+        auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+        if (len > 0 && len < 100) {
+            if (num < 0.0) {
+                res[0] = '-';
+                res[1] = 0;
+            }
+            strncat(res, int_str.c_str(), 99);
+            strncat(res, fr_str + 1, 99);
+        }
+    }
+    return res;
+}
+static bool _chart_has_high_low(Chart::TYPE chart_type) {
+    return chart_type == Chart::BAR || chart_type == Chart::VERTICAL || chart_type == Chart::CLAMP_VERTICAL;
+}
+static bool _chart_has_resizable_width(Chart::TYPE chart_type) {
+    return chart_type == Chart::BAR || chart_type == Chart::VERTICAL || chart_type == Chart::CLAMP_VERTICAL;
+}
+static bool _chart_has_time(Date::RANGE date_range) {
+    return date_range == Date::RANGE::HOUR || date_range == Date::RANGE::MIN || date_range == Date::RANGE::SEC;
+}
+static Chart::TYPE _chart_string_to_type(std::string name) {
+    if (name == "LINE") return Chart::LINE;
+    else if (name == "BAR") return Chart::BAR;
+    else if (name == "VERTICAL") return Chart::VERTICAL;
+    else if (name == "CLAMP_VERTICAL") return Chart::CLAMP_VERTICAL;
+    else if (name == "HORIZONTAL") return Chart::HORIZONTAL;
+    else if (name == "EXPAND_VERTICAL") return Chart::EXPAND_VERTICAL;
+    else if (name == "EXPAND_HORIZONTAL") return Chart::EXPAND_HORIZONTAL;
+    else return Chart::LINE;
+}
+static std::string _chart_type_to_string(Chart::TYPE type) {
+    assert(type >= 0 && type <= 6);
+    static const char* NAMES[] = { "LINE", "BAR", "VERTICAL", "CLAMP_VERTICAL", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL", "", "", };
+    return NAMES[type];
+}
+struct ChartLine {
+    Fl_Align                    align;
+    Chart::TYPE                 type;
+    Fl_Color                    color;
+    bool                        visible;
+    int                         width;
+    double                      clamp_max;
+    double                      clamp_min;
+    std::string                 label;
+    double                      max;
+    double                      min;
+    PriceVector                 points;
+                                ChartLine();
+                                ~ChartLine()
+                                    { clear(); }
+    void                        clear();
+    void                        debug(int num) const;
+    bool                        set(const PriceVector& points, std::string label, Chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
+};
+ChartLine::ChartLine() {
     clear();
 }
-void flw::chart::Line::clear() {
+void ChartLine::clear() {
     points.clear();
     align     = FL_ALIGN_CENTER;
-    type      = chart::TYPE::LINE;
-    clamp_max = chart::MAX_VAL;
-    clamp_min = chart::MIN_VAL;
+    type      = Chart::LINE;
+    clamp_max = Chart::MAX_VAL;
+    clamp_min = Chart::MIN_VAL;
     color     = FL_FOREGROUND_COLOR;
     label     = "";
-    max       = chart::MIN_VAL;
-    min       = chart::MAX_VAL;
+    max       = Chart::MIN_VAL;
+    min       = Chart::MAX_VAL;
     visible   = true;
     width     = 1;
 }
-void flw::chart::Line::debug(int num) const {
+void ChartLine::debug(int num) const {
 #ifdef DEBUG
     fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tflw::chart::Line: %d\n", num);
+    fprintf(stderr, "\t\tChartLine: %d\n", num);
     fprintf(stderr, "\t\t\talign:      %25s\n", (align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
     fprintf(stderr, "\t\t\ttype:       %25d\n", (int) type);
     fprintf(stderr, "\t\t\tclamp_max:  %25.4f\n", clamp_max);
@@ -467,11 +248,11 @@ void flw::chart::Line::debug(int num) const {
     (void) num;
 #endif
 }
-bool flw::chart::Line::set(const PriceVector& points, std::string label, chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max) {
-    if (width == 0 || width > MAX_LINE_WIDTH || (int) type < 0 || (int) type > (int) chart::TYPE::LAST) {
+bool ChartLine::set(const PriceVector& points, std::string label, Chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max) {
+    if (width == 0 || width > _CHART_MAX_LINE_WIDTH || (int) type < 0 || (int) type > (int) Chart::LAST) {
         return false;
     }
-    if (width < 0 && chart::has_resizable_width(type) == false) {
+    if (width < 0 && _chart_has_resizable_width(type) == false) {
         return false;
     }
     if (align != FL_ALIGN_LEFT && align != FL_ALIGN_RIGHT) {
@@ -496,10 +277,23 @@ bool flw::chart::Line::set(const PriceVector& points, std::string label, chart::
     }
     return true;
 }
-flw::chart::Scale::Scale() {
+struct ChartScale {
+    double                      max;
+    double                      min;
+    double                      pixel;
+    double                      tick;
+                                ChartScale();
+    void                        calc(int height);
+    void                        clear();
+    void                        debug(const char* name) const;
+    double                      diff() const
+                                    { return max - min; }
+    void                        fix_height();
+};
+ChartScale::ChartScale() {
     clear();
 }
-void flw::chart::Scale::calc(int height) {
+void ChartScale::calc(int height) {
     auto range = diff();
     tick  = 0.0;
     pixel = 0.0;
@@ -535,16 +329,16 @@ void flw::chart::Scale::calc(int height) {
         }
     }
 }
-void flw::chart::Scale::clear() {
-    min   = chart::MAX_VAL;
-    max   = chart::MIN_VAL;
+void ChartScale::clear() {
+    min   = Chart::MAX_VAL;
+    max   = Chart::MIN_VAL;
     tick  = 0.0;
     pixel = 0.0;
 }
-void flw::chart::Scale::debug(const char* name) const {
+void ChartScale::debug(const char* name) const {
 #ifdef DEBUG
     fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tflw::chart::Scale: %s\n", name);
+    fprintf(stderr, "\t\tChartScale: %s\n", name);
     fprintf(stderr, "\t\t\tmin:   %30.6f\n", min);
     fprintf(stderr, "\t\t\tmax:   %30.6f\n", max);
     fprintf(stderr, "\t\t\tDiff:  %30.6f\n", diff());
@@ -554,7 +348,7 @@ void flw::chart::Scale::debug(const char* name) const {
     (void) name;
 #endif
 }
-void flw::chart::Scale::fix_height() {
+void ChartScale::fix_height() {
     if (fabs(max - min) < 0.000001) {
         if (min >= 0.0) {
             min *= 0.9;
@@ -570,7 +364,104 @@ void flw::chart::Scale::fix_height() {
         }
     }
 }
-flw::Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+struct ChartArea {
+    size_t                      count;
+    double                      h;
+    ChartScale                  left;
+    LineVector                  lines;
+    int                         percent;
+    ChartScale                  right;
+    size_t                      selected;
+    double                      w;
+    double                      x;
+    double                      y;
+                                ChartArea();
+    void                        clear(bool clear_data);
+    void                        debug(int num) const;
+    int                         x2() const
+                                    { return (int) (x + w); }
+    int                         y2() const
+                                    { return (int) (y + h); }
+};
+ChartArea::ChartArea() {
+    for (size_t f = 0; f < Chart::MAX_LINE; f++) {
+        lines.push_back(ChartLine());
+    }
+    clear(false);
+}
+void ChartArea::clear(bool clear_data) {
+    count    = 0;
+    x        = 0.0;
+    y        = 0.0;
+    w        = 0.0;
+    h        = 0.0;
+    selected = 0;
+    left.clear();
+    right.clear();
+    if (clear_data == true) {
+        percent = 0;
+        for (size_t f = 0; f < Chart::MAX_LINE; f++) {
+            lines[f] = ChartLine();
+        }
+    }
+}
+void ChartArea::debug(int num) const {
+#ifdef DEBUG
+    auto count = 0;
+    for (const auto& line : lines) {
+        if (line.points.size() > 0) {
+            count++;
+        }
+    }
+    if (count > 0 || num == 0) {
+        fprintf(stderr, "\t----------------------\n");
+        fprintf(stderr, "\tChartArea: %d\n", num);
+        fprintf(stderr, "\t\tlines:    %4d\n", count);
+        fprintf(stderr, "\t\tx:        %4.0f\n", x);
+        fprintf(stderr, "\t\ty:        %4.0f\n", y);
+        fprintf(stderr, "\t\tw:        %4.0f\n", w);
+        fprintf(stderr, "\t\th:        %4.0f\n", h);
+        fprintf(stderr, "\t\tpercent:  %4d\n", percent);
+        fprintf(stderr, "\t\tselected: %4d\n", (int) selected);
+        left.debug("left");
+        right.debug("right");
+        count = 0;
+        for (const auto& line : lines) {
+            if (line.points.size() > 0) {
+                line.debug(count++);
+            }
+        }
+    }
+#else
+    (void) num;
+#endif
+}
+Price::Price() {
+    high  = 0.0;
+    low   = 0.0;
+    close = 0.0;
+    vol   = 0.0;
+}
+Price::Price(const std::string& date, double value) {
+    this->date = date;
+    high       = value;
+    low        = value;
+    close      = value;
+    vol        = value;
+}
+Price::Price(const std::string& date, double high, double low, double close, double vol) {
+    this->date  = date;
+    this->high  = high;
+    this->low   = low;
+    this->close = close;
+    this->vol   = vol;
+#ifdef DEBUG
+    if (close > high || close < low || high < low) {
+        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
+    }
+#endif
+}
+Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     color(FL_BACKGROUND2_COLOR);
@@ -591,36 +482,39 @@ flw::Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W,
     add(_scroll);
     _scroll->type(FL_HORIZONTAL);
     _scroll->callback(Chart::_CallbackScrollbar, this);
-    _menu->add(chart::SHOW_LABELS, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(chart::SHOW_HLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(chart::SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(chart::RESET_SELECT, 0, Chart::_CallbackReset, this);
-    _menu->add(chart::SAVE_PNG, 0, Chart::_CallbackSavePng, this);
+    _menu->add(_CHART_SHOW_LABELS, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_HLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_CHART_RESET_SELECT, 0, Chart::_CallbackReset, this);
+    _menu->add(_CHART_SAVE_PNG, 0, Chart::_CallbackSavePng, this);
 #ifdef DEBUG
     _menu->add("Debug", 0, Chart::_CallbackDebug, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
-    _areas.push_back(chart::Area());
-    _areas.push_back(chart::Area());
-    _areas.push_back(chart::Area());
+    _areas.push_back(ChartArea());
+    _areas.push_back(ChartArea());
+    _areas.push_back(ChartArea());
     clear();
     update_pref();
     view_options();
 }
-bool flw::Chart::add_line(size_t area, const PriceVector& points, std::string line_label, chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width, double clamp_min, double clamp_max) {
+bool Chart::add_line(size_t area, const PriceVector& points, std::string line_label, Chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width, double clamp_min, double clamp_max) {
     _area = nullptr;
     redraw();
-    if (area >= chart::MAX_AREA || _areas[area].count >= chart::MAX_LINE) {
+    if (area >= Chart::MAX_AREA || _areas[area].count >= Chart::MAX_LINE) {
+        return false;
+    }
+    if (chart_type < Chart::LINE || chart_type > Chart::LAST) {
         return false;
     }
     if (_areas[area].lines[_areas[area].count].set(points, line_label, chart_type, line_align, line_color, line_width, clamp_min, clamp_max) == false) {
-        _areas[area].lines[_areas[area].count] = chart::Line();
+        _areas[area].lines[_areas[area].count] = ChartLine();
         return false;
     }
     _areas[area].count++;
     return true;
 }
-bool flw::Chart::area_size(int area1, int area2, int area3) {
+bool Chart::area_size(int area1, int area2, int area3) {
     _area = nullptr;
     if (area1 < 0 || area1 > 100 || area2 < 0 || area2 > 100 || area3 < 0 || area3 > 100 || area1 + area2 + area3 != 100) {
         return false;
@@ -630,14 +524,14 @@ bool flw::Chart::area_size(int area1, int area2, int area3) {
     _areas[2].percent = area3;
     return true;
 }
-void flw::Chart::_calc_area_height() {
+void Chart::_calc_area_height() {
     int last   = 0;
     int addh   = 0;
     int height = 0;
     _top_space    = flw::PREF_FIXED_FONTSIZE;
     _bottom_space = flw::PREF_FIXED_FONTSIZE * 3 + Fl::scrollbar_size();
     height        = h() - (_bottom_space + _top_space);
-    for (size_t f = 1; f < chart::MAX_AREA; f++) {
+    for (size_t f = 1; f < Chart::MAX_AREA; f++) {
         const auto& area = _areas[f];
         if (area.percent >= 10) {
             height -= PREF_FIXED_FONTSIZE;
@@ -645,7 +539,7 @@ void flw::Chart::_calc_area_height() {
     }
     _areas[0].y = _top_space;
     _areas[0].h = (int) ((_areas[0].percent / 100.0) * height);
-    for (size_t f = 1; f < chart::MAX_AREA; f++) {
+    for (size_t f = 1; f < Chart::MAX_AREA; f++) {
         const auto& prev = _areas[f - 1];
         auto&       area = _areas[f];
         if (area.percent > 10) {
@@ -659,7 +553,7 @@ void flw::Chart::_calc_area_height() {
         _areas[last].h = (int) (height - addh);
     }
 }
-void flw::Chart::_calc_area_width() {
+void Chart::_calc_area_width() {
     const double width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
     _ticks     = (int) (width / _tick_width);
     _top_space = flw::PREF_FIXED_FONTSIZE;
@@ -685,7 +579,7 @@ void flw::Chart::_calc_area_width() {
         area.w = width;
     }
 }
-void flw::Chart::_calc_dates() {
+void Chart::_calc_dates() {
     std::string min       = "";
     std::string max       = "";
     bool        long_date = false;
@@ -725,11 +619,11 @@ void flw::Chart::_calc_dates() {
     }
     _dates.clear();
     if (min != "") {
-        _dates = chart::create_date_serie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
+        _dates = _chart_create_date_serie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
         redraw();
     }
 }
-void flw::Chart::_calc_ymin_ymax() {
+void Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
         area.left.clear();
         area.right.clear();
@@ -737,14 +631,14 @@ void flw::Chart::_calc_ymin_ymax() {
             if (line.points.size() > 0) {
                 const int stop    = _date_start + _ticks;
                 int       current = _date_start;
-                double    max     = chart::MIN_VAL;
-                double    min     = chart::MAX_VAL;
+                double    max     = Chart::MIN_VAL;
+                double    min     = Chart::MAX_VAL;
                 while (current <= stop && current < (int) _dates.size()) {
                     const Price& date  = _dates[current];
-                    const size_t index = chart::bsearch(line.points, date);
+                    const size_t index = _chart_bsearch(line.points, date);
                     if (index != (size_t) -1) {
                         const Price& price = line.points[index];
-                        if (chart::has_high_low(line.type) == true) {
+                        if (_chart_has_high_low(line.type) == true) {
                             min = price.low;
                             max = price.high;
                         }
@@ -752,10 +646,10 @@ void flw::Chart::_calc_ymin_ymax() {
                             min = price.close;
                             max = price.close;
                         }
-                        if ((int64_t) line.clamp_min > chart::MIN_VAL) {
+                        if ((int64_t) line.clamp_min > Chart::MIN_VAL) {
                             min = line.clamp_min;
                         }
-                        if ((int64_t) line.clamp_max < chart::MAX_VAL) {
+                        if ((int64_t) line.clamp_max < Chart::MAX_VAL) {
                             max = line.clamp_max;
                         }
                         if (line.align == FL_ALIGN_LEFT) {
@@ -783,43 +677,13 @@ void flw::Chart::_calc_ymin_ymax() {
         area.right.fix_height();
     }
 }
-void flw::Chart::_calc_yscale() {
+void Chart::_calc_yscale() {
     for (auto& area : _areas) {
         area.left.calc(area.h);
         area.right.calc(area.h);
     }
 }
-void flw::Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
-    self->debug();
-}
-void flw::Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
-    self->_view.labels     = menu::item_value(self->_menu, chart::SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, chart::SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, chart::SHOW_HLINES);
-    self->redraw();
-}
-void flw::Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
-    for (auto& area : self->_areas) {
-        area.selected = 0;
-        for (auto& line : area.lines) {
-            line.visible = true;
-        }
-    }
-    self->redraw();
-}
-void flw::Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
-    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
-}
-void flw::Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
-    self->_date_start = self->_scroll->value();
-    self->init(false);
-}
-void flw::Chart::clear() {
+void Chart::clear() {
     ((Fl_Valuator*) _scroll)->value(0);
     _block_dates.clear();
     _dates.clear();
@@ -841,73 +705,75 @@ void flw::Chart::clear() {
     tick_width();
     init(false);
 }
-void flw::Chart::_create_tooltip(bool ctrl) {
+void Chart::_create_tooltip(bool ctrl) {
     const int X   = Fl::event_x();
     const int Y   = Fl::event_y();
     auto      old = _tooltip;
     _tooltip = "";
-    if (_area != nullptr) {
-        const auto date_format = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
-        const int  stop        = _date_start + _ticks;
-        int        start       = _date_start;
-        int        X1          = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
-        int        left_dec    = 0;
-        int        right_dec   = 0;
-        if (_area->left.tick < 10.0 ) {
-            left_dec = chart::count_decimals(_area->left.tick) + 1;
-        }
-        if (_area->right.tick < 10.0 ) {
-            right_dec = chart::count_decimals(_area->right.tick) + 1;
-        }
-        while (start <= stop && start < (int) _dates.size()) {
-            if (X >= X1 && X <= X1 + _tick_width - 1) {
-                const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(date_format);
-                _tooltip = fancy_date;
-                if (ctrl == false || _area->lines[_area->selected].points.size() == 0) {
-                    const double ydiff = (double) ((y() + _area->y2()) - Y);
-                    std::string  left;
-                    std::string  right;
-                    if (_area->left.max > _area->left.min) {
-                        left = chart::format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
-                    }
-                    if (_area->right.max > _area->right.min) {
-                        right = chart::format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
-                    }
-                    const size_t len = (left.length() > right.length()) ? left.length() : right.length();
-                    if (left != "" && right != "") {
-                        _tooltip = util::format("%s\nleft:  %*s\nright: %*s", fancy_date.c_str(), (int) len, left.c_str(), (int) len, right.c_str());
-                    }
-                    else if (left != "") {
-                        _tooltip = util::format("%s\nleft: %*s", fancy_date.c_str(), (int) len, left.c_str());
-                    }
-                    else if (right != "") {
-                        _tooltip = util::format("%s\nright: %*s", fancy_date.c_str(), (int) len, right.c_str());
-                    }
+    if (_area == nullptr) {
+        Fl::redraw();
+        return;
+    }
+    const auto date_format = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
+    const int  stop        = _date_start + _ticks;
+    int        start       = _date_start;
+    int        X1          = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+    int        left_dec    = 0;
+    int        right_dec   = 0;
+    if (_area->left.tick < 10.0 ) {
+        left_dec = _chart_count_decimals(_area->left.tick) + 1;
+    }
+    if (_area->right.tick < 10.0 ) {
+        right_dec = _chart_count_decimals(_area->right.tick) + 1;
+    }
+    while (start <= stop && start < (int) _dates.size()) {
+        if (X >= X1 && X <= X1 + _tick_width - 1) {
+            const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(date_format);
+            _tooltip = fancy_date;
+            if (ctrl == false || _area->lines[_area->selected].points.size() == 0) {
+                const double ydiff = (double) ((y() + _area->y2()) - Y);
+                std::string  left;
+                std::string  right;
+                if (_area->left.max > _area->left.min) {
+                    left = _chart_format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
                 }
-                else {
-                    const auto&  line  = _area->lines[_area->selected];
-                    const size_t index = chart::bsearch(line.points, _dates[start].date);
-                    if (index != (size_t) -1) {
-                        const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
-                        const auto price = line.points[index];
-                        auto       high  = chart::format_double(price.high, dec, '\'');
-                        auto       low   = chart::format_double(price.low, dec, '\'');
-                        auto       close = chart::format_double(price.close, dec, '\'');
-                        const auto len   = (low.length() > high.length()) ? low.length() : high.length();
-                        _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), (int) len, high.c_str(), (int) len, close.c_str(), (int) len, low.c_str());
-                    }
+                if (_area->right.max > _area->right.min) {
+                    right = _chart_format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
                 }
-                break;
+                const size_t len = (left.length() > right.length()) ? left.length() : right.length();
+                if (left != "" && right != "") {
+                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s", fancy_date.c_str(), (int) len, left.c_str(), (int) len, right.c_str());
+                }
+                else if (left != "") {
+                    _tooltip = util::format("%s\nleft: %*s", fancy_date.c_str(), (int) len, left.c_str());
+                }
+                else if (right != "") {
+                    _tooltip = util::format("%s\nright: %*s", fancy_date.c_str(), (int) len, right.c_str());
+                }
             }
-            X1    += _tick_width;
-            start += 1;
+            else {
+                const auto&  line  = _area->lines[_area->selected];
+                const size_t index = _chart_bsearch(line.points, _dates[start].date);
+                if (index != (size_t) -1) {
+                    const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
+                    const auto price = line.points[index];
+                    auto       high  = _chart_format_double(price.high, dec, '\'');
+                    auto       low   = _chart_format_double(price.low, dec, '\'');
+                    auto       close = _chart_format_double(price.close, dec, '\'');
+                    const auto len   = (low.length() > high.length()) ? low.length() : high.length();
+                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), (int) len, high.c_str(), (int) len, close.c_str(), (int) len, low.c_str());
+                }
+            }
+            break;
         }
+        X1    += _tick_width;
+        start += 1;
     }
     if (_tooltip != "" || old != "") {
         redraw();
     }
 }
-bool flw::Chart::date_range(Date::RANGE range) {
+bool Chart::date_range(Date::RANGE range) {
     if ((int) range < 0 || (int) range > (int) Date::RANGE::LAST) {
         return false;
     }
@@ -915,7 +781,7 @@ bool flw::Chart::date_range(Date::RANGE range) {
     _date_format = (_date_range == Date::RANGE::HOUR || _date_range == Date::RANGE::MIN || _date_range == Date::RANGE::SEC) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO;
     return true;
 }
-void flw::Chart::debug() const {
+void Chart::debug() const {
 #ifdef DEBUG
     Price first, last, start, end;
     if (_dates.size()) {
@@ -932,7 +798,7 @@ void flw::Chart::debug() const {
     }
     fprintf(stderr, "\n");
     fprintf(stderr, "--------------------------------------------\n");
-    fprintf(stderr, "flw::Chart:\n");
+    fprintf(stderr, "Chart:\n");
     fprintf(stderr, "\tblock_dates:     %19d\n", (int) _block_dates.size());
     fprintf(stderr, "\tbottom_space:    %19d\n", _bottom_space);
     fprintf(stderr, "\tcw:              %19d\n", _cw);
@@ -963,7 +829,7 @@ void flw::Chart::debug() const {
     fflush(stderr);
 #endif
 }
-void flw::Chart::draw() {
+void Chart::draw() {
 #ifdef DEBUG
 #endif
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
@@ -985,7 +851,7 @@ void flw::Chart::draw() {
 #ifdef DEBUG
 #endif
 }
-void flw::Chart::_draw_area(const chart::Area& area) {
+void Chart::_draw_area(const ChartArea& area) {
     _draw_ver_lines(area);
     _draw_ylabels(_margin_left * flw::PREF_FIXED_FONTSIZE, area.y + area.h, area.y, area.left, true);
     _draw_ylabels(w() - _margin_right * flw::PREF_FIXED_FONTSIZE, area.y + area.h, area.y, area.right, false);
@@ -999,7 +865,7 @@ void flw::Chart::_draw_area(const chart::Area& area) {
     fl_pop_clip();
     fl_pop_matrix();
 }
-void flw::Chart::_draw_line(const chart::Line& line, const chart::Scale& scale, int X, const int Y, const int W, const int H) {
+void Chart::_draw_line(const ChartLine& line, const ChartScale& scale, int X, const int Y, const int W, const int H) {
     if (line.points.size() > 0 && line.visible == true) {
         const int y2      = y() + Y + H;
         int       lastX   = -1;
@@ -1015,7 +881,7 @@ void flw::Chart::_draw_line(const chart::Line& line, const chart::Scale& scale, 
         const int lw4 = lw2 / 2;
         fl_push_clip(x() + X, y() + Y, W + 1, H + 1);
         fl_color(line.color);
-        if (line.type == chart::TYPE::BAR) {
+        if (line.type == Chart::BAR) {
             fl_line_style(FL_SOLID, lw2);
         }
         else {
@@ -1023,35 +889,35 @@ void flw::Chart::_draw_line(const chart::Line& line, const chart::Scale& scale, 
         }
         while (current <= stop && current < (int) _dates.size()) {
             const auto& date  = _dates[current];
-            const auto  index = chart::bsearch(line.points, date);
+            const auto  index = _chart_bsearch(line.points, date);
             if (index != (size_t) -1) {
                 const auto& pr = line.points[index];
                 const auto  yh = (int) ((pr.high - scale.min) * scale.pixel);
                 const auto  yl = (int) ((pr.low - scale.min) * scale.pixel);
                 const auto  yc = (int) ((pr.close - scale.min) * scale.pixel);
-                if (line.type == chart::TYPE::LINE) {
+                if (line.type == Chart::LINE) {
                     if (lastX > -1 && lastY > -1) {
                         fl_line(lastX + lw2, y2 - lastY, x() + X + lw2, y2 - yc);
                     }
                 }
-                else if (line.type == chart::TYPE::BAR) {
+                else if (line.type == Chart::BAR) {
                     fl_line(x() + X + lw4, y2 - yl, x() + X + lw4, y2 - yh);
                     fl_line(x() + X, y2 - yc, x() + X + _tick_width - 1, y2 - yc);
                 }
-                else if (line.type == chart::TYPE::HORIZONTAL) {
+                else if (line.type == Chart::HORIZONTAL) {
                     fl_line(x() + X, y2 - yc, x() + X + _tick_width, y2 - yc);
                 }
-                else if (line.type == chart::TYPE::VERTICAL) {
+                else if (line.type == Chart::VERTICAL) {
                     auto h = yh - yl;
                     fl_rectf(x() + X, y2 - yh, width, (h < 1) ? 1 : h);
                 }
-                else if (line.type == chart::TYPE::CLAMP_VERTICAL) {
+                else if (line.type == Chart::CLAMP_VERTICAL) {
                     fl_rectf(x() + X, y2 - yh, width, yh);
                 }
-                else if (line.type == chart::TYPE::EXPAND_VERTICAL) {
+                else if (line.type == Chart::EXPAND_VERTICAL) {
                     fl_line(x() + X, y2, x() + X, y() + Y);
                 }
-                else if (line.type == chart::TYPE::EXPAND_HORIZONTAL) {
+                else if (line.type == Chart::EXPAND_HORIZONTAL) {
                     fl_line(x() + _margin_left * flw::PREF_FIXED_FONTSIZE, y2 - yc, x() + Fl_Widget::w() - _margin_right * flw::PREF_FIXED_FONTSIZE, y2 - yc);
                 }
                 lastX = x() + X;
@@ -1064,7 +930,7 @@ void flw::Chart::_draw_line(const chart::Line& line, const chart::Scale& scale, 
         fl_line_style(0);
     }
 }
-void flw::Chart::_draw_line_labels(const chart::Area& area) {
+void Chart::_draw_line_labels(const ChartArea& area) {
     if (_view.labels == true) {
         int       left_h  = 0;
         int       left_w  = 0;
@@ -1131,7 +997,7 @@ void flw::Chart::_draw_line_labels(const chart::Area& area) {
         }
     }
 }
-void flw::Chart::_draw_tooltip() {
+void Chart::_draw_tooltip() {
     if (_tooltip != "" && _area != nullptr) {
         auto       X = Fl::event_x();
         auto       Y = Fl::event_y();
@@ -1159,10 +1025,10 @@ void flw::Chart::_draw_tooltip() {
         fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
     }
 }
-void flw::Chart::_draw_ver_lines(const chart::Area& area) {
+void Chart::_draw_ver_lines(const ChartArea& area) {
     if (_view.vertical == true) {
         fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-        for (auto i = 0; i < chart::MAX_VLINES; i++) {
+        for (auto i = 0; i < _CHART_MAX_VLINES; i++) {
             if (_ver_pos[i] < 0) {
                 break;
             }
@@ -1172,7 +1038,7 @@ void flw::Chart::_draw_ver_lines(const chart::Area& area) {
         }
     }
 }
-void flw::Chart::_draw_xlabels() {
+void Chart::_draw_xlabels() {
     const int  stop  = _date_start + _ticks;
     const int  cw2   = _cw * 2;
     const int  cw4   = _cw * 4;
@@ -1292,7 +1158,7 @@ void flw::Chart::_draw_xlabels() {
             fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE - 2);
             fl_draw(buffer2, X1 - cw2, Y + fs05, cw4, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
         }
-        if (addv == true && index < chart::MAX_VLINES) {
+        if (addv == true && index < _CHART_MAX_VLINES) {
             _ver_pos[index++] = X1;
         }
         X1    += _tick_width;
@@ -1300,12 +1166,12 @@ void flw::Chart::_draw_xlabels() {
     }
     _ver_pos[index] = -1;
 }
-void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const chart::Scale& scale, const bool left) {
+void Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ChartScale& scale, const bool left) {
     const double yinc  = (scale.pixel * scale.tick);
     const int    fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
-    const int    fr    = chart::count_decimals(scale.tick);
+    const int    fr    = _chart_count_decimals(scale.tick);
     int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
-    double       ylast = chart::MAX_VAL;
+    double       ylast = Chart::MAX_VAL;
     double       yval  = scale.min;
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     if (scale.min >= scale.max || scale.pixel * scale.tick < 1.0) {
@@ -1315,7 +1181,7 @@ void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ch
         if (ylast > Y1) {
             auto y1     = y() + (int) Y1;
             auto x1     = x() + X;
-            auto string = chart::format_double(yval, fr, '\'');
+            auto string = _chart_format_double(yval, fr, '\'');
             if (left == true) {
                 fl_color(labelcolor());
                 fl_line(x1 - fs05, y1, x1, y1);
@@ -1340,7 +1206,7 @@ void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ch
         yval += scale.tick;
     }
 }
-int flw::Chart::handle(int event) {
+int Chart::handle(int event) {
     if (event == FL_PUSH) {
         if (Fl::event_button1() != 0) {
             _area = _inside_area(Fl::event_x(), Fl::event_y());
@@ -1350,9 +1216,9 @@ int flw::Chart::handle(int event) {
             }
         }
         else if (Fl::event_button3() != 0) {
-            menu::set_item(_menu, chart::SHOW_LABELS, _view.labels);
-            menu::set_item(_menu, chart::SHOW_HLINES, _view.horizontal);
-            menu::set_item(_menu, chart::SHOW_VLINES, _view.vertical);
+            menu::set_item(_menu, _CHART_SHOW_LABELS, _view.labels);
+            menu::set_item(_menu, _CHART_SHOW_HLINES, _view.horizontal);
+            menu::set_item(_menu, _CHART_SHOW_VLINES, _view.vertical);
             _menu->popup();
             return 1;
         }
@@ -1382,7 +1248,7 @@ int flw::Chart::handle(int event) {
         }
         else if (Fl::event_ctrl() > 0) {
             const int width = (adj > 0.0) ? _tick_width + 1 : _tick_width - 1;
-            if (width >= chart::MIN_TICK && width <= chart::MAX_TICK) {
+            if (width >= Chart::MIN_TICK && width <= Chart::MAX_TICK) {
                 tick_width(width);
                 init(false);
             }
@@ -1437,7 +1303,10 @@ int flw::Chart::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::Chart::init(bool calc_dates) {
+bool Chart::has_time() const {
+    return _chart_has_time(_date_range);
+}
+void Chart::init(bool calc_dates) {
 #ifdef DEBUG
 #endif
     if (calc_dates == true) {
@@ -1451,7 +1320,7 @@ void flw::Chart::init(bool calc_dates) {
 #ifdef DEBUG
 #endif
 }
-flw::chart::Area* flw::Chart::_inside_area(int X, int Y) {
+flw::ChartArea* Chart::_inside_area(int X, int Y) {
     for (auto& area : _areas) {
         if (area.percent >= 10 &&
             X >= x() + (int) area.x &&
@@ -1463,7 +1332,7 @@ flw::chart::Area* flw::Chart::_inside_area(int X, int Y) {
     }
     return nullptr;
 }
-bool flw::Chart::margin(int left, int right) {
+bool Chart::margin(int left, int right) {
     if (left < 1 || left > 20 || right < 1 || right > 20) {
         return false;
     }
@@ -1472,7 +1341,7 @@ bool flw::Chart::margin(int left, int right) {
     redraw();
     return true;
 }
-void flw::Chart::resize(int X, int Y, int W, int H) {
+void Chart::resize(int X, int Y, int W, int H) {
     if (_old_width != W || _old_height != H) {
         Fl_Group::resize(X, Y, W, H);
         _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
@@ -1481,7 +1350,7 @@ void flw::Chart::resize(int X, int Y, int W, int H) {
         init(false);
     }
 }
-bool flw::Chart::tick_width(int tick_width) {
+bool Chart::tick_width(int tick_width) {
     if (tick_width < 3 || tick_width > 100) {
         return false;
     }
@@ -1489,9 +1358,200 @@ bool flw::Chart::tick_width(int tick_width) {
     redraw();
     return true;
 }
-void flw::Chart::update_pref() {
+void Chart::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
+}
+void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
+    auto self = (Chart*) chart_object;
+    self->debug();
+}
+void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
+    auto self = (Chart*) chart_object;
+    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+    self->redraw();
+}
+void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
+    auto self = (Chart*) chart_object;
+    for (auto& area : self->_areas) {
+        area.selected = 0;
+        for (auto& line : area.lines) {
+            line.visible = true;
+        }
+    }
+    self->redraw();
+}
+void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
+    auto self = (Chart*) chart_object;
+    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
+}
+void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
+    auto self = (Chart*) chart_object;
+    self->_date_start = self->_scroll->value();
+    self->init(false);
+}
+#define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
+bool Chart::Load(Chart* chart, std::string filename) {
+    chart->clear();
+    chart->redraw();
+    auto wc  = WaitCursor();
+    auto buf = util::load_file(filename);
+    if (buf.p == nullptr) {
+        fl_alert("error: failed to load %s", filename.c_str());
+        return false;
+    }
+    auto js  = JS();
+    auto err = js.decode(buf.p, buf.s);
+    if (err != "") {
+        fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
+        return false;
+    }
+    if (js.is_object() == false) FLW_CHART_ERROR(&js);
+    for (auto j : js.vo_to_va()) {
+        if (j->name() == "descr" && j->is_object() == true) {
+            for (auto j2 : j->vo_to_va()) {
+                if (j2->name() == "type" && j2->is_string() == true) {
+                    if (j2->vs() != "flw::chart") FLW_CHART_ERROR(j2)
+                }
+                else if (j2->name() == "version" && j2->is_number() == true) {
+                    if (j2->vn_i() != 2) FLW_CHART_ERROR(j2)
+                }
+                else FLW_CHART_ERROR(j2)
+            }
+        }
+        else if (j->name() == "descr_area" && j->is_object() == true) {
+            long long int area[11] = { 0 };
+            for (auto j2 : j->vo_to_va()) {
+                if (j2->name() == "area0" && j2->is_number() == true)             area[0] = j2->vn_i();
+                else if (j2->name() == "area1" && j2->is_number() == true)        area[1] = j2->vn_i();
+                else if (j2->name() == "area2" && j2->is_number() == true)        area[2] = j2->vn_i();
+                else if (j2->name() == "date_range" && j2->is_number() == true)   area[3] = j2->vn_i();
+                else if (j2->name() == "horizontal" && j2->is_bool() == true)     area[4] = j2->vb();
+                else if (j2->name() == "labels" && j2->is_bool() == true)         area[5] = j2->vb();
+                else if (j2->name() == "margin_left" && j2->is_number() == true)  area[6] = j2->vn_i();
+                else if (j2->name() == "margin_right" && j2->is_number() == true) area[7] = j2->vn_i();
+                else if (j2->name() == "tick_width" && j2->is_number() == true)   area[8] = j2->vn_i();
+                else if (j2->name() == "vertical" && j2->is_bool() == true)       area[9] = j2->vb();
+                else FLW_CHART_ERROR(j2)
+            }
+            area[10] += chart->area_size(area[0], area[1], area[2]) == false;
+            area[10] += chart->tick_width(area[8]) == false;
+            area[10] += chart->date_range((Date::RANGE) area[3]) == false;
+            area[10] += chart->margin(area[6], area[7]) == false;
+            if (area[10] != 0) FLW_CHART_ERROR(j)
+            chart->view_options(area[5], area[4], area[9]);
+        }
+        else if (j->name() == "lines" && j->is_array() == true) {
+            for (auto j2 : *j->va()) {
+                int         line[5]  = { 0 };
+                double      clamp[2] = { 0.0 };
+                std::string label;
+                PriceVector prices;
+                if ( j2->is_object() == true) {
+                    for (auto l : j2->vo_to_va()) {
+                        if (l->name() == "align" && l->is_number() == true)           line[0]  = l->vn_i();
+                        else if (l->name() == "area" && l->is_number() == true)       line[1]  = l->vn_i();
+                        else if (l->name() == "clamp_max" && l->is_number() == true)  clamp[0] = l->vn();
+                        else if (l->name() == "clamp_min" && l->is_number() == true)  clamp[1] = l->vn();
+                        else if (l->name() == "color" && l->is_number() == true)      line[2]  = l->vn_i();
+                        else if (l->name() == "label" && l->is_string() == true)      label    = l->vs_u();
+                        else if (l->name() == "type" && l->is_string() == true)       line[3]  = _chart_string_to_type(l->vs());
+                        else if (l->name() == "width" && l->is_number() == true)      line[4]  = l->vn_i();
+                        else if (l->name() == "yx" && l->is_array() == true) {
+                            for (auto p : *l->va()) {
+                                if (p->is_array() == false) FLW_CHART_ERROR(p)
+                                else if (p->size() == 2 && (*p)[0]->is_string() == true && (*p)[1]->is_number() == true) prices.push_back(Price((*p)[0]->vs(), (*p)[1]->vn()));
+                                else if (p->size() == 4 && (*p)[0]->is_string() == true && (*p)[1]->is_number() == true && (*p)[2]->is_number() == true && (*p)[3]->is_number() == true) prices.push_back(Price((*p)[0]->vs(), (*p)[1]->vn(), (*p)[2]->vn(), (*p)[3]->vn()));
+                                else FLW_CHART_ERROR(p)
+                            }
+                        }
+                        else FLW_CHART_ERROR(l)
+                    }
+                }
+                if (chart->add_line(line[1], prices, label, (Chart::TYPE) line[3], line[0], line[2], line[4], clamp[1], clamp[0]) == false) FLW_CHART_ERROR(j2)
+            }
+        }
+        else if (j->name() == "lines_block" && j->is_array() == true) {
+            PriceVector dates;
+            for (auto d : *j->va()) {
+                if (d->is_string() == true) dates.push_back(Price(d->vs()));
+                else FLW_CHART_ERROR(d)
+            }
+            chart->block_dates(dates);
+        }
+        else FLW_CHART_ERROR(j)
+    }
+    chart->init(true);
+    return true;
+}
+bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_low) {
+    auto ac  = 0;
+    auto wc  = WaitCursor();
+    auto jsb = JSB();
+    try {
+        jsb << JSB::MakeObject();
+            jsb << JSB::MakeObject("descr");
+                jsb << JSB::MakeString("flw::chart", "type");
+                jsb << JSB::MakeNumber(2, "version");
+            jsb.end();
+            jsb << JSB::MakeObject("descr_area");
+                jsb << JSB::MakeNumber(chart->_areas[0].percent, "area0");
+                jsb << JSB::MakeNumber(chart->_areas[1].percent, "area1");
+                jsb << JSB::MakeNumber(chart->_areas[2].percent, "area2");
+                jsb << JSB::MakeNumber(chart->_tick_width, "tick_width");
+                jsb << JSB::MakeNumber((double) chart->_date_range, "date_range");
+                jsb << JSB::MakeNumber(chart->_margin_left, "margin_left");
+                jsb << JSB::MakeNumber(chart->_margin_right, "margin_right");
+                jsb << JSB::MakeBool(chart->_view.labels, "labels");
+                jsb << JSB::MakeBool(chart->_view.horizontal, "horizontal");
+                jsb << JSB::MakeBool(chart->_view.vertical, "vertical");
+            jsb.end();
+            jsb << JSB::MakeArray("lines");
+                for (const auto& area : chart->_areas) {
+                    for (const auto& line : area.lines) {
+                        if (line.points.size() > 0) {
+                            jsb << JSB::MakeObject();
+                                jsb << JSB::MakeNumber(ac, "area");
+                                jsb << JSB::MakeString(line.label, "label");
+                                jsb << JSB::MakeString(_chart_type_to_string(line.type), "type");
+                                jsb << JSB::MakeNumber(line.align, "align");
+                                jsb << JSB::MakeNumber(line.color, "color");
+                                jsb << JSB::MakeNumber(line.width, "width");
+                                jsb << JSB::MakeNumber(line.clamp_min, "clamp_min");
+                                jsb << JSB::MakeNumber(line.clamp_max, "clamp_max");
+                                jsb << JSB::MakeArray("yx");
+                                for (auto& price : line.points) {
+                                    jsb << JSB::MakeArrayInline();
+                                        jsb << JSB::MakeString(_chart_format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO));
+                                        if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
+                                            jsb << JSB::MakeNumber(price.high);
+                                            jsb << JSB::MakeNumber(price.low);
+                                        }
+                                        jsb << JSB::MakeNumber(price.close);
+                                        jsb.end();
+                                }
+                                jsb.end();
+                            jsb.end();
+                        }
+                    }
+                    ac++;
+                }
+            jsb.end();
+            jsb << JSB::MakeArray("lines_block");
+                for (auto& price : chart->_block_dates) {
+                    jsb << JSB::MakeString(price.date);
+                }
+            jsb.end();
+        auto js = jsb.encode();
+        return util::save_file(filename, js.c_str(), js.length());
+    }
+    catch(std::string e) {
+        fl_alert("error: failed to encode json\n%s", e.c_str());
+        return false;
+    }
+}
 }
 #include <string.h>
 #include <time.h>
@@ -3846,15 +3906,13 @@ flw::Buf::Buf(const char* P, size_t S) {
         s = 0;
     }
     else {
-        p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
+        p = (char*) calloc(S + 1, 1);
         s = 0;
         if (p == nullptr) {
-            throw "error: memory allocation failed";
+            return;
         }
-        else {
-            memcpy(p, P, S);
-            s = S;
-        }
+        memcpy(p, P, S);
+        s = S;
     }
 }
 flw::Buf::Buf(const Buf& b) {
@@ -3863,15 +3921,13 @@ flw::Buf::Buf(const Buf& b) {
         s = 0;
     }
     else {
-        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        p = (char*) calloc(b.s + 1, 1);
         s = 0;
         if (p == nullptr) {
-            throw "error: memory allocation failed";
+            return;
         }
-        else {
-            memcpy(p, b.p, b.s);
-            s = b.s;
-        }
+        memcpy(p, b.p, b.s);
+        s = b.s;
     }
 }
 flw::Buf::Buf(Buf&& b) {
@@ -3887,15 +3943,13 @@ flw::Buf& flw::Buf::operator=(const Buf& b) {
     }
     else {
         free(p);
-        p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+        p = (char*) calloc(b.s + 1, 1);
         s = 0;
         if (p == nullptr) {
-            throw "error: memory allocation failed";
+            return *this;
         }
-        else {
-            memcpy(p, b.p, b.s);
-            s = b.s;
-        }
+        memcpy(p, b.p, b.s);
+        s = b.s;
     }
     return *this;
 }
@@ -3913,25 +3967,20 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
         *this = b;
     }
     else {
-        auto t = (b.s < SIZE_MAX) ? (char*) calloc(s + b.s + 1, 1) : nullptr;
+        auto t = (char*) calloc(s + b.s + 1, 1);
         if (t == nullptr) {
-            throw "error: memory allocation failed";
+            return *this;
         }
-        else {
-            memcpy(t, p, s);
-            memcpy(t + s, b.p, b.s);
-            free(p);
-            p = t;
-            s += b.s;
-        }
+        memcpy(t, p, s);
+        memcpy(t + s, b.p, b.s);
+        free(p);
+        p = t;
+        s += b.s;
     }
     return *this;
 }
 bool flw::Buf::operator==(const Buf& other) const {
     return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
-}
-flw::Buf::~Buf() {
-    free(p);
 }
 void flw::debug::print(Fl_Widget* widget, bool tab) {
     assert(widget);
@@ -5256,475 +5305,803 @@ const char* flw::InputMenu::value() const {
 void flw::InputMenu::value(const char* string) {
     _input->value(string ? string : "");
 }
-#include <string.h>
 #include <errno.h>
+#include <cstring>
+#include <cmath>
 namespace flw {
-namespace json {
-    #define _FLW_JSON_RETURN(X,Y)           return Err((ssize_t) (X - Y), line);
-    #define _FLW_JSON_RETURN_POS(X)         return Err(X.pos, X.line);
-    #define _FLW_JSON_CHECK_SEPARATOR(X)    if (X > 32 && X != ',' && X != ':' && X != '}' && X != ']' && X != '{' && X != '[') return Err((ssize_t) (text - json), line);
-    static const char* _TYPE_NAMES[] = { "NA", "OBJECT", "END_OBJECT", "ARRAY","END_ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "COLON", "COMMA", "ARRAY_NL" };
-    static bool _convert_num(const char* s, double& d) {
-        errno = 0;
-        d = strtod(s, nullptr);
-        return errno != ERANGE;
+#define JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
+#define JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
+static const char* const _JSON_BOM = "\xef\xbb\xbf";
+static void _json_debug(const JS* js, std::string t) {
+    if (js->is_array() == true) {
+        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        t += "\t";
+        for (auto js2 : *js->va()) _json_debug(js2, t);
+        t.pop_back();
     }
-    static std::string _remove_last(std::vector<std::string>& v) {
-        if (v.size() > 0) {
-            auto res = v.back();
-            v.pop_back();
-            return res;
+    else if (js->is_object() == true) {
+        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        t += "\t";
+        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
+        t.pop_back();
+    }
+    else if (js->is_null()) printf("%s%s(%u): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c());
+    else if (js->is_string()) printf("%s%s(%u): \"%s\": \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vs_c());
+    else if (js->is_number()) printf("%s%s(%u): \"%s\": %f\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vn());
+    else if (js->is_bool()) printf("%s%s(%u): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vb() ? "true" : "false");
+    fflush(stdout);
+}
+static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
+    char buf[256];
+    snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
+    return buf;
+}
+static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
+    bool        res = false;
+    std::string n1;
+    std::string n2;
+    nVal = NAN;
+    while (pos < len) {
+        unsigned char c = json[pos];
+        if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
+            n1 += c;
+            pos++;
         }
-        return "";
-    }
-    struct _Token {
-        TYPE                            type;
-        int                             depth;
-        std::string                     value;
-        size_t                          pos;
-        size_t                          line;
-                                        _Token()
-                                            { type = json::NA; pos = 0; depth = 0; line = 0; }
-                                        _Token(TYPE type, const std::string& value = "", size_t pos = 0, size_t depth = 0, size_t line = 0)
-                                            { this->type = type; this->value = value; this->pos = pos; this->depth = depth; this->line = line; }
-        bool                            is_end() const
-                                            { return type == json::END_ARRAY || type == json::END_OBJECT; }
-        bool                            is_start() const
-                                            { return type == json::ARRAY || type == json::OBJECT; }
-    };
-    typedef std::vector<_Token>         _TokenVector;
-    static void _tokenize_count_dot_minus_plus_e(const std::string& s, int& dot, int& minus, int& plus, int& E) {
-        dot = 0; minus = 0; plus = 0; E = 0;
-        for (auto c : s) {
-            dot   += (c =='.');
-            minus += (c =='-');
-            plus  += (c =='+');
-            E     += (c =='e');
-            E     += (c =='E');
+        else {
+            break;
         }
     }
-    static Err _tokenize(const char* json, size_t len, _TokenVector& tokens) {
-        tokens.clear();
-        auto text  = json;
-        auto end   = text + len;
-        auto value = std::string();
-        auto num   = std::string();
-        auto depth = 0;
-        auto line  = 1;
-        auto DUMMY = _Token();
-        num.reserve(50);
-        value.reserve(200);
-        while (text < end) {
-            auto  c  = (unsigned char) *text;
-            if (c == 10) {
+    while (pos < len) {
+        unsigned char c = json[pos];
+        if (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
+            n2 += c;
+            pos++;
+        }
+        else {
+            break;
+        }
+    }
+    int dot1  = 0;
+    int dot2  = 0;
+    int minus = 0;
+    int plus  = 0;
+    int E     = 0;
+    int term  = json[pos];
+    for (auto c : n1) {
+        dot1  += (c =='.');
+        minus += (c =='-');
+        plus  += (c =='+');
+        E     += (c =='e');
+        E     += (c =='E');
+    }
+    if (dot1 > 1 || minus > 1 || n1 == "-") {
+        return false;
+    }
+    else if (n1.back() == '.') {
+        return false;
+    }
+    else if (n1[0] == '-' && n1[1] == '0' && n1[2] != '.' && n1[2] != 0) {
+        return false;
+    }
+    else if (n1[0] == '-' && n1[1] == '.') {
+        return false;
+    }
+    else if (n1[0] == '0' && n1[1] != 0 && n1[1] != '.') {
+        return false;
+    }
+    else if (minus > 0 && n1[0] != '-') {
+        return false;
+    }
+    if (n2 != "") {
+        if (n2.length() == 1) {
+            return false;
+        }
+        else {
+            dot2 = minus = plus = E = 0;
+            for (auto c : n2) {
+                dot2  += (c =='.');
+                minus += (c =='-');
+                plus  += (c =='+');
+                E     += (c =='e');
+                E     += (c =='E');
+            }
+            if (plus + minus > 1 || E > 1) {
+                return false;
+            }
+            else if (plus > 0 && n2.back() == '+') {
+                return false;
+            }
+            else if (plus > 0 && n2[1] != '+') {
+                return false;
+            }
+            else if (minus > 0 && n2.back() == '-') {
+                return false;
+            }
+            else if (minus > 0 && n2[1] != '-') {
+                return false;
+            }
+        }
+    }
+    if (term > 32 && term != ',' && term != ':' && term != '}' && term != ']' && term != '{' && term != '[') {
+        return false;
+    }
+    errno = 0;
+    if (E > 0 || dot1 > 0) {
+        nVal = strtod((n1 + n2).c_str(), nullptr);
+    }
+    else {
+        nVal = strtoll((n1 + n2).c_str(), nullptr, 0);
+    }
+    res   = (errno == 0);
+    pos--;
+    return res;
+}
+static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
+    std::string str   = "";
+    bool        term  = false;
+    unsigned    c     = 0;
+    unsigned    p     = 0;
+    pos++;
+    while (pos < len) {
+        c = json[pos];
+        if (p == '\\' && c == '\\') {
+            str += c;
+            c = 0;
+        }
+        else if (p == '\\' && c == '"') {
+            str += c;
+        }
+        else if (c == '"') {
+            pos++;
+            term = true;
+            break;
+        }
+        else if (c < 32) {
+            return false;
+        }
+        else {
+            str += c;
+        }
+        p = c;
+        pos++;
+    }
+    auto ulen = (ignore_utf_check == false) ? JS::CountUtf8(str.c_str()) : 1;
+    if (term == false) {
+        return false;
+    }
+    else if (ulen == 0 && str.length() > 0) {
+        return false;
+    }
+    if (*sVal1 == nullptr) {
+        *sVal1 = strdup(str.c_str());
+    }
+    else if (*sVal2 == nullptr) {
+        *sVal2 = strdup(str.c_str());
+    }
+    else {
+        return false;
+    }
+    pos--;
+    return true;
+}
+ssize_t JS::COUNT = 0;
+bool JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeBool("", b, this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+bool JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeNil("", this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+bool JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true && std::isnan(nVal) == false) {
+        _va->push_back(JS::_MakeNumber("", nVal, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && std::isnan(nVal) == false) {
+        res = _set_object(*sVal1, JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    nVal = NAN;
+    return res;
+}
+bool JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
+        _va->push_back(JS::_MakeString("", *sVal1, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
+        res = _set_object(*sVal1, JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    free(*sVal2);
+    *sVal1 = nullptr;
+    *sVal2 = nullptr;
+    return res;
+}
+void JS::_clear(bool name) {
+    if (_type == ARRAY) {
+        for (auto js : *_va) {
+            delete js;
+        }
+        delete _va;
+        _va = nullptr;
+    }
+    else if (_type == OBJECT) {
+        for (auto js : *_vo) {
+            delete js.second;
+        }
+        delete _vo;
+        _vo = nullptr;
+    }
+    else if (_type == STRING) {
+        free(_vs);
+        _vs = nullptr;
+    }
+    if (name == true) {
+        free(_name);
+        _name   = nullptr;
+    }
+    _type   = NIL;
+    _vb     = false;
+    _parent = nullptr;
+}
+std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+    auto colon   = 0;
+    auto comma   = 0;
+    auto count_a = 0;
+    auto count_o = 0;
+    auto current = (JS*) nullptr;
+    auto line    = (unsigned) 1;
+    auto n       = (JS*) nullptr;
+    auto nVal    = (double) NAN;
+    auto pos     = (size_t) 0;
+    auto pos2    = (size_t) 0;
+    auto posn    = (size_t) 0;
+    auto sVal1   = (char*) nullptr;
+    auto sVal2   = (char*) nullptr;
+    auto tmp     = JS();
+    try {
+        _clear(true);
+        _name = strdup("");
+        tmp._type = JS::ARRAY;
+        tmp._va   = new JSArray();
+        current   = &tmp;
+        if (strncmp(json, _JSON_BOM, 3) == 0) {
+            pos += 3;
+        }
+        while (pos < len) {
+            auto start = pos;
+            auto c     = (unsigned) json[pos];
+            if (c == '\t' || c == '\r' || c == ' ') {
+                pos++;
+            }
+            else if (c == '\n') {
                 line++;
-            }
-            if (c < 33) {
-                text++;
-            }
-            else if (c == ',') {
-                tokens.push_back(_Token(json::COMMA, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == ':') {
-                tokens.push_back(_Token(json::COLON, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == '{') {
-                tokens.push_back(_Token(json::OBJECT, "", (size_t) text - (size_t) json, depth, line));
-                depth++;
-                text++;
-            }
-            else if (c == '}') {
-                depth--;
-                tokens.push_back(_Token(json::END_OBJECT, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == '[') {
-                tokens.push_back(_Token(json::ARRAY, "", (size_t) text - (size_t) json, depth, line));
-                depth++;
-                text++;
-            }
-            else if (c == ']') {
-                depth--;
-                tokens.push_back(_Token(json::END_ARRAY, "", (size_t) text - (size_t) json, depth, line));
-                text++;
-            }
-            else if (c == 't' && strncmp(text, "true", 4) == 0) {
-                tokens.push_back(_Token(json::BOOL, "true", (size_t) text - (size_t) json, depth, line));
-                text += 4;
-                c = *text;
-                _FLW_JSON_CHECK_SEPARATOR(c)
-            }
-            else if (c == 'f' && strncmp(text, "false", 5) == 0) {
-                tokens.push_back(_Token(json::BOOL, "false", (size_t) text - (size_t) json, depth, line));
-                text += 5;
-                c = *text;
-                _FLW_JSON_CHECK_SEPARATOR(c)
-            }
-            else if (c == 'n' && strncmp(text, "null", 4) == 0) {
-                tokens.push_back(_Token(json::NIL, "", (size_t) text - (size_t) json, depth, line));
-                text += 4;
-                c = *text;
-                _FLW_JSON_CHECK_SEPARATOR(c)
+                pos++;
             }
             else if (c == '"') {
-                auto p = (unsigned char) *text;
-                auto start = text;
-                text++;
-                auto c = (unsigned char) *text;
-                value = "";
-                while (text < end) {
-                    if (c < 32) _FLW_JSON_RETURN(text, json)
-                    else if (p == '\\' && c == '"') {
+                pos2 = pos;
+                if (sVal1 == nullptr) posn = pos;
+                if (_json_parse_string(ignore_utf_check, json, len, pos, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
+                auto add_object = (current->is_object() == true && sVal2 != nullptr);
+                auto add_array = (current->is_array() == true);
+                if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (add_object == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (add_object == true || add_array == true) {
+                    pos2 = (sVal2 == nullptr) ? pos2 : posn;
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                    colon = 0;
+                    comma = 0;
+                }
+                pos++;
+            }
+            else if ((c >= '0' && c <= '9') || c == '-') {
+                pos2 = (sVal1 == nullptr) ? pos : posn;
+                if (_json_parse_number(json, len, pos, nVal) == false) throw JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                colon = 0;
+                comma = 0;
+                pos++;
+            }
+            else if (c == ',') {
+                if (comma > 0) throw JSON_ERROR(pos, line);
+                else if (current == &tmp) throw JSON_ERROR(pos, line);
+                comma++;
+                pos++;
+            }
+            else if (c == ':') {
+                if (colon > 0) throw JSON_ERROR(pos, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
+                else if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                colon++;
+                pos++;
+            }
+            else if (c == '[') {
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                else if (current->is_array() == true) {
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
+                    n = JS::_MakeArray("", current, pos);
+                    current->_va->push_back(n);
+                }
+                else {
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                    else if (colon != 1) throw JSON_ERROR(pos, line);
+                    n = JS::_MakeArray(sVal1, current, pos2);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    JSON_FREE_STRINGS(sVal1, sVal2)
+                }
+                current = n;
+                colon = 0;
+                comma = 0;
+                count_a++;
+                pos++;
+            }
+            else if (c == ']') {
+                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
+                else if (current->is_array() == false) throw JSON_ERROR(pos, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
+                else if (count_a < 0) throw JSON_ERROR(pos, line);
+                current = current->_parent;
+                comma = 0;
+                count_a--;
+                pos++;
+            }
+            else if (c == '{') {
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                else if (current->is_array() == true) {
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
+                    n = JS::_MakeObject("", current, pos);
+                    current->_va->push_back(n);
+                }
+                else {
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                    else if (colon != 1) throw JSON_ERROR(pos, line);
+                    n = JS::_MakeObject(sVal1, current, posn);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    JSON_FREE_STRINGS(sVal1, sVal2)
+                }
+                current = n;
+                colon = 0;
+                comma = 0;
+                count_o++;
+                pos++;
+            }
+            else if (c == '}') {
+                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
+                else if (count_o < 0) throw JSON_ERROR(pos, line);
+                current = current->_parent;
+                comma = 0;
+                count_o--;
+                pos++;
+            }
+            else if ((c == 't' && json[pos + 1] == 'r' && json[pos + 2] == 'u' && json[pos + 3] == 'e') ||
+                    (c == 'f' && json[pos + 1] == 'a' && json[pos + 2] == 'l' && json[pos + 3] == 's' && json[pos + 4] == 'e')) {
+                pos2 = (sVal1 == nullptr) ? pos : posn;
+                if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                colon = 0;
+                comma = 0;
+                pos += 4;
+                pos += (c == 'f');
+            }
+            else if (c == 'n' && json[pos + 1] == 'u' && json[pos + 2] == 'l' && json[pos + 3] == 'l') {
+                pos2 = (sVal1 == nullptr) ? pos : posn;
+                if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos) == false) throw JSON_ERROR(start, line);
+                colon = 0;
+                comma = 0;
+                pos += 4;
+            }
+            else {
+                throw JSON_ERROR(pos, line);
+            }
+            if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
+                throw JSON_ERROR(pos, line);
+            }
+        }
+        if (count_a != 0 || count_o != 0) {
+            throw JSON_ERROR(len, 1);
+        }
+        else if (tmp.size() != 1) {
+            throw JSON_ERROR(len, 1);
+        }
+        else if (tmp[0]->_type == JS::ARRAY) {
+            _type = JS::ARRAY;
+            _va = tmp[0]->_va;
+            ((JS*) tmp[0])->_type = JS::NIL;
+            for (auto o : *_va) {
+                o->_parent = this;
+            }
+        }
+        else if (tmp[0]->_type == JS::OBJECT) {
+            _type = JS::OBJECT;
+            _vo = tmp[0]->_vo;
+            ((JS*) tmp[0])->_type = JS::NIL;
+            for (auto& it : *_vo) {
+                it.second->_parent = this;
+            }
+        }
+        else if (tmp[0]->_type == JS::BOOL) {
+            _type = JS::BOOL;
+            _vb   = tmp[0]->_vb;
+        }
+        else if (tmp[0]->_type == JS::NUMBER) {
+            _type = JS::NUMBER;
+            _vn   = tmp[0]->_vn;
+        }
+        else if (tmp[0]->_type == JS::STRING) {
+            _type = JS::STRING;
+            _vs   = tmp[0]->_vs;
+            ((JS*) tmp[0])->_type = JS::NIL;
+        }
+        else if (tmp[0]->_type == JS::NIL) {
+            _type = JS::NIL;
+        }
+        else {
+            throw JSON_ERROR(0, 1);
+        }
+    }
+    catch(std::string err) {
+        JSON_FREE_STRINGS(sVal1, sVal2)
+        _clear(false);
+        return err;
+    }
+    return "";
+}
+void JS::debug() const {
+    std::string t;
+    _json_debug(this, t);
+}
+std::string JS::encode(int skip) const {
+    std::string t;
+    std::string j;
+    try {
+        if (is_array() == true || is_object() == true) {
+            JS::_Encode(this, j, t, false, skip);
+        }
+        else {
+            return _encode(true, skip);
+        }
+    }
+    catch (std::string e) {
+        j = e;
+    }
+    return j;
+}
+std::string JS::_encode(bool ignore_name, int skip) const {
+    static const std::string QUOTE = "\"";
+    std::string res;
+    std::string arr = (skip == 0) ? "\": [" : "\":[";
+    std::string obj = (skip == 0) ? "\": {" : "\":{";
+    std::string name = (skip == 0) ? "\": " : "\":";
+    bool object = (_parent != nullptr && _parent->is_object() == true);
+    if (_type == ARRAY) {
+        res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
+    }
+    else if (_type == OBJECT) {
+        res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
+    }
+    else {
+        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name);
+        if (_type == STRING) {
+            res += QUOTE + _vs + QUOTE;
+        }
+        else if (_type == NIL) {
+            res += "null";
+        }
+        else if (_type == BOOL && _vb == true) {
+            res += "true";
+        }
+        else if (_type == BOOL && _vb == false) {
+            res += "false";
+        }
+        else if (_type == NUMBER) {
+            char b[500];
+            auto n   = snprintf(b, 500, "%f", _vn);
+            auto dot = strstr(b, ".");
+            if (n < 1 || n >= 500) {
+                strcpy(b, "0.0");
+            }
+            else if (dot != nullptr) {
+                auto zero = b + strlen(b) - 1;
+                while (zero >= dot) {
+                    if (*zero == '0' || *zero == '.') {
+                        *zero = 0;
                     }
-                    else if (c == '"') {
-                        tokens.push_back(_Token(json::STRING, value, (size_t) start - (size_t) json, depth, line));
-                        text++;
+                    else {
                         break;
                     }
-                    value += c;
-                    p = c;
-                    text++;
-                    c = *text;
+                    zero--;
                 }
-                c = *text;
-                if (text == end) _FLW_JSON_RETURN(text, json)
-                _FLW_JSON_CHECK_SEPARATOR(c)
             }
-            else if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-                auto start = text;
-                std::string n1, n2;
-                int dot, minus, plus, E;
-                while (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-                    n1 += c; text++; c = *text;
+            res += b;
+        }
+    }
+    return res;
+}
+const JS* JS::find(std::string name, bool rec) const {
+    if (is_object() == true) {
+        auto find = _vo->find(name);
+        if (find != _vo->end()) {
+            return find->second;
+        }
+        else if (rec == true) {
+            for (auto o : *_vo) {
+                if (o.second->is_object() == true) {
+                    return o.second->find(name, rec);
                 }
-                _tokenize_count_dot_minus_plus_e(n1, dot, minus, plus, E);
-                if (dot > 1 || minus > 1) _FLW_JSON_RETURN(start, json)
-                if (n1[0] == '.' || n1.back() == '.') _FLW_JSON_RETURN(start, json)
-                if (n1[0] == '-' && n1[1] == '.') _FLW_JSON_RETURN(start, json)
-                if (n1[0] == '-' && n1[1] == '0' && n1.length() > 2 && n1[2] != '.') _FLW_JSON_RETURN(start, json)
-                if (n1 == "-") _FLW_JSON_RETURN(start, json)
-                if (minus > 0 && n1[0] != '-') _FLW_JSON_RETURN(start, json)
-                while (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
-                    n2 += c; text++; c = *text;
-                }
-                if (n2.empty() == false) {
-                    if (n2.length() == 1) _FLW_JSON_RETURN(start, json)
-                    _tokenize_count_dot_minus_plus_e(n2, dot, minus, plus, E);
-                    if (plus + minus > 1 || E > 1) _FLW_JSON_RETURN(start, json)
-                    if (plus > 0 && n2.back() == '+') _FLW_JSON_RETURN(start, json)
-                    if (plus > 0 && n2[1] != '+') _FLW_JSON_RETURN(start, json)
-                    if (minus > 0 && n2.back() == '-') _FLW_JSON_RETURN(start, json)
-                    if (minus > 0 && n2[1] != '-') _FLW_JSON_RETURN(start, json)
-                }
-                else if (n1[0] == '0' && n1.length() > 1 && n1[1] != '.') _FLW_JSON_RETURN(start, json)
-                tokens.push_back(_Token(json::NUMBER, n1 + n2, (size_t) start - (size_t) json, depth, line));
-                _FLW_JSON_CHECK_SEPARATOR(c)
+            }
+        }
+    }
+    return nullptr;
+}
+const JS* JS::_get_object(const char* name, bool escape) const {
+    if (is_object() == true) {
+        auto key  = (escape == true) ? JS::Escape(name) : name;
+        auto find = _vo->find(key);
+        return (find != _vo->end()) ? find->second : nullptr;
+    }
+    return nullptr;
+}
+bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
+    if (is_object() == true) {
+        auto find = _vo->find(name);
+        if (find != _vo->end()) {
+            if (ignore_duplicates == false) {
+                delete js;
+                return false;
             }
             else {
-                _FLW_JSON_RETURN(text, json);
+                delete find->second;
             }
         }
-        return Err();
+        (*_vo)[name] = js;
     }
-    void Node::print() const {
-        printf("%5u| %5u| %2d| %*s %-10s <%s>", (unsigned) index, (unsigned) textpos, depth, depth * 4, "", _TYPE_NAMES[(int) type], name.c_str());
-        if (type == json::STRING || type == json::NUMBER || type == json::BOOL) printf(" => <%s>\n", value.c_str());
-        else printf("\n");
-        fflush(stdout);
-    }
-    std::string escape_string(const std::string& string) {
-        std::string res;
-        for (unsigned char c : string) {
-            if (c == 9) res += "\\t";
-            else if (c == 10) res += "\\n";
-            else if (c == 13) res += "\\r";
-            else if (c == 8) res += "\\b";
-            else if (c == 14) res += "\\f";
-            else if (c == 34) res += "\\\"";
-            else if (c == 92) res += "\\\\";
-            else res += c;
+    return true;
+}
+const JSArray JS::vo_to_va() const {
+    JSArray res;
+    if (_type == OBJECT) {
+        for (auto& m : *_vo) {
+            res.push_back(m.second);
         }
-        return res;
     }
-    NodeVector find_children(const NodeVector& nodes, const Node& start, bool grandchildren) {
-        auto res = NodeVector();
-        if (start.index + 1 >= nodes.size()) return res;
-        for (size_t f = start.index + 1; f < nodes.size(); f++) {
-            auto& node = nodes[f];
-            if (node.depth <= start.depth) break;
-            else if (grandchildren == true) res.push_back(node);
-            else if (node.depth == start.depth + 1 && node.is_end() == false) res.push_back(node);
-        }
-        return res;
-    }
-    NodeVector find_nodes(const NodeVector& nodes, std::string name, TYPE type) {
-        auto res = NodeVector();
-        for (size_t f = 0; f < nodes.size(); f++) {
-            auto& node = nodes[f];
-            if (name == "") {
-                if (type == json::NA) res.push_back(node);
-                else if (node.type == type) res.push_back(node);
+    return res;
+}
+size_t JS::CountUtf8(const char* p) {
+    auto count = (size_t) 0;
+    auto f     = (size_t) 0;
+    auto u     = (const unsigned char*) p;
+    auto c     = (unsigned) u[0];
+    while (c != 0) {
+        if (c >= 128) {
+            if (c >= 194 && c <= 223) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
             }
-            else if (node.name == name) {
-                if (type == json::NA) res.push_back(node);
-                else if (node.type == type) res.push_back(node);
+            else if (c >= 224 && c <= 239) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
             }
-        }
-        return res;
-    }
-    NodeVector find_siblings(const NodeVector& nodes, const Node& start) {
-        auto res = NodeVector();
-        if (start.index >= nodes.size()) return res;
-        for (size_t f = start.index; f < nodes.size(); f++) {
-            auto& node = nodes[f];
-            if (node.depth < start.depth) break;
-            else if (node.depth == start.depth && node.is_end() == false) res.push_back(node);
-        }
-        return res;
-    }
-    Err parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma) {
-        auto tokens      = _TokenVector();
-        auto len         = strlen(json);
-        auto err         = _tokenize(json, len, tokens);
-        auto size        = tokens.size();
-        auto obj         = 0;
-        auto arr         = 0;
-        auto num         = 0.0;
-        auto arr_name    = std::vector<std::string>();
-        auto obj_name    = std::vector<std::string>();
-        auto containers  = std::vector<std::string>();
-        auto const DUMMY = _Token();
-        nodes.clear();
-        if (err.pos >= 0) return err;
-        else if (size < 2) return Err(size, 1);
-        for (size_t f = 0; f < size; f++) {
-            auto& t  = tokens[f];
-            auto& T0 = (f > 0) ? tokens[f - 1] : DUMMY;
-            auto& T1 = (f < size - 1) ? tokens[f + 1] : DUMMY;
-            auto& T2 = (f < size - 2) ? tokens[f + 2] : DUMMY;
-            if ((T0.type == json::STRING || T0.type == json::NUMBER || T0.type == json::NIL || T0.type == json::BOOL) &&
-                (t.type != json::COMMA && t.type != json::END_ARRAY && t.type != json::END_OBJECT)) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (obj == 0 && arr == 0 && nodes.size() > 0) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (obj == 0 && arr == 0 && t.type != json::OBJECT && t.type != json::ARRAY) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::COMMA && T0.type == json::COMMA) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::COMMA && T0.type == json::ARRAY) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::COLON && T0.type != json::STRING) {
-                _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::END_OBJECT) {
-                if (ignore_trailing_comma == false && T0.type == json::COMMA) _FLW_JSON_RETURN_POS(t)
-                containers.pop_back();
-                obj--;
-                if (obj < 0) _FLW_JSON_RETURN_POS(t)
-               nodes.push_back(Node(json::END_OBJECT, _remove_last(obj_name), "", t.depth, t.pos));
-            }
-            else if (t.type == json::OBJECT) {
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-                if (T0.is_end() == true && T0.depth == t.depth) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("O");
-                obj++;
-                nodes.push_back(Node(json::OBJECT, "", "", t.depth, t.pos));
-                obj_name.push_back("");
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::OBJECT) {
-                if (T0.is_end() == true && T0.depth == T2.depth) _FLW_JSON_RETURN_POS(t)
-                if (obj == 0) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("O");
-                obj++;
-                nodes.push_back(Node(json::OBJECT, t.value, "", T2.depth, t.pos));
-                obj_name.push_back(t.value);
-                f += 2;
-            }
-            else if (t.type == json::END_ARRAY) {
-                if (ignore_trailing_comma == false && T0.type == json::COMMA) _FLW_JSON_RETURN_POS(t)
-                containers.pop_back();
-                arr--;
-                if (arr < 0) _FLW_JSON_RETURN_POS(t)
-                nodes.push_back(Node(json::END_ARRAY, _remove_last(arr_name), "", t.depth, t.pos));
-            }
-            else if (t.type == json::ARRAY) {
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-                if (T0.is_end() == true && T0.depth == t.depth) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("A");
-                arr++;
-                nodes.push_back(Node(json::ARRAY, "", "", t.depth, t.pos));
-                arr_name.push_back("");
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::ARRAY) {
-                if (T0.is_end() == true && T0.depth == T2.depth) _FLW_JSON_RETURN_POS(t)
-                if (obj == 0) _FLW_JSON_RETURN_POS(t)
-                containers.push_back("A");
-                arr++;
-                nodes.push_back(Node(json::ARRAY, t.value, "", T2.depth, t.pos));
-                arr_name.push_back(t.value);
-                f += 2;
-            }
-            else if (t.type == json::BOOL) {
-                nodes.push_back(Node(json::BOOL, "", t.value, t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::BOOL) {
-                nodes.push_back(Node(json::BOOL, t.value, T2.value, T2.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::NIL) {
-                nodes.push_back(Node(json::NIL, "", "", t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::NIL) {
-                nodes.push_back(Node(json::NIL, t.value, "", T2.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::NUMBER) {
-                if (_convert_num(t.value.c_str(), num) == false) _FLW_JSON_RETURN_POS(t)
-                nodes.push_back(Node(json::NUMBER, "", t.value, t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::NUMBER) {
-                if (_convert_num(T2.value.c_str(), num) == false) _FLW_JSON_RETURN_POS(t)
-                nodes.push_back(Node(json::NUMBER, t.value, T2.value, t.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::STRING) {
-                nodes.push_back(Node(json::STRING, t.value, T2.value, t.depth, t.pos));
-                f += 2;
-                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
-            }
-            else if (t.type == json::STRING) {
-                nodes.push_back(Node(json::STRING, "", t.value, t.depth, t.pos));
-                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
-            }
-            if (nodes.size() > 0) nodes.back().index   = nodes.size() - 1;
-            if (arr < 0 || obj < 0) _FLW_JSON_RETURN_POS(t)
-        }
-        if (arr != 0 || obj != 0) return Err(len, -1);
-        return Err();
-    }
-    Err parse(std::string json, NodeVector& nodes, bool ignore_trailing_commas) {
-        return parse(json.c_str(), nodes, ignore_trailing_commas);
-    }
-    void print(const NodeVector& nodes) {
-        auto c = 0;
-        printf("\n%d Node objects\n", (int) nodes.size());
-        printf("%6s| %6s| %6s| %6s| %s\n", "COUNT", "INDEX", "POS", "DEPTH", "VALUES");
-        printf("-------------------------------------------------------\n");
-        for (auto& node : nodes) {
-            printf("%6d| %6u| %6u| %6d|%*s  %-10s <%s>", c, (unsigned) node.index, (unsigned) node.textpos, node.depth, node.depth * 4, "", _TYPE_NAMES[(int) node.type], node.name.c_str());
-            if (node.type == json::STRING || node.type == json::NUMBER || node.type == json::BOOL) printf(" => <%s>", node.value.c_str());
-            printf("\n");
-            c++;
-        }
-        fflush(stdout);
-    }
-    std::string tostring(const NodeVector& nodes) {
-        if (nodes.size() < 2) return "";
-        auto res    = std::string();
-        auto DUMMY  = Node();
-        auto last   = nodes.size() - 1;
-        auto indent = std::string();
-        auto arr    = json::NA;
-        res.reserve(20 * nodes.size());
-        for (size_t f = 0; f <= last; f++) {
-            auto& node = nodes[f];
-            auto& next = (f < last) ? nodes[f + 1] : DUMMY;
-            auto  nl   = std::string("\n");
-            auto  nl2  = std::string("");
-            if (node.is_data() && next.is_end() == false) {
-                nl  = ",\n";
-                nl2 = ",";
-            }
-            else if (node.is_end() && (next.is_start() == true || next.is_data() == true)) {
-                nl  = ",\n";
-                nl2 = ",";
-            }
-            if (node.type == json::END_OBJECT) {
-                indent.pop_back();
-                res += indent;
-                res += "}";
-            }
-            else if (node.type == json::END_ARRAY) {
-                indent.pop_back();
-                if (arr != json::ARRAY) res += indent;
-                res += "]";
-                arr = json::NA;
+            else if (c >= 240 && c <= 244) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
             }
             else {
-                if (arr != json::ARRAY) res += indent;
-                if (node.type == json::OBJECT) {
-                    indent += "\t";
-                    if (node.name == "") res += "{";
-                    else res += "\"" + node.name + "\": {";
-                }
-                else if (node.type == json::ARRAY || node.type == json::ARRAY_NL) {
-                    indent += "\t";
-                    if (node.name == "") res += "[";
-                    else res += "\"" + node.name + "\": [";
-                    arr = (node.type == json::ARRAY_NL) ? json::ARRAY : json::NA;
-                }
-                else if (node.type == json::STRING) {
-                    if (node.name == "") res += "\"" + node.value + "\"";
-                    else res += "\"" + node.name + "\": \"" + node.value + "\"";
-                }
-                else if (node.type == json::NUMBER) {
-                    if (node.name == "") res += node.value;
-                    else res += "\"" + node.name + "\": " + node.value;
-                }
-                else if (node.type == json::BOOL) {
-                    if (node.name == "") res += node.value;
-                    else res += "\"" + node.name + "\": " + node.value;
-                }
-                else if (node.type == json::NIL) {
-                    if (node.name == "") res += "null";
-                    else res += "\"" + node.name + "\": null";
-                }
+                return 0;
             }
-            if (arr != json::ARRAY) res += nl;
-            else res += nl2;
         }
-        return res;
+        count++;
+        c = u[++f];
     }
-    std::string unescape_string(const std::string& string) {
-        std::string res;
-        for (size_t f = 0; f < string.length(); f++) {
-            unsigned char c = string[f];
-            unsigned char n = string[f + 1];
-            if (c == '\\') {
-                if (n == 't') res += '\t';
-                else if (n == 'n') res += '\n';
-                else if (n == 'r') res += '\r';
-                else if (n == 'b') res += '\b';
-                else if (n == 'f') res += '\f';
-                else if (n == '\"') res += '"';
-                else if (n == '\\') res += '\\';
-                f++;
+    return count;
+}
+void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int skip) {
+    std::string c = (comma == true) ? "," : "";
+    std::string n = (skip > 1) ? "" : "\n";
+    size_t      f = 0;
+    if (js->is_array() == true) {
+        j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
+        for (auto n : *js->_va) {
+            if (skip == 0) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
+            else JS::_Encode(n, j, t, f < (js->_va->size() - 1), skip);
+            if (skip == 0) t.pop_back();
+            f++;
+        }
+        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
+    }
+    else if (js->is_object() == true) {
+        j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
+        for (auto& n : *js->_vo) {
+            if (skip == 0) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
+            else JS::_Encode(n.second, j, t, f < (js->_vo->size() - 1), skip);
+            if (skip == 0) t.pop_back();
+            f++;
+        }
+        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
+    }
+    else {
+        j += t + js->_encode(false, skip) + c + n;
+    }
+}
+void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
+    std::string c = (comma == true) ? "," : "";
+    size_t      f = 0;
+    if (*js == ARRAY) {
+        j += js->_encode(false, skip);
+        for (auto n : *js->_va) {
+            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
+            f++;
+        }
+        j += "]" + c;
+    }
+    else if (*js == OBJECT) {
+        j += js->_encode(false, skip);
+        for (auto& n : *js->_vo) {
+            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
+            f++;
+        }
+        j += "}" + c;
+    }
+    else {
+        j += js->_encode(false, skip) + c;
+    }
+}
+std::string JS::Escape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string) + 5);
+    while (*string != 0) {
+        auto c = *string;
+        if (c == 9) res += "\\t";
+        else if (c == 10) res += "\\n";
+        else if (c == 13) res += "\\r";
+        else if (c == 8) res += "\\b";
+        else if (c == 14) res += "\\f";
+        else if (c == 34) res += "\\\"";
+        else if (c == 92) res += "\\\\";
+        else res += c;
+        string++;
+    }
+    return res;
+}
+std::string JS::Unescape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string));
+    while (*string != 0) {
+        unsigned char c = *string;
+        unsigned char n = *(string + 1);
+        if (c == '\\') {
+            if (n == 't') res += '\t';
+            else if (n == 'n') res += '\n';
+            else if (n == 'r') res += '\r';
+            else if (n == 'b') res += '\b';
+            else if (n == 'f') res += '\f';
+            else if (n == '\"') res += '"';
+            else if (n == '\\') res += '\\';
+            else if (n == 0) break;
+            string++;
+        }
+        else {
+            res += c;
+        }
+        string++;
+    }
+    return res;
+}
+JSB& JSB::add(JS* js) {
+    auto name = js->name();
+    if (_current == nullptr) {
+        if (name != "") {
+            delete js;
+            throw std::string("error: root object must be nameless <" + name + ">");
+        }
+        else {
+            _root = _current = js;
+        }
+    }
+    else {
+        js->_parent = _current;
+        if (_current->is_array() == true) {
+            if (name != "") {
+                delete js;
+                throw std::string("error: values added to array are nameless <" + name + ">");
             }
-            else res += c;
+            else if (*js == JS::ARRAY || *js == JS::OBJECT) {
+                _current->_va->push_back(js);
+                _current = js;
+            }
+            else {
+                _current->_va->push_back(js);
+            }
         }
-        return res;
+        else if (_current->is_object() == true) {
+            if (_current->find(name) != nullptr) {
+                delete js;
+                throw std::string("error: duplicate name <" + name + ">");
+            }
+            else if (js->is_array() == true || js->is_object() == true) {
+                (*_current->_vo)[name] = js;
+                _current = js;
+            }
+            else {
+                (*_current->_vo)[name] = js;
+            }
+        }
+        else {
+            delete js;
+            throw std::string("error: missing container");
+        }
     }
-     Err validate(const char* json) {
-        auto nodes = NodeVector();
-        return parse(json, nodes);
+    return *this;
+}
+std::string JSB::encode() const {
+    if (_root == nullptr) {
+        throw std::string("error: empty json");
     }
-     Err validate(std::string json) {
-        auto nodes = NodeVector();
-        return parse(json.c_str(), nodes);
+    else if (_name != "") {
+        throw std::string("error: unused name value <" + _name + ">");
     }
+    auto j = _root->encode();
+    if (j.find("error") == 0) {
+        throw j;
+    }
+    return j;
+}
+JSB& JSB::end() {
+    if (_current == nullptr) {
+        throw std::string("error: empty json");
+    }
+    else if (_current == _root) {
+        throw std::string("error: already at the top level");
+    }
+    _current = _current->parent();
+    return *this;
 }
 }
 #include <FL/fl_draw.H>
@@ -5941,88 +6318,89 @@ void flw::LcdNumber::value(const char *value) {
 #include <FL/fl_ask.H>
 #include <FL/Fl_File_Chooser.H>
 namespace flw {
-    namespace logdisplay {
-        #define STYLE_ATTRIBUTE 0, 0
-        #define STYLE_ATTRIBUTE2 Fl_Text_Display::ATTR_BGCOLOR, 0
-        Fl_Color BG_COLOR      = fl_lighter(FL_GRAY);
-        Fl_Color BG_DARK_COLOR = FL_WHITE;
-        size_t   MAX_LINE_LEN  = 1000;
-        size_t   TURN_WRAP_ON  =  300;
-        Fl_Text_Display::Style_Table_Entry STYLE_TABLE[] = {
-            { FL_FOREGROUND_COLOR,  FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_GRAY,              FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_RED,               FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_DARK_GREEN,        FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_BLUE,              FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_MAGENTA,           FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_DARK_YELLOW,       FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_CYAN,              FL_COURIER,         14, STYLE_ATTRIBUTE },
-            { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_GRAY,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_RED,               FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_BLUE,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_MAGENTA,           FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_CYAN,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE },
-            { FL_FOREGROUND_COLOR,  FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_GRAY,              FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_RED,               FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_GREEN,        FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_BLUE,              FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_MAGENTA,           FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_YELLOW,       FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_CYAN,              FL_COURIER,         14, STYLE_ATTRIBUTE2 },
-            { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_GRAY,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_RED,               FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_BLUE,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_MAGENTA,           FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-            { FL_CYAN,              FL_COURIER_BOLD,    14, STYLE_ATTRIBUTE2 },
-        };
-        static const std::string JSON_EXAMPLE = R"(Example json string
+Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE_TABLE[] = {
+    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, 0, 0 },
+    { FL_GRAY,              FL_COURIER,         14, 0, 0 },
+    { FL_RED,               FL_COURIER,         14, 0, 0 },
+    { FL_DARK_GREEN,        FL_COURIER,         14, 0, 0 },
+    { FL_BLUE,              FL_COURIER,         14, 0, 0 },
+    { FL_MAGENTA,           FL_COURIER,         14, 0, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER,         14, 0, 0 },
+    { FL_CYAN,              FL_COURIER,         14, 0, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_GRAY,              FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_RED,               FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_BLUE,              FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_MAGENTA,           FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_CYAN,              FL_COURIER_BOLD,    14, 0, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_GRAY,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_RED,               FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_GREEN,        FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_BLUE,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_MAGENTA,           FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_CYAN,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_GRAY,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_RED,               FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_BLUE,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_MAGENTA,           FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_CYAN,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+};
+static const std::string _LOGDISPLAY_JSON_EXAMPLE = R"(Example json string
 All available options are below.
 Use one or all.
-{
-    "lock": {
+[
+    {
+        "style": "lock",
         "on": true
     },
-    "line": {
+    {
+        "style": "line",
         "start": 0,
         "stop": 10,
         "color": "RED"
     },
-    "num": {
+    {
+        "style": "num",
         "color": "MAGENTA",
         "count": 0
     },
-    "string": {
+    {
+        "style": "string",
         "word1": "find_text_from_left",
         "color": "BLUE",
         "count": 0
     },
-    "rstring": {
+    {
+        "style": "rstring",
         "word1": "find_text_from_right",
         "color": "BLUE",
         "count": 1
     },
-    "range": {
+    {
+        "style": "range",
         "word1": "from_string",
         "word2": "to_string",
         "inclusive": true,
         "color": "BLUE",
         "count": 0
     },
-    "between": {
+    {
+        "style": "between",
         "word1": "from_first_string",
         "word2": "to_last_string",
         "inclusive": true,
         "color": "BLUE",
         "count": 0
     },
-    "custom": {
+    {
+        "style": "custom",
         "word1": "string_1",
         "word2": "string_2",
         "start": 0,
@@ -6031,48 +6409,54 @@ Use one or all.
         "color": "BLUE",
         "count": 0
     }
-}
-    )";
-        static const std::string HELP = R"(@bSet style colors
+]
+)";
+static const std::string _LOGDISPLAY_HELP = R"(@bSet style colors
 All options will be called for every line.
 Text must be valid JSON wrapped within [].
 Count property is how many strings to color, 0 means all.
 If inclusive is set to false only characters between found strings will be colored.
 
 If lock is true then never change colors that have been set.
-@f"lock": {
+@f{
+@f    "style": "lock",
 @f    "on": true
 @f}
 
 Color characters by using index in line.
-@f"line": {
+@f{
+@f    "style": "line",
 @f    "start": 0,
 @f    "stop": 10,
 @f    "color": "RED"
 @f}
 
 Color all numbers.
-@f"num": {
+@f{
+@f    "style": "num",
 @f    "color": "MAGENTA",
 @f    "count": 0
 @f}
 
 Color strings.
-@f"string": {
+@f{
+@f    "style": "string",
 @f    "word1": "find_text_from_left",
 @f    "color": "BLUE",
 @f    "count": 0
 @f}
 
 Color string but start from the right.
-@f"rstring": {
+@f{
+@f    "style": "rstring",
 @f    "word1": "find_text_from_right",
 @f    "color": "BLUE",
 @f    "count": 0
 @f}
 
 Color text between two strings.
-@f"range": {
+@f{
+@f    "style": "range",
 @f    "word1": "from_string",
 @f    "word2": "to_string",
 @f    "inclusive": true,
@@ -6081,7 +6465,8 @@ Color text between two strings.
 @f}
 
 Color text from first found string to the last found string.
-@f"between": {
+@f{
+@f    "style": "between",
 @f    "word1": "from_first_string",
 @f    "word2": "to_last_string",
 @f    "inclusive": true,
@@ -6089,7 +6474,8 @@ Color text from first found string to the last found string.
 @f}
 
 This property will call LogDisplay::line_custom_cb() which does nothing so override it.
-@f"custom": {
+@f{
+@f    "style": "custom",
 @f    "word1": "string_1",
 @f    "word2": "string_2",
 @f    "start": 0,
@@ -6133,189 +6519,155 @@ BG_BOLD_YELLOW
 BG_BOLD_CYAN
 
     )";
-        static const std::string TOOLTIP = R"(Ctrl + 'f' for enter search text.
+static const std::string _LOGDISPLAY_TOOLTIP = R"(Ctrl + 'f' for enter search text.
 F3 to search for next word.
 Shift + F3 to search for previous word.
 Ctrl + 'h' to display style string help.
 Ctrl + 'e' to edit style string.
-    )";
-        enum class STYLE {
-            EMPTY,
-            LOCK,
-            LINE,
-            STRING,
-            RSTRING,
-            RANGE,
-            NUM,
-            BETWEEN,
-            CUSTOM,
-        };
-        struct Style {
-            COLOR               color;
-            size_t              count;
-            bool                inclusive;
-            bool                on;
-            size_t              start;
-            size_t              stop;
-            STYLE               style;
-            std::string         word1;
-            std::string         word2;
-            Style() {
-                color     = COLOR::FOREGROUND;
-                count     = ALL_STRINGS;
-                inclusive = false;
-                on        = false;
-                start     = 0;
-                stop      = 0;
-                style     = STYLE::EMPTY;
+)";
+struct _LogDisplayStyle {
+    enum STYLE {
+                                EMPTY,
+                                BETWEEN,
+                                CUSTOM,
+                                LINE,
+                                LOCK,
+                                NUM,
+                                RANGE,
+                                RSTRING,
+                                STRING,
+    };
+    LogDisplay::COLOR           color;
+    STYLE                       style;
+    bool                        inclusive;
+    bool                        on;
+    size_t                      count;
+    size_t                      start;
+    size_t                      stop;
+    std::string                 word1;
+    std::string                 word2;
+    _LogDisplayStyle() {
+        color     = LogDisplay::FOREGROUND;
+        count     = 0;
+        inclusive = false;
+        on        = false;
+        start     = 0;
+        stop      = 0;
+        style     = _LogDisplayStyle::EMPTY;
+    }
+};
+static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
+    if (name == "GRAY") return LogDisplay::GRAY;
+    else if (name == "RED") return LogDisplay::RED;
+    else if (name == "GREEN") return LogDisplay::GREEN;
+    else if (name == "BLUE") return LogDisplay::BLUE;
+    else if (name == "MAGENTA") return LogDisplay::MAGENTA;
+    else if (name == "YELLOW") return LogDisplay::YELLOW;
+    else if (name == "CYAN") return LogDisplay::CYAN;
+    else if (name == "BOLD_FOREGROUND") return LogDisplay::BOLD_FOREGROUND;
+    else if (name == "BOLD_GRAY") return LogDisplay::BOLD_GRAY;
+    else if (name == "BOLD_RED") return LogDisplay::BOLD_RED;
+    else if (name == "BOLD_GREEN") return LogDisplay::BOLD_GREEN;
+    else if (name == "BOLD_BLUE") return LogDisplay::BOLD_BLUE;
+    else if (name == "BOLD_MAGENTA") return LogDisplay::BOLD_MAGENTA;
+    else if (name == "BOLD_YELLOW") return LogDisplay::BOLD_YELLOW;
+    else if (name == "BOLD_CYAN") return LogDisplay::BOLD_CYAN;
+    else if (name == "BG_FOREGROUND") return LogDisplay::BG_FOREGROUND;
+    else if (name == "BG_GRAY") return LogDisplay::BG_GRAY;
+    else if (name == "BG_RED") return LogDisplay::BG_RED;
+    else if (name == "BG_GREEN") return LogDisplay::BG_GREEN;
+    else if (name == "BG_BLUE") return LogDisplay::BG_BLUE;
+    else if (name == "BG_MAGENTA") return LogDisplay::BG_MAGENTA;
+    else if (name == "BG_YELLOW") return LogDisplay::BG_YELLOW;
+    else if (name == "BG_CYAN") return LogDisplay::BG_CYAN;
+    else if (name == "BG_BOLD_FOREGROUND") return LogDisplay::BG_BOLD_FOREGROUND;
+    else if (name == "BG_BOLD_GRAY") return LogDisplay::BG_BOLD_GRAY;
+    else if (name == "BG_BOLD_RED") return LogDisplay::BG_BOLD_RED;
+    else if (name == "BG_BOLD_GREEN") return LogDisplay::BG_BOLD_GREEN;
+    else if (name == "BG_BOLD_BLUE") return LogDisplay::BG_BOLD_BLUE;
+    else if (name == "BG_BOLD_MAGENTA") return LogDisplay::BG_BOLD_MAGENTA;
+    else if (name == "BG_BOLD_YELLOW") return LogDisplay::BG_BOLD_YELLOW;
+    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
+    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
+    else return LogDisplay::GRAY;
+}
+static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
+    #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
+    auto res = std::vector<_LogDisplayStyle>();
+    auto js  = JS();
+    auto err = js.decode(json.c_str(), json.length());
+    if (err != "") {
+        fl_alert("error: failed to parse json\n%s", err.c_str());
+        return res;
+    }
+    if (js.is_array() == false) FLW_LOGDISPLAY_ERROR(&js)
+    for (auto j : *js.va()) {
+        if (j->is_object() == false) FLW_LOGDISPLAY_ERROR(j);
+        auto style = _LogDisplayStyle();
+        for (auto j2 : j->vo_to_va()) {
+            if (j2->name() == "color" && j2->is_string() == true)           style.color     = _logdisplay_convert_color(j2->vs());
+            else if (j2->name() == "count" && j2->is_number() == true)      style.count     = (size_t) j2->vn_i();
+            else if (j2->name() == "inclusive" && j2->is_bool() == true)    style.inclusive = j2->vb();
+            else if (j2->name() == "on" && j2->is_bool() == true)           style.on        = j2->vb();
+            else if (j2->name() == "start" && j2->is_number() == true)      style.start     = (size_t) j2->vn_i();
+            else if (j2->name() == "stop" && j2->is_number() == true)       style.stop      = (size_t) j2->vn_i();
+            else if (j2->name() == "word1" && j2->is_string() == true)      style.word1     = j2->vs_u();
+            else if (j2->name() == "word2" && j2->is_string() == true)      style.word2     = j2->vs_u();
+            else if (j2->name() == "style" && j2->is_string() == true) {
+                if (j2->vs() == "between")      style.style = _LogDisplayStyle::BETWEEN;
+                else if (j2->vs() == "custom")  style.style = _LogDisplayStyle::CUSTOM;
+                else if (j2->vs() == "line")    style.style = _LogDisplayStyle::LINE;
+                else if (j2->vs() == "lock")    style.style = _LogDisplayStyle::LOCK;
+                else if (j2->vs() == "num")     style.style = _LogDisplayStyle::NUM;
+                else if (j2->vs() == "range")   style.style = _LogDisplayStyle::RANGE;
+                else if (j2->vs() == "rstring") style.style = _LogDisplayStyle::RSTRING;
+                else if (j2->vs() == "string")  style.style = _LogDisplayStyle::STRING;
+                else FLW_LOGDISPLAY_ERROR(j2)
             }
-        };
-        static COLOR convert_color_string(std::string name) {
-            if (name == "GRAY") return COLOR::GRAY;
-            else if (name == "RED") return COLOR::RED;
-            else if (name == "GREEN") return COLOR::GREEN;
-            else if (name == "BLUE") return COLOR::BLUE;
-            else if (name == "MAGENTA") return COLOR::MAGENTA;
-            else if (name == "YELLOW") return COLOR::YELLOW;
-            else if (name == "CYAN") return COLOR::CYAN;
-            else if (name == "BOLD_FOREGROUND") return COLOR::BOLD_FOREGROUND;
-            else if (name == "BOLD_GRAY") return COLOR::BOLD_GRAY;
-            else if (name == "BOLD_RED") return COLOR::BOLD_RED;
-            else if (name == "BOLD_GREEN") return COLOR::BOLD_GREEN;
-            else if (name == "BOLD_BLUE") return COLOR::BOLD_BLUE;
-            else if (name == "BOLD_MAGENTA") return COLOR::BOLD_MAGENTA;
-            else if (name == "BOLD_YELLOW") return COLOR::BOLD_YELLOW;
-            else if (name == "BOLD_CYAN") return COLOR::BOLD_CYAN;
-            else if (name == "BG_FOREGROUND") return COLOR::BG_FOREGROUND;
-            else if (name == "BG_GRAY") return COLOR::BG_GRAY;
-            else if (name == "BG_RED") return COLOR::BG_RED;
-            else if (name == "BG_GREEN") return COLOR::BG_GREEN;
-            else if (name == "BG_BLUE") return COLOR::BG_BLUE;
-            else if (name == "BG_MAGENTA") return COLOR::BG_MAGENTA;
-            else if (name == "BG_YELLOW") return COLOR::BG_YELLOW;
-            else if (name == "BG_CYAN") return COLOR::BG_CYAN;
-            else if (name == "BG_BOLD_FOREGROUND") return COLOR::BG_BOLD_FOREGROUND;
-            else if (name == "BG_BOLD_GRAY") return COLOR::BG_BOLD_GRAY;
-            else if (name == "BG_BOLD_RED") return COLOR::BG_BOLD_RED;
-            else if (name == "BG_BOLD_GREEN") return COLOR::BG_BOLD_GREEN;
-            else if (name == "BG_BOLD_BLUE") return COLOR::BG_BOLD_BLUE;
-            else if (name == "BG_BOLD_MAGENTA") return COLOR::BG_BOLD_MAGENTA;
-            else if (name == "BG_BOLD_YELLOW") return COLOR::BG_BOLD_YELLOW;
-            else if (name == "BG_BOLD_CYAN") return COLOR::BG_BOLD_CYAN;
-            else if (name == "BG_BOLD_CYAN") return COLOR::BG_BOLD_CYAN;
-            else return COLOR::GRAY;
+            else FLW_LOGDISPLAY_ERROR(j2)
         }
-        static std::vector<Style> parse_json(std::string json) {
-            auto nv  = json::NodeVector();
-            auto err = json::parse(json, nv);
-            auto res = std::vector<Style>();
-            if (err.pos >= 0) {
-                fl_alert("error: failed to parse json string at line %d and byte %d", (int) err.line, (int) err.pos);
-                return res;
-            }
-            else if (nv.size() < 3) {
-                fl_alert("error: nothing to parse");
-                return res;
-            }
-            for (const auto& n : json::find_children(nv, nv[0])) {
-                if (n.is_object() == true) {
-                    auto style = Style();
-                    if (n.name == "lock") {
-                        style.style = STYLE::LOCK;
-                    }
-                    else if (n.name == "line") {
-                        style.style = STYLE::LINE;
-                    }
-                    else if (n.name == "num") {
-                        style.style = STYLE::NUM;
-                    }
-                    else if (n.name == "string") {
-                        style.style = STYLE::STRING;
-                    }
-                    else if (n.name == "rstring") {
-                        style.style = STYLE::RSTRING;
-                    }
-                    else if (n.name == "between") {
-                        style.style = STYLE::BETWEEN;
-                    }
-                    else if (n.name == "range") {
-                        style.style = STYLE::RANGE;
-                    }
-                    else if (n.name == "custom") {
-                        style.style = STYLE::CUSTOM;
-                    }
-                    auto children = json::find_children(nv, n);
-                    for (const auto& n2 : children) {
-                        if (n2.name == "on" && n2.is_bool() == true) {
-                            style.on = n2.tobool();
-                        }
-                        else if (n2.name == "inclusive" && n2.is_bool() == true) {
-                            style.inclusive = n2.tobool();
-                        }
-                        else if (n2.name == "start" && n2.is_number() == true) {
-                            style.start = (size_t) n2.toint();
-                        }
-                        else if (n2.name == "stop" && n2.is_number() == true) {
-                            style.stop = (size_t) n2.toint();
-                        }
-                        else if (n2.name == "count" && n2.is_number() == true) {
-                            style.count = (size_t) n2.toint();
-                        }
-                        else if (n2.name == "color" && n2.is_string() == true) {
-                            style.color = convert_color_string(n2.value);
-                        }
-                        else if (n2.name == "word1" && n2.is_string() == true) {
-                            style.word1 = n2.tostring();
-                        }
-                        else if (n2.name == "word2" && n2.is_string() == true) {
-                            style.word2 = n2.tostring();
-                        }
-                    }
-                    if (style.style != STYLE::EMPTY) {
-                        res.push_back(style);
-                    }
-                }
-            }
-            return res;
-        }
-        char* win_to_unix(const char* string) {
-            auto r = false;
-            auto b = string;
-            while (*b != 0) {
-                if (*b++ == '\r') {
-                    r = true;
-                    break;
-                }
-            }
-            if (r == false) {
-                return nullptr;
-            }
-            auto len = strlen(string);
-            auto res = (char*) calloc(len + 1, 1);
-            auto pos = 0;
-            if (res != nullptr) {
-                b = string;
-                while (*b != 0) {
-                    if (*b != '\r') {
-                        res[pos++] = *b;
-                    }
-                    b++;
-                }
-            }
-            return res;
+        if (style.style != _LogDisplayStyle::EMPTY) {
+            res.push_back(style);
         }
     }
+    return res;
 }
-flw::LogDisplay::LogDisplay::Tmp::Tmp() {
+static char* _logdisplay_win_to_unix(const char* string) {
+    auto r = false;
+    auto b = string;
+    while (*b != 0) {
+        if (*b++ == '\r') {
+            r = true;
+            break;
+        }
+    }
+    if (r == false) {
+        return nullptr;
+    }
+    auto len = strlen(string);
+    auto res = (char*) calloc(len + 1, 1);
+    auto pos = 0;
+    if (res != nullptr) {
+        b = string;
+        while (*b != 0) {
+            if (*b != '\r') {
+                res[pos++] = *b;
+            }
+            b++;
+        }
+    }
+    return res;
+}
+LogDisplay::LogDisplay::Tmp::Tmp() {
     buf  = nullptr;
     len  = 0;
     pos  = 0;
     size = 0;
 }
-flw::LogDisplay::LogDisplay::Tmp::~Tmp() {
+LogDisplay::LogDisplay::Tmp::~Tmp() {
     free(buf);
 }
-flw::LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Display(x, y, w, h, l) {
+LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Display(x, y, w, h, l) {
     _buffer      = new Fl_Text_Buffer();
     _style       = new Fl_Text_Buffer();
     _lock_colors = false;
@@ -6324,23 +6676,23 @@ flw::LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text
     linenumber_align(FL_ALIGN_RIGHT);
     linenumber_format("%5d");
     update_pref();
-    tooltip(logdisplay::TOOLTIP.c_str());
+    tooltip(_LOGDISPLAY_TOOLTIP.c_str());
 }
-flw::LogDisplay::~LogDisplay() {
+LogDisplay::~LogDisplay() {
     buffer(nullptr);
     delete _buffer;
     delete _style;
     delete _tmp;
 }
-void flw::LogDisplay::edit_styles() {
-    auto json    = (_json == "") ? logdisplay::JSON_EXAMPLE : _json;
+void LogDisplay::edit_styles() {
+    auto json    = (_json == "") ? _LOGDISPLAY_JSON_EXAMPLE : _json;
     auto changed = dlg::text_edit("Edit JSON Style String", json, top_window(), 40, 50);
     if (changed == false) {
         return;
     }
     style(json);
 }
-void flw::LogDisplay::find(bool next, bool force_ask) {
+void LogDisplay::find(bool next, bool force_ask) {
     if (_find == "" || force_ask) {
         auto s = fl_input("Enter search string", _find.c_str());
         if (s == nullptr || *s == 0) {
@@ -6381,7 +6733,7 @@ void flw::LogDisplay::find(bool next, bool force_ask) {
     insert_position(pos);
     show_insert_position();
 }
-int flw::LogDisplay::handle(int event) {
+int LogDisplay::handle(int event) {
     if (event == FL_KEYBOARD) {
         auto key = Fl::event_key();
         if (Fl::event_ctrl() != 0) {
@@ -6399,7 +6751,7 @@ int flw::LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("Style Help", logdisplay::HELP, top_window(), false, 40, 30);
+                dlg::list("Style Help", _LOGDISPLAY_HELP, top_window(), false, 40, 30);
                 return 1;
             }
         }
@@ -6412,15 +6764,15 @@ int flw::LogDisplay::handle(int event) {
     }
     return Fl_Text_Display::handle(event);
 }
-void flw::LogDisplay::save_file() {
+void LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
     if (filename != nullptr && _buffer->savefile(filename) != 0) {
         fl_alert("error: failed to save text to %s", filename);
     }
 }
-void flw::LogDisplay::style(std::string json) {
+void LogDisplay::style(std::string json) {
     auto row = 1;
-    auto ds  = (json != "") ? logdisplay::parse_json(json) : std::vector<logdisplay::Style>();
+    auto ds  = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
     _json      = json;
     _tmp       = new Tmp();
     _tmp->size = _buffer->length();
@@ -6436,29 +6788,29 @@ void flw::LogDisplay::style(std::string json) {
             else {
                 lock_colors(false);
                 for (const auto& d : ds) {
-                    if (d.style == logdisplay::STYLE::LOCK) {
-                        lock_colors(d.on);
-                    }
-                    else if (d.style == logdisplay::STYLE::LINE) {
-                        style_line(d.start, d.stop, d.color);
-                    }
-                    else if (d.style == logdisplay::STYLE::STRING) {
-                        style_string(line, d.word1, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::RSTRING) {
-                        style_rstring(line, d.word1, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::RANGE) {
-                        style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::NUM) {
-                        style_num(line, d.color, d.count);
-                    }
-                    else if (d.style == logdisplay::STYLE::BETWEEN) {
+                    if (d.style == _LogDisplayStyle::BETWEEN) {
                         style_range(line, d.word1, d.word2, d.inclusive, d.color);
                     }
-                    else if (d.style == logdisplay::STYLE::CUSTOM) {
+                    else if (d.style == _LogDisplayStyle::CUSTOM) {
                         line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::LINE) {
+                        style_line(d.start, d.stop, d.color);
+                    }
+                    else if (d.style == _LogDisplayStyle::LOCK) {
+                        lock_colors(d.on);
+                    }
+                    else if (d.style == _LogDisplayStyle::NUM) {
+                        style_num(line, d.color, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::RANGE) {
+                        style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::RSTRING) {
+                        style_rstring(line, d.word1, d.color, d.count);
+                    }
+                    else if (d.style == _LogDisplayStyle::STRING) {
+                        style_string(line, d.word1, d.color, d.count);
                     }
                 }
             }
@@ -6467,12 +6819,12 @@ void flw::LogDisplay::style(std::string json) {
             free(line);
         }
         _style->text(_tmp->buf);
-        highlight_data(_style, logdisplay::STYLE_TABLE, sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]), (char) logdisplay::COLOR::FOREGROUND, nullptr, 0);
+        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), (char) LogDisplay::FOREGROUND, nullptr, 0);
     }
     delete _tmp;
     _tmp = nullptr;
 }
-void flw::LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color) {
+void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -6487,18 +6839,18 @@ void flw::LogDisplay::style_between(const std::string& line, const std::string& 
         }
     }
 }
-void flw::LogDisplay::style_line(size_t start, size_t stop, logdisplay::COLOR c) {
+void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::COLOR c) {
     assert(_tmp);
     start += _tmp->pos;
     stop  += _tmp->pos;
     while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->len) {
-        if (_lock_colors == false || _tmp->buf[start] == (char) logdisplay::COLOR::FOREGROUND) {
+        if (_lock_colors == false || _tmp->buf[start] == (char) LogDisplay::LogDisplay::FOREGROUND) {
             _tmp->buf[start] = (char) c;
         }
         start++;
     }
 }
-void flw::LogDisplay::style_num(const std::string& line, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_num(const std::string& line, LogDisplay::COLOR color, size_t count) {
     if (count == 0) {
         count = 999;
     }
@@ -6510,7 +6862,7 @@ void flw::LogDisplay::style_num(const std::string& line, logdisplay::COLOR color
         }
     }
 }
-void flw::LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -6538,7 +6890,7 @@ void flw::LogDisplay::style_range(const std::string& line, const std::string& wo
         }
     }
 }
-void flw::LogDisplay::style_rstring(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -6555,7 +6907,7 @@ void flw::LogDisplay::style_rstring(const std::string& line, const std::string& 
         count--;
     }
 }
-void flw::LogDisplay::style_string(const std::string& line, const std::string& word1, logdisplay::COLOR color, size_t count) {
+void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -6569,7 +6921,7 @@ void flw::LogDisplay::style_string(const std::string& line, const std::string& w
         count--;
     }
 }
-void flw::LogDisplay::update_pref() {
+void LogDisplay::update_pref() {
     labelsize(flw::PREF_FIXED_FONTSIZE);
     linenumber_bgcolor(FL_BACKGROUND_COLOR);
     linenumber_fgcolor(FL_FOREGROUND_COLOR);
@@ -6578,23 +6930,21 @@ void flw::LogDisplay::update_pref() {
     linenumber_width(flw::PREF_FIXED_FONTSIZE * 3);
     textfont(flw::PREF_FIXED_FONT);
     textsize(flw::PREF_FIXED_FONTSIZE);
-    for (size_t f = 0; f < sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]); f++) {
-        logdisplay::STYLE_TABLE[f].size = flw::PREF_FIXED_FONTSIZE;
-#if FL_MINOR_VERSION == 4
+    for (size_t f = 0; f < sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]); f++) {
+        _LOGDISPLAY_STYLE_TABLE[f].size = flw::PREF_FIXED_FONTSIZE;
         if (theme::is_dark() == true) {
-            logdisplay::STYLE_TABLE[f].bgcolor = logdisplay::BG_DARK_COLOR;
+            _LOGDISPLAY_STYLE_TABLE[f].bgcolor = FL_WHITE;
         }
         else {
-            logdisplay::STYLE_TABLE[f].bgcolor = logdisplay::BG_COLOR;
+            _LOGDISPLAY_STYLE_TABLE[f].bgcolor = fl_lighter(FL_GRAY);
         }
-#endif
     }
 }
-void flw::LogDisplay::value(const char* text) {
+void LogDisplay::value(const char* text) {
     assert(text);
     _buffer->text("");
     _style->text("");
-    auto win = logdisplay::win_to_unix(text);
+    auto win = _logdisplay_win_to_unix(text);
     if (win != nullptr) {
         _buffer->text(win);
         free(win);
@@ -6603,269 +6953,162 @@ void flw::LogDisplay::value(const char* text) {
         _buffer->text(text);
     }
 }
+}
 #include <assert.h>
 #include <math.h>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
-    namespace plot {
-        static const char* const        SHOW_LABELS     = "Show line labels";
-        static const char* const        SHOW_HLINES     = "Show horizontal lines";
-        static const char* const        SHOW_VLINES     = "Show vertical lines";
-        static const char* const        SAVE_FILE       = "Save to png file...";
-        int count_decimals(double number) {
-            number = fabs(number);
-            int    res     = 0;
-            int    len     = 0;
-            char*  end     = 0;
-            double inumber = (int64_t) number;
-            double fnumber = number - inumber;
-            char   buffer[100];
-            if (number > 999999999999999) {
-                snprintf(buffer, 100, "%.1f", fnumber);
+static const char* const        _PLOT_SHOW_LABELS = "Show line labels";
+static const char* const        _PLOT_SHOW_HLINES = "Show horizontal lines";
+static const char* const        _PLOT_SHOW_VLINES = "Show vertical lines";
+static const char* const        _PLOT_SAVE_FILE   = "Save to png file...";
+static int _plot_count_decimals(double number) {
+    number = fabs(number);
+    int    res     = 0;
+    int    len     = 0;
+    char*  end     = 0;
+    double inumber = (int64_t) number;
+    double fnumber = number - inumber;
+    char   buffer[100];
+    if (number > 999999999999999) {
+        snprintf(buffer, 100, "%.1f", fnumber);
+    }
+    else if (number > 9999999999999) {
+        snprintf(buffer, 100, "%.2f", fnumber);
+    }
+    else if (number > 999999999999) {
+        snprintf(buffer, 100, "%.3f", fnumber);
+    }
+    else if (number > 99999999999) {
+        snprintf(buffer, 100, "%.4f", fnumber);
+    }
+    else if (number > 9999999999) {
+        snprintf(buffer, 100, "%.5f", fnumber);
+    }
+    else if (number > 999999999) {
+        snprintf(buffer, 100, "%.6f", fnumber);
+    }
+    else if (number > 99999999) {
+        snprintf(buffer, 100, "%.7f", fnumber);
+    }
+    else if (number > 9999999) {
+        snprintf(buffer, 100, "%.8f", fnumber);
+    }
+    else {
+        snprintf(buffer, 100, "%.9f", fnumber);
+    }
+    len = strlen(buffer);
+    end = buffer + len - 1;
+    while (*end == '0') {
+        *end = 0;
+        end--;
+    }
+    res = strlen(buffer) - 2;
+    return res;
+}
+static std::string _plot_format_double(double num, int decimals, char del) {
+    char res[100];
+    *res = 0;
+    if (decimals < 0) {
+        decimals = _plot_count_decimals(num);
+    }
+    if (decimals == 0) {
+        return util::format_int((int64_t) num, del);
+    }
+    if (fabs(num) < 9223372036854775807.0) {
+        char fr_str[100];
+        auto int_num    = (int64_t) fabs(num);
+        auto double_num = (double) (fabs(num) - int_num);
+        auto int_str    = util::format_int(int_num, del);
+        auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+        if (len > 0 && len < 100) {
+            if (num < 0.0) {
+                res[0] = '-';
+                res[1] = 0;
             }
-            else if (number > 9999999999999) {
-                snprintf(buffer, 100, "%.2f", fnumber);
-            }
-            else if (number > 999999999999) {
-                snprintf(buffer, 100, "%.3f", fnumber);
-            }
-            else if (number > 99999999999) {
-                snprintf(buffer, 100, "%.4f", fnumber);
-            }
-            else if (number > 9999999999) {
-                snprintf(buffer, 100, "%.5f", fnumber);
-            }
-            else if (number > 999999999) {
-                snprintf(buffer, 100, "%.6f", fnumber);
-            }
-            else if (number > 99999999) {
-                snprintf(buffer, 100, "%.7f", fnumber);
-            }
-            else if (number > 9999999) {
-                snprintf(buffer, 100, "%.8f", fnumber);
-            }
-            else {
-                snprintf(buffer, 100, "%.9f", fnumber);
-            }
-            len = strlen(buffer);
-            end = buffer + len - 1;
-            while (*end == '0') {
-                *end = 0;
-                end--;
-            }
-            res = strlen(buffer) - 2;
-            return res;
-        }
-        std::string format_double(double num, int decimals, char del) {
-            char res[100];
-            *res = 0;
-            if (decimals < 0) {
-                decimals = plot::count_decimals(num);
-            }
-            if (decimals == 0) {
-                return util::format_int((int64_t) num, del);
-            }
-            if (fabs(num) < 9223372036854775807.0) {
-                char fr_str[100];
-                auto int_num    = (int64_t) fabs(num);
-                auto double_num = (double) (fabs(num) - int_num);
-                auto int_str    = util::format_int(int_num, del);
-                auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
-                if (len > 0 && len < 100) {
-                    if (num < 0.0) {
-                        res[0] = '-';
-                        res[1] = 0;
-                    }
-                    strncat(res, int_str.c_str(), 99);
-                    strncat(res, fr_str + 1, 99);
-                }
-            }
-            return res;
-        }
-        bool has_pairs(TYPE type) {
-            return type != TYPE::CIRCLE && type != TYPE::FILLED_CIRCLE && type != TYPE::SQUARE;
-        }
-        bool has_radius(TYPE type) {
-            return type == TYPE::CIRCLE || type == TYPE::FILLED_CIRCLE || type == TYPE::SQUARE;
-        }
-        bool load_data(Plot* plot, std::string filename) {
-            auto buf = util::load_file(filename);
-            auto nv  = json::NodeVector();
-            auto ok  = 0;
-            auto x   = Scale();
-            auto y   = Scale();
-            auto l   = false;
-            auto h   = false;
-            auto v   = false;
-            plot->clear();
-            plot->redraw();
-            if (buf.p == nullptr) {
-                fl_alert("error: failed to load %s", filename.c_str());
-                return false;
-            }
-            auto err = json::parse(buf.p, nv, true);
-            if (err.pos >= 0) {
-                fl_alert("error: failed to parse %s on line %d and byte %d", filename.c_str(), (int) err.line, (int) err.pos);
-                return false;
-            }
-            for (const auto& n : json::find_children(nv, nv[0])) {
-                auto children = json::find_children(nv, n);
-                if (n.name == "descr" && n.is_object() == true) {
-                    for (auto& n2 : children) {
-                        if ((n2.name == "type" && n2.value == "flw::plot") || (n2.name == "version" && n2.value == "1")) {
-                            ok++;
-                        }
-                    }
-                }
-                else if (ok != 2) {
-                    fl_alert("error: unknown file format");
-                    return false;
-                }
-                else if ((n.name == "xscale" || n.name == "yscale") && n.is_object() == true) {
-                    auto& scale = (n.name == "xscale") ? x : y;
-                    for (auto& n2 : children) {
-                        if (n2.name == "label") {
-                            scale.label = n2.value;
-                        }
-                        else if (n2.name == "color") {
-                            scale.color = (Fl_Color) n2.toint();
-                        }
-                        else if (n2.name == "labels") {
-                            for (auto& n3 : json::find_children(nv, n2)) {
-                                if (n3.is_string() == true) {
-                                    scale.labels.push_back(n3.value);
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (n.name == "view" && n.is_object() == true) {
-                    for (auto& n2 : children) {
-                        if (n2.name == "labels") {
-                            l = (bool) n2.tobool();
-                        }
-                        else if (n2.name == "horizontal") {
-                            h = (bool) n2.tobool();
-                        }
-                        else if (n2.name == "vertical") {
-                            v = (bool) n2.tobool();
-                        }
-                    }
-                }
-                else if (n.name == "line" && n.is_object() == true) {
-                    plot::Line line;
-                    for (auto& n2 : children) {
-                        if (n2.name == "width" && n2.is_number() == true) {
-                            line.width = (unsigned) n2.toint();
-                        }
-                        else if (n2.name == "color" && n2.is_number() == true) {
-                            line.color = (Fl_Color) n2.toint();
-                        }
-                        else if (n2.name == "type" && n2.is_string() == true) {
-                            line.type = plot::string_to_type(n2.value);
-                        }
-                        else if (n2.name == "label" && n2.is_string() == true) {
-                            line.label = n2.value;
-                        }
-                        else if (n2.name == "p" && n2.is_array()) {
-                            auto p = json::find_children(nv, n2);
-                            if (p.size() == 2) {
-                                line.points.push_back(plot::Point(p[0].tonumber(), p[1].tonumber()));
-                            }
-                        }
-                    }
-                    if (plot->add_line(line) == false) {
-                        fl_alert("error: failed to add line that started on position %u", (unsigned) n.textpos);
-                        plot->clear();
-                        return false;
-                    }
-                }
-            }
-            plot->labels(x.label, y.label);
-            plot->label_colors(x.color, y.color);
-            plot->view_options(l, h, v);
-            plot->custom_xlabels_for_points0(x.labels);
-            plot->custom_ylabels_for_points0(y.labels);
-            plot->resize();
-            return true;
-        }
-        void print(const PointVector& points) {
-            auto c = 1;
-            for (auto& p : points) {
-                fprintf(stderr, "%3d| X=%16.6f   Y=%16.6f\n", c++, p.x, p.y);
-            }
-            fflush(stderr);
-        }
-        bool save_data(const Plot* plot, std::string filename) {
-            json::NodeVector nv;
-            FLW_JSON_START(nv,
-                FLW_JSON_START_OBJECT(
-                    FLW_JSON_ADD_OBJECT("descr",
-                        FLW_JSON_ADD_STRING("type", "flw::plot")
-                        FLW_JSON_ADD_UINT("version", 1)
-                    )
-                    FLW_JSON_ADD_OBJECT("view",
-                        FLW_JSON_ADD_BOOL("labels", plot->_view.labels)
-                        FLW_JSON_ADD_BOOL("horizontal", plot->_view.horizontal)
-                        FLW_JSON_ADD_BOOL("vertical", plot->_view.vertical)
-                    )
-                    FLW_JSON_ADD_OBJECT("xscale",
-                        FLW_JSON_ADD_STRING("label", plot->_x.label)
-                        FLW_JSON_ADD_UINT("color", plot->_x.color)
-                        FLW_JSON_ADD_ARRAY_NL("labels",
-                            for (const auto& l : plot->_x.labels)
-                            FLW_JSON_ADD_STRING_TO_ARRAY(l)
-                        )
-                    )
-                    FLW_JSON_ADD_OBJECT("yscale",
-                        FLW_JSON_ADD_STRING("label", plot->_y.label)
-                        FLW_JSON_ADD_UINT("color", plot->_y.color)
-                        FLW_JSON_ADD_ARRAY_NL("labels",
-                            for (const auto& l : plot->_y.labels)
-                            FLW_JSON_ADD_STRING_TO_ARRAY(l)
-                        )
-                    )
-                    for (size_t f = 0; f < plot->_size; f++) {
-                    const auto& line = plot->_lines[f];
-                    if (line.points.size() > 0) {
-                    FLW_JSON_ADD_OBJECT("line",
-                        FLW_JSON_ADD_UINT("width", line.width)
-                        FLW_JSON_ADD_UINT("color", line.color)
-                        FLW_JSON_ADD_STRING("type", plot::type_to_string(line.type))
-                        FLW_JSON_ADD_STRING("label", line.label)
-                        for (const auto& point : line.points) {
-                        FLW_JSON_ADD_ARRAY_NL("p",
-                            FLW_JSON_ADD_NUMBER_TO_ARRAY(point.x)
-                            FLW_JSON_ADD_NUMBER_TO_ARRAY(point.y)
-                        )
-                        }
-                    )
-                    }
-                    }
-                )
-            )
-            auto js = json::tostring(nv);
-            return util::save_file(filename, js.c_str(), js.length());
-        }
-        TYPE string_to_type(std::string name) {
-            if (name == "TYPE::LINE_DASH") return TYPE::LINE_DASH;
-            else if (name == "TYPE::LINE_DOT") return TYPE::LINE_DOT;
-            else if (name == "TYPE::LINE_WITH_SQUARE") return TYPE::LINE_WITH_SQUARE;
-            else if (name == "TYPE::VECTOR") return TYPE::VECTOR;
-            else if (name == "TYPE::CIRCLE") return TYPE::CIRCLE;
-            else if (name == "TYPE::FILLED_CIRCLE") return TYPE::FILLED_CIRCLE;
-            else if (name == "TYPE::SQUARE") return TYPE::SQUARE;
-            else return TYPE::LINE;
-        }
-        std::string type_to_string(TYPE type) {
-            assert((size_t) type <= 8);
-            static const char* NAMES[] = { "TYPE::LINE", "TYPE::LINE_DASH", "TYPE::LINE_DOT", "TYPE::LINE_WITH_SQUARE", "TYPE::VECTOR", "TYPE::CIRCLE", "TYPE::FILLED_CIRCLE", "TYPE::SQUARE", "", "", };
-            return NAMES[(size_t) type];
+            strncat(res, int_str.c_str(), 99);
+            strncat(res, fr_str + 1, 99);
         }
     }
+    return res;
 }
-flw::plot::Scale::Scale() {
+static bool _plot_has_pairs(Plot::TYPE type) {
+    return type != Plot::CIRCLE && type != Plot::FILLED_CIRCLE && type != Plot::SQUARE;
+}
+static bool _plot_has_radius(Plot::TYPE type) {
+    return type == Plot::CIRCLE || type == Plot::FILLED_CIRCLE || type == Plot::SQUARE;
+}
+static Plot::TYPE _plot_string_to_type(std::string name) {
+    if (name == "LINE_DASH") return Plot::LINE_DASH;
+    else if (name == "LINE_DOT") return Plot::LINE_DOT;
+    else if (name == "LINE_WITH_SQUARE") return Plot::LINE_WITH_SQUARE;
+    else if (name == "VECTOR") return Plot::VECTOR;
+    else if (name == "CIRCLE") return Plot::CIRCLE;
+    else if (name == "FILLED_CIRCLE") return Plot::FILLED_CIRCLE;
+    else if (name == "SQUARE") return Plot::SQUARE;
+    else return Plot::LINE;
+}
+static std::string _plot_type_to_string(Plot::TYPE type) {
+    assert((size_t) type <= 8);
+    static const char* NAMES[] = { "LINE", "LINE_DASH", "LINE_DOT", "LINE_WITH_SQUARE", "VECTOR", "CIRCLE", "FILLED_CIRCLE", "SQUARE", "", "", };
+    return NAMES[(size_t) type];
+}
+struct PlotArea {
+    int                         x;
+    int                         y;
+    int                         w;
+    int                         h;
+                                PlotArea(int x = 0, int y = 0, int w = 0, int h = 0) {
+                                    this->x = x;
+                                    this->y = y;
+                                    this->w = w;
+                                    this->h = h;
+                                }
+    int                         x2() const
+                                    { return x + w; }
+    int                         y2() const
+                                    { return y + h; }
+};
+struct PlotLine {
+    Fl_Color                    color;
+    unsigned                    width;
+    bool                        visible;
+    std::string                 label;
+    PointVector                 points;
+    Plot::TYPE                  type;
+                                PlotLine();
+    void                        clear();
+};
+PlotLine::PlotLine() {
+    clear();
+}
+void PlotLine::clear() {
+    color   = FL_BLUE;
+    type    = Plot::LINE;
+    visible = true;
+    width   = 1;
+    points.clear();
+}
+struct PlotScale {
+    Fl_Color                    color;
+    int                         fr;
+    std::string                 label;
+    flw::StringVector           labels;
+    double                      max;
+    double                      max2;
+    double                      min;
+    double                      min2;
+    double                      pixel;
+    int                         text;
+    double                      tick;
+                                PlotScale();
+    void                        calc(double canvas_size);
+    void                        debug(const char* s) const;
+    void                        measure_text(int cw);
+    void                        reset_min_max();
+};
+PlotScale::PlotScale() {
     color  = FL_FOREGROUND_COLOR;
     fr     = 0;
     label  = "";
@@ -6878,7 +7121,7 @@ flw::plot::Scale::Scale() {
     text   = 0;
     tick   = 0.0;
 }
-void flw::plot::Scale::calc(double canvas_size) {
+void PlotScale::calc(double canvas_size) {
     double range = max - min;
     tick  = 0.0;
     pixel = 0.0;
@@ -6913,11 +7156,11 @@ void flw::plot::Scale::calc(double canvas_size) {
             pixel = canvas_size / (max - min);
         }
     }
-    fr = plot::count_decimals(tick);
+    fr = _plot_count_decimals(tick);
 }
-void flw::plot::Scale::debug(const char* s) const {
+void PlotScale::debug(const char* s) const {
 #ifdef DEBUG
-    fprintf(stderr, "\tflw::plot::Scale: %s\n", s);
+    fprintf(stderr, "\tPlotScale: %s\n", s);
     fprintf(stderr, "\t\tcolor  = %u\n", color);
     fprintf(stderr, "\t\tfr     = %d\n", fr);
     fprintf(stderr, "\t\tlabel  = %s\n", label.c_str());
@@ -6934,7 +7177,7 @@ void flw::plot::Scale::debug(const char* s) const {
     (void) s;
 #endif
 }
-void flw::plot::Scale::measure_text(int cw) {
+void PlotScale::measure_text(int cw) {
     if (labels.size() > 0) {
         text = 0;
         for (auto& l : labels) {
@@ -6946,22 +7189,16 @@ void flw::plot::Scale::measure_text(int cw) {
     }
     else {
         const auto dec = (fr > 0) ? fr : -1;
-        const auto l1  = plot::format_double(min, dec, ' ');
-        const auto l2  = plot::format_double(max, dec, ' ');
+        const auto l1  = _plot_format_double(min, dec, ' ');
+        const auto l2  = _plot_format_double(max, dec, ' ');
         text = (l1.length() > l2.length()) ? l1.length() * cw : l2.length() * cw;
     }
 }
-void flw::plot::Scale::reset_min_max() {
-    min = min2 = plot::MAX;
-    max = max2 = plot::MIN;
+void PlotScale::reset_min_max() {
+    min = min2 = Plot::MAX;
+    max = max2 = Plot::MIN;
 }
-flw::plot::Line::Line() {
-    color   = FL_BLUE;
-    type    = plot::TYPE::LINE;
-    visible = true;
-    width   = 1;
-}
-flw::Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     color(FL_BACKGROUND2_COLOR);
@@ -6976,78 +7213,72 @@ flw::Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H
     );
     _menu = new Fl_Menu_Button(0, 0, 0, 0);
     add(_menu);
-    _menu->add(flw::plot::SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(flw::plot::SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(flw::plot::SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(flw::plot::SAVE_FILE, 0, Plot::_CallbackSave, this);
+    _menu->add(_PLOT_SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_PLOT_SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_PLOT_SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
     _menu->add("Debug", 0, Plot::_CallbackDebug, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
+    for (size_t f = 0; f < Plot::MAX_LINES; f++) {
+        _lines[f] = new PlotLine();
+    }
+    _x    = nullptr;
+    _y    = nullptr;
+    _area = new PlotArea();
     clear();
     update_pref();
     view_options();
 }
-bool flw::Plot::add_line(const flw::plot::PointVector& points, flw::plot::TYPE type, unsigned width, std::string label, Fl_Color color) {
-    if (_size >= plot::MAX_LINES || width == 0 || width > 100) {
+Plot::~Plot() {
+    delete _area;
+    delete _x;
+    delete _y;
+    for (size_t f = 0; f < Plot::MAX_LINES; f++) {
+        delete _lines[f];
+    }
+}
+bool Plot::add_line(const PointVector& points, TYPE type, unsigned width, std::string label, Fl_Color color) {
+    if (_size >= Plot::MAX_LINES || width == 0 || width > 100) {
         return false;
     }
-    _lines[_size].points    = points;
-    _lines[_size].label     = label;
-    _lines[_size].width     = width;
-    _lines[_size].color     = color;
-    _lines[_size].type      = type;
-    _lines[_size++].visible = true;
-    _calc                   = true;
+    _lines[_size]->points    = points;
+    _lines[_size]->label     = label;
+    _lines[_size]->width     = width;
+    _lines[_size]->color     = color;
+    _lines[_size]->type      = type;
+    _lines[_size++]->visible = true;
+    _calc                    = true;
     return true;
 }
-bool flw::Plot::add_line(const plot::Line& line) {
-    if (_size >= plot::MAX_LINES || line.width < 1 || line.width > 100) {
-        return false;
-    }
-    _lines[_size++] = line;
-    return true;
-}
-void flw::Plot::_calc_min_max() {
-    _x.reset_min_max();
-    _y.reset_min_max();
+void Plot::_calc_min_max() {
+    _x->reset_min_max();
+    _y->reset_min_max();
     for (size_t f = 0; f < _size; f++) {
-        for (auto& p : _lines[f].points) {
-            if (p.x < _x.min) {
-                _x.min = p.x;
+        for (auto& p : _lines[f]->points) {
+            if (p.x < _x->min) {
+                _x->min = p.x;
             }
-            if (p.x > _x.max) {
-                _x.max = p.x;
+            if (p.x > _x->max) {
+                _x->max = p.x;
             }
-            if (p.y < _y.min) {
-                _y.min = p.y;
+            if (p.y < _y->min) {
+                _y->min = p.y;
             }
-            if (p.y > _y.max) {
-                _y.max = p.y;
+            if (p.y > _y->max) {
+                _y->max = p.y;
             }
         }
     }
-    _x.min2 = _x.min;
-    _x.max2 = _x.max;
-    _y.min2 = _y.min;
-    _y.max2 = _y.max;
+    _x->min2 = _x->min;
+    _x->max2 = _x->max;
+    _y->min2 = _y->min;
+    _y->max2 = _y->max;
 }
-void flw::Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
-    self->debug();
-}
-void flw::Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
-    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
-}
-void flw::Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
-    self->_view.labels     = flw::menu::item_value(self->_menu, plot::SHOW_LABELS);
-    self->_view.horizontal = flw::menu::item_value(self->_menu, plot::SHOW_HLINES);
-    self->_view.vertical   = flw::menu::item_value(self->_menu, plot::SHOW_VLINES);
-    self->redraw();
-}
-void flw::Plot::clear() {
+void Plot::clear() {
+    delete _x;
+    delete _y;
     _calc           = false;
     _ch             = 0;
     _ct             = 0;
@@ -7057,39 +7288,36 @@ void flw::Plot::clear() {
     _selected_point = -1;
     _size           = 0;
     _w              = 0;
-    _x              = flw::plot::Scale();
-    _y              = flw::plot::Scale();
-    selection_color(FL_FOREGROUND_COLOR);
-    clear_points();
-}
-void flw::Plot::clear_points() {
-    for (size_t f = 0; f < _size; f++) {
-        _lines[f] = plot::Line();
+    _x              = new PlotScale();
+    _y              = new PlotScale();
+    for (size_t f = 0; f < Plot::MAX_LINES; f++) {
+        _lines[f]->clear();
     }
+    selection_color(FL_FOREGROUND_COLOR);
 }
-void flw::Plot::_create_tooltip(bool ctrl) {
-    const auto X   = Fl::event_x();
-    const auto Y   = Fl::event_y();
-    const auto old = _tooltip;
+void Plot::_create_tooltip(bool ctrl) {
+    int         X   = Fl::event_x();
+    int         Y   = Fl::event_y();
+    std::string old = _tooltip;
     _tooltip        = "";
     _selected_point = -1;
-    if (X >= _area.x && X < _area.x2() && Y >= _area.y && Y < _area.y2()) {
-        auto fr = (_x.fr > _y.fr) ? _x.fr : _y.fr;
+    if (X >= _area->x && X < _area->x2() && Y >= _area->y && Y < _area->y2()) {
+        auto fr = (_x->fr > _y->fr) ? _x->fr : _y->fr;
         if (_selected_line < _size) {
-            const plot::Line&        line   = _lines[_selected_line];
-            const bool               radius = flw::plot::has_radius(line.type);
-            const plot::PointVector& points = line.points;
-            const int                rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
-            const double             xv1    = ((double) (X - _area.x - rad) / _x.pixel) + _x.min;
-            const double             xv2    = ((double) (X - _area.x + rad) / _x.pixel) + _x.min;
-            const double             yv1    = ((double) (_area.y2() - Y - rad) / _y.pixel) + _y.min;
-            const double             yv2    = ((double) (_area.y2() - Y + rad) / _y.pixel) + _y.min;
+            const auto&  line   = *_lines[_selected_line];
+            const auto&  points = line.points;
+            const bool   radius = _plot_has_radius(line.type);
+            const int    rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
+            const double xv1    = ((double) (X - _area->x - rad) / _x->pixel) + _x->min;
+            const double xv2    = ((double) (X - _area->x + rad) / _x->pixel) + _x->min;
+            const double yv1    = ((double) (_area->y2() - Y - rad) / _y->pixel) + _y->min;
+            const double yv2    = ((double) (_area->y2() - Y + rad) / _y->pixel) + _y->min;
             for (size_t i = 0; i < points.size(); i++) {
-                const plot::Point& point = points[i];
+                const auto& point = points[i];
                 if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
-                    auto xl  = plot::format_double(point.x, fr, ' ');
-                    auto yl  = plot::format_double(point.y, fr, ' ');
-                    auto len = (xl.length() > yl.length()) ? xl.length() : yl.length();
+                    std::string xl  = _plot_format_double(point.x, fr, ' ');
+                    std::string yl  = _plot_format_double(point.y, fr, ' ');
+                    size_t      len = (xl.length() > yl.length()) ? xl.length() : yl.length();
                     _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
                     _selected_point = i;
                     break;
@@ -7097,11 +7325,11 @@ void flw::Plot::_create_tooltip(bool ctrl) {
             }
         }
         if (_tooltip == "") {
-            auto xv  = ((double) (X - _area.x) / _x.pixel) + _x.min;
-            auto yv  = ((double) (_area.y2() - Y) / _y.pixel) + _y.min;
-            auto xl  = plot::format_double(xv, fr, ' ');
-            auto yl  = plot::format_double(yv, fr, ' ');
-            auto len = (xl.length() > yl.length()) ? xl.length() : yl.length();
+            double      xv  = ((double) (X - _area->x) / _x->pixel) + _x->min;
+            double      yv  = ((double) (_area->y2() - Y) / _y->pixel) + _y->min;
+            std::string xl  = _plot_format_double(xv, fr, ' ');
+            std::string yl  = _plot_format_double(yv, fr, ' ');
+            size_t      len = (xl.length() > yl.length()) ? xl.length() : yl.length();
             _tooltip = flw::util::format("X = %*s\nY = %*s", len, xl.c_str(), len, yl.c_str());
         }
     }
@@ -7109,11 +7337,17 @@ void flw::Plot::_create_tooltip(bool ctrl) {
         redraw();
     }
 }
-void flw::Plot::debug() const {
+void Plot::custom_xlabels_for_points0(const flw::StringVector& xlabels) {
+    _x->labels = xlabels;
+}
+void Plot::custom_ylabels_for_points0(const flw::StringVector& ylabels) {
+     _y->labels = ylabels;
+}
+void Plot::debug() const {
 #ifdef DEBUG
-    fprintf(stderr, "\nflw::Plot: %d\n", (int) _size);
+    fprintf(stderr, "\nPlot: %d\n", (int) _size);
     fprintf(stderr, "\tcanvas          = (%d, %d) - (%d, %d) - (%d, %d)\n", x(), y(), w(), h(), x() + w(), y() + h());
-    fprintf(stderr, "\tarea            = (%d, %d) - (%d, %d) - (%d, %d)\n", _area.x, _area.y, _area.w, _area.h, _area.x + _area.w, _area.y + _area.h);
+    fprintf(stderr, "\tarea            = (%d, %d) - (%d, %d) - (%d, %d)\n", _area->x, _area->y, _area->w, _area->h, _area->x + _area->w, _area->y + _area->h);
     fprintf(stderr, "\tcw, ch          = (%d, %d)\n", _cw, _ch);
     fprintf(stderr, "\tselected_line   = %d\n", (int) _selected_line);
     fprintf(stderr, "\tselected_point  = %d\n", (int) _selected_point);
@@ -7121,26 +7355,26 @@ void flw::Plot::debug() const {
     fprintf(stderr, "\tview_labels     = %s\n", _view.labels ? "YES" : "NO");
     fprintf(stderr, "\tview_horizontal = %s\n", _view.horizontal ? "YES" : "NO");
     fprintf(stderr, "\tview_vertical   = %s\n", _view.vertical ? "YES" : "NO");
-    _x.debug("X");
-    _y.debug("Y");
+    _x->debug("X");
+    _y->debug("Y");
     for (size_t f = 0; f < _size; f++) {
-        fprintf(stderr, "\tflw::Plot::Line: %d\n", (int) f);
-        fprintf(stderr, "\t\tcolor   = %u\n", _lines[f].color);
-        fprintf(stderr, "\t\tlabel   = '%s'\n", _lines[f].label.c_str());
-        fprintf(stderr, "\t\tpoints  = %d\n", (int) _lines[f].points.size());
-        fprintf(stderr, "\t\ttype    = %d\n", (int) _lines[f].type);
-        fprintf(stderr, "\t\tvisible = %s\n", _lines[f].visible ? "YES" : "NO");
-        fprintf(stderr, "\t\twidth   = %d px\n", (int) _lines[f].width);
+        fprintf(stderr, "\tPlot::Line: %d\n", (int) f);
+        fprintf(stderr, "\t\tcolor   = %u\n", _lines[f]->color);
+        fprintf(stderr, "\t\tlabel   = '%s'\n", _lines[f]->label.c_str());
+        fprintf(stderr, "\t\tpoints  = %d\n", (int) _lines[f]->points.size());
+        fprintf(stderr, "\t\ttype    = %d\n", (int) _lines[f]->type);
+        fprintf(stderr, "\t\tvisible = %s\n", _lines[f]->visible ? "YES" : "NO");
+        fprintf(stderr, "\t\twidth   = %d px\n", (int) _lines[f]->width);
     }
     fflush(stderr);
 #endif
 }
-void flw::Plot::draw() {
+void Plot::draw() {
 #ifdef DEBUG
 #endif
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     Fl_Group::draw();
-    if (_area.w < 50 || _area.h < 50 || _x.min >= _x.max || _x.pixel * _x.tick < 1.0 || _y.min >= _y.max || _y.pixel * _y.tick < 1.0) {
+    if (_area->w < 50 || _area->h < 50 || _x->min >= _x->max || _x->pixel * _x->tick < 1.0 || _y->min >= _y->max || _y->pixel * _y->tick < 1.0) {
         return;
     }
     fl_push_clip(x(), y(), w(), h());
@@ -7150,37 +7384,37 @@ void flw::Plot::draw() {
     _draw_ylabels2();
     _draw_labels();
     fl_pop_clip();
-    fl_push_clip(_area.x, _area.y, _area.w, _area.h);
+    fl_push_clip(_area->x, _area->y, _area->w, _area->h);
     _draw_lines();
     _draw_line_labels();
     _draw_tooltip();
     fl_pop_clip();
     fl_color(FL_FOREGROUND_COLOR);
     fl_line_style(FL_SOLID, 1);
-    fl_rect(_area.x, _area.y, _area.w, _area.h, FL_FOREGROUND_COLOR);
+    fl_rect(_area->x, _area->y, _area->w, _area->h, FL_FOREGROUND_COLOR);
     fl_line_style(0);
 #ifdef DEBUG
 #endif
 }
-void flw::Plot::_draw_labels() {
-    if (_x.label != "") {
-        fl_color(_x.color);
-        fl_draw (_x.label.c_str(), _area.x, y() + h() - _ch, _area.w, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+void Plot::_draw_labels() {
+    if (_x->label != "") {
+        fl_color(_x->color);
+        fl_draw (_x->label.c_str(), _area->x, y() + h() - _ch, _area->w, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
     }
-    if (_y.label != "") {
-        auto y = _area.y + (_area.h / 2) + (_y.label.length() * _cw / 2);
-        fl_color(_y.color);
-        fl_draw (90, _y.label.c_str(), x() + _ch, y);
+    if (_y->label != "") {
+        auto y = _area->y + (_area->h / 2) + (_y->label.length() * _cw / 2);
+        fl_color(_y->color);
+        fl_draw (90, _y->label.c_str(), x() + _ch, y);
     }
 }
-void flw::Plot::_draw_line_labels() {
+void Plot::_draw_line_labels() {
     if (_view.labels == true) {
-        const int X = _area.x + 6;
-        int       Y = _area.y + 6;
-        int       W = 0;
-        int       H = 0;
+        int X = _area->x + 6;
+        int Y = _area->y + 6;
+        int W = 0;
+        int H = 0;
         for (size_t f = 0; f < _size; f++) {
-            const auto& label = _lines[f].label;
+            const auto& label = _lines[f]->label;
             if (label != "") {
                 H++;
                 if ((int) label.length() * _cw > W) {
@@ -7198,13 +7432,13 @@ void flw::Plot::_draw_line_labels() {
             fl_line_style(FL_SOLID, 1);
             fl_rect(X, Y, W + 8, H + 8);
             for (size_t f = 0; f < _size; f++) {
-                const plot::Line& line = _lines[f];
+                auto& line = *_lines[f];
                 if (line.label != "") {
                     auto label = line.label;
                     if (f == _selected_line) {
                         label = "@-> " + label;
                     }
-                    fl_color((line.visible == false) ? FL_GRAY : _lines[f].color);
+                    fl_color((line.visible == false) ? FL_GRAY : _lines[f]->color);
                     fl_line_style(FL_SOLID, 1);
                     fl_draw(label.c_str(), X + 4, Y + 4, W, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE, nullptr, 1);
                     Y += flw::PREF_FIXED_FONTSIZE;
@@ -7214,67 +7448,67 @@ void flw::Plot::_draw_line_labels() {
         }
     }
 }
-void flw::Plot::_draw_lines() {
-    const int X = _area.x;
-    const int Y = _area.y2() - 1;
+void Plot::_draw_lines() {
+    const int X = _area->x;
+    const int Y = _area->y2() - 1;
     for (size_t f = 0; f < _size; f++) {
-        const plot::Line& data  = _lines[f];
-        const plot::TYPE  type  = data.type;
-        const int         size1 = data.width;
-        const int         size2 = size1 / 2;
-        int               x1    = 10000;
-        int               y1    = 0;
-        if (data.visible == false) {
+        const auto& line  = *_lines[f];
+        const TYPE  type  = line.type;
+        const int   size1 = line.width;
+        const int   size2 = size1 / 2;
+        int         x1    = 10000;
+        int         y1    = 0;
+        if (line.visible == false) {
             continue;
         }
-        for (size_t i = 0; i < data.points.size(); i++) {
-            const plot::Point& p = data.points[i];
-            const int          x = X + (int) ((p.x - _x.min) * _x.pixel);
-            const int          y = Y - (int) ((p.y - _y.min) * _y.pixel);
-            if (type == plot::TYPE::LINE || type == plot::TYPE::LINE_DASH || type == plot::TYPE::LINE_DOT || type == plot::TYPE::LINE_WITH_SQUARE) {
+        for (size_t i = 0; i < line.points.size(); i++) {
+            const Point& p = line.points[i];
+            const int          x = X + (int) ((p.x - _x->min) * _x->pixel);
+            const int          y = Y - (int) ((p.y - _y->min) * _y->pixel);
+            if (type == Plot::LINE || type == Plot::LINE_DASH || type == Plot::LINE_DOT || type == Plot::LINE_WITH_SQUARE) {
                 if (x1 == 10000) {
                     x1 = x;
                     y1 = y;
                 }
                 else {
-                    fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                    fl_color((_selected_point == i && _selected_line == f) ? selection_color() : line.color);
                     _draw_lines_style(type, size1);
                     fl_line(x1, y1, x, y);
                     x1 = x;
                     y1 = y;
                 }
-                if (type == plot::TYPE::LINE_WITH_SQUARE) {
-                    fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                if (type == Plot::LINE_WITH_SQUARE) {
+                    fl_color((_selected_point == i && _selected_line == f) ? selection_color() : line.color);
                     _draw_lines_style(type, size1);
                     fl_rectf(x - size1 - 3, y - size1 - 3, size1 * 2 + 6, size1 * 2 + 6);
                 }
             }
-            else if (type == plot::TYPE::VECTOR) {
+            else if (type == Plot::VECTOR) {
                 if (x1 == 10000) {
                     x1 = x;
                     y1 = y;
                 }
                 else {
-                    fl_color(((_selected_point == i || _selected_point == i - 1) && _selected_line == f) ? selection_color() : data.color);
+                    fl_color(((_selected_point == i || _selected_point == i - 1) && _selected_line == f) ? selection_color() : line.color);
                     _draw_lines_style(type, size1);
                     fl_line(x, y, x1, y1);
                     x1 = 10000;
                 }
             }
-            else if (type == plot::TYPE::CIRCLE) {
-                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+            else if (type == Plot::CIRCLE) {
+                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : line.color);
                 _draw_lines_style(type, 1);
                 fl_circle(x, y - 1, size2);
             }
-            else if (type == plot::TYPE::FILLED_CIRCLE) {
-                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+            else if (type == Plot::FILLED_CIRCLE) {
+                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : line.color);
                 _draw_lines_style(type, 1);
                 fl_begin_polygon();
                 fl_circle(x, y - 1, size2);
                 fl_end_polygon();
             }
-            else if (type == plot::TYPE::SQUARE) {
-                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+            else if (type == Plot::SQUARE) {
+                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : line.color);
                 _draw_lines_style(type, 1);
                 fl_rectf(x - size2, y - size2 - 1, size1, size1);
             }
@@ -7282,48 +7516,48 @@ void flw::Plot::_draw_lines() {
     }
     fl_line_style(0);
 }
-void flw::Plot::_draw_lines_style(plot::TYPE type, int size) {
-    if (type == plot::TYPE::LINE) {
+void Plot::_draw_lines_style(TYPE type, int size) {
+    if (type == Plot::LINE) {
         fl_line_style(FL_SOLID, size);
     }
-    else if (type == plot::TYPE::LINE_DASH) {
+    else if (type == Plot::LINE_DASH) {
         fl_line_style(FL_DASH, size);
     }
-    else if (type == plot::TYPE::LINE_DOT) {
+    else if (type == Plot::LINE_DOT) {
         fl_line_style(FL_DOT, size);
     }
-    else if (type == plot::TYPE::VECTOR) {
+    else if (type == Plot::VECTOR) {
         fl_line_style(FL_SOLID, size);
     }
-    else if (type == plot::TYPE::LINE_WITH_SQUARE) {
+    else if (type == Plot::LINE_WITH_SQUARE) {
         fl_line_style(FL_SOLID, size);
     }
-    else if (type == plot::TYPE::CIRCLE) {
+    else if (type == Plot::CIRCLE) {
         fl_line_style(FL_SOLID, size);
     }
-    else if (type == plot::TYPE::FILLED_CIRCLE) {
+    else if (type == Plot::FILLED_CIRCLE) {
         fl_line_style(FL_SOLID, size);
     }
-    else if (type == plot::TYPE::SQUARE) {
+    else if (type == Plot::SQUARE) {
         fl_line_style(FL_SOLID, size);
     }
     else {
         fl_line_style(FL_SOLID, 1);
     }
 }
-void flw::Plot::_draw_tooltip() {
+void Plot::_draw_tooltip() {
     if (_tooltip == "") {
         return;
     }
     auto X = Fl::event_x();
     auto Y = Fl::event_y();
-    if (X > _area.x2() - flw::PREF_FIXED_FONTSIZE * 19) {
+    if (X > _area->x2() - flw::PREF_FIXED_FONTSIZE * 19) {
         X -= flw::PREF_FIXED_FONTSIZE * 18;
     }
     else {
         X += flw::PREF_FIXED_FONTSIZE * 2;
     }
-    if (Y > _area.y2() - flw::PREF_FIXED_FONTSIZE * 8) {
+    if (Y > _area->y2() - flw::PREF_FIXED_FONTSIZE * 8) {
         Y -= flw::PREF_FIXED_FONTSIZE * 6;
     }
     else {
@@ -7336,32 +7570,32 @@ void flw::Plot::_draw_tooltip() {
     fl_line_style(FL_SOLID, 1);
     fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * 16, flw::PREF_FIXED_FONTSIZE * 4);
     fl_line_style(FL_SOLID, 1);
-    fl_line(Fl::event_x(), _area.y, Fl::event_x(), _area.y2() - 1);
-    fl_line(_area.x, Fl::event_y(), _area.x2() - 1, Fl::event_y());
+    fl_line(Fl::event_x(), _area->y, Fl::event_x(), _area->y2() - 1);
+    fl_line(_area->x, Fl::event_y(), _area->x2() - 1, Fl::event_y());
     fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * 14, flw::PREF_FIXED_FONTSIZE * 4, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
     fl_line_style(0);
 }
-void flw::Plot::_draw_xlabels() {
-    double       X    = _area.x;
-    const int    Y    = _area.y2();
+void Plot::_draw_xlabels() {
+    double       X    = _area->x;
+    const int    Y    = _area->y2();
     const int    W    = x2();
-    const double inc  = _x.pixel * _x.tick;
-    double       val  = _x.min;
+    const double inc  = _x->pixel * _x->tick;
+    double       val  = _x->min;
     int          last = -10'000;
-    const int    tw   = _x.text / 2;
-    while (X < _area.x2()) {
-        if (_view.vertical == true && X > (_area.x + 4) && X < (_area.x2() - 4)) {
+    const int    tw   = _x->text / 2;
+    while (X < _area->x2()) {
+        if (_view.vertical == true && X > (_area->x + 4) && X < (_area->x2() - 4)) {
             fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-            fl_line(X, _area.y + 1, X, _area.y2() - 2);
+            fl_line(X, _area->y + 1, X, _area->y2() - 2);
         }
         if (X > (last + tw) && (X + tw) < W) {
-            auto label = plot::format_double(val, _x.fr, '\'');
-            if ((int) (X + 1) == (_area.x2() - 1)) {
+            auto label = _plot_format_double(val, _x->fr, '\'');
+            if ((int) (X + 1) == (_area->x2() - 1)) {
                 X += 1.0;
             }
             fl_color(FL_FOREGROUND_COLOR);
             fl_line(X, Y, X, Y + _ct * 2);
-            if (_x.labels.size() == 0) {
+            if (_x->labels.size() == 0) {
                 fl_draw(label.c_str(), X - tw, Y + _ct * 2, tw * 2, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
             }
             last = X + tw + _cw;
@@ -7371,77 +7605,77 @@ void flw::Plot::_draw_xlabels() {
             fl_line(X, Y, X, Y + _ct);
         }
         X   += inc;
-        val += _x.tick;
+        val += _x->tick;
     }
 }
-void flw::Plot::_draw_xlabels2() {
-    if (_x.labels.size() > 0) {
-        auto index = (size_t) 0;
-        auto pair  = plot::has_pairs(_lines[0].type);
-        for (size_t i = 0; i < _lines[0].points.size(); i++) {
-            const plot::Point& point = _lines[0].points[i];
-            if (index >= _x.labels.size()) {
+void Plot::_draw_xlabels2() {
+    if (_x->labels.size() > 0) {
+        size_t index = 0;
+        bool   pair  = _plot_has_pairs(_lines[0]->type);
+        for (size_t i = 0; i < _lines[0]->points.size(); i++) {
+            const Point& point = _lines[0]->points[i];
+            if (index >= _x->labels.size()) {
                 break;
             }
             if ((i % 2 == 1 && pair == true) || pair == false) {
-                const int X = _area.x + (int) ((point.x - _x.min) * _x.pixel);
-                const int W = _x.labels[index].length() * _cw / 2;
-                fl_draw(_x.labels[index].c_str(), X - W, _area.y2() + _ct * 2, W * 2, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+                const int X = _area->x + (int) ((point.x - _x->min) * _x->pixel);
+                const int W = _x->labels[index].length() * _cw / 2;
+                fl_draw(_x->labels[index].c_str(), X - W, _area->y2() + _ct * 2, W * 2, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
                 index++;
             }
         }
     }
 }
-void flw::Plot::_draw_ylabels() {
+void Plot::_draw_ylabels() {
     const int    X    = x();
-    double       Y    = _area.y2() - 1.0;
-    const int    W    = _area.x - X - flw::PREF_FIXED_FONTSIZE;
-    const double inc  = _y.pixel * _y.tick;
-    double       val  = _y.min;
+    double       Y    = _area->y2() - 1.0;
+    const int    W    = _area->x - X - flw::PREF_FIXED_FONTSIZE;
+    const double inc  = _y->pixel * _y->tick;
+    double       val  = _y->min;
     int          last = 10'000;
-    while ((int) (Y + 0.5) >= _area.y) {
-        if (_view.horizontal == true && Y > (_area.y + _ct) && Y < (_area.y2() - _ct)) {
+    while ((int) (Y + 0.5) >= _area->y) {
+        if (_view.horizontal == true && Y > (_area->y + _ct) && Y < (_area->y2() - _ct)) {
             fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-            fl_line(_area.x + 1, Y, _area.x2() - 2, Y);
+            fl_line(_area->x + 1, Y, _area->x2() - 2, Y);
         }
         if (Y < last) {
-            const auto label = plot::format_double(val, _y.fr, '\'');
-            if (Y < (double) _area.y) {
-                Y = _area.y;
+            auto label = _plot_format_double(val, _y->fr, '\'');
+            if (Y < (double) _area->y) {
+                Y = _area->y;
             }
             fl_color(FL_FOREGROUND_COLOR);
-            fl_line(_area.x, Y, _area.x - _ct * 2, Y);
-            if (_y.labels.size() == 0) {
+            fl_line(_area->x, Y, _area->x - _ct * 2, Y);
+            if (_y->labels.size() == 0) {
                 fl_draw(label.c_str(), X, Y - _ct * 2, W, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
             }
             last = Y - flw::PREF_FIXED_FONTSIZE;
         }
         else {
             fl_color(FL_FOREGROUND_COLOR);
-            fl_line(_area.x, Y, _area.x - _ct, Y);
+            fl_line(_area->x, Y, _area->x - _ct, Y);
         }
         Y   -= inc;
-        val += _y.tick;
+        val += _y->tick;
     }
 }
-void flw::Plot::_draw_ylabels2() {
-    if (_y.labels.size() > 0) {
-        size_t     index = 0;
-        const bool pair  = plot::has_pairs(_lines[0].type);
-        for (size_t i = 0; i < _lines[0].points.size(); i++) {
-            const plot::Point& p = _lines[0].points[i];
-            if (index >= _y.labels.size()) {
+void Plot::_draw_ylabels2() {
+    if (_y->labels.size() > 0) {
+        size_t index = 0;
+        bool   pair  = _plot_has_pairs(_lines[0]->type);
+        for (size_t i = 0; i < _lines[0]->points.size(); i++) {
+            const Point& p = _lines[0]->points[i];
+            if (index >= _y->labels.size()) {
                 break;
             }
             if ((i % 2 == 1 && pair == true) || pair == false) {
-                const int Y = _area.y2() - 1 - ((p.y - _y.min) * _y.pixel);
-                fl_draw(_y.labels[index].c_str(), x() + _cw * 3, Y - _ct * 2, _y.text, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                const int Y = _area->y2() - 1 - ((p.y - _y->min) * _y->pixel);
+                fl_draw(_y->labels[index].c_str(), x() + _cw * 3, Y - _ct * 2, _y->text, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
                 index++;
             }
         }
     }
 }
-int flw::Plot::handle(int event) {
+int Plot::handle(int event) {
     if (event == FL_PUSH) {
         if (Fl::event_button1() != 0) {
             _create_tooltip(Fl::event_ctrl());
@@ -7450,9 +7684,9 @@ int flw::Plot::handle(int event) {
             }
         }
         else if (Fl::event_button3() != 0) {
-            flw::menu::set_item(_menu, plot::SHOW_LABELS, _view.labels);
-            flw::menu::set_item(_menu, plot::SHOW_HLINES, _view.horizontal);
-            flw::menu::set_item(_menu, plot::SHOW_VLINES, _view.vertical);
+            flw::menu::set_item(_menu, _PLOT_SHOW_LABELS, _view.labels);
+            flw::menu::set_item(_menu, _PLOT_SHOW_HLINES, _view.horizontal);
+            flw::menu::set_item(_menu, _PLOT_SHOW_VLINES, _view.vertical);
             _menu->popup();
             return 1;
         }
@@ -7481,7 +7715,7 @@ int flw::Plot::handle(int event) {
                 line = 0;
             }
             if (Fl::event_shift() != 0) {
-                _lines[line].visible = !_lines[line].visible;
+                _lines[line]->visible = !_lines[line]->visible;
             }
             else {
                 _selected_line = line;
@@ -7491,7 +7725,15 @@ int flw::Plot::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::Plot::resize(int X, int Y, int W, int H) {
+void Plot::labels(std::string x, std::string y) {
+    _x->label = x;
+    _y->label = y;
+}
+void Plot::label_colors(Fl_Color x, Fl_Color y) {
+    _x->color = x;
+    _y->color = y;
+}
+void Plot::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
     if (_calc == false && _w == W && _h == H) {
         return;
@@ -7506,24 +7748,184 @@ void flw::Plot::resize(int X, int Y, int W, int H) {
     fl_measure("X", _cw, _ch, 0);
     if (_calc == true) {
         _calc_min_max();
-        _x.calc(W - flw::PREF_FIXED_FONTSIZE * 6);
-        _y.calc(H - flw::PREF_FIXED_FONTSIZE * 6);
-        _x.measure_text(_cw);
-        _y.measure_text(_cw);
+        _x->calc(W - flw::PREF_FIXED_FONTSIZE * 6);
+        _y->calc(H - flw::PREF_FIXED_FONTSIZE * 6);
+        _x->measure_text(_cw);
+        _y->measure_text(_cw);
     }
-    _area.x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y.text + ((_y.label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
-    _area.y = Y + flw::PREF_FIXED_FONTSIZE;
-    _area.w = W - (_area.x - X) - flw::PREF_FIXED_FONTSIZE * 2;
-    _area.h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x.label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
-    _x.calc(_area.w - 1);
-    _y.calc(_area.h - 1);
+    _area->x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y->text + ((_y->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _area->y = Y + flw::PREF_FIXED_FONTSIZE;
+    _area->w = W - (_area->x - X) - flw::PREF_FIXED_FONTSIZE * 2;
+    _area->h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _x->calc(_area->w - 1);
+    _y->calc(_area->h - 1);
     _calc = false;
     _w    = W;
     _h    = H;
 }
-void flw::Plot::update_pref() {
+void Plot::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
+}
+#define FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); plot->clear(); return false; }
+void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
+    auto self = (Plot*) plot_object;
+    self->debug();
+}
+void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
+    auto self = (Plot*) plot_object;
+    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
+}
+void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
+    auto self = (Plot*) plot_object;
+    self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
+    self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
+    self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
+    self->redraw();
+}
+bool Plot::Load(Plot* plot, std::string filename) {
+    plot->clear();
+    plot->redraw();
+    auto wc  = WaitCursor();
+    auto buf = util::load_file(filename);
+    if (buf.p == nullptr) {
+        fl_alert("error: failed to load %s", filename.c_str());
+        return false;
+    }
+    auto js  = JS();
+    auto err = js.decode(buf.p, buf.s);
+    auto h   = false;
+    auto l   = false;
+    auto v   = false;
+    auto x   = PlotScale();
+    auto y   = PlotScale();
+    if (err != "") {
+        fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
+        return false;
+    }
+    if (js.is_object() == false) FLW_PLOT_ERROR(&js);
+    for (auto j : js.vo_to_va()) {
+        if (j->name() == "descr" && j->is_object() == true) {
+            for (auto j2 : j->vo_to_va()) {
+                if (j2->name() == "type" && j2->is_string() == true) {
+                    if (j2->vs() != "flw::plot") FLW_PLOT_ERROR(j2)
+                }
+                else if (j2->name() == "version" && j2->is_number() == true) {
+                    if (j2->vn_i() != 2) FLW_PLOT_ERROR(j2)
+                }
+                else FLW_PLOT_ERROR(j2)
+            }
+        }
+        else if (j->name() == "view" && j->is_object() == true) {
+            for (auto j2 : j->vo_to_va()) {
+                if (j2->name() == "horizontal" && j2->is_bool() == true)    h = j2->vb();
+                else if (j2->name() == "labels" && j2->is_bool() == true)   l = j2->vb();
+                else if (j2->name() == "vertical" && j2->is_bool() == true) v = j2->vb();
+                else FLW_PLOT_ERROR(j2)
+            }
+        }
+        else if ((j->name() == "xscale" || j->name() == "yscale") && j->is_object() == true) {
+            auto& scale = (j->name() == "xscale") ? x : y;
+            for (auto s : j->vo_to_va()) {
+                if (s->name() == "color")      scale.color = s->vn_i();
+                else if (s->name() == "label") scale.label = s->vs_u();
+                else if (s->name() == "labels" && s->is_array() == true) {
+                    for (auto l : *s->va()) {
+                        if (l->is_string() == true) scale.labels.push_back(l->vs_u());
+                        else FLW_PLOT_ERROR(l)
+                    }
+                }
+                else FLW_PLOT_ERROR(s)
+            }
+        }
+        else if (j->name() == "yxlines" && j->is_array() == true) {
+            for (auto j2 : *j->va()) {
+                if (j2->is_object() == true) {
+                    PlotLine line;
+                    for (auto l : j2->vo_to_va()) {
+                        if (l->name() == "color" && l->is_number() == true)      line.color = (Fl_Color) l->vn_i();
+                        else if (l->name() == "label" && l->is_string() == true) line.label = l->vs_u();
+                        else if (l->name() == "type" && l->is_string() == true)  line.type  = _plot_string_to_type(l->vs());
+                        else if (l->name() == "width" && l->is_number() == true) line.width = (unsigned) l->vn_i();
+                        else if (l->name() == "yx" && l->is_array() == true) {
+                            for (auto p : *l->va()) {
+                                if (p->is_array() == true && p->size() == 2 && (*p)[0]->is_number() == true && (*p)[1]->is_number() == true) {
+                                    line.points.push_back(Point((*p)[0]->vn(), (*p)[1]->vn()));
+                                }
+                                else FLW_PLOT_ERROR(p)
+                            }
+                        }
+                        else FLW_PLOT_ERROR(l)
+                    }
+                    if (plot->add_line(line.points, line.type, line.width, line.label, line.color) == false) FLW_PLOT_ERROR(j2)
+                }
+            }
+        }
+    }
+    plot->labels(x.label, y.label);
+    plot->label_colors(x.color, y.color);
+    plot->view_options(l, h, v);
+    plot->custom_xlabels_for_points0(x.labels);
+    plot->custom_ylabels_for_points0(y.labels);
+    plot->resize();
+    return true;
+}
+bool Plot::Save(const Plot* plot, std::string filename) {
+    auto wc  = WaitCursor();
+    auto jsb = JSB();
+    try {
+        jsb << JSB::MakeObject();
+            jsb << JSB::MakeObject("descr");
+                jsb << JSB::MakeString("flw::plot", "type");
+                jsb << JSB::MakeNumber(2, "version");
+            jsb.end();
+            jsb << JSB::MakeObject("view");
+                jsb << JSB::MakeBool(plot->_view.labels, "labels");
+                jsb << JSB::MakeBool(plot->_view.horizontal, "horizontal");
+                jsb << JSB::MakeBool(plot->_view.vertical, "vertical");
+            jsb.end();
+            jsb << JSB::MakeObject("xscale");
+                jsb << JSB::MakeString(plot->_x->label.c_str(), "label");
+                jsb << JSB::MakeNumber(plot->_x->color, "color");
+                jsb << JSB::MakeArrayInline("labels");
+                    for (const auto& l : plot->_x->labels) jsb << JSB::MakeString(l);
+                jsb.end();
+            jsb.end();
+            jsb << JSB::MakeObject("yscale");
+                jsb << JSB::MakeString(plot->_y->label.c_str(), "label");
+                jsb << JSB::MakeNumber(plot->_y->color, "color");
+                jsb << JSB::MakeArrayInline("labels");
+                    for (const auto& l : plot->_y->labels) jsb << JSB::MakeString(l);
+                jsb.end();
+            jsb.end();
+            jsb << JSB::MakeArray("yxlines");
+            for (size_t f = 0; f < plot->_size; f++) {
+                const auto& line = *plot->_lines[f];
+                if (line.points.size() > 0) {
+                    jsb << JSB::MakeObject();
+                        jsb << JSB::MakeNumber(line.width, "width");
+                        jsb << JSB::MakeNumber(line.color, "color");
+                        jsb << JSB::MakeString(line.label, "label");
+                        jsb << JSB::MakeString(_plot_type_to_string(line.type), "type");
+                        jsb << JSB::MakeArray("yx");
+                        for (const auto& point : line.points) {
+                            jsb << JSB::MakeArrayInline();
+                                jsb << JSB::MakeNumber(point.x);
+                                jsb << JSB::MakeNumber(point.y);
+                            jsb.end();
+                        }
+                        jsb.end();
+                    jsb.end();
+                }
+            }
+        auto js = jsb.encode();
+        return util::save_file(filename, js.c_str(), js.length());
+    }
+    catch(std::string e) {
+        fl_alert("error: failed to encode json\n%s", e.c_str());
+        return false;
+    }
+}
 }
 namespace flw {
     RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label, std::string clear_label) {
@@ -9687,44 +10089,44 @@ int flw::TableEditor::handle(int event) {
 #include <FL/Fl_Toggle_Button.H>
 #include <FL/fl_draw.H>
 namespace flw {
-    class _TabsGroupButton : public Fl_Toggle_Button {
-    public:
-        static int                      _BORDER;
-        static Fl_Boxtype               _BOXTYPE;
-        static Fl_Color                 _BOXSELCOLOR;
-        static Fl_Color                 _BOXCOLOR;
-        int _tw;
-        _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
-            _tw = 0;
-            copy_label(label);
-            copy_tooltip(label);
-        }
-        void draw() override {
-            fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
-            fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
-        }
-    };
-    int        _TabsGroupButton::_BORDER      = 6;
-    Fl_Boxtype _TabsGroupButton::_BOXTYPE     = FL_FLAT_BOX;
-    Fl_Color   _TabsGroupButton::_BOXSELCOLOR = FL_SELECTION_COLOR;
-    Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
-}
-flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+class _TabsGroupButton : public Fl_Toggle_Button {
+public:
+    static int                  _BORDER;
+    static Fl_Boxtype           _BOXTYPE;
+    static Fl_Color             _BOXSELCOLOR;
+    static Fl_Color             _BOXCOLOR;
+    int                         _tw;
+    _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
+        _tw = 0;
+        copy_label(label);
+        copy_tooltip(label);
+    }
+    void draw() override {
+        fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
+        fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+    }
+};
+int        _TabsGroupButton::_BORDER      = 6;
+Fl_Boxtype _TabsGroupButton::_BOXTYPE     = FL_FLAT_BOX;
+Fl_Color   _TabsGroupButton::_BOXSELCOLOR = FL_SELECTION_COLOR;
+Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
+TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    tooltip(TabsGroup::Help());
     _active = -1;
     _drag   = false;
     _hide   = false;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
 }
-void flw::TabsGroup::add(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
     auto button = new _TabsGroupButton(label.c_str());
     button->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     button->box(FL_THIN_UP_BOX);
-    button->callback(flw::TabsGroup::Callback, this);
+    button->callback(TabsGroup::Callback, this);
     button->when(FL_WHEN_CHANGED);
     Fl_Group::add(widget);
     Fl_Group::add(button);
@@ -9736,48 +10138,15 @@ void flw::TabsGroup::add(const std::string& label, Fl_Widget* widget) {
         _widgets.insert(_widgets.begin() + _active + 1, widget);
         _buttons.insert(_buttons.begin() + _active + 1, button);
     }
-    flw::TabsGroup::Callback(button, this);
+    TabsGroup::Callback(button, this);
 }
-void flw::TabsGroup::BoxColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
-}
-void flw::TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
-}
-void flw::TabsGroup::BoxType(Fl_Boxtype boxtype) {
-    flw::_TabsGroupButton::_BOXTYPE = boxtype;
-}
-Fl_Widget* flw::TabsGroup::_button() {
+Fl_Widget* TabsGroup::_button() {
     return (_active >= 0 && _active < (int) _buttons.size()) ? _buttons[_active] : nullptr;
 }
-void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    if (sender) {
-        auto button = (_TabsGroupButton*) sender;
-        auto self   = (TabsGroup*) object;
-        auto count  = 0;
-        self->_active = -1;
-        for (auto b : self->_buttons) {
-            if (b == button) {
-                ((Fl_Button*) b)->value(1);
-                self->_active = count;
-                self->_widgets[count]->show();
-            }
-            else {
-                ((Fl_Button*) b)->value(0);
-                self->_widgets[count]->hide();
-            }
-            count++;
-        }
-        if (self->value() != nullptr && Fl::focus() != self->value()) {
-            self->value()->take_focus();
-        }
-        self->resize();
-    }
-}
-Fl_Widget* flw::TabsGroup::child(int num) const {
+Fl_Widget* TabsGroup::child(int num) const {
     return (num >= 0 && num < (int) _widgets.size()) ? _widgets[num] : nullptr;
 }
-int flw::TabsGroup::find(Fl_Widget* widget) const{
+int TabsGroup::find(Fl_Widget* widget) const{
     auto num = 0;
     for (auto w : _widgets) {
         if (w == widget) {
@@ -9789,7 +10158,7 @@ int flw::TabsGroup::find(Fl_Widget* widget) const{
     }
     return -1;
 }
-int flw::TabsGroup::handle(int event) {
+int TabsGroup::handle(int event) {
     if (_widgets.size() == 0) {
         return Fl_Group::handle(event);
     }
@@ -9851,33 +10220,37 @@ int flw::TabsGroup::handle(int event) {
         if (event == FL_KEYBOARD) {
             auto key   = Fl::event_key();
             auto alt   = Fl::event_alt() != 0;
+            auto alt2  = alt;
             auto shift = Fl::event_shift() != 0;
-            if (alt == true && key >= '0' && key <= '9') {
+#ifdef __APPLE__
+            alt2 = Fl::event_command() != 0;
+#endif
+            if (alt2 == true && key >= '0' && key <= '9') {
                 auto tab = key - '0';
                 tab = (tab == 0) ? 9 : tab - 1;
                 if (tab < (int) _buttons.size()) {
-                    flw::TabsGroup::Callback(_buttons[tab], this);
+                    TabsGroup::Callback(_buttons[tab], this);
                 }
                 return 1;
             }
             else if (alt == true && shift == true && key == FL_Left) {
                 swap(_active, _active - 1);
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
             else if (alt == true && shift == true && key == FL_Right) {
                 swap(_active, _active + 1);
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
             else if (alt == true && key == FL_Left) {
                 _active = _active == 0 ? (int) _widgets.size() - 1 : _active - 1;
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
             else if (alt == true && key == FL_Right) {
                 _active = _active == (int) _widgets.size() - 1 ? 0 : _active + 1;
-                flw::TabsGroup::Callback(_button(), this);
+                TabsGroup::Callback(_button(), this);
                 return 1;
             }
         }
@@ -9890,7 +10263,7 @@ int flw::TabsGroup::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::TabsGroup::_hide_tab_buttons(bool hide) {
+void TabsGroup::_hide_tab_buttons(bool hide) {
     _hide = hide;
     for (auto b : _buttons) {
         if (_hide == true) {
@@ -9902,14 +10275,14 @@ void flw::TabsGroup::_hide_tab_buttons(bool hide) {
     }
     resize();
 }
-void flw::TabsGroup::label(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
     if (num != -1) {
         _buttons[num]->copy_label(label.c_str());
         _buttons[num]->copy_tooltip(label.c_str());
     }
 }
-Fl_Widget* flw::TabsGroup::remove(int num) {
+Fl_Widget* TabsGroup::remove(int num) {
     if (num >= 0 && num < (int) _widgets.size()) {
         auto w = _widgets[num];
         auto b = _buttons[num];
@@ -9924,14 +10297,14 @@ Fl_Widget* flw::TabsGroup::remove(int num) {
         else if (_active == (int) _widgets.size()) {
             _active = (int) _widgets.size() - 1;
         }
-        flw::TabsGroup::Callback(_button(), this);
+        TabsGroup::Callback(_button(), this);
         return w;
     }
     else {
         return nullptr;
     }
 }
-void flw::TabsGroup::resize(int X, int Y, int W, int H) {
+void TabsGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
     if (W == 0 || H == 0) {
         return;
@@ -9956,7 +10329,8 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
         auto w     = 0;
         auto th    = 0;
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        for (auto b : _buttons) {
+        for (auto widget : _buttons) {
+            auto b = (_TabsGroupButton*) widget;
             b->_tw = 0;
             fl_measure(b->label(), b->_tw, th);
             b->_tw += _TabsGroupButton::_BORDER;
@@ -9968,7 +10342,8 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
         else {
             w = 0;
         }
-        for (auto b : _buttons) {
+        for (auto widget : _buttons) {
+            auto b  = (_TabsGroupButton*) widget;
             auto bw = (w != 0) ? w : b->_tw;
             if (_tabs == TABS::NORTH) {
                 b->resize(X + x, Y, bw, height);
@@ -10023,57 +10398,96 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
         }
     }
 }
-void flw::TabsGroup::swap(int from, int to) {
+void TabsGroup::swap(int from, int to) {
     auto last = (int) _widgets.size() - 1;
     if (_widgets.size() < 2 || to < -1 || to > (int) _widgets.size()) {
         return;
     }
-    else {
-        bool active = (_active == from);
-        if (from == 0 && to == -1) {
-            auto widget = _widgets[0];
-            auto button = _buttons[0];
-            for (int f = 1; f <= last; f++) {
-                _widgets[f - 1] = _widgets[f];
-                _buttons[f - 1] = _buttons[f];
-            }
-            from           = last;
-            _widgets[from] = widget;
-            _buttons[from] = button;
+    bool active = (_active == from);
+    if (from == 0 && to == -1) {
+        auto widget = _widgets[0];
+        auto button = _buttons[0];
+        for (int f = 1; f <= last; f++) {
+            _widgets[f - 1] = _widgets[f];
+            _buttons[f - 1] = _buttons[f];
         }
-        else if (from == last && to == (int) _widgets.size()) {
-            auto widget = _widgets[last];
-            auto button = _buttons[last];
-            for (int f = last - 1; f >= 0; f--) {
-                _widgets[f + 1] = _widgets[f];
-                _buttons[f + 1] = _buttons[f];
-            }
-            from           = 0;
-            _widgets[from] = widget;
-            _buttons[from] = button;
-        }
-        else {
-            auto widget = _widgets[from];
-            auto button = _buttons[from];
-            _widgets[from] = _widgets[to];
-            _buttons[from] = _buttons[to];
-            _widgets[to]   = widget;
-            _buttons[to]   = button;
-            from           = to;
-        }
-        if (active) {
-            _active = from;
-        }
-        resize();
+        from           = last;
+        _widgets[from] = widget;
+        _buttons[from] = button;
     }
+    else if (from == last && to == (int) _widgets.size()) {
+        auto widget = _widgets[last];
+        auto button = _buttons[last];
+        for (int f = last - 1; f >= 0; f--) {
+            _widgets[f + 1] = _widgets[f];
+            _buttons[f + 1] = _buttons[f];
+        }
+        from           = 0;
+        _widgets[from] = widget;
+        _buttons[from] = button;
+    }
+    else {
+        auto widget = _widgets[from];
+        auto button = _buttons[from];
+        _widgets[from] = _widgets[to];
+        _buttons[from] = _buttons[to];
+        _widgets[to]   = widget;
+        _buttons[to]   = button;
+        from           = to;
+    }
+    if (active) {
+        _active = from;
+    }
+    resize();
 }
-Fl_Widget* flw::TabsGroup::value() const {
+Fl_Widget* TabsGroup::value() const {
     return (_active >= 0 && _active < (int) _widgets.size()) ? _widgets[_active] : nullptr;
 }
-void flw::TabsGroup::value(int num) {
+void TabsGroup::value(int num) {
     if (num >= 0 && num < (int) _buttons.size()) {
-        flw::TabsGroup::Callback(_buttons[num], this);
+        TabsGroup::Callback(_buttons[num], this);
     }
+}
+void TabsGroup::BoxColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
+}
+void TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
+}
+void TabsGroup::BoxType(Fl_Boxtype boxtype) {
+    flw::_TabsGroupButton::_BOXTYPE = boxtype;
+}
+void TabsGroup::Callback(Fl_Widget* sender, void* object) {
+    if (sender) {
+        auto button = (_TabsGroupButton*) sender;
+        auto self   = (TabsGroup*) object;
+        auto count  = 0;
+        self->_active = -1;
+        for (auto b : self->_buttons) {
+            if (b == button) {
+                ((Fl_Button*) b)->value(1);
+                self->_active = count;
+                self->_widgets[count]->show();
+            }
+            else {
+                ((Fl_Button*) b)->value(0);
+                self->_widgets[count]->hide();
+            }
+            count++;
+        }
+        if (self->value() != nullptr && Fl::focus() != self->value()) {
+            self->value()->take_focus();
+        }
+        self->resize();
+    }
+}
+const char* TabsGroup::Help() {
+    static const char* const HELP =
+    "Use alt + left/right to move between tabs.\n"
+    "Or alt (command key) + [1 - 9] to select tab.\n"
+    "And alt + shift + left/right to move tabs.";
+    return HELP;
+}
 }
 #include <FL/fl_draw.H>
 #include <FL/Fl.H>

@@ -23,7 +23,7 @@ class Test : public Fl_Double_Window {
 
 public:
     //--------------------------------------------------------------------------
-    Test() : Fl_Double_Window(640, 480, "flCalc") {
+    Test() : Fl_Double_Window(640, 480, "test_recentmenu.cpp") {
         end();
 
         menu          = new Fl_Menu_Bar(0, 0, 0, 0);

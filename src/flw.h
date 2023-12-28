@@ -11,6 +11,30 @@
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
 
+#ifdef DEBUG
+#include <iostream>
+#include <iomanip>
+#define FLW_LINE                        { printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_RED                         { printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_GREEN                       { printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_BLUE                        { printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
+#define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << std::endl; fflush(stdout); }
+#define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << std::endl; fflush(stdout); }
+#define FLW_PRINT3(A,B,C)               { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << std::endl; fflush(stdout); }
+#define FLW_PRINT4(A,B,C,D)             { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << std::endl; fflush(stdout); }
+#define FLW_PRINT5(A,B,C,D,E)           { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << std::endl; fflush(stdout); }
+#define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
+#define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
+#define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#else
+#define FLW_LINE
+#define FLW_RED
+#define FLW_GREEN
+#define FLW_BLUE
+#define FLW_PRINT(...)
+#endif
+
 namespace flw {
     extern int                          PREF_FIXED_FONT;        // Fixed font - FL_COURIER
     extern std::string                  PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
@@ -24,6 +48,7 @@ namespace flw {
     extern int                          PREF_SCROLLBAR;         // Extra pixel width for scrollbar depending what theme are active - used internally
 
     typedef std::vector<std::string>    StringVector;
+    typedef std::vector<Fl_Widget*>     WidgetVector;
 
     //--------------------------------------------------------------------------
     // Buffer container that frees memory automatically
@@ -42,7 +67,8 @@ namespace flw {
         Buf&                            operator=(Buf&& b);
         Buf&                            operator+=(const Buf& b);
         bool                            operator==(const Buf& other) const;
-        virtual                         ~Buf();
+        virtual                         ~Buf()
+                                            { free(p); }
     };
 
     //--------------------------------------------------------------------------
