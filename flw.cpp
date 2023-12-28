@@ -5300,6 +5300,7 @@ void flw::InputMenu::value(const char* string) {
 }
 #include <cstring>
 #include <cmath>
+#include <errno.h>
 namespace flw {
 #define JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
 #define JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
@@ -8653,7 +8654,7 @@ void flw::TableDisplay::draw() {
             r = _start_row - 1;
         }
     }
-    if (_edit) {
+    if (_edit != nullptr) {
         fl_color(fl_lighter(FL_FOREGROUND_COLOR));
         fl_rect(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
@@ -8678,11 +8679,11 @@ void flw::TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H,
         fl_color(textcolor);
         _draw_text(val, X + space, Y + 2, W - space * 2, H - 4, align);
         fl_color(FL_DARK3);
-        if (ver) {
+        if (ver == true) {
             fl_line(X, Y, X, Y + H);
             fl_line(X + W, Y, X + W, Y + H);
         }
-        if (hor) {
+        if (hor == true) {
             fl_line(X, Y, X + W, Y);
             fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
         }
@@ -9351,7 +9352,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             _draw_text(string.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
         else if (rend == flw::TableEditor::REND::BOOLEAN) {
-            auto bw  = textsize + 4;
+            auto bw  = textsize;
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
             if (align == FL_ALIGN_RIGHT) {
@@ -9365,8 +9366,8 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
             fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_WHITE);
             if (*val == '1') {
-                bw -= 6;
-                fl_draw_box(FL_ROUND_UP_BOX, x_1 + 3, y_1 + 3, bw, bw, selection_color());
+                Fl_Rect r(x_1, y_1, bw - 1, bw - 1);
+                fl_draw_check(r, selection_color());
             }
         }
         else if (rend == flw::TableEditor::REND::INTEGER) {

@@ -490,7 +490,7 @@ void flw::TableDisplay::draw() {
         }
     }
 
-    if (_edit) { // Make sure border are consistent around edit widget
+    if (_edit != nullptr) { // Make sure border are consistent around edit widget
         fl_color(fl_lighter(FL_FOREGROUND_COLOR));
         fl_rect(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
@@ -523,12 +523,12 @@ void flw::TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H,
         _draw_text(val, X + space, Y + 2, W - space * 2, H - 4, align);
         fl_color(FL_DARK3);
 
-        if (ver) {
+        if (ver == true) {
             fl_line(X, Y, X, Y + H);
             fl_line(X + W, Y, X + W, Y + H);
         }
 
-        if (hor) {
+        if (hor == true) {
             fl_line(X, Y, X + W, Y);
             fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
         }

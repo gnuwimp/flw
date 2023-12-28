@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <cmath>
+#include <errno.h>
 
 namespace flw {
 

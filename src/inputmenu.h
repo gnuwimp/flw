@@ -29,7 +29,7 @@ namespace flw {
         void                            clear();
         StringVector                    get_history() const;
         Fl_Input*                       input()
-                                            { return (Fl_Input*) _input; }
+                                            { return reinterpret_cast<Fl_Input*>(_input); }
         void                            insert(std::string string, int max_list_len);
         Fl_Menu_Button*                 menu()
                                             { return _menu; }

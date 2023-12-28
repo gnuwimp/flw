@@ -20,8 +20,8 @@ using namespace flw;
 
 class TestTable : public TableDisplay {
 public:
-    char                                buffer[200];
-    int                                 widths[ROWS + 1];
+    char buffer[200];
+    int  widths[ROWS + 1];
 
     TestTable() : TableDisplay() {
         widths[0] = flw::PREF_FONTSIZE * 8;

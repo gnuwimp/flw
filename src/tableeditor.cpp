@@ -216,7 +216,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             _draw_text(string.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
         else if (rend == flw::TableEditor::REND::BOOLEAN) {
-            auto bw  = textsize + 4;
+            auto bw  = textsize;
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
 
@@ -233,8 +233,8 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_WHITE);
 
             if (*val == '1') {
-                bw -= 6;
-                fl_draw_box(FL_ROUND_UP_BOX, x_1 + 3, y_1 + 3, bw, bw, selection_color());
+                Fl_Rect r(x_1, y_1, bw - 1, bw - 1);
+                fl_draw_check(r, selection_color());
             }
         }
         else if (rend == flw::TableEditor::REND::INTEGER) {
