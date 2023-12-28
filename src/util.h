@@ -64,6 +64,7 @@ namespace flw {
         long double                     to_double_l(const char* string, long double def = 0.0);
         int                             to_doubles(const char* string, double numbers[], size_t size);
         int64_t                         to_int(const char* string, int64_t def = 0);
+        int                             to_ints(const char* string, int64_t numbers[], size_t size);
         void*                           zero_memory(char* string);
         void*                           zero_memory(void* mem, size_t size);
         void*                           zero_memory(std::string& string);

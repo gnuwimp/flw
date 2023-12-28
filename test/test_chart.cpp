@@ -60,7 +60,6 @@ public:
 
     Test(int W, int H) : Fl_Double_Window(W, H, "test_chart.cpp") {
         end();
-        resizable(this);
 
         mb    = new Fl_Menu_Bar(0, 0, 0, 0);
         chart = new Chart();
@@ -105,7 +104,8 @@ public:
 
         resize(0, 0, W, H);
         create_chart(this);
-        position(0, 0);
+        resizable(this);
+        size_range(64, 48);
         show();
     }
 
@@ -408,7 +408,7 @@ int main(int argc, const char** argv) {
 
     {
         srand(time(0));
-        Test win(800, 480);
+        Test win(960, 540);
         Fl::run();
     }
 

@@ -42,51 +42,51 @@ int main(int argc, const char** argv) {
          }
 
         if (run == "loadsmall") {
-            #ifdef _WIN32
-                auto font = flw::dlg::FontDialog::LoadFont("MS Serif bold");
-            #else
-                auto font = flw::dlg::FontDialog::LoadFont("Kinnari bold italic");
-            #endif
+#ifdef _WIN32
+            auto font = dlg::FontDialog::LoadFont("MS Serif bold");
+#else
+            auto font = dlg::FontDialog::LoadFont("Kinnari bold italic");
+#endif
 
             if (font != -1) {
-                flw::PREF_FONT     = font;
-                flw::PREF_FONTSIZE = 12;
+                PREF_FONT     = font;
+                PREF_FONTSIZE = 12;
             }
 
-            #ifdef _WIN32
-                font = flw::dlg::FontDialog::LoadFont("Fira Code bold");
-            #else
-                font = flw::dlg::FontDialog::LoadFont("mono bold italic");
-            #endif
+#ifdef _WIN32
+            font = dlg::FontDialog::LoadFont("Fira Code bold");
+#else
+            font = dlg::FontDialog::LoadFont("mono bold italic");
+#endif
 
             if (font != -1) {
-                flw::PREF_FIXED_FONT     = font;
-                flw::PREF_FIXED_FONTSIZE = 12;
+                PREF_FIXED_FONT     = font;
+                PREF_FIXED_FONTSIZE = 12;
             }
 
         }
 
         if (run == "loadbig") {
-            #ifdef _WIN32
-                auto font = flw::dlg::FontDialog::LoadFont("Calibri italic");
-            #else
-                auto font = flw::dlg::FontDialog::LoadFont("Kinnari bold italic");
-            #endif
+#ifdef _WIN32
+            auto font = dlg::FontDialog::LoadFont("Calibri italic");
+#else
+            auto font = dlg::FontDialog::LoadFont("Kinnari bold italic");
+#endif
 
             if (font != -1) {
-                flw::PREF_FONT     = font;
-                flw::PREF_FONTSIZE = 20;
+                PREF_FONT     = font;
+                PREF_FONTSIZE = 20;
             }
 
-            #ifdef _WIN32
-                font = flw::dlg::FontDialog::LoadFont("Lucida Console");
-            #else
-                font = flw::dlg::FontDialog::LoadFont("mono bold italic");
-            #endif
+#ifdef _WIN32
+            font = dlg::FontDialog::LoadFont("Lucida Console");
+#else
+            font = dlg::FontDialog::LoadFont("mono bold italic");
+#endif
 
             if (font != -1) {
-                flw::PREF_FIXED_FONT     = font;
-                flw::PREF_FIXED_FONTSIZE = 20;
+                PREF_FIXED_FONT     = font;
+                PREF_FIXED_FONTSIZE = 20;
             }
 
         }
@@ -96,29 +96,38 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "font") {
-            auto dlg = flw::dlg::FontDialog("Roboto", 14, "Test Font");
+#ifdef _WIN32
+            auto dlg = dlg::FontDialog("Candara", 15, "Test Font");
+#else
+            auto dlg = dlg::FontDialog("Nimbus Sans", 15, "Test Font");
+#endif
             dlg.run();
             printf("font=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
-        }
 
-        if (run == "" || run == "abort") {
-            auto dialog = flw::dlg::AbortDialog();
-
-            dialog.show("This will never stop until you press the button\nHello World");
-
-            while (dialog.abort() == false) {
+            if (dlg.fontsize() != -1) {
+                PREF_FONT     = dlg.font();
+                PREF_FONTSIZE = dlg.fontsize();
             }
         }
 
         if (run == "" || run == "abort") {
-            auto dialog = flw::dlg::AbortDialog(-100.0, 100.0);
+            auto dialog = dlg::AbortDialog();
+
+            dialog.show("This will never stop until you press the button\nHello World");
+
+            while (dialog.check() == false) {
+            }
+        }
+
+        if (run == "" || run == "abort") {
+            auto dialog = dlg::AbortDialog(-100.0, 100.0);
             auto count  = -100.0;
 
             dialog.show("This will take some time");
 
-            while (dialog.abort() == false && count <= 100.0) {
+            while (dialog.check() == false && count <= 100.0) {
                 dialog.value(count);
-                flw::util::time_sleep(100);
+                util::time_sleep(100);
                 count += 1.0;
             }
         }
@@ -126,21 +135,21 @@ int main(int argc, const char** argv) {
         if (run == "" || run == "wait") {
             auto w = Fl_Double_Window(100, 100, 480, 240, "WaitCursor - Press Escape to quit");
             w.show();
-            flw::util::center_window(&w);
+            util::center_window(&w);
             WaitCursor wc1;
             WaitCursor wc2;
             WaitCursor wc3;
             Fl::run();
         }
 
-        if (run == "" || run == "html") { // flw::dlg::html()
+        if (run == "" || run == "html") {
             auto html = "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text";
             dlg::html("HTML Dialog", html);
         }
 
         if (run == "" || run == "list") {
             dlg::list("List View", HAMLET_TEXT);
-            dlg::list("List View", HAMLET_LIST, nullptr, true); // !!! does not show all rows with fixed font
+            dlg::list("List View", HAMLET_LIST, nullptr, true);
         }
 
         if (run == "" || run == "select") {
@@ -152,16 +161,16 @@ int main(int argc, const char** argv) {
                 v.push_back(std::string(c));
             }
 
-            printf("line %d was selected\n", (int) dlg::select("flw::dlg::select", v, 66));
-            printf("line %d was selected\n", (int) dlg::select("flw::dlg::select", v, "Hello World 00044"));
+            printf("line %d was selected\n", (int) dlg::select("dlg::select", v, 66));
+            printf("line %d was selected\n", (int) dlg::select("dlg::select", v, "Hello World 00044"));
             fflush(stdout);
         }
 
-        if (run == "" || run == "date") { // flw::dlg::date()
+        if (run == "" || run == "date") {
             Date date;
 
-            if (flw::dlg::date("Select Date", date, nullptr)) {
-                printf("flw::dlg::date=%s\n", date.format().c_str());
+            if (dlg::date("Select Date", date, nullptr)) {
+                printf("dlg::date=%s\n", date.format().c_str());
             }
             else {
                 printf("No date was selected\n");
@@ -174,32 +183,36 @@ int main(int argc, const char** argv) {
             std::string password, file;
             bool ret;
 
-            ret = flw::dlg::password1("test_dlg.cpp - flw::dlg::password1", password);
-            printf("flw::dlg::password1=%d, '%s'\n", ret, password.c_str());
+            ret = dlg::password1("test_dlg.cpp - dlg::password1", password);
+            printf("dlg::password1=%d, '%s'\n", ret, password.c_str());
             util::zero_memory((char*) password.data());
 
-            ret = flw::dlg::password2("test_dlg.cpp - flw::dlg::password2", password);
-            printf("flw::dlg::password2=%d, '%s'\n", ret, password.c_str());
+            ret = dlg::password2("test_dlg.cpp - dlg::password2", password);
+            printf("dlg::password2=%d, '%s'\n", ret, password.c_str());
             util::zero_memory((char*) password.data());
 
-            // flw::dlg::PASSWORD_CANCEL = "cancel";
-            // flw::dlg::PASSWORD_OK = "ok";
-
-            ret = flw::dlg::password3("test_dlg.cpp - flw::dlg::password3", password, file);
-            printf("flw::dlg::password3=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
+            ret = dlg::password3("test_dlg.cpp - dlg::password3", password, file);
+            printf("dlg::password3=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
             util::zero_memory((char*) password.data());
             util::zero_memory((char*) file.data());
 
-            ret = flw::dlg::password4("test_dlg.cpp - flw::dlg::password4", password, file);
-            printf("flw::dlg::password4=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
+            dlg::PASSWORD_CANCEL = "cancel";
+            dlg::PASSWORD_OK = "ok";
+            ret = dlg::password4("test_dlg.cpp - dlg::password4", password, file);
+            printf("dlg::password4=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
             util::zero_memory((char*) password.data());
             util::zero_memory((char*) file.data());
 
             fflush(stdout);
         }
 
-        if (run == "" || run == "work")  { // flw::dlg::work()
-            auto work  = flw::dlg::WorkDialog("WorkDialog", nullptr, true, true);
+        if (run == "" || run == "text") {
+            dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT);
+            dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT, nullptr, true, 70, 50);
+        }
+
+        if (run == "" || run == "work")  {
+            auto work  = dlg::WorkDialog("WorkDialog", nullptr, true, true);
             auto start = util::time();
 
             while (true) {
@@ -213,8 +226,8 @@ int main(int argc, const char** argv) {
             }
         }
 
-        if (run == "" || run == "work") { // flw::dlg::work()
-            auto work = flw::dlg::WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
+        if (run == "" || run == "work") {
+            auto work = dlg::WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
             auto stop = util::time() + 5.0;
 
             while (true) {
@@ -233,11 +246,6 @@ int main(int argc, const char** argv) {
 
                 util::time_sleep(20);
             }
-        }
-
-        if (run == "" || run == "text") { // flw::dlg::text()
-            flw::dlg::text("test_dlg.cpp - flw::dlg::text", HAMLET_TEXT);
-            flw::dlg::text("test_dlg.cpp - flw::dlg::text", HAMLET_TEXT, nullptr, true, 70, 50);
         }
     }
 

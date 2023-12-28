@@ -41,11 +41,12 @@ namespace flw {
             AbortDialog&                operator=(AbortDialog&&) = delete;
 
                                         AbortDialog(double min = 0.0, double max = 0.0);
-            bool                        abort(int milliseconds = 200);
-            bool                        abort(double value, double min, double max, int milliseconds = 200);
+            bool                        check(int milliseconds = 200);
+            bool                        check(double value, double min, double max, int milliseconds = 200);
             bool                        aborted()
                                             { return _abort; }
             void                        range(double min, double max);
+            void                        resize(int X, int Y, int W, int H) override;
             void                        show(const std::string& label, Fl_Window* parent = nullptr);
             void                        value(double value);
 

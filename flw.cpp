@@ -2667,6 +2667,8 @@ namespace flw {
                 flw::util::labelfont(this);
                 callback(Callback, this);
                 copy_label(title);
+                size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
+                size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
                 set_modal();
                 resizable(this);
             }
@@ -2700,16 +2702,15 @@ namespace flw {
 
             //------------------------------------------------------------------
             bool run(Fl_Window* parent) {
-                size(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 24);
                 util::center_window(this, parent);
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
 
-                if (_res) {
+                if (_res == true) {
                     _value = _date_chooser->get();
                 }
 
@@ -2756,6 +2757,7 @@ namespace flw {
 
                 callback(_DlgHtml::Callback, this);
                 copy_label(title);
+                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
                 util::center_window(this, parent);
@@ -2782,7 +2784,7 @@ namespace flw {
             void run() {
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
@@ -2814,11 +2816,10 @@ namespace flw {
                 _close->labelfont(flw::PREF_FONT);
                 _close->labelsize(flw::PREF_FONTSIZE);
 
-                resize(0, 0, w(), h());
                 _list->take_focus();
 
                 for (auto& s : list) {
-                    _list->add(s.c_str());
+                    _list->add(s.c_str());size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 }
 
                 if (fixed_font) {
@@ -2832,6 +2833,7 @@ namespace flw {
 
                 callback(_DlgList::Callback, this);
                 copy_label(title);
+                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
                 util::center_window(this, parent);
@@ -2858,7 +2860,7 @@ namespace flw {
             void run() {
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
@@ -2915,8 +2917,6 @@ namespace flw {
                     _list->textsize(flw::PREF_FONTSIZE);
                 }
 
-                resize(0, 0, w(), h());
-
                 {
                     auto r = 0;
                     auto f = 0;
@@ -2944,14 +2944,15 @@ namespace flw {
                     }
                 }
 
+                _filter->take_focus();
                 flw::util::labelfont(this);
                 callback(_DlgSelect::Callback, this);
                 copy_label(title);
+                activate_button();
+                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
                 util::center_window(this, parent);
-                activate_button();
-                _filter->take_focus();
             }
 
             //------------------------------------------------------------------
@@ -3046,14 +3047,14 @@ namespace flw {
             int run() {
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
 
                 auto row = _list->value();
 
-                if (row) {
+                if (row > 0) {
                     auto selected = _list->text(row);
 
                     for (int f = 0; f < (int) _strings.size(); f++) {
@@ -3075,7 +3076,6 @@ namespace flw {
 
         const char* PASSWORD_CANCEL = "Cancel";
         const char* PASSWORD_OK     = "Ok";
-
 
         //----------------------------------------------------------------------
         class _DlgPassword : public Fl_Double_Window {
@@ -3138,28 +3138,33 @@ namespace flw {
                 _password2->textsize(flw::PREF_FONTSIZE);
                 _password2->when(FL_WHEN_CHANGED);
 
+                auto W = 40 * flw::PREF_FONTSIZE;
+                auto H = 11 * flw::PREF_FONTSIZE + 28;
+
                 if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
                     _password2->hide();
                     _browse->hide();
                     _file->hide();
-                    resize(0, 0, 30 * flw::PREF_FONTSIZE, 5 * flw::PREF_FONTSIZE + 16);
+                    W = 30 * flw::PREF_FONTSIZE;
+                    H = 5 * flw::PREF_FONTSIZE + 16;
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
                     _browse->hide();
                     _file->hide();
-                    resize(0, 0, 30 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
+                    W = 30 * flw::PREF_FONTSIZE;
+                    H = 8 * flw::PREF_FONTSIZE + 24;
                 }
                 else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
                     _password2->hide();
-                    resize(0, 0, 40 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
-                }
-                else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-                    resize(0, 0, 40 * flw::PREF_FONTSIZE, 11 * flw::PREF_FONTSIZE + 28);
+                    W = 40 * flw::PREF_FONTSIZE;
+                    H = 8 * flw::PREF_FONTSIZE + 24;
                 }
 
                 flw::util::labelfont(this);
                 callback(_DlgPassword::Callback, this);
                 label(title);
+                size(W, H);
+                size_range(W, H);
                 set_modal();
                 resizable(this);
                 util::center_window(this, parent);
@@ -3256,7 +3261,7 @@ namespace flw {
             bool run(std::string& password, std::string& file) {
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
@@ -3323,6 +3328,7 @@ namespace flw {
 
                 callback(_DlgText::Callback, this);
                 copy_label(title);
+                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
                 util::center_window(this, parent);
@@ -3355,7 +3361,7 @@ namespace flw {
             void run() {
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
@@ -3438,6 +3444,8 @@ void flw::dlg::text(const std::string& title, const std::string& text, Fl_Window
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
+// To disable progress set min and max to 0.0
+//
 flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
     _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
@@ -3447,11 +3455,17 @@ flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0,
     add(_button);
     add(_progress);
 
+    auto W = flw::PREF_FONTSIZE * 32;
+    auto H = 0;
+
     if (min < max && fabs(max - min) > 0.001) {
         _progress->range(min, max);
+        _progress->value(min);
+        H = flw::PREF_FONTSIZE * 6 + 12;
     }
     else {
         _progress->hide();
+        H = flw::PREF_FONTSIZE * 4 + 8;
     }
 
     _button->callback(AbortDialog::Callback, this);
@@ -3459,6 +3473,8 @@ flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0,
     _button->labelsize(flw::PREF_FONTSIZE);
     _progress->color(FL_SELECTION_COLOR);
 
+    size(W, H);
+    size_range(W, H);
     callback(AbortDialog::Callback, this);
     set_modal();
 }
@@ -3473,7 +3489,7 @@ void flw::dlg::AbortDialog::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::AbortDialog::abort(int milliseconds) {
+bool flw::dlg::AbortDialog::check(int milliseconds) {
     auto now = flw::util::time_milli();
 
     if (now - _last > milliseconds) {
@@ -3485,7 +3501,7 @@ bool flw::dlg::AbortDialog::abort(int milliseconds) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::AbortDialog::abort(double value, double min, double max, int milliseconds) {
+bool flw::dlg::AbortDialog::check(double value, double min, double max, int milliseconds) {
     auto now = flw::util::time_milli();
 
     if (now - _last > milliseconds) {
@@ -3503,23 +3519,25 @@ void flw::dlg::AbortDialog::range(double min, double max) {
     _progress->range(min, max);
 }
 
+//------------------------------------------------------------------
+void flw::dlg::AbortDialog::resize(int X, int Y, int W, int H) {
+    Fl_Double_Window::resize(X, Y, W, H);
+
+    if (_progress->visible() != 0) {
+        _button->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
+        _progress->resize(4, H - flw::PREF_FONTSIZE * 2 - 4, W - 8, flw::PREF_FONTSIZE * 2);
+    }
+    else {
+        _button->resize(4, 4, W - 8, H - 8);
+    }
+}
+
 //------------------------------------------------------------------------------
 void flw::dlg::AbortDialog::show(const std::string& label, Fl_Window* parent) {
     _abort = false;
     _last  = 0;
 
-    if (_progress->visible()) {
-        resize(0, 0, flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 6 + 12);
-        _button->copy_label(label.c_str());
-        _button->resize(4, 4, w() - 8, h() - flw::PREF_FONTSIZE * 2 - 12);
-        _progress->resize(4, h() - flw::PREF_FONTSIZE * 2 - 4, w() - 8, flw::PREF_FONTSIZE * 2);
-    }
-    else {
-        resize(0, 0, flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 4 + 8);
-        _button->copy_label(label.c_str());
-        _button->resize(4, 4, w() - 8, h() - 8);
-    }
-
+    _button->copy_label(label.c_str());
     flw::util::center_window(this, parent);
     Fl_Double_Window::show();
     Fl::flush();
@@ -3565,6 +3583,7 @@ flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool canc
     flw::util::labelfont(this);
     callback(WorkDialog::Callback, this);
     copy_label(title);
+    size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(this);
     util::center_window(this, parent);
@@ -3585,7 +3604,7 @@ void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
         dlg->_cancel->deactivate();
         dlg->_pause->label("C&ontinue");
 
-        while (dlg->_pause->value()) {
+        while (dlg->_pause->value() != 0) {
             util::time_sleep(10);
             Fl::check();
         }
@@ -3617,6 +3636,7 @@ bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages)
         for (auto& s : messages) {
             _label->add(s.c_str());
         }
+
         _last = now;
         Fl::check();
         Fl::flush();
@@ -3708,7 +3728,7 @@ Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
 }
 
 //------------------------------------------------------------------------------
-flw::dlg::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
+flw::dlg::FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
@@ -3736,7 +3756,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == dlg->_fonts) {
         auto row = dlg->_fonts->value();
 
-        if (row) {
+        if (row > 0) {
             ((_FontDialogLabel*) dlg->_label)->font = row - 1;
         }
 
@@ -3747,7 +3767,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row1 = dlg->_fonts->value();
         auto row2 = dlg->_sizes->value();
 
-        if (row1 && row2) {
+        if (row1 > 0 && row2 > 0) {
             row1--;
 
             dlg->_fontname = ScrollBrowser::RemoveFormat(_FONTDIALOG_NAMES[row1]);
@@ -3761,7 +3781,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == dlg->_sizes) {
         auto row = dlg->_sizes->value();
 
-        if (row) {
+        if (row > 0) {
             ((_FontDialogLabel*) dlg->_label)->size = row + 5;
         }
 
@@ -3771,7 +3791,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label) {
+void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
     end();
 
     _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
@@ -3842,6 +3862,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl
     resizable(this);
     copy_label(label.c_str());
     callback(flw::dlg::FontDialog::Callback, this);
+    size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
 }
@@ -3856,7 +3877,7 @@ void flw::dlg::FontDialog::DeleteFonts() {
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::FontDialog::LoadFont(const std::string& requested_font) {
+int flw::dlg::FontDialog::LoadFont(std::string requested_font) {
     FontDialog::LoadFonts();
 
     auto count = 0;
@@ -3923,7 +3944,7 @@ bool flw::dlg::FontDialog::run(Fl_Window* parent) {
     flw::util::center_window(this, parent);
     show();
 
-    while (visible()) {
+    while (visible() != 0) {
         Fl::wait();
         Fl::flush();
     }
@@ -3932,7 +3953,7 @@ bool flw::dlg::FontDialog::run(Fl_Window* parent) {
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::FontDialog::_select_name(const std::string& fontname) {
+void flw::dlg::FontDialog::_select_name(std::string fontname) {
     auto count = 1;
 
     for (auto font : _FONTDIALOG_NAMES) {
@@ -7688,7 +7709,7 @@ void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
             count++;
         }
 
-        if (self->value() && Fl::focus() != self->value()) {
+        if (self->value() != nullptr && Fl::focus() != self->value()) {
             self->value()->take_focus();
         }
 
@@ -7698,7 +7719,7 @@ void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
 
 //------------------------------------------------------------------------------
 Fl_Widget* flw::TabsGroup::child(int num) const {
-    return num >= 0 && num < (int) _widgets.size() ? _widgets[num] : nullptr;
+    return (num >= 0 && num < (int) _widgets.size()) ? _widgets[num] : nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -7828,6 +7849,7 @@ int flw::TabsGroup::handle(int event) {
     if (event == FL_FOCUS) {
         if (value() != nullptr && Fl::focus() != value()) {
             value()->take_focus();
+            return 1;
         }
     }
 
@@ -8879,10 +8901,10 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
     if (parent != nullptr) {
         int x = parent->x() + parent->w() / 2;
         int y = parent->y() + parent->h() / 2;
-        window->position(x - window->w() / 2, y - window->h() / 2);
+        window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
     }
     else {
-        window->position((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2));
+        window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
     }
 }
 
@@ -9255,6 +9277,29 @@ int64_t flw::util::to_int(const char* string, int64_t def) {
     }
 
     return res;
+}
+
+//------------------------------------------------------------------------------
+// Return number of set integers
+//
+int flw::util::to_ints(const char* string, int64_t numbers[], size_t size) {
+    assert(string);
+
+    auto end = (char*) nullptr;
+    auto f   = (size_t) 0;
+    errno = 0;
+
+    for (; f < size; f++) {
+        numbers[f] = strtoll(string, &end, 10);
+
+        if (errno != 0 || string == end) {
+            return f;
+        }
+
+        string = end;
+    }
+
+    return f;
 }
 
 //------------------------------------------------------------------------------

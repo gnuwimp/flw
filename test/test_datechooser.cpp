@@ -14,10 +14,11 @@ public:
     DateChooser* dc;
 
     Test(int W, int H) : Fl_Double_Window(W, H, "test_datechooser.cpp") {
-        resizable(this);
         dc = new DateChooser(flw::PREF_FONTSIZE, flw::PREF_FONTSIZE, W - flw::PREF_FONTSIZE * 2, H - flw::PREF_FONTSIZE * 2);
         dc->callback(Callback);
         dc->set(Date());
+        size_range(64, 48);
+        resizable(this);
     }
 
     void resize(int X, int Y, int W, int H) override {

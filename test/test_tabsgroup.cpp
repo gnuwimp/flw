@@ -57,6 +57,7 @@ public:
         b3->callback(CallbackWidget3, this);
 
         resizable(this);
+        size_range(64, 48);
     }
 
     static void CallbackEast(Fl_Widget*, void*) {

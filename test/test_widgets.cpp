@@ -75,6 +75,7 @@ public:
 
         callback(Callback);
         resizable(this);
+        size_range(64, 48);
     }
 
     static void Callback(Fl_Widget* sender, void*) {

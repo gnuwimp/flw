@@ -43,6 +43,7 @@ public:
 
         group->resize();
         resizable(this);
+        size_range(64, 48);
     }
 
     static void Callback1Right(Fl_Widget*, void* o) {

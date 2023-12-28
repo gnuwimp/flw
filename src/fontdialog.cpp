@@ -78,7 +78,7 @@ Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
 }
 
 //------------------------------------------------------------------------------
-flw::dlg::FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label) :
+flw::dlg::FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
@@ -106,7 +106,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == dlg->_fonts) {
         auto row = dlg->_fonts->value();
 
-        if (row) {
+        if (row > 0) {
             ((_FontDialogLabel*) dlg->_label)->font = row - 1;
         }
 
@@ -117,7 +117,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row1 = dlg->_fonts->value();
         auto row2 = dlg->_sizes->value();
 
-        if (row1 && row2) {
+        if (row1 > 0 && row2 > 0) {
             row1--;
 
             dlg->_fontname = ScrollBrowser::RemoveFormat(_FONTDIALOG_NAMES[row1]);
@@ -131,7 +131,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == dlg->_sizes) {
         auto row = dlg->_sizes->value();
 
-        if (row) {
+        if (row > 0) {
             ((_FontDialogLabel*) dlg->_label)->size = row + 5;
         }
 
@@ -141,7 +141,7 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label) {
+void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
     end();
 
     _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
@@ -212,6 +212,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl
     resizable(this);
     copy_label(label.c_str());
     callback(flw::dlg::FontDialog::Callback, this);
+    size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
 }
@@ -226,7 +227,7 @@ void flw::dlg::FontDialog::DeleteFonts() {
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::FontDialog::LoadFont(const std::string& requested_font) {
+int flw::dlg::FontDialog::LoadFont(std::string requested_font) {
     FontDialog::LoadFonts();
 
     auto count = 0;
@@ -293,7 +294,7 @@ bool flw::dlg::FontDialog::run(Fl_Window* parent) {
     flw::util::center_window(this, parent);
     show();
 
-    while (visible()) {
+    while (visible() != 0) {
         Fl::wait();
         Fl::flush();
     }
@@ -302,7 +303,7 @@ bool flw::dlg::FontDialog::run(Fl_Window* parent) {
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::FontDialog::_select_name(const std::string& fontname) {
+void flw::dlg::FontDialog::_select_name(std::string fontname) {
     auto count = 1;
 
     for (auto font : _FONTDIALOG_NAMES) {

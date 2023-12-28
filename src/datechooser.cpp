@@ -431,6 +431,8 @@ namespace flw {
                 flw::util::labelfont(this);
                 callback(Callback, this);
                 copy_label(title);
+                size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
+                size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
                 set_modal();
                 resizable(this);
             }
@@ -464,16 +466,15 @@ namespace flw {
 
             //------------------------------------------------------------------
             bool run(Fl_Window* parent) {
-                size(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 24);
                 util::center_window(this, parent);
                 show();
 
-                while (visible()) {
+                while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
 
-                if (_res) {
+                if (_res == true) {
                     _value = _date_chooser->get();
                 }
 

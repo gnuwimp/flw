@@ -36,6 +36,7 @@ public:
         button1->callback(Callback1, this);
         button2->callback(Callback2, this);
         resizable(grid);
+        size_range(64, 48);
     }
 
     static void Callback1(Fl_Widget* w, void* o) {

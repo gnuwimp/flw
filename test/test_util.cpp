@@ -38,6 +38,22 @@ int main() {
         FLW_ASSERTD(-5.67, num[4], 0.001)
     }
 
+    { // util::to_ints()
+        int64_t num[20];
+        FLW_ASSERT(0, util::to_ints("", num, 20))
+        FLW_ASSERT(0, util::to_ints(":123 234  345   456 -567", num, 20))
+        FLW_ASSERT(1, util::to_ints("123 : 234  345   456 -567", num, 20))
+        FLW_ASSERT(3, util::to_ints("123 234  345 : 456 -567", num, 20))
+        FLW_ASSERT(6, util::to_ints("123 234  345   456 -567 123456789123456789", num, 20))
+
+        FLW_ASSERT(123, num[0])
+        FLW_ASSERT(234, num[1])
+        FLW_ASSERT(345, num[2])
+        FLW_ASSERT(456, num[3])
+        FLW_ASSERT(-567, num[4])
+        FLW_ASSERT(123456789123456789, num[5])
+    }
+
     { // util::format_int()
         FLW_ASSERT("123", util::format_int(123).c_str())
         FLW_ASSERT("-12 345", util::format_int(-12345).c_str())

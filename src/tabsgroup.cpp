@@ -118,7 +118,7 @@ void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
             count++;
         }
 
-        if (self->value() && Fl::focus() != self->value()) {
+        if (self->value() != nullptr && Fl::focus() != self->value()) {
             self->value()->take_focus();
         }
 
@@ -128,7 +128,7 @@ void flw::TabsGroup::Callback(Fl_Widget* sender, void* object) {
 
 //------------------------------------------------------------------------------
 Fl_Widget* flw::TabsGroup::child(int num) const {
-    return num >= 0 && num < (int) _widgets.size() ? _widgets[num] : nullptr;
+    return (num >= 0 && num < (int) _widgets.size()) ? _widgets[num] : nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -258,6 +258,7 @@ int flw::TabsGroup::handle(int event) {
     if (event == FL_FOCUS) {
         if (value() != nullptr && Fl::focus() != value()) {
             value()->take_focus();
+            return 1;
         }
     }
 

@@ -13,8 +13,6 @@ using namespace flw;
 class Test : public Fl_Double_Window {
 public:
     Test(int W, int H) : Fl_Double_Window(W, H, "test_gridgroup1.cpp") {
-        resizable(this);
-
         grid1 = new GridGroup(100, 100, 200, 180);
         grid1->size(flw::PREF_FONTSIZE / 4);
         grid1->color(FL_YELLOW);
@@ -52,6 +50,8 @@ public:
         grid2->add(b2, 5, 2, -5, -4);
         grid2->size(20);
 
+        resizable(this);
+        size_range(64, 48);
         b1->callback(Callback1, this);
         b2->callback(Callback2, this);
         flw::util::labelfont(grid1);

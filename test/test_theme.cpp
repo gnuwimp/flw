@@ -224,6 +224,7 @@ public:
         menu->add("Edit/Paste");
 
         resizable(this);
+        size_range(64, 48);
     }
 
     static void CallbackButton(Fl_Widget* w, void*) {

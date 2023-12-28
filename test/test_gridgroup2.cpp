@@ -38,6 +38,7 @@ public:
         grid->size(10);
         grid->resize();
         resizable(grid);
+        size_range(64, 48);
     }
 
     GridGroup* grid;

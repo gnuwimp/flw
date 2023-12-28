@@ -114,6 +114,7 @@ public:
         log->value(TEXT);
         log->find("07/Mar/2004:17:31:39 -0800", true);
         resizable(this);
+        size_range(64, 48);
     }
 
     flw::LogDisplay* log;

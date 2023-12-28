@@ -372,6 +372,7 @@ public:
 
         resizable(this);
         resize(x(), y(), w(), h());
+        size_range(64, 48);
         bar->textfont(flw::PREF_FONT);
         bar->textsize(flw::PREF_FONTSIZE);
         flw::util::labelfont(this);

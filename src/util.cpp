@@ -32,10 +32,10 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
     if (parent != nullptr) {
         int x = parent->x() + parent->w() / 2;
         int y = parent->y() + parent->h() / 2;
-        window->position(x - window->w() / 2, y - window->h() / 2);
+        window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
     }
     else {
-        window->position((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2));
+        window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
     }
 }
 
@@ -408,6 +408,29 @@ int64_t flw::util::to_int(const char* string, int64_t def) {
     }
 
     return res;
+}
+
+//------------------------------------------------------------------------------
+// Return number of set integers
+//
+int flw::util::to_ints(const char* string, int64_t numbers[], size_t size) {
+    assert(string);
+
+    auto end = (char*) nullptr;
+    auto f   = (size_t) 0;
+    errno = 0;
+
+    for (; f < size; f++) {
+        numbers[f] = strtoll(string, &end, 10);
+
+        if (errno != 0 || string == end) {
+            return f;
+        }
+
+        string = end;
+    }
+
+    return f;
 }
 
 //------------------------------------------------------------------------------

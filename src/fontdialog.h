@@ -30,7 +30,7 @@ namespace flw {
             FontDialog&                 operator=(FontDialog&&) = delete;
 
                                         FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
-                                        FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& label);
+                                        FontDialog(std::string font, Fl_Fontsize fontsize, std::string label);
             void                        activate_font()
                                             { ((Fl_Widget*) _fonts)->activate(); }
             void                        deactivate_font()
@@ -48,13 +48,13 @@ namespace flw {
 
             static void                 Callback(Fl_Widget* w, void* o);
             static void                 DeleteFonts();
-            static int                  LoadFont(const std::string& requested_font);
+            static int                  LoadFont(std::string requested_font);
             static void                 LoadFonts(bool iso8859_only = true);
 
         private:
             void                        _activate();
-            void                        _create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label);
-            void                        _select_name(const std::string& font_name);
+            void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label);
+            void                        _select_name(std::string font_name);
 
             Fl_Box*                     _label;
             Fl_Button*                  _cancel;
