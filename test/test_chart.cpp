@@ -139,12 +139,12 @@ public:
 
     static void CallbackLoad(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        chart::load_data(w->chart, "chart.tsv");
+        chart::load_data(w->chart, "chart.json");
     }
 
     static void CallbackSave(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        chart::save_data(w->chart, "chart.tsv");
+        chart::save_data(w->chart, "chart.json");
     }
 
     static void CallbackTest(Fl_Widget*, void* v) {

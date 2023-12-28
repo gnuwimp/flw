@@ -119,6 +119,113 @@ namespace flw {
                                             { size = mtime = 0; mode = 0; }
                                         Stat(std::string filename);
     };
+
+    namespace json {
+        //----------------------------------------------------------------------
+        // Very simple json parser
+        // Don't use it for arbitrary data download from internet
+
+        // Macros for creating json
+        #define FLW_JSON_START(VEC, X)                      { flw::json::NodeVector& V = VEC; int D = 0; char B[50]; X; (void) B; size_t I = 0; for (auto& n : V) n.index = I++; }
+        #define FLW_JSON_START_OBJECT(X)                    { V.push_back(flw::json::Node(flw::json::TYPE::OBJECT, "", "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_OBJECT, "", "", --D)); }
+        #define FLW_JSON_START_ARRAY(X)                     { V.push_back(flw::json::Node(flw::json::TYPE::ARRAY, "", "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, "", "", --D)); }
+        #define FLW_JSON_START_ARRAY_NL(X)                  { V.push_back(flw::json::Node(flw::json::TYPE::ARRAY_NL, "", "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, "", "", --D)); }
+
+        #define FLW_JSON_ADD_OBJECT(NAME,X)                 { std::string N = flw::json::escape_string(NAME); V.push_back(flw::json::Node(flw::json::TYPE::OBJECT, N, "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_OBJECT, N, "", --D)); }
+        #define FLW_JSON_ADD_ARRAY(NAME,X)                  { std::string N = flw::json::escape_string(NAME); V.push_back(flw::json::Node(flw::json::TYPE::ARRAY, N, "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, N, "", --D)); }
+        #define FLW_JSON_ADD_ARRAY_NL(NAME,X)               { std::string N = flw::json::escape_string(NAME); V.push_back(flw::json::Node(flw::json::TYPE::ARRAY_NL, N, "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, N, "", --D)); }
+
+        #define FLW_JSON_ADD_STRING(NAME,VALUE)             { V.push_back(flw::json::Node(flw::json::TYPE::STRING, flw::json::escape_string(NAME), flw::json::escape_string(VALUE), D)); }
+        #define FLW_JSON_ADD_NUMBER(NAME,VALUE)             { snprintf(B, 50, "%f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
+        #define FLW_JSON_ADD_NUMBER2(NAME,VALUE)            { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
+        #define FLW_JSON_ADD_INT(NAME,VALUE)                { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
+        #define FLW_JSON_ADD_UINT(NAME,VALUE)               { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
+        #define FLW_JSON_ADD_BOOL(NAME,VALUE)               { V.push_back(flw::json::Node(flw::json::TYPE::BOOL, flw::json::escape_string(NAME), VALUE == true ? "true" : "false", D)); }
+        #define FLW_JSON_ADD_NIL(NAME)                      { V.push_back(flw::json::Node(flw::json::TYPE::NIL, flw::json::escape_string(NAME), "", D)); }
+
+        #define FLW_JSON_ADD_STRING_TO_ARRAY(VALUE)         { V.push_back(flw::json::Node(flw::json::TYPE::STRING, "", flw::json::escape_string(VALUE), D)); }
+        #define FLW_JSON_ADD_NUMBER_TO_ARRAY(VALUE)         { snprintf(B, 50, "%f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
+        #define FLW_JSON_ADD_NUMBER2_TO_ARRAY(VALUE)        { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
+        #define FLW_JSON_ADD_INT_TO_ARRAY(VALUE)            { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
+        #define FLW_JSON_ADD_UINT_TO_ARRAY(VALUE)           { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
+        #define FLW_JSON_ADD_BOOL_TO_ARRAY(VALUE)           { V.push_back(flw::json::Node(flw::json::TYPE::BOOL, "", VALUE == true ? "true" : "false", D)); }
+        #define FLW_JSON_ADD_NIL_TO_ARRAY()                 { V.push_back(flw::json::Node(flw::json::TYPE::NIL, "", "", D)); }
+
+        enum class TYPE {
+                                        NA,
+                                        OBJECT,
+                                        END_OBJECT,
+                                        ARRAY,
+                                        END_ARRAY,
+                                        STRING,
+                                        NUMBER,
+                                        BOOL,
+                                        NIL,
+
+                                        COLON, // Only for tokenizer
+                                        COMMA, // Only for tokenizer
+                                        ARRAY_NL, // Only for creating json
+        };
+
+        std::string                     escape_string(const std::string& string);
+        std::string                     unescape_string(const std::string& string);
+
+        struct Node {
+            TYPE                        type;
+            int                         depth;
+            size_t                      index;
+            std::string                 value;
+            std::string                 name;
+            size_t                      textpos;
+
+                                        Node(TYPE type = TYPE::NA, const std::string& name = "", const std::string& value = "", int depth = 0, size_t textpos = 0)
+                                            { this->type = type; this->name = name; this->value = value; this->depth = depth; this->textpos = textpos; }
+            bool                        operator==(const Node& other) const
+                                            { return (type == other.type || (type == TYPE::ARRAY && other.type == TYPE::ARRAY_NL) || (type == TYPE::ARRAY_NL && other.type == TYPE::ARRAY)) && depth == other.depth && value == other.value && name == other.name; }
+            bool                        is_array() const
+                                            { return type == json::TYPE::ARRAY; }
+            bool                        is_bool() const
+                                            { return type == json::TYPE::BOOL; }
+            bool                        is_data() const
+                                            { return type == json::TYPE::STRING || type == json::TYPE::NUMBER || type == json::TYPE::BOOL || type == json::TYPE::NIL; }
+            bool                        is_end() const
+                                            { return type == json::TYPE::END_ARRAY || type == json::TYPE::END_OBJECT; }
+            bool                        is_nil() const
+                                            { return type == json::TYPE::NIL; }
+            bool                        is_number() const
+                                            { return type == json::TYPE::NUMBER; }
+            bool                        is_object() const
+                                            { return type == json::TYPE::OBJECT; }
+            bool                        is_start() const
+                                            { return type == json::TYPE::ARRAY || type == json::TYPE::ARRAY_NL || type == json::TYPE::OBJECT; }
+            bool                        is_string() const
+                                            { return type == json::TYPE::STRING; }
+            void                        print() const;
+            bool                        tobool() const
+                                            { return value == "true"; }
+            long long                   toint() const
+                                            { return (type == json::TYPE::NUMBER) ? strtoll(value.c_str(), nullptr, 0) : 0; }
+            double                      tonumber() const
+                                            { return (type == json::TYPE::NUMBER) ? strtod(value.c_str(), nullptr) : 0.0; }
+            std::string                 tostring() const
+                                            { return unescape_string(value); }
+            std::string                 unescape_name() const
+                                            { return unescape_string(name); }
+        };
+
+        typedef std::vector<Node>       NodeVector;
+        typedef std::vector<size_t>     SizeTVector;
+
+        NodeVector                      find_children(const NodeVector& nodes, const Node& start, bool grandchildren = false);
+        NodeVector                      find_nodes(const NodeVector& nodes, std::string name, TYPE type = TYPE::NA);
+        NodeVector                      find_siblings(const NodeVector& nodes, const Node& start);
+        size_t                          parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma = false);
+        size_t                          parse(std::string json, NodeVector& nodes, bool ignore_trailing_comma = false);
+        void                            print(const NodeVector& nodes);
+        std::string                     tostring(const NodeVector& nodes);
+        size_t                          validate(const char* json);
+        size_t                          validate(std::string json);
+    }
 }
 
 // MKALGAM_OFF

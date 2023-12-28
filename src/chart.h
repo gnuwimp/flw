@@ -22,22 +22,22 @@ namespace flw {
         class Line;
         enum class TYPE;
 
-        extern const double             MAX_VAL;
-        extern const double             MIN_VAL;
-        extern const int                MAX_TICK;
-        extern const int                MIN_TICK;
-        extern const size_t             MAX_AREA;
-        extern const size_t             MAX_LINE;
+        const int                       MIN_TICK  = 3;
+        const int                       MAX_TICK  = 100;
+        const size_t                    MAX_AREA  = 3;
+        const size_t                    MAX_LINE  = 10;
+        const double                    MIN_VAL   = -999'999'999'999'999.0;
+        const double                    MAX_VAL   =  999'999'999'999'999.0;
 
         typedef std::vector<chart::Line> LineVector;
         typedef std::vector<chart::Area> AreaVector;
 
-        size_t                          bsearch(const flw::PriceVector& prices, const flw::Price& key);
-        bool                            has_high_low(flw::chart::TYPE chart_type);
-        bool                            has_resizable_width(flw::chart::TYPE chart_type);
-        bool                            has_time(flw::Date::RANGE date_range);
-        bool                            load_data(flw::Chart* chart, std::string filename);
-        bool                            save_data(const flw::Chart* chart, std::string filename);
+        size_t                          bsearch(const PriceVector& prices, const Price& key);
+        bool                            has_high_low(TYPE chart_type);
+        bool                            has_resizable_width(TYPE chart_type);
+        bool                            has_time(Date::RANGE date_range);
+        bool                            load_data(Chart* chart, std::string filename);
+        bool                            save_data(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
 
         //----------------------------------------------------------------------
         enum class TYPE {
@@ -56,7 +56,7 @@ namespace flw {
         //
         struct Line {
             Fl_Align                    align;
-            flw::chart::TYPE            type;
+            TYPE                        type;
             Fl_Color                    color;
             bool                        visible;
             int                         width;
@@ -65,14 +65,14 @@ namespace flw {
             std::string                 label;
             double                      max;
             double                      min;
-            flw::PriceVector            points;
+            PriceVector                 points;
 
                                         Line();
                                         ~Line()
                                             { clear(); }
             void                        clear();
             void                        debug(int num) const;
-            bool                        set(const flw::PriceVector& points, std::string label, flw::chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
+            bool                        set(const PriceVector& points, std::string label, TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
         };
 
         //----------------------------------------------------------------------
@@ -100,10 +100,10 @@ namespace flw {
         struct Area {
             size_t                      count;
             double                      h;
-            flw::chart::Scale           left;
-            flw::chart::LineVector      lines;
+            Scale                       left;
+            LineVector                  lines;
             int                         percent;
-            flw::chart::Scale           right;
+            Scale                       right;
             size_t                      selected;
             double                      w;
             double                      x;
@@ -127,30 +127,29 @@ namespace flw {
     // Line types BAR, VERTICAL and CLAMP_VERTICAL can use line width of -1 which means it will expand to tick width - 1
     //
     class Chart : public Fl_Group {
-        friend bool                     flw::chart::load_data(flw::Chart* chart, std::string filename);
-        friend bool                     flw::chart::save_data(const flw::Chart* chart, std::string filename);
+        friend bool                     chart::save_data(const Chart*, std::string, double);
 
     public:
                                         Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        bool                            add_line(size_t area_0_to_2, const flw::PriceVector& points, std::string line_label, flw::chart::TYPE chart_type = flw::chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = flw::chart::MIN_VAL, double clamp_max = flw::chart::MAX_VAL);
+        bool                            add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, chart::TYPE chart_type = chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = chart::MIN_VAL, double clamp_max = chart::MAX_VAL);
         bool                            area_size(int area1 = 100, int area2 = 0, int area3 = 0);
-        void                            block_dates(const flw::PriceVector& block_dates)
+        void                            block_dates(const PriceVector& block_dates)
                                             { _block_dates = block_dates; }
         void                            clear();
         Date::FORMAT                    date_format() const
                                             { return _date_format; }
-        bool                            date_range(flw::Date::RANGE range = Date::RANGE::DAY);
+        bool                            date_range(Date::RANGE range = Date::RANGE::DAY);
         void                            debug() const;
         void                            draw() override;
         int                             handle(int event) override;
         bool                            has_time() const
-                                            { return flw::chart::has_time(_date_range); }
+                                            { return chart::has_time(_date_range); }
         void                            init(bool calc_dates);
         bool                            margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
         void                            resize()
                                             { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
         void                            resize(int X, int Y, int W, int H) override;
-        bool                            tick_width(int tick_width_from_3_to_100 = flw::chart::MIN_TICK);
+        bool                            tick_width(int tick_width_from_3_to_100 = chart::MIN_TICK);
         void                            update_pref();
         void                            view_options(bool labels = true, bool hor = true, bool ver = true)
                                             { _view.labels = labels; _view.horizontal = hor; _view.vertical = ver; redraw(); }
@@ -162,14 +161,14 @@ namespace flw {
         void                            _calc_ymin_ymax();
         void                            _calc_yscale();
         void                            _create_tooltip(bool ctrl);
-        void                            _draw_area(const flw::chart::Area& area);
-        void                            _draw_line(const flw::chart::Line& line, const flw::chart::Scale& scale, int X, int Y, int W, int H);
-        void                            _draw_line_labels(const flw::chart::Area& area);
+        void                            _draw_area(const chart::Area& area);
+        void                            _draw_line(const chart::Line& line, const chart::Scale& scale, int X, int Y, int W, int H);
+        void                            _draw_line_labels(const chart::Area& area);
         void                            _draw_tooltip();
-        void                            _draw_ver_lines(const flw::chart::Area& area);
+        void                            _draw_ver_lines(const chart::Area& area);
         void                            _draw_xlabels();
-        void                            _draw_ylabels(int X, double Y1, double Y2, const flw::chart::Scale& scale, bool left);
-        flw::chart::Area*               _inside_area(int X, int Y);
+        void                            _draw_ylabels(int X, double Y1, double Y2, const chart::Scale& scale, bool left);
+        chart::Area*                    _inside_area(int X, int Y);
 
         static void                     _CallbackDebug(Fl_Widget* widget, void* chart_object);
         static void                     _CallbackReset(Fl_Widget* widget, void* chart_object);
@@ -183,15 +182,15 @@ namespace flw {
             bool                        vertical;
         }                               _view;
 
-        flw::chart::Area*               _area;
-        flw::chart::AreaVector          _areas;
-        flw::PriceVector                _block_dates;
+        chart::Area*                    _area;
+        chart::AreaVector               _areas;
+        PriceVector                     _block_dates;
         int                             _bottom_space;
         int                             _cw;
-        flw::Date::FORMAT               _date_format;
-        flw::Date::RANGE                _date_range;
+        Date::FORMAT                    _date_format;
+        Date::RANGE                     _date_range;
         int                             _date_start;
-        flw::PriceVector                _dates;
+        PriceVector                     _dates;
         int                             _margin_left;
         int                             _margin_right;
         Fl_Menu_Button*                 _menu;

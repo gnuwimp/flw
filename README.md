@@ -30,7 +30,6 @@ Dialogs:
 * dlg::password* - Ask user for password and optional password confirmation.
 * dlg::select* - Let user select a string from an list and also to filter shown strings.
 * dlg::text - Show text in an editor widget.
-* dlg::text_edit - Edit text dialog.
 * dlg::date - Show an date selection dialog.
 * dlg::theme - Let user select a theme.
 
