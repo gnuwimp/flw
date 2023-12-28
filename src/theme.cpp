@@ -9,6 +9,7 @@
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Preferences.H>
 
 // MKALGAM_ON
 
@@ -22,7 +23,48 @@ namespace flw {
         static unsigned char _SYS_B[256];
         static bool          _SAVED_COLOR = false;
         static bool          _SAVED_SYS   = false;
-        static std::string   _NAME        = "default";
+
+        static const char*   _NAMES[] = {
+                "default",
+                "gleam",
+                "blue gleam",
+                "dark blue gleam",
+                "dark gleam",
+                "darker gleam",
+                "tan gleam",
+                "gtk",
+                "blue gtk",
+                "dark blue gtk",
+                "dark gtk",
+                "darker gtk",
+                "tan gtk",
+                "plastic",
+                "blue plastic",
+                "tan plastic",
+                "system"
+        };
+
+        enum {
+                _NAME_DEFAULT,
+                _NAME_GLEAM,
+                _NAME_GLEAM_BLUE,
+                _NAME_GLEAM_DARK_BLUE,
+                _NAME_GLEAM_DARK,
+                _NAME_GLEAM_DARKER,
+                _NAME_GLEAM_TAN,
+                _NAME_GTK,
+                _NAME_GTK_BLUE,
+                _NAME_GTK_DARK_BLUE,
+                _NAME_GTK_DARK,
+                _NAME_GTK_DARKER,
+                _NAME_GTK_TAN,
+                _NAME_PLASTIC,
+                _NAME_PLASTIC_BLUE,
+                _NAME_PLASTIC_TAN,
+                _NAME_SYSTEM,
+        };
+
+        static std::string _NAME = _NAMES[_NAME_DEFAULT];
 
         //----------------------------------------------------------------------
         static void _blue_colors() {
@@ -68,6 +110,16 @@ namespace flw {
             Fl::set_color(15,  149,  75,  37); // FL_SELECTION_COLOR
             Fl::set_color(56,    0,   0,   0); // FL_BLACK
             Fl::background(85, 85, 85);
+        }
+
+        //----------------------------------------------------------------------
+        static void _dark_colors2() {
+            Fl::set_color(0,   164, 164, 164); // FL_FOREGROUND_COLOR
+            Fl::set_color(7,    16,  16,  16); // FL_BACKGROUND2_COLOR
+            Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
+            Fl::set_color(15,  133,  59,  21); // FL_SELECTION_COLOR
+            Fl::set_color(56,    0,   0,   0); // FL_BLACK
+            Fl::background(32, 32, 32);
         }
 
         //----------------------------------------------------------------------
@@ -129,40 +181,40 @@ namespace flw {
         }
 
         //------------------------------------------------------------------------------
-        void _load_default() {
+        static void _load_default() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::scheme("none");
             Fl::redraw();
-            _NAME = "default";
+            _NAME = _NAMES[_NAME_DEFAULT];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gleam() {
+        static void _load_gleam() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             Fl::scheme("gleam");
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
-            _NAME = "gleam";
+            _NAME = _NAMES[_NAME_GLEAM];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gleam_blue() {
+        static void _load_gleam_blue() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_blue_colors();
             Fl::scheme("gleam");
             Fl::redraw();
-            _NAME = "blue gleam";
+            _NAME = _NAMES[_NAME_GLEAM_BLUE];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gleam_dark() {
+        static void _load_gleam_dark() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_colors();
@@ -170,12 +222,25 @@ namespace flw {
             Fl::set_color(255, 125, 125, 125);
             Fl::scheme("gleam");
             Fl::redraw();
-            _NAME = "dark gleam";
+            _NAME = _NAMES[_NAME_GLEAM_DARK];
             flw::PREF_IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gleam_dark_blue() {
+        static void _load_gleam_darker() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_dark_colors2();
+            flw::theme::_darker_colors();
+            Fl::set_color(255, 125, 125, 125);
+            Fl::scheme("gleam");
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_GLEAM_DARKER];
+            flw::PREF_IS_DARK = true;
+        }
+
+        //------------------------------------------------------------------------------
+        static void _load_gleam_dark_blue() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_blue_colors();
@@ -183,46 +248,45 @@ namespace flw {
             Fl::set_color(255, 101, 117, 125);
             Fl::scheme("gleam");
             Fl::redraw();
-            _NAME = "dark blue gleam";
+            _NAME = _NAMES[_NAME_GLEAM_DARK_BLUE];
             flw::PREF_IS_DARK = true;
         }
 
-
         //------------------------------------------------------------------------------
-        void _load_gleam_tan() {
+        static void _load_gleam_tan() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_tan_colors();
             Fl::scheme("gleam");
             Fl::redraw();
-            _NAME = "tan gleam";
+            _NAME = _NAMES[_NAME_GLEAM_TAN];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gtk() {
+        static void _load_gtk() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             Fl::scheme("gtk+");
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
-            _NAME = "gtk";
+            _NAME = _NAMES[_NAME_GTK];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gtk_blue() {
+        static void _load_gtk_blue() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_blue_colors();
             Fl::scheme("gtk+");
             Fl::redraw();
-            _NAME = "blue gtk";
+            _NAME = _NAMES[_NAME_GTK_BLUE];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gtk_dark() {
+        static void _load_gtk_dark() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_colors();
@@ -230,12 +294,25 @@ namespace flw {
             Fl::set_color(255, 185, 185, 185);
             Fl::scheme("gtk+");
             Fl::redraw();
-            _NAME = "dark gtk";
+            _NAME = _NAMES[_NAME_GTK_DARK];
             flw::PREF_IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gtk_dark_blue() {
+        static void _load_gtk_darker() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_dark_colors2();
+            flw::theme::_darker_colors();
+            Fl::set_color(255, 125, 125, 125);
+            Fl::scheme("gtk+");
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_GTK_DARKER];
+            flw::PREF_IS_DARK = true;
+        }
+
+        //------------------------------------------------------------------------------
+        static void _load_gtk_dark_blue() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_blue_colors();
@@ -243,56 +320,56 @@ namespace flw {
             Fl::set_color(255, 161, 177, 185);
             Fl::scheme("gtk+");
             Fl::redraw();
-            _NAME = "dark blue gtk";
+            _NAME = _NAMES[_NAME_GTK_DARK_BLUE];
             flw::PREF_IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
-        void _load_gtk_tan() {
+        static void _load_gtk_tan() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_tan_colors();
             Fl::scheme("gtk+");
             Fl::redraw();
-            _NAME = "tan gtk";
+            _NAME = _NAMES[_NAME_GTK_TAN];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_plastic() {
+        static void _load_plastic() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::scheme("plastic");
             Fl::redraw();
-            _NAME = "plastic";
+            _NAME = _NAMES[_NAME_PLASTIC];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_blue_plastic() {
+        static void _load_blue_plastic() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_blue_colors();
             Fl::scheme("plastic");
             Fl::redraw();
-            _NAME = "blue plastic";
+            _NAME = _NAMES[_NAME_PLASTIC_BLUE];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_tan_plastic() {
+        static void _load_tan_plastic() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_tan_colors();
             Fl::scheme("plastic");
             Fl::redraw();
-            _NAME = "tan plastic";
+            _NAME = _NAMES[_NAME_PLASTIC_TAN];
             flw::PREF_IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
-        void _load_system() {
+        static void _load_system() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             Fl::scheme("gtk+");
@@ -306,7 +383,7 @@ namespace flw {
             }
 
             Fl::redraw();
-            _NAME = "system";
+            _NAME = _NAMES[_NAME_SYSTEM];
             flw::PREF_IS_DARK = false;
         }
     }
@@ -362,21 +439,9 @@ namespace flw {
                 _theme->callback(Callback, this);
                 _theme->textfont(flw::PREF_FONT);
 
-                _theme->add("default");
-                _theme->add("gleam");
-                _theme->add("blue gleam");
-                _theme->add("dark blue gleam");
-                _theme->add("dark gleam");
-                _theme->add("tan gleam");
-                _theme->add("gtk");
-                _theme->add("blue gtk");
-                _theme->add("dark blue gtk");
-                _theme->add("dark gtk");
-                _theme->add("tan gtk");
-                _theme->add("plastic");
-                _theme->add("blue plastic");
-                _theme->add("tan plastic");
-                _theme->add("system");
+                for (int f = 0; f <= theme::_NAME_SYSTEM; f++) {
+                    _theme->add(theme::_NAMES[f]);
+                }
 
                 resizable(this);
                 callback(Callback, this);
@@ -413,52 +478,58 @@ namespace flw {
                     }
                 }
                 else if (w == dlg->_theme) {
-                    auto row = dlg->_theme->value();
+                    auto row = dlg->_theme->value() - 1;
 
-                    if (row == 1) {
-                        theme::_load_default();
-                    }
-                    else if (row == 2) {
+                    if (row == theme::_NAME_GLEAM) {
                         theme::_load_gleam();
                     }
-                    else if (row == 3) {
+                    else if (row == theme::_NAME_GLEAM_BLUE) {
                         theme::_load_gleam_blue();
                     }
-                    else if (row == 4) {
+                    else if (row == theme::_NAME_GLEAM_DARK_BLUE) {
                         theme::_load_gleam_dark_blue();
                     }
-                    else if (row == 5) {
+                    else if (row == theme::_NAME_GLEAM_DARK) {
                         theme::_load_gleam_dark();
                     }
-                    else if (row == 6) {
+                    else if (row == theme::_NAME_GLEAM_DARKER) {
+                        theme::_load_gleam_darker();
+                    }
+                    else if (row == theme::_NAME_GLEAM_TAN) {
                         theme::_load_gleam_tan();
                     }
-                    else if (row == 7) {
+                    else if (row == theme::_NAME_GTK) {
                         theme::_load_gtk();
                     }
-                    else if (row == 8) {
+                    else if (row == theme::_NAME_GTK_BLUE) {
                         theme::_load_gtk_blue();
                     }
-                    else if (row == 9) {
+                    else if (row == theme::_NAME_GTK_DARK_BLUE) {
                         theme::_load_gtk_dark_blue();
                     }
-                    else if (row == 10) {
+                    else if (row == theme::_NAME_GTK_DARK) {
                         theme::_load_gtk_dark();
                     }
-                    else if (row == 11) {
+                    else if (row == theme::_NAME_GTK_DARKER) {
+                        theme::_load_gtk_darker();
+                    }
+                    else if (row == theme::_NAME_GTK_TAN) {
                         theme::_load_gtk_tan();
                     }
-                    else if (row == 12) {
+                    else if (row == theme::_NAME_PLASTIC) {
                         theme::_load_plastic();
                     }
-                    else if (row == 13) {
+                    else if (row == theme::_NAME_PLASTIC_BLUE) {
                         theme::_load_blue_plastic();
                     }
-                    else if (row == 14) {
+                    else if (row == theme::_NAME_PLASTIC_TAN) {
                         theme::_load_tan_plastic();
                     }
-                    else if (row == 15) {
+                    else if (row == theme::_NAME_SYSTEM) {
                         theme::_load_system();
+                    }
+                    else {
+                        theme::_load_default();
                     }
 
                     Fl::redraw();
@@ -477,8 +548,8 @@ namespace flw {
                 _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
                 _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
                 _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
-                _fixedfont->resize       (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
-                _font->resize            (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
+                _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
+                _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
                 _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
             }
 
@@ -502,50 +573,12 @@ namespace flw {
                 _theme->textsize(flw::PREF_FONTSIZE);
                 size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
 
-                if (theme::_NAME == "default") {
-                    _theme->value(1);
-                }
-                else if (theme::_NAME == "gleam") {
-                    _theme->value(2);
-                }
-                else if (theme::_NAME == "blue gleam") {
-                    _theme->value(3);
-                }
-                else if (theme::_NAME == "dark blue gleam") {
-                    _theme->value(4);
-                }
-                else if (theme::_NAME == "dark gleam") {
-                    _theme->value(5);
-                }
-                else if (theme::_NAME == "tan gleam") {
-                    _theme->value(6);
-                }
-                else if (theme::_NAME == "gtk") {
-                    _theme->value(7);
-                }
-                else if (theme::_NAME == "blue gtk") {
-                    _theme->value(8);
-                }
-                else if (theme::_NAME == "dark blue gtk") {
-                    _theme->value(9);
-                }
-                else if (theme::_NAME == "dark gtk") {
-                    _theme->value(10);
-                }
-                else if (theme::_NAME == "tan gtk") {
-                    _theme->value(11);
-                }
-                else if (theme::_NAME == "plastic") {
-                    _theme->value(12);
-                }
-                else if (theme::_NAME == "blue plastic") {
-                    _theme->value(13);
-                }
-                else if (theme::_NAME == "tan plastic") {
-                    _theme->value(14);
-                }
-                else if (theme::_NAME == "system") {
-                    _theme->value(15);
+                for (int f = 0; f <= theme::_NAME_SYSTEM; f++) {
+                    if (theme::_NAME == theme::_NAMES[f]) {
+                        _theme->value(f + 1);
+                        break;
+                    }
+
                 }
 
                 Fl::redraw();
@@ -556,7 +589,12 @@ namespace flw {
 
 //------------------------------------------------------------------------------
 bool flw::theme::is_dark() {
-    if (flw::theme::_NAME == "dark blue gleam" || flw::theme::_NAME == "dark gleam" || flw::theme::_NAME == "dark blue gtk" || flw::theme::_NAME == "dark gtk") {
+    if (theme::_NAME == theme::_NAMES[_NAME_GLEAM_DARK_BLUE] ||
+        theme::_NAME == theme::_NAMES[_NAME_GLEAM_DARK] ||
+        theme::_NAME == theme::_NAMES[_NAME_GLEAM_DARKER] ||
+        theme::_NAME == theme::_NAMES[_NAME_GTK_DARK_BLUE] ||
+        theme::_NAME == theme::_NAMES[_NAME_GTK_DARK] ||
+        theme::_NAME == theme::_NAMES[_NAME_GTK_DARKER]) {
         return true;
     }
     else {
@@ -566,46 +604,52 @@ bool flw::theme::is_dark() {
 
 //------------------------------------------------------------------------------
 bool flw::theme::load(const std::string& name) {
-    if (name == "default") {
+    if (name == theme::_NAMES[_NAME_DEFAULT]) {
         theme::_load_default();
     }
-    else if (name == "gleam") {
+    else if (name == theme::_NAMES[_NAME_GLEAM]) {
         theme::_load_gleam();
     }
-    else if (name == "blue gleam" || name == "bluegleam") {
+    else if (name == theme::_NAMES[_NAME_GLEAM_BLUE]) {
         theme::_load_gleam_blue();
     }
-    else if (name == "dark blue gleam" || name == "darkbluegleam") {
+    else if (name == theme::_NAMES[_NAME_GLEAM_DARK_BLUE]) {
         theme::_load_gleam_dark_blue();
     }
-    else if (name == "dark gleam" || name == "darkgleam") {
+    else if (name == theme::_NAMES[_NAME_GLEAM_DARK]) {
         theme::_load_gleam_dark();
     }
-    else if (name == "tan gleam" || name == "tangleam") {
+    else if (name == theme::_NAMES[_NAME_GLEAM_DARKER]) {
+        theme::_load_gleam_darker();
+    }
+    else if (name == theme::_NAMES[_NAME_GLEAM_TAN]) {
         theme::_load_gleam_tan();
     }
-    else if (name == "gtk" || name == "gtk+") {
+    else if (name == theme::_NAMES[_NAME_GTK]) {
         theme::_load_gtk();
     }
-    else if (name == "blue gtk" || name == "bluegtk") {
+    else if (name == theme::_NAMES[_NAME_GTK_BLUE]) {
         theme::_load_gtk_blue();
     }
-    else if (name == "dark blue gtk" || name == "darkbluegtk") {
+    else if (name == theme::_NAMES[_NAME_GTK_DARK_BLUE]) {
         theme::_load_gtk_dark_blue();
     }
-    else if (name == "dark gtk" || name == "darkgtk") {
+    else if (name == theme::_NAMES[_NAME_GTK_DARK]) {
         theme::_load_gtk_dark();
     }
-    else if (name == "tan gtk" || name == "tangtk") {
+    else if (name == theme::_NAMES[_NAME_GTK_DARKER]) {
+        theme::_load_gtk_darker();
+    }
+    else if (name == theme::_NAMES[_NAME_GTK_TAN]) {
         theme::_load_gtk_tan();
     }
-    else if (name == "plastic") {
+    else if (name == theme::_NAMES[_NAME_PLASTIC]) {
         theme::_load_plastic();
     }
-    else if (name == "blue plastic" || name == "blueplastic") {
+    else if (name == theme::_NAMES[_NAME_PLASTIC_BLUE]) {
         theme::_load_blue_plastic();
     }
-    else if (name == "tan plastic" || name == "tanplastic") {
+    else if (name == theme::_NAMES[_NAME_PLASTIC_TAN]) {
         theme::_load_tan_plastic();
     }
     else {
@@ -674,6 +718,88 @@ bool flw::theme::parse(int argc, const char** argv) {
 void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
     auto dlg = dlg::_DlgTheme(enable_font, enable_fixedfont, parent);
     dlg.run();
+}
+
+//------------------------------------------------------------------------------
+// Load gui preferences and if window is set resize and show it
+//
+void flw::util::load_pref(Fl_Preferences& pref, Fl_Window* window) {
+    auto val = 0;
+    char buffer[4000];
+
+    if (window != nullptr) {
+        int x, y, w, h, f;
+
+        pref.get("gui.x", x, 80);
+        pref.get("gui.y", y, 60);
+        pref.get("gui.w", w, 800);
+        pref.get("gui.h", h, 600);
+        pref.get("gui.fullscreen", f, 0);
+
+        window->resize(x, y, w, h);
+        window->show();
+        window->resize(x, y, w, h);
+
+        if (f == 1) {
+            window->fullscreen();
+        }
+    }
+
+    pref.get("gui.fontname", buffer, "", 4000);
+
+    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
+        auto font = dlg::FontDialog::LoadFont(buffer);
+
+        if (font != -1) {
+            flw::PREF_FONT     = font;
+            flw::PREF_FONTNAME = buffer;
+        }
+    }
+
+    pref.get("gui.fontsize", val, flw::PREF_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FONTSIZE = val;
+    }
+
+    pref.get("gui.fixedfontname", buffer, "", 1000);
+
+    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
+        auto font = dlg::FontDialog::LoadFont(buffer);
+
+        if (font != -1) {
+            flw::PREF_FIXED_FONT     = font;
+            flw::PREF_FIXED_FONTNAME = buffer;
+        }
+    }
+
+    pref.get("gui.fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FIXED_FONTSIZE = val;
+    }
+
+    pref.get("gui.theme", buffer, "gtk", 4000);
+    theme::load(buffer);
+}
+
+//------------------------------------------------------------------------------
+// Save theme and fontnames and optionally window size
+//
+void flw::util::save_pref(Fl_Preferences& pref, Fl_Window* window) {
+    if (window != nullptr) {
+        pref.set("gui.x", window->x());
+        pref.set("gui.y", window->y());
+        pref.set("gui.w", window->w());
+        pref.set("gui.h", window->h());
+        pref.set("gui.fullscreen", window->fullscreen_active() ? 1 : 0);
+    }
+
+    pref.set("gui.theme", flw::theme::name().c_str());
+    pref.set("gui.fontname", flw::PREF_FONTNAME.c_str());
+    pref.set("gui.fontsize", flw::PREF_FONTSIZE);
+    pref.set("gui.fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("gui.fixedfontsize", flw::PREF_FIXED_FONTSIZE);
 }
 
 // MKALGAM_OFF

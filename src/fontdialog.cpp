@@ -285,7 +285,7 @@ void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
     _select->resize (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,             fs * 2);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool flw::dlg::FontDialog::run(Fl_Window* parent) {
     _ret = false;
 

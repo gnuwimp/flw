@@ -9,6 +9,7 @@
 // MKALGAM_ON
 
 class Fl_Window;
+class Fl_Preferences;
 
 namespace flw {
     namespace theme {
@@ -21,6 +22,11 @@ namespace flw {
 
     namespace dlg {
         void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
+    }
+
+    namespace util {
+        void                            load_pref(Fl_Preferences& pref, Fl_Window* window = nullptr);
+        void                            save_pref(Fl_Preferences& pref, Fl_Window* window = nullptr);
     }
 }
 
