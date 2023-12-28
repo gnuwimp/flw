@@ -2,7 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "chart.h"
-#include "price.h"
 #include "theme.h"
 #include "util.h"
 #include <math.h>
@@ -13,6 +12,152 @@
 #include <FL/Fl.H>
 
 using namespace flw;
+
+flw::PriceVector day_to_month(const PriceVector& in) {
+    PriceVector res;
+    Price       current;
+    Date        stop;
+    Date        pdate;
+    std::size_t f = 0;
+
+    for (auto& price : in) {
+        if (f == 0) {
+            current = price;
+            stop = Date::FromString(current.date.c_str());
+            stop.day_last();
+        }
+        else {
+            pdate = Date::FromString(price.date.c_str());
+
+            if (stop < pdate) {
+                current.date = stop.format();
+                res.push_back(current);
+                current = price;
+                stop = Date::FromString(current.date.c_str());
+                stop.day_last();
+            }
+            else {
+                if (price.high > current.high) {
+                    current.high = price.high;
+                }
+
+                if (price.low < current.low) {
+                    current.low = price.low;
+                }
+
+                current.vol   += price.vol;
+                current.close  = price.close;
+
+            }
+        }
+
+        if (f + 1 == in.size()) {
+            auto s = stop.format();
+            stop.day_last();
+            current.date = s;
+            res.push_back(current);
+        }
+
+        f++;
+    }
+
+    return res;
+}
+
+
+flw::PriceVector day_to_week(const PriceVector& in, Date::DAY weekday) {
+    Price       current;
+    Date        stop;
+    Date        pdate;
+    PriceVector res;
+    std::size_t f = 0;
+
+    for (auto& price : in) {
+        if (f == 0) {
+            stop = Date::FromString(price.date.c_str());
+
+            if (weekday > stop.weekday()) {
+                stop.weekday(weekday);
+            }
+            else if (weekday < stop.weekday()) {
+                stop.weekday(weekday);
+                stop.add_days(7);
+            }
+
+            current = price;
+        }
+        else {
+            pdate = Date::FromString(price.date.c_str());
+
+            if (stop < pdate) {
+                current.date = stop.format();
+                res.push_back(current);
+                current = price;
+            }
+            else {
+                if (price.high > current.high) {
+                    current.high = price.high;
+                }
+
+                if (price.low < current.low) {
+                    current.low = price.low;
+                }
+
+                current.vol   += price.vol;
+                current.close  = price.close;
+            }
+
+            while (stop < pdate) {
+                stop.add_days(7);
+            }
+
+            current.date = stop.format();
+        }
+
+        if (f + 1 == in.size()) {
+            current.date = stop.format();
+            res.push_back(current);
+        }
+
+        f++;
+    }
+
+    return res;
+}
+
+flw::PriceVector moving_average(const PriceVector& in, std::size_t days) {
+    PriceVector res;
+
+    if (days > 1 && days <= 500 && days < in.size()) {
+        std::size_t count = 0;
+        auto        sum   = 0.0;
+        auto        tmp   = new double[in.size() + 1];
+
+        for (auto& price : in) {
+            count++;
+
+            if (count < days) { //  Add data until the first moving average price can be calculated
+                tmp[count - 1] = price.close;
+                sum += price.close;
+            }
+            else if (count == days) { //  This is the first point
+                tmp[count - 1] = price.close;
+                sum += price.close;
+                res.push_back(Price(price.date, sum / days));
+            }
+            else { //  Remove oldest data in range and add current to sum
+                tmp[count - 1] = price.close;
+                sum -= tmp[count - (days + 1)];
+                sum += price.close;
+                res.push_back(Price(price.date, sum / days));
+            }
+        }
+
+        delete [] tmp;
+    }
+
+    return res;
+}
 
 class Test;
 
@@ -376,15 +521,15 @@ void test3(Chart* chart, const char* label, const Date::RANGE range, const bool 
     }
 
     if (range == Date::RANGE::FRIDAY) {
-        prices2 = Price::DayToWeek(prices1, Date::DAY::FRIDAY);
+        prices2 = day_to_week(prices1, Date::DAY::FRIDAY);
         chart->tick_width(25);
     }
     else if (range == Date::RANGE::SUNDAY) {
-        prices2 = Price::DayToWeek(prices1, Date::DAY::SUNDAY);
+        prices2 = day_to_week(prices1, Date::DAY::SUNDAY);
         chart->tick_width(25);
     }
     else if (range == Date::RANGE::MONTH) {
-        prices2 = Price::DayToMonth(prices1);
+        prices2 = day_to_month(prices1);
         chart->tick_width(50);
     }
     else {
@@ -420,16 +565,14 @@ void test5(Chart* chart, const bool three) {
     PriceVector prices4;
 
     if (three == true) {
-        prices4 = Price::MovingAverage(prices1, 20);
         chart->area_size(40, 40, 20);
         chart->add_line(0, prices1, "Bar Chart", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, 3);
-        chart->add_line(0, prices4, "AVG", chart::TYPE::LINE, FL_ALIGN_LEFT, color::GREEN, 3);
         chart->add_line(1, prices2, "Line Chart", chart::TYPE::LINE, FL_ALIGN_LEFT, color::RED, 3);
         chart->add_line(2, prices3, "Volume", chart::TYPE::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, 3, 0.0);
         chart->margin(7, 1);
     }
     else {
-        prices4 = Price::MovingAverage(prices3, 20);
+        prices4 = moving_average(prices3, 20);
         chart->area_size(70, 30, 0);
         chart->add_line(0, prices1, "Bar Chart", chart::TYPE::BAR, FL_ALIGN_LEFT, color::BLUE, -1);
         chart->add_line(0, prices2, "Line Chart", chart::TYPE::LINE, FL_ALIGN_RIGHT, color::RED, 3);

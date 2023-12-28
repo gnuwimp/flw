@@ -5,7 +5,6 @@
 #define FLW_CHART_H
 
 #include "date.h"
-#include "price.h"
 
 // MKALGAM_ON
 
@@ -16,6 +15,24 @@
 
 namespace flw {
     class Chart;
+
+    struct Price {
+        std::string                     date;
+        double                          close;
+        double                          high;
+        double                          low;
+        double                          vol;
+
+                                        Price();
+                                        Price(const std::string& date_value, double value = 0.0);
+                                        Price(const std::string& date, double high, double low, double close, double vol = 0.0);
+        bool                            operator<(const Price& price) const { return date < price.date; }
+        bool                            operator<=(const Price& price) const { return date <= price.date; }
+        bool                            operator==(const Price& price) const { return date == price.date; }
+        bool                            operator!=(const Price& price) const { return date != price.date; }
+    };
+
+    typedef std::vector<Price>          PriceVector;
 
     namespace chart {
         struct Area;

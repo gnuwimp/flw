@@ -11,6 +11,7 @@
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
+#include <algorithm>
 #include <math.h>
 
 namespace flw {
@@ -34,6 +35,94 @@ namespace flw {
             else {
                 return std::distance(prices.begin(), it);
             }
+        }
+
+        //----------------------------------------------------------------------
+        flw::PriceVector create_date_serie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
+            int         month   = -1;
+            Date        current = Date::FromString(start_date);
+            Date        stop    = Date::FromString(stop_date);
+            PriceVector res;
+
+            if (range == Date::RANGE::HOUR && current.year() < 1970) {
+                return res;
+            }
+
+            if (range == Date::RANGE::FRIDAY) {
+                while (current.weekday() != Date::DAY::FRIDAY)
+                    current.add_days(1);
+            }
+            else if (range == Date::RANGE::SUNDAY) {
+                while (current.weekday() != Date::DAY::SUNDAY) {
+                    current.add_days(1);
+                }
+            }
+
+            while (current <= stop) {
+                Date date(1, 1, 1);
+
+                if (range == Date::RANGE::DAY) {
+                    date = Date(current);
+                    current.add_days(1);
+                }
+                else if (range == Date::RANGE::WEEKDAY) {
+                    Date::DAY weekday = current.weekday();
+
+                    if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
+                        date = Date(current);
+                    }
+
+                    current.add_days(1);
+                }
+                else if (range == Date::RANGE::FRIDAY || range == Date::RANGE::SUNDAY) {
+                    date = Date(current);
+                    current.add_days(7);
+                }
+                else if (range == Date::RANGE::MONTH) {
+                    if (current.month() != month) {
+                        current.day(current.month_days());
+                        date = Date(current);
+                        month = current.month();
+                    }
+
+                    current.add_months(1);
+                }
+                else if (range == Date::RANGE::HOUR) {
+                    date = Date(current);
+                    current.add_seconds(3600);
+                }
+                else if (range == Date::RANGE::MIN) {
+                    date = Date(current);
+                    current.add_seconds(60);
+                }
+                else if (range == Date::RANGE::SEC) {
+                    date = Date(current);
+                    current.add_seconds(1);
+                }
+
+                if (date.year() > 1) {
+                    Price price;
+
+                    if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
+                        price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
+                    }
+                    else {
+                        price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
+                    }
+
+                    if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
+                        res.push_back(price);
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        //----------------------------------------------------------------------
+        std::string format_date(const Price& price, Date::FORMAT format) {
+            auto date = flw::Date::FromString(price.date.c_str());
+            return date.format(format);
         }
 
         //----------------------------------------------------------------------
@@ -66,7 +155,7 @@ namespace flw {
                 fl_alert("error: failed to load %s", filename.c_str());
                 return false;
             }
-            else if ((err = json::parse(buf.p, nv)) != (size_t) -1) {
+            else if ((err = json::parse(buf.p, nv, true)) != (size_t) -1) {
                 fl_alert("error: failed to parse %s (position %u)", filename.c_str(), (unsigned) err);
                 return false;
             }
@@ -217,7 +306,7 @@ namespace flw {
                         FLW_JSON_ADD_NUMBER("clamp_max", line.clamp_max)
                         for (auto& price : line.points) {
                         FLW_JSON_ADD_ARRAY_NL("p",
-                            FLW_JSON_ADD_STRING_TO_ARRAY(price.format_date((chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO))
+                            FLW_JSON_ADD_STRING_TO_ARRAY(chart::format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO))
                             if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
                             FLW_JSON_ADD_NUMBER_TO_ARRAY(price.high)
                             FLW_JSON_ADD_NUMBER_TO_ARRAY(price.low)
@@ -244,6 +333,42 @@ namespace flw {
             return util::save_file(filename, js.c_str(), js.length());
         }
     }
+}
+
+//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+flw::Price::Price() {
+    high  = 0.0;
+    low   = 0.0;
+    close = 0.0;
+    vol   = 0.0;
+}
+
+//------------------------------------------------------------------------------
+flw::Price::Price(const std::string& date, double value) {
+    this->date = date;
+    high       = value;
+    low        = value;
+    close      = value;
+    vol        = value;
+}
+
+//------------------------------------------------------------------------------
+flw::Price::Price(const std::string& date, double high, double low, double close, double vol) {
+    this->date  = date;
+    this->high  = high;
+    this->low   = low;
+    this->close = close;
+    this->vol   = vol;
+
+#ifdef DEBUG
+    if (close > high || close < low || high < low) {
+        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
+    }
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -704,7 +829,7 @@ void flw::Chart::_calc_dates() {
     _dates.clear();
 
     if (min != "") {
-        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
+        _dates = chart::create_date_serie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
         redraw();
     }
 }

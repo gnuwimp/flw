@@ -28,7 +28,6 @@ all: test_chart.exe \
 	test_lcdnumber.exe \
 	test_logdisplay.exe \
 	test_plot.exe \
-	test_price.exe \
 	test_recentmenu.exe \
 	test_splitgroup.exe \
 	test_tabledisplay.exe \
@@ -49,7 +48,6 @@ OBJ=obj/chart.o \
 	obj/lcdnumber.o \
 	obj/logdisplay.o \
 	obj/plot.o \
-	obj/price.o \
 	obj/recentmenu.o \
 	obj/scrollbrowser.o \
 	obj/splitgroup.o \
@@ -70,7 +68,7 @@ obj:
 $(THEME_RESOURCE): res/theme.rc
 	windres res/theme.rc -O coff -o $(THEME_RESOURCE)
 
-obj/chart.o: src/chart.cpp src/chart.h src/date.h src/price.h src/util.h
+obj/chart.o: src/chart.cpp src/chart.h src/date.h src/util.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/date.o: src/date.cpp src/date.h
@@ -101,9 +99,6 @@ obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/util.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/plot.o: src/plot.cpp src/plot.h src/util.h
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
-obj/price.o: src/price.cpp src/price.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/recentmenu.o: src/recentmenu.cpp src/recentmenu.h src/util.h
@@ -190,12 +185,6 @@ obj/test_plot.o: test/test_plot.cpp obj/plot.o obj/util.o
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_plot.exe: obj/test_plot.o obj/libflw.a
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-obj/test_price.o: test/test_price.cpp obj/price.o obj/util.o
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
-test_price.exe: obj/test_price.o obj/libflw.a
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 obj/test_recentmenu.o: test/test_recentmenu.cpp obj/recentmenu.o obj/util.o
