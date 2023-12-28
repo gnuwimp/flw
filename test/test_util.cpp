@@ -9,10 +9,6 @@ using namespace flw;
 #define FLW_TRUE(X)             util::test(X,__LINE__,__func__);
 #define FLW_ASSERTD(X,Y,Z)      util::test(X,Y,Z,__LINE__,__func__);
 
-Buf create() {
-    return Buf("Hello World", 12);
-}
-
 int main() {
     {
         FLW_ASSERTD(1.0, util::to_double("", 1.0), 0.001)
@@ -77,29 +73,6 @@ int main() {
         auto t2 = (int) (util::time_milli() - t1);
         // printf("sleept %d mS\n", t2);
         FLW_TRUE(t2 >= 1'000 && t2 <= 1'020)
-    }
-
-    {
-        auto a = create();
-        auto b = a;
-        auto c = Buf(b);
-        auto d = Buf(1000);
-        auto e = std::move(create());
-        FLW_ASSERT("Hello World", a.p)
-        FLW_ASSERT(12, a.s)
-        FLW_ASSERT("Hello World", b.p)
-        FLW_ASSERT(12, b.s)
-        FLW_ASSERT("Hello World", c.p)
-        FLW_ASSERT(12, c.s)
-        FLW_ASSERT(1000, d.s)
-        FLW_ASSERT("Hello World", e.p)
-        FLW_ASSERT(12, e.s)
-
-        e = d;
-        FLW_ASSERT("", e.p)
-        FLW_ASSERT(1000, e.s)
-
-        // e = e;
     }
 
     {

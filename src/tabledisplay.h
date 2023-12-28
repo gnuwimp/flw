@@ -6,11 +6,12 @@
 
 #include "util.h"
 #include "theme.h"
-#include <FL/Fl_Group.H>
-
-class Fl_Scrollbar;
 
 // MKALGAM_ON
+
+#include <map>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Scrollbar.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

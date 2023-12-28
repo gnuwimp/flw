@@ -5,10 +5,11 @@
 #define FLW_GRID_H
 
 #include "tableeditor.h"
-#include <string>
-#include <map>
 
 // MKALGAM_ON
+
+#include <string>
+#include <map>
 
 namespace flw {
     typedef std::map<std::string, std::string> StringMap;

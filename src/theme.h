@@ -4,15 +4,10 @@
 #ifndef FLW_THEME_H
 #define FLW_THEME_H
 
-#include <string>
-#include <FL/fl_draw.H>
-
 // MKALGAM_ON
 
-class Fl_Preferences;
-class Fl_Window;
-
-#define FLW_THEME 1
+#include <string>
+#include <FL/fl_draw.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

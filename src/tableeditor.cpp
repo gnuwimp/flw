@@ -4,8 +4,9 @@
 #include "tableeditor.h"
 #include "datechooser.h"
 #include "dlg.h"
-#include <FL/Fl_Scrollbar.H>
-#include <FL/fl_draw.H>
+
+// MKALGAM_ON
+
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_File_Chooser.H>
@@ -15,8 +16,6 @@
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_show_colormap.H>
-
-// MKALGAM_ON
 
 const char* flw::TableEditor::SELECT_DATE = "Select Date";
 const char* flw::TableEditor::SELECT_DIR  = "Select Directory";

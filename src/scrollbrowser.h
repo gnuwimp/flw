@@ -5,11 +5,11 @@
 #define FLW_SCROLLBROWSER_H
 
 #include "util.h"
-#include <FL/Fl_Hold_Browser.H>
-
-class Fl_Menu_Button;
 
 // MKALGAM_ON
+
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Menu_Button.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

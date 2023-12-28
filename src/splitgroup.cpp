@@ -2,10 +2,10 @@
 // Released under the GNU General Public License v3.0
 
 #include "splitgroup.h"
-#include <FL/fl_draw.H>
-#include <FL/Fl.H>
 
 // MKALGAM_ON
+
+#include <FL/fl_draw.H>
 
 //------------------------------------------------------------------------------
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {

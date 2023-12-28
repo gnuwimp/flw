@@ -2,7 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "recentmenu.h"
-#include <FL/Fl_Preferences.H>
 
 // MKALGAM_ON
 

@@ -1,14 +1,15 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include <FL/Fl_Menu_.H>
 #include "util.h"
-
-class Fl_Preferences;
 
 // MKALGAM_ON
 
+#include <FL/Fl_Menu_.H>
+#include <FL/Fl_Preferences.H>
+
 namespace flw {
+    //--------------------------------------------------------------------------
     class RecentMenu {
     public:
                                         RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label = "&File/Open recent", std::string clear_label = "/Clear");

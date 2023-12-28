@@ -2,10 +2,10 @@
 // Released under the GNU General Public License v3.0
 
 #include "lcdnumber.h"
-#include <FL/fl_draw.H>
-#include <string.h>
 
 // MKALGAM_ON
+
+#include <FL/fl_draw.H>
 
 namespace flw {
     static const unsigned char _LCDNUMBER_SEGMENTS[20] = {

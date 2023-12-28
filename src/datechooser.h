@@ -5,12 +5,12 @@
 #define FLW_DATECHOOSER_H
 
 #include "date.h"
-#include <FL/Fl_Group.H>
-
-class Fl_Box;
-class Fl_Button;
 
 // MKALGAM_ON
+
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Group.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

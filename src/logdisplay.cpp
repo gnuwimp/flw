@@ -5,11 +5,11 @@
 #include "dlg.h"
 #include "util.h"
 #include "theme.h"
-#include <string.h>
-#include <FL/fl_ask.H>
-#include <FL/Fl_File_Chooser.H>
 
 // MKALGAM_ON
+
+#include <FL/fl_ask.H>
+#include <FL/Fl_File_Chooser.H>
 
 namespace flw {
     namespace logdisplay {

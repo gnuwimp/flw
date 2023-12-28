@@ -3,17 +3,16 @@
 
 #include "dlg.h"
 #include "scrollbrowser.h"
+
+// MKALGAM_ON
+
 #include <math.h>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
-#include <FL/Fl_Hor_Fill_Slider.H>
+#include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Editor.H>
-#include <FL/Fl_Toggle_Button.H>
-
-// MKALGAM_ON
 
 namespace flw {
     namespace dlg {

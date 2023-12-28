@@ -4,14 +4,11 @@
 #include "plot.h"
 #include "util.h"
 #include "theme.h"
-#include <assert.h>
-#include <math.h>
-#include <FL/Fl.H>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Menu_Button.H>
-#include <FL/fl_draw.H>
 
 // MKALGAM_ON
+
+#include <math.h>
+#include <FL/fl_ask.H>
 
 namespace flw {
     namespace plot {

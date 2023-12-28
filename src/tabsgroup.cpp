@@ -3,10 +3,10 @@
 
 #include "tabsgroup.h"
 #include "theme.h"
-#include <FL/fl_draw.H>
-#include <FL/Fl_Toggle_Button.H>
 
 // MKALGAM_ON
+
+#include <FL/Fl_Toggle_Button.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

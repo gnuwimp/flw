@@ -2,18 +2,17 @@
 // Released under the GNU General Public License v3.0
 
 #include "util.h"
-#include <errno.h>
+
+// MKALGAM_ON
+
+#include <algorithm>
 #include <math.h>
 #include <stdarg.h>
-#include <sys/timeb.h>
 #include <time.h>
-#include <unistd.h>
 #include <FL/Fl_Window.H>
-#include <FL/Fl.H>
 #include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Menu_.H>
 #include <FL/fl_ask.H>
-
+//
 #ifdef FLW_USE_PNG
     #include <FL/Fl_PNG_Image.H>
     #include <FL/fl_draw.H>
@@ -21,9 +20,9 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#else
+    #include <unistd.h>
 #endif
-
-// MKALGAM_ON
 
 namespace flw {
     int         PREF_FIXED_FONT     = FL_COURIER;
@@ -175,72 +174,65 @@ std::string flw::util::fix_menu_string(std::string in) {
 
 //------------------------------------------------------------------------------
 std::string flw::util::format(const char* format, ...) {
-    assert(format);
+    if (format == nullptr || *format == 0) return "";
 
+    int         l   = 128;
+    int         n   = 0;
+    char*       buf = (char*) calloc(l, 1);
     std::string res;
-    int         l = 100;
-    int         n = 0;
-    char*       s = (char*) calloc(100 + 1, 1);
+    va_list     args;
 
-    if (s == nullptr) {
+    va_start(args, format);
+    n = vsnprintf(buf, l, format, args);
+    va_end(args);
+
+    if (n < 0) {
+        free(buf);
         return res;
     }
 
-    while (true) {
-        va_list args;
-
-        va_start(args, format);
-        n = vsnprintf(s, l, format, args);
-        va_end(args);
-
-        if (n == -1) {
-            s[0] = 0;
-            break;
-        }
-        else if (n >= l) {
-            l = n + 1;
-            char* tmp = (char*) realloc(s, l);
-
-            if (tmp == nullptr) {
-                free(s);
-                return res;
-            }
-
-            s = tmp;
-        }
-        else {
-            break;
-        }
+    if (n < l) {
+        res = buf;
+        free(buf);
+        return res;
     }
 
-    res = s;
-    free(s);
+    free(buf);
+    l = n + 1;
+    buf = (char*) calloc(l, 1);
+    if (buf == nullptr) return res;
+
+    va_start(args, format);
+    n = vsnprintf(buf, l, format, args);
+    va_end(args);
+    res = buf;
+    free(buf);
     return res;
 }
 
 //------------------------------------------------------------------------------
-std::string flw::util::format_double(double number, int decimals, char sep) {
+std::string flw::util::format_double(double num, int decimals, char del) {
     char res[100];
 
     *res = 0;
 
     if (decimals < 0) {
-        decimals = util::count_decimals(number);
+        decimals = util::count_decimals(num);
     }
 
     if (decimals == 0) {
-        return util::format_int((int64_t) number, sep);
+        return util::format_int((int64_t) num, del);
     }
 
-    if (fabs(number) < 9223372036854775807.0) {
+    if (fabs(num) < 9223372036854775807.0) {
         char fr_str[100];
-        auto int_num    = (int64_t) fabs(number);
-        auto double_num = (double) (fabs(number) - int_num);
-        auto int_str    = util::format_int(int_num, sep);
+        auto int_num    = (int64_t) fabs(num);
+        auto double_num = (double) (fabs(num) - int_num);
+        auto int_str    = util::format_int(int_num, del);
         auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
 
         if (len > 0 && len < 100) {
-            if (number < 0.0) {
+            if (num < 0.0) {
                 res[0] = '-';
                 res[1] = 0;
             }
@@ -254,43 +246,31 @@ std::string flw::util::format_double(double number, int decimals, char sep) {
 }
 
 //------------------------------------------------------------------------------
-std::string flw::util::format_int(int64_t number, char sep) {
+std::string flw::util::format_int(int64_t num, char del) {
     auto pos = 0;
-    char tmp1[100];
-    char tmp2[100];
+    char tmp1[32];
+    char tmp2[32];
 
-    if (sep < 32) {
-        sep = 32;
+    if (del < 1) {
+        del = 32;
     }
+    memset(tmp2, 0, 32);
+    snprintf(tmp1, 32, "%lld", (long long int) num);
+    auto len = strlen(tmp1);
 
-    snprintf(tmp1, 100, "%lld", (long long int) llabs(number));
-    auto len = (int) strlen(tmp1);
+    for (int f = len - 1, i = 0; f >= 0 && pos < 32; f--, i++) {
+        char c = tmp1[f];
 
-    for (auto f = len - 1, c = 0; f >= 0 && pos < 100; f--, c++) {
-        if ((c % 3) == 0 && c > 0) {
-            tmp2[pos] = sep;
-            pos++;
+        if ((i % 3) == 0 && i > 0 && c != '-') {
+            tmp2[pos++] = del;
         }
 
-        tmp2[pos] = tmp1[f];
-        pos++;
+        tmp2[pos++] = c;
     }
 
-    if (number < 0) {
-        tmp2[pos] = '-';
-        pos++;
-    }
-
-    tmp2[pos] = 0;
-    len = strlen(tmp2);
-
-    for (auto f = 0; f < len / 2; f++) {
-        auto c = tmp2[f];
-        tmp2[f] = tmp2[len - f - 1];
-        tmp2[len - f - 1] = c;
-    }
-
-    return tmp2;
+    std::string r = tmp2;
+    std::reverse(r.begin(), r.end());
+    return r;
 }
 
 //------------------------------------------------------------------------------
@@ -323,7 +303,7 @@ flw::Buf flw::util::load_file(std::string filename, bool alert) {
         return Buf();
     }
 
-    auto file = fopen(filename.c_str(), "rb");
+    auto file = fl_fopen(filename.c_str(), "rb");
 
     if (file == nullptr) {
         if (alert == true) {
@@ -343,7 +323,6 @@ flw::Buf flw::util::load_file(std::string filename, bool alert) {
             fl_alert("error: failed to read %s", filename.c_str());
         }
 
-        free(buf.p);
         return Buf();
     }
 
@@ -815,69 +794,107 @@ void* flw::util::zero_memory(std::string& string) {
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(size_t size) {
-    p = util::allocate(size, 1);
-    s = size;
-}
-
-//------------------------------------------------------------------------------
-flw::Buf::Buf(const char* buffer, size_t size) {
-    p = util::allocate(size, 1);
-    s = size;
-
-    assert(buffer != p);
-    memcpy(p, buffer, s);
-}
-
-//------------------------------------------------------------------------------
-flw::Buf::Buf(const Buf& other) {
+flw::Buf::Buf() {
     p = nullptr;
     s = 0;
+}
 
-    if (other.p != nullptr && other.s > 0) {
-        s = other.s;
-        p = util::allocate(s);
+//------------------------------------------------------------------------------
+flw::Buf::Buf(size_t s_) {
+    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
+    s = 0;
 
-        assert(other.p != p);
-        memcpy(p, other.p, s);
+    if (p != nullptr) {
+        s = s_;
     }
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(Buf&& other) {
-    s       = other.s;
-    p       = other.p;
-    other.p = nullptr;
+flw::Buf::Buf(char* p_, size_t s_) {
+    p = p_;
+    s = s_;
 }
 
 //------------------------------------------------------------------------------
-flw::Buf& flw::Buf::operator=(const Buf& other) {
-    assert(other.p != p);
-
-    free(p);
-    p = nullptr;
+flw::Buf::Buf(const char* p_, size_t s_) {
+    p = (s_ < SIZE_MAX) ? (char*) calloc(s_ + 1, 1) : nullptr;
     s = 0;
 
-    if (other.p != nullptr && other.s > 0) {
-        s = other.s;
-        p = util::allocate(s);
+    if (p != nullptr) {
+        memcpy(p, p_, s_);
+        s = s_;
+    }
+}
 
-        assert(other.p != p);
-        memcpy(p, other.p, s);
+//------------------------------------------------------------------------------
+flw::Buf::Buf(const Buf& b) {
+    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+    s = 0;
+
+    if (p != nullptr) {
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(Buf&& b) {
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf& flw::Buf::operator=(const Buf& b) {
+    free(p);
+    p = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+    s = 0;
+
+    if (p != nullptr) {
+        memcpy(p, b.p, b.s);
+        s = b.s;
     }
 
     return *this;
 }
 
 //------------------------------------------------------------------------------
-flw::Buf& flw::Buf::operator=(Buf&& other) {
+flw::Buf& flw::Buf::operator=(Buf&& b) {
     free(p);
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+    return *this;
+}
 
-    s       = other.s;
-    p       = other.p;
-    other.p = nullptr;
+//------------------------------------------------------------------------------
+flw::Buf& flw::Buf::operator+=(const Buf& b) {
+    auto t = (b.s < SIZE_MAX) ? (char*) calloc(b.s + 1, 1) : nullptr;
+
+    if (t != nullptr) {
+        memcpy(t, p, s);
+        memcpy(t + s, b.p, b.s);
+        free(p);
+        p = t;
+        s += b.s;
+    }
+    else {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
 
     return *this;
+}
+
+//------------------------------------------------------------------------------
+bool flw::Buf::operator==(const Buf& other) const {
+    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::~Buf() {
+    free(p);
 }
 
 //------------------------------------------------------------------------------

@@ -4,14 +4,13 @@
 #include "datechooser.h"
 #include "util.h"
 #include "theme.h"
-#include <FL/fl_draw.H>
-#include <FL/Fl_Box.H>
+
+// MKALGAM_ON
+
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Repeat_Button.H>
 #include <FL/Fl_Return_Button.H>
 #include <time.h>
-
-// MKALGAM_ON
 
 namespace flw {
     //--------------------------------------------------------------------------

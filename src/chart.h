@@ -6,13 +6,13 @@
 
 #include "date.h"
 #include "price.h"
-#include <FL/Fl_Group.H>
-#include <vector>
-
-class Fl_Scrollbar;
-class Fl_Menu_Button;
 
 // MKALGAM_ON
+
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Scrollbar.H>
+#include <vector>
 
 namespace flw {
     class Chart;

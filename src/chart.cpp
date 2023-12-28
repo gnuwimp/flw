@@ -5,18 +5,13 @@
 #include "util.h"
 #include "waitcursor.h"
 #include "theme.h"
-#include <FL/Fl.H>
+
+// MKALGAM_ON
+
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
-#include <FL/fl_draw.H>
-#include <algorithm>
 #include <math.h>
-#include <time.h>
-#include <string.h>
-#include <unistd.h>
-
-// MKALGAM_ON
 
 namespace flw {
     namespace chart {

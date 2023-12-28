@@ -4,9 +4,9 @@
 #ifndef FLW_GRIDGROUP_H
 #define FLW_GRIDGROUP_H
 
-#include <FL/Fl_Group.H>
-
 // MKALGAM_ON
+
+#include <FL/Fl_Group.H>
 
 namespace flw {
     struct _GridGroupChild;

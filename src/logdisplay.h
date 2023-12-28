@@ -4,10 +4,10 @@
 #ifndef FLW_LOGDISPLAY_H
 #define FLW_LOGDISPLAY_H
 
+// MKALGAM_ON
+
 #include <FL/Fl_Text_Display.H>
 #include <string>
-
-// MKALGAM_ON
 
 namespace flw {
     namespace logdisplay {

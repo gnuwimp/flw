@@ -4,10 +4,9 @@
 #ifndef FLW_LCDNUMBER_H
 #define FLW_LCDNUMBER_H
 
-#include <FL/Fl_Box.H>
-#include <FL/Fl.H>
-
 // MKALGAM_ON
+
+#include <FL/Fl_Box.H>
 
 namespace flw {
     //--------------------------------------------------------------------------

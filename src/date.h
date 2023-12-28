@@ -4,9 +4,9 @@
 #ifndef FLW_DATE_H
 #define FLW_DATE_H
 
-#include <string>
-
 // MKALGAM_ON
+
+#include <string>
 
 namespace flw {
     //--------------------------------------------------------------------------

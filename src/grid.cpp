@@ -2,10 +2,10 @@
 // Released under the GNU General Public License v3.0
 
 #include "grid.h"
-#include <stdarg.h>
-#include <string.h>
 
 // MKALGAM_ON
+
+#include <stdarg.h>
 
 namespace flw {
     static int _FLW_GRID_STRING_SIZE = 1000;

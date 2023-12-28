@@ -5,10 +5,11 @@
 #define FLW_TABSGROUP_H
 
 #include "util.h"
-#include <FL/Fl_Group.H>
-#include <FL/Fl.H>
 
 // MKALGAM_ON
+
+#include <FL/Fl_Group.H>
+#include <FL/Fl.H>
 
 namespace flw {
     class _TabsGroupButton;

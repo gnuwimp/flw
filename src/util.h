@@ -4,19 +4,13 @@
 #ifndef FLW_UTIL_H
 #define FLW_UTIL_H
 
+// MKALGAM_ON
+
 #include <assert.h>
 #include <string>
 #include <vector>
 #include <iostream>
-#include <string.h>
-
-class Fl_Group;
-class Fl_Widget;
-class Fl_Window;
-class Fl_Menu_;
-class Fl_Menu_Item;
-
-// MKALGAM_ON
+#include <FL/Fl_Menu_.H>
 
 #define _FLW_TOSTRING(X)            #X
 #define FLW_TOSTRING(X)             _FLW_TOSTRING(X)
@@ -52,24 +46,17 @@ namespace flw {
         char*                           p;
         size_t                          s;
 
-                                        Buf()
-                                            { p = nullptr; s = 0; }
-                                        Buf(size_t size);
-                                        Buf(const char* buffer, size_t size);
-                                        Buf(const Buf&);
-                                        Buf(Buf&& other);
-        virtual                         ~Buf()
-                                            { free(p); }
-        Buf&                            operator=(const Buf&);
-        Buf&                            operator=(Buf&& other);
-        bool                            operator==(const Buf& other) const
-                                            { return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0; }
-        uint8_t&                        operator[](size_t index)
-                                            { assert(index < s); return (uint8_t&) *(p + index); }
-        const char*                     c_str() const
-                                            { return p; }
-        void                            clear()
-                                            { free(p); p = nullptr; s = 0; }
+                                        Buf();
+                                        Buf(size_t s);
+                                        Buf(char* p, size_t s);
+                                        Buf(const char* p, size_t s);
+                                        Buf(const Buf& b);
+                                        Buf(Buf&& b);
+        Buf&                            operator=(const Buf& b);
+        Buf&                            operator=(Buf&& b);
+        Buf&                            operator+=(const Buf& b);
+        bool                            operator==(const Buf& other) const;
+        virtual                         ~Buf();
     };
 
     namespace util {
@@ -82,8 +69,8 @@ namespace flw {
         int                             count_decimals(double number);
         std::string                     fix_menu_string(std::string in);
         std::string                     format(const char* format, ...);
-        std::string                     format_double(double number, int decimals, char sep = ' ');
-        std::string                     format_int(int64_t number, char sep = ' ');
+        std::string                     format_double(double num, int decimals, char del = ' ');
+        std::string                     format_int(int64_t num, char del = ' ');
         size_t                          insert_string(StringVector& in, size_t max_size, std::string string);
         void                            labelfont(Fl_Widget* widget);
         Buf                             load_file(std::string filename, bool alert = true);

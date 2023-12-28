@@ -2,15 +2,14 @@
 // Released under the GNU General Public License v3.0
 
 #include "tabledisplay.h"
+
+// MKALGAM_ON
+
 #include <FL/Fl.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
-#include <FL/Fl_Scrollbar.H>
-#include <FL/fl_draw.H>
 #include <FL/fl_ask.H>
-
-// MKALGAM_ON
 
 namespace flw {
     //--------------------------------------------------------------------------

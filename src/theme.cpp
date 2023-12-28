@@ -5,23 +5,22 @@
 #include "theme.h"
 #include "fontdialog.h"
 #include "util.h"
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Hold_Browser.H>
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Preferences.H>
-#include <FL/fl_ask.H>
-
-#ifdef _WIN32
-    #include <FL/x.H>
-    #include <windows.h>
-#elif defined(__linux__)
-    #include <FL/Fl_Window.H>
-    #include <FL/Fl_Pixmap.H>
-    #include <FL/Fl_RGB_Image.H>
-#endif
 
 // MKALGAM_ON
+
+#include <FL/Fl.H>
+#include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/fl_ask.H>
+//
+#ifdef _WIN32
+    #include <FL/x.H>
+//    #include <windows.h>
+#elif defined(__linux__)
+//    #include <FL/Fl_Window.H>
+//    #include <FL/Fl_Pixmap.H>
+//    #include <FL/Fl_RGB_Image.H>
+#endif
 
 namespace flw {
     namespace color {

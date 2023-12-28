@@ -5,10 +5,11 @@
 #define FLW_PRICE_H
 
 #include "date.h"
-#include <vector>
-#include <string>
 
 // MKALGAM_ON
+
+#include <vector>
+#include <string>
 
 namespace flw {
     struct Price;

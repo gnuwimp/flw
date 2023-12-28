@@ -5,12 +5,12 @@
 #define FLW_INPUTMENU_H
 
 #include "util.h"
-#include <FL/Fl_Hold_Browser.H>
-
-class Fl_Input;
-class Fl_Menu_Button;
 
 // MKALGAM_ON
+
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Menu_Button.H>
 
 namespace flw {
     class _InputMenu;

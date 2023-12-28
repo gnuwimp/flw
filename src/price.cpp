@@ -3,10 +3,11 @@
 
 #include "price.h"
 #include "util.h"
-#include <math.h>
-#include <algorithm>
 
 // MKALGAM_ON
+
+#include <math.h>
+#include <algorithm>
 
 //------------------------------------------------------------------------------
 flw::Price::Price() {

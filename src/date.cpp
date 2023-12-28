@@ -2,12 +2,11 @@
 // Released under the GNU General Public License v3.0
 
 #include "date.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 // MKALGAM_ON
+
+#include <string.h>
+#include <time.h>
 
 namespace flw {
     static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};

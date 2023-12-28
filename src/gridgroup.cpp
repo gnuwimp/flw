@@ -2,7 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "gridgroup.h"
-#include <FL/Fl.H>
 
 // MKALGAM_ON
 

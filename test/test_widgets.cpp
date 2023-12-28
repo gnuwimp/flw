@@ -144,11 +144,9 @@ public:
 Test* Test::TEST = nullptr;
 
 int main(int argc, const char** argv) {
-#ifdef FLW_THEME
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("gtk");
     }
-#endif
 
     Test win(800, 480);
     win.show();

@@ -18,6 +18,11 @@ class Fl_Input;
 class Fl_Menu_;
 class Fl_Menu_Button;
 class Fl_Toggle_Button;
+#include <assert.h>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <FL/Fl_Menu_.H>
 #define _FLW_TOSTRING(X)            #X
 #define FLW_TOSTRING(X)             _FLW_TOSTRING(X)
 #define FLW_LINE                    { fprintf(stderr, "%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stderr); }
@@ -48,24 +53,17 @@ namespace flw {
     struct Buf {
         char*                           p;
         size_t                          s;
-                                        Buf()
-                                            { p = nullptr; s = 0; }
-                                        Buf(size_t size);
-                                        Buf(const char* buffer, size_t size);
-                                        Buf(const Buf&);
-                                        Buf(Buf&& other);
-        virtual                         ~Buf()
-                                            { free(p); }
-        Buf&                            operator=(const Buf&);
-        Buf&                            operator=(Buf&& other);
-        bool                            operator==(const Buf& other) const
-                                            { return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0; }
-        uint8_t&                        operator[](size_t index)
-                                            { assert(index < s); return (uint8_t&) *(p + index); }
-        const char*                     c_str() const
-                                            { return p; }
-        void                            clear()
-                                            { free(p); p = nullptr; s = 0; }
+                                        Buf();
+                                        Buf(size_t s);
+                                        Buf(char* p, size_t s);
+                                        Buf(const char* p, size_t s);
+                                        Buf(const Buf& b);
+                                        Buf(Buf&& b);
+        Buf&                            operator=(const Buf& b);
+        Buf&                            operator=(Buf&& b);
+        Buf&                            operator+=(const Buf& b);
+        bool                            operator==(const Buf& other) const;
+        virtual                         ~Buf();
     };
     namespace util {
         size_t                          add_string(StringVector& in, size_t max_size, std::string string);
@@ -74,8 +72,8 @@ namespace flw {
         int                             count_decimals(double number);
         std::string                     fix_menu_string(std::string in);
         std::string                     format(const char* format, ...);
-        std::string                     format_double(double number, int decimals, char sep = ' ');
-        std::string                     format_int(int64_t number, char sep = ' ');
+        std::string                     format_double(double num, int decimals, char del = ' ');
+        std::string                     format_int(int64_t num, char del = ' ');
         size_t                          insert_string(StringVector& in, size_t max_size, std::string string);
         void                            labelfont(Fl_Widget* widget);
         Buf                             load_file(std::string filename, bool alert = true);
@@ -207,6 +205,7 @@ namespace flw {
         size_t                          validate(std::string json);
     }
 }
+#include <string>
 namespace flw {
     class Date {
     public:
@@ -329,6 +328,9 @@ namespace flw {
         char                            _sec;
     };
 }
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Group.H>
 namespace flw {
     class DateChooser : public Fl_Group {
     public:
@@ -358,6 +360,11 @@ namespace flw {
         bool                            date(const std::string& title, Date& date, Fl_Window* parent);
     }
 }
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Hor_Fill_Slider.H>
+#include <FL/Fl_Toggle_Button.H>
 namespace flw {
     namespace dlg {
         extern const char*              PASSWORD_CANCEL;
@@ -414,6 +421,10 @@ namespace flw {
         };
     }
 }
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Double_Window.H>
+#include <string>
 namespace flw {
     class ScrollBrowser;
     namespace dlg {
@@ -459,6 +470,7 @@ namespace flw {
         };
     }
 }
+#include <FL/Fl_Group.H>
 namespace flw {
     struct _GridGroupChild;
     class GridGroup : public Fl_Group {
@@ -480,6 +492,9 @@ namespace flw {
         int                             _size;
     };
 }
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Menu_Button.H>
 namespace flw {
     class _InputMenu;
     class InputMenu : public Fl_Group {
@@ -509,6 +524,7 @@ namespace flw {
         Fl_Menu_Button*                 _menu;
     };
 }
+#include <FL/Fl_Box.H>
 namespace flw {
     class LcdNumber : public Fl_Box {
     public:
@@ -562,6 +578,8 @@ namespace flw {
         int                             _unit_w;
     };
 }
+#include <FL/Fl_Text_Display.H>
+#include <string>
 namespace flw {
     namespace logdisplay {
         enum class COLOR {
@@ -649,6 +667,8 @@ namespace flw {
         Tmp*                            _tmp;
     };
 }
+#include <vector>
+#include <string>
 namespace flw {
     struct Price;
     typedef std::vector<Price> PriceVector;
@@ -685,6 +705,10 @@ namespace flw {
         static PriceVector              Stochastics(const PriceVector& in, std::size_t days);
     };
 }
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Scrollbar.H>
+#include <vector>
 namespace flw {
     class Chart;
     namespace chart {
@@ -840,6 +864,8 @@ namespace flw {
         int                             _ver_pos[101];
     };
 }
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Menu_Button.H>
 namespace flw {
     class ScrollBrowser : public Fl_Hold_Browser {
     public:
@@ -865,6 +891,8 @@ namespace flw {
         int                             _scroll;
     };
 }
+#include <FL/Fl_Group.H>
+#include <FL/Fl.H>
 namespace flw {
     class SplitGroup : public Fl_Group {
     public:
@@ -907,6 +935,9 @@ namespace flw {
         int                             _split_pos;
     };
 }
+#include <map>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Scrollbar.H>
 namespace flw {
     class TableDisplay : public Fl_Group {
         friend class _TableDisplayFindDialog;
@@ -1114,6 +1145,8 @@ namespace flw {
         Fl_Widget*                      _edit3;
     };
 }
+#include <string>
+#include <map>
 namespace flw {
     typedef std::map<std::string, std::string> StringMap;
     class Grid : public TableEditor {
@@ -1161,6 +1194,8 @@ namespace flw {
         char                            _key[100];
     };
 }
+#include <FL/Fl_Group.H>
+#include <FL/Fl.H>
 namespace flw {
     class _TabsGroupButton;
     class TabsGroup : public Fl_Group {
@@ -1216,9 +1251,8 @@ namespace flw {
         std::vector<Fl_Widget*>         _widgets;
     };
 }
-class Fl_Preferences;
-class Fl_Window;
-#define FLW_THEME 1
+#include <string>
+#include <FL/fl_draw.H>
 namespace flw {
     namespace theme {
         bool                            is_dark();

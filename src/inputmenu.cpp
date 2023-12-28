@@ -2,8 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "inputmenu.h"
-#include <FL/Fl_Input.H>
-#include <FL/Fl_Menu_Button.H>
 
 // MKALGAM_ON
 

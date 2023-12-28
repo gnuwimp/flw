@@ -5,14 +5,14 @@
 #define FLW_DLG_H
 
 #include "util.h"
-#include <FL/Fl_Double_Window.H>
-
-class Fl_Button;
-class Fl_Hold_Browser;
-class Fl_Toggle_Button;
-class Fl_Hor_Fill_Slider;
 
 // MKALGAM_ON
+
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Hor_Fill_Slider.H>
+#include <FL/Fl_Toggle_Button.H>
 
 namespace flw {
     namespace dlg {

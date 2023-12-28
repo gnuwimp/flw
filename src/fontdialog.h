@@ -4,13 +4,12 @@
 #ifndef FLW_FONTDIALOG_H
 #define FLW_FONTDIALOG_H
 
+// MKALGAM_ON
+
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <string>
-
-class Fl_Box;
-class Fl_Button;
-
-// MKALGAM_ON
 
 namespace flw {
     class ScrollBrowser;
