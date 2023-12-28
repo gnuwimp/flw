@@ -26,7 +26,7 @@ namespace flw {
     const double      flw::Chart::MAX   =  999999999999999.0;
     const double      flw::Chart::MIN   = -999999999999999.0;
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static int _chart_bsearch(const std::vector<flw::Price>& prices, const Price& key) {
         auto it = std::lower_bound(prices.begin(), prices.end(), key);
 

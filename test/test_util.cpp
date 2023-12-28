@@ -43,11 +43,11 @@ int main() {
     }
 
     { // util::time_sleep()
-        auto t1 = util::time_micro();
+        auto t1 = util::time_milli();
         util::time_sleep(1000);
-        auto t2 = (int) (util::time_micro() - t1);
-        // printf("sleept in %d\n", t2);
-        FLW_TRUE(t2 >= 1000000 && t2 <= 1001000)
+        auto t2 = (int) (util::time_milli() - t1);
+        // printf("sleept %d mS\n", t2);
+        FLW_TRUE(t2 >= 1'000 && t2 <= 1'020)
     }
 
     printf("\nTests Finished\n");

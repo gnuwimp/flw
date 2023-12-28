@@ -12,8 +12,7 @@
 #include <FL/Fl.H>
 
 #ifdef _WIN32
-    #include <profileapi.h>
-    #include <synchapi.h>
+    #include <windows.h>
 #endif
 
 // MKALGAM_ON
