@@ -15,7 +15,7 @@ namespace flw {
     class Plot;
 
     namespace plot {
-        class Point;
+        struct Point;
         enum class TYPE;
 
         const double                    MAX        =  999'999'999'999'999.0;

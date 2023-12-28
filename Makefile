@@ -1,6 +1,13 @@
 include makeinclude
 
-CXXFLAGS += -Wno-cast-function-type
+ifneq ($(OS), macOS)
+	CXXFLAGS += -Wno-cast-function-type
+endif
+
+ifeq ($(OS), macOS)
+	CXXFLAGS += -Wno-overloaded-virtual
+endif
+
 CXXFLAGS += $(FLTK_CXXFLAGS)
 LDFLAGS  += $(FLTKI_LDFLAGS)
 LDFLAGS  += obj/libflw.a

@@ -18,8 +18,8 @@ namespace flw {
     class Chart;
 
     namespace chart {
-        class Area;
-        class Line;
+        struct Area;
+        struct Line;
         enum class TYPE;
 
         const int                       MIN_TICK  = 3;
