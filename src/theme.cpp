@@ -48,6 +48,9 @@ namespace flw {
     namespace theme {
         static const char* _NAMES[] = {
             "default",
+            "oxy",
+            "blue oxy",
+            "tan oxy",
             "gleam",
             "blue gleam",
             "dark blue gleam",
@@ -68,6 +71,9 @@ namespace flw {
 
         enum {
             _NAME_DEFAULT,
+            _NAME_OXY,
+            _NAME_OXY_BLUE,
+            _NAME_OXY_TAN,
             _NAME_GLEAM,
             _NAME_GLEAM_BLUE,
             _NAME_GLEAM_DARK_BLUE,
@@ -251,6 +257,42 @@ namespace flw {
             Fl::scheme("none");
             Fl::redraw();
             _NAME = _NAMES[_NAME_DEFAULT];
+            _IS_DARK = false;
+        }
+
+        //------------------------------------------------------------------------------
+        static void _load_oxy() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_OXY];
+            _IS_DARK = false;
+        }
+
+        //------------------------------------------------------------------------------
+        static void _load_oxy_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_blue_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_OXY_BLUE];
+            _IS_DARK = false;
+        }
+
+        //------------------------------------------------------------------------------
+        static void _load_oxy_tan() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_tan_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_OXY_TAN];
             _IS_DARK = false;
         }
 
@@ -559,7 +601,16 @@ namespace flw {
                 else if (w == dlg->_theme) {
                     auto row = dlg->_theme->value() - 1;
 
-                    if (row == flw::theme::_NAME_GLEAM) {
+                    if (row == flw::theme::_NAME_OXY) {
+                        flw::theme::_load_oxy();
+                    }
+                    else if (row == flw::theme::_NAME_OXY_BLUE) {
+                        flw::theme::_load_oxy_blue();
+                    }
+                    else if (row == flw::theme::_NAME_OXY_TAN) {
+                        flw::theme::_load_oxy_tan();
+                    }
+                    else if (row == flw::theme::_NAME_GLEAM) {
                         flw::theme::_load_gleam();
                     }
                     else if (row == flw::theme::_NAME_GLEAM_BLUE) {
@@ -691,6 +742,15 @@ bool flw::theme::is_dark() {
 bool flw::theme::load(std::string name) {
     if (name == flw::theme::_NAMES[_NAME_DEFAULT]) {
         flw::theme::_load_default();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_OXY]) {
+        flw::theme::_load_oxy();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_OXY_BLUE]) {
+        flw::theme::_load_oxy_blue();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_OXY_TAN]) {
+        flw::theme::_load_oxy_tan();
     }
     else if (name == flw::theme::_NAMES[_NAME_GLEAM]) {
         flw::theme::_load_gleam();
