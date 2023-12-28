@@ -832,14 +832,15 @@ public:
         }
 
         _close->callback(Callback, this);
+        _font_label->box(FL_BORDER_BOX);
         _font_label->color(FL_BACKGROUND2_COLOR);
-        _font_label->box(FL_DOWN_BOX);
         _font->callback(Callback, this);
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _fixedfont_label->box(FL_BORDER_BOX);
         _fixedfont_label->color(FL_BACKGROUND2_COLOR);
-        _fixedfont_label->box(FL_DOWN_BOX);
         _fixedfont->callback(Callback, this);
         _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
 
@@ -1255,15 +1256,14 @@ abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
 –—‘“”„†•…‰™œŠŸž€ ΑΒΓΔΩαβγδω АБВГДабвгд
 ∀∂∈ℝ∧∪≡∞ ↑↗↨↻⇣ ┐┼╔╘░►☺♀ ﬁ�⑀₂ἠḂӥẄɐː⍎אԱა
 
-Hello world, Καλημέρα κόσμε, コンニチハ
-
-math: ∮ E⋅da = Q,  n → ∞, ∑ f(i) 2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ
-korean: 구두의
-greek: Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν
-russian: Зарегистрируйтесь сейчас
-thai: แผ่นดินฮั่นเสื่อมโทรมแสนสังเวช
-amharic: ሰማይ አይታረስ ንጉሥ አይከሰስ
+japanese: こんにちは世界
+korean: 안녕하세요 세계
+greek: Γειά σου Κόσμε
+ukrainian: Привіт Світ
+thai: สวัสดีชาวโลก
+amharic: ሰላም ልዑል
 braille: ⡌⠁⠧⠑ ⠼⠁⠒  ⡍⠜⠇⠑⠹⠰⠎ ⡣⠕⠌
+math: ∮ E⋅da = Q,  n → ∞, ∑ f(i) 2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ
 
 “There is nothing else than now.
 There is neither yesterday, certainly,
@@ -1394,6 +1394,7 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _cancel->callback(FontDialog::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
     _cancel->labelsize(flw::PREF_FONTSIZE);
+    _fonts->box(FL_BORDER_BOX);
     _fonts->callback(FontDialog::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
@@ -1402,6 +1403,7 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _select->callback(FontDialog::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
+    _sizes->box(FL_BORDER_BOX);
     _sizes->callback(FontDialog::Callback, this);
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
