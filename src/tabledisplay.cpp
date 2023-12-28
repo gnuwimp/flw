@@ -191,7 +191,7 @@ void flw::TableDisplay::active_cell(int row, int col, bool show) {
     _curr_col = col;
 
     if (send) {
-        _event_set(_curr_row, _curr_col, flw::TableDisplay::EVENT::CURSOR);
+        _set_event(_curr_row, _curr_col, flw::TableDisplay::EVENT::CURSOR);
         do_callback();
     }
 
@@ -534,11 +534,11 @@ int flw::TableDisplay::_ev_mouse_click () {
         }
 
         if (row == 0 && col >= 1) { // Mouse click on top header cells
-            _event_set(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+            _set_event(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
             do_callback();
         }
         else if (col == 0 && row >= 1) { // Mouse click on left header cells
-            _event_set(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+            _set_event(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
             do_callback();
         }
         else if (row == -1 || col == -1) { // Mouse click outside cell
@@ -889,7 +889,7 @@ void flw::TableDisplay::size(int rows, int cols) {
         _start_row = 1;
         _start_col = 1;
 
-        _event_set(_curr_row, _curr_col, flw::TableDisplay::EVENT::SIZE);
+        _set_event(_curr_row, _curr_col, flw::TableDisplay::EVENT::SIZE);
         do_callback();
     }
 

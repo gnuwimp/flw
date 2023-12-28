@@ -87,7 +87,7 @@ namespace flw {
 
         public:
             //------------------------------------------------------------------
-            _DlgList(const char* title, const std::vector<std::string>& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
+            _DlgList(const char* title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
                 end();
 
@@ -162,11 +162,11 @@ namespace flw {
             Fl_Button*                      _cancel;
             ScrollBrowser*                  _list;
             Fl_Input*                       _filter;
-            const std::vector<std::string>& _strings;
+            const StringVector& _strings;
 
         public:
             //------------------------------------------------------------------
-            _DlgSelect(const char* title, Fl_Window* parent, const std::vector<std::string>& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
+            _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
             _strings(strings) {
                 end();
@@ -397,6 +397,13 @@ namespace flw {
                 _mode      = mode;
                 _ret       = false;
 
+                add(_password1);
+                add(_password2);
+                add(_file);
+                add(_browse);
+                add(_cancel);
+                add(_close);
+
                 _browse->callback(_DlgPassword::Callback, this);
                 _cancel->callback(_DlgPassword::Callback, this);
                 _close->callback(_DlgPassword::Callback, this);
@@ -420,33 +427,20 @@ namespace flw {
                     _password2->hide();
                     _browse->hide();
                     _file->hide();
-                    add(_password1);
                     resize(0, 0, 30 * flw::PREF_FONTSIZE, 5 * flw::PREF_FONTSIZE + 16);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
                     _browse->hide();
                     _file->hide();
-                    add(_password1);
-                    add(_password2);
                     resize(0, 0, 30 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
                 }
                 else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
                     _password2->hide();
-                    add(_password1);
-                    add(_file);
-                    add(_browse);
                     resize(0, 0, 40 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-                    add(_password1);
-                    add(_password2);
-                    add(_file);
-                    add(_browse);
                     resize(0, 0, 40 * flw::PREF_FONTSIZE, 11 * flw::PREF_FONTSIZE + 28);
                 }
-
-                add(_cancel);
-                add(_close);
 
                 flw::util::labelfont(this);
                 callback(_DlgPassword::Callback, this);
@@ -662,7 +656,7 @@ void flw::dlg::html(const std::string& title, const std::string& text, Fl_Window
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::list(const std::string& title, const std::vector<std::string>& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void flw::dlg::list(const std::string& title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgList dlg(title.c_str(), list, parent, fixed_font, W, H);
     dlg.run();
 }
@@ -707,13 +701,13 @@ bool flw::dlg::password4(const std::string& title, std::string& password, std::s
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int flw::dlg::select(const std::string& title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int flw::dlg::select(const std::string& title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
@@ -899,7 +893,7 @@ void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
+bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
     auto now = util::time();
 
     if (now - _last > update_time) {

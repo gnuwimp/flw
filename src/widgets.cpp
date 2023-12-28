@@ -15,9 +15,9 @@ namespace flw {
     class _InputMenu : public Fl_Input {
     public:
 
-        bool                            show_menu;
-        int                             index;
-        std::vector<std::string>        history;
+        bool            show_menu;
+        int             index;
+        StringVector    history;
 
         //----------------------------------------------------------------------
         _InputMenu() : Fl_Input(0, 0, 0, 0) {
@@ -127,7 +127,7 @@ void flw::InputMenu::clear() {
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> flw::InputMenu::get_history() const {
+flw::StringVector flw::InputMenu::get_history() const {
     return _input->history;
 }
 
@@ -171,7 +171,7 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::set(const std::vector<std::string>& list, bool copy_first_to_input) {
+void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
     clear();
     _input->history = list;
 

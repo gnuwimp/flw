@@ -21,6 +21,8 @@ class Fl_Menu_Button;
 #define FLW_LINE printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout);
 
 namespace flw {
+    typedef std::vector<std::string>    StringVector;
+
     extern bool                         PREF_IS_DARK;
     extern int                          PREF_FIXED_FONT;
     extern std::string                  PREF_FIXED_FONTNAME;
@@ -41,7 +43,7 @@ namespace flw {
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
         int                             replace(std::string& string, const std::string& find, const std::string& replace);
-        std::vector<std::string>        split(const std::string& string, const std::string& split);
+        StringVector                    split(const std::string& string, const std::string& split);
         const char*                     str_copy(char* dest, const char* src, int dest_size);
         bool                            test(bool val, int line, const char* func);
         bool                            test(const char* ref, const char* val, int line, const char* func);
@@ -234,15 +236,15 @@ namespace flw {
         extern const char*              PASSWORD_OK;
 
         void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-        void                            list(const std::string& title, const std::vector<std::string>& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            panic(std::string message);
         bool                            password1(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
         bool                            password2(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
         bool                            password3(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
         bool                            password4(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-        int                             select(const std::string& title, const std::vector<std::string>& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        int                             select(const std::string& title, const std::vector<std::string>& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        int                             select(const std::string& title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        int                             select(const std::string& title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 
         //----------------------------------------------------------------------
@@ -276,7 +278,7 @@ namespace flw {
         public:
                                         WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
             void                        resize(int X, int Y, int W, int H) override;
-            bool                        run(double update_time, const std::vector<std::string>& messages);
+            bool                        run(double update_time, const StringVector& messages);
             bool                        run(double update_time, const std::string& message);
 
             static void                 Callback(Fl_Widget* w, void* o);
@@ -752,36 +754,56 @@ namespace flw {
 
                                         TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            active_cell(int row = -1, int col = -1, bool show = false);
+        virtual Fl_Align                cell_align(int row, int col)
+                                            { (void) row; (void) col; return FL_ALIGN_LEFT; }
+        virtual Fl_Color                cell_color(int row, int col)
+                                            { (void) row; (void) col; return FL_BACKGROUND2_COLOR; }
+        virtual Fl_Color                cell_textcolor(int row, int col)
+                                            { (void) row; (void) col; return FL_FOREGROUND_COLOR; }
+        virtual Fl_Font                 cell_textfont(int row, int col)
+                                            { (void) row; (void) col; return flw::PREF_FONT; }
+        virtual Fl_Fontsize             cell_textsize(int row, int col)
+                                            { (void) row; (void) col; return flw::PREF_FONTSIZE; }
+        virtual const char*             cell_value(int row, int col)
+                                            { (void) row; (void) col; return ""; }
+        virtual int                     cell_width(int col)
+                                            { (void) col; return flw::PREF_FONTSIZE * 6; }
+        virtual void                    cell_width(int col, int width)
+                                            { (void) col; (void) width; }
         virtual void                    clear();
+        int                             column() const
+                                            { return _curr_col; }
+        int                             columns() const
+                                            { return _cols; }
         virtual void                    draw() override;
+        void                            expand_last_column(bool expand = false)
+                                            { _expand = expand; redraw(); }
+        TableDisplay::EVENT             event() const
+                                            { return _event; }
+        int                             event_col() const
+                                            { return _event_col; }
+        int                             event_row() const
+                                            { return _event_row; }
         virtual int                     handle(int event) override;
         void                            header(bool row = false, bool col = false);
+        int                             height() const
+                                            { return _height; }
+        void                            height(int height)
+                                            { _height = height; }
         void                            lines(bool ver = false, bool hor = false);
         void                            move_cursor(int pos);
+        void                            resize_column_width(bool resize = false)
+                                            { _resize = resize; }
+        int                             row() const
+                                            { return _curr_row; }
+        int                             rows() const
+                                            { return _rows; }
+        void                            scrollbar(bool ver = true, bool hor = true)
+                                            { _disable_ver = !ver; _disable_hor = !hor; redraw(); }
+        void                            select_mode(TableDisplay::SELECT select = TableDisplay::SELECT::NO)
+                                            { _select = select; }
         void                            show_cell(int row, int col);
         virtual void                    size(int rows, int cols);
-
-        virtual Fl_Align                cell_align(int row, int col) { (void) row; (void) col; return FL_ALIGN_LEFT; }
-        virtual Fl_Color                cell_color(int row, int col) { (void) row; (void) col; return FL_BACKGROUND2_COLOR; }
-        virtual Fl_Color                cell_textcolor(int row, int col) { (void) row; (void) col; return FL_FOREGROUND_COLOR; }
-        virtual Fl_Font                 cell_textfont(int row, int col) { (void) row; (void) col; return flw::PREF_FONT; }
-        virtual Fl_Fontsize             cell_textsize(int row, int col) { (void) row; (void) col; return flw::PREF_FONTSIZE; }
-        virtual const char*             cell_value(int row, int col) { (void) row; (void) col; return ""; }
-        virtual int                     cell_width(int col) { (void) col; return flw::PREF_FONTSIZE * 6; }
-        virtual void                    cell_width(int col, int width) { (void) col; (void) width; }
-        int                             column() const { return _curr_col; }
-        int                             columns() const { return _cols; }
-        void                            expand_last_column(bool expand = false) { _expand = expand; redraw(); }
-        TableDisplay::EVENT             event() const { return _event; }
-        int                             event_col() const { return _event_col; }
-        int                             event_row() const { return _event_row; }
-        int                             height() const { return _height; }
-        void                            height(int height) { _height = height; }
-        void                            resize_column_width(bool resize = false) { _resize = resize; }
-        int                             row() const { return _curr_row; }
-        int                             rows() const { return _rows; }
-        void                            scrollbar(bool ver = true, bool hor = true) { _disable_ver = !ver; _disable_hor = !hor; redraw(); }
-        void                            select_mode(TableDisplay::SELECT select = TableDisplay::SELECT::NO) { _select = select; }
 
     protected:
         int                             _cell_height(int Y = -1);
@@ -795,8 +817,8 @@ namespace flw {
         int                             _ev_mouse_move();
         void                            _get_cell_below_mouse(int& row, int& col);
         void                            _update_scrollbars();
-
-        void                            _event_set(int row, int col, TableDisplay::EVENT event) { _event_row = row; _event_col = col; _event = event; }
+        void                            _set_event(int row, int col, TableDisplay::EVENT event)
+                                            { _event_row = row; _event_col = col; _event = event; }
 
         static void                     _CallbackHor(Fl_Widget* w, void* v);
         static void                     _CallbackVer(Fl_Widget* w, void* v);
@@ -881,18 +903,25 @@ namespace flw {
         static const char*              SELECT_LIST;
 
                                         TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        void                            send_changed_event_always(bool value)
+                                            { _send_changed_event_always = value; }
+        virtual StringVector            cell_choice(int row, int col)
+                                            { (void) row; (void) col; return StringVector(); }
+        virtual bool                    cell_edit(int row, int col)
+                                            { (void) row; (void) col; return false; }
+        virtual TableEditor::FORMAT     cell_format(int row, int col)
+                                            { (void) row; (void) col; return TableEditor::FORMAT::DEFAULT; }
+        virtual TableEditor::REND       cell_rend(int row, int col)
+                                            { (void) row; (void) col; return TableEditor::REND::TEXT; }
+        virtual bool                    cell_value(int row, int col, const char* value)
+                                            { (void) row; (void) col; (void) value; return false; }
         void                            clear() override;
         virtual int                     handle(int event) override;
-
-        virtual std::vector<std::string> cell_choice(int row, int col) { (void) row; (void) col; return std::vector<std::string>(); }
-        virtual bool                    cell_edit(int row, int col) { (void) row; (void) col; return false; }
-        virtual TableEditor::FORMAT     cell_format(int row, int col) { (void) row; (void) col; return TableEditor::FORMAT::DEFAULT; }
-        virtual TableEditor::REND       cell_rend(int row, int col) { (void) row; (void) col; return TableEditor::REND::TEXT; }
-        virtual bool                    cell_value(int row, int col, const char* value) { (void) row; (void) col; (void) value; return false; }
 
         static const char*              FormatSlider(double val, double min, double max, double step);
 
     private:
+        bool                            _send_changed_event_always;
         void                            _delete_current_cell();
         void                            _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false) override;
         void                            _edit_create();
@@ -968,6 +997,8 @@ namespace flw {
 
 
 namespace flw {
+    typedef std::map<std::string, std::string> StringMap;
+
     //--------------------------------------------------------------------------
     // A Table editing widget with built in data storage
     //
@@ -979,7 +1010,7 @@ namespace flw {
         virtual                         ~Grid();
         Fl_Align                        cell_align(int row, int col) override;
         void                            cell_align(int row, int col, Fl_Align align);
-        std::vector<std::string>        cell_choice(int row, int col) override;
+        StringVector                    cell_choice(int row, int col) override;
         void                            cell_choice(int row, int col, const char* value);
         Fl_Color                        cell_color(int row, int col) override;
         void                            cell_color(int row, int col, Fl_Color color);
@@ -999,24 +1030,24 @@ namespace flw {
         void                            size(int rows, int cols) override;
 
     private:
-        int                             _get_int(std::map<std::string, std::string>& map, int row, int col, int def = 0);
+        int                             _get_int(StringMap& map, int row, int col, int def = 0);
         const char*                     _get_key(int row, int col);
-        const char*                     _get_string(std::map<std::string, std::string>& map, int row, int col, const char* def = "");
-        void                            _set_int(std::map<std::string, std::string>& map, int row, int col, int value);
-        void                            _set_string(std::map<std::string, std::string>& map, int row, int col, const char* value);
+        const char*                     _get_string(StringMap& map, int row, int col, const char* def = "");
+        void                            _set_int(StringMap& map, int row, int col, int value);
+        void                            _set_string(StringMap& map, int row, int col, const char* value);
 
-        char                                _key[100];
-        char*                               _buffer;
-        std::map<std::string, std::string>  _align;
-        std::map<std::string, std::string>  _cell;
-        std::map<std::string, std::string>  _choice;
-        std::map<std::string, std::string>  _color;
-        std::map<std::string, std::string>  _edit;
-        std::map<std::string, std::string>  _format;
-        std::map<std::string, std::string>  _rend;
-        std::map<std::string, std::string>  _textcolor;
-        std::map<std::string, std::string>  _width;
-        std::vector<std::string>            _choices;
+        char                            _key[100];
+        char*                           _buffer;
+        StringMap                       _align;
+        StringMap                       _cell;
+        StringMap                       _choice;
+        StringMap                       _color;
+        StringMap                       _edit;
+        StringMap                       _format;
+        StringMap                       _rend;
+        StringMap                       _textcolor;
+        StringMap                       _width;
+        StringVector                    _choices;
     };
 }
 
@@ -1061,10 +1092,10 @@ namespace flw {
 
                                         InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            clear();
-        std::vector<std::string>        get_history() const;
+        StringVector                    get_history() const;
         void                            insert(const std::string& string, int max_list_len);
         void                            resize(int X, int Y, int W, int H) override;
-        void                            set(const std::vector<std::string>& list, bool copy_first_to_input = true);
+        void                            set(const StringVector& list, bool copy_first_to_input = true);
         void                            update_pref(Fl_Font text_font = flw::PREF_FIXED_FONT, Fl_Fontsize text_size = flw::PREF_FIXED_FONTSIZE);
         const char*                     value() const;
         void                            value(const char* string);
@@ -1076,7 +1107,7 @@ namespace flw {
 
     private:
         void                            _add(bool insert, const std::string& string, int max_list_len);
-        void                            _add(bool insert, const std::vector<std::string>& list);
+        void                            _add(bool insert, const StringVector& list);
 
         _InputMenu*                     _input;
         Fl_Menu_Button*                 _menu;

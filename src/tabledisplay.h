@@ -36,36 +36,56 @@ namespace flw {
 
                                         TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            active_cell(int row = -1, int col = -1, bool show = false);
+        virtual Fl_Align                cell_align(int row, int col)
+                                            { (void) row; (void) col; return FL_ALIGN_LEFT; }
+        virtual Fl_Color                cell_color(int row, int col)
+                                            { (void) row; (void) col; return FL_BACKGROUND2_COLOR; }
+        virtual Fl_Color                cell_textcolor(int row, int col)
+                                            { (void) row; (void) col; return FL_FOREGROUND_COLOR; }
+        virtual Fl_Font                 cell_textfont(int row, int col)
+                                            { (void) row; (void) col; return flw::PREF_FONT; }
+        virtual Fl_Fontsize             cell_textsize(int row, int col)
+                                            { (void) row; (void) col; return flw::PREF_FONTSIZE; }
+        virtual const char*             cell_value(int row, int col)
+                                            { (void) row; (void) col; return ""; }
+        virtual int                     cell_width(int col)
+                                            { (void) col; return flw::PREF_FONTSIZE * 6; }
+        virtual void                    cell_width(int col, int width)
+                                            { (void) col; (void) width; }
         virtual void                    clear();
+        int                             column() const
+                                            { return _curr_col; }
+        int                             columns() const
+                                            { return _cols; }
         virtual void                    draw() override;
+        void                            expand_last_column(bool expand = false)
+                                            { _expand = expand; redraw(); }
+        TableDisplay::EVENT             event() const
+                                            { return _event; }
+        int                             event_col() const
+                                            { return _event_col; }
+        int                             event_row() const
+                                            { return _event_row; }
         virtual int                     handle(int event) override;
         void                            header(bool row = false, bool col = false);
+        int                             height() const
+                                            { return _height; }
+        void                            height(int height)
+                                            { _height = height; }
         void                            lines(bool ver = false, bool hor = false);
         void                            move_cursor(int pos);
+        void                            resize_column_width(bool resize = false)
+                                            { _resize = resize; }
+        int                             row() const
+                                            { return _curr_row; }
+        int                             rows() const
+                                            { return _rows; }
+        void                            scrollbar(bool ver = true, bool hor = true)
+                                            { _disable_ver = !ver; _disable_hor = !hor; redraw(); }
+        void                            select_mode(TableDisplay::SELECT select = TableDisplay::SELECT::NO)
+                                            { _select = select; }
         void                            show_cell(int row, int col);
         virtual void                    size(int rows, int cols);
-
-        virtual Fl_Align                cell_align(int row, int col) { (void) row; (void) col; return FL_ALIGN_LEFT; }
-        virtual Fl_Color                cell_color(int row, int col) { (void) row; (void) col; return FL_BACKGROUND2_COLOR; }
-        virtual Fl_Color                cell_textcolor(int row, int col) { (void) row; (void) col; return FL_FOREGROUND_COLOR; }
-        virtual Fl_Font                 cell_textfont(int row, int col) { (void) row; (void) col; return flw::PREF_FONT; }
-        virtual Fl_Fontsize             cell_textsize(int row, int col) { (void) row; (void) col; return flw::PREF_FONTSIZE; }
-        virtual const char*             cell_value(int row, int col) { (void) row; (void) col; return ""; }
-        virtual int                     cell_width(int col) { (void) col; return flw::PREF_FONTSIZE * 6; }
-        virtual void                    cell_width(int col, int width) { (void) col; (void) width; }
-        int                             column() const { return _curr_col; }
-        int                             columns() const { return _cols; }
-        void                            expand_last_column(bool expand = false) { _expand = expand; redraw(); }
-        TableDisplay::EVENT             event() const { return _event; }
-        int                             event_col() const { return _event_col; }
-        int                             event_row() const { return _event_row; }
-        int                             height() const { return _height; }
-        void                            height(int height) { _height = height; }
-        void                            resize_column_width(bool resize = false) { _resize = resize; }
-        int                             row() const { return _curr_row; }
-        int                             rows() const { return _rows; }
-        void                            scrollbar(bool ver = true, bool hor = true) { _disable_ver = !ver; _disable_hor = !hor; redraw(); }
-        void                            select_mode(TableDisplay::SELECT select = TableDisplay::SELECT::NO) { _select = select; }
 
     protected:
         int                             _cell_height(int Y = -1);
@@ -79,8 +99,8 @@ namespace flw {
         int                             _ev_mouse_move();
         void                            _get_cell_below_mouse(int& row, int& col);
         void                            _update_scrollbars();
-
-        void                            _event_set(int row, int col, TableDisplay::EVENT event) { _event_row = row; _event_col = col; _event = event; }
+        void                            _set_event(int row, int col, TableDisplay::EVENT event)
+                                            { _event_row = row; _event_col = col; _event = event; }
 
         static void                     _CallbackHor(Fl_Widget* w, void* v);
         static void                     _CallbackVer(Fl_Widget* w, void* v);

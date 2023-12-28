@@ -240,6 +240,7 @@ int main(int argc, const char** argv) {
         }
     }
 
+    dlg::FontDialog::DeleteFonts();
     printf("\nTests Finished\n");
     return 0;
 }

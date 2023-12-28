@@ -23,7 +23,7 @@ ifeq ($(OS),Linux)
 		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags`
 
 	else
-		CXX = g++ -std=c++17 -DDEBUG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		CXX = g++ -g -std=c++17 -DDEBUG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
 		LD = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags`
 	endif
 

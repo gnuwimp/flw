@@ -351,9 +351,10 @@ public:
         bar   = new Fl_Menu_Bar(0, 0, 0, 0);
         table = new TestTable();
 
-        bar->add("&Debug/Clear", 0, Test::CallbackDebugClear, this);
+        bar->add("Debug/Clear", 0, Test::CallbackDebugClear, this);
 
-        bar->add("&Size/Shrink", 0, Test::CallbackShrink, this);
+        bar->add("Size/Shrink", 0, Test::CallbackShrink, this);
+        bar->add("Event/Always", 0, Test::CallbackEvent, this, FL_MENU_TOGGLE);
 
         table->header(true, true);
         table->lines(true, true);
@@ -411,13 +412,22 @@ public:
     }
 
     static void CallbackDebugClear(Fl_Widget*, void* v) {
-        Test* w = (Test*) v;
+        auto w = (Test*) v;
+
         w->table->clear();
     }
 
     static void CallbackShrink(Fl_Widget*, void* v) {
-        Test* w = (Test*) v;
+        auto w = (Test*) v;
+
         w->table->size(10, 5);
+    }
+
+    static void CallbackEvent(Fl_Widget*, void* v) {
+        auto w    = (Test*) v;
+        auto item = (Fl_Menu_Item*) w->bar->find_item("Event/Always");
+
+        w->table->send_changed_event_always(item->value());
     }
 };
 

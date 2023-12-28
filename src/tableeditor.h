@@ -58,18 +58,25 @@ namespace flw {
         static const char*              SELECT_LIST;
 
                                         TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        void                            send_changed_event_always(bool value)
+                                            { _send_changed_event_always = value; }
+        virtual StringVector            cell_choice(int row, int col)
+                                            { (void) row; (void) col; return StringVector(); }
+        virtual bool                    cell_edit(int row, int col)
+                                            { (void) row; (void) col; return false; }
+        virtual TableEditor::FORMAT     cell_format(int row, int col)
+                                            { (void) row; (void) col; return TableEditor::FORMAT::DEFAULT; }
+        virtual TableEditor::REND       cell_rend(int row, int col)
+                                            { (void) row; (void) col; return TableEditor::REND::TEXT; }
+        virtual bool                    cell_value(int row, int col, const char* value)
+                                            { (void) row; (void) col; (void) value; return false; }
         void                            clear() override;
         virtual int                     handle(int event) override;
-
-        virtual std::vector<std::string> cell_choice(int row, int col) { (void) row; (void) col; return std::vector<std::string>(); }
-        virtual bool                    cell_edit(int row, int col) { (void) row; (void) col; return false; }
-        virtual TableEditor::FORMAT     cell_format(int row, int col) { (void) row; (void) col; return TableEditor::FORMAT::DEFAULT; }
-        virtual TableEditor::REND       cell_rend(int row, int col) { (void) row; (void) col; return TableEditor::REND::TEXT; }
-        virtual bool                    cell_value(int row, int col, const char* value) { (void) row; (void) col; (void) value; return false; }
 
         static const char*              FormatSlider(double val, double min, double max, double step);
 
     private:
+        bool                            _send_changed_event_always;
         void                            _delete_current_cell();
         void                            _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false) override;
         void                            _edit_create();

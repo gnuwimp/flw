@@ -190,8 +190,8 @@ int flw::util::replace(std::string& string, const std::string& find, const std::
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> flw::util::split(const std::string& string, const std::string& split) {
-    auto res = std::vector<std::string>();
+flw::StringVector flw::util::split(const std::string& string, const std::string& split) {
+    auto res = StringVector();
 
     try {
         if (split.size()) {

@@ -16,6 +16,8 @@ class Fl_Window;
 #define FLW_LINE printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout);
 
 namespace flw {
+    typedef std::vector<std::string>    StringVector;
+
     extern bool                         PREF_IS_DARK;
     extern int                          PREF_FIXED_FONT;
     extern std::string                  PREF_FIXED_FONTNAME;
@@ -36,7 +38,7 @@ namespace flw {
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
         int                             replace(std::string& string, const std::string& find, const std::string& replace);
-        std::vector<std::string>        split(const std::string& string, const std::string& split);
+        StringVector                    split(const std::string& string, const std::string& split);
         const char*                     str_copy(char* dest, const char* src, int dest_size);
         bool                            test(bool val, int line, const char* func);
         bool                            test(const char* ref, const char* val, int line, const char* func);

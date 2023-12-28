@@ -11,6 +11,8 @@
 // MKALGAM_ON
 
 namespace flw {
+    typedef std::map<std::string, std::string> StringMap;
+
     //--------------------------------------------------------------------------
     // A Table editing widget with built in data storage
     //
@@ -22,7 +24,7 @@ namespace flw {
         virtual                         ~Grid();
         Fl_Align                        cell_align(int row, int col) override;
         void                            cell_align(int row, int col, Fl_Align align);
-        std::vector<std::string>        cell_choice(int row, int col) override;
+        StringVector                    cell_choice(int row, int col) override;
         void                            cell_choice(int row, int col, const char* value);
         Fl_Color                        cell_color(int row, int col) override;
         void                            cell_color(int row, int col, Fl_Color color);
@@ -42,24 +44,24 @@ namespace flw {
         void                            size(int rows, int cols) override;
 
     private:
-        int                             _get_int(std::map<std::string, std::string>& map, int row, int col, int def = 0);
+        int                             _get_int(StringMap& map, int row, int col, int def = 0);
         const char*                     _get_key(int row, int col);
-        const char*                     _get_string(std::map<std::string, std::string>& map, int row, int col, const char* def = "");
-        void                            _set_int(std::map<std::string, std::string>& map, int row, int col, int value);
-        void                            _set_string(std::map<std::string, std::string>& map, int row, int col, const char* value);
+        const char*                     _get_string(StringMap& map, int row, int col, const char* def = "");
+        void                            _set_int(StringMap& map, int row, int col, int value);
+        void                            _set_string(StringMap& map, int row, int col, const char* value);
 
-        char                                _key[100];
-        char*                               _buffer;
-        std::map<std::string, std::string>  _align;
-        std::map<std::string, std::string>  _cell;
-        std::map<std::string, std::string>  _choice;
-        std::map<std::string, std::string>  _color;
-        std::map<std::string, std::string>  _edit;
-        std::map<std::string, std::string>  _format;
-        std::map<std::string, std::string>  _rend;
-        std::map<std::string, std::string>  _textcolor;
-        std::map<std::string, std::string>  _width;
-        std::vector<std::string>            _choices;
+        char                            _key[100];
+        char*                           _buffer;
+        StringMap                       _align;
+        StringMap                       _cell;
+        StringMap                       _choice;
+        StringMap                       _color;
+        StringMap                       _edit;
+        StringMap                       _format;
+        StringMap                       _rend;
+        StringMap                       _textcolor;
+        StringMap                       _width;
+        StringVector                    _choices;
     };
 }
 

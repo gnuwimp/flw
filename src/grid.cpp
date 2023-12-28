@@ -41,7 +41,7 @@ void flw::Grid::cell_align(int row, int col, Fl_Align align) {
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> flw::Grid::cell_choice(int row, int col) {
+flw::StringVector flw::Grid::cell_choice(int row, int col) {
     _choices.clear();
     auto choices = _get_string(_choice, row, col);
 
@@ -160,7 +160,7 @@ void flw::Grid::cell_width(int col, int width) {
 }
 
 //------------------------------------------------------------------------------
-int flw::Grid::_get_int(std::map<std::string, std::string>& map, int row, int col, int def) {
+int flw::Grid::_get_int(StringMap& map, int row, int col, int def) {
     auto value = _get_string(map, row, col);
     return *value ? atoi(value) : def;
 }
@@ -172,20 +172,20 @@ const char* flw::Grid::_get_key(int row, int col) {
 }
 
 //------------------------------------------------------------------------------
-const char* flw::Grid::_get_string(std::map<std::string, std::string>& map, int row, int col, const char* def) {
+const char* flw::Grid::_get_string(StringMap& map, int row, int col, const char* def) {
     auto search = map.find(_get_key(row, col));
     return search != map.end() ? search->second.c_str() : def;
 }
 
 //------------------------------------------------------------------------------
-void flw::Grid::_set_int(std::map<std::string, std::string>& map, int row, int col, int value) {
+void flw::Grid::_set_int(StringMap& map, int row, int col, int value) {
     char value2[100];
     sprintf(value2, "%d", value);
     map[_get_key(row, col)] = value2;
 }
 
 //------------------------------------------------------------------------------
-void flw::Grid::_set_string(std::map<std::string, std::string>& map, int row, int col, const char* value) {
+void flw::Grid::_set_string(StringMap& map, int row, int col, const char* value) {
     map[_get_key(row, col)] = value ? value : "";
 }
 

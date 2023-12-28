@@ -2799,7 +2799,7 @@ namespace flw {
 
         public:
             //------------------------------------------------------------------
-            _DlgList(const char* title, const std::vector<std::string>& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
+            _DlgList(const char* title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
                 end();
 
@@ -2874,11 +2874,11 @@ namespace flw {
             Fl_Button*                      _cancel;
             ScrollBrowser*                  _list;
             Fl_Input*                       _filter;
-            const std::vector<std::string>& _strings;
+            const StringVector& _strings;
 
         public:
             //------------------------------------------------------------------
-            _DlgSelect(const char* title, Fl_Window* parent, const std::vector<std::string>& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
+            _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
             _strings(strings) {
                 end();
@@ -3109,6 +3109,13 @@ namespace flw {
                 _mode      = mode;
                 _ret       = false;
 
+                add(_password1);
+                add(_password2);
+                add(_file);
+                add(_browse);
+                add(_cancel);
+                add(_close);
+
                 _browse->callback(_DlgPassword::Callback, this);
                 _cancel->callback(_DlgPassword::Callback, this);
                 _close->callback(_DlgPassword::Callback, this);
@@ -3132,33 +3139,20 @@ namespace flw {
                     _password2->hide();
                     _browse->hide();
                     _file->hide();
-                    add(_password1);
                     resize(0, 0, 30 * flw::PREF_FONTSIZE, 5 * flw::PREF_FONTSIZE + 16);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
                     _browse->hide();
                     _file->hide();
-                    add(_password1);
-                    add(_password2);
                     resize(0, 0, 30 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
                 }
                 else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
                     _password2->hide();
-                    add(_password1);
-                    add(_file);
-                    add(_browse);
                     resize(0, 0, 40 * flw::PREF_FONTSIZE, 8 * flw::PREF_FONTSIZE + 24);
                 }
                 else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-                    add(_password1);
-                    add(_password2);
-                    add(_file);
-                    add(_browse);
                     resize(0, 0, 40 * flw::PREF_FONTSIZE, 11 * flw::PREF_FONTSIZE + 28);
                 }
-
-                add(_cancel);
-                add(_close);
 
                 flw::util::labelfont(this);
                 callback(_DlgPassword::Callback, this);
@@ -3374,7 +3368,7 @@ void flw::dlg::html(const std::string& title, const std::string& text, Fl_Window
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::list(const std::string& title, const std::vector<std::string>& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void flw::dlg::list(const std::string& title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgList dlg(title.c_str(), list, parent, fixed_font, W, H);
     dlg.run();
 }
@@ -3419,13 +3413,13 @@ bool flw::dlg::password4(const std::string& title, std::string& password, std::s
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int flw::dlg::select(const std::string& title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::select(const std::string& title, const std::vector<std::string>& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int flw::dlg::select(const std::string& title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
@@ -3611,7 +3605,7 @@ void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::WorkDialog::run(double update_time, const std::vector<std::string>& messages) {
+bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
     auto now = util::time();
 
     if (now - _last > update_time) {
@@ -3992,7 +3986,7 @@ void flw::Grid::cell_align(int row, int col, Fl_Align align) {
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> flw::Grid::cell_choice(int row, int col) {
+flw::StringVector flw::Grid::cell_choice(int row, int col) {
     _choices.clear();
     auto choices = _get_string(_choice, row, col);
 
@@ -4111,7 +4105,7 @@ void flw::Grid::cell_width(int col, int width) {
 }
 
 //------------------------------------------------------------------------------
-int flw::Grid::_get_int(std::map<std::string, std::string>& map, int row, int col, int def) {
+int flw::Grid::_get_int(StringMap& map, int row, int col, int def) {
     auto value = _get_string(map, row, col);
     return *value ? atoi(value) : def;
 }
@@ -4123,20 +4117,20 @@ const char* flw::Grid::_get_key(int row, int col) {
 }
 
 //------------------------------------------------------------------------------
-const char* flw::Grid::_get_string(std::map<std::string, std::string>& map, int row, int col, const char* def) {
+const char* flw::Grid::_get_string(StringMap& map, int row, int col, const char* def) {
     auto search = map.find(_get_key(row, col));
     return search != map.end() ? search->second.c_str() : def;
 }
 
 //------------------------------------------------------------------------------
-void flw::Grid::_set_int(std::map<std::string, std::string>& map, int row, int col, int value) {
+void flw::Grid::_set_int(StringMap& map, int row, int col, int value) {
     char value2[100];
     sprintf(value2, "%d", value);
     map[_get_key(row, col)] = value2;
 }
 
 //------------------------------------------------------------------------------
-void flw::Grid::_set_string(std::map<std::string, std::string>& map, int row, int col, const char* value) {
+void flw::Grid::_set_string(StringMap& map, int row, int col, const char* value) {
     map[_get_key(row, col)] = value ? value : "";
 }
 
@@ -5791,7 +5785,7 @@ void flw::TableDisplay::active_cell(int row, int col, bool show) {
     _curr_col = col;
 
     if (send) {
-        _event_set(_curr_row, _curr_col, flw::TableDisplay::EVENT::CURSOR);
+        _set_event(_curr_row, _curr_col, flw::TableDisplay::EVENT::CURSOR);
         do_callback();
     }
 
@@ -6134,11 +6128,11 @@ int flw::TableDisplay::_ev_mouse_click () {
         }
 
         if (row == 0 && col >= 1) { // Mouse click on top header cells
-            _event_set(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+            _set_event(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
             do_callback();
         }
         else if (col == 0 && row >= 1) { // Mouse click on left header cells
-            _event_set(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+            _set_event(row, col, Fl::event_ctrl() ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
             do_callback();
         }
         else if (row == -1 || col == -1) { // Mouse click outside cell
@@ -6489,7 +6483,7 @@ void flw::TableDisplay::size(int rows, int cols) {
         _start_row = 1;
         _start_col = 1;
 
-        _event_set(_curr_row, _curr_col, flw::TableDisplay::EVENT::SIZE);
+        _set_event(_curr_row, _curr_col, flw::TableDisplay::EVENT::SIZE);
         do_callback();
     }
 
@@ -6594,6 +6588,7 @@ flw::TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : Table
 void flw::TableEditor::clear() {
     TableDisplay::clear();
 
+    _send_changed_event_always = false;
     _edit2 = nullptr;
     _edit3 = nullptr;
 }
@@ -6641,7 +6636,7 @@ void flw::TableEditor::_delete_current_cell() {
             }
 
             if (set) {
-                _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
                 do_callback();
                 redraw();
             }
@@ -7030,8 +7025,8 @@ void flw::TableEditor::_edit_quick(const char* key) {
 
         snprintf(buffer, 100, "%lld", (long long int) num);
 
-        if (strcmp(val, buffer) != 0 && cell_value(_curr_row, _curr_col, buffer)) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (strcmp(val, buffer) != 0 && cell_value(_curr_row, _curr_col, buffer))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
@@ -7059,8 +7054,8 @@ void flw::TableEditor::_edit_quick(const char* key) {
 
         snprintf(buffer, 100, "%f", num);
 
-        if (strcmp(val, buffer) != 0 && cell_value(_curr_row, _curr_col, buffer)) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (strcmp(val, buffer) != 0 && cell_value(_curr_row, _curr_col, buffer))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
@@ -7088,8 +7083,8 @@ void flw::TableEditor::_edit_quick(const char* key) {
 
         auto string = date.format(Date::FORMAT::ISO_LONG);
 
-        if (cell_value(_curr_row, _curr_col, string.c_str())) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (cell_value(_curr_row, _curr_col, string.c_str()))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
@@ -7128,8 +7123,8 @@ void flw::TableEditor::_edit_quick(const char* key) {
 
             auto val2 = FormatSlider(curr, min, max, step);
 
-            if (strcmp(val, val2) != 0 && cell_value(_curr_row, _curr_col, val2)) {
-                _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            if (_send_changed_event_always == true || (strcmp(val, val2) != 0 && cell_value(_curr_row, _curr_col, val2))) {
+                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
                 do_callback();
             }
         }
@@ -7148,24 +7143,24 @@ void flw::TableEditor::_edit_show() {
 
         snprintf(buffer, 20, "%d", color2);
 
-        if ((color1 != color2) && cell_value(_curr_row, _curr_col, buffer)) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (color1 != color2 && cell_value(_curr_row, _curr_col, buffer))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
     else if (rend == flw::TableEditor::REND::DLG_FILE) {
         auto result = fl_file_chooser(flw::TableEditor::SELECT_FILE, "", val, 0);
 
-        if (result && strcmp(val, result) != 0 && cell_value(_curr_row, _curr_col, result)) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0 && cell_value(_curr_row, _curr_col, result))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
     else if (rend == flw::TableEditor::REND::DLG_DIR) {
         auto result = fl_dir_chooser(flw::TableEditor::SELECT_DIR, val);
 
-        if (result && strcmp(val, result) != 0 && cell_value(_curr_row, _curr_col, result)) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0 && cell_value(_curr_row, _curr_col, result))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
@@ -7175,8 +7170,8 @@ void flw::TableEditor::_edit_show() {
         auto result = flw::dlg::date(flw::TableEditor::SELECT_DATE, date1, top_window());
         auto string = date1.format(Date::FORMAT::ISO_LONG);
 
-        if (result && date1 != date2 && cell_value(_curr_row, _curr_col, string.c_str())) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+        if (_send_changed_event_always == true || (result == true && date1 != date2 && cell_value(_curr_row, _curr_col, string.c_str()))) {
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
@@ -7186,11 +7181,11 @@ void flw::TableEditor::_edit_show() {
         if (choices.size()) {
             auto row = dlg::select(flw::TableEditor::SELECT_LIST, choices, val);
 
-            if (row) {
+            if (row > 0) {
                 auto& string = choices[row - 1];
 
-                if (string != val && cell_value(_curr_row, _curr_col, string.c_str())) {
-                    _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                if (_send_changed_event_always == true || (string != val && cell_value(_curr_row, _curr_col, string.c_str()))) {
+                    _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
                     do_callback();
                 }
             }
@@ -7231,7 +7226,7 @@ void flw::TableEditor::_edit_stop(bool save) {
         auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
         auto stop = true;
 
-        if (save) {
+        if (save == true) {
             if (rend == flw::TableEditor::REND::TEXT ||
                 rend == flw::TableEditor::REND::INTEGER ||
                 rend == flw::TableEditor::REND::NUMBER ||
@@ -7324,7 +7319,7 @@ void flw::TableEditor::_edit_stop(bool save) {
             }
         }
 
-        if (stop) {
+        if (stop == true) {
             remove(_edit);
             delete _edit;
 
@@ -7336,8 +7331,8 @@ void flw::TableEditor::_edit_stop(bool save) {
             _current_cell[2] = 0;
             _current_cell[3] = 0;
 
-            if (save) {
-                _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            if (_send_changed_event_always == true || save == true) {
+                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
                 do_callback();
             }
 
@@ -7525,7 +7520,7 @@ int flw::TableEditor::_ev_paste() {
         }
 
         if (strcmp(val, text) != 0 && cell_value(_curr_row, _curr_col, text)) {
-            _event_set(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
             do_callback();
             redraw();
         }
@@ -8995,8 +8990,8 @@ int flw::util::replace(std::string& string, const std::string& find, const std::
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> flw::util::split(const std::string& string, const std::string& split) {
-    auto res = std::vector<std::string>();
+flw::StringVector flw::util::split(const std::string& string, const std::string& split) {
+    auto res = StringVector();
 
     try {
         if (split.size()) {
@@ -9308,9 +9303,9 @@ namespace flw {
     class _InputMenu : public Fl_Input {
     public:
 
-        bool                            show_menu;
-        int                             index;
-        std::vector<std::string>        history;
+        bool            show_menu;
+        int             index;
+        StringVector    history;
 
         //----------------------------------------------------------------------
         _InputMenu() : Fl_Input(0, 0, 0, 0) {
@@ -9420,7 +9415,7 @@ void flw::InputMenu::clear() {
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> flw::InputMenu::get_history() const {
+flw::StringVector flw::InputMenu::get_history() const {
     return _input->history;
 }
 
@@ -9464,7 +9459,7 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::set(const std::vector<std::string>& list, bool copy_first_to_input) {
+void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
     clear();
     _input->history = list;
 

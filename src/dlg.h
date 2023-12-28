@@ -21,15 +21,15 @@ namespace flw {
         extern const char*              PASSWORD_OK;
 
         void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-        void                            list(const std::string& title, const std::vector<std::string>& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            panic(std::string message);
         bool                            password1(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
         bool                            password2(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
         bool                            password3(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
         bool                            password4(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-        int                             select(const std::string& title, const std::vector<std::string>& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        int                             select(const std::string& title, const std::vector<std::string>& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        int                             select(const std::string& title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        int                             select(const std::string& title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 
         //----------------------------------------------------------------------
@@ -63,7 +63,7 @@ namespace flw {
         public:
                                         WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
             void                        resize(int X, int Y, int W, int H) override;
-            bool                        run(double update_time, const std::vector<std::string>& messages);
+            bool                        run(double update_time, const StringVector& messages);
             bool                        run(double update_time, const std::string& message);
 
             static void                 Callback(Fl_Widget* w, void* o);

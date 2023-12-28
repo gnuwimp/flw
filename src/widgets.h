@@ -27,10 +27,10 @@ namespace flw {
 
                                         InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            clear();
-        std::vector<std::string>        get_history() const;
+        StringVector                    get_history() const;
         void                            insert(const std::string& string, int max_list_len);
         void                            resize(int X, int Y, int W, int H) override;
-        void                            set(const std::vector<std::string>& list, bool copy_first_to_input = true);
+        void                            set(const StringVector& list, bool copy_first_to_input = true);
         void                            update_pref(Fl_Font text_font = flw::PREF_FIXED_FONT, Fl_Fontsize text_size = flw::PREF_FIXED_FONTSIZE);
         const char*                     value() const;
         void                            value(const char* string);
@@ -42,7 +42,7 @@ namespace flw {
 
     private:
         void                            _add(bool insert, const std::string& string, int max_list_len);
-        void                            _add(bool insert, const std::vector<std::string>& list);
+        void                            _add(bool insert, const StringVector& list);
 
         _InputMenu*                     _input;
         Fl_Menu_Button*                 _menu;
