@@ -21,7 +21,7 @@ namespace flw {
         StringVector                    items() const
                                             { return _files; }
         void                            max_items(size_t max)
-                                            { assert(max > 0 && max <= 100); _max = max; }
+                                            { if (max > 0 && max <= 100) _max = max; }
         Fl_Menu_*                       menu()
                                             { return _menu; }
         void                            load_pref(Fl_Preferences& pref, std::string base_name = "files");
@@ -29,6 +29,8 @@ namespace flw {
 
     private:
         void                            _add(std::string file, bool append);
+        size_t                          _add_string(StringVector& in, size_t max_size, std::string string);
+        size_t                          _insert_string(StringVector& in, size_t max_size, std::string string);
 
         std::string                     _base;
         Fl_Callback*                    _callback;

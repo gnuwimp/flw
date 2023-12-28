@@ -134,7 +134,7 @@ int main(int argc, const char** argv) {
 
             while (dialog.check() == false && count <= 100.0) {
                 dialog.value(count);
-                util::time_sleep(100);
+                util::sleep(100);
                 count += 1.0;
             }
         }
@@ -193,23 +193,17 @@ int main(int argc, const char** argv) {
 
             ret = dlg::password1("test_dlg.cpp - dlg::password1", password);
             printf("dlg::password1=%d, '%s'\n", ret, password.c_str());
-            util::zero_memory((char*) password.data());
 
             ret = dlg::password2("test_dlg.cpp - dlg::password2", password);
             printf("dlg::password2=%d, '%s'\n", ret, password.c_str());
-            util::zero_memory((char*) password.data());
 
             ret = dlg::password3("test_dlg.cpp - dlg::password3", password, file);
             printf("dlg::password3=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
-            util::zero_memory((char*) password.data());
-            util::zero_memory((char*) file.data());
 
             dlg::PASSWORD_CANCEL = "cancel";
             dlg::PASSWORD_OK = "ok";
             ret = dlg::password4("test_dlg.cpp - dlg::password4", password, file);
             printf("dlg::password4=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
-            util::zero_memory((char*) password.data());
-            util::zero_memory((char*) file.data());
 
             fflush(stdout);
         }
@@ -222,38 +216,38 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "work")  {
             auto work  = dlg::WorkDialog("WorkDialog", nullptr, true, true);
-            auto start = util::time();
+            auto start = util::clock();
 
             while (true) {
-                auto s = util::format("@bRunning for = %.1f sec", util::time() - start);
+                auto s = util::format("@bRunning for = %.1f sec", util::clock() - start);
 
                 if (work.run(0.1, s) == false) {
                     break;
                 }
 
-                util::time_sleep(20);
+                util::sleep(20);
             }
         }
 
         if (run == "" || run == "work") {
             auto work = dlg::WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
-            auto stop = util::time() + 5.0;
+            auto stop = util::clock() + 5.0;
 
             while (true) {
                 auto m = std::vector<std::string>();
 
                 m.push_back(util::format("@bHello World"));
-                m.push_back(util::format("Quitting in %.1f sec", stop - util::time()));
-                m.push_back(util::format("@B95Quitting in %.1f sec", stop - util::time()));
+                m.push_back(util::format("Quitting in %.1f sec", stop - util::clock()));
+                m.push_back(util::format("@B95Quitting in %.1f sec", stop - util::clock()));
 
                 if (work.run(0.1, m) == false) {
                     break;
                 }
-                else if (util::time() - stop > 0.0) {
+                else if (util::clock() - stop > 0.0) {
                     break;
                 }
 
-                util::time_sleep(20);
+                util::sleep(20);
             }
         }
     }

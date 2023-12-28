@@ -1,40 +1,10 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
-#include <algorithm>
-#include <math.h>
-#include <stdarg.h>
-#include <time.h>
-#include <sys/timeb.h>
-#include <unistd.h>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Float_Input.H>
-#include <FL/Fl_Help_View.H>
-#include <FL/Fl_Hor_Fill_Slider.H>
-#include <FL/Fl_Input_Choice.H>
-#include <FL/Fl_Int_Input.H>
-#include <FL/Fl_Menu_Button.H>
-#include <FL/Fl_Multiline_Output.H>
-#include <FL/Fl_Repeat_Button.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Secret_Input.H>
-#include <FL/Fl_Toggle_Button.H>
-#include <FL/Fl_Value_Slider.H>
-#include <FL/fl_show_colormap.H>
-#include <FL/x.H>
-#ifdef _WIN32
-    #include <FL/x.H>
-    #include <windows.h>
-#elif defined(__linux__)
-    #include <FL/Fl_Pixmap.H>
-    #include <FL/Fl_RGB_Image.H>
-#endif
-#ifdef FLW_USE_PNG
-    #include <FL/Fl_PNG_Image.H>
-#endif
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
+#include <algorithm>
 #include <math.h>
 namespace flw {
     namespace chart {
@@ -55,6 +25,149 @@ namespace flw {
                 return std::distance(prices.begin(), it);
             }
         }
+        int count_decimals(double number) {
+            number = fabs(number);
+            int    res     = 0;
+            int    len     = 0;
+            char*  end     = 0;
+            double inumber = (int64_t) number;
+            double fnumber = number - inumber;
+            char   buffer[100];
+            if (number > 999999999999999) {
+                snprintf(buffer, 100, "%.1f", fnumber);
+            }
+            else if (number > 9999999999999) {
+                snprintf(buffer, 100, "%.2f", fnumber);
+            }
+            else if (number > 999999999999) {
+                snprintf(buffer, 100, "%.3f", fnumber);
+            }
+            else if (number > 99999999999) {
+                snprintf(buffer, 100, "%.4f", fnumber);
+            }
+            else if (number > 9999999999) {
+                snprintf(buffer, 100, "%.5f", fnumber);
+            }
+            else if (number > 999999999) {
+                snprintf(buffer, 100, "%.6f", fnumber);
+            }
+            else if (number > 99999999) {
+                snprintf(buffer, 100, "%.7f", fnumber);
+            }
+            else if (number > 9999999) {
+                snprintf(buffer, 100, "%.8f", fnumber);
+            }
+            else {
+                snprintf(buffer, 100, "%.9f", fnumber);
+            }
+            len = strlen(buffer);
+            end = buffer + len - 1;
+            while (*end == '0') {
+                *end = 0;
+                end--;
+            }
+            res = strlen(buffer) - 2;
+            return res;
+        }
+        flw::PriceVector create_date_serie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
+            int         month   = -1;
+            Date        current = Date::FromString(start_date);
+            Date        stop    = Date::FromString(stop_date);
+            PriceVector res;
+            if (range == Date::RANGE::HOUR && current.year() < 1970) {
+                return res;
+            }
+            if (range == Date::RANGE::FRIDAY) {
+                while (current.weekday() != Date::DAY::FRIDAY)
+                    current.add_days(1);
+            }
+            else if (range == Date::RANGE::SUNDAY) {
+                while (current.weekday() != Date::DAY::SUNDAY) {
+                    current.add_days(1);
+                }
+            }
+            while (current <= stop) {
+                Date date(1, 1, 1);
+                if (range == Date::RANGE::DAY) {
+                    date = Date(current);
+                    current.add_days(1);
+                }
+                else if (range == Date::RANGE::WEEKDAY) {
+                    Date::DAY weekday = current.weekday();
+                    if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
+                        date = Date(current);
+                    }
+                    current.add_days(1);
+                }
+                else if (range == Date::RANGE::FRIDAY || range == Date::RANGE::SUNDAY) {
+                    date = Date(current);
+                    current.add_days(7);
+                }
+                else if (range == Date::RANGE::MONTH) {
+                    if (current.month() != month) {
+                        current.day(current.month_days());
+                        date = Date(current);
+                        month = current.month();
+                    }
+                    current.add_months(1);
+                }
+                else if (range == Date::RANGE::HOUR) {
+                    date = Date(current);
+                    current.add_seconds(3600);
+                }
+                else if (range == Date::RANGE::MIN) {
+                    date = Date(current);
+                    current.add_seconds(60);
+                }
+                else if (range == Date::RANGE::SEC) {
+                    date = Date(current);
+                    current.add_seconds(1);
+                }
+                if (date.year() > 1) {
+                    Price price;
+                    if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
+                        price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
+                    }
+                    else {
+                        price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
+                    }
+                    if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
+                        res.push_back(price);
+                    }
+                }
+            }
+            return res;
+        }
+        std::string format_date(const Price& price, Date::FORMAT format) {
+            auto date = flw::Date::FromString(price.date.c_str());
+            return date.format(format);
+        }
+        std::string format_double(double num, int decimals, char del) {
+            char res[100];
+            *res = 0;
+            if (decimals < 0) {
+                decimals = chart::count_decimals(num);
+            }
+            if (decimals == 0) {
+                return util::format_int((int64_t) num, del);
+            }
+            if (fabs(num) < 9223372036854775807.0) {
+                char fr_str[100];
+                auto int_num    = (int64_t) fabs(num);
+                auto double_num = (double) (fabs(num) - int_num);
+                auto int_str    = util::format_int(int_num, del);
+                auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+                if (len > 0 && len < 100) {
+                    if (num < 0.0) {
+                        res[0] = '-';
+                        res[1] = 0;
+                    }
+                    strncat(res, int_str.c_str(), 99);
+                    strncat(res, fr_str + 1, 99);
+                }
+            }
+            return res;
+        }
         bool has_high_low(chart::TYPE chart_type) {
             return chart_type == chart::TYPE::BAR || chart_type == chart::TYPE::VERTICAL || chart_type == chart::TYPE::CLAMP_VERTICAL;
         }
@@ -69,15 +182,15 @@ namespace flw {
             auto buf = util::load_file(filename);
             auto nv  = json::NodeVector();
             auto ok  = 0;
-            auto err = (size_t) 0;
             chart->clear();
             chart->redraw();
             if (buf.p == nullptr) {
                 fl_alert("error: failed to load %s", filename.c_str());
                 return false;
             }
-            else if ((err = json::parse(buf.p, nv)) != (size_t) -1) {
-                fl_alert("error: failed to parse %s (position %u)", filename.c_str(), (unsigned) err);
+            auto err = json::parse(buf.p, nv, true);
+            if (err.pos >= 0) {
+                fl_alert("error: failed to parse %s (line %d and byte %d)", filename.c_str(), (int) err.line, (int) err.pos);
                 return false;
             }
             for (const auto& n : json::find_children(nv, nv[0])) {
@@ -211,7 +324,7 @@ namespace flw {
                         FLW_JSON_ADD_NUMBER("clamp_max", line.clamp_max)
                         for (auto& price : line.points) {
                         FLW_JSON_ADD_ARRAY_NL("p",
-                            FLW_JSON_ADD_STRING_TO_ARRAY(price.format_date((chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO))
+                            FLW_JSON_ADD_STRING_TO_ARRAY(chart::format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO))
                             if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
                             FLW_JSON_ADD_NUMBER_TO_ARRAY(price.high)
                             FLW_JSON_ADD_NUMBER_TO_ARRAY(price.low)
@@ -237,6 +350,31 @@ namespace flw {
             return util::save_file(filename, js.c_str(), js.length());
         }
     }
+}
+flw::Price::Price() {
+    high  = 0.0;
+    low   = 0.0;
+    close = 0.0;
+    vol   = 0.0;
+}
+flw::Price::Price(const std::string& date, double value) {
+    this->date = date;
+    high       = value;
+    low        = value;
+    close      = value;
+    vol        = value;
+}
+flw::Price::Price(const std::string& date, double high, double low, double close, double vol) {
+    this->date  = date;
+    this->high  = high;
+    this->low   = low;
+    this->close = close;
+    this->vol   = vol;
+#ifdef DEBUG
+    if (close > high || close < low || high < low) {
+        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
+    }
+#endif
 }
 flw::chart::Area::Area() {
     for (size_t f = 0; f < chart::MAX_LINE; f++) {
@@ -587,7 +725,7 @@ void flw::Chart::_calc_dates() {
     }
     _dates.clear();
     if (min != "") {
-        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
+        _dates = chart::create_date_serie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
         redraw();
     }
 }
@@ -657,9 +795,9 @@ void flw::Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
 }
 void flw::Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
     auto self = (Chart*) chart_object;
-    self->_view.labels     = util::menu_item_value(self->_menu, chart::SHOW_LABELS);
-    self->_view.vertical   = util::menu_item_value(self->_menu, chart::SHOW_VLINES);
-    self->_view.horizontal = util::menu_item_value(self->_menu, chart::SHOW_HLINES);
+    self->_view.labels     = menu::item_value(self->_menu, chart::SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, chart::SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, chart::SHOW_HLINES);
     self->redraw();
 }
 void flw::Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
@@ -716,10 +854,10 @@ void flw::Chart::_create_tooltip(bool ctrl) {
         int        left_dec    = 0;
         int        right_dec   = 0;
         if (_area->left.tick < 10.0 ) {
-            left_dec = util::count_decimals(_area->left.tick) + 1;
+            left_dec = chart::count_decimals(_area->left.tick) + 1;
         }
         if (_area->right.tick < 10.0 ) {
-            right_dec = util::count_decimals(_area->right.tick) + 1;
+            right_dec = chart::count_decimals(_area->right.tick) + 1;
         }
         while (start <= stop && start < (int) _dates.size()) {
             if (X >= X1 && X <= X1 + _tick_width - 1) {
@@ -730,10 +868,10 @@ void flw::Chart::_create_tooltip(bool ctrl) {
                     std::string  left;
                     std::string  right;
                     if (_area->left.max > _area->left.min) {
-                        left = util::format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
+                        left = chart::format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
                     }
                     if (_area->right.max > _area->right.min) {
-                        right = util::format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
+                        right = chart::format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
                     }
                     const size_t len = (left.length() > right.length()) ? left.length() : right.length();
                     if (left != "" && right != "") {
@@ -752,9 +890,9 @@ void flw::Chart::_create_tooltip(bool ctrl) {
                     if (index != (size_t) -1) {
                         const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
                         const auto price = line.points[index];
-                        auto       high  = util::format_double(price.high, dec, '\'');
-                        auto       low   = util::format_double(price.low, dec, '\'');
-                        auto       close = util::format_double(price.close, dec, '\'');
+                        auto       high  = chart::format_double(price.high, dec, '\'');
+                        auto       low   = chart::format_double(price.low, dec, '\'');
+                        auto       close = chart::format_double(price.close, dec, '\'');
                         const auto len   = (low.length() > high.length()) ? low.length() : high.length();
                         _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), (int) len, high.c_str(), (int) len, close.c_str(), (int) len, low.c_str());
                     }
@@ -1165,7 +1303,7 @@ void flw::Chart::_draw_xlabels() {
 void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const chart::Scale& scale, const bool left) {
     const double yinc  = (scale.pixel * scale.tick);
     const int    fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
-    const int    fr    = util::count_decimals(scale.tick);
+    const int    fr    = chart::count_decimals(scale.tick);
     int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
     double       ylast = chart::MAX_VAL;
     double       yval  = scale.min;
@@ -1177,7 +1315,7 @@ void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ch
         if (ylast > Y1) {
             auto y1     = y() + (int) Y1;
             auto x1     = x() + X;
-            auto string = util::format_double(yval, fr, '\'');
+            auto string = chart::format_double(yval, fr, '\'');
             if (left == true) {
                 fl_color(labelcolor());
                 fl_line(x1 - fs05, y1, x1, y1);
@@ -1212,9 +1350,9 @@ int flw::Chart::handle(int event) {
             }
         }
         else if (Fl::event_button3() != 0) {
-            util::menu_item_set(_menu, chart::SHOW_LABELS, _view.labels);
-            util::menu_item_set(_menu, chart::SHOW_HLINES, _view.horizontal);
-            util::menu_item_set(_menu, chart::SHOW_VLINES, _view.vertical);
+            menu::set_item(_menu, chart::SHOW_LABELS, _view.labels);
+            menu::set_item(_menu, chart::SHOW_HLINES, _view.horizontal);
+            menu::set_item(_menu, chart::SHOW_VLINES, _view.vertical);
             _menu->popup();
             return 1;
         }
@@ -2410,6 +2548,19 @@ namespace flw {
 #include <FL/Fl_Text_Editor.H>
 namespace flw {
     namespace dlg {
+        void* zero_memory(void* mem, size_t size) {
+            if (mem == nullptr || size == 0) return mem;
+        #ifdef _WIN32
+            RtlSecureZeroMemory(mem, size);
+        #else
+            auto p = (volatile unsigned char*) mem;
+            while (size--) {
+                *p = 0;
+                p++;
+            }
+        #endif
+            return mem;
+        }
         class _DlgHtml  : public Fl_Double_Window {
             Fl_Help_View*               _html;
             Fl_Return_Button*           _close;
@@ -2835,9 +2986,9 @@ namespace flw {
                     file = _file->value();
                     password = _password1->value();
                 }
-                flw::util::zero_memory((void*) _password1->value(), strlen(_password1->value()));
-                flw::util::zero_memory((void*) _password2->value(), strlen(_password2->value()));
-                flw::util::zero_memory((void*) _file->value(), strlen(_file->value()));
+                dlg::zero_memory((void*) _password1->value(), strlen(_password1->value()));
+                dlg::zero_memory((void*) _password2->value(), strlen(_password2->value()));
+                dlg::zero_memory((void*) _file->value(), strlen(_file->value()));
                 return _ret;
             }
         };
@@ -3022,7 +3173,6 @@ flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0,
     _progress->color(FL_SELECTION_COLOR);
     size(W, H);
     size_range(W, H);
-    FLW_PRINT(W,H, w(), h())
     callback(AbortDialog::Callback, this);
     set_modal();
 }
@@ -3033,7 +3183,7 @@ void flw::dlg::AbortDialog::Callback(Fl_Widget* w, void* o) {
     }
 }
 bool flw::dlg::AbortDialog::check(int milliseconds) {
-    auto now = flw::util::time_milli();
+    auto now = flw::util::milliseconds();
     if (now - _last > milliseconds) {
         _last = now;
         Fl::check();
@@ -3041,7 +3191,7 @@ bool flw::dlg::AbortDialog::check(int milliseconds) {
     return _abort;
 }
 bool flw::dlg::AbortDialog::check(double value, double min, double max, int milliseconds) {
-    auto now = flw::util::time_milli();
+    auto now = flw::util::milliseconds();
     if (now - _last > milliseconds) {
         _progress->value(value);
         _progress->range(min, max);
@@ -3116,7 +3266,7 @@ void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
         dlg->_cancel->deactivate();
         dlg->_pause->label("C&ontinue");
         while (dlg->_pause->value() != 0) {
-            flw::util::time_sleep(10);
+            flw::util::sleep(10);
             Fl::check();
         }
         dlg->_pause->label("&Pause");
@@ -3132,7 +3282,7 @@ void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
     _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
 }
 bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = flw::util::time();
+    auto now = flw::util::clock();
     if (now - _last > update_time) {
         _label->clear();
         for (auto& s : messages) {
@@ -3145,7 +3295,7 @@ bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages)
     return _ret;
 }
 bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
-    auto now = flw::util::time();
+    auto now = flw::util::clock();
     if (now - _last > update_time) {
         _label->clear();
         _label->add(message.c_str());
@@ -3809,6 +3959,476 @@ const char* flw::InputMenu::value() const {
 void flw::InputMenu::value(const char* string) {
     _input->value(string ? string : "");
 }
+#include <string.h>
+namespace flw {
+namespace json {
+    #define _FLW_JSON_RETURN(X,Y)           return Err((ssize_t) (X - Y), line);
+    #define _FLW_JSON_RETURN_POS(X)         return Err(X.pos, X.line);
+    #define _FLW_JSON_CHECK_SEPARATOR(X)    if (X > 32 && X != ',' && X != ':' && X != '}' && X != ']' && X != '{' && X != '[') return Err((ssize_t) (text - json), line);
+    static const char* _TYPE_NAMES[] = { "NA", "OBJECT", "END_OBJECT", "ARRAY","END_ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "COLON", "COMMA", "ARRAY_NL" };
+    static bool _convert_num(const char* s, double& d) {
+        errno = 0;
+        d = strtod(s, nullptr);
+        return errno != ERANGE;
+    }
+    static std::string _remove_last(std::vector<std::string>& v) {
+        if (v.size() > 0) {
+            auto res = v.back();
+            v.pop_back();
+            return res;
+        }
+        return "";
+    }
+    struct _Token {
+        TYPE                            type;
+        int                             depth;
+        std::string                     value;
+        size_t                          pos;
+        size_t                          line;
+                                        _Token()
+                                            { type = json::NA; pos = 0; depth = 0; line = 0; }
+                                        _Token(TYPE type, const std::string& value = "", size_t pos = 0, size_t depth = 0, size_t line = 0)
+                                            { this->type = type; this->value = value; this->pos = pos; this->depth = depth; this->line = line; }
+        bool                            is_end() const
+                                            { return type == json::END_ARRAY || type == json::END_OBJECT; }
+        bool                            is_start() const
+                                            { return type == json::ARRAY || type == json::OBJECT; }
+    };
+    typedef std::vector<_Token>         _TokenVector;
+    static void _tokenize_count_dot_minus_plus_e(const std::string& s, int& dot, int& minus, int& plus, int& E) {
+        dot = 0; minus = 0; plus = 0; E = 0;
+        for (auto c : s) {
+            dot   += (c =='.');
+            minus += (c =='-');
+            plus  += (c =='+');
+            E     += (c =='e');
+            E     += (c =='E');
+        }
+    }
+    static Err _tokenize(const char* json, size_t len, _TokenVector& tokens) {
+        tokens.clear();
+        auto text  = json;
+        auto end   = text + len;
+        auto value = std::string();
+        auto num   = std::string();
+        auto depth = 0;
+        auto line  = 1;
+        auto DUMMY = _Token();
+        num.reserve(50);
+        value.reserve(200);
+        while (text < end) {
+            auto  c  = (unsigned char) *text;
+            if (c == 10) {
+                line++;
+            }
+            if (c < 33) {
+                text++;
+            }
+            else if (c == ',') {
+                tokens.push_back(_Token(json::COMMA, "", (size_t) text - (size_t) json, depth, line));
+                text++;
+            }
+            else if (c == ':') {
+                tokens.push_back(_Token(json::COLON, "", (size_t) text - (size_t) json, depth, line));
+                text++;
+            }
+            else if (c == '{') {
+                tokens.push_back(_Token(json::OBJECT, "", (size_t) text - (size_t) json, depth, line));
+                depth++;
+                text++;
+            }
+            else if (c == '}') {
+                depth--;
+                tokens.push_back(_Token(json::END_OBJECT, "", (size_t) text - (size_t) json, depth, line));
+                text++;
+            }
+            else if (c == '[') {
+                tokens.push_back(_Token(json::ARRAY, "", (size_t) text - (size_t) json, depth, line));
+                depth++;
+                text++;
+            }
+            else if (c == ']') {
+                depth--;
+                tokens.push_back(_Token(json::END_ARRAY, "", (size_t) text - (size_t) json, depth, line));
+                text++;
+            }
+            else if (c == 't' && strncmp(text, "true", 4) == 0) {
+                tokens.push_back(_Token(json::BOOL, "true", (size_t) text - (size_t) json, depth, line));
+                text += 4;
+                c = *text;
+                _FLW_JSON_CHECK_SEPARATOR(c)
+            }
+            else if (c == 'f' && strncmp(text, "false", 5) == 0) {
+                tokens.push_back(_Token(json::BOOL, "false", (size_t) text - (size_t) json, depth, line));
+                text += 5;
+                c = *text;
+                _FLW_JSON_CHECK_SEPARATOR(c)
+            }
+            else if (c == 'n' && strncmp(text, "null", 4) == 0) {
+                tokens.push_back(_Token(json::NIL, "", (size_t) text - (size_t) json, depth, line));
+                text += 4;
+                c = *text;
+                _FLW_JSON_CHECK_SEPARATOR(c)
+            }
+            else if (c == '"') {
+                auto p = (unsigned char) *text;
+                auto start = text;
+                text++;
+                auto c = (unsigned char) *text;
+                value = "";
+                while (text < end) {
+                    if (c < 32) _FLW_JSON_RETURN(text, json)
+                    else if (p == '\\' && c == '"') {
+                    }
+                    else if (c == '"') {
+                        tokens.push_back(_Token(json::STRING, value, (size_t) start - (size_t) json, depth, line));
+                        text++;
+                        break;
+                    }
+                    value += c;
+                    p = c;
+                    text++;
+                    c = *text;
+                }
+                c = *text;
+                if (text == end) _FLW_JSON_RETURN(text, json)
+                _FLW_JSON_CHECK_SEPARATOR(c)
+            }
+            else if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
+                auto start = text;
+                std::string n1, n2;
+                int dot, minus, plus, E;
+                while (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
+                    n1 += c; text++; c = *text;
+                }
+                _tokenize_count_dot_minus_plus_e(n1, dot, minus, plus, E);
+                if (dot > 1 || minus > 1) _FLW_JSON_RETURN(start, json)
+                if (n1[0] == '.' || n1.back() == '.') _FLW_JSON_RETURN(start, json)
+                if (n1[0] == '-' && n1[1] == '.') _FLW_JSON_RETURN(start, json)
+                if (n1[0] == '-' && n1[1] == '0' && n1.length() > 2 && n1[2] != '.') _FLW_JSON_RETURN(start, json)
+                if (n1 == "-") _FLW_JSON_RETURN(start, json)
+                if (minus > 0 && n1[0] != '-') _FLW_JSON_RETURN(start, json)
+                while (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
+                    n2 += c; text++; c = *text;
+                }
+                if (n2.empty() == false) {
+                    if (n2.length() == 1) _FLW_JSON_RETURN(start, json)
+                    _tokenize_count_dot_minus_plus_e(n2, dot, minus, plus, E);
+                    if (plus + minus > 1 || E > 1) _FLW_JSON_RETURN(start, json)
+                    if (plus > 0 && n2.back() == '+') _FLW_JSON_RETURN(start, json)
+                    if (plus > 0 && n2[1] != '+') _FLW_JSON_RETURN(start, json)
+                    if (minus > 0 && n2.back() == '-') _FLW_JSON_RETURN(start, json)
+                    if (minus > 0 && n2[1] != '-') _FLW_JSON_RETURN(start, json)
+                }
+                else if (n1[0] == '0' && n1.length() > 1 && n1[1] != '.') _FLW_JSON_RETURN(start, json)
+                tokens.push_back(_Token(json::NUMBER, n1 + n2, (size_t) start - (size_t) json, depth, line));
+                _FLW_JSON_CHECK_SEPARATOR(c)
+            }
+            else {
+                _FLW_JSON_RETURN(text, json);
+            }
+        }
+        return Err();
+    }
+    void Node::print() const {
+        printf("%5u| %5u| %2d| %*s %-10s <%s>", (unsigned) index, (unsigned) textpos, depth, depth * 4, "", _TYPE_NAMES[(int) type], name.c_str());
+        if (type == json::STRING || type == json::NUMBER || type == json::BOOL) printf(" => <%s>\n", value.c_str());
+        else printf("\n");
+        fflush(stdout);
+    }
+    std::string escape_string(const std::string& string) {
+        std::string res;
+        for (unsigned char c : string) {
+            if (c == 9) res += "\\t";
+            else if (c == 10) res += "\\n";
+            else if (c == 13) res += "\\r";
+            else if (c == 8) res += "\\b";
+            else if (c == 14) res += "\\f";
+            else if (c == 34) res += "\\\"";
+            else if (c == 92) res += "\\\\";
+            else res += c;
+        }
+        return res;
+    }
+    NodeVector find_children(const NodeVector& nodes, const Node& start, bool grandchildren) {
+        auto res = NodeVector();
+        if (start.index + 1 >= nodes.size()) return res;
+        for (size_t f = start.index + 1; f < nodes.size(); f++) {
+            auto& node = nodes[f];
+            if (node.depth <= start.depth) break;
+            else if (grandchildren == true) res.push_back(node);
+            else if (node.depth == start.depth + 1 && node.is_end() == false) res.push_back(node);
+        }
+        return res;
+    }
+    NodeVector find_nodes(const NodeVector& nodes, std::string name, TYPE type) {
+        auto res = NodeVector();
+        for (size_t f = 0; f < nodes.size(); f++) {
+            auto& node = nodes[f];
+            if (name == "") {
+                if (type == json::NA) res.push_back(node);
+                else if (node.type == type) res.push_back(node);
+            }
+            else if (node.name == name) {
+                if (type == json::NA) res.push_back(node);
+                else if (node.type == type) res.push_back(node);
+            }
+        }
+        return res;
+    }
+    NodeVector find_siblings(const NodeVector& nodes, const Node& start) {
+        auto res = NodeVector();
+        if (start.index >= nodes.size()) return res;
+        for (size_t f = start.index; f < nodes.size(); f++) {
+            auto& node = nodes[f];
+            if (node.depth < start.depth) break;
+            else if (node.depth == start.depth && node.is_end() == false) res.push_back(node);
+        }
+        return res;
+    }
+    Err parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma) {
+        auto tokens      = _TokenVector();
+        auto len         = strlen(json);
+        auto err         = _tokenize(json, len, tokens);
+        auto size        = tokens.size();
+        auto obj         = 0;
+        auto arr         = 0;
+        auto num         = 0.0;
+        auto arr_name    = std::vector<std::string>();
+        auto obj_name    = std::vector<std::string>();
+        auto containers  = std::vector<std::string>();
+        auto const DUMMY = _Token();
+        nodes.clear();
+        if (err.pos >= 0) return err;
+        else if (size < 2) return Err(size, 1);
+        for (size_t f = 0; f < size; f++) {
+            auto& t  = tokens[f];
+            auto& T0 = (f > 0) ? tokens[f - 1] : DUMMY;
+            auto& T1 = (f < size - 1) ? tokens[f + 1] : DUMMY;
+            auto& T2 = (f < size - 2) ? tokens[f + 2] : DUMMY;
+            if ((T0.type == json::STRING || T0.type == json::NUMBER || T0.type == json::NIL || T0.type == json::BOOL) &&
+                (t.type != json::COMMA && t.type != json::END_ARRAY && t.type != json::END_OBJECT)) {
+                _FLW_JSON_RETURN_POS(t)
+            }
+            else if (obj == 0 && arr == 0 && nodes.size() > 0) {
+                _FLW_JSON_RETURN_POS(t)
+            }
+            else if (obj == 0 && arr == 0 && t.type != json::OBJECT && t.type != json::ARRAY) {
+                _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::COMMA && T0.type == json::COMMA) {
+                _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::COMMA && T0.type == json::ARRAY) {
+                _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::COLON && T0.type != json::STRING) {
+                _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::END_OBJECT) {
+                if (ignore_trailing_comma == false && T0.type == json::COMMA) _FLW_JSON_RETURN_POS(t)
+                containers.pop_back();
+                obj--;
+                if (obj < 0) _FLW_JSON_RETURN_POS(t)
+               nodes.push_back(Node(json::END_OBJECT, _remove_last(obj_name), "", t.depth, t.pos));
+            }
+            else if (t.type == json::OBJECT) {
+                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
+                if (T0.is_end() == true && T0.depth == t.depth) _FLW_JSON_RETURN_POS(t)
+                containers.push_back("O");
+                obj++;
+                nodes.push_back(Node(json::OBJECT, "", "", t.depth, t.pos));
+                obj_name.push_back("");
+            }
+            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::OBJECT) {
+                if (T0.is_end() == true && T0.depth == T2.depth) _FLW_JSON_RETURN_POS(t)
+                if (obj == 0) _FLW_JSON_RETURN_POS(t)
+                containers.push_back("O");
+                obj++;
+                nodes.push_back(Node(json::OBJECT, t.value, "", T2.depth, t.pos));
+                obj_name.push_back(t.value);
+                f += 2;
+            }
+            else if (t.type == json::END_ARRAY) {
+                if (ignore_trailing_comma == false && T0.type == json::COMMA) _FLW_JSON_RETURN_POS(t)
+                containers.pop_back();
+                arr--;
+                if (arr < 0) _FLW_JSON_RETURN_POS(t)
+                nodes.push_back(Node(json::END_ARRAY, _remove_last(arr_name), "", t.depth, t.pos));
+            }
+            else if (t.type == json::ARRAY) {
+                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
+                if (T0.is_end() == true && T0.depth == t.depth) _FLW_JSON_RETURN_POS(t)
+                containers.push_back("A");
+                arr++;
+                nodes.push_back(Node(json::ARRAY, "", "", t.depth, t.pos));
+                arr_name.push_back("");
+            }
+            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::ARRAY) {
+                if (T0.is_end() == true && T0.depth == T2.depth) _FLW_JSON_RETURN_POS(t)
+                if (obj == 0) _FLW_JSON_RETURN_POS(t)
+                containers.push_back("A");
+                arr++;
+                nodes.push_back(Node(json::ARRAY, t.value, "", T2.depth, t.pos));
+                arr_name.push_back(t.value);
+                f += 2;
+            }
+            else if (t.type == json::BOOL) {
+                nodes.push_back(Node(json::BOOL, "", t.value, t.depth, t.pos));
+                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::BOOL) {
+                nodes.push_back(Node(json::BOOL, t.value, T2.value, T2.depth, t.pos));
+                f += 2;
+                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::NIL) {
+                nodes.push_back(Node(json::NIL, "", "", t.depth, t.pos));
+                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::NIL) {
+                nodes.push_back(Node(json::NIL, t.value, "", T2.depth, t.pos));
+                f += 2;
+                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::NUMBER) {
+                if (_convert_num(t.value.c_str(), num) == false) _FLW_JSON_RETURN_POS(t)
+                nodes.push_back(Node(json::NUMBER, "", t.value, t.depth, t.pos));
+                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::NUMBER) {
+                if (_convert_num(T2.value.c_str(), num) == false) _FLW_JSON_RETURN_POS(t)
+                nodes.push_back(Node(json::NUMBER, t.value, T2.value, t.depth, t.pos));
+                f += 2;
+                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::STRING && T1.type == json::COLON && T2.type == json::STRING) {
+                nodes.push_back(Node(json::STRING, t.value, T2.value, t.depth, t.pos));
+                f += 2;
+                if (containers.size() && containers.back() == "A") _FLW_JSON_RETURN_POS(t)
+            }
+            else if (t.type == json::STRING) {
+                nodes.push_back(Node(json::STRING, "", t.value, t.depth, t.pos));
+                if (containers.size() && containers.back() == "O") _FLW_JSON_RETURN_POS(t)
+            }
+            if (nodes.size() > 0) nodes.back().index   = nodes.size() - 1;
+            if (arr < 0 || obj < 0) _FLW_JSON_RETURN_POS(t)
+        }
+        if (arr != 0 || obj != 0) return Err(len, -1);
+        return Err();
+    }
+    Err parse(std::string json, NodeVector& nodes, bool ignore_trailing_commas) {
+        return parse(json.c_str(), nodes, ignore_trailing_commas);
+    }
+    void print(const NodeVector& nodes) {
+        auto c = 0;
+        printf("\n%d Node objects\n", (int) nodes.size());
+        printf("%6s| %6s| %6s| %6s| %s\n", "COUNT", "INDEX", "POS", "DEPTH", "VALUES");
+        printf("-------------------------------------------------------\n");
+        for (auto& node : nodes) {
+            printf("%6d| %6u| %6u| %6d|%*s  %-10s <%s>", c, (unsigned) node.index, (unsigned) node.textpos, node.depth, node.depth * 4, "", _TYPE_NAMES[(int) node.type], node.name.c_str());
+            if (node.type == json::STRING || node.type == json::NUMBER || node.type == json::BOOL) printf(" => <%s>", node.value.c_str());
+            printf("\n");
+            c++;
+        }
+        fflush(stdout);
+    }
+    std::string tostring(const NodeVector& nodes) {
+        if (nodes.size() < 2) return "";
+        auto res    = std::string();
+        auto DUMMY  = Node();
+        auto last   = nodes.size() - 1;
+        auto indent = std::string();
+        auto arr    = json::NA;
+        res.reserve(20 * nodes.size());
+        for (size_t f = 0; f <= last; f++) {
+            auto& node = nodes[f];
+            auto& next = (f < last) ? nodes[f + 1] : DUMMY;
+            auto  nl   = std::string("\n");
+            auto  nl2  = std::string("");
+            if (node.is_data() && next.is_end() == false) {
+                nl  = ",\n";
+                nl2 = ",";
+            }
+            else if (node.is_end() && (next.is_start() == true || next.is_data() == true)) {
+                nl  = ",\n";
+                nl2 = ",";
+            }
+            if (node.type == json::END_OBJECT) {
+                indent.pop_back();
+                res += indent;
+                res += "}";
+            }
+            else if (node.type == json::END_ARRAY) {
+                indent.pop_back();
+                if (arr != json::ARRAY) res += indent;
+                res += "]";
+                arr = json::NA;
+            }
+            else {
+                if (arr != json::ARRAY) res += indent;
+                if (node.type == json::OBJECT) {
+                    indent += "\t";
+                    if (node.name == "") res += "{";
+                    else res += "\"" + node.name + "\": {";
+                }
+                else if (node.type == json::ARRAY || node.type == json::ARRAY_NL) {
+                    indent += "\t";
+                    if (node.name == "") res += "[";
+                    else res += "\"" + node.name + "\": [";
+                    arr = (node.type == json::ARRAY_NL) ? json::ARRAY : json::NA;
+                }
+                else if (node.type == json::STRING) {
+                    if (node.name == "") res += "\"" + node.value + "\"";
+                    else res += "\"" + node.name + "\": \"" + node.value + "\"";
+                }
+                else if (node.type == json::NUMBER) {
+                    if (node.name == "") res += node.value;
+                    else res += "\"" + node.name + "\": " + node.value;
+                }
+                else if (node.type == json::BOOL) {
+                    if (node.name == "") res += node.value;
+                    else res += "\"" + node.name + "\": " + node.value;
+                }
+                else if (node.type == json::NIL) {
+                    if (node.name == "") res += "null";
+                    else res += "\"" + node.name + "\": null";
+                }
+            }
+            if (arr != json::ARRAY) res += nl;
+            else res += nl2;
+        }
+        return res;
+    }
+    std::string unescape_string(const std::string& string) {
+        std::string res;
+        for (size_t f = 0; f < string.length(); f++) {
+            unsigned char c = string[f];
+            unsigned char n = string[f + 1];
+            if (c == '\\') {
+                if (n == 't') res += '\t';
+                else if (n == 'n') res += '\n';
+                else if (n == 'r') res += '\r';
+                else if (n == 'b') res += '\b';
+                else if (n == 'f') res += '\f';
+                else if (n == '\"') res += '"';
+                else if (n == '\\') res += '\\';
+                f++;
+            }
+            else res += c;
+        }
+        return res;
+    }
+     Err validate(const char* json) {
+        auto nodes = NodeVector();
+        return parse(json, nodes);
+    }
+     Err validate(std::string json) {
+        auto nodes = NodeVector();
+        return parse(json.c_str(), nodes);
+    }
+}
+}
 #include <FL/fl_draw.H>
 namespace flw {
     static const unsigned char _LCDNUMBER_SEGMENTS[20] = {
@@ -4019,6 +4639,7 @@ void flw::LcdNumber::value(const char *value) {
     }
     Fl::redraw();
 }
+#include <assert.h>
 #include <FL/fl_ask.H>
 #include <FL/Fl_File_Chooser.H>
 namespace flw {
@@ -4290,8 +4911,8 @@ Ctrl + 'e' to edit style string.
             auto nv  = json::NodeVector();
             auto err = json::parse(json, nv);
             auto res = std::vector<Style>();
-            if (err != (size_t) -1) {
-                fl_alert("error: failed to parse json string at position %u", (unsigned) err);
+            if (err.pos >= 0) {
+                fl_alert("error: failed to parse json string at line %d and byte %d", (int) err.line, (int) err.pos);
                 return res;
             }
             else if (nv.size() < 3) {
@@ -4355,6 +4976,32 @@ Ctrl + 'e' to edit style string.
                     if (style.style != STYLE::EMPTY) {
                         res.push_back(style);
                     }
+                }
+            }
+            return res;
+        }
+        char* win_to_unix(const char* string) {
+            auto r = false;
+            auto b = string;
+            while (*b != 0) {
+                if (*b++ == '\r') {
+                    r = true;
+                    break;
+                }
+            }
+            if (r == false) {
+                return nullptr;
+            }
+            auto len = strlen(string);
+            auto res = (char*) calloc(len + 1, 1);
+            auto pos = 0;
+            if (res != nullptr) {
+                b = string;
+                while (*b != 0) {
+                    if (*b != '\r') {
+                        res[pos++] = *b;
+                    }
+                    b++;
                 }
             }
             return res;
@@ -4479,49 +5126,51 @@ void flw::LogDisplay::style(std::string json) {
     _json      = json;
     _tmp       = new Tmp();
     _tmp->size = _buffer->length();
-    _tmp->buf  = util::allocate(_tmp->size);
-    memset(_tmp->buf, 'A', _tmp->size);
-    while (_tmp->pos < (size_t) _buffer->length()) {
-        auto line = _buffer->line_text(_tmp->pos);
-        _tmp->len = strlen(line);
-        if (_json == "") {
-            line_cb(row, line);
-        }
-        else {
-            lock_colors(false);
-            for (const auto& d : ds) {
-                if (d.style == logdisplay::STYLE::LOCK) {
-                    lock_colors(d.on);
-                }
-                else if (d.style == logdisplay::STYLE::LINE) {
-                    style_line(d.start, d.stop, d.color);
-                }
-                else if (d.style == logdisplay::STYLE::STRING) {
-                    style_string(line, d.word1, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::RSTRING) {
-                    style_rstring(line, d.word1, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::RANGE) {
-                    style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::NUM) {
-                    style_num(line, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::BETWEEN) {
-                    style_range(line, d.word1, d.word2, d.inclusive, d.color);
-                }
-                else if (d.style == logdisplay::STYLE::CUSTOM) {
-                    line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
+    _tmp->buf  = (char*) calloc(_tmp->size + 1, 1);
+    if (_tmp->buf != nullptr) {
+        memset(_tmp->buf, 'A', _tmp->size);
+        while (_tmp->pos < (size_t) _buffer->length()) {
+            auto line = _buffer->line_text(_tmp->pos);
+            _tmp->len = strlen(line);
+            if (_json == "") {
+                line_cb(row, line);
+            }
+            else {
+                lock_colors(false);
+                for (const auto& d : ds) {
+                    if (d.style == logdisplay::STYLE::LOCK) {
+                        lock_colors(d.on);
+                    }
+                    else if (d.style == logdisplay::STYLE::LINE) {
+                        style_line(d.start, d.stop, d.color);
+                    }
+                    else if (d.style == logdisplay::STYLE::STRING) {
+                        style_string(line, d.word1, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::RSTRING) {
+                        style_rstring(line, d.word1, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::RANGE) {
+                        style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::NUM) {
+                        style_num(line, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::BETWEEN) {
+                        style_range(line, d.word1, d.word2, d.inclusive, d.color);
+                    }
+                    else if (d.style == logdisplay::STYLE::CUSTOM) {
+                        line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
+                    }
                 }
             }
+            _tmp->pos += _tmp->len + 1;
+            row += 1;
+            free(line);
         }
-        _tmp->pos += _tmp->len + 1;
-        row += 1;
-        free(line);
+        _style->text(_tmp->buf);
+        highlight_data(_style, logdisplay::STYLE_TABLE, sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]), (char) logdisplay::COLOR::FOREGROUND, nullptr, 0);
     }
-    _style->text(_tmp->buf);
-    highlight_data(_style, logdisplay::STYLE_TABLE, sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]), (char) logdisplay::COLOR::FOREGROUND, nullptr, 0);
     delete _tmp;
     _tmp = nullptr;
 }
@@ -4647,7 +5296,7 @@ void flw::LogDisplay::value(const char* text) {
     assert(text);
     _buffer->text("");
     _style->text("");
-    auto win = util::win_to_unix(text);
+    auto win = logdisplay::win_to_unix(text);
     if (win != nullptr) {
         _buffer->text(win);
         free(win);
@@ -4656,443 +5305,1002 @@ void flw::LogDisplay::value(const char* text) {
         _buffer->text(text);
     }
 }
+#include <assert.h>
 #include <math.h>
-#include <algorithm>
-flw::Price::Price() {
-    high  = 0.0;
-    low   = 0.0;
-    close = 0.0;
-    vol   = 0.0;
-}
-flw::Price::Price(const std::string& date, double value) {
-    this->date = date;
-    high       = value;
-    low        = value;
-    close      = value;
-    vol        = value;
-}
-flw::Price::Price(const std::string& date, double high, double low, double close, double vol) {
-    this->date  = date;
-    this->high  = high;
-    this->low   = low;
-    this->close = close;
-    this->vol   = vol;
-#ifdef DEBUG
-    if (close > high || close < low || high < low) {
-        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
+#include <FL/fl_ask.H>
+namespace flw {
+    namespace plot {
+        static const char* const        SHOW_LABELS     = "Show line labels";
+        static const char* const        SHOW_HLINES     = "Show horizontal lines";
+        static const char* const        SHOW_VLINES     = "Show vertical lines";
+        static const char* const        SAVE_FILE       = "Save to png file...";
+        static const char* const        PRINT_DEBUG     = "Debug";
+        int count_decimals(double number) {
+            number = fabs(number);
+            int    res     = 0;
+            int    len     = 0;
+            char*  end     = 0;
+            double inumber = (int64_t) number;
+            double fnumber = number - inumber;
+            char   buffer[100];
+            if (number > 999999999999999) {
+                snprintf(buffer, 100, "%.1f", fnumber);
+            }
+            else if (number > 9999999999999) {
+                snprintf(buffer, 100, "%.2f", fnumber);
+            }
+            else if (number > 999999999999) {
+                snprintf(buffer, 100, "%.3f", fnumber);
+            }
+            else if (number > 99999999999) {
+                snprintf(buffer, 100, "%.4f", fnumber);
+            }
+            else if (number > 9999999999) {
+                snprintf(buffer, 100, "%.5f", fnumber);
+            }
+            else if (number > 999999999) {
+                snprintf(buffer, 100, "%.6f", fnumber);
+            }
+            else if (number > 99999999) {
+                snprintf(buffer, 100, "%.7f", fnumber);
+            }
+            else if (number > 9999999) {
+                snprintf(buffer, 100, "%.8f", fnumber);
+            }
+            else {
+                snprintf(buffer, 100, "%.9f", fnumber);
+            }
+            len = strlen(buffer);
+            end = buffer + len - 1;
+            while (*end == '0') {
+                *end = 0;
+                end--;
+            }
+            res = strlen(buffer) - 2;
+            return res;
+        }
+        std::string format_double(double num, int decimals, char del) {
+            char res[100];
+            *res = 0;
+            if (decimals < 0) {
+                decimals = plot::count_decimals(num);
+            }
+            if (decimals == 0) {
+                return util::format_int((int64_t) num, del);
+            }
+            if (fabs(num) < 9223372036854775807.0) {
+                char fr_str[100];
+                auto int_num    = (int64_t) fabs(num);
+                auto double_num = (double) (fabs(num) - int_num);
+                auto int_str    = util::format_int(int_num, del);
+                auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+                if (len > 0 && len < 100) {
+                    if (num < 0.0) {
+                        res[0] = '-';
+                        res[1] = 0;
+                    }
+                    strncat(res, int_str.c_str(), 99);
+                    strncat(res, fr_str + 1, 99);
+                }
+            }
+            return res;
+        }
+        bool has_pairs(TYPE type) {
+            return type != TYPE::CIRCLE && type != TYPE::FILLED_CIRCLE && type != TYPE::SQUARE;
+        }
+        bool has_radius(TYPE type) {
+            return type == TYPE::CIRCLE || type == TYPE::FILLED_CIRCLE || type == TYPE::SQUARE;
+        }
+        bool load_data(Plot* plot, std::string filename) {
+            auto buf = util::load_file(filename);
+            auto nv  = json::NodeVector();
+            auto ok  = 0;
+            auto x   = Scale();
+            auto y   = Scale();
+            auto l   = false;
+            auto h   = false;
+            auto v   = false;
+            plot->clear();
+            plot->redraw();
+            if (buf.p == nullptr) {
+                fl_alert("error: failed to load %s", filename.c_str());
+                return false;
+            }
+            auto err = json::parse(buf.p, nv, true);
+            if (err.pos >= 0) {
+                fl_alert("error: failed to parse %s on line %d and byte %d", filename.c_str(), (int) err.line, (int) err.pos);
+                return false;
+            }
+            for (const auto& n : json::find_children(nv, nv[0])) {
+                auto children = json::find_children(nv, n);
+                if (n.name == "descr" && n.is_object() == true) {
+                    for (auto& n2 : children) {
+                        if ((n2.name == "type" && n2.value == "flw::plot") || (n2.name == "version" && n2.value == "1")) {
+                            ok++;
+                        }
+                    }
+                }
+                else if (ok != 2) {
+                    fl_alert("error: unknown file format");
+                    return false;
+                }
+                else if ((n.name == "xscale" || n.name == "yscale") && n.is_object() == true) {
+                    auto& scale = (n.name == "xscale") ? x : y;
+                    for (auto& n2 : children) {
+                        if (n2.name == "label") {
+                            scale.label = n2.value;
+                        }
+                        else if (n2.name == "color") {
+                            scale.color = (Fl_Color) n2.toint();
+                        }
+                        else if (n2.name == "labels") {
+                            for (auto& n3 : json::find_children(nv, n2)) {
+                                if (n3.is_string() == true) {
+                                    scale.labels.push_back(n3.value);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (n.name == "view" && n.is_object() == true) {
+                    for (auto& n2 : children) {
+                        if (n2.name == "labels") {
+                            l = (bool) n2.tobool();
+                        }
+                        else if (n2.name == "horizontal") {
+                            h = (bool) n2.tobool();
+                        }
+                        else if (n2.name == "vertical") {
+                            v = (bool) n2.tobool();
+                        }
+                    }
+                }
+                else if (n.name == "line" && n.is_object() == true) {
+                    plot::Line line;
+                    for (auto& n2 : children) {
+                        if (n2.name == "width" && n2.is_number() == true) {
+                            line.width = (unsigned) n2.toint();
+                        }
+                        else if (n2.name == "color" && n2.is_number() == true) {
+                            line.color = (Fl_Color) n2.toint();
+                        }
+                        else if (n2.name == "type" && n2.is_string() == true) {
+                            line.type = plot::string_to_type(n2.value);
+                        }
+                        else if (n2.name == "label" && n2.is_string() == true) {
+                            line.label = n2.value;
+                        }
+                        else if (n2.name == "p" && n2.is_array()) {
+                            auto p = json::find_children(nv, n2);
+                            if (p.size() == 2) {
+                                line.points.push_back(plot::Point(p[0].tonumber(), p[1].tonumber()));
+                            }
+                        }
+                    }
+                    if (plot->add_line(line) == false) {
+                        fl_alert("error: failed to add line that started on position %u", (unsigned) n.textpos);
+                        plot->clear();
+                        return false;
+                    }
+                }
+            }
+            plot->labels(x.label, y.label);
+            plot->label_colors(x.color, y.color);
+            plot->view_options(l, h, v);
+            plot->custom_xlabels_for_points0(x.labels);
+            plot->custom_ylabels_for_points0(y.labels);
+            plot->resize();
+            return true;
+        }
+        void print(const PointVector& points) {
+            auto c = 1;
+            for (auto& p : points) {
+                fprintf(stderr, "%3d| X=%16.6f   Y=%16.6f\n", c++, p.x, p.y);
+            }
+            fflush(stderr);
+        }
+        bool save_data(const Plot* plot, std::string filename) {
+            json::NodeVector nv;
+            FLW_JSON_START(nv,
+                FLW_JSON_START_OBJECT(
+                    FLW_JSON_ADD_OBJECT("descr",
+                        FLW_JSON_ADD_STRING("type", "flw::plot")
+                        FLW_JSON_ADD_UINT("version", 1)
+                    )
+                    FLW_JSON_ADD_OBJECT("view",
+                        FLW_JSON_ADD_BOOL("labels", plot->_view.labels)
+                        FLW_JSON_ADD_BOOL("horizontal", plot->_view.horizontal)
+                        FLW_JSON_ADD_BOOL("vertical", plot->_view.vertical)
+                    )
+                    FLW_JSON_ADD_OBJECT("xscale",
+                        FLW_JSON_ADD_STRING("label", plot->_x.label)
+                        FLW_JSON_ADD_UINT("color", plot->_x.color)
+                        FLW_JSON_ADD_ARRAY_NL("labels",
+                            for (const auto& l : plot->_x.labels)
+                            FLW_JSON_ADD_STRING_TO_ARRAY(l)
+                        )
+                    )
+                    FLW_JSON_ADD_OBJECT("yscale",
+                        FLW_JSON_ADD_STRING("label", plot->_y.label)
+                        FLW_JSON_ADD_UINT("color", plot->_y.color)
+                        FLW_JSON_ADD_ARRAY_NL("labels",
+                            for (const auto& l : plot->_y.labels)
+                            FLW_JSON_ADD_STRING_TO_ARRAY(l)
+                        )
+                    )
+                    for (size_t f = 0; f < plot->_size; f++) {
+                    const auto& line = plot->_lines[f];
+                    if (line.points.size() > 0) {
+                    FLW_JSON_ADD_OBJECT("line",
+                        FLW_JSON_ADD_UINT("width", line.width)
+                        FLW_JSON_ADD_UINT("color", line.color)
+                        FLW_JSON_ADD_STRING("type", plot::type_to_string(line.type))
+                        FLW_JSON_ADD_STRING("label", line.label)
+                        for (const auto& point : line.points) {
+                        FLW_JSON_ADD_ARRAY_NL("p",
+                            FLW_JSON_ADD_NUMBER_TO_ARRAY(point.x)
+                            FLW_JSON_ADD_NUMBER_TO_ARRAY(point.y)
+                        )
+                        }
+                    )
+                    }
+                    }
+                )
+            )
+            auto js = json::tostring(nv);
+            return util::save_file(filename, js.c_str(), js.length());
+        }
+        TYPE string_to_type(std::string name) {
+            if (name == "TYPE::LINE_DASH") return TYPE::LINE_DASH;
+            else if (name == "TYPE::LINE_DOT") return TYPE::LINE_DOT;
+            else if (name == "TYPE::LINE_WITH_SQUARE") return TYPE::LINE_WITH_SQUARE;
+            else if (name == "TYPE::VECTOR") return TYPE::VECTOR;
+            else if (name == "TYPE::CIRCLE") return TYPE::CIRCLE;
+            else if (name == "TYPE::FILLED_CIRCLE") return TYPE::FILLED_CIRCLE;
+            else if (name == "TYPE::SQUARE") return TYPE::SQUARE;
+            else return TYPE::LINE;
+        }
+        std::string type_to_string(TYPE type) {
+            assert((size_t) type <= 8);
+            static const char* NAMES[] = { "TYPE::LINE", "TYPE::LINE_DASH", "TYPE::LINE_DOT", "TYPE::LINE_WITH_SQUARE", "TYPE::VECTOR", "TYPE::CIRCLE", "TYPE::FILLED_CIRCLE", "TYPE::SQUARE", "", "", };
+            return NAMES[(size_t) type];
+        }
     }
+}
+flw::plot::Scale::Scale() {
+    color  = FL_FOREGROUND_COLOR;
+    fr     = 0;
+    label  = "";
+    labels = StringVector();
+    max    = 0.0;
+    max2   = 0.0;
+    min    = 0.0;
+    min2   = 0.0;
+    pixel  = 0.0;
+    text   = 0;
+    tick   = 0.0;
+}
+void flw::plot::Scale::calc(double canvas_size) {
+    double range = max - min;
+    tick  = 0.0;
+    pixel = 0.0;
+    if (range > 0.000000001) {
+        double test_inc = 0.0;
+        double test_min = 0.0;
+        double test_max = 0.0;
+        int    ticker   = 0;
+        test_inc = pow(10.0, ceil(log10(range / 10.0)));
+        test_max = ((int) (max / test_inc)) * test_inc;
+        if (test_max < max) {
+            test_max += test_inc;
+        }
+        test_min = test_max;
+        do {
+            ++ticker;
+            test_min -= test_inc;
+        } while (test_min > min);
+        if (ticker < 10) {
+            test_inc = (ticker < 5) ? test_inc / 10.0 : test_inc / 2.0;
+            while ((test_min + test_inc) <= min) {
+                test_min += test_inc;
+            }
+            while ((test_max - test_inc) >= max) {
+                test_max -= test_inc;
+            }
+        }
+        min  = test_min;
+        max  = test_max;
+        tick = test_inc;
+        if (tick > 0.000000001) {
+            pixel = canvas_size / (max - min);
+        }
+    }
+    fr = plot::count_decimals(tick);
+}
+void flw::plot::Scale::debug(const char* s) const {
+#ifdef DEBUG
+    fprintf(stderr, "\tflw::plot::Scale: %s\n", s);
+    fprintf(stderr, "\t\tcolor  = %u\n", color);
+    fprintf(stderr, "\t\tfr     = %d\n", fr);
+    fprintf(stderr, "\t\tlabel  = %s\n", label.c_str());
+    fprintf(stderr, "\t\tlabels = %d strings\n", (int) labels.size());
+    fprintf(stderr, "\t\tmax    = %16.8f\n", max);
+    fprintf(stderr, "\t\tmax2   = %16.8f\n", max2);
+    fprintf(stderr, "\t\tmin    = %16.8f\n", min);
+    fprintf(stderr, "\t\tmin2   = %16.8f\n", min2);
+    fprintf(stderr, "\t\tpixel  = %16.8f\n", pixel);
+    fprintf(stderr, "\t\ttext   = %d px\n", text);
+    fprintf(stderr, "\t\ttick   = %16.8f\n", tick);
+    fflush(stderr);
+#else
+    (void) s;
 #endif
 }
-flw::Price::Price(const Price& price) {
-    date  = price.date;
-    high  = price.high;
-    low   = price.low;
-    close = price.close;
-    vol   = price.vol;
-}
-flw::Price::Price(Price&& price) {
-    date  = price.date;
-    high  = price.high;
-    low   = price.low;
-    close = price.close;
-    vol   = price.vol;
-}
-flw::Price& flw::Price::operator=(const Price& price) {
-    date  = price.date;
-    high  = price.high;
-    low   = price.low;
-    close = price.close;
-    vol   = price.vol;
-    return *this;
-}
-flw::Price& flw::Price::operator=(Price&& price) {
-    date  = price.date;
-    high  = price.high;
-    low   = price.low;
-    close = price.close;
-    vol   = price.vol;
-    return *this;
-}
-flw::PriceVector flw::Price::Atr(const PriceVector& in, std::size_t days) {
-    PriceVector res;
-    if (days > 1 && in.size() > days) {
-        auto        tot        = 0.0;
-        auto        prev_close = 0.0;
-        auto        prev_range = 0.0;
-        std::size_t f        = 0;
-        days--;
-        for (auto& price : in) {
-            if (f == 0) {
-                tot += price.high - price.low;
-            }
-            else {
-                auto t1 = price.high - price.low;
-                auto t2 = fabs(price.high - prev_close);
-                auto t3 = fabs(price.low - prev_close);
-                auto ra = 0.0;
-                if (t1 > t2 && t1 > t3) {
-                    ra = t1;
-                }
-                else if (t2 > t1 && t2 > t3) {
-                    ra = t2;
-                }
-                else {
-                    ra = t3;
-                }
-                tot += ra;
-                if (f == days) {
-                    prev_range = tot / (days + 1);
-                    res.push_back(Price(price.date, prev_range));
-                }
-                else if (f > days) {
-                    prev_range = ((prev_range * days) + ra) / (days + 1);
-                    res.push_back(Price(price.date, prev_range));
-                }
-            }
-            prev_close = price.close;
-            f++;
-        }
-    }
-    return res;
-}
-flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
-    int         month   = -1;
-    Date        current = Date::FromString(start_date);
-    Date        stop    = Date::FromString(stop_date);
-    PriceVector res;
-    if (range == Date::RANGE::HOUR && current.year() < 1970) {
-        return res;
-    }
-    if (range == Date::RANGE::FRIDAY) {
-        while (current.weekday() != Date::DAY::FRIDAY)
-            current.add_days(1);
-    }
-    else if (range == Date::RANGE::SUNDAY) {
-        while (current.weekday() != Date::DAY::SUNDAY) {
-            current.add_days(1);
-        }
-    }
-    while (current <= stop) {
-        Date date(1, 1, 1);
-        if (range == Date::RANGE::DAY) {
-            date = Date(current);
-            current.add_days(1);
-        }
-        else if (range == Date::RANGE::WEEKDAY) {
-            Date::DAY weekday = current.weekday();
-            if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
-                date = Date(current);
-            }
-            current.add_days(1);
-        }
-        else if (range == Date::RANGE::FRIDAY || range == Date::RANGE::SUNDAY) {
-            date = Date(current);
-            current.add_days(7);
-        }
-        else if (range == Date::RANGE::MONTH) {
-            if (current.month() != month) {
-                current.day(current.month_days());
-                date = Date(current);
-                month = current.month();
-            }
-            current.add_months(1);
-        }
-        else if (range == Date::RANGE::HOUR) {
-            date = Date(current);
-            current.add_seconds(3600);
-        }
-        else if (range == Date::RANGE::MIN) {
-            date = Date(current);
-            current.add_seconds(60);
-        }
-        else if (range == Date::RANGE::SEC) {
-            date = Date(current);
-            current.add_seconds(1);
-        }
-        if (date.year() > 1) {
-            Price price;
-            if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
-                price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
-            }
-            else {
-                price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
-            }
-            if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
-                res.push_back(price);
+void flw::plot::Scale::measure_text(int cw) {
+    if (labels.size() > 0) {
+        text = 0;
+        for (auto& l : labels) {
+            if ((int) l.length() > text) {
+                text = l.length();
             }
         }
-    }
-    return res;
-}
-flw::PriceVector flw::Price::DayToMonth(const PriceVector& in) {
-    PriceVector res;
-    Price       current;
-    Date        stop;
-    Date        pdate;
-    std::size_t f = 0;
-    for (auto& price : in) {
-        if (f == 0) {
-            current = price;
-            stop = Date::FromString(current.date.c_str());
-            stop.day_last();
-        }
-        else {
-            pdate = Date::FromString(price.date.c_str());
-            if (stop < pdate) {
-                current.date = stop.format();
-                res.push_back(current);
-                current = price;
-                stop = Date::FromString(current.date.c_str());
-                stop.day_last();
-            }
-            else {
-                if (price.high > current.high) {
-                    current.high = price.high;
-                }
-                if (price.low < current.low) {
-                    current.low = price.low;
-                }
-                current.vol   += price.vol;
-                current.close  = price.close;
-            }
-        }
-        if (f + 1 == in.size()) {
-            auto s = stop.format();
-            stop.day_last();
-            current.date = s;
-            res.push_back(current);
-        }
-        f++;
-    }
-    return res;
-}
-flw::PriceVector flw::Price::DayToWeek(const PriceVector& in, Date::DAY weekday) {
-    Price       current;
-    Date        stop;
-    Date        pdate;
-    PriceVector res;
-    std::size_t f = 0;
-    for (auto& price : in) {
-        if (f == 0) {
-            stop = Date::FromString(price.date.c_str());
-            if (weekday > stop.weekday()) {
-                stop.weekday(weekday);
-            }
-            else if (weekday < stop.weekday()) {
-                stop.weekday(weekday);
-                stop.add_days(7);
-            }
-            current = price;
-        }
-        else {
-            pdate = Date::FromString(price.date.c_str());
-            if (stop < pdate) {
-                current.date = stop.format();
-                res.push_back(current);
-                current = price;
-            }
-            else {
-                if (price.high > current.high) {
-                    current.high = price.high;
-                }
-                if (price.low < current.low) {
-                    current.low = price.low;
-                }
-                current.vol   += price.vol;
-                current.close  = price.close;
-            }
-            while (stop < pdate) {
-                stop.add_days(7);
-            }
-            current.date = stop.format();
-        }
-        if (f + 1 == in.size()) {
-            current.date = stop.format();
-            res.push_back(current);
-        }
-        f++;
-    }
-    return res;
-}
-flw::PriceVector flw::Price::ExponentialMovingAverage(const PriceVector& in, std::size_t days) {
-    PriceVector res;
-    if (days > 1 && days < in.size()) {
-        auto         sma   = 0.0;
-        auto         prev  = 0.0;
-        auto         multi = 2.0 / double(days + 1.0);
-        std::size_t f      = 0;
-        for (auto& price : in) {
-            if (f < (days - 1)) {
-                sma += price.close;
-            }
-            else if (f == (days - 1)) {
-                sma += price.close;
-                prev = sma / days;
-                res.push_back(Price(price.date, prev));
-            }
-            else {
-                prev = ((price.close - prev) * multi) + prev;
-                res.push_back(Price(price.date, prev));
-            }
-            f++;
-        }
-    }
-    return res;
-}
-std::string flw::Price::format_date(Date::FORMAT format) const {
-    auto date = flw::Date::FromString(this->date.c_str());
-    return date.format(format);
-}
-std::string flw::Price::format_price(Date::FORMAT format, bool hlc, bool v) const {
-    auto d = flw::Date::FromString(this->date.c_str());
-    if (v == true) {
-        return flw::util::format("%s\t%f\t%f\t%f\t%f", d.format(format).c_str(), high, low, close, vol);
-    }
-    else if (hlc == false || (fabs(close - low) < 0.000001 && fabs(close - high) < 0.000001)) {
-        return flw::util::format("%s\t%f", d.format(format).c_str(), close);
+        text *= cw;
     }
     else {
-        return flw::util::format("%s\t%f\t%f\t%f", d.format(format).c_str(), high, low, close);
+        const auto dec = (fr > 0) ? fr : -1;
+        const auto l1  = plot::format_double(min, dec, ' ');
+        const auto l2  = plot::format_double(max, dec, ' ');
+        text = (l1.length() > l2.length()) ? l1.length() * cw : l2.length() * cw;
     }
 }
-flw::PriceVector flw::Price::Momentum(const PriceVector& in, std::size_t days) {
-    std::size_t start = days - 1;
-    PriceVector res;
-    if (days > 1 && days < in.size()) {
-        for (auto f = start; f < in.size(); f++) {
-            auto& price1 = in[f];
-            auto& price2 = in[f - start];
-            res.push_back(Price(price1.date, price1.close - price2.close));
+void flw::plot::Scale::reset_min_max() {
+    min = min2 = plot::MAX;
+    max = max2 = plot::MIN;
+}
+flw::plot::Line::Line() {
+    color   = FL_BLUE;
+    type    = plot::TYPE::LINE;
+    visible = true;
+    width   = 1;
+}
+flw::Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+    end();
+    clip_children(1);
+    color(FL_BACKGROUND2_COLOR);
+    labelcolor(FL_FOREGROUND_COLOR);
+    box(FL_BORDER_BOX);
+    tooltip(
+        "Press right button for menu.\n"
+        "Press left button to show X, Y values and possible found point.\n"
+        "Press ctrl + left button to increase match radius.\n"
+        "Press 1 - 9 to select which line to use.\n"
+        "Press shift + 1 - 9 to toggle line visibility."
+    );
+    _menu = new Fl_Menu_Button(0, 0, 0, 0);
+    add(_menu);
+    _menu->add(flw::plot::SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(flw::plot::SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(flw::plot::SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(flw::plot::SAVE_FILE, 0, Plot::_CallbackSave, this);
+#ifdef DEBUG
+    _menu->add(flw::plot::PRINT_DEBUG, 0, Plot::_CallbackDebug, this);
+#endif
+    _menu->type(Fl_Menu_Button::POPUP3);
+    clear();
+    update_pref();
+    view_options();
+}
+bool flw::Plot::add_line(const flw::plot::PointVector& points, flw::plot::TYPE type, unsigned width, std::string label, Fl_Color color) {
+    if (_size >= plot::MAX_LINES || width == 0 || width > 100) {
+        return false;
+    }
+    _lines[_size].points    = points;
+    _lines[_size].label     = label;
+    _lines[_size].width     = width;
+    _lines[_size].color     = color;
+    _lines[_size].type      = type;
+    _lines[_size++].visible = true;
+    _calc                   = true;
+    return true;
+}
+bool flw::Plot::add_line(const plot::Line& line) {
+    if (_size >= plot::MAX_LINES || line.width < 1 || line.width > 100) {
+        return false;
+    }
+    _lines[_size++] = line;
+    return true;
+}
+void flw::Plot::_calc_min_max() {
+    _x.reset_min_max();
+    _y.reset_min_max();
+    for (size_t f = 0; f < _size; f++) {
+        for (auto& p : _lines[f].points) {
+            if (p.x < _x.min) {
+                _x.min = p.x;
+            }
+            if (p.x > _x.max) {
+                _x.max = p.x;
+            }
+            if (p.y < _y.min) {
+                _y.min = p.y;
+            }
+            if (p.y > _y.max) {
+                _y.max = p.y;
+            }
         }
     }
-    return res;
+    _x.min2 = _x.min;
+    _x.max2 = _x.max;
+    _y.min2 = _y.min;
+    _y.max2 = _y.max;
 }
-flw::PriceVector flw::Price::MovingAverage(const PriceVector& in, std::size_t days) {
-    PriceVector res;
-    if (days > 1 && days <= 500 && days < in.size()) {
-        std::size_t count = 0;
-        auto        sum   = 0.0;
-        auto        tmp   = new double[in.size() + 1];
-        for (auto& price : in) {
-            count++;
-            if (count < days) {
-                tmp[count - 1] = price.close;
-                sum += price.close;
-            }
-            else if (count == days) {
-                tmp[count - 1] = price.close;
-                sum += price.close;
-                res.push_back(Price(price.date, sum / days));
-            }
-            else {
-                tmp[count - 1] = price.close;
-                sum -= tmp[count - (days + 1)];
-                sum += price.close;
-                res.push_back(Price(price.date, sum / days));
+void flw::Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
+    auto self = (Plot*) plot_object;
+    self->debug();
+}
+void flw::Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
+    auto self = (Plot*) plot_object;
+    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
+}
+void flw::Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
+    auto self = (Plot*) plot_object;
+    self->_view.labels     = flw::menu::item_value(self->_menu, plot::SHOW_LABELS);
+    self->_view.horizontal = flw::menu::item_value(self->_menu, plot::SHOW_HLINES);
+    self->_view.vertical   = flw::menu::item_value(self->_menu, plot::SHOW_VLINES);
+    self->redraw();
+}
+void flw::Plot::clear() {
+    _calc           = false;
+    _ch             = 0;
+    _ct             = 0;
+    _cw             = 0;
+    _h              = 0;
+    _selected_line  = 0;
+    _selected_point = -1;
+    _size           = 0;
+    _w              = 0;
+    _x              = flw::plot::Scale();
+    _y              = flw::plot::Scale();
+    selection_color(FL_FOREGROUND_COLOR);
+    clear_points();
+}
+void flw::Plot::clear_points() {
+    for (size_t f = 0; f < _size; f++) {
+        _lines[f] = plot::Line();
+    }
+}
+void flw::Plot::_create_tooltip(bool ctrl) {
+    const auto X   = Fl::event_x();
+    const auto Y   = Fl::event_y();
+    const auto old = _tooltip;
+    _tooltip        = "";
+    _selected_point = -1;
+    if (X >= _area.x && X < _area.x2() && Y >= _area.y && Y < _area.y2()) {
+        auto fr = (_x.fr > _y.fr) ? _x.fr : _y.fr;
+        if (_selected_line < _size) {
+            const plot::Line&        line   = _lines[_selected_line];
+            const bool               radius = flw::plot::has_radius(line.type);
+            const plot::PointVector& points = line.points;
+            const int                rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
+            const double             xv1    = ((double) (X - _area.x - rad) / _x.pixel) + _x.min;
+            const double             xv2    = ((double) (X - _area.x + rad) / _x.pixel) + _x.min;
+            const double             yv1    = ((double) (_area.y2() - Y - rad) / _y.pixel) + _y.min;
+            const double             yv2    = ((double) (_area.y2() - Y + rad) / _y.pixel) + _y.min;
+            for (size_t i = 0; i < points.size(); i++) {
+                const plot::Point& point = points[i];
+                if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
+                    auto xl  = plot::format_double(point.x, fr, ' ');
+                    auto yl  = plot::format_double(point.y, fr, ' ');
+                    auto len = (xl.length() > yl.length()) ? xl.length() : yl.length();
+                    _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
+                    _selected_point = i;
+                    break;
+                }
             }
         }
-        delete [] tmp;
+        if (_tooltip == "") {
+            auto xv  = ((double) (X - _area.x) / _x.pixel) + _x.min;
+            auto yv  = ((double) (_area.y2() - Y) / _y.pixel) + _y.min;
+            auto xl  = plot::format_double(xv, fr, ' ');
+            auto yl  = plot::format_double(yv, fr, ' ');
+            auto len = (xl.length() > yl.length()) ? xl.length() : yl.length();
+            _tooltip = flw::util::format("X = %*s\nY = %*s", len, xl.c_str(), len, yl.c_str());
+        }
     }
-    return res;
-}
-void flw::Price::print() const {
-    printf("Price| date: %s   high=%12.4f   low=%12.4f   close=%12.4f   vol=%12.0f\n", date.c_str(), high, low, close, vol);
-    fflush(stdout);
-}
-void flw::Price::Print(const PriceVector& in) {
-    printf("PriceVector(%d)\n", (int) in.size());
-    for (auto& price : in) {
-        price.print();
+    if (_tooltip != "" || old != "") {
+        redraw();
     }
 }
-flw::PriceVector flw::Price::RSI(const PriceVector& in, std::size_t days) {
-    PriceVector res;
-    if (days > 1 && days <= in.size()) {
-        auto avg_gain = 0.0;
-        auto avg_loss = 0.0;
-        for (std::size_t f = 1; f < in.size(); f++) {
-            auto  diff  = 0.0;
-            auto& price = in[f];
-            auto& prev  = in[f - 1];
-            diff = price.close - prev.close;
-            if (f <= days) {
-                if (diff > 0) {
-                    avg_gain += diff;
+void flw::Plot::debug() const {
+#ifdef DEBUG
+    fprintf(stderr, "\nflw::Plot: %d\n", (int) _size);
+    fprintf(stderr, "\tcanvas          = (%d, %d) - (%d, %d) - (%d, %d)\n", x(), y(), w(), h(), x() + w(), y() + h());
+    fprintf(stderr, "\tarea            = (%d, %d) - (%d, %d) - (%d, %d)\n", _area.x, _area.y, _area.w, _area.h, _area.x + _area.w, _area.y + _area.h);
+    fprintf(stderr, "\tcw, ch          = (%d, %d)\n", _cw, _ch);
+    fprintf(stderr, "\tselected_line   = %d\n", (int) _selected_line);
+    fprintf(stderr, "\tselected_point  = %d\n", (int) _selected_point);
+    fprintf(stderr, "\tline_count      = %d\n", (int) _size);
+    fprintf(stderr, "\tview_labels     = %s\n", _view.labels ? "YES" : "NO");
+    fprintf(stderr, "\tview_horizontal = %s\n", _view.horizontal ? "YES" : "NO");
+    fprintf(stderr, "\tview_vertical   = %s\n", _view.vertical ? "YES" : "NO");
+    _x.debug("X");
+    _y.debug("Y");
+    for (size_t f = 0; f < _size; f++) {
+        fprintf(stderr, "\tflw::Plot::Line: %d\n", (int) f);
+        fprintf(stderr, "\t\tcolor   = %u\n", _lines[f].color);
+        fprintf(stderr, "\t\tlabel   = '%s'\n", _lines[f].label.c_str());
+        fprintf(stderr, "\t\tpoints  = %d\n", (int) _lines[f].points.size());
+        fprintf(stderr, "\t\ttype    = %d\n", (int) _lines[f].type);
+        fprintf(stderr, "\t\tvisible = %s\n", _lines[f].visible ? "YES" : "NO");
+        fprintf(stderr, "\t\twidth   = %d px\n", (int) _lines[f].width);
+    }
+    fflush(stderr);
+#endif
+}
+void flw::Plot::draw() {
+#ifdef DEBUG
+#endif
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    Fl_Group::draw();
+    if (_area.w < 50 || _area.h < 50 || _x.min >= _x.max || _x.pixel * _x.tick < 1.0 || _y.min >= _y.max || _y.pixel * _y.tick < 1.0) {
+        return;
+    }
+    fl_push_clip(x(), y(), w(), h());
+    _draw_xlabels();
+    _draw_xlabels2();
+    _draw_ylabels();
+    _draw_ylabels2();
+    _draw_labels();
+    fl_pop_clip();
+    fl_push_clip(_area.x, _area.y, _area.w, _area.h);
+    _draw_lines();
+    _draw_line_labels();
+    _draw_tooltip();
+    fl_pop_clip();
+    fl_color(FL_FOREGROUND_COLOR);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(_area.x, _area.y, _area.w, _area.h, FL_FOREGROUND_COLOR);
+    fl_line_style(0);
+#ifdef DEBUG
+#endif
+}
+void flw::Plot::_draw_labels() {
+    if (_x.label != "") {
+        fl_color(_x.color);
+        fl_draw (_x.label.c_str(), _area.x, y() + h() - _ch, _area.w, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+    }
+    if (_y.label != "") {
+        auto y = _area.y + (_area.h / 2) + (_y.label.length() * _cw / 2);
+        fl_color(_y.color);
+        fl_draw (90, _y.label.c_str(), x() + _ch, y);
+    }
+}
+void flw::Plot::_draw_line_labels() {
+    if (_view.labels == true) {
+        const int X = _area.x + 6;
+        int       Y = _area.y + 6;
+        int       W = 0;
+        int       H = 0;
+        for (size_t f = 0; f < _size; f++) {
+            const auto& label = _lines[f].label;
+            if (label != "") {
+                H++;
+                if ((int) label.length() * _cw > W) {
+                    W = label.length() * _cw;
+                }
+            }
+        }
+        if (W > 0) {
+            H *= flw::PREF_FIXED_FONTSIZE;
+            W += _cw * 2;
+            fl_color(FL_BACKGROUND2_COLOR);
+            fl_line_style(FL_SOLID, 1);
+            fl_rectf(X, Y, W + 8, H + 8);
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_line_style(FL_SOLID, 1);
+            fl_rect(X, Y, W + 8, H + 8);
+            for (size_t f = 0; f < _size; f++) {
+                const plot::Line& line = _lines[f];
+                if (line.label != "") {
+                    auto label = line.label;
+                    if (f == _selected_line) {
+                        label = "@-> " + label;
+                    }
+                    fl_color((line.visible == false) ? FL_GRAY : _lines[f].color);
+                    fl_line_style(FL_SOLID, 1);
+                    fl_draw(label.c_str(), X + 4, Y + 4, W, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE, nullptr, 1);
+                    Y += flw::PREF_FIXED_FONTSIZE;
+                }
+            }
+            fl_line_style(0);
+        }
+    }
+}
+void flw::Plot::_draw_lines() {
+    const int X = _area.x;
+    const int Y = _area.y2() - 1;
+    for (size_t f = 0; f < _size; f++) {
+        const plot::Line& data  = _lines[f];
+        const plot::TYPE  type  = data.type;
+        const int         size1 = data.width;
+        const int         size2 = size1 / 2;
+        int               x1    = 10000;
+        int               y1    = 0;
+        if (data.visible == false) {
+            continue;
+        }
+        for (size_t i = 0; i < data.points.size(); i++) {
+            const plot::Point& p = data.points[i];
+            const int          x = X + (int) ((p.x - _x.min) * _x.pixel);
+            const int          y = Y - (int) ((p.y - _y.min) * _y.pixel);
+            if (type == plot::TYPE::LINE || type == plot::TYPE::LINE_DASH || type == plot::TYPE::LINE_DOT || type == plot::TYPE::LINE_WITH_SQUARE) {
+                if (x1 == 10000) {
+                    x1 = x;
+                    y1 = y;
                 }
                 else {
-                    avg_loss += fabs(diff);
+                    fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                    _draw_lines_style(type, size1);
+                    fl_line(x1, y1, x, y);
+                    x1 = x;
+                    y1 = y;
+                }
+                if (type == plot::TYPE::LINE_WITH_SQUARE) {
+                    fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                    _draw_lines_style(type, size1);
+                    fl_rectf(x - size1 - 3, y - size1 - 3, size1 * 2 + 6, size1 * 2 + 6);
                 }
             }
-            if (f == days) {
-                avg_gain = avg_gain / days;
-                avg_loss = avg_loss / days;
-                res.push_back(Price(price.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
+            else if (type == plot::TYPE::VECTOR) {
+                if (x1 == 10000) {
+                    x1 = x;
+                    y1 = y;
+                }
+                else {
+                    fl_color(((_selected_point == i || _selected_point == i - 1) && _selected_line == f) ? selection_color() : data.color);
+                    _draw_lines_style(type, size1);
+                    fl_line(x, y, x1, y1);
+                    x1 = 10000;
+                }
             }
-            else if (f > days) {
-                avg_gain = ((avg_gain * (days - 1)) + ((diff > 0) ? fabs(diff) : 0)) / days;
-                avg_loss = ((avg_loss * (days - 1)) + ((diff < 0) ? fabs(diff) : 0)) / days;
-                res.push_back(Price(price.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
+            else if (type == plot::TYPE::CIRCLE) {
+                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                _draw_lines_style(type, 1);
+                fl_circle(x, y - 1, size2);
+            }
+            else if (type == plot::TYPE::FILLED_CIRCLE) {
+                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                _draw_lines_style(type, 1);
+                fl_begin_polygon();
+                fl_circle(x, y - 1, size2);
+                fl_end_polygon();
+            }
+            else if (type == plot::TYPE::SQUARE) {
+                fl_color((_selected_point == i && _selected_line == f) ? selection_color() : data.color);
+                _draw_lines_style(type, 1);
+                fl_rectf(x - size2, y - size2 - 1, size1, size1);
             }
         }
     }
-    return res;
+    fl_line_style(0);
 }
-flw::PriceVector flw::Price::StdDev(const PriceVector& in, std::size_t days) {
-    PriceVector res;
-    if (days > 2 && days <= in.size()) {
-        std::size_t count  = 0;
-        auto        sum    = 0.0;
-        Price       price2;
-        for (auto& price : in) {
-            count++;
-            sum += price.close;
-            if (count >= days) {
-                auto mean = sum / days;
-                auto dev  = 0.0;
-                for (std::size_t j = count - days; j < count; j++) {
-                    price2 = in[j];
-                    auto tmp = price2.close - mean;
-                    tmp *= tmp;
-                    dev  += tmp;
-                }
-                dev /= days;
-                dev = sqrt(dev);
-                price2 = in[count - days];
-                sum -= price2.close;
-                price2 = in[count - 1];
-                res.push_back(Price(price2.date, dev));
-            }
-        }
+void flw::Plot::_draw_lines_style(plot::TYPE type, int size) {
+    if (type == plot::TYPE::LINE) {
+        fl_line_style(FL_SOLID, size);
     }
-    return res;
+    else if (type == plot::TYPE::LINE_DASH) {
+        fl_line_style(FL_DASH, size);
+    }
+    else if (type == plot::TYPE::LINE_DOT) {
+        fl_line_style(FL_DOT, size);
+    }
+    else if (type == plot::TYPE::VECTOR) {
+        fl_line_style(FL_SOLID, size);
+    }
+    else if (type == plot::TYPE::LINE_WITH_SQUARE) {
+        fl_line_style(FL_SOLID, size);
+    }
+    else if (type == plot::TYPE::CIRCLE) {
+        fl_line_style(FL_SOLID, size);
+    }
+    else if (type == plot::TYPE::FILLED_CIRCLE) {
+        fl_line_style(FL_SOLID, size);
+    }
+    else if (type == plot::TYPE::SQUARE) {
+        fl_line_style(FL_SOLID, size);
+    }
+    else {
+        fl_line_style(FL_SOLID, 1);
+    }
 }
-flw::PriceVector flw::Price::Stochastics(const PriceVector& in, std::size_t days) {
-    auto        high = 0.0;
-    auto        low  = 0.0;
-    PriceVector res;
-    for (std::size_t f = 0; f < in.size(); f++) {
-        auto& price = in[f];
-        if ((f + 1) >= days) {
-            high = price.high;
-            low  = price.low;
-            for (std::size_t j = (f + 1) - days; j < (f + 1) - 1; j++) {
-                auto& price2 = in[j];
-                if (price2.high > high) {
-                    high = price2.high;
-                }
-                if (price2.low < low) {
-                    low = price2.low;
-                }
+void flw::Plot::_draw_tooltip() {
+    if (_tooltip == "") {
+        return;
+    }
+    auto X = Fl::event_x();
+    auto Y = Fl::event_y();
+    if (X > _area.x2() - flw::PREF_FIXED_FONTSIZE * 19) {
+        X -= flw::PREF_FIXED_FONTSIZE * 18;
+    }
+    else {
+        X += flw::PREF_FIXED_FONTSIZE * 2;
+    }
+    if (Y > _area.y2() - flw::PREF_FIXED_FONTSIZE * 8) {
+        Y -= flw::PREF_FIXED_FONTSIZE * 6;
+    }
+    else {
+        Y += flw::PREF_FIXED_FONTSIZE * 2;
+    }
+    fl_color(FL_BACKGROUND2_COLOR);
+    fl_line_style(FL_SOLID, 1);
+    fl_rectf(X, Y, flw::PREF_FIXED_FONTSIZE * 16, flw::PREF_FIXED_FONTSIZE * 4);
+    fl_color(FL_FOREGROUND_COLOR);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * 16, flw::PREF_FIXED_FONTSIZE * 4);
+    fl_line_style(FL_SOLID, 1);
+    fl_line(Fl::event_x(), _area.y, Fl::event_x(), _area.y2() - 1);
+    fl_line(_area.x, Fl::event_y(), _area.x2() - 1, Fl::event_y());
+    fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * 14, flw::PREF_FIXED_FONTSIZE * 4, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+    fl_line_style(0);
+}
+void flw::Plot::_draw_xlabels() {
+    double       X    = _area.x;
+    const int    Y    = _area.y2();
+    const int    W    = x2();
+    const double inc  = _x.pixel * _x.tick;
+    double       val  = _x.min;
+    int          last = -10'000;
+    const int    tw   = _x.text / 2;
+    while (X < _area.x2()) {
+        if (_view.vertical == true && X > (_area.x + 4) && X < (_area.x2() - 4)) {
+            fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
+            fl_line(X, _area.y + 1, X, _area.y2() - 2);
+        }
+        if (X > (last + tw) && (X + tw) < W) {
+            auto label = plot::format_double(val, _x.fr, '\'');
+            if ((int) (X + 1) == (_area.x2() - 1)) {
+                X += 1.0;
             }
-            auto diff1 = price.close - low;
-            auto diff2 = high - low;
-            if (diff2 > 0.0001) {
-                auto kval  = 100 * (diff1 / diff2);
-                res.push_back(Price(price.date, kval));
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_line(X, Y, X, Y + _ct * 2);
+            if (_x.labels.size() == 0) {
+                fl_draw(label.c_str(), X - tw, Y + _ct * 2, tw * 2, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            }
+            last = X + tw + _cw;
+        }
+        else {
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_line(X, Y, X, Y + _ct);
+        }
+        X   += inc;
+        val += _x.tick;
+    }
+}
+void flw::Plot::_draw_xlabels2() {
+    if (_x.labels.size() > 0) {
+        auto index = (size_t) 0;
+        auto pair  = plot::has_pairs(_lines[0].type);
+        for (size_t i = 0; i < _lines[0].points.size(); i++) {
+            const plot::Point& point = _lines[0].points[i];
+            if (index >= _x.labels.size()) {
+                break;
+            }
+            if ((i % 2 == 1 && pair == true) || pair == false) {
+                const int X = _area.x + (int) ((point.x - _x.min) * _x.pixel);
+                const int W = _x.labels[index].length() * _cw / 2;
+                fl_draw(_x.labels[index].c_str(), X - W, _area.y2() + _ct * 2, W * 2, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+                index++;
             }
         }
     }
-    return res;
+}
+void flw::Plot::_draw_ylabels() {
+    const int    X    = x();
+    double       Y    = _area.y2() - 1.0;
+    const int    W    = _area.x - X - flw::PREF_FIXED_FONTSIZE;
+    const double inc  = _y.pixel * _y.tick;
+    double       val  = _y.min;
+    int          last = 10'000;
+    while ((int) (Y + 0.5) >= _area.y) {
+        if (_view.horizontal == true && Y > (_area.y + _ct) && Y < (_area.y2() - _ct)) {
+            fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
+            fl_line(_area.x + 1, Y, _area.x2() - 2, Y);
+        }
+        if (Y < last) {
+            const auto label = plot::format_double(val, _y.fr, '\'');
+            if (Y < (double) _area.y) {
+                Y = _area.y;
+            }
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_line(_area.x, Y, _area.x - _ct * 2, Y);
+            if (_y.labels.size() == 0) {
+                fl_draw(label.c_str(), X, Y - _ct * 2, W, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+            }
+            last = Y - flw::PREF_FIXED_FONTSIZE;
+        }
+        else {
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_line(_area.x, Y, _area.x - _ct, Y);
+        }
+        Y   -= inc;
+        val += _y.tick;
+    }
+}
+void flw::Plot::_draw_ylabels2() {
+    if (_y.labels.size() > 0) {
+        size_t     index = 0;
+        const bool pair  = plot::has_pairs(_lines[0].type);
+        for (size_t i = 0; i < _lines[0].points.size(); i++) {
+            const plot::Point& p = _lines[0].points[i];
+            if (index >= _y.labels.size()) {
+                break;
+            }
+            if ((i % 2 == 1 && pair == true) || pair == false) {
+                const int Y = _area.y2() - 1 - ((p.y - _y.min) * _y.pixel);
+                fl_draw(_y.labels[index].c_str(), x() + _cw * 3, Y - _ct * 2, _y.text, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                index++;
+            }
+        }
+    }
+}
+int flw::Plot::handle(int event) {
+    if (event == FL_PUSH) {
+        if (Fl::event_button1() != 0) {
+            _create_tooltip(Fl::event_ctrl());
+            if (_tooltip != "") {
+                return 1;
+            }
+        }
+        else if (Fl::event_button3() != 0) {
+            flw::menu::set_item(_menu, plot::SHOW_LABELS, _view.labels);
+            flw::menu::set_item(_menu, plot::SHOW_HLINES, _view.horizontal);
+            flw::menu::set_item(_menu, plot::SHOW_VLINES, _view.vertical);
+            _menu->popup();
+            return 1;
+        }
+    }
+    else if (event == FL_DRAG) {
+        _create_tooltip(Fl::event_ctrl());
+        if (_tooltip != "") {
+            return 1;
+        }
+    }
+    else if (event == FL_MOVE) {
+        if (_tooltip != "") {
+            _tooltip = "";
+            redraw();
+        }
+    }
+    else if (event == FL_KEYDOWN) {
+        auto key = Fl::event_key();
+        if (key >= '0' && key <= '9') {
+            auto line = key - '0';
+            if (line == 0) {
+                line = 10;
+            }
+            line--;
+            if ((size_t) line >= _size) {
+                line = 0;
+            }
+            if (Fl::event_shift() != 0) {
+                _lines[line].visible = !_lines[line].visible;
+            }
+            else {
+                _selected_line = line;
+            }
+            redraw();
+        }
+    }
+    return Fl_Group::handle(event);
+}
+void flw::Plot::resize(int X, int Y, int W, int H) {
+    Fl_Widget::resize(X, Y, W, H);
+    if (_calc == false && _w == W && _h == H) {
+        return;
+    }
+    if (_size == 0) {
+        return;
+    }
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
+    _cw = 0;
+    _ch = 0;
+    fl_measure("X", _cw, _ch, 0);
+    if (_calc == true) {
+        _calc_min_max();
+        _x.calc(W - flw::PREF_FIXED_FONTSIZE * 6);
+        _y.calc(H - flw::PREF_FIXED_FONTSIZE * 6);
+        _x.measure_text(_cw);
+        _y.measure_text(_cw);
+    }
+    _area.x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y.text + ((_y.label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _area.y = Y + flw::PREF_FIXED_FONTSIZE;
+    _area.w = W - (_area.x - X) - flw::PREF_FIXED_FONTSIZE * 2;
+    _area.h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x.label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _x.calc(_area.w - 1);
+    _y.calc(_area.h - 1);
+    _calc = false;
+    _w    = W;
+    _h    = H;
+}
+void flw::Plot::update_pref() {
+    _menu->textfont(flw::PREF_FONT);
+    _menu->textsize(flw::PREF_FONTSIZE);
+}
+namespace flw {
+    RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label, std::string clear_label) {
+        _menu     = menu;
+        _callback = file_callback;
+        _base     = base_label;
+        _clear    = clear_label;
+        _user     = userdata;
+        _max      = 10;
+        _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
+    }
+    void RecentMenu::_add(std::string file, bool append) {
+        if (file == "") {
+            _files.clear();
+        }
+        else if (append == true) {
+            _add_string(_files, _max, file);
+        }
+        else {
+            _insert_string(_files, _max, file);
+        }
+        auto index = _menu->find_index(_base.c_str());
+        if (index >= 0) {
+            _menu->clear_submenu(index);
+            _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
+        }
+        for (const auto& file : _files) {
+            _menu->add((_base + "/" + flw::util::fix_menu_string(file)).c_str(), 0, _callback, _user);
+        }
+    }
+    size_t RecentMenu::_add_string(StringVector& in, size_t max_size, std::string string) {
+        for (auto it = in.begin(); it != in.end(); ++it) {
+            if (*it == string) {
+                in.erase(it);
+                break;
+            }
+        }
+        in.push_back(string);
+        while (in.size() > max_size) in.erase(in.begin());
+        return in.size();
+    }
+    void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
+        auto self = (RecentMenu*) o;
+        self->_add("", false);
+    }
+    size_t RecentMenu::_insert_string(StringVector& in, size_t max_size, std::string string) {
+        for (auto it = in.begin(); it != in.end(); ++it) {
+            if (*it == string) {
+                in.erase(it);
+                break;
+            }
+        }
+        in.insert(in.begin(), string);
+        while (in.size() > max_size) in.pop_back();
+        return (int) in.size();
+    }
+    void RecentMenu::load_pref(Fl_Preferences& pref, std::string base_name) {
+        auto index = 1;
+        char buffer[1000];
+        while (index <= 100) {
+            auto key = flw::util::format("%s%d", base_name.c_str(), index++);
+            pref.get(key.c_str(), buffer, "", 1000);
+            if (*buffer == 0) {
+                break;
+            }
+            _add(buffer, true);
+        }
+    }
+    void RecentMenu::save_pref(Fl_Preferences& pref, std::string base_name) {
+        auto index = 1;
+        for (auto& s : _files) {
+            pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), s.c_str());
+        }
+        pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), "");
+    }
 }
 namespace flw {
     static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
@@ -6319,6 +7527,7 @@ void flw::TableDisplay::_update_scrollbars() {
     _ver->Fl_Valuator::value(_start_row);
     _hor->Fl_Valuator::value(_start_col);
 }
+#include <assert.h>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_File_Chooser.H>
@@ -6332,6 +7541,42 @@ const char* flw::TableEditor::SELECT_DATE = "Select Date";
 const char* flw::TableEditor::SELECT_DIR  = "Select Directory";
 const char* flw::TableEditor::SELECT_FILE = "Select File";
 const char* flw::TableEditor::SELECT_LIST = "Select String";
+namespace flw {
+    namespace tableeditor {
+        double to_double(std::string string, double def) {
+            try { return std::stod(string.c_str(), 0); }
+            catch (...) { return def; }
+        }
+        int to_doubles(std::string string, double numbers[], size_t size) {
+            auto end = (char*) nullptr;
+            auto in  = string.c_str();
+            auto f   = (size_t) 0;
+            errno = 0;
+            for (; f < size; f++) {
+                numbers[f] = strtod(in, &end);
+                if (errno != 0 || in == end) return f;
+                in = end;
+            }
+            return f;
+        }
+        int64_t to_int(std::string string, int64_t def) {
+            try { return std::stoll(string.c_str(), 0, 0); }
+            catch (...) { return def; }
+        }
+        int to_ints(std::string string, int64_t numbers[], size_t size) {
+            auto end = (char*) nullptr;
+            auto in  = string.c_str();
+            auto f   = (size_t) 0;
+            errno = 0;
+            for (; f < size; f++) {
+                numbers[f] = strtoll(in, &end, 10);
+                if (errno != 0 || in == end) return f;
+                in = end;
+            }
+            return f;
+        }
+    }
+}
 flw::TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
     TableEditor::clear();
 }
@@ -6411,7 +7656,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
         }
         else if (rend == flw::TableEditor::REND::SLIDER) {
             double nums[4];
-            if (util::to_doubles(val, nums, 4) == 4) {
+            if (tableeditor::to_doubles(val, nums, 4) == 4) {
                 auto range = 0.0;
                 if ((nums[2] - nums[1]) > 0.0001) {
                     range = (nums[0] - nums[1]) / (nums[2] - nums[1]);
@@ -6423,7 +7668,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
         }
         else if (rend == flw::TableEditor::REND::DLG_COLOR) {
-            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) util::to_int(val));
+            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) tableeditor::to_int(val, 0));
         }
         else if (rend == flw::TableEditor::REND::DLG_DATE) {
             auto        date = Date::FromString(val);
@@ -6461,7 +7706,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
         }
         else if (rend == flw::TableEditor::REND::INTEGER) {
-            auto num = util::to_int(val);
+            auto num = tableeditor::to_int(val, 0);
             fl_font(textfont, textsize);
             fl_color(textcolor);
             if (format == flw::TableEditor::FORMAT::INT_SEP) {
@@ -6474,10 +7719,10 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
         }
         else if (rend == flw::TableEditor::REND::NUMBER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-            auto num = util::to_double(val);
+            auto num = tableeditor::to_double(val, 0.0);
             if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
-                if (util::to_doubles(val, nums, 1) == 1) {
+                if (tableeditor::to_doubles(val, nums, 1) == 1) {
                     num = nums[0];
                 }
             }
@@ -6587,7 +7832,7 @@ void flw::TableEditor::_edit_create() {
     else if (rend == flw::TableEditor::REND::SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
-        if (util::to_doubles(val, nums, 4) == 4) {
+        if (tableeditor::to_doubles(val, nums, 4) == 4) {
             w = new Fl_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -6602,7 +7847,7 @@ void flw::TableEditor::_edit_create() {
     else if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
-        if (util::to_doubles(val, nums, 4) == 4) {
+        if (tableeditor::to_doubles(val, nums, 4) == 4) {
             w = new Fl_Value_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -6679,7 +7924,7 @@ void flw::TableEditor::_edit_quick(const char* key) {
     char buffer[100];
     assert(val);
     if (rend == flw::TableEditor::REND::INTEGER) {
-        auto num = util::to_int(val);
+        auto num = tableeditor::to_int(val, 0);
         if (strcmp(key, "+") == 0) {
             num++;
         }
@@ -6705,7 +7950,7 @@ void flw::TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == flw::TableEditor::REND::NUMBER) {
-        auto num = util::to_double(val);
+        auto num = tableeditor::to_double(val, 0.0);
         if (strcmp(key, "+") == 0) {
             num += 0.1;
         }
@@ -6758,7 +8003,7 @@ void flw::TableEditor::_edit_quick(const char* key) {
     }
     else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
         double nums[4];
-        if (util::to_doubles(val, nums, 4) == 4) {
+        if (tableeditor::to_doubles(val, nums, 4) == 4) {
             if (strcmp(key, "+") == 0) {
                 nums[0] += nums[3];
             }
@@ -6797,7 +8042,7 @@ void flw::TableEditor::_edit_show() {
     char buffer[100];
     assert(val);
     if (rend == flw::TableEditor::REND::DLG_COLOR) {
-        auto color1 = (int) util::to_int(val);
+        auto color1 = (int) tableeditor::to_int(val, 0);
         auto color2 = (int) fl_show_colormap((Fl_Color) color1);
         snprintf(buffer, 20, "%d", color2);
         if ((_send_changed_event_always == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
@@ -6878,11 +8123,11 @@ void flw::TableEditor::_edit_stop(bool save) {
                 auto val2  = input->value();
                 char buffer[100];
                 if (rend == flw::TableEditor::REND::INTEGER) {
-                    snprintf(buffer, 100, "%d", (int) util::to_int(val2));
+                    snprintf(buffer, 100, "%d", (int) tableeditor::to_int(val2, 0));
                     val2 = buffer;
                 }
                 else if (rend == flw::TableEditor::REND::NUMBER) {
-                    auto num = util::to_double(val2);
+                    auto num = tableeditor::to_double(val2, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
@@ -7093,7 +8338,7 @@ int flw::TableEditor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    auto num = util::to_int(text);
+                    auto num = tableeditor::to_int(text, 0);
                     snprintf(buffer, 100, "%lld", (long long int) num);
                     text = buffer;
                     if (rend == flw::TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
@@ -7108,7 +8353,7 @@ int flw::TableEditor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    auto num = util::to_double(text);
+                    auto num = tableeditor::to_double(text, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
                     break;
@@ -7556,6 +8801,7 @@ void flw::TabsGroup::value(int num) {
         flw::TabsGroup::Callback(_buttons[num], this);
     }
 }
+#include <assert.h>
 #include <FL/Fl.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Hold_Browser.H>
@@ -8355,7 +9601,7 @@ bool flw::theme::parse(int argc, const char** argv) {
         if (res == false) {
             res = flw::theme::load(argv[f]);
         }
-        auto fontsize = util::to_int(argv[f]);
+        auto fontsize = atoi(argv[f]);
         if (fontsize >= 6 && fontsize <= 72) {
             flw::PREF_FONTSIZE = fontsize;
         }
@@ -8379,6 +9625,7 @@ void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::str
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
 }
 #include <algorithm>
+#include <assert.h>
 #include <math.h>
 #include <stdarg.h>
 #include <time.h>
@@ -8395,554 +9642,60 @@ void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::str
     #include <unistd.h>
 #endif
 namespace flw {
-    int         PREF_FIXED_FONT     = FL_COURIER;
-    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
-    int         PREF_FIXED_FONTSIZE = 14;
-    int         PREF_FONT           = FL_HELVETICA;
-    int         PREF_FONTSIZE       = 14;
-    std::string PREF_FONTNAME       = "FL_HELVETICA";
-    static Fl_Menu_Item* _util_menu_item(Fl_Menu_* menu, const char* text) {
-        assert(menu && text);
-        auto item = menu->find_item(text);
-#ifdef DEBUG
-        if (item == nullptr) {
-            fprintf(stderr, "error: cant find menu item <%s>\n", text);
-        }
-#endif
-        return (Fl_Menu_Item*) item;
-    }
-}
-size_t flw::util::add_string(StringVector& in, size_t max_size, std::string string) {
-    for (auto it = in.begin(); it != in.end(); ++it) {
-        if (*it == string) {
-            in.erase(it);
-            break;
-        }
-    }
-    in.push_back(string);
-    while (in.size() > max_size) {
-        in.erase(in.begin());
-    }
-    return in.size();
-}
-char* flw::util::allocate(size_t size, bool terminate) {
-    auto res = (char*) calloc(size + 1, 1);
-    if (res == nullptr && terminate == true) {
-        fl_alert("error: failed to allocate memory with size %lld\nI'm going to quit now!", (long long int) size);
-        exit(1);
-    }
-    return res;
-}
-void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
-    if (parent != nullptr) {
-        int x = parent->x() + parent->w() / 2;
-        int y = parent->y() + parent->h() / 2;
-        window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
-    }
-    else {
-        window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
-    }
-}
-int flw::util::count_decimals(double number) {
-    number = fabs(number);
-    int    res     = 0;
-    int    len     = 0;
-    char*  end     = 0;
-    double inumber = (int64_t) number;
-    double fnumber = number - inumber;
-    char   buffer[100];
-    if (number > 999999999999999) {
-        snprintf(buffer, 100, "%.1f", fnumber);
-    }
-    else if (number > 9999999999999) {
-        snprintf(buffer, 100, "%.2f", fnumber);
-    }
-    else if (number > 999999999999) {
-        snprintf(buffer, 100, "%.3f", fnumber);
-    }
-    else if (number > 99999999999) {
-        snprintf(buffer, 100, "%.4f", fnumber);
-    }
-    else if (number > 9999999999) {
-        snprintf(buffer, 100, "%.5f", fnumber);
-    }
-    else if (number > 999999999) {
-        snprintf(buffer, 100, "%.6f", fnumber);
-    }
-    else if (number > 99999999) {
-        snprintf(buffer, 100, "%.7f", fnumber);
-    }
-    else if (number > 9999999) {
-        snprintf(buffer, 100, "%.8f", fnumber);
-    }
-    else {
-        snprintf(buffer, 100, "%.9f", fnumber);
-    }
-    len = strlen(buffer);
-    end = buffer + len - 1;
-    while (*end == '0') {
-        *end = 0;
-        end--;
-    }
-    res = strlen(buffer) - 2;
-    return res;
-}
-void flw::util::labelfont(Fl_Widget* widget) {
-    assert(widget);
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
-    auto group = widget->as_group();
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            util::labelfont(group->child(f));
-        }
-    }
-}
-std::string flw::util::fix_menu_string(std::string in) {
-    std::string res = in;
-    util::replace(res, "\\", "\\\\");
-    util::replace(res, "_", "\\_");
-    util::replace(res, "/", "\\/");
-    util::replace(res, "&", "&&");
-    return res;
-}
-std::string flw::util::format(const char* format, ...) {
-    if (format == nullptr || *format == 0) return "";
-    int         l   = 128;
-    int         n   = 0;
-    char*       buf = (char*) calloc(l, 1);
-    std::string res;
-    va_list     args;
-    va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
-    va_end(args);
-    if (n < 0) {
-        free(buf);
-        return res;
-    }
-    if (n < l) {
-        res = buf;
-        free(buf);
-        return res;
-    }
-    free(buf);
-    l = n + 1;
-    buf = (char*) calloc(l, 1);
-    if (buf == nullptr) return res;
-    va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
-    va_end(args);
-    res = buf;
-    free(buf);
-    return res;
-}
-std::string flw::util::format_double(double num, int decimals, char del) {
-    char res[100];
-    *res = 0;
-    if (decimals < 0) {
-        decimals = util::count_decimals(num);
-    }
-    if (decimals == 0) {
-        return util::format_int((int64_t) num, del);
-    }
-    if (fabs(num) < 9223372036854775807.0) {
-        char fr_str[100];
-        auto int_num    = (int64_t) fabs(num);
-        auto double_num = (double) (fabs(num) - int_num);
-        auto int_str    = util::format_int(int_num, del);
-        auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
-        if (len > 0 && len < 100) {
-            if (num < 0.0) {
-                res[0] = '-';
-                res[1] = 0;
+    int         PREF_FIXED_FONT         = FL_COURIER;
+    std::string PREF_FIXED_FONTNAME     = "FL_COURIER";
+    int         PREF_FIXED_FONTSIZE     = 14;
+    int         PREF_FONT               = FL_HELVETICA;
+    int         PREF_FONTSIZE           = 14;
+    std::string PREF_FONTNAME           = "FL_HELVETICA";
+    struct Stat {
+        int64_t                         size;
+        int64_t                         mtime;
+        int                             mode;
+         Stat()
+            { size = mtime = 0; mode = 0; }
+         Stat(std::string filename) {
+            size  = 0;
+            mtime = 0;
+            mode  = 0;
+        #ifdef _WIN32
+            wchar_t wbuffer[1025];
+            struct __stat64 st;
+            while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+                filename.pop_back();
             }
-            strncat(res, int_str.c_str(), 99);
-            strncat(res, fr_str + 1, 99);
-        }
-    }
-    return res;
-}
-std::string flw::util::format_int(int64_t num, char del) {
-    auto pos = 0;
-    char tmp1[32];
-    char tmp2[32];
-    if (del < 1) {
-        del = 32;
-    }
-    memset(tmp2, 0, 32);
-    snprintf(tmp1, 32, "%lld", (long long int) num);
-    auto len = strlen(tmp1);
-    for (int f = len - 1, i = 0; f >= 0 && pos < 32; f--, i++) {
-        char c = tmp1[f];
-        if ((i % 3) == 0 && i > 0 && c != '-') {
-            tmp2[pos++] = del;
-        }
-        tmp2[pos++] = c;
-    }
-    std::string r = tmp2;
-    std::reverse(r.begin(), r.end());
-    return r;
-}
-size_t flw::util::insert_string(StringVector& in, size_t max_size, std::string string) {
-    for (auto it = in.begin(); it != in.end(); ++it) {
-        if (*it == string) {
-            in.erase(it);
-            break;
-        }
-    }
-    in.insert(in.begin(), string);
-    while (in.size() > max_size) {
-        in.pop_back();
-    }
-    return (int) in.size();
-}
-flw::Buf flw::util::load_file(std::string filename, bool alert) {
-    auto stat = flw::Stat(filename);
-    if (stat.mode != 2) {
-        if (alert == true) {
-            fl_alert("error: file %s is missing or not an file", filename.c_str());
-        }
-        return Buf();
-    }
-    auto file = fl_fopen(filename.c_str(), "rb");
-    if (file == nullptr) {
-        if (alert == true) {
-            fl_alert("error: can't open %s", filename.c_str());
-        }
-        return Buf();
-    }
-    auto buf  = Buf(stat.size);
-    auto read = fread(buf.p, 1, (size_t) stat.size, file);
-    fclose(file);
-    if (read != (size_t) stat.size) {
-        if (alert == true) {
-            fl_alert("error: failed to read %s", filename.c_str());
-        }
-        return Buf();
-    }
-    return buf;
-}
-void flw::util::menu_item_enable(Fl_Menu_* menu, const char* text, bool value) {
-    assert(menu && text);
-    auto item = flw::_util_menu_item(menu, text);
-    if (item == nullptr) {
-        return;
-    }
-    if (value == true) {
-        item->activate();
-    }
-    else {
-        item->deactivate();
-    }
-}
-Fl_Menu_Item* flw::util::menu_item_get(Fl_Menu_* menu, const char* text) {
-    assert(menu && text);
-    return flw::_util_menu_item(menu, text);
-}
-void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
-    assert(menu && text);
-    auto item = flw::_util_menu_item(menu, text);
-    if (item == nullptr) {
-        return;
-    }
-    if (value == true) {
-        item->set();
-    }
-    else {
-        item->clear();
-    }
-}
-void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
-    assert(menu && text);
-    auto item = flw::_util_menu_item(menu, text);
-    if (item == nullptr) {
-        return;
-    }
-    menu->setonly(item);
-}
-bool flw::util::menu_item_value(Fl_Menu_* menu, const char* text) {
-    assert(menu && text);
-    auto item = flw::_util_menu_item(menu, text);
-    if (item == nullptr) {
-        return false;
-    }
-    return item->value();
-}
-void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
-#ifdef FLW_USE_PNG
-    auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
-    if (filename != nullptr) {
-        window->make_current();
-        if (X == 0 && Y == 0 && W == 0 && H == 0) {
-            X = window->x();
-            Y = window->y();
-            W = window->w();
-            H = window->h();
-        }
-        auto image = fl_read_image(nullptr, X, Y, W, H);
-        if (image != nullptr) {
-            auto ret = fl_write_png(filename, image, W, H);
-            if (ret == 0) {
-            }
-            else if (ret == -1) {
-                fl_alert("%s", "error: missing libraries");
-            }
-            else if (ret == -1) {
-                fl_alert("error: failed to save image to %s", filename);
-            }
-            delete []image;
-        }
-        else {
-            fl_alert("%s", "error: failed to grab image");
-        }
-    }
-#else
-    (void) opt_name;
-    (void) window;
-    (void) X;
-    (void) Y;
-    (void) W;
-    (void) H;
-    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
-#endif
-}
-void flw::util::print(Fl_Widget* widget, bool tab) {
-    assert(widget);
-    printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
-    fflush(stdout);
-}
-void flw::util::print(Fl_Group* group) {
-    assert(group);
-    puts("");
-    util::print((Fl_Widget*) group);
-    for (int f = 0; f < group->children(); f++) {
-        util::print(group->child(f), true);
-    }
-}
-int flw::util::replace(std::string& string, std::string find, std::string replace) {
-    auto index = (size_t) 0;
-    auto count = (size_t) 0;
-    try {
-        if (string.size() > 0 && find.size() > 0) {
-            while (true) {
-                index = string.find(find, index);
-                if (index == std::string::npos) {
-                    break;
+            fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
+            if (_wstat64(wbuffer, &st) == 0) {
+                size  = st.st_size;
+                mtime = st.st_mtime;
+                if (S_ISDIR(st.st_mode)) {
+                    mode = 1;
                 }
-                string.replace(index, find.size(), replace);
-                count++;
-                index += replace.size();
+                else if (S_ISREG(st.st_mode)) {
+                    mode = 2;
+                }
+                else {
+                    mode = 3;
+                }
             }
-            string.shrink_to_fit();
-        }
-        return (int) count;
-    }
-    catch(...) {
-        return -1;
-    }
-}
-bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
+        #else
+            struct stat st;
+            if (stat(filename.c_str(), &st) == 0) {
+                size  = st.st_size;
+                mtime = st.st_mtime;
+                if (S_ISDIR(st.st_mode)) {
+                    mode = 1;
+                }
+                else if (S_ISREG(st.st_mode)) {
+                    mode = 2;
+                }
+                else {
+                    mode = 3;
+                }
             }
-            return false;
+        #endif
         }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
-    }
-    return true;
-}
-flw::StringVector flw::util::split(const std::string& string, std::string split) {
-    auto res = StringVector();
-    try {
-        if (split != "") {
-            auto pos1 = (std::string::size_type) 0;
-            auto pos2 = string.find(split);
-            while (pos2 != std::string::npos) {
-                res.push_back(string.substr(pos1, pos2 - pos1));
-                pos1 = pos2 + split.size();
-                pos2 = string.find(split, pos1);
-            }
-            if (pos1 <= string.size()) {
-                res.push_back(string.substr(pos1));
-            }
-        }
-    }
-    catch(...) {
-        res.clear();
-    }
-    return res;
-}
-bool flw::util::test(bool val, int line, const char* func) {
-    if (val == false) {
-        fprintf(stderr, "error: test failed at line %d in %s\n", line, func);
-        fflush(stderr);
-        return false;
-    }
-    return true;
-}
-bool flw::util::test(const char* ref, const char* val, int line, const char* func) {
-    if (ref == nullptr && val == nullptr) {
-        return true;
-    }
-    else if (ref == nullptr || val == nullptr || strcmp(ref, val) != 0) {
-        fprintf(stderr, "error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
-        fflush(stderr);
-        return false;
-    }
-    return true;
-}
-bool flw::util::test(int64_t ref, int64_t val, int line, const char* func) {
-    if (ref != val) {
-        fprintf(stderr, "error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
-        fflush(stderr);
-        return false;
-    }
-    return true;
-}
-bool flw::util::test(double ref, double val, double diff, int line, const char* func) {
-    if (fabs(ref - val) > diff) {
-        fprintf(stderr, "error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
-        fflush(stderr);
-        return false;
-    }
-    return true;
-}
-double flw::util::time() {
-#ifdef _WIN32
-    struct timeb timeVal;
-    ftime(&timeVal);
-    return (double) timeVal.time + (double) (timeVal.millitm / 1000.0);
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
-#endif
-}
-int64_t flw::util::time_micro() {
-#if defined(_WIN32)
-    LARGE_INTEGER StartingTime;
-    LARGE_INTEGER Frequency;
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&StartingTime);
-    StartingTime.QuadPart *= 1000000;
-    StartingTime.QuadPart /= Frequency.QuadPart;
-    return StartingTime.QuadPart;
-#else
-    timespec t;
-    clock_gettime(CLOCK_MONOTONIC, &t);
-    return t.tv_sec * 1000000 + t.tv_nsec / 1000;
-#endif
-}
-int32_t flw::util::time_milli() {
-    return (int) (util::time_micro() / 1000);
-}
-void flw::util::time_sleep(int milli) {
-#ifdef _WIN32
-    Sleep(milli);
-#else
-    usleep(milli * 1000);
-#endif
-}
-double flw::util::to_double(std::string string, double def) {
-    try {
-        return std::stod(string.c_str(), 0);
-    }
-    catch (...) {
-        return def;
-    }
-}
-int flw::util::to_doubles(std::string string, double numbers[], size_t size) {
-    auto end = (char*) nullptr;
-    auto in  = string.c_str();
-    auto f   = (size_t) 0;
-    errno = 0;
-    for (; f < size; f++) {
-        numbers[f] = strtod(in, &end);
-        if (errno != 0 || in == end) {
-            return f;
-        }
-        in = end;
-    }
-    return f;
-}
-int64_t flw::util::to_int(std::string string, int64_t def) {
-    try {
-        return std::stoll(string.c_str(), 0, 0);
-    }
-    catch (...) {
-        return def;
-    }
-}
-int flw::util::to_ints(std::string string, int64_t numbers[], size_t size) {
-    auto end = (char*) nullptr;
-    auto in  = string.c_str();
-    auto f   = (size_t) 0;
-    errno = 0;
-    for (; f < size; f++) {
-        numbers[f] = strtoll(in, &end, 10);
-        if (errno != 0 || in == end) {
-            return f;
-        }
-        in = end;
-    }
-    return f;
-}
-char* flw::util::win_to_unix(const char* string) {
-    auto r = false;
-    auto b = string;
-    while (*b != 0) {
-        if (*b++ == '\r') {
-            r = true;
-            break;
-        }
-    }
-    if (r == false) {
-        return nullptr;
-    }
-    auto len = strlen(string);
-    auto res = util::allocate(len);
-    auto pos = 0;
-    b = string;
-    while (*b != 0) {
-        if (*b != '\r') {
-            res[pos++] = *b;
-        }
-        b++;
-    }
-    return res;
-}
-void* flw::util::zero_memory(char* string) {
-    assert(string);
-    if (string == nullptr) {
-        return nullptr;
-    }
-    return util::zero_memory(string, strlen(string));
-}
-void* flw::util::zero_memory(void* mem, size_t size) {
-    if (mem == nullptr || size == 0) {
-        return mem;
-    }
-#ifdef _WIN32
-    RtlSecureZeroMemory(mem, size);
-#else
-    auto p = (volatile unsigned char*) mem;
-    while (size--) {
-        *p = 0;
-        p++;
-    }
-#endif
-    return mem;
-}
-void* flw::util::zero_memory(std::string& string) {
-    return util::zero_memory((char*) string.data());
+   };
 }
 flw::Buf::Buf() {
     p = nullptr;
@@ -9019,530 +9772,280 @@ bool flw::Buf::operator==(const Buf& other) const {
 flw::Buf::~Buf() {
     free(p);
 }
-flw::Stat::Stat(std::string filename) {
-    size  = 0;
-    mtime = 0;
-    mode  = 0;
-#ifdef _WIN32
-    wchar_t wbuffer[1025];
-    struct __stat64 st;
-    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-        filename.pop_back();
+void flw::debug::print(Fl_Widget* widget, bool tab) {
+    assert(widget);
+    printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
+    fflush(stdout);
+}
+void flw::debug::print(Fl_Group* group) {
+    assert(group);
+    puts("");
+    debug::print((Fl_Widget*) group);
+    for (int f = 0; f < group->children(); f++) {
+        debug::print(group->child(f), true);
     }
-    fl_utf8towc	(filename.c_str(), filename.length(), wbuffer, 1024);
-    if (_wstat64(wbuffer, &st) == 0) {
-        size  = st.st_size;
-        mtime = st.st_mtime;
-        if (S_ISDIR(st.st_mode)) {
-            mode = 1;
+}
+namespace flw {
+    namespace menu {
+        static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
+            assert(menu && text);
+            auto item = menu->find_item(text);
+        #ifdef DEBUG
+            if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
+        #endif
+            return (Fl_Menu_Item*) item;
         }
-        else if (S_ISREG(st.st_mode)) {
-            mode = 2;
+        void enable_item(Fl_Menu_* menu, const char* text, bool value) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return;
+            if (value == true) item->activate();
+            else item->deactivate();
+        }
+        Fl_Menu_Item* get_item(Fl_Menu_* menu, const char* text) {
+            return _item(menu, text);
+        }
+        bool item_value(Fl_Menu_* menu, const char* text) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return false;
+            return item->value();
+        }
+        void set_item(Fl_Menu_* menu, const char* text, bool value) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return;
+            if (value == true) item->set();
+            else item->clear();
+        }
+        void setonly_item(Fl_Menu_* menu, const char* text) {
+            auto item = _item(menu, text);
+            if (item == nullptr) return;
+            menu->setonly(item);
+        }
+    }
+}
+void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
+    if (parent != nullptr) {
+        int x = parent->x() + parent->w() / 2;
+        int y = parent->y() + parent->h() / 2;
+        window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
+    }
+    else {
+        window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
+    }
+}
+double flw::util::clock() {
+#ifdef _WIN32
+    struct timeb timeVal;
+    ftime(&timeVal);
+    return (double) timeVal.time + (double) (timeVal.millitm / 1000.0);
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
+#endif
+}
+void flw::util::labelfont(Fl_Widget* widget) {
+    assert(widget);
+    widget->labelfont(flw::PREF_FONT);
+    widget->labelsize(flw::PREF_FONTSIZE);
+    auto group = widget->as_group();
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            util::labelfont(group->child(f));
+        }
+    }
+}
+std::string flw::util::fix_menu_string(std::string in) {
+    std::string res = in;
+    util::replace(res, "\\", "\\\\");
+    util::replace(res, "_", "\\_");
+    util::replace(res, "/", "\\/");
+    util::replace(res, "&", "&&");
+    return res;
+}
+std::string flw::util::format(const char* format, ...) {
+    if (format == nullptr || *format == 0) return "";
+    int         l   = 128;
+    int         n   = 0;
+    char*       buf = (char*) calloc(l, 1);
+    std::string res;
+    va_list     args;
+    va_start(args, format);
+    n = vsnprintf(buf, l, format, args);
+    va_end(args);
+    if (n < 0) {
+        free(buf);
+        return res;
+    }
+    if (n < l) {
+        res = buf;
+        free(buf);
+        return res;
+    }
+    free(buf);
+    l = n + 1;
+    buf = (char*) calloc(l, 1);
+    if (buf == nullptr) return res;
+    va_start(args, format);
+    n = vsnprintf(buf, l, format, args);
+    va_end(args);
+    res = buf;
+    free(buf);
+    return res;
+}
+std::string flw::util::format_int(int64_t num, char del) {
+    auto pos = 0;
+    char tmp1[32];
+    char tmp2[32];
+    if (del < 1) {
+        del = 32;
+    }
+    memset(tmp2, 0, 32);
+    snprintf(tmp1, 32, "%lld", (long long int) num);
+    auto len = strlen(tmp1);
+    for (int f = len - 1, i = 0; f >= 0 && pos < 32; f--, i++) {
+        char c = tmp1[f];
+        if ((i % 3) == 0 && i > 0 && c != '-') {
+            tmp2[pos++] = del;
+        }
+        tmp2[pos++] = c;
+    }
+    std::string r = tmp2;
+    std::reverse(r.begin(), r.end());
+    return r;
+}
+flw::Buf flw::util::load_file(std::string filename, bool alert) {
+    auto stat = flw::Stat(filename);
+    if (stat.mode != 2) {
+        if (alert == true) {
+            fl_alert("error: file %s is missing or not an file", filename.c_str());
+        }
+        return Buf();
+    }
+    auto file = fl_fopen(filename.c_str(), "rb");
+    if (file == nullptr) {
+        if (alert == true) {
+            fl_alert("error: can't open %s", filename.c_str());
+        }
+        return Buf();
+    }
+    auto buf  = Buf(stat.size);
+    auto read = fread(buf.p, 1, (size_t) stat.size, file);
+    fclose(file);
+    if (read != (size_t) stat.size) {
+        if (alert == true) {
+            fl_alert("error: failed to read %s", filename.c_str());
+        }
+        return Buf();
+    }
+    return buf;
+}
+int32_t flw::util::milliseconds() {
+#if defined(_WIN32)
+    LARGE_INTEGER StartingTime;
+    LARGE_INTEGER Frequency;
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
+    StartingTime.QuadPart *= 1000000;
+    StartingTime.QuadPart /= Frequency.QuadPart;
+    return StartingTime.QuadPart / 1000;
+#else
+    timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (t.tv_sec * 1000000 + t.tv_nsec / 1000) / 1000;
+#endif
+}
+void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+#ifdef FLW_USE_PNG
+    auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
+    if (filename != nullptr) {
+        window->make_current();
+        if (X == 0 && Y == 0 && W == 0 && H == 0) {
+            X = window->x();
+            Y = window->y();
+            W = window->w();
+            H = window->h();
+        }
+        auto image = fl_read_image(nullptr, X, Y, W, H);
+        if (image != nullptr) {
+            auto ret = fl_write_png(filename, image, W, H);
+            if (ret == 0) {
+            }
+            else if (ret == -1) {
+                fl_alert("%s", "error: missing libraries");
+            }
+            else if (ret == -1) {
+                fl_alert("error: failed to save image to %s", filename);
+            }
+            delete []image;
         }
         else {
-            mode = 3;
+            fl_alert("%s", "error: failed to grab image");
         }
     }
 #else
-    struct stat st;
-    if (stat(filename.c_str(), &st) == 0) {
-        size  = st.st_size;
-        mtime = st.st_mtime;
-        if (S_ISDIR(st.st_mode)) {
-            mode = 1;
-        }
-        else if (S_ISREG(st.st_mode)) {
-            mode = 2;
-        }
-        else {
-            mode = 3;
-        }
-    }
+    (void) opt_name;
+    (void) window;
+    (void) X;
+    (void) Y;
+    (void) W;
+    (void) H;
+    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
 }
-namespace flw {
-    namespace json {
-        #define _JSON_RETURN(X,Y)           return (size_t) X - (size_t) Y;
-        #define _JSON_RETURN_POS(X)         return X.pos;
-        #define _JSON_CHECK_SEPARATOR(X)    if (X > 32 && X != ',' && X != ':' && X != '}' && X != ']' && X != '{' && X != '[') return (size_t) text - (size_t) json;
-        static const char* _TYPE_NAMES[] = { "NA", "OBJECT", "END_OBJECT", "ARRAY","END_ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "COLON", "COMMA", "ARRAY_NL" };
-        struct Token {
-            TYPE                        type;
-            int                         depth;
-            std::string                 value;
-            size_t                      pos;
-                                        Token()
-                                            { type = TYPE::NA; pos = 0; depth = 0; }
-                                        Token(TYPE type, const std::string& value = "", size_t pos = 0, size_t depth = 0)
-                                            { this->type = type; this->value = value; this->pos = pos; this->depth = depth; }
-            bool                        is_end() const
-                                            { return type == TYPE::END_ARRAY || type == TYPE::END_OBJECT; }
-            bool                        is_start() const
-                                            { return type == TYPE::ARRAY || type == TYPE::OBJECT; }
-        };
-        typedef std::vector<Token>      TokenVector;
-        void                            print(const TokenVector& tokens);
-        size_t                          tokenize(std::string text, TokenVector& tokens);
-        size_t                          tokenize(const char* json, size_t len, TokenVector& tokens);
-        static bool _convert_num(const char* s, double& d) {
-            errno = 0;
-            d = strtod(s, nullptr);
-            return errno != ERANGE;
-        }
-        static void _count_dot_minus_plus_e(const std::string& s, int& dot, int& minus, int& plus, int& E) {
-            dot = 0; minus = 0; plus = 0; E = 0;
-            for (auto c : s) {
-                dot   += (c =='.');
-                minus += (c =='-');
-                plus  += (c =='+');
-                E     += (c =='e');
-                E     += (c =='E');
+std::string& flw::util::replace(std::string& string, std::string find, std::string replace) {
+    if (find == "") return string;
+    size_t start = 0;
+    while ((start = string.find(find, start)) != std::string::npos) {
+        string.replace(start, find.length(), replace);
+        start += replace.length();
+    }
+    return string;
+}
+bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
             }
-        }
-        static std::string _remove_last(StringVector& v) {
-            if (v.size() > 0) {
-                auto res = v.back();
-                v.pop_back();
-                return res;
-            }
-            return "";
-        }
-        void Node::print() const {
-            printf("%5u| %5u| %2d| %*s %-10s <%s>", (unsigned) index, (unsigned) textpos, depth, depth * 4, "", _TYPE_NAMES[(int) type], name.c_str());
-            if (type == TYPE::STRING || type == TYPE::NUMBER || type == TYPE::BOOL) printf(" => <%s>\n", value.c_str());
-            else printf("\n");
-            fflush(stdout);
-        }
-        std::string escape_string(const std::string& string) {
-            std::string res;
-            for (unsigned char c : string) {
-                if (c == 9) res += "\\t";
-                else if (c == 10) res += "\\n";
-                else if (c == 13) res += "\\r";
-                else if (c == 8) res += "\\b";
-                else if (c == 14) res += "\\f";
-                else if (c == 34) res += "\\\"";
-                else if (c == 92) res += "\\\\";
-                else res += c;
-            }
-            return res;
-        }
-        NodeVector find_children(const NodeVector& nodes, const Node& start, bool grandchildren) {
-            auto res = NodeVector();
-            if (start.index + 1 >= nodes.size()) return res;
-            for (size_t f = start.index + 1; f < nodes.size(); f++) {
-                auto& node = nodes[f];
-                if (node.depth <= start.depth) break;
-                else if (grandchildren == true) res.push_back(node);
-                else if (node.depth == start.depth + 1 && node.is_end() == false) res.push_back(node);
-            }
-            return res;
-        }
-        NodeVector find_nodes(const NodeVector& nodes, std::string name, TYPE type) {
-            auto res = NodeVector();
-            for (size_t f = 0; f < nodes.size(); f++) {
-                auto& node = nodes[f];
-                if (name == "") {
-                    if (type == TYPE::NA) res.push_back(node);
-                    else if (node.type == type) res.push_back(node);
-                }
-                else if (node.name == name) {
-                    if (type == TYPE::NA) res.push_back(node);
-                    else if (node.type == type) res.push_back(node);
-                }
-            }
-            return res;
-        }
-        NodeVector find_siblings(const NodeVector& nodes, const Node& start) {
-            auto res = NodeVector();
-            if (start.index >= nodes.size()) return res;
-            for (size_t f = start.index; f < nodes.size(); f++) {
-                auto& node = nodes[f];
-                if (node.depth < start.depth) break;
-                else if (node.depth == start.depth && node.is_end() == false) res.push_back(node);
-            }
-            return res;
-        }
-        size_t parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma) {
-            auto tokens      = json::TokenVector();
-            auto len         = strlen(json);
-            auto err         = json::tokenize(json, len, tokens);
-            auto size        = tokens.size();
-            auto obj         = 0;
-            auto arr         = 0;
-            auto num         = 0.0;
-            auto arr_name    = std::vector<std::string>();
-            auto obj_name    = std::vector<std::string>();
-            auto containers  = std::vector<std::string>();
-            auto const DUMMY = json::Token();
-            nodes.clear();
-            if (err != (size_t) -1) return err;
-            else if (size < 2) return size;
-            for (size_t f = 0; f < size; f++) {
-                auto& t  = tokens[f];
-                auto& T0 = (f > 0) ? tokens[f - 1] : DUMMY;
-                auto& T1 = (f < size - 1) ? tokens[f + 1] : DUMMY;
-                auto& T2 = (f < size - 2) ? tokens[f + 2] : DUMMY;
-                if ((T0.type == TYPE::STRING || T0.type == TYPE::NUMBER || T0.type == TYPE::NIL || T0.type == TYPE::BOOL) &&
-                    (t.type != TYPE::COMMA && t.type != TYPE::END_ARRAY && t.type != TYPE::END_OBJECT)) {
-                    _JSON_RETURN_POS(t)
-                }
-                else if (obj == 0 && arr == 0 && nodes.size() > 0) {
-                    _JSON_RETURN_POS(t)
-                }
-                else if (obj == 0 && arr == 0 && t.type != TYPE::OBJECT && t.type != TYPE::ARRAY) {
-                    _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::COMMA && T0.type == TYPE::COMMA) {
-                    _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::COMMA && T0.type == TYPE::ARRAY) {
-                    _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::COLON && T0.type != TYPE::STRING) {
-                    _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::END_OBJECT) {
-                    if (ignore_trailing_comma == false && T0.type == TYPE::COMMA) _JSON_RETURN_POS(t)
-                    containers.pop_back();
-                    obj--;
-                    if (obj < 0) _JSON_RETURN_POS(t)
-                   nodes.push_back(Node(TYPE::END_OBJECT, _remove_last(obj_name), "", t.depth, t.pos));
-                }
-                else if (t.type == TYPE::OBJECT) {
-                    if (containers.size() && containers.back() == "O") _JSON_RETURN_POS(t)
-                    if (T0.is_end() == true && T0.depth == t.depth) _JSON_RETURN_POS(t)
-                    containers.push_back("O");
-                    obj++;
-                    nodes.push_back(Node(TYPE::OBJECT, "", "", t.depth, t.pos));
-                    obj_name.push_back("");
-                }
-                else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::OBJECT) {
-                    if (T0.is_end() == true && T0.depth == T2.depth) _JSON_RETURN_POS(t)
-                    if (obj == 0) _JSON_RETURN_POS(t)
-                    containers.push_back("O");
-                    obj++;
-                    nodes.push_back(Node(TYPE::OBJECT, t.value, "", T2.depth, t.pos));
-                    obj_name.push_back(t.value);
-                    f += 2;
-                }
-                else if (t.type == TYPE::END_ARRAY) {
-                    if (ignore_trailing_comma == false && T0.type == TYPE::COMMA) _JSON_RETURN_POS(t)
-                    containers.pop_back();
-                    arr--;
-                    if (arr < 0) _JSON_RETURN_POS(t)
-                    nodes.push_back(Node(TYPE::END_ARRAY, _remove_last(arr_name), "", t.depth, t.pos));
-                }
-                else if (t.type == TYPE::ARRAY) {
-                    if (containers.size() && containers.back() == "O") _JSON_RETURN_POS(t)
-                    if (T0.is_end() == true && T0.depth == t.depth) _JSON_RETURN_POS(t)
-                    containers.push_back("A");
-                    arr++;
-                    nodes.push_back(Node(TYPE::ARRAY, "", "", t.depth, t.pos));
-                    arr_name.push_back("");
-                }
-                else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::ARRAY) {
-                    if (T0.is_end() == true && T0.depth == T2.depth) _JSON_RETURN_POS(t)
-                    if (obj == 0) _JSON_RETURN_POS(t)
-                    containers.push_back("A");
-                    arr++;
-                    nodes.push_back(Node(TYPE::ARRAY, t.value, "", T2.depth, t.pos));
-                    arr_name.push_back(t.value);
-                    f += 2;
-                }
-                else if (t.type == TYPE::BOOL) {
-                    nodes.push_back(Node(TYPE::BOOL, "", t.value, t.depth, t.pos));
-                    if (containers.size() && containers.back() == "O") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::BOOL) {
-                    nodes.push_back(Node(TYPE::BOOL, t.value, T2.value, T2.depth, t.pos));
-                    f += 2;
-                    if (containers.size() && containers.back() == "A") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::NIL) {
-                    nodes.push_back(Node(TYPE::NIL, "", "", t.depth, t.pos));
-                    if (containers.size() && containers.back() == "O") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::NIL) {
-                    nodes.push_back(Node(TYPE::NIL, t.value, "", T2.depth, t.pos));
-                    f += 2;
-                    if (containers.size() && containers.back() == "A") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::NUMBER) {
-                    if (_convert_num(t.value.c_str(), num) == false) _JSON_RETURN_POS(t)
-                    nodes.push_back(Node(TYPE::NUMBER, "", t.value, t.depth, t.pos));
-                    if (containers.size() && containers.back() == "O") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::NUMBER) {
-                    if (_convert_num(T2.value.c_str(), num) == false) _JSON_RETURN_POS(t)
-                    nodes.push_back(Node(TYPE::NUMBER, t.value, T2.value, t.depth, t.pos));
-                    f += 2;
-                    if (containers.size() && containers.back() == "A") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::STRING) {
-                    nodes.push_back(Node(TYPE::STRING, t.value, T2.value, t.depth, t.pos));
-                    f += 2;
-                    if (containers.size() && containers.back() == "A") _JSON_RETURN_POS(t)
-                }
-                else if (t.type == TYPE::STRING) {
-                    nodes.push_back(Node(TYPE::STRING, "", t.value, t.depth, t.pos));
-                    if (containers.size() && containers.back() == "O") _JSON_RETURN_POS(t)
-                }
-                if (nodes.size() > 0) nodes.back().index   = nodes.size() - 1;
-                if (arr < 0 || obj < 0) _JSON_RETURN_POS(t)
-            }
-            if (arr != 0 || obj != 0) return len;
-            return -1;
-        }
-        size_t parse(std::string json, NodeVector& nodes, bool ignore_trailing_commas) {
-            return json::parse(json.c_str(), nodes, ignore_trailing_commas);
-        }
-        void print(const TokenVector& tokens) {
-            auto c = 0;
-            printf("\n%d json::Token objects\n", (int) tokens.size());
-            printf("%-5s| %7s| %5s| VALUES\n", "TOKEN", "POS", "DEPTH");
-            printf("-------------------------------------------------------\n");
-            for (auto& t : tokens) {
-                if (t.type == TYPE::NA) ;
-                else if (t.type == TYPE::STRING || t.type == TYPE::NUMBER || t.type == TYPE::BOOL) printf("%5d| %7d| %5d|%*s %-10s <%s>\n", c, (int) t.pos, t.depth, t.depth * 4, "", _TYPE_NAMES[(int) t.type], t.value.c_str());
-                else printf("%5d| %7d| %5d|%*s %-10s\n", c, (int) t.pos, (int) t.depth, t.depth * 4, "", _TYPE_NAMES[(int) t.type]);
-                c++;
-            }
-            printf("\n");
-            fflush(stdout);
-        }
-        void print(const NodeVector& nodes) {
-            auto c = 0;
-            printf("\n%d json::Node objects\n", (int) nodes.size());
-            printf("%6s| %6s| %6s| %6s| %s\n", "COUNT", "INDEX", "POS", "DEPTH", "VALUES");
-            printf("-------------------------------------------------------\n");
-            for (auto& node : nodes) {
-                printf("%6d| %6u| %6u| %6d|%*s  %-10s <%s>", c, (unsigned) node.index, (unsigned) node.textpos, node.depth, node.depth * 4, "", _TYPE_NAMES[(int) node.type], node.name.c_str());
-                if (node.type == TYPE::STRING || node.type == TYPE::NUMBER || node.type == TYPE::BOOL) printf(" => <%s>", node.value.c_str());
-                printf("\n");
-                c++;
-            }
-            fflush(stdout);
-        }
-        size_t tokenize(const char* json, size_t len, TokenVector& tokens) {
-            tokens.clear();
-            auto text  = json;
-            auto end   = text + len;
-            auto value = std::string();
-            auto num   = std::string();
-            auto depth = 0;
-            auto DUMMY = Token();
-            num.reserve(50);
-            value.reserve(200);
-            while (text < end) {
-                auto  c  = (unsigned char) *text;
-                if (c < 33) {
-                    text++;
-                }
-                else if (c == ',') {
-                    tokens.push_back(json::Token(TYPE::COMMA, "", (size_t) text - (size_t) json, depth));
-                    text++;
-                }
-                else if (c == ':') {
-                    tokens.push_back(json::Token(TYPE::COLON, "", (size_t) text - (size_t) json, depth));
-                    text++;
-                }
-                else if (c == '{') {
-                    tokens.push_back(json::Token(TYPE::OBJECT, "", (size_t) text - (size_t) json, depth));
-                    depth++;
-                    text++;
-                }
-                else if (c == '}') {
-                    depth--;
-                    tokens.push_back(json::Token(TYPE::END_OBJECT, "", (size_t) text - (size_t) json, depth));
-                    text++;
-                }
-                else if (c == '[') {
-                    tokens.push_back(json::Token(TYPE::ARRAY, "", (size_t) text - (size_t) json, depth));
-                    depth++;
-                    text++;
-                }
-                else if (c == ']') {
-                    depth--;
-                    tokens.push_back(json::Token(TYPE::END_ARRAY, "", (size_t) text - (size_t) json, depth));
-                    text++;
-                }
-                else if (c == 't' && strncmp(text, "true", 4) == 0) {
-                    tokens.push_back(json::Token(TYPE::BOOL, "true", (size_t) text - (size_t) json, depth));
-                    text += 4;
-                    c = *text;
-                    _JSON_CHECK_SEPARATOR(c)
-                }
-                else if (c == 'f' && strncmp(text, "false", 5) == 0) {
-                    tokens.push_back(json::Token(TYPE::BOOL, "false", (size_t) text - (size_t) json, depth));
-                    text += 5;
-                    c = *text;
-                    _JSON_CHECK_SEPARATOR(c)
-                }
-                else if (c == 'n' && strncmp(text, "null", 4) == 0) {
-                    tokens.push_back(json::Token(TYPE::NIL, "", (size_t) text - (size_t) json, depth));
-                    text += 4;
-                    c = *text;
-                    _JSON_CHECK_SEPARATOR(c)
-                }
-                else if (c == '"') {
-                    auto p = (unsigned char) *text;
-                    auto start = text;
-                    text++;
-                    auto c = (unsigned char) *text;
-                    value = "";
-                    while (text < end) {
-                        if (c < 32) _JSON_RETURN(text, json)
-                        else if (p == '\\' && c == '"') {
-                        }
-                        else if (c == '"') {
-                            tokens.push_back(json::Token(TYPE::STRING, value, (size_t) start - (size_t) json, depth));
-                            text++;
-                            break;
-                        }
-                        value += c;
-                        p = c;
-                        text++;
-                        c = *text;
-                    }
-                    c = *text;
-                    if (text == end) _JSON_RETURN(text, json)
-                    _JSON_CHECK_SEPARATOR(c)
-                }
-                else if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-                    auto start = text;
-                    std::string n1, n2;
-                    int dot, minus, plus, E;
-                    while (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-                        n1 += c; text++; c = *text;
-                    }
-                    _count_dot_minus_plus_e(n1, dot, minus, plus, E);
-                    if (dot > 1 || minus > 1) _JSON_RETURN(start, json)
-                    if (n1[0] == '.' || n1.back() == '.') _JSON_RETURN(start, json)
-                    if (n1[0] == '-' && n1[1] == '.') _JSON_RETURN(start, json)
-                    if (n1[0] == '-' && n1[1] == '0' && n1.length() > 2 && n1[2] != '.') _JSON_RETURN(start, json)
-                    if (n1 == "-") _JSON_RETURN(start, json)
-                    if (minus > 0 && n1[0] != '-') _JSON_RETURN(start, json)
-                    while (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
-                        n2 += c; text++; c = *text;
-                    }
-                    if (n2.empty() == false) {
-                        if (n2.length() == 1) _JSON_RETURN(start, json)
-                        _count_dot_minus_plus_e(n2, dot, minus, plus, E);
-                        if (plus + minus > 1 || E > 1) _JSON_RETURN(start, json)
-                        if (plus > 0 && n2.back() == '+') _JSON_RETURN(start, json)
-                        if (plus > 0 && n2[1] != '+') _JSON_RETURN(start, json)
-                        if (minus > 0 && n2.back() == '-') _JSON_RETURN(start, json)
-                        if (minus > 0 && n2[1] != '-') _JSON_RETURN(start, json)
-                    }
-                    else if (n1[0] == '0' && n1.length() > 1 && n1[1] != '.') _JSON_RETURN(start, json)
-                    tokens.push_back(json::Token(TYPE::NUMBER, n1 + n2, (size_t) start - (size_t) json, depth));
-                    _JSON_CHECK_SEPARATOR(c)
-                }
-                else {
-                    _JSON_RETURN(text, json);
-                }
-            }
-            return -1;
-        }
-        size_t tokenize(std::string text, TokenVector& tokens) {
-            return json::tokenize(text.c_str(), text.length(), tokens);
-        }
-        std::string tostring(const NodeVector& nodes) {
-            if (nodes.size() < 2) return "";
-            auto res    = std::string();
-            auto DUMMY  = Node();
-            auto last   = nodes.size() - 1;
-            auto indent = std::string();
-            auto arr    = TYPE::NA;
-            res.reserve(20 * nodes.size());
-            for (size_t f = 0; f <= last; f++) {
-                auto& node = nodes[f];
-                auto& next = (f < last) ? nodes[f + 1] : DUMMY;
-                auto  nl   = std::string("\n");
-                auto  nl2  = std::string("");
-                if (node.is_data() && next.is_end() == false) {
-                    nl  = ",\n";
-                    nl2 = ",";
-                }
-                else if (node.is_end() && (next.is_start() == true || next.is_data() == true)) {
-                    nl  = ",\n";
-                    nl2 = ",";
-                }
-                if (node.type == TYPE::END_OBJECT) {
-                    indent.pop_back();
-                    res += indent;
-                    res += "}";
-                }
-                else if (node.type == TYPE::END_ARRAY) {
-                    indent.pop_back();
-                    if (arr != TYPE::ARRAY) res += indent;
-                    res += "]";
-                    arr = TYPE::NA;
-                }
-                else {
-                    if (arr != TYPE::ARRAY) res += indent;
-                    if (node.type == TYPE::OBJECT) {
-                        indent += "\t";
-                        if (node.name == "") res += "{";
-                        else res += "\"" + node.name + "\": {";
-                    }
-                    else if (node.type == TYPE::ARRAY || node.type == TYPE::ARRAY_NL) {
-                        indent += "\t";
-                        if (node.name == "") res += "[";
-                        else res += "\"" + node.name + "\": [";
-                        arr = (node.type == TYPE::ARRAY_NL) ? TYPE::ARRAY : TYPE::NA;
-                    }
-                    else if (node.type == TYPE::STRING) {
-                        if (node.name == "") res += "\"" + node.value + "\"";
-                        else res += "\"" + node.name + "\": \"" + node.value + "\"";
-                    }
-                    else if (node.type == TYPE::NUMBER) {
-                        if (node.name == "") res += node.value;
-                        else res += "\"" + node.name + "\": " + node.value;
-                    }
-                    else if (node.type == TYPE::BOOL) {
-                        if (node.name == "") res += node.value;
-                        else res += "\"" + node.name + "\": " + node.value;
-                    }
-                    else if (node.type == TYPE::NIL) {
-                        if (node.name == "") res += "null";
-                        else res += "\"" + node.name + "\": null";
-                    }
-                }
-                if (arr != TYPE::ARRAY) res += nl;
-                else res += nl2;
-            }
-            return res;
-        }
-        std::string unescape_string(const std::string& string) {
-            std::string res;
-            for (size_t f = 0; f < string.length(); f++) {
-                unsigned char c = string[f];
-                unsigned char n = string[f + 1];
-                if (c == '\\') {
-                    if (n == 't') res += '\t';
-                    else if (n == 'n') res += '\n';
-                    else if (n == 'r') res += '\r';
-                    else if (n == 'b') res += '\b';
-                    else if (n == 'f') res += '\f';
-                    else if (n == '\"') res += '"';
-                    else if (n == '\\') res += '\\';
-                    f++;
-                }
-                else res += c;
-            }
-            return res;
-        }
-         size_t validate(const char* json) {
-            auto nodes = json::NodeVector();
-            return json::parse(json, nodes);
-        }
-         size_t validate(std::string json) {
-            auto nodes = json::NodeVector();
-            return json::parse(json.c_str(), nodes);
+            return false;
         }
     }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+    return true;
+}
+void flw::util::sleep(int milli) {
+#ifdef _WIN32
+    Sleep(milli);
+#else
+    usleep(milli * 1000);
+#endif
+}
+flw::StringVector flw::util::split(const std::string& string, std::string split) {
+    auto res = StringVector();
+    try {
+        if (split != "") {
+            auto pos1 = (std::string::size_type) 0;
+            auto pos2 = string.find(split);
+            while (pos2 != std::string::npos) {
+                res.push_back(string.substr(pos1, pos2 - pos1));
+                pos1 = pos2 + split.size();
+                pos2 = string.find(split, pos1);
+            }
+            if (pos1 <= string.size()) {
+                res.push_back(string.substr(pos1));
+            }
+        }
+    }
+    catch(...) {
+        res.clear();
+    }
+    return res;
 }
 #include <FL/fl_draw.H>
 #include <FL/Fl.H>

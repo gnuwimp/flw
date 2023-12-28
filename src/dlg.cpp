@@ -17,6 +17,23 @@
 namespace flw {
     namespace dlg {
         //----------------------------------------------------------------------
+        void* zero_memory(void* mem, size_t size) {
+            if (mem == nullptr || size == 0) return mem;
+        #ifdef _WIN32
+            RtlSecureZeroMemory(mem, size);
+        #else
+            auto p = (volatile unsigned char*) mem;
+
+            while (size--) {
+                *p = 0;
+                p++;
+            }
+        #endif
+
+            return mem;
+        }
+
+        //----------------------------------------------------------------------
         class _DlgHtml  : public Fl_Double_Window {
             Fl_Help_View*               _html;
             Fl_Return_Button*           _close;
@@ -561,9 +578,9 @@ namespace flw {
                     password = _password1->value();
                 }
 
-                flw::util::zero_memory((void*) _password1->value(), strlen(_password1->value()));
-                flw::util::zero_memory((void*) _password2->value(), strlen(_password2->value()));
-                flw::util::zero_memory((void*) _file->value(), strlen(_file->value()));
+                dlg::zero_memory((void*) _password1->value(), strlen(_password1->value()));
+                dlg::zero_memory((void*) _password2->value(), strlen(_password2->value()));
+                dlg::zero_memory((void*) _file->value(), strlen(_file->value()));
 
                 return _ret;
             }
@@ -819,7 +836,6 @@ flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0,
 
     size(W, H);
     size_range(W, H);
-    FLW_PRINT(W,H, w(), h())
     callback(AbortDialog::Callback, this);
     set_modal();
 }
@@ -835,7 +851,7 @@ void flw::dlg::AbortDialog::Callback(Fl_Widget* w, void* o) {
 
 //------------------------------------------------------------------------------
 bool flw::dlg::AbortDialog::check(int milliseconds) {
-    auto now = flw::util::time_milli();
+    auto now = flw::util::milliseconds();
 
     if (now - _last > milliseconds) {
         _last = now;
@@ -847,7 +863,7 @@ bool flw::dlg::AbortDialog::check(int milliseconds) {
 
 //------------------------------------------------------------------------------
 bool flw::dlg::AbortDialog::check(double value, double min, double max, int milliseconds) {
-    auto now = flw::util::time_milli();
+    auto now = flw::util::milliseconds();
 
     if (now - _last > milliseconds) {
         _progress->value(value);
@@ -950,7 +966,7 @@ void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
         dlg->_pause->label("C&ontinue");
 
         while (dlg->_pause->value() != 0) {
-            flw::util::time_sleep(10);
+            flw::util::sleep(10);
             Fl::check();
         }
 
@@ -973,7 +989,7 @@ void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
 
 //------------------------------------------------------------------------------
 bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = flw::util::time();
+    auto now = flw::util::clock();
 
     if (now - _last > update_time) {
         _label->clear();
@@ -992,7 +1008,7 @@ bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages)
 
 //------------------------------------------------------------------------------
 bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
-    auto now = flw::util::time();
+    auto now = flw::util::clock();
 
     if (now - _last > update_time) {
         _label->clear();

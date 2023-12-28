@@ -8,6 +8,7 @@
 
 // MKALGAM_ON
 
+#include <assert.h>
 #include <FL/Fl.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Hold_Browser.H>
@@ -969,7 +970,7 @@ bool flw::theme::parse(int argc, const char** argv) {
             res = flw::theme::load(argv[f]);
         }
 
-        auto fontsize = util::to_int(argv[f]);
+        auto fontsize = atoi(argv[f]);
 
         if (fontsize >= 6 && fontsize <= 72) {
             flw::PREF_FONTSIZE = fontsize;

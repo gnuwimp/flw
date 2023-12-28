@@ -256,8 +256,8 @@ public:
         mb->textfont(flw::PREF_FONT);
         mb->textsize(flw::PREF_FONTSIZE);
 
-        util::menu_item_set(mb, "&Data/srand(time)", true);
-        util::menu_item_set(mb, "&Data/All Days (LINE)", true);
+        menu::set_item(mb, "&Data/srand(time)", true);
+        menu::set_item(mb, "&Data/All Days (LINE)", true);
         mb->textsize(flw::PREF_FONTSIZE);
         util::labelfont(this);
 
@@ -336,7 +336,7 @@ void callback_timer(void *data) {
 
     if (TEST == DATA_LAST) {
         TEST = DATA_LEFT_ALL;
-        util::menu_item_set(test->mb, "&Data/All Days (LINE)", true);
+        menu::set_item(test->mb, "&Data/All Days (LINE)", true);
         test->mb->activate();
         Fl::remove_timeout(callback_timer, data);
     }

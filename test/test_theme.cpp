@@ -246,12 +246,12 @@ public:
         menu->add("Test/Enabled");
         menu->add("Test/Disabled");
 
-        util::menu_item_set(menu, "Test/Toggle on", true);
-        util::menu_item_set(menu, "Test/Toggle off", true);
-        util::menu_item_set(menu, "Test/Toggle off", false);
-        util::menu_item_enable(menu, "Test/Enabled", false);
-        util::menu_item_enable(menu, "Test/Disabled", false);
-        util::menu_item_enable(menu, "Test/Enabled", true);
+        menu::set_item(menu, "Test/Toggle on", true);
+        menu::set_item(menu, "Test/Toggle off", true);
+        menu::set_item(menu, "Test/Toggle off", false);
+        menu::enable_item(menu, "Test/Enabled", false);
+        menu::enable_item(menu, "Test/Disabled", false);
+        menu::enable_item(menu, "Test/Enabled", true);
     }
 
     static void CallbackButton(Fl_Widget* w, void*) {
@@ -348,7 +348,6 @@ public:
         auto c = (Fl_Color*) color;
         char buf[200];
 
-        FLW_PRINT(color, c)
         Fl::get_color(*c, r, g, b);
 
         if (fl_color_chooser("Select", r, g, b, 1)) {

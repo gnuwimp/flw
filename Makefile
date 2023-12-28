@@ -34,7 +34,6 @@ all: test_chart.exe \
 	test_tableeditor.exe \
 	test_tabsgroup.exe \
 	test_theme.exe \
-	test_util.exe \
 	test_widgets.exe \
 
 OBJ=obj/chart.o \
@@ -225,12 +224,6 @@ obj/test_theme.o: test/test_theme.cpp obj/theme.o obj/util.o
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_theme.exe: obj/test_theme.o obj/libflw.a $(THEME_RESOURCE)
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-obj/test_util.o: test/test_util.cpp obj/util.o
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
-test_util.exe: obj/test_util.o obj/libflw.a
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 obj/test_widgets.o: test/test_widgets.cpp obj/inputmenu.o obj/scrollbrowser.o obj/util.o obj/theme.o

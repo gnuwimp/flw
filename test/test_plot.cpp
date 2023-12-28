@@ -4,6 +4,7 @@
 #include "plot.h"
 #include "theme.h"
 #include "util.h"
+#include <time.h>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>

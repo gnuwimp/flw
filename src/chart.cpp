@@ -39,6 +39,57 @@ namespace flw {
         }
 
         //----------------------------------------------------------------------
+        int count_decimals(double number) {
+            number = fabs(number);
+
+            int    res     = 0;
+            int    len     = 0;
+            char*  end     = 0;
+            double inumber = (int64_t) number;
+            double fnumber = number - inumber;
+            char   buffer[100];
+
+            if (number > 999999999999999) {
+                snprintf(buffer, 100, "%.1f", fnumber);
+            }
+            else if (number > 9999999999999) {
+                snprintf(buffer, 100, "%.2f", fnumber);
+            }
+            else if (number > 999999999999) {
+                snprintf(buffer, 100, "%.3f", fnumber);
+            }
+            else if (number > 99999999999) {
+                snprintf(buffer, 100, "%.4f", fnumber);
+            }
+            else if (number > 9999999999) {
+                snprintf(buffer, 100, "%.5f", fnumber);
+            }
+            else if (number > 999999999) {
+                snprintf(buffer, 100, "%.6f", fnumber);
+            }
+            else if (number > 99999999) {
+                snprintf(buffer, 100, "%.7f", fnumber);
+            }
+            else if (number > 9999999) {
+                snprintf(buffer, 100, "%.8f", fnumber);
+            }
+            else {
+                snprintf(buffer, 100, "%.9f", fnumber);
+            }
+
+            len = strlen(buffer);
+            end = buffer + len - 1;
+
+            while (*end == '0') {
+                *end = 0;
+                end--;
+            }
+
+            res = strlen(buffer) - 2;
+            return res;
+        }
+
+        //----------------------------------------------------------------------
         flw::PriceVector create_date_serie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
             int         month   = -1;
             Date        current = Date::FromString(start_date);
@@ -124,6 +175,41 @@ namespace flw {
         std::string format_date(const Price& price, Date::FORMAT format) {
             auto date = flw::Date::FromString(price.date.c_str());
             return date.format(format);
+        }
+
+        //----------------------------------------------------------------------
+        std::string format_double(double num, int decimals, char del) {
+            char res[100];
+
+            *res = 0;
+
+            if (decimals < 0) {
+                decimals = chart::count_decimals(num);
+            }
+
+            if (decimals == 0) {
+                return util::format_int((int64_t) num, del);
+            }
+
+            if (fabs(num) < 9223372036854775807.0) {
+                char fr_str[100];
+                auto int_num    = (int64_t) fabs(num);
+                auto double_num = (double) (fabs(num) - int_num);
+                auto int_str    = util::format_int(int_num, del);
+                auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+
+                if (len > 0 && len < 100) {
+                    if (num < 0.0) {
+                        res[0] = '-';
+                        res[1] = 0;
+                    }
+
+                    strncat(res, int_str.c_str(), 99);
+                    strncat(res, fr_str + 1, 99);
+                }
+            }
+
+            return res;
         }
 
         //----------------------------------------------------------------------
@@ -923,9 +1009,9 @@ void flw::Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
 void flw::Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
     auto self = (Chart*) chart_object;
 
-    self->_view.labels     = util::menu_item_value(self->_menu, chart::SHOW_LABELS);
-    self->_view.vertical   = util::menu_item_value(self->_menu, chart::SHOW_VLINES);
-    self->_view.horizontal = util::menu_item_value(self->_menu, chart::SHOW_HLINES);
+    self->_view.labels     = menu::item_value(self->_menu, chart::SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, chart::SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, chart::SHOW_HLINES);
     self->redraw();
 }
 
@@ -1007,11 +1093,11 @@ void flw::Chart::_create_tooltip(bool ctrl) {
         int        right_dec   = 0;
 
         if (_area->left.tick < 10.0 ) {
-            left_dec = util::count_decimals(_area->left.tick) + 1;
+            left_dec = chart::count_decimals(_area->left.tick) + 1;
         }
 
         if (_area->right.tick < 10.0 ) {
-            right_dec = util::count_decimals(_area->right.tick) + 1;
+            right_dec = chart::count_decimals(_area->right.tick) + 1;
         }
 
         while (start <= stop && start < (int) _dates.size()) {
@@ -1026,11 +1112,11 @@ void flw::Chart::_create_tooltip(bool ctrl) {
                     std::string  right;
 
                     if (_area->left.max > _area->left.min) {
-                        left = util::format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
+                        left = chart::format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
                     }
 
                     if (_area->right.max > _area->right.min) {
-                        right = util::format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
+                        right = chart::format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
                     }
 
                     const size_t len = (left.length() > right.length()) ? left.length() : right.length();
@@ -1052,9 +1138,9 @@ void flw::Chart::_create_tooltip(bool ctrl) {
                     if (index != (size_t) -1) {
                         const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
                         const auto price = line.points[index];
-                        auto       high  = util::format_double(price.high, dec, '\'');
-                        auto       low   = util::format_double(price.low, dec, '\'');
-                        auto       close = util::format_double(price.close, dec, '\'');
+                        auto       high  = chart::format_double(price.high, dec, '\'');
+                        auto       low   = chart::format_double(price.low, dec, '\'');
+                        auto       close = chart::format_double(price.close, dec, '\'');
                         const auto len   = (low.length() > high.length()) ? low.length() : high.length();
 
                         _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), (int) len, high.c_str(), (int) len, close.c_str(), (int) len, low.c_str());
@@ -1559,7 +1645,7 @@ void flw::Chart::_draw_xlabels() {
 void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const chart::Scale& scale, const bool left) {
     const double yinc  = (scale.pixel * scale.tick);
     const int    fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
-    const int    fr    = util::count_decimals(scale.tick);
+    const int    fr    = chart::count_decimals(scale.tick);
     int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
     double       ylast = chart::MAX_VAL;
     double       yval  = scale.min;
@@ -1574,7 +1660,7 @@ void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ch
         if (ylast > Y1) {
             auto y1     = y() + (int) Y1;
             auto x1     = x() + X;
-            auto string = util::format_double(yval, fr, '\'');
+            auto string = chart::format_double(yval, fr, '\'');
 
             if (left == true) {
                 fl_color(labelcolor());
@@ -1617,9 +1703,9 @@ int flw::Chart::handle(int event) {
             }
         }
         else if (Fl::event_button3() != 0) {
-            util::menu_item_set(_menu, chart::SHOW_LABELS, _view.labels);
-            util::menu_item_set(_menu, chart::SHOW_HLINES, _view.horizontal);
-            util::menu_item_set(_menu, chart::SHOW_VLINES, _view.vertical);
+            menu::set_item(_menu, chart::SHOW_LABELS, _view.labels);
+            menu::set_item(_menu, chart::SHOW_HLINES, _view.horizontal);
+            menu::set_item(_menu, chart::SHOW_VLINES, _view.vertical);
             _menu->popup();
             return 1;
         }

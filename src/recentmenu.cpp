@@ -24,10 +24,10 @@ namespace flw {
             _files.clear();
         }
         else if (append == true) {
-            util::add_string(_files, _max, file);
+            _add_string(_files, _max, file);
         }
         else {
-            util::insert_string(_files, _max, file);
+            _insert_string(_files, _max, file);
         }
 
         auto index = _menu->find_index(_base.c_str());
@@ -43,10 +43,39 @@ namespace flw {
         }
     }
 
+    //------------------------------------------------------------------------------
+    size_t RecentMenu::_add_string(StringVector& in, size_t max_size, std::string string) {
+        for (auto it = in.begin(); it != in.end(); ++it) {
+            if (*it == string) {
+                in.erase(it);
+                break;
+            }
+        }
+
+        in.push_back(string);
+
+        while (in.size() > max_size) in.erase(in.begin());
+        return in.size();
+    }
+
     //--------------------------------------------------------------------------
     void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
         auto self = (RecentMenu*) o;
         self->_add("", false);
+    }
+
+    //------------------------------------------------------------------------------
+    size_t RecentMenu::_insert_string(StringVector& in, size_t max_size, std::string string) {
+        for (auto it = in.begin(); it != in.end(); ++it) {
+            if (*it == string) {
+                in.erase(it);
+                break;
+            }
+        }
+
+        in.insert(in.begin(), string);
+        while (in.size() > max_size) in.pop_back();
+        return (int) in.size();
     }
 
     //--------------------------------------------------------------------------

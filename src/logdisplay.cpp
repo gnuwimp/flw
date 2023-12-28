@@ -9,6 +9,7 @@
 
 // MKALGAM_ON
 
+#include <assert.h>
 #include <FL/fl_ask.H>
 #include <FL/Fl_File_Chooser.H>
 
@@ -376,6 +377,44 @@ Ctrl + 'e' to edit style string.
 
             return res;
         }
+
+        //----------------------------------------------------------------------
+        // Returns new converted buffer if it does contain \r
+        // Otherwise it returns nullptr
+        //
+        char* win_to_unix(const char* string) {
+            auto r = false;
+            auto b = string;
+
+            while (*b != 0) {
+                if (*b++ == '\r') {
+                    r = true;
+                    break;
+                }
+            }
+
+            if (r == false) {
+                return nullptr;
+            }
+
+            auto len = strlen(string);
+            auto res = (char*) calloc(len + 1, 1);
+            auto pos = 0;
+
+            if (res != nullptr) {
+                b = string;
+
+                while (*b != 0) {
+                    if (*b != '\r') {
+                        res[pos++] = *b;
+                    }
+
+                    b++;
+                }
+            }
+
+            return res;
+        }
     } // logdisplay
 } // flw
 
@@ -536,56 +575,59 @@ void flw::LogDisplay::style(std::string json) {
     _json      = json;
     _tmp       = new Tmp();
     _tmp->size = _buffer->length();
-    _tmp->buf  = util::allocate(_tmp->size);
+    _tmp->buf  = (char*) calloc(_tmp->size + 1, 1);
 
-    memset(_tmp->buf, 'A', _tmp->size);
+    if (_tmp->buf != nullptr) {
+        memset(_tmp->buf, 'A', _tmp->size);
 
-    while (_tmp->pos < (size_t) _buffer->length()) {
-        auto line = _buffer->line_text(_tmp->pos);
+        while (_tmp->pos < (size_t) _buffer->length()) {
+            auto line = _buffer->line_text(_tmp->pos);
 
-        _tmp->len = strlen(line);
+            _tmp->len = strlen(line);
 
-        if (_json == "") {
-            line_cb(row, line);
-        }
-        else {
-            lock_colors(false);
+            if (_json == "") {
+                line_cb(row, line);
+            }
+            else {
+                lock_colors(false);
 
-            for (const auto& d : ds) {
-                if (d.style == logdisplay::STYLE::LOCK) {
-                    lock_colors(d.on);
-                }
-                else if (d.style == logdisplay::STYLE::LINE) {
-                    style_line(d.start, d.stop, d.color);
-                }
-                else if (d.style == logdisplay::STYLE::STRING) {
-                    style_string(line, d.word1, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::RSTRING) {
-                    style_rstring(line, d.word1, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::RANGE) {
-                    style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::NUM) {
-                    style_num(line, d.color, d.count);
-                }
-                else if (d.style == logdisplay::STYLE::BETWEEN) {
-                    style_range(line, d.word1, d.word2, d.inclusive, d.color);
-                }
-                else if (d.style == logdisplay::STYLE::CUSTOM) {
-                    line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
+                for (const auto& d : ds) {
+                    if (d.style == logdisplay::STYLE::LOCK) {
+                        lock_colors(d.on);
+                    }
+                    else if (d.style == logdisplay::STYLE::LINE) {
+                        style_line(d.start, d.stop, d.color);
+                    }
+                    else if (d.style == logdisplay::STYLE::STRING) {
+                        style_string(line, d.word1, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::RSTRING) {
+                        style_rstring(line, d.word1, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::RANGE) {
+                        style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::NUM) {
+                        style_num(line, d.color, d.count);
+                    }
+                    else if (d.style == logdisplay::STYLE::BETWEEN) {
+                        style_range(line, d.word1, d.word2, d.inclusive, d.color);
+                    }
+                    else if (d.style == logdisplay::STYLE::CUSTOM) {
+                        line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
+                    }
                 }
             }
+
+            _tmp->pos += _tmp->len + 1;
+            row += 1;
+            free(line);
         }
 
-        _tmp->pos += _tmp->len + 1;
-        row += 1;
-        free(line);
+        _style->text(_tmp->buf);
+        highlight_data(_style, logdisplay::STYLE_TABLE, sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]), (char) logdisplay::COLOR::FOREGROUND, nullptr, 0);
     }
 
-    _style->text(_tmp->buf);
-    highlight_data(_style, logdisplay::STYLE_TABLE, sizeof(logdisplay::STYLE_TABLE) / sizeof(logdisplay::STYLE_TABLE[0]), (char) logdisplay::COLOR::FOREGROUND, nullptr, 0);
     delete _tmp;
     _tmp = nullptr;
 }
@@ -763,7 +805,7 @@ void flw::LogDisplay::value(const char* text) {
     _buffer->text("");
     _style->text("");
 
-    auto win = util::win_to_unix(text);
+    auto win = logdisplay::win_to_unix(text);
 
     if (win != nullptr) {
         _buffer->text(win);

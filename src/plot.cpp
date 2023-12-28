@@ -8,6 +8,7 @@
 
 // MKALGAM_ON
 
+#include <assert.h>
 #include <math.h>
 #include <FL/fl_ask.H>
 
@@ -18,6 +19,92 @@ namespace flw {
         static const char* const        SHOW_VLINES     = "Show vertical lines";
         static const char* const        SAVE_FILE       = "Save to png file...";
         static const char* const        PRINT_DEBUG     = "Debug";
+
+        //----------------------------------------------------------------------
+        int count_decimals(double number) {
+            number = fabs(number);
+
+            int    res     = 0;
+            int    len     = 0;
+            char*  end     = 0;
+            double inumber = (int64_t) number;
+            double fnumber = number - inumber;
+            char   buffer[100];
+
+            if (number > 999999999999999) {
+                snprintf(buffer, 100, "%.1f", fnumber);
+            }
+            else if (number > 9999999999999) {
+                snprintf(buffer, 100, "%.2f", fnumber);
+            }
+            else if (number > 999999999999) {
+                snprintf(buffer, 100, "%.3f", fnumber);
+            }
+            else if (number > 99999999999) {
+                snprintf(buffer, 100, "%.4f", fnumber);
+            }
+            else if (number > 9999999999) {
+                snprintf(buffer, 100, "%.5f", fnumber);
+            }
+            else if (number > 999999999) {
+                snprintf(buffer, 100, "%.6f", fnumber);
+            }
+            else if (number > 99999999) {
+                snprintf(buffer, 100, "%.7f", fnumber);
+            }
+            else if (number > 9999999) {
+                snprintf(buffer, 100, "%.8f", fnumber);
+            }
+            else {
+                snprintf(buffer, 100, "%.9f", fnumber);
+            }
+
+            len = strlen(buffer);
+            end = buffer + len - 1;
+
+            while (*end == '0') {
+                *end = 0;
+                end--;
+            }
+
+            res = strlen(buffer) - 2;
+            return res;
+        }
+
+        //----------------------------------------------------------------------
+        std::string format_double(double num, int decimals, char del) {
+            char res[100];
+
+            *res = 0;
+
+            if (decimals < 0) {
+                decimals = plot::count_decimals(num);
+            }
+
+            if (decimals == 0) {
+                return util::format_int((int64_t) num, del);
+            }
+
+            if (fabs(num) < 9223372036854775807.0) {
+                char fr_str[100];
+                auto int_num    = (int64_t) fabs(num);
+                auto double_num = (double) (fabs(num) - int_num);
+                auto int_str    = util::format_int(int_num, del);
+                auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+
+                if (len > 0 && len < 100) {
+                    if (num < 0.0) {
+                        res[0] = '-';
+                        res[1] = 0;
+                    }
+
+                    strncat(res, int_str.c_str(), 99);
+                    strncat(res, fr_str + 1, 99);
+                }
+            }
+
+            return res;
+        }
 
         //----------------------------------------------------------------------
         bool has_pairs(TYPE type) {
@@ -298,7 +385,7 @@ void flw::plot::Scale::calc(double canvas_size) {
         }
     }
 
-    fr = util::count_decimals(tick);
+    fr = plot::count_decimals(tick);
 }
 
 //------------------------------------------------------------------------------
@@ -337,8 +424,8 @@ void flw::plot::Scale::measure_text(int cw) {
     }
     else {
         const auto dec = (fr > 0) ? fr : -1;
-        const auto l1  = util::format_double(min, dec, ' ');
-        const auto l2  = util::format_double(max, dec, ' ');
+        const auto l1  = plot::format_double(min, dec, ' ');
+        const auto l2  = plot::format_double(max, dec, ' ');
 
         text = (l1.length() > l2.length()) ? l1.length() * cw : l2.length() * cw;
     }
@@ -473,9 +560,9 @@ void flw::Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
 void flw::Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
     auto self = (Plot*) plot_object;
 
-    self->_view.labels     = flw::util::menu_item_value(self->_menu, plot::SHOW_LABELS);
-    self->_view.horizontal = flw::util::menu_item_value(self->_menu, plot::SHOW_HLINES);
-    self->_view.vertical   = flw::util::menu_item_value(self->_menu, plot::SHOW_VLINES);
+    self->_view.labels     = flw::menu::item_value(self->_menu, plot::SHOW_LABELS);
+    self->_view.horizontal = flw::menu::item_value(self->_menu, plot::SHOW_HLINES);
+    self->_view.vertical   = flw::menu::item_value(self->_menu, plot::SHOW_VLINES);
 
     self->redraw();
 }
@@ -534,8 +621,8 @@ void flw::Plot::_create_tooltip(bool ctrl) {
                 const plot::Point& point = points[i];
 
                 if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
-                    auto xl  = util::format_double(point.x, fr, ' ');
-                    auto yl  = util::format_double(point.y, fr, ' ');
+                    auto xl  = plot::format_double(point.x, fr, ' ');
+                    auto yl  = plot::format_double(point.y, fr, ' ');
                     auto len = (xl.length() > yl.length()) ? xl.length() : yl.length();
 
                     _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
@@ -548,8 +635,8 @@ void flw::Plot::_create_tooltip(bool ctrl) {
         if (_tooltip == "") {
             auto xv  = ((double) (X - _area.x) / _x.pixel) + _x.min;
             auto yv  = ((double) (_area.y2() - Y) / _y.pixel) + _y.min;
-            auto xl  = util::format_double(xv, fr, ' ');
-            auto yl  = util::format_double(yv, fr, ' ');
+            auto xl  = plot::format_double(xv, fr, ' ');
+            auto yl  = plot::format_double(yv, fr, ' ');
             auto len = (xl.length() > yl.length()) ? xl.length() : yl.length();
 
             _tooltip = flw::util::format("X = %*s\nY = %*s", len, xl.c_str(), len, yl.c_str());
@@ -857,7 +944,7 @@ void flw::Plot::_draw_xlabels() {
         }
 
         if (X > (last + tw) && (X + tw) < W) {
-            auto label = util::format_double(val, _x.fr, '\'');
+            auto label = plot::format_double(val, _x.fr, '\'');
 
             if ((int) (X + 1) == (_area.x2() - 1)) { // Adjust so rightmost pixel is aligned
                 X += 1.0;
@@ -922,7 +1009,7 @@ void flw::Plot::_draw_ylabels() {
         }
 
         if (Y < last) {
-            const auto label = util::format_double(val, _y.fr, '\'');
+            const auto label = plot::format_double(val, _y.fr, '\'');
 
             if (Y < (double) _area.y) { // Adjust top most pixel
                 Y = _area.y;
@@ -981,9 +1068,9 @@ int flw::Plot::handle(int event) {
             }
         }
         else if (Fl::event_button3() != 0) {
-            flw::util::menu_item_set(_menu, plot::SHOW_LABELS, _view.labels);
-            flw::util::menu_item_set(_menu, plot::SHOW_HLINES, _view.horizontal);
-            flw::util::menu_item_set(_menu, plot::SHOW_VLINES, _view.vertical);
+            flw::menu::set_item(_menu, plot::SHOW_LABELS, _view.labels);
+            flw::menu::set_item(_menu, plot::SHOW_HLINES, _view.horizontal);
+            flw::menu::set_item(_menu, plot::SHOW_VLINES, _view.vertical);
             _menu->popup();
             return 1;
         }

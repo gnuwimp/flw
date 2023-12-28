@@ -1,47 +1,12 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
+// Optional compile flags:
+// -DFLW_USE_PNG
 #ifndef FLW_H
 #define FLW_H
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Hold_Browser.H>
-#include <FL/Fl_Text_Buffer.H>
-#include <FL/Fl_Text_Editor.H>
-#include <assert.h>
-#include <iostream>
-#include <map>
 #include <string>
 #include <vector>
-class Fl_Button;
-class Fl_Hor_Fill_Slider;
-class Fl_Input;
-class Fl_Menu_;
-class Fl_Menu_Button;
-class Fl_Toggle_Button;
-#include <assert.h>
-#include <string>
-#include <vector>
-#include <iostream>
 #include <FL/Fl_Menu_.H>
-#define _FLW_TOSTRING(X)            #X
-#define FLW_TOSTRING(X)             _FLW_TOSTRING(X)
-#define FLW_LINE                    { fprintf(stderr, "%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stderr); }
-#define FLW_RED                     { fprintf(stderr, "\033[7m\033[31m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_GREEN                   { fprintf(stderr, "\033[7m\033[32m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_YELLOW                  { fprintf(stderr, "\033[7m\033[33m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_BLUE                    { fprintf(stderr, "\033[7m\033[34m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_MAGENTA                 { fprintf(stderr, "\033[7m\033[35m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_CYAN                    { fprintf(stderr, "\033[7m\033[36m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_WHITE                   { fprintf(stderr, "\033[7m\033[37m" "%s: %s: " FLW_TOSTRING(__LINE__) " \033[0m\n", __FILE__, __func__); fflush(stderr); }
-#define FLW_PRINT(...)              FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
-#define FLW_PRINT1(A)               { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << std::endl; fflush(stderr); }
-#define FLW_PRINT2(A,B)             { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << std::endl; fflush(stderr); }
-#define FLW_PRINT3(A,B,C)           { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << std::endl; fflush(stderr); }
-#define FLW_PRINT4(A,B,C,D)         { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << std::endl; fflush(stderr); }
-#define FLW_PRINT5(A,B,C,D,E)       { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << ", (" FLW_TOSTRING(E) ")=" << (E) << std::endl; fflush(stderr); }
-#define FLW_PRINT6(A,B,C,D,E,F)     { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << ", (" FLW_TOSTRING(E) ")=" << (E) << ", (" FLW_TOSTRING(F) ")=" << (F) << std::endl; fflush(stderr); }
-#define FLW_PRINT7(A,B,C,D,E,F,G)   { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << ", (" FLW_TOSTRING(E) ")=" << (E) << ", (" FLW_TOSTRING(F) ")=" << (F) << ", (" FLW_TOSTRING(G) ")=" << (G) << std::endl; fflush(stderr); }
-#define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
 namespace flw {
     extern int                          PREF_FIXED_FONT;
     extern std::string                  PREF_FIXED_FONTNAME;
@@ -65,144 +30,31 @@ namespace flw {
         bool                            operator==(const Buf& other) const;
         virtual                         ~Buf();
     };
-    namespace util {
-        size_t                          add_string(StringVector& in, size_t max_size, std::string string);
-        char*                           allocate(size_t size, bool terminate = true);
-        void                            center_window(Fl_Window* window, Fl_Window* parent = nullptr);
-        int                             count_decimals(double number);
-        std::string                     fix_menu_string(std::string in);
-        std::string                     format(const char* format, ...);
-        std::string                     format_double(double num, int decimals, char del = ' ');
-        std::string                     format_int(int64_t num, char del = ' ');
-        size_t                          insert_string(StringVector& in, size_t max_size, std::string string);
-        void                            labelfont(Fl_Widget* widget);
-        Buf                             load_file(std::string filename, bool alert = true);
-        void                            menu_item_enable(Fl_Menu_* menu, const char* text, bool value);
-        Fl_Menu_Item*                   menu_item_get(Fl_Menu_* menu, const char* text);
-        void                            menu_item_set(Fl_Menu_* menu, const char* text, bool value);
-        void                            menu_item_set_only(Fl_Menu_* menu, const char* text);
-        bool                            menu_item_value(Fl_Menu_* menu, const char* text);
-        void                            png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    namespace debug {
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
-        int                             replace(std::string& string, std::string find, std::string replace);
-        bool                            save_file(std::string filename, const void* data, size_t size, bool alert = true);
-        StringVector                    split(const std::string& string, std::string split);
-        bool                            test(bool val, int line, const char* func);
-        bool                            test(const char* ref, const char* val, int line, const char* func);
-        bool                            test(int64_t ref, int64_t val, int line, const char* func);
-        bool                            test(double ref, double val, double diff, int line, const char* func);
-        double                          time();
-        int64_t                         time_micro();
-        int32_t                         time_milli();
-        void                            time_sleep(int milli);
-        double                          to_double(std::string, double def = 0.0);
-        int                             to_doubles(std::string string, double numbers[], size_t size);
-        int64_t                         to_int(std::string string, int64_t def = 0);
-        int                             to_ints(std::string string, int64_t numbers[], size_t size);
-        char*                           win_to_unix(const char* string);
-        void*                           zero_memory(char* string);
-        void*                           zero_memory(void* Buf, size_t size);
-        void*                           zero_memory(std::string& string);
     }
-    struct Stat {
-        int64_t                         size;
-        int64_t                         mtime;
-        int                             mode;
-                                        Stat()
-                                            { size = mtime = 0; mode = 0; }
-                                        Stat(std::string filename);
-    };
-    namespace json {
-        #define FLW_JSON_START(VEC, X)                      { flw::json::NodeVector& V = VEC; int D = 0; char B[50]; X; (void) B; size_t I = 0; for (auto& n : V) n.index = I++; }
-        #define FLW_JSON_START_OBJECT(X)                    { V.push_back(flw::json::Node(flw::json::TYPE::OBJECT, "", "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_OBJECT, "", "", --D)); }
-        #define FLW_JSON_START_ARRAY(X)                     { V.push_back(flw::json::Node(flw::json::TYPE::ARRAY, "", "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, "", "", --D)); }
-        #define FLW_JSON_START_ARRAY_NL(X)                  { V.push_back(flw::json::Node(flw::json::TYPE::ARRAY_NL, "", "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, "", "", --D)); }
-        #define FLW_JSON_ADD_OBJECT(NAME,X)                 { std::string N = flw::json::escape_string(NAME); V.push_back(flw::json::Node(flw::json::TYPE::OBJECT, N, "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_OBJECT, N, "", --D)); }
-        #define FLW_JSON_ADD_ARRAY(NAME,X)                  { std::string N = flw::json::escape_string(NAME); V.push_back(flw::json::Node(flw::json::TYPE::ARRAY, N, "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, N, "", --D)); }
-        #define FLW_JSON_ADD_ARRAY_NL(NAME,X)               { std::string N = flw::json::escape_string(NAME); V.push_back(flw::json::Node(flw::json::TYPE::ARRAY_NL, N, "", D++)); X; V.push_back(flw::json::Node(flw::json::TYPE::END_ARRAY, N, "", --D)); }
-        #define FLW_JSON_ADD_STRING(NAME,VALUE)             { V.push_back(flw::json::Node(flw::json::TYPE::STRING, flw::json::escape_string(NAME), flw::json::escape_string(VALUE), D)); }
-        #define FLW_JSON_ADD_NUMBER(NAME,VALUE)             { snprintf(B, 50, "%f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
-        #define FLW_JSON_ADD_NUMBER2(NAME,VALUE)            { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
-        #define FLW_JSON_ADD_INT(NAME,VALUE)                { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
-        #define FLW_JSON_ADD_UINT(NAME,VALUE)               { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, flw::json::escape_string(NAME), B, D)); }
-        #define FLW_JSON_ADD_BOOL(NAME,VALUE)               { V.push_back(flw::json::Node(flw::json::TYPE::BOOL, flw::json::escape_string(NAME), VALUE == true ? "true" : "false", D)); }
-        #define FLW_JSON_ADD_NIL(NAME)                      { V.push_back(flw::json::Node(flw::json::TYPE::NIL, flw::json::escape_string(NAME), "", D)); }
-        #define FLW_JSON_ADD_STRING_TO_ARRAY(VALUE)         { V.push_back(flw::json::Node(flw::json::TYPE::STRING, "", flw::json::escape_string(VALUE), D)); }
-        #define FLW_JSON_ADD_NUMBER_TO_ARRAY(VALUE)         { snprintf(B, 50, "%f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
-        #define FLW_JSON_ADD_NUMBER2_TO_ARRAY(VALUE)        { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
-        #define FLW_JSON_ADD_INT_TO_ARRAY(VALUE)            { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
-        #define FLW_JSON_ADD_UINT_TO_ARRAY(VALUE)           { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(flw::json::Node(flw::json::TYPE::NUMBER, "", B, D)); }
-        #define FLW_JSON_ADD_BOOL_TO_ARRAY(VALUE)           { V.push_back(flw::json::Node(flw::json::TYPE::BOOL, "", VALUE == true ? "true" : "false", D)); }
-        #define FLW_JSON_ADD_NIL_TO_ARRAY()                 { V.push_back(flw::json::Node(flw::json::TYPE::NIL, "", "", D)); }
-        enum class TYPE {
-                                        NA,
-                                        OBJECT,
-                                        END_OBJECT,
-                                        ARRAY,
-                                        END_ARRAY,
-                                        STRING,
-                                        NUMBER,
-                                        BOOL,
-                                        NIL,
-                                        COLON,
-                                        COMMA,
-                                        ARRAY_NL,
-        };
-        std::string                     escape_string(const std::string& string);
-        std::string                     unescape_string(const std::string& string);
-        struct Node {
-            TYPE                        type;
-            int                         depth;
-            size_t                      index;
-            std::string                 value;
-            std::string                 name;
-            size_t                      textpos;
-                                        Node(TYPE type = TYPE::NA, const std::string& name = "", const std::string& value = "", int depth = 0, size_t textpos = 0)
-                                            { this->type = type; this->name = name; this->value = value; this->depth = depth; this->textpos = textpos; }
-            bool                        operator==(const Node& other) const
-                                            { return (type == other.type || (type == TYPE::ARRAY && other.type == TYPE::ARRAY_NL) || (type == TYPE::ARRAY_NL && other.type == TYPE::ARRAY)) && depth == other.depth && value == other.value && name == other.name; }
-            bool                        is_array() const
-                                            { return type == json::TYPE::ARRAY; }
-            bool                        is_bool() const
-                                            { return type == json::TYPE::BOOL; }
-            bool                        is_data() const
-                                            { return type == json::TYPE::STRING || type == json::TYPE::NUMBER || type == json::TYPE::BOOL || type == json::TYPE::NIL; }
-            bool                        is_end() const
-                                            { return type == json::TYPE::END_ARRAY || type == json::TYPE::END_OBJECT; }
-            bool                        is_nil() const
-                                            { return type == json::TYPE::NIL; }
-            bool                        is_number() const
-                                            { return type == json::TYPE::NUMBER; }
-            bool                        is_object() const
-                                            { return type == json::TYPE::OBJECT; }
-            bool                        is_start() const
-                                            { return type == json::TYPE::ARRAY || type == json::TYPE::ARRAY_NL || type == json::TYPE::OBJECT; }
-            bool                        is_string() const
-                                            { return type == json::TYPE::STRING; }
-            void                        print() const;
-            bool                        tobool() const
-                                            { return value == "true"; }
-            long long                   toint() const
-                                            { return (type == json::TYPE::NUMBER) ? strtoll(value.c_str(), nullptr, 0) : 0; }
-            double                      tonumber() const
-                                            { return (type == json::TYPE::NUMBER) ? strtod(value.c_str(), nullptr) : 0.0; }
-            std::string                 tostring() const
-                                            { return unescape_string(value); }
-            std::string                 unescape_name() const
-                                            { return unescape_string(name); }
-        };
-        typedef std::vector<Node>       NodeVector;
-        typedef std::vector<size_t>     SizeTVector;
-        NodeVector                      find_children(const NodeVector& nodes, const Node& start, bool grandchildren = false);
-        NodeVector                      find_nodes(const NodeVector& nodes, std::string name, TYPE type = TYPE::NA);
-        NodeVector                      find_siblings(const NodeVector& nodes, const Node& start);
-        size_t                          parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma = false);
-        size_t                          parse(std::string json, NodeVector& nodes, bool ignore_trailing_comma = false);
-        void                            print(const NodeVector& nodes);
-        std::string                     tostring(const NodeVector& nodes);
-        size_t                          validate(const char* json);
-        size_t                          validate(std::string json);
+    namespace menu {
+        void                            enable_item(Fl_Menu_* menu, const char* text, bool value);
+        Fl_Menu_Item*                   get_item(Fl_Menu_* menu, const char* text);
+        bool                            item_value(Fl_Menu_* menu, const char* text);
+        void                            set_item(Fl_Menu_* menu, const char* text, bool value);
+        void                            setonly_item(Fl_Menu_* menu, const char* text);
+    }
+    namespace util {
+        void                            center_window(Fl_Window* window, Fl_Window* parent = nullptr);
+        double                          clock();
+        std::string                     fix_menu_string(std::string in);
+        std::string                     format(const char* format, ...);
+        std::string                     format_int(int64_t num, char del = ' ');
+        void                            labelfont(Fl_Widget* widget);
+        Buf                             load_file(std::string filename, bool alert = true);
+        int32_t                         milliseconds();
+        void                            png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+        std::string&                    replace(std::string& string, std::string find, std::string replace);
+        bool                            save_file(std::string filename, const void* data, size_t size, bool alert = true);
+        void                            sleep(int milli);
+        StringVector                    split(const std::string& string, std::string split);
     }
 }
 #include <string>
@@ -326,6 +178,180 @@ namespace flw {
         char                            _hour;
         char                            _min;
         char                            _sec;
+    };
+}
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Scrollbar.H>
+#include <vector>
+namespace flw {
+    class Chart;
+    struct Price {
+        std::string                     date;
+        double                          close;
+        double                          high;
+        double                          low;
+        double                          vol;
+                                        Price();
+                                        Price(const std::string& date_value, double value = 0.0);
+                                        Price(const std::string& date, double high, double low, double close, double vol = 0.0);
+        bool                            operator<(const Price& price) const { return date < price.date; }
+        bool                            operator<=(const Price& price) const { return date <= price.date; }
+        bool                            operator==(const Price& price) const { return date == price.date; }
+        bool                            operator!=(const Price& price) const { return date != price.date; }
+    };
+    typedef std::vector<Price>          PriceVector;
+    namespace chart {
+        struct Area;
+        struct Line;
+        enum class TYPE;
+        const int                       MIN_TICK  = 3;
+        const int                       MAX_TICK  = 100;
+        const size_t                    MAX_AREA  = 3;
+        const size_t                    MAX_LINE  = 10;
+        const double                    MIN_VAL   = -999'999'999'999'999.0;
+        const double                    MAX_VAL   =  999'999'999'999'999.0;
+        typedef std::vector<chart::Line> LineVector;
+        typedef std::vector<chart::Area> AreaVector;
+        size_t                          bsearch(const PriceVector& prices, const Price& key);
+        bool                            has_high_low(TYPE chart_type);
+        bool                            has_resizable_width(TYPE chart_type);
+        bool                            has_time(Date::RANGE date_range);
+        bool                            load_data(Chart* chart, std::string filename);
+        bool                            save_data(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
+        enum class TYPE {
+                                        LINE,
+                                        BAR,
+                                        VERTICAL,
+                                        CLAMP_VERTICAL,
+                                        HORIZONTAL,
+                                        EXPAND_VERTICAL,
+                                        EXPAND_HORIZONTAL,
+                                        LAST = EXPAND_HORIZONTAL,
+        };
+        struct Line {
+            Fl_Align                    align;
+            TYPE                        type;
+            Fl_Color                    color;
+            bool                        visible;
+            int                         width;
+            double                      clamp_max;
+            double                      clamp_min;
+            std::string                 label;
+            double                      max;
+            double                      min;
+            PriceVector                 points;
+                                        Line();
+                                        ~Line()
+                                            { clear(); }
+            void                        clear();
+            void                        debug(int num) const;
+            bool                        set(const PriceVector& points, std::string label, TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
+        };
+        struct Scale {
+            double                      max;
+            double                      min;
+            double                      pixel;
+            double                      tick;
+                                        Scale();
+            void                        calc(int height);
+            void                        clear();
+            void                        debug(const char* name) const;
+            double                      diff() const
+                                            { return max - min; }
+            void                        fix_height();
+        };
+        struct Area {
+            size_t                      count;
+            double                      h;
+            Scale                       left;
+            LineVector                  lines;
+            int                         percent;
+            Scale                       right;
+            size_t                      selected;
+            double                      w;
+            double                      x;
+            double                      y;
+                                        Area();
+            void                        clear(bool clear_data);
+            void                        debug(int num) const;
+            int                         x2() const
+                                            { return (int) (x + w); }
+            int                         y2() const
+                                            { return (int) (y + h); }
+        };
+    }
+    class Chart : public Fl_Group {
+        friend bool                     chart::save_data(const Chart*, std::string, double);
+    public:
+                                        Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        bool                            add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, chart::TYPE chart_type = chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = chart::MIN_VAL, double clamp_max = chart::MAX_VAL);
+        bool                            area_size(int area1 = 100, int area2 = 0, int area3 = 0);
+        void                            block_dates(const PriceVector& block_dates)
+                                            { _block_dates = block_dates; }
+        void                            clear();
+        Date::FORMAT                    date_format() const
+                                            { return _date_format; }
+        bool                            date_range(Date::RANGE range = Date::RANGE::DAY);
+        void                            debug() const;
+        void                            draw() override;
+        int                             handle(int event) override;
+        bool                            has_time() const
+                                            { return chart::has_time(_date_range); }
+        void                            init(bool calc_dates);
+        bool                            margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
+        void                            resize()
+                                            { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
+        void                            resize(int X, int Y, int W, int H) override;
+        bool                            tick_width(int tick_width_from_3_to_100 = chart::MIN_TICK);
+        void                            update_pref();
+        void                            view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
+                                            { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
+    private:
+        void                            _calc_area_height();
+        void                            _calc_area_width();
+        void                            _calc_dates();
+        void                            _calc_ymin_ymax();
+        void                            _calc_yscale();
+        void                            _create_tooltip(bool ctrl);
+        void                            _draw_area(const chart::Area& area);
+        void                            _draw_line(const chart::Line& line, const chart::Scale& scale, int X, int Y, int W, int H);
+        void                            _draw_line_labels(const chart::Area& area);
+        void                            _draw_tooltip();
+        void                            _draw_ver_lines(const chart::Area& area);
+        void                            _draw_xlabels();
+        void                            _draw_ylabels(int X, double Y1, double Y2, const chart::Scale& scale, bool left);
+        chart::Area*                    _inside_area(int X, int Y);
+        static void                     _CallbackDebug(Fl_Widget* widget, void* chart_object);
+        static void                     _CallbackReset(Fl_Widget* widget, void* chart_object);
+        static void                     _CallbackSavePng(Fl_Widget* widget, void* chart_object);
+        static void                     _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
+        static void                     _CallbackToggle(Fl_Widget* widget, void* chart_object);
+        struct {
+            bool                        horizontal;
+            bool                        labels;
+            bool                        vertical;
+        }                               _view;
+        chart::Area*                    _area;
+        chart::AreaVector               _areas;
+        PriceVector                     _block_dates;
+        int                             _bottom_space;
+        int                             _cw;
+        Date::FORMAT                    _date_format;
+        Date::RANGE                     _date_range;
+        int                             _date_start;
+        PriceVector                     _dates;
+        int                             _margin_left;
+        int                             _margin_right;
+        Fl_Menu_Button*                 _menu;
+        int                             _old_height;
+        int                             _old_width;
+        Fl_Scrollbar*                   _scroll;
+        int                             _tick_width;
+        int                             _ticks;
+        std::string                     _tooltip;
+        int                             _top_space;
+        int                             _ver_pos[101];
     };
 }
 #include <FL/Fl_Box.H>
@@ -524,6 +550,109 @@ namespace flw {
         Fl_Menu_Button*                 _menu;
     };
 }
+#include <string>
+#include <vector>
+namespace flw {
+namespace json {
+    #define FLW_JSON_START(VEC, X)                      { json::NodeVector& V = VEC; int D = 0; char B[50]; X; (void) B; size_t I = 0; for (auto& n : V) n.index = I++; }
+    #define FLW_JSON_START_OBJECT(X)                    { V.push_back(json::Node(json::OBJECT, "", "", D++)); X; V.push_back(json::Node(json::END_OBJECT, "", "", --D)); }
+    #define FLW_JSON_START_ARRAY(X)                     { V.push_back(json::Node(json::ARRAY, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
+    #define FLW_JSON_START_ARRAY_NL(X)                  { V.push_back(json::Node(json::ARRAY_NL, "", "", D++)); X; V.push_back(json::Node(json::END_ARRAY, "", "", --D)); }
+    #define FLW_JSON_ADD_OBJECT(NAME,X)                 { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::OBJECT, N, "", D++)); X; V.push_back(json::Node(json::END_OBJECT, N, "", --D)); }
+    #define FLW_JSON_ADD_ARRAY(NAME,X)                  { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
+    #define FLW_JSON_ADD_ARRAY_NL(NAME,X)               { std::string N = json::escape_string(NAME); V.push_back(json::Node(json::ARRAY_NL, N, "", D++)); X; V.push_back(json::Node(json::END_ARRAY, N, "", --D)); }
+    #define FLW_JSON_ADD_STRING(NAME,VALUE)             { V.push_back(json::Node(json::STRING, json::escape_string(NAME), json::escape_string(VALUE), D)); }
+    #define FLW_JSON_ADD_NUMBER(NAME,VALUE)             { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
+    #define FLW_JSON_ADD_NUMBER2(NAME,VALUE)            { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
+    #define FLW_JSON_ADD_INT(NAME,VALUE)                { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
+    #define FLW_JSON_ADD_UINT(NAME,VALUE)               { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, json::escape_string(NAME), B, D)); }
+    #define FLW_JSON_ADD_BOOL(NAME,VALUE)               { V.push_back(json::Node(json::BOOL, json::escape_string(NAME), VALUE == true ? "true" : "false", D)); }
+    #define FLW_JSON_ADD_NIL(NAME)                      { V.push_back(json::Node(json::NIL, json::escape_string(NAME), "", D)); }
+    #define FLW_JSON_ADD_STRING_TO_ARRAY(VALUE)         { V.push_back(json::Node(json::STRING, "", json::escape_string(VALUE), D)); }
+    #define FLW_JSON_ADD_NUMBER_TO_ARRAY(VALUE)         { snprintf(B, 50, "%f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
+    #define FLW_JSON_ADD_NUMBER2_TO_ARRAY(VALUE)        { snprintf(B, 50, "%.2f", (double) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
+    #define FLW_JSON_ADD_INT_TO_ARRAY(VALUE)            { snprintf(B, 50, "%lld", (long long int) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
+    #define FLW_JSON_ADD_UINT_TO_ARRAY(VALUE)           { snprintf(B, 50, "%llu", (long long unsigned) VALUE); V.push_back(json::Node(json::NUMBER, "", B, D)); }
+    #define FLW_JSON_ADD_BOOL_TO_ARRAY(VALUE)           { V.push_back(json::Node(json::BOOL, "", VALUE == true ? "true" : "false", D)); }
+    #define FLW_JSON_ADD_NIL_TO_ARRAY()                 { V.push_back(json::Node(json::NIL, "", "", D)); }
+    struct Err {
+        ssize_t                         pos;
+        ssize_t                         line;
+                                        Err()
+                                            { pos = -1; line = -1; }
+                                        Err(ssize_t pos, ssize_t line)
+                                            { this->pos = pos; this->line = line; }
+    };
+    enum TYPE {
+                                        NA,
+                                        OBJECT,
+                                        END_OBJECT,
+                                        ARRAY,
+                                        END_ARRAY,
+                                        STRING,
+                                        NUMBER,
+                                        BOOL,
+                                        NIL,
+                                        COLON,
+                                        COMMA,
+                                        ARRAY_NL,
+    };
+    std::string                         escape_string(const std::string& string);
+    std::string                         unescape_string(const std::string& string);
+    struct Node {
+        TYPE                            type;
+        int                             depth;
+        size_t                          index;
+        std::string                     value;
+        std::string                     name;
+        size_t                          textpos;
+                                        Node(TYPE type = TYPE::NA, const std::string& name = "", const std::string& value = "", int depth = 0, size_t textpos = 0)
+                                            { this->type = type; this->name = name; this->value = value; this->depth = depth; this->textpos = textpos; }
+        bool                            operator==(const Node& other) const
+                                            { return (type == other.type || (type == TYPE::ARRAY && other.type == TYPE::ARRAY_NL) || (type == TYPE::ARRAY_NL && other.type == TYPE::ARRAY)) && depth == other.depth && value == other.value && name == other.name; }
+        bool                            is_array() const
+                                            { return type == json::ARRAY; }
+        bool                            is_bool() const
+                                            { return type == json::BOOL; }
+        bool                            is_data() const
+                                            { return type == json::STRING || type == json::NUMBER || type == json::BOOL || type == json::NIL; }
+        bool                            is_end() const
+                                            { return type == json::END_ARRAY || type == json::END_OBJECT; }
+        bool                            is_nil() const
+                                            { return type == json::NIL; }
+        bool                            is_number() const
+                                            { return type == json::NUMBER; }
+        bool                            is_object() const
+                                            { return type == json::OBJECT; }
+        bool                            is_start() const
+                                            { return type == json::ARRAY || type == json::ARRAY_NL || type == json::OBJECT; }
+        bool                            is_string() const
+                                            { return type == json::STRING; }
+        void                            print() const;
+        bool                            tobool() const
+                                            { return value == "true"; }
+        long long                       toint() const
+                                            { return (type == json::NUMBER) ? strtoll(value.c_str(), nullptr, 0) : 0; }
+        double                          tonumber() const
+                                            { return (type == json::NUMBER) ? strtod(value.c_str(), nullptr) : 0.0; }
+        std::string                     tostring() const
+                                            { return unescape_string(value); }
+        std::string                     unescape_name() const
+                                            { return unescape_string(name); }
+    };
+    typedef std::vector<Node>           NodeVector;
+    typedef std::vector<size_t>         SizeTVector;
+    NodeVector                          find_children(const NodeVector& nodes, const Node& start, bool grandchildren = false);
+    NodeVector                          find_nodes(const NodeVector& nodes, std::string name, TYPE type = TYPE::NA);
+    NodeVector                          find_siblings(const NodeVector& nodes, const Node& start);
+    Err                                 parse(const char* json, NodeVector& nodes, bool ignore_trailing_comma = false);
+    Err                                 parse(std::string json, NodeVector& nodes, bool ignore_trailing_comma = false);
+    void                                print(const NodeVector& nodes);
+    std::string                         tostring(const NodeVector& nodes);
+    Err                                 validate(const char* json);
+    Err                                 validate(std::string json);
+}
+}
 #include <FL/Fl_Box.H>
 namespace flw {
     class LcdNumber : public Fl_Box {
@@ -667,201 +796,182 @@ namespace flw {
         Tmp*                            _tmp;
     };
 }
-#include <vector>
-#include <string>
-namespace flw {
-    struct Price;
-    typedef std::vector<Price> PriceVector;
-    struct Price {
-        std::string                     date;
-        double                          close;
-        double                          high;
-        double                          low;
-        double                          vol;
-                                        Price();
-                                        Price(const std::string& date_value, double value = 0.0);
-                                        Price(const std::string& date, double high, double low, double close, double vol = 0.0);
-                                        Price(const Price& price);
-                                        Price(Price&& price);
-        Price&                          operator=(const Price& price);
-        Price&                          operator=(Price&& price);
-        bool                            operator<(const Price& price) const { return date < price.date; }
-        bool                            operator<=(const Price& price) const { return date <= price.date; }
-        bool                            operator==(const Price& price) const { return date == price.date; }
-        bool                            operator!=(const Price& price) const { return date != price.date; }
-        std::string                     format_date(Date::FORMAT format = Date::FORMAT::ISO) const;
-        std::string                     format_price(Date::FORMAT format = Date::FORMAT::ISO, bool hlc = true, bool v = true) const;
-        void                            print() const;
-        static PriceVector              Atr(const PriceVector& in, std::size_t days);
-        static PriceVector              DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const PriceVector& block = PriceVector(), bool long_format = false);
-        static PriceVector              DayToMonth(const PriceVector& in);
-        static PriceVector              DayToWeek(const PriceVector& in, Date::DAY weekday);
-        static PriceVector              ExponentialMovingAverage(const PriceVector& in, std::size_t days);
-        static PriceVector              Momentum(const PriceVector& in, std::size_t days);
-        static PriceVector              MovingAverage(const PriceVector& in, std::size_t days);
-        static void                     Print(const PriceVector& in);
-        static PriceVector              RSI(const PriceVector& in, std::size_t days);
-        static PriceVector              StdDev(const PriceVector& in, std::size_t days);
-        static PriceVector              Stochastics(const PriceVector& in, std::size_t days);
-    };
-}
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
-#include <FL/Fl_Scrollbar.H>
-#include <vector>
 namespace flw {
-    class Chart;
-    namespace chart {
-        class Area;
-        class Line;
+    class Plot;
+    namespace plot {
+        struct Point;
         enum class TYPE;
-        const int                       MIN_TICK  = 3;
-        const int                       MAX_TICK  = 100;
-        const size_t                    MAX_AREA  = 3;
-        const size_t                    MAX_LINE  = 10;
-        const double                    MIN_VAL   = -999'999'999'999'999.0;
-        const double                    MAX_VAL   =  999'999'999'999'999.0;
-        typedef std::vector<chart::Line> LineVector;
-        typedef std::vector<chart::Area> AreaVector;
-        size_t                          bsearch(const PriceVector& prices, const Price& key);
-        bool                            has_high_low(TYPE chart_type);
-        bool                            has_resizable_width(TYPE chart_type);
-        bool                            has_time(Date::RANGE date_range);
-        bool                            load_data(Chart* chart, std::string filename);
-        bool                            save_data(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
+        const double                    MAX        =  999'999'999'999'999.0;
+        const double                    MIN        = -999'999'999'999'999.0;
+        const size_t                    MAX_LINES  = 10;
+        typedef std::vector<plot::Point> PointVector;
+        bool                            has_pairs(flw::plot::TYPE type);
+        bool                            has_radius(flw::plot::TYPE type);
+        bool                            load_data(flw::Plot* plot, std::string filename);
+        void                            print(const flw::plot::PointVector& points);
+        bool                            save_data(const flw::Plot* plot, std::string filename);
+        TYPE                            string_to_type(std::string name);
+        std::string                     type_to_string(TYPE type);
         enum class TYPE {
                                         LINE,
-                                        BAR,
-                                        VERTICAL,
-                                        CLAMP_VERTICAL,
-                                        HORIZONTAL,
-                                        EXPAND_VERTICAL,
-                                        EXPAND_HORIZONTAL,
-                                        LAST = EXPAND_HORIZONTAL,
+                                        LINE_DASH,
+                                        LINE_DOT,
+                                        LINE_WITH_SQUARE,
+                                        VECTOR,
+                                        CIRCLE,
+                                        FILLED_CIRCLE,
+                                        SQUARE,
         };
-        struct Line {
-            Fl_Align                    align;
-            TYPE                        type;
-            Fl_Color                    color;
-            bool                        visible;
-            int                         width;
-            double                      clamp_max;
-            double                      clamp_min;
-            std::string                 label;
-            double                      max;
-            double                      min;
-            PriceVector                 points;
-                                        Line();
-                                        ~Line()
-                                            { clear(); }
-            void                        clear();
-            void                        debug(int num) const;
-            bool                        set(const PriceVector& points, std::string label, TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
-        };
-        struct Scale {
-            double                      max;
-            double                      min;
-            double                      pixel;
-            double                      tick;
-                                        Scale();
-            void                        calc(int height);
-            void                        clear();
-            void                        debug(const char* name) const;
-            double                      diff() const
-                                            { return max - min; }
-            void                        fix_height();
-        };
-        struct Area {
-            size_t                      count;
-            double                      h;
-            Scale                       left;
-            LineVector                  lines;
-            int                         percent;
-            Scale                       right;
-            size_t                      selected;
-            double                      w;
+        struct Point {
             double                      x;
             double                      y;
-                                        Area();
-            void                        clear(bool clear_data);
-            void                        debug(int num) const;
+                                        Point(double x = 0.0, double y = 0.0) {
+                                            this->x = x;
+                                            this->y = y;
+                                        }
+        };
+        struct Area {
+            int                         x;
+            int                         y;
+            int                         w;
+            int                         h;
+                                        Area(int x = 0, int y = 0, int w = 0, int h = 0) {
+                                            this->x = x;
+                                            this->y = y;
+                                            this->w = w;
+                                            this->h = h;
+                                        }
             int                         x2() const
-                                            { return (int) (x + w); }
+                                            { return x + w; }
             int                         y2() const
-                                            { return (int) (y + h); }
+                                            { return y + h; }
+        };
+        struct Scale {
+            Fl_Color                    color;
+            int                         fr;
+            std::string                 label;
+            flw::StringVector           labels;
+            double                      max;
+            double                      max2;
+            double                      min;
+            double                      min2;
+            double                      pixel;
+            int                         text;
+            double                      tick;
+                                        Scale();
+            void                        calc(double canvas_size);
+            void                        debug(const char* s) const;
+            void                        measure_text(int cw);
+            void                        reset_min_max();
+        };
+        struct Line {
+            Fl_Color                    color;
+            unsigned                    width;
+            bool                        visible;
+            std::string                 label;
+            PointVector                 points;
+            TYPE                        type;
+                                        Line();
         };
     }
-    class Chart : public Fl_Group {
-        friend bool                     chart::save_data(const Chart*, std::string, double);
+    class Plot : public Fl_Group {
+        friend bool                     plot::save_data(const Plot*, std::string);
     public:
-                                        Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        bool                            add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, chart::TYPE chart_type = chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = chart::MIN_VAL, double clamp_max = chart::MAX_VAL);
-        bool                            area_size(int area1 = 100, int area2 = 0, int area3 = 0);
-        void                            block_dates(const PriceVector& block_dates)
-                                            { _block_dates = block_dates; }
+                                        Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        bool                            add_line(const plot::PointVector& points, plot::TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
+        bool                            add_line(const plot::Line& line);
         void                            clear();
-        Date::FORMAT                    date_format() const
-                                            { return _date_format; }
-        bool                            date_range(Date::RANGE range = Date::RANGE::DAY);
+        void                            clear_points();
+        void                            custom_xlabels_for_points0(const flw::StringVector& xlabels = StringVector())
+                                            { _x.labels = xlabels; }
+        void                            custom_ylabels_for_points0(const flw::StringVector& ylabels = StringVector())
+                                            { _y.labels = ylabels; }
         void                            debug() const;
         void                            draw() override;
         int                             handle(int event) override;
-        bool                            has_time() const
-                                            { return chart::has_time(_date_range); }
-        void                            init(bool calc_dates);
-        bool                            margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
+        void                            label_colors(Fl_Color x, Fl_Color y)
+                                            { _x.color = x; _y.color = y; }
+        void                            labels(std::string x, std::string y)
+                                            { _x.label = x; _y.label = y; }
         void                            resize()
-                                            { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
+                                            { _calc = true; _w = _h = 0; resize(x(), y(), w(), h()); redraw(); }
         void                            resize(int X, int Y, int W, int H) override;
-        bool                            tick_width(int tick_width_from_3_to_100 = chart::MIN_TICK);
         void                            update_pref();
         void                            view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
                                             { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
+        int                             x2() const
+                                            { return x() + w(); }
+        int                             y2() const
+                                            { return y() + h(); }
     private:
-        void                            _calc_area_height();
-        void                            _calc_area_width();
-        void                            _calc_dates();
-        void                            _calc_ymin_ymax();
-        void                            _calc_yscale();
+        void                            _calc_min_max();
         void                            _create_tooltip(bool ctrl);
-        void                            _draw_area(const chart::Area& area);
-        void                            _draw_line(const chart::Line& line, const chart::Scale& scale, int X, int Y, int W, int H);
-        void                            _draw_line_labels(const chart::Area& area);
+        void                            _draw_labels();
+        void                            _draw_line_labels();
+        void                            _draw_lines();
+        void                            _draw_lines_style(flw::plot::TYPE type, int size);
         void                            _draw_tooltip();
-        void                            _draw_ver_lines(const chart::Area& area);
         void                            _draw_xlabels();
-        void                            _draw_ylabels(int X, double Y1, double Y2, const chart::Scale& scale, bool left);
-        chart::Area*                    _inside_area(int X, int Y);
-        static void                     _CallbackDebug(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackReset(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackSavePng(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
-        static void                     _CallbackToggle(Fl_Widget* widget, void* chart_object);
+        void                            _draw_xlabels2();
+        void                            _draw_ylabels();
+        void                            _draw_ylabels2();
+        static void                     _CallbackDebug(Fl_Widget*, void* plot_object);
+        static void                     _CallbackSave(Fl_Widget*, void* plot_object);
+        static void                     _CallbackToggle(Fl_Widget*, void* plot_object);
         struct {
             bool                        horizontal;
             bool                        labels;
             bool                        vertical;
         }                               _view;
-        chart::Area*                    _area;
-        chart::AreaVector               _areas;
-        PriceVector                     _block_dates;
-        int                             _bottom_space;
+        plot::Area                      _area;
+        bool                            _calc;
+        int                             _ch;
+        int                             _ct;
         int                             _cw;
-        Date::FORMAT                    _date_format;
-        Date::RANGE                     _date_range;
-        int                             _date_start;
-        PriceVector                     _dates;
-        int                             _margin_left;
-        int                             _margin_right;
+        int                             _h;
+        plot::Line                      _lines[10];
         Fl_Menu_Button*                 _menu;
-        int                             _old_height;
-        int                             _old_width;
-        Fl_Scrollbar*                   _scroll;
-        int                             _tick_width;
-        int                             _ticks;
+        size_t                          _selected_point;
+        size_t                          _selected_line;
+        size_t                          _size;
         std::string                     _tooltip;
-        int                             _top_space;
-        int                             _ver_pos[101];
+        int                             _w;
+        plot::Scale                     _x;
+        plot::Scale                     _y;
+    };
+}
+#include <FL/Fl_Menu_.H>
+#include <FL/Fl_Preferences.H>
+namespace flw {
+    class RecentMenu {
+    public:
+                                        RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label = "&File/Open recent", std::string clear_label = "/Clear");
+        void                            append(std::string file)
+                                            { return _add(file, true); }
+        static void                     CallbackClear(Fl_Widget*, void* o);
+        void                            insert(std::string file)
+                                            { return _add(file, false); }
+        StringVector                    items() const
+                                            { return _files; }
+        void                            max_items(size_t max)
+                                            { if (max > 0 && max <= 100) _max = max; }
+        Fl_Menu_*                       menu()
+                                            { return _menu; }
+        void                            load_pref(Fl_Preferences& pref, std::string base_name = "files");
+        void                            save_pref(Fl_Preferences& pref, std::string base_name = "files");
+    private:
+        void                            _add(std::string file, bool append);
+        size_t                          _add_string(StringVector& in, size_t max_size, std::string string);
+        size_t                          _insert_string(StringVector& in, size_t max_size, std::string string);
+        std::string                     _base;
+        Fl_Callback*                    _callback;
+        std::string                     _clear;
+        StringVector                    _files;
+        size_t                          _max;
+        Fl_Menu_*                       _menu;
+        void*                           _user;
     };
 }
 #include <FL/Fl_Hold_Browser.H>
