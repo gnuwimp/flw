@@ -482,7 +482,7 @@ Test* Test::TEST = nullptr;
 int main(int argc, const char** argv) {
     Test win;
 
-    auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
+    auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "theme");
     flw::theme::parse(argc, argv);
     flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
     flw::theme::load_theme_pref(pref);

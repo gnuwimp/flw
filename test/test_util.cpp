@@ -130,6 +130,6 @@ int main() {
         FLW_ASSERT("HELLO", s[0].c_str())
     }
 
-    printf("\nTests Finished\n");
+    printf("\nTests Finished now=%f\n", flw::util::time());
     return 0;
 }

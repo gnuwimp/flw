@@ -158,8 +158,9 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Group::resize(X, Y, W, H);
 
     if (_menu->visible() != 0) {
-        _input->resize(X, Y, W - flw::PREF_FONTSIZE * 2, H);
-        _menu->resize(X + W - flw::PREF_FONTSIZE * 2, Y, flw::PREF_FONTSIZE * 2, H);
+        auto mw = (int) flw::PREF_FONTSIZE / 2;
+        _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
+        _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y + 2, flw::PREF_FONTSIZE + mw, H - 4);
     }
     else {
         _input->resize(X, Y, W, H);
@@ -186,6 +187,8 @@ void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
 void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
+    _input->labelfont(text_font);
+    _input->labelsize(text_font);
     _input->textfont(text_font);
     _input->textsize(text_size);
     _menu->labelfont(text_font);

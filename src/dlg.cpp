@@ -88,7 +88,7 @@ namespace flw {
 
         public:
             //------------------------------------------------------------------
-            _DlgList(const char* title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
+            _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
                 end();
 
@@ -103,10 +103,6 @@ namespace flw {
                 _close->labelsize(flw::PREF_FONTSIZE);
 
                 _list->take_focus();
-
-                for (auto& s : list) {
-                    _list->add(s.c_str());
-                }
 
                 if (fixed_font == true) {
                     _list->textfont(flw::PREF_FIXED_FONT);
@@ -123,6 +119,15 @@ namespace flw {
                 set_modal();
                 resizable(this);
                 flw::util::center_window(this, parent);
+
+                if (list.size() > 0) {
+                    for (auto& s : list) {
+                        _list->add(s.c_str());
+                    }
+                }
+                else if (file != "") {
+                    _list->load(file.c_str());
+                }
             }
 
             //------------------------------------------------------------------
@@ -698,14 +703,20 @@ void flw::dlg::html(std::string title, const std::string& text, Fl_Window* paren
 
 //------------------------------------------------------------------------------
 void flw::dlg::list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgList dlg(title.c_str(), list, parent, fixed_font, W, H);
+    _DlgList dlg(title.c_str(), list, "", parent, fixed_font, W, H);
     dlg.run();
 }
 
 //------------------------------------------------------------------------------
 void flw::dlg::list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     auto list2 = flw::util::split( list, "\n");
-    _DlgList dlg(title.c_str(), list2, parent, fixed_font, W, H);
+    _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
+    dlg.run();
+}
+
+//------------------------------------------------------------------------------
+void flw::dlg::list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgList dlg(title.c_str(), flw::StringVector(), file, parent, fixed_font, W, H);
     dlg.run();
 }
 

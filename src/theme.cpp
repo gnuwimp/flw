@@ -101,6 +101,7 @@ namespace flw {
         static bool          _IS_DARK     = false;
         static bool          _SAVED_COLOR = false;
         static bool          _SAVED_SYS   = false;
+        static int           _SCROLLBAR   = 2;
         static std::string   _NAME        = _NAMES[_NAME_DEFAULT];
 
         //----------------------------------------------------------------------
@@ -270,6 +271,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_OXY];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -282,6 +284,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_OXY_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -294,6 +297,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_OXY_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -306,6 +310,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -318,6 +323,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -332,6 +338,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -346,6 +353,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARKER];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -360,6 +368,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK_BLUE];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -372,6 +381,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -384,6 +394,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -396,6 +407,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -410,6 +422,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -438,6 +451,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK_BLUE];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -450,6 +464,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
 
         //------------------------------------------------------------------------------
@@ -462,6 +477,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC];
             _IS_DARK = false;
+            _SCROLLBAR = 2;
         }
 
         //------------------------------------------------------------------------------
@@ -474,6 +490,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 2;
         }
 
         //------------------------------------------------------------------------------
@@ -486,6 +503,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 2;
         }
 
         //------------------------------------------------------------------------------
@@ -506,6 +524,13 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_SYSTEM];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
+        }
+
+        //------------------------------------------------------------------------------
+        static void _scrollbar() {
+            auto s = (flw::PREF_FONTSIZE > flw::PREF_FIXED_FONTSIZE) ? flw::PREF_FONTSIZE : flw::PREF_FIXED_FONTSIZE;
+            Fl::scrollbar_size(s + _SCROLLBAR);
         }
     }
 
@@ -585,6 +610,11 @@ namespace flw {
                         flw::PREF_FIXED_FONT     = fd.font();
                         flw::PREF_FIXED_FONTSIZE = fd.fontsize();
                         flw::PREF_FIXED_FONTNAME = fd.fontname();
+
+                        if (dlg->_font->active() == 0) {
+                            flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
+                        }
+
                         dlg->update_pref();
                     }
                 }
@@ -595,6 +625,11 @@ namespace flw {
                         flw::PREF_FONT     = fd.font();
                         flw::PREF_FONTSIZE = fd.fontsize();
                         flw::PREF_FONTNAME = fd.fontname();
+
+                        if (dlg->_fixedfont->active() == 0) {
+                            flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+                        }
+
                         dlg->update_pref();
                     }
                 }
@@ -662,7 +697,7 @@ namespace flw {
                         flw::theme::_load_default();
                     }
 
-                    Fl::redraw();
+                    dlg->update_pref();
                 }
                 else if (w == dlg->_close) {
                     dlg->hide();
@@ -702,6 +737,7 @@ namespace flw {
                 _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
                 _theme->textsize(flw::PREF_FONTSIZE);
                 size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+                theme::_scrollbar();
 
                 for (int f = 0; f <= flw::theme::_NAME_SYSTEM; f++) {
                     if (theme::_NAME == flw::theme::_NAMES[f]) {
@@ -801,6 +837,7 @@ bool flw::theme::load(std::string name) {
         return false;
     }
 
+    theme::_scrollbar();
     return true;
 }
 
@@ -906,10 +943,11 @@ void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool sho
         y = 60;
     }
 
-    window->resize(x, y, w, h);
-
-    if (show == true) {
+    if (show == true && window->shown() == 0) {
+        window->resize(x, y, w, h);
         window->show();
+    }
+    else {
         window->resize(x, y, w, h);
     }
 

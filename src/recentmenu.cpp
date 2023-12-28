@@ -16,7 +16,7 @@ namespace flw {
         _user     = userdata;
         _max      = 10;
 
-        _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this);
+        _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
     }
 
     //--------------------------------------------------------------------------
@@ -35,11 +35,11 @@ namespace flw {
 
         if (index >= 0) {
             _menu->clear_submenu(index);
-            _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this);
+            _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
 
         }
 
-        for (auto& file : _files) {
+        for (const auto& file : _files) {
             _menu->add((_base + "/" + flw::util::fix_menu_string(file)).c_str(), 0, _callback, _user);
         }
     }

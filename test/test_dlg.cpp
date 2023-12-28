@@ -93,6 +93,11 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "theme") {
             dlg::theme(true, true);
+//            dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT);
+//            dlg::theme(false, true);
+//            dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT);
+//            dlg::theme(true, false);
+//            dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT);
         }
 
         if (run == "" || run == "font") {
@@ -150,8 +155,9 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "list") {
-            dlg::list("List View - STRING", HAMLET_TEXT);
-            dlg::list("List View - LIST", HAMLET_LIST, nullptr, true);
+            dlg::list("List Dialog", HAMLET_TEXT);
+            dlg::list("List Dialog - Fixed Font", HAMLET_TEXT, nullptr, true);
+            dlg::list_file("List View - File", "test/browser.txt", nullptr, true);
         }
 
         if (run == "" || run == "select") {

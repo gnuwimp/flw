@@ -633,23 +633,14 @@ bool flw::util::test(double ref, double val, double diff, int line, const char* 
 // Return time as seconds since 1970
 //
 double flw::util::time() {
-    auto sec   = 0.0;
-    auto milli = 0.0;
-
 #ifdef _WIN32
-    struct __timeb64 timeVal;
-
-    _ftime64(&timeVal);
-    sec   = (double) timeVal.time;
-    milli = (double) timeVal.millitm;
-    return sec + (milli / 1000.0);
-#else
     struct timeb timeVal;
-
     ftime(&timeVal);
-    sec   = (double) timeVal.time;
-    milli = (double) timeVal.millitm;
-    return sec + (milli / 1000.0);
+    return (double) timeVal.time + (double) (timeVal.millitm / 1000.0);
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
 #endif
 }
 

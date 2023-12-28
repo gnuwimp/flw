@@ -84,7 +84,7 @@ obj/date.o: src/date.cpp src/date.h
 obj/datechooser.o: src/datechooser.cpp src/datechooser.h src/util.h
 	$(CXX)
 
-obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/util.h
+obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/util.h test/test.h
 	$(CXX)
 
 obj/fontdialog.o: src/fontdialog.cpp src/fontdialog.h src/util.h
