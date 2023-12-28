@@ -76,6 +76,22 @@ public:
     Fl_Button*           cyan;
     Fl_Button*           magenta;
     Fl_Button*           white;
+    Fl_Button*           color_red;
+    Fl_Button*           color_lime;
+    Fl_Button*           color_yellow;
+    Fl_Button*           color_cyan;
+    Fl_Button*           color_magenta;
+    Fl_Button*           color_maroon;
+    Fl_Button*           color_olive;
+    Fl_Button*           color_green;
+    Fl_Button*           color_purple;
+    Fl_Button*           color_teal;
+    Fl_Button*           color_navy;
+    Fl_Button*           color_brown;
+    Fl_Button*           color_pink;
+    Fl_Button*           color_beige;
+    Fl_Button*           color_azure;
+    Fl_Button*           color_blue;
 
     DateChooser*         date;
     Fl_Hold_Browser*     browser;
@@ -90,18 +106,25 @@ public:
     Scale*               scale;
 
     Test() : Fl_Double_Window(0, 0, "test_theme.cpp") {
-        TEST         = this;
+        TEST = this;
+        resizable(this);
+        size_range(64, 48);
+        menu = nullptr;
+    }
+
+    void create() {
+        begin();
 
         check        = new Fl_Check_Button(0, 0, 0, 0, "Fl_Check_Button");
         colormap     = new Fl_Button(0, 0, 0, 0, "Color Map");
         date         = new DateChooser(0, 0, 0, 0);
-        disabled     = new Fl_Button(0, 0, 0, 0, "deactivated");
+        disabled     = new Fl_Button(0, 0, 0, 0, "Deactivated");
         light        = new Fl_Light_Button(0, 0, 0, 0, "File Chooser");
         menu         = new Fl_Menu_Bar(0, 0, 0, 0);
         radio        = new Fl_Round_Button(0, 0, 0, 0, "Fl_Round_Button");
         roller       = new Fl_Roller(0, 0, 0, 0, "");
         slider       = new Fl_Slider(0, 0, 0, 0);
-        theme        = new Fl_Button(0, 0, 0, 0, "Theme");
+        theme        = new Fl_Button(0, 0, 0, 0, "&Theme");
 
         browser      = new Fl_Hold_Browser(0, 0, 0, 0);
         input        = new Fl_Input(0, 0, 0, 0);
@@ -136,45 +159,24 @@ public:
         magenta      = new Fl_Button(0, 0, 0, 0, "FL_MAGENTA (48)");
         white        = new Fl_Button(0, 0, 0, 0, "FL_WHITE (55)");
 
-        add(menu);
-        add(theme);
-        add(disabled);
-        add(radio);
-        add(check);
-        add(light);
-        add(slider);
-        add(roller);
-        add(input);
-        add(browser);
-        add(date);
+        color_red     = new Fl_Button(0, 0, 0, 0, "color::RED");
+        color_lime    = new Fl_Button(0, 0, 0, 0, "color::LIME");
+        color_yellow  = new Fl_Button(0, 0, 0, 0, "color::YELLOW");
+        color_cyan    = new Fl_Button(0, 0, 0, 0, "color::CYAN");
+        color_magenta = new Fl_Button(0, 0, 0, 0, "color::MAGENTA");
+        color_maroon  = new Fl_Button(0, 0, 0, 0, "color::MARRON");
+        color_olive   = new Fl_Button(0, 0, 0, 0, "color::OLIVE");
+        color_green   = new Fl_Button(0, 0, 0, 0, "color::GREEN");
+        color_purple  = new Fl_Button(0, 0, 0, 0, "color::PURPLE");
+        color_teal    = new Fl_Button(0, 0, 0, 0, "color::TEAL");
+        color_navy    = new Fl_Button(0, 0, 0, 0, "color::NAVY");
+        color_brown   = new Fl_Button(0, 0, 0, 0, "color::BROWN");
+        color_pink    = new Fl_Button(0, 0, 0, 0, "color::PINK");
+        color_beige   = new Fl_Button(0, 0, 0, 0, "color::BEIGE");
+        color_azure   = new Fl_Button(0, 0, 0, 0, "color::AZURE");
+        color_blue    = new Fl_Button(0, 0, 0, 0, "color::BLUE");
 
-        add(gray0);
-        add(dark1);
-        add(dark2);
-        add(dark3);
-        add(light1);
-        add(light2);
-        add(light3);
-        add(fg);
-        add(bg);
-        add(bg2);
-        add(inactive);
-        add(selection);
-
-        add(black);
-        add(dark_green);
-        add(green);
-        add(dark_red);
-        add(dark_yellow);
-        add(red);
-        add(yellow);
-        add(dark_blue);
-        add(dark_cyan);
-        add(dark_magenta);
-        add(blue);
-        add(cyan);
-        add(magenta);
-        add(white);
+        end();
 
         button(bg, FL_BACKGROUND_COLOR);
         button(bg2, FL_BACKGROUND2_COLOR);
@@ -204,6 +206,23 @@ public:
         button(magenta, FL_MAGENTA);
         button(white, FL_WHITE);
 
+        button2(color_red, color::RED);
+        button2(color_lime, color::LIME);
+        button2(color_yellow, color::YELLOW);
+        button2(color_cyan, color::CYAN);
+        button2(color_magenta, color::MAGENTA);
+        button2(color_maroon, color::MAROON);
+        button2(color_olive, color::OLIVE);
+        button2(color_green, color::GREEN);
+        button2(color_purple, color::PURPLE);
+        button2(color_teal, color::TEAL);
+        button2(color_navy, color::NAVY);
+        button2(color_brown, color::BROWN);
+        button2(color_pink, color::PINK);
+        button2(color_beige, color::BEIGE);
+        button2(color_azure, color::AZURE);
+        button2(color_blue, color:: BLUE);
+
         colormap->callback(CallbackColorMap);
         disabled->deactivate();
         input->value("default");
@@ -222,13 +241,14 @@ public:
         menu->add("Edit/Copy");
         menu->add("Edit/Cut");
         menu->add("Edit/Paste");
-
-        resizable(this);
-        size_range(64, 48);
     }
 
     static void CallbackButton(Fl_Widget* w, void*) {
         TEST->color(w, (size_t) w->user_data());
+    }
+
+    static void CallbackButton2(Fl_Widget* w, void*) {
+        TEST->color2(w, w->user_data());
     }
 
     static void CallbackColorMap(Fl_Widget*, void*) {
@@ -255,8 +275,26 @@ public:
 
     static void CallbackTheme(Fl_Widget*, void*) {
         flw::dlg::theme(true, true, TEST);
+        TEST->clear();
+        TEST->create();
         TEST->update_pref();
         TEST->input->value(flw::theme::name().c_str());
+        TEST->button2(TEST->color_red, color::RED);
+        TEST->button2(TEST->color_lime, color::LIME);
+        TEST->button2(TEST->color_yellow, color::YELLOW);
+        TEST->button2(TEST->color_cyan, color::CYAN);
+        TEST->button2(TEST->color_magenta, color::MAGENTA);
+        TEST->button2(TEST->color_maroon, color::MAROON);
+        TEST->button2(TEST->color_olive, color::OLIVE);
+        TEST->button2(TEST->color_green, color::GREEN);
+        TEST->button2(TEST->color_purple, color::PURPLE);
+        TEST->button2(TEST->color_teal, color::TEAL);
+        TEST->button2(TEST->color_navy, color::NAVY);
+        TEST->button2(TEST->color_brown, color::BROWN);
+        TEST->button2(TEST->color_pink, color::PINK);
+        TEST->button2(TEST->color_beige, color::BEIGE);
+        TEST->button2(TEST->color_azure, color::AZURE);
+        TEST->button2(TEST->color_blue, color::BLUE);
     }
 
     void button(Fl_Button* button, Fl_Color color) {
@@ -267,6 +305,14 @@ public:
         button->user_data((void*) (size_t) color);
     }
 
+    void button2(Fl_Button* button, Fl_Color& color) {
+        button->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
+        button->box(FL_BORDER_BOX);
+        button->color(color);
+        button->callback(CallbackButton2);
+        button->user_data(&color);
+    }
+
     void color(Fl_Widget* button, Fl_Color color) {
         auto r = (unsigned char) 0;
         auto g = (unsigned char) 0;
@@ -274,12 +320,31 @@ public:
         char buf[200];
 
         Fl::get_color((int) color, r, g, b);
-        sprintf(buf, "Choose color for %d", color);
+        sprintf(buf, "Fl_Color=%d", color);
 
         if (fl_color_chooser(buf, r, g, b, 1)) {
             sprintf(buf, "color %d, r=%d, g=%d, b=%d", (int) color, r, g, b);
             button->copy_label(buf);
             Fl::set_color(color, r, g, b);
+            Fl::redraw();
+        };
+    }
+
+    void color2(Fl_Widget* button, void* color) {
+        auto r = (unsigned char) 0;
+        auto g = (unsigned char) 0;
+        auto b = (unsigned char) 0;
+        auto c = (Fl_Color*) color;
+        char buf[200];
+
+        FLW_PRINT(color, c)
+        Fl::get_color(*c, r, g, b);
+
+        if (fl_color_chooser("Select", r, g, b, 1)) {
+            sprintf(buf, "r=%d, g=%d, b=%d", r, g, b);
+            *c = fl_rgb_color(r, g, b);
+            button->copy_label(buf);
+            button->color(*c);
             Fl::redraw();
         };
     }
@@ -319,6 +384,10 @@ public:
 
         Fl_Double_Window::resize(X, Y, W, H);
 
+        if (menu == nullptr) {
+            return;
+        }
+
         menu->resize(0, 0, W, fs * 2);
 
         theme->resize   (4, fs * 2 + 4, fs * 10, fs * 2);
@@ -336,37 +405,55 @@ public:
         date->resize   (fs * 10 + 8, fs * 14 + 12, fs * 24, fs * 20);
         tree->resize   (fs * 10 + 8, fs * 34 + 16, fs * 24, H - fs * 34 - 20);
 
-        fg->resize       (W - fs * 32 - 8, fs * 3 + 4,   fs * 16, fs * 2);
-        bg->resize       (W - fs * 32 - 8, fs * 6 + 8,   fs * 16, fs * 2);
-        bg2->resize      (W - fs * 32 - 8, fs * 9 + 12,  fs * 16, fs * 2);
-        inactive->resize (W - fs * 32 - 8, fs * 12 + 16, fs * 16, fs * 2);
-        selection->resize(W - fs * 32 - 8, fs * 15 + 20, fs * 16, fs * 2);
-        gray0->resize    (W - fs * 32 - 8, fs * 18 + 24, fs * 16, fs * 2);
-        dark3->resize    (W - fs * 32 - 8, fs * 21 + 28, fs * 16, fs * 2);
-        dark2->resize    (W - fs * 32 - 8, fs * 24 + 32, fs * 16, fs * 2);
-        dark1->resize    (W - fs * 32 - 8, fs * 27 + 36, fs * 16, fs * 2);
-        light1->resize   (W - fs * 32 - 8, fs * 30 + 40, fs * 16, fs * 2);
-        light2->resize   (W - fs * 32 - 8, fs * 33 + 44, fs * 16, fs * 2);
-        light3->resize   (W - fs * 32 - 8, fs * 36 + 48, fs * 16, fs * 2);
+        fg->resize       (W - fs * 48 - 8, fs * 3 + 4,   fs * 15, fs * 2);
+        bg->resize       (W - fs * 48 - 8, fs * 6 + 8,   fs * 15, fs * 2);
+        bg2->resize      (W - fs * 48 - 8, fs * 9 + 12,  fs * 15, fs * 2);
+        inactive->resize (W - fs * 48 - 8, fs * 12 + 16, fs * 15, fs * 2);
+        selection->resize(W - fs * 48 - 8, fs * 15 + 20, fs * 15, fs * 2);
+        gray0->resize    (W - fs * 48 - 8, fs * 18 + 24, fs * 15, fs * 2);
+        dark3->resize    (W - fs * 48 - 8, fs * 21 + 28, fs * 15, fs * 2);
+        dark2->resize    (W - fs * 48 - 8, fs * 24 + 32, fs * 15, fs * 2);
+        dark1->resize    (W - fs * 48 - 8, fs * 27 + 36, fs * 15, fs * 2);
+        light1->resize   (W - fs * 48 - 8, fs * 30 + 40, fs * 15, fs * 2);
+        light2->resize   (W - fs * 48 - 8, fs * 33 + 44, fs * 15, fs * 2);
+        light3->resize   (W - fs * 48 - 8, fs * 36 + 48, fs * 15, fs * 2);
 
-        black->resize        (W - fs * 16 - 4, fs * 3 + 4,   fs * 16, fs * 2);
-        dark_green->resize   (W - fs * 16 - 4, fs * 6 + 8,   fs * 16, fs * 2);
-        green->resize        (W - fs * 16 - 4, fs * 9 + 12,  fs * 16, fs * 2);
-        dark_red->resize     (W - fs * 16 - 4, fs * 12 + 16, fs * 16, fs * 2);
-        dark_yellow->resize  (W - fs * 16 - 4, fs * 15 + 20, fs * 16, fs * 2);
-        red->resize          (W - fs * 16 - 4, fs * 18 + 24, fs * 16, fs * 2);
-        yellow->resize       (W - fs * 16 - 4, fs * 21 + 28, fs * 16, fs * 2);
-        dark_blue->resize    (W - fs * 16 - 4, fs * 24 + 32, fs * 16, fs * 2);
-        dark_cyan->resize    (W - fs * 16 - 4, fs * 27 + 36, fs * 16, fs * 2);
-        dark_magenta->resize (W - fs * 16 - 4, fs * 30 + 40, fs * 16, fs * 2);
-        blue->resize         (W - fs * 16 - 4, fs * 33 + 44, fs * 16, fs * 2);
-        cyan->resize         (W - fs * 16 - 4, fs * 36 + 48, fs * 16, fs * 2);
-        magenta->resize      (W - fs * 16 - 4, fs * 39 + 52, fs * 16, fs * 2);
-        white->resize        (W - fs * 16 - 4, fs * 42 + 56, fs * 16, fs * 2);
+        black->resize        (W - fs * 32 - 4, fs * 3 + 4,   fs * 15, fs * 2);
+        dark_green->resize   (W - fs * 32 - 4, fs * 6 + 8,   fs * 15, fs * 2);
+        green->resize        (W - fs * 32 - 4, fs * 9 + 12,  fs * 15, fs * 2);
+        dark_red->resize     (W - fs * 32 - 4, fs * 12 + 16, fs * 15, fs * 2);
+        dark_yellow->resize  (W - fs * 32 - 4, fs * 15 + 20, fs * 15, fs * 2);
+        red->resize          (W - fs * 32 - 4, fs * 18 + 24, fs * 15, fs * 2);
+        yellow->resize       (W - fs * 32 - 4, fs * 21 + 28, fs * 15, fs * 2);
+        dark_blue->resize    (W - fs * 32 - 4, fs * 24 + 32, fs * 15, fs * 2);
+        dark_cyan->resize    (W - fs * 32 - 4, fs * 27 + 36, fs * 15, fs * 2);
+        dark_magenta->resize (W - fs * 32 - 4, fs * 30 + 40, fs * 15, fs * 2);
+        blue->resize         (W - fs * 32 - 4, fs * 33 + 44, fs * 15, fs * 2);
+        cyan->resize         (W - fs * 32 - 4, fs * 36 + 48, fs * 15, fs * 2);
+        magenta->resize      (W - fs * 32 - 4, fs * 39 + 52, fs * 15, fs * 2);
+        white->resize        (W - fs * 32 - 4, fs * 42 + 56, fs * 15, fs * 2);
+
+        auto y = fs * 3 + 4;
+        color_azure->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_beige->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_blue->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_brown->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_cyan->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_green->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_lime->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_magenta->resize (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_maroon->resize  (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_navy->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_olive->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_pink->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_purple->resize  (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_red->resize     (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_teal->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
+        color_yellow->resize  (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
     }
 
     void update_pref() {
-        flw::util::labelfont(this);
+        flw::theme::labelfont(this);
         input->textfont(flw::PREF_FONT);
         input->textsize(flw::PREF_FONTSIZE);
         browser->textfont(flw::PREF_FONT);
@@ -382,24 +469,16 @@ public:
 Test* Test::TEST = nullptr;
 
 int main(int argc, const char** argv) {
-    flw::theme::parse(argc, argv);
-
     Test win;
 
-    {
-        flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
-
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
-        flw::util::pref_load(pref, &win);
-        win.update_pref();
-    }
-
+    auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
+    flw::theme::parse(argc, argv);
+    flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
+    flw::theme::pref_load(pref, &win);
+    win.create();
+    win.update_pref();
     Fl::run();
-
-    {
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
-        flw::util::pref_save(pref, &win);
-    }
+    flw::theme::pref_save(pref, &win);
 
     return 0;
 }

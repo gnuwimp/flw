@@ -9,18 +9,13 @@
 
 // MKALGAM_ON
 
-namespace flw
-                                    {
+namespace flw {
     //--------------------------------------------------------------------------
     // A 7 segment number label widget
     //
-    class LcdNumber : public Fl_Box
-                                        {
+    class LcdNumber : public Fl_Box {
     public:
                                         LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        void                            draw() override;
-        void                            value(const char* value);
-
         Fl_Align                        align() const
                                             { return _align; }
         void                            align(Fl_Align align)
@@ -29,6 +24,7 @@ namespace flw
                                             { return _dot_size; }
         void                            dot_size(int size)
                                             { _dot_size = size; Fl::redraw(); }
+        void                            draw() override;
         Fl_Color                        segment_color() const
                                             { return _seg_color; }
         void                            segment_color(Fl_Color color)
@@ -55,6 +51,7 @@ namespace flw
                                             { _unit_w = width; Fl::redraw(); }
         const char*                     value() const
                                             { return _value; }
+        void                            value(const char* value);
 
     private:
         void                            _draw_seg(uchar a, int x, int y, int w, int h);

@@ -1,4 +1,4 @@
-// This source file is an amalgamation of one or more source files
+// This source file is an amalgamation of one or more source files.
 // Copyright 2016 - 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
@@ -24,512 +24,739 @@
 #include <FL/fl_show_colormap.H>
 #include <FL/x.H>
 #ifdef _WIN32
+    #include <FL/x.H>
     #include <windows.h>
+#elif defined(__linux__)
+    #include <FL/Fl_Pixmap.H>
+    #include <FL/Fl_RGB_Image.H>
+#endif
+#ifdef FLW_USE_PNG
+    #include <FL/Fl_PNG_Image.H>
 #endif
 
 
-#define _PUSH_CLIP(X,Y,W,H) fl_push_clip(X,Y,W,H)
-#define _POP_CLIP()         fl_pop_clip()
-// #define _PUSH_CLIP(X,Y,W,H)
-// #define _POP_CLIP()
-
 namespace flw {
-    static const int  _CHART_VLINES     =               1000;
-    static const int  _CHART_LABEL_SIZE =                100;
-    const double      flw::Chart::MAX   =  999999999999999.0;
-    const double      flw::Chart::MIN   = -999999999999999.0;
+    namespace chart {
+        const int                       MIN_TICK        = 3;
+        const int                       MAX_TICK        = 100;
+        const size_t                    MAX_AREA        = 3;
+        const size_t                    MAX_LINE        = 10;
+        const double                    MIN_VAL         = -999'999'999'999'999.0;
+        const double                    MAX_VAL         =  999'999'999'999'999.0;
+        static const int                MAX_VLINES      = 100;
+        static const int                MAX_LINE_WIDTH  = 100;
+        static const char* const        SHOW_LABELS     = "Show line labels";
+        static const char* const        SHOW_HLINES     = "Show horizontal lines";
+        static const char* const        SHOW_VLINES     = "Show vertical lines";
+        static const char* const        RESET_SELECT    = "Reset line selection and visibility";
+        static const char* const        SAVE_PNG        = "Save png to file...";
+        static const char* const        PRINT_DEBUG     = "Debug";
 
-    //--------------------------------------------------------------------------
-    static int _chart_bsearch(const std::vector<flw::Price>& prices, const Price& key) {
-        auto it = std::lower_bound(prices.begin(), prices.end(), key);
+        //----------------------------------------------------------------------
+        size_t bsearch(const flw::PriceVector& prices, const flw::Price& key) {
+            auto it = std::lower_bound(prices.begin(), prices.end(), key);
 
-        if (it == prices.end() || *it != key) {
-            return -1;
-        }
-        else {
-            std::size_t index = std::distance(prices.begin(), it);
-            return (int) index;
-        }
-    }
-
-    //--------------------------------------------------------------------------
-    static int _chart_count_decimals(double number) {
-        number = fabs(number);
-
-        int    res     = 0;
-        int    len     = 0;
-        char*  end     = 0;
-        double inumber = (int64_t) number;
-        double fnumber = number - inumber;
-        char   buffer[100];
-
-        if (number > 999999999999999) {
-            snprintf(buffer, 100, "%.1f", fnumber);
-        }
-        else if (number > 9999999999999) {
-            snprintf(buffer, 100, "%.2f", fnumber);
-        }
-        else if (number > 999999999999) {
-            snprintf(buffer, 100, "%.3f", fnumber);
-        }
-        else if (number > 99999999999) {
-            snprintf(buffer, 100, "%.4f", fnumber);
-        }
-        else if (number > 9999999999) {
-            snprintf(buffer, 100, "%.5f", fnumber);
-        }
-        else if (number > 999999999) {
-            snprintf(buffer, 100, "%.6f", fnumber);
-        }
-        else if (number > 99999999) {
-            snprintf(buffer, 100, "%.7f", fnumber);
-        }
-        else if (number > 9999999) {
-            snprintf(buffer, 100, "%.8f", fnumber);
-        }
-        else {
-            snprintf(buffer, 100, "%.9f", fnumber);
-        }
-
-        len = strlen(buffer);
-        end = buffer + len - 1;
-
-        while (*end == '0') {
-            *end = 0;
-            end--;
-        }
-
-        res = strlen(buffer) - 2;
-        return res;
-    }
-
-    //--------------------------------------------------------------------------
-    static std::string _chart_format_double(double number, int decimals, char sep) {
-        char res[100];
-
-        *res = 0;
-
-        if (sep < 32) {
-            sep = 32;
-        }
-
-        if (decimals < 0) {
-            decimals = flw::_chart_count_decimals(number);
-        }
-
-        if (decimals == 0) {
-            return flw::util::format_int((int64_t) number, sep);
-        }
-        else if (fabs(number) < 9223372036854775807.0) {
-            char fr_str[100];
-            auto int_num    = (int64_t) fabs(number);
-            auto double_num = (double) (fabs(number) - int_num);
-            auto int_str    = flw::util::format_int(int_num, sep);
-            auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
-
-            if (len > 0 && len < 100) {
-                if (number < 0.0) {
-                    res[0] = '-';
-                    res[1] = 0;
-                }
-
-                strncat(res, int_str.c_str(), 99);
-                strncat(res, fr_str + 1, 99);
+            if (it == prices.end() || *it != key) {
+                return (size_t) -1;
+            }
+            else {
+                return std::distance(prices.begin(), it);
             }
         }
 
-        return res;
-    }
-
-    //------------------------------------------------------------------------------
-    struct ChartScale {
-        double max;
-        double min;
-        double pixel;
-        double tick;
-
-        //--------------------------------------------------------------------------
-        ChartScale() {
-            clear();
+        //----------------------------------------------------------------------
+        bool has_high_low(flw::chart::TYPE chart_type) {
+            return chart_type == flw::chart::TYPE::BAR || chart_type == flw::chart::TYPE::VERTICAL || chart_type == flw::chart::TYPE::CLAMP_VERTICAL;
         }
 
-        //--------------------------------------------------------------------------
-        void calc(int height) {
-            auto range    = diff();
+        //----------------------------------------------------------------------
+        bool has_resizable_width(flw::chart::TYPE chart_type) {
+            return chart_type == flw::chart::TYPE::BAR || chart_type == flw::chart::TYPE::VERTICAL || chart_type == flw::chart::TYPE::CLAMP_VERTICAL;
+        }
 
-            tick = 0.0;
+        //----------------------------------------------------------------------
+        bool has_time(flw::Date::RANGE date_range) {
+            return date_range == flw::Date::RANGE::HOUR || date_range == flw::Date::RANGE::MIN || date_range == flw::Date::RANGE::SEC;
+        }
 
-            if (min < max && range > 0.000000001) {
-                double test_inc = 0.0;
-                double test_min = 0.0;
-                double test_max = 0.0;
-                int    ticker   = 0;
+        //----------------------------------------------------------------------
+        bool load_data(flw::Chart* chart, std::string filename) {
+            struct ChartData {
+                bool             labels;
+                bool             horizontal;
+                bool             vertical;
+                int              date_range;
+                int              margin_left;
+                int              margin_right;
+                int              size0;
+                int              size1;
+                int              size2;
+                int              tick_width;
+                flw::PriceVector block;
+            };
 
-                test_inc = pow((double) 10, (double) ceil(log10(range / 10.0)));
-                test_max = ((int) (max / test_inc)) * test_inc;
+            struct LineData {
+                int              area;
+                std::string      label;
+                int              type;
+                int              width;
+                int              color;
+                int              align;
+                double           clamp_max;
+                double           clamp_min;
+                flw::PriceVector prices;
+            };
 
-                if (test_max < max) {
-                    test_max += test_inc;
+            flw::Buf buf = flw::util::file_load(filename);
+
+            if (buf.p == nullptr) {
+                return false;
+            }
+
+            const std::string str = buf.p;
+
+            if (str.length() != buf.s) {
+                fl_alert("error: file %s is not an text file", filename.c_str());
+                return false;
+            }
+
+            chart->clear();
+
+            auto lines = flw::util::split(str, "\n");
+            auto state = 0;
+            auto count = 0;
+            auto data  = ChartData { true, true, true, (int) flw::Date::RANGE::DAY, 6, 1, 100, 0, 0, 1, PriceVector(), } ;
+            auto line  = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
+
+            for (const auto& l : lines) {
+                count++;
+
+                if (l == "") {
+                    continue;
                 }
 
-                test_min = test_max;
+                auto columns = flw::util::split(l, "\t");
 
-                do {
-                    ++ticker;
-                    test_min -= test_inc;
-                } while (test_min > min);
+                if (columns.size() == 0) {
+                    continue;
+                }
 
-                if (ticker < 8) {
-                    if (ticker < 5) {
-                        test_inc /= 5;
+                auto key = columns[0];
+
+                if (state == 0 && key == "chart") {
+                    if (columns.size() < 2 || columns[1] != "1") goto ERR;
+                    state = 1;
+                }
+                else if (state == 0) {
+                    goto ERR;
+                }
+                else if (state == 1) {
+                    if (key == "start_area") {
+                        state = 2;
                     }
-                    else {
-                        test_inc /= 2;
+                    if (key == "start_line") {
+                         state = 3;
+                         line = LineData { 0, "", (int) flw::chart::TYPE::LINE, 1, FL_BLUE, FL_ALIGN_LEFT, flw::chart::MIN_VAL, flw::chart::MAX_VAL, PriceVector(), };
                     }
-
-                    while ((test_min + test_inc) <= min) {
-                        test_min += test_inc;
-                    }
-
-                    while ((test_max - test_inc) >= max) {
-                        test_max -= test_inc;
-                    }
-
-                }
-
-                pixel = 0.0;
-                min   = test_min;
-                max   = test_max;
-                tick  = test_inc;
-
-                if (tick > 0.000000001) {
-                    pixel = height / diff();
-                }
-            }
-        }
-
-        //--------------------------------------------------------------------------
-        void clear() {
-            min   = flw::Chart::MAX;
-            max   = flw::Chart::MIN;
-            tick  = 0.0;
-            pixel = 0.0;
-        }
-
-        //--------------------------------------------------------------------------
-        void debug(const char* name) const {
-            #ifdef DEBUG
-                printf("\t\t------------------------------------\n");
-                printf("\t\tChartScale: (%s)\n", name);
-                printf("\t\t\tmin: %4s%25.6f\n", "", min);
-                printf("\t\t\tmax: %4s%25.6f\n", "", max);
-                printf("\t\t\tDiff: %3s%25.6f\n", "", diff());
-                printf("\t\t\ttick: %3s%25.6f\n", "", tick);
-                printf("\t\t\tpixel: %2s%25.6f\n", "", pixel);
-            #else
-                (void) name;
-            #endif
-        }
-
-        //--------------------------------------------------------------------------
-        double diff() const {
-            return max - min;
-        }
-
-        //--------------------------------------------------------------------------
-        void fix_height() {
-            if (fabs(max - min) < 0.000001) {
-                if (min >= 0.0) {
-                    min *= 0.9;
-                }
-                else {
-                    min *= 1.1;
-                }
-
-                if (max >= 0.0) {
-                    max *= 1.1;
-                }
-                else {
-                    max *= 0.9;
-                }
-            }
-        }
-    };
-
-    //------------------------------------------------------------------------------
-    struct ChartLine {
-        flw::Chart::TYPE             chart_type;
-        Fl_Align                align;
-        Fl_Color                color;
-        std::vector<flw::Price> points;
-        char*                   label;
-        double                  clamp_max;
-        double                  clamp_min;
-        double                  max;
-        double                  min;
-        int                     width;
-
-        //--------------------------------------------------------------------------
-        ChartLine() {
-            label = nullptr;
-            clear();
-        }
-
-        //--------------------------------------------------------------------------
-        ~ChartLine() {
-            clear();
-        }
-
-        //--------------------------------------------------------------------------
-        void clear() {
-            points.clear();
-            free(label);
-
-            align      = FL_ALIGN_CENTER;
-            chart_type = flw::Chart::TYPE::LINE;
-            clamp_max  = flw::Chart::MAX;
-            clamp_min  = flw::Chart::MIN;
-            color      = FL_BLACK;
-            label      = nullptr;
-            max        = flw::Chart::MIN;
-            min        = flw::Chart::MAX;
-            width      = 1;
-        }
-
-        //--------------------------------------------------------------------------
-        void debug(int num) const {
-            #ifdef DEBUG
-                printf("\t\t------------------------------------------\n");
-                printf("\t\tChartLine: (num=%d)\n", num);
-                printf("\t\t\tpoints: %7s%25d\n", "", (int) points.size());
-                printf("\t\t\tpoints_size: %2s%25d\n", "", (int) (sizeof(Price) * points.size()));
-                printf("\t\t\tchart_type: %3s%25d\n", "", (int) chart_type);
-                printf("\t\t\talign: %8s%25s\n", "", align == FL_ALIGN_LEFT ? "LEFT" : "RIGHT");
-                printf("\t\t\twidth: %8s%25d\n", "", width);
-                printf("\t\t\tlabel: %8s%25s\n", "", label);
-                printf("\t\t\tclamp_min: %4s%25.4f\n", "", clamp_min);
-                printf("\t\t\tclamp_max: %4s%25.4f\n", "", clamp_max);
-
-                if (points.size() > 1) {
-                    printf("\t\t\tfirst: %8s%25s\n", "", points.front().date.c_str());
-                    printf("\t\t\tfirst: %8s%25f\n", "", points.front().close);
-                    printf("\t\t\tlast: %9s%25s\n", "", points.back().date.c_str());
-                    printf("\t\t\tlast: %9s%25f\n", "", points.back().close);
-                }
-            #else
-                (void) num;
-            #endif
-        }
-
-        //--------------------------------------------------------------------------
-        void set(const std::vector<flw::Price>& points, const char* label, flw::Chart::TYPE chart_type, Fl_Align align, Fl_Color color, int width) {
-            clear();
-
-            this->points     = points;
-            this->label      = strdup(label);
-            this->chart_type = chart_type;
-            this->align      = align;
-            this->color      = color;
-            this->width      = width > 0 && width <= 100 ? width : 1;
-
-            for (auto& price : this->points) {
-                if (price.high > max) {
-                    max = price.high;
-                }
-
-                if (price.low < min) {
-                    min = price.low;
-                }
-            }
-        }
-    };
-
-    //------------------------------------------------------------------------------
-    struct ChartArea {
-        ChartLine*  lines[(int) flw::Chart::LINE::SIZE];
-        ChartScale* left;
-        ChartScale* right;
-        double      h;
-        double      w;
-        double      x;
-        double      y;
-        int         percent;
-
-        //--------------------------------------------------------------------------
-        ChartArea() {
-            for (int f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-                lines[f] = new ChartLine();
-            }
-
-            left  = new ChartScale();
-            right = new ChartScale();
-
-            clear(false);
-        }
-
-        //--------------------------------------------------------------------------
-        ~ChartArea() {
-            clear(true);
-
-            for (auto f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-                delete lines[f];
-            }
-
-            delete left;
-            delete right;
-        }
-
-        //--------------------------------------------------------------------------
-        void clear(bool clear_data) {
-            x = y = w = h = 0.0;
-            left->clear();
-            right->clear();
-
-            if (clear_data) {
-                percent = 0;
-
-                for (auto f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-                    lines[f]->clear();
-                }
-            }
-        }
-
-        //--------------------------------------------------------------------------
-        void debug(int num) const {
-            #ifdef DEBUG
-                bool empty = true;
-
-                for (auto f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-                    if (lines[f]->points.size() > 0) {
-                        empty = false;
+                    else if (key == "start_block") {
+                         state = 4;
                     }
                 }
+                else if (state == 2) {
+                    if (key == "area") {
+                        if (columns.size() != 3) goto ERR;
+                        auto area = (int) flw::util::to_int(columns[1].c_str());
+                        auto size = (int) flw::util::to_int(columns[2].c_str());
 
-                if (empty == false || num == 0) {
-                    printf("\t-----------------\n");
-                    printf("\tChartArea: (num=%d)\n", num);
-                    printf("\t\tobject: %3s%4d\n", "", (int) sizeof(ChartArea));
-                    printf("\t\tx: %8s%4.0f\n", "", x);
-                    printf("\t\ty: %8s%4.0f\n", "", y);
-                    printf("\t\tw: %8s%4.0f\n", "", w);
-                    printf("\t\th: %8s%4.0f\n", "", h);
-                    printf("\t\tpercent: %2s%4d\n", "", percent);
+                        if (area == 2) data.size2 = size;
+                        else if (area == 1) data.size1 = size;
+                        else data.size0 = size;
+                    }
+                    else if (key == "tick_width") {
+                        if (columns.size() < 2) goto ERR;
+                        data.tick_width = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "date_range") {
+                        if (columns.size() < 2) goto ERR;
+                        data.date_range = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "margin_left") {
+                        if (columns.size() < 2) goto ERR;
+                        data.margin_left = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "margin_right") {
+                        if (columns.size() < 2) goto ERR;
+                        data.margin_right = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "margin_right") {
+                        if (columns.size() < 2) goto ERR;
+                        data.margin_right = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "labels") {
+                        if (columns.size() < 2) goto ERR;
+                        data.labels = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "horizontal") {
+                        if (columns.size() < 2) goto ERR;
+                        data.horizontal = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "vertical") {
+                        if (columns.size() < 2) goto ERR;
+                        data.vertical = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "end_chart") {
+                        if (chart->area_size(data.size0, data.size1, data.size2) == false) goto ERR;
+                        if (chart->tick_width(data.tick_width) == false) goto ERR;
+                        if (chart->date_range((flw::Date::RANGE) data.date_range) == false) goto ERR;
+                        if (chart->margin(data.margin_left, data.margin_right) == false) goto ERR;
+                        chart->view_options(data.labels, data.horizontal, data.vertical);
+                        state = 1;
+                    }
+                }
+                else if (state == 3) {
+                    if (key == "area") {
+                        if (columns.size() < 2) goto ERR;
+                        line.area = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "type") {
+                        if (columns.size() < 2) goto ERR;
+                        line.type = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "color") {
+                        if (columns.size() < 2) goto ERR;
+                        line.color = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "width") {
+                        if (columns.size() < 2) goto ERR;
+                        line.width = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "align") {
+                        if (columns.size() < 2) goto ERR;
+                        line.align = (int) flw::util::to_int(columns[1].c_str());
+                    }
+                    else if (key == "clamp_max") {
+                        if (columns.size() < 2) goto ERR;
+                        line.clamp_max = flw::util::to_double(columns[1].c_str());
+                    }
+                    else if (key == "clamp_min") {
+                        if (columns.size() < 2) goto ERR;
+                        line.clamp_min = flw::util::to_double(columns[1].c_str());
+                    }
+                    else if (key == "label") {
+                        if (columns.size() >= 2) line.label = columns[1];
+                        else line.label = "";
+                    }
+                    else if (key == "p") {
+                        auto date = flw::Date::FromString((columns.size() > 1) ? columns[1].c_str() : "");
 
-                    left->debug("left");
-                    right->debug("right");
-
-                    for (auto f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-                        if (lines[f]->points.size() > 0) {
-                            lines[f]->debug(f);
+                        if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
+                            goto ERR;
+                        }
+                        else if (columns.size() > 4) {
+                            auto h = flw::util::to_double(columns[2].c_str());
+                            auto l = flw::util::to_double(columns[3].c_str());
+                            auto c = flw::util::to_double(columns[4].c_str());
+                            line.prices.push_back(Price(date.format(chart->_date_format), h, l, c));
+                        }
+                        else if (columns.size() > 2) {
+                            auto c = flw::util::to_double(columns[2].c_str());
+                            line.prices.push_back(Price(date.format(chart->_date_format), c));
+                        }
+                        else {
+                            goto ERR;
                         }
                     }
+                    else if (key == "end_line") {
+                        if (chart->add_line(line.area, line.prices, line.label, (flw::chart::TYPE) line.type, line.align, line.color, line.width, line.clamp_min, line.clamp_max) == false) {
+                            goto ERR;
+                        }
+
+                        state = 1;
+                    }
                 }
-            #else
-                (void) num;
-            #endif
+                else if (state == 4) {
+                    if (key == "d") {
+                        auto date = flw::Date::FromString((columns.size() > 1) ? columns[1].c_str() : "");
+
+                        if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
+                            goto ERR;
+                        }
+                        else {
+                            data.block.push_back(Price(date.format(chart->_date_format), 0.0));
+                        }
+                    }
+                    else if (key == "end_block") {
+                        chart->block_dates(data.block);
+                        state = 1;
+                    }
+                }
+            }
+
+            if (state != 1) goto ERR;
+            chart->init(true);
+            chart->redraw();
+            return true;
+
+        ERR:
+            chart->clear();
+            chart->redraw();
+            fl_alert("error: can't parse %s\nlast read line was %d", filename.c_str(), count);
+            return false;
         }
-    };
+
+        //----------------------------------------------------------------------
+        bool save_data(const flw::Chart* chart, std::string filename) {
+            int area_count = 0;
+            std::string res;
+
+            res.resize(1'000'000);
+
+            res  = "chart" "\t" "1" "\n\n";
+            res += "start_area" "\n";
+
+            for (auto& area : chart->_areas) {
+                res += flw::util::format("area" "\t" "%d" "\t" "%d" "\n", area_count++, area.percent);
+            }
+
+            res += flw::util::format("tick_width"   "\t" "%d" "\n", chart->_tick_width);
+            res += flw::util::format("date_range"   "\t" "%d" "\n", (int) chart->_date_range);
+            res += flw::util::format("margin_left"  "\t" "%d" "\n", (int) chart->_margin_left);
+            res += flw::util::format("margin_right" "\t" "%d" "\n", (int) chart->_margin_right);
+            res += flw::util::format("labels"       "\t" "%d" "\n", (int) chart->_view.labels);
+            res += flw::util::format("horizontal"   "\t" "%d" "\n", (int) chart->_view.horizontal);
+            res += flw::util::format("vertical"     "\t" "%d" "\n", (int) chart->_view.vertical);
+            res += "end_chart" "\n";
+            area_count = 0;
+
+            for (const auto& area : chart->_areas) {
+                for (const auto& line : area.lines) {
+                    if (line.points.size() > 0) {
+                        res += flw::util::format("\nstart_line\n");
+                        res += flw::util::format("area"      "\t" "%d\n", area_count);
+                        res += flw::util::format("label"     "\t" "%s\n", line.label.c_str());
+                        res += flw::util::format("type"      "\t" "%d\n", line.type);
+                        res += flw::util::format("align"     "\t" "%d\n", line.align);
+                        res += flw::util::format("color"     "\t" "%u\n", line.color);
+                        res += flw::util::format("width"     "\t" "%d\n", line.width);
+                        res += flw::util::format("clamp_max" "\t" "%f\n", line.clamp_max);
+                        res += flw::util::format("clamp_min" "\t" "%f\n", line.clamp_min);
+
+                        for (auto& price : line.points) {
+                            res += "p\t" + price.format_price((chart->has_time() == true) ? flw::Date::FORMAT::ISO_TIME : flw::Date::FORMAT::ISO, true, false) + "\n";
+                        }
+
+                        res += "end_line\n";
+                    }
+                }
+
+                area_count++;
+            }
+
+            res += "\nstart_block\n";
+            for (const auto& date : chart->_block_dates) {
+                res += "d\t" + date.format_date((chart->has_time() == true) ? flw::Date::FORMAT::ISO_TIME : flw::Date::FORMAT::ISO) + "\n";
+            }
+            res += flw::util::format("end_block\n");
+
+            return flw::util::file_save(filename, res.c_str(), res.length());
+        }
+    }
 }
+
+//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------
+flw::chart::Area::Area() {
+    for (size_t f = 0; f < flw::chart::MAX_LINE; f++) {
+        lines.push_back(flw::chart::Line());
+    }
+
+    clear(false);
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Area::clear(bool clear_data) {
+    count    = 0;
+    x        = 0.0;
+    y        = 0.0;
+    w        = 0.0;
+    h        = 0.0;
+    selected = 0;
+
+    left.clear();
+    right.clear();
+
+    if (clear_data == true) {
+        percent = 0;
+
+        for (size_t f = 0; f < flw::chart::MAX_LINE; f++) {
+            lines[f] = flw::chart::Line();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Area::debug(int num) const {
+#ifdef DEBUG
+    auto count = 1;
+
+    for (const auto& line : lines) {
+        if (line.points.size() > 0) {
+            count = 0;
+        }
+    }
+
+    if (count == 0 || num == 0) {
+        fprintf(stderr, "\t----------------------\n");
+        fprintf(stderr, "\tflw::chart::Area: %d\n", num);
+        fprintf(stderr, "\t\tcount:    %d\n", (int) count);
+        fprintf(stderr, "\t\tx:        %4.0f\n", x);
+        fprintf(stderr, "\t\ty:        %4.0f\n", y);
+        fprintf(stderr, "\t\tw:        %4.0f\n", w);
+        fprintf(stderr, "\t\th:        %4.0f\n", h);
+        fprintf(stderr, "\t\tpercent:  %4d\n", percent);
+        fprintf(stderr, "\t\tselected: %4d\n", (int) selected);
+
+        left.debug("left");
+        right.debug("right");
+        count = 0;
+
+        for (const auto& line : lines) {
+            if (line.points.size() > 0) {
+                line.debug(count++);
+            }
+        }
+    }
+#else
+    (void) num;
+#endif
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::chart::Line::Line() {
+    clear();
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Line::clear() {
+    points.clear();
+
+    align     = FL_ALIGN_CENTER;
+    type      = flw::chart::TYPE::LINE;
+    clamp_max = flw::chart::MAX_VAL;
+    clamp_min = flw::chart::MIN_VAL;
+    color     = FL_FOREGROUND_COLOR;
+    label     = "";
+    max       = flw::chart::MIN_VAL;
+    min       = flw::chart::MAX_VAL;
+    visible   = true;
+    width     = 1;
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Line::debug(int num) const {
+#ifdef DEBUG
+    fprintf(stderr, "\t\t---------------------------------------------\n");
+    fprintf(stderr, "\t\tflw::chart::Line: %d\n", num);
+    fprintf(stderr, "\t\t\talign:      %25s\n", (align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
+    fprintf(stderr, "\t\t\ttype:       %25d\n", (int) type);
+    fprintf(stderr, "\t\t\tclamp_max:  %25.4f\n", clamp_max);
+    fprintf(stderr, "\t\t\tclamp_min:  %25.4f\n", clamp_min);
+    fprintf(stderr, "\t\t\tlabel: %30s\n", label.c_str());
+    fprintf(stderr, "\t\t\tprices:     %25d\n", (int) points.size());
+    fprintf(stderr, "\t\t\tvisible:    %25d\n", visible);
+    fprintf(stderr, "\t\t\twidth:      %25d\n", width);
+
+    if (points.size() > 1) {
+        fprintf(stderr, "\t\t\tfirst:      %25s\n", points.front().date.c_str());
+        fprintf(stderr, "\t\t\tfirst:      %25f\n", points.front().close);
+        fprintf(stderr, "\t\t\tlast:       %25s\n", points.back().date.c_str());
+        fprintf(stderr, "\t\t\tlast:       %25f\n", points.back().close);
+    }
+#else
+    (void) num;
+#endif
+}
+
+//------------------------------------------------------------------------------
+bool flw::chart::Line::set(const flw::PriceVector& points, std::string label, flw::chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max) {
+    if (width == 0 || width > MAX_LINE_WIDTH || (int) type < 0 || (int) type > (int) flw::chart::TYPE::LAST) {
+        assert(false);
+        return false;
+    }
+
+    if (width < 0 && flw::chart::has_resizable_width(type) == false) {
+        assert(false);
+        return false;
+    }
+
+    if (align != FL_ALIGN_LEFT && align != FL_ALIGN_RIGHT) {
+        assert(false);
+        return false;
+    }
+
+    clear();
+
+    this->points    = points;
+    this->label     = label;
+    this->type      = type;
+    this->align     = align;
+    this->color     = color;
+    this->width     = width;
+    this->clamp_min = clamp_min;
+    this->clamp_max = clamp_max;
+
+    for (const auto& price : this->points) {
+        if (price.high > max) {
+            max = price.high;
+        }
+
+        if (price.low < min) {
+            min = price.low;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::chart::Scale::Scale() {
+    clear();
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Scale::calc(int height) {
+    auto range = diff();
+
+    tick  = 0.0;
+    pixel = 0.0;
+
+    if (min < max && range > 0.000000001) {
+        double test_inc = 0.0;
+        double test_min = 0.0;
+        double test_max = 0.0;
+        int    ticker   = 0;
+
+        test_inc = pow((double) 10, (double) ceil(log10(range / 10.0)));
+        test_max = ((int) (max / test_inc)) * test_inc;
+
+        if (test_max < max) {
+            test_max += test_inc;
+        }
+
+        test_min = test_max;
+
+        do {
+            ++ticker;
+            test_min -= test_inc;
+        } while (test_min > min);
+
+        if (ticker < 10) {
+            test_inc = (ticker < 5) ? test_inc / 10.0 : test_inc / 2.0;
+
+            while ((test_min + test_inc) <= min) {
+                test_min += test_inc;
+            }
+
+            while ((test_max - test_inc) >= max) {
+                test_max -= test_inc;
+            }
+
+        }
+
+        min   = test_min;
+        max   = test_max;
+        tick  = test_inc;
+
+        if (tick > 0.000000001) {
+            pixel = height / diff();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Scale::clear() {
+    min   = flw::chart::MAX_VAL;
+    max   = flw::chart::MIN_VAL;
+    tick  = 0.0;
+    pixel = 0.0;
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Scale::debug(const char* name) const {
+#ifdef DEBUG
+    fprintf(stderr, "\t\t---------------------------------------------\n");
+    fprintf(stderr, "\t\tflw::chart::Scale: %s\n", name);
+    fprintf(stderr, "\t\t\tmin:   %30.6f\n", min);
+    fprintf(stderr, "\t\t\tmax:   %30.6f\n", max);
+    fprintf(stderr, "\t\t\tDiff:  %30.6f\n", diff());
+    fprintf(stderr, "\t\t\ttick:  %30.6f\n", tick);
+    fprintf(stderr, "\t\t\tpixel: %30.6f\n", pixel);
+#else
+    (void) name;
+#endif
+}
+
+//------------------------------------------------------------------------------
+void flw::chart::Scale::fix_height() {
+    if (fabs(max - min) < 0.000001) {
+        if (min >= 0.0) {
+            min *= 0.9;
+        }
+        else {
+            min *= 1.1;
+        }
+
+        if (max >= 0.0) {
+            max *= 1.1;
+        }
+        else {
+            max *= 0.9;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 flw::Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
+    clip_children(1);
     color(FL_BACKGROUND2_COLOR);
     labelcolor(FL_FOREGROUND_COLOR);
     box(FL_BORDER_BOX);
+    tooltip(
+        "Press right button for menu.\n"
+        "Press ctrl + scroll wheel to change tick size.\n"
+        "Press left button to show Y value.\n"
+        "Press ctrl + left button to show actual price data.\n"
+        "Press 1 - 9 to select which line to use.\n"
+        "Press shift + 1 - 9 to toggle line visibility.\n"
+        "Click in target area first."
+    );
 
+    _menu   = new Fl_Menu_Button(0, 0, 0, 0);
     _scroll = new Fl_Scrollbar(0, 0, 0, 0);
-    _scroll->type(FL_HORIZONTAL);
-    _scroll->callback(flw::Chart::_CallbackScrollbar, this);
+
+    add(_menu);
     add(_scroll);
 
-    _areas[0] = new ChartArea;
-    _areas[1] = new ChartArea;
-    _areas[2] = new ChartArea;
+    _scroll->type(FL_HORIZONTAL);
+    _scroll->callback(flw::Chart::_CallbackScrollbar, this);
+    _menu->add(flw::chart::SHOW_LABELS, 0, flw::Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(flw::chart::SHOW_HLINES, 0, flw::Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(flw::chart::SHOW_VLINES, 0, flw::Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(flw::chart::RESET_SELECT, 0, flw::Chart::_CallbackReset, this);
+    _menu->add(flw::chart::SAVE_PNG, 0, flw::Chart::_CallbackSavePng, this);
+#ifdef DEBUG
+    _menu->add(flw::chart::PRINT_DEBUG, 0, flw::Chart::_CallbackDebug, this);
+#endif
+    _menu->type(Fl_Menu_Button::POPUP3);
+
+    _areas.push_back(flw::chart::Area());
+    _areas.push_back(flw::chart::Area());
+    _areas.push_back(flw::chart::Area());
 
     clear();
+    update_pref();
 }
 
 //------------------------------------------------------------------------------
-flw::Chart::~Chart() {
-    clear();
-    delete _areas[0];
-    delete _areas[1];
-    delete _areas[2];
-}
+bool flw::Chart::add_line(size_t area, const flw::PriceVector& points, std::string line_label, flw::chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width, double clamp_min, double clamp_max) {
+    _area = nullptr;
+    redraw();
 
-//------------------------------------------------------------------------------
-void flw::Chart::area_size(int area1, int area2, int area3) {
-    if (area1 >= 0 &&
-        area1 <= 100 &&
-        area2 >= 0 &&
-        area2 <= 100 &&
-        area3 >= 0 &&
-        area3 <= 100 &&
-        area1 + area2 + area3 == 100) {
-
-        _areas[0]->percent = area1;
-        _areas[1]->percent = area2;
-        _areas[2]->percent = area3;
+    if (area >= flw::chart::MAX_AREA || _areas[area].count >= flw::chart::MAX_LINE) {
+        assert(false);
+        return false;
     }
+
+    if (_areas[area].lines[_areas[area].count].set(points, line_label, chart_type, line_align, line_color, line_width, clamp_min, clamp_max) == false) {
+        _areas[area].lines[_areas[area].count] = flw::chart::Line();
+        return false;
+    }
+
+    _areas[area].count++;
+    return true;
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::block(const std::vector<flw::Price>& dates) {
-    _blocks = dates;
+bool flw::Chart::area_size(int area1, int area2, int area3) {
+    _area = nullptr;
+
+    if (area1 < 0 || area1 > 100 || area2 < 0 || area2 > 100 || area3 < 0 || area3 > 100 || area1 + area2 + area3 != 100) {
+        assert(false);
+        return false;
+    }
+
+    _areas[0].percent = area1;
+    _areas[1].percent = area2;
+    _areas[2].percent = area3;
+    return true;
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::_calc_area_height() {
-    auto last   = 0;
-    auto addh   = 0;
-    auto height = 0;
+    int last   = 0;
+    int addh   = 0;
+    int height = 0;
 
-    _top_space    = _fs;
-    _bottom_space = _fs * 3 + Fl::scrollbar_size();
+    _top_space    = flw::PREF_FIXED_FONTSIZE;
+    _bottom_space = flw::PREF_FIXED_FONTSIZE * 3 + Fl::scrollbar_size();
+    height        = h() - (_bottom_space + _top_space);
 
-    height = h() - (_bottom_space + _top_space);
+    for (size_t f = 1; f < flw::chart::MAX_AREA; f++) {
+        const auto& area = _areas[f];
 
-    for (auto f = 1; f < (int) flw::Chart::AREA::SIZE; f++) {
-        auto area = _areas[f];
-
-        if (area->percent >= 10) {
-            height -= _fs;
+        if (area.percent >= 10) {
+            height -= flw::PREF_FIXED_FONTSIZE;
         }
     }
 
-    _areas[0]->y = _top_space;
-    _areas[0]->h = (int) ((_areas[0]->percent / 100.0) * height);
+    _areas[0].y = _top_space;
+    _areas[0].h = (int) ((_areas[0].percent / 100.0) * height);
 
-    for (auto f = 1; f < (int) flw::Chart::AREA::SIZE; f++) {
-        auto prev = _areas[f - 1];
-        auto area = _areas[f];
+    for (size_t f = 1; f < flw::chart::MAX_AREA; f++) {
+        const auto& prev = _areas[f - 1];
+        auto&       area = _areas[f];
 
-        if (area->percent > 10) {
-            area->y = prev->y + prev->h + _fs;
-            area->h = (int) ((_areas[1]->percent / 100.0) * height);
-            addh += (int) (prev->h);
-            last = f;
+        if (area.percent > 10) {
+            area.y  = prev.y + prev.h + flw::PREF_FIXED_FONTSIZE;
+            area.h  = (int) ((_areas[1].percent / 100.0) * height);
+            addh   += (int) (prev.h);
+            last    = f;
         }
     }
 
     if (last > 0) {
-        _areas[last]->h = (int) (height - addh);
+        _areas[last].h = (int) (height - addh);
     }
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::_calc_area_width() {
-    const double width = w() - (_margin_left * _fs + _margin_right * _fs);
+    const double width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
 
     _ticks     = (int) (width / _tick_width);
-    _top_space = _fs;
+    _top_space = flw::PREF_FIXED_FONTSIZE;
 
     if ((int) _dates.size() > _ticks) {
-        double slider_size = _ticks / (_dates.size() + 1.0);
+        const double slider_size = _ticks / (_dates.size() + 1.0);
 
         _scroll->activate();
-        _scroll->slider_size(slider_size > 0.05 ? slider_size : 0.05);
+        _scroll->slider_size((slider_size > 0.05) ? slider_size : 0.05);
         _scroll->range(0, _dates.size() - _ticks);
 
         if (_scroll->value() > _scroll->maximum()) {
@@ -545,11 +772,9 @@ void flw::Chart::_calc_area_width() {
         _date_start = 0;
     }
 
-    for (int f = 0; f < (int) flw::Chart::AREA::SIZE; f++) {
-        auto area = _areas[f];
-
-        area->x = _margin_left * _fs;
-        area->w = width;
+    for (auto& area : _areas) {
+        area.x = _margin_left * flw::PREF_FIXED_FONTSIZE;
+        area.w = width;
     }
 }
 
@@ -558,15 +783,11 @@ void flw::Chart::_calc_dates() {
     std::string min = "99991231";
     std::string max = "01010101";
 
-    for (auto f = 0; f < (int) flw::Chart::AREA::SIZE; f++) {
-        ChartArea* area = _areas[f];
-
-        for (auto g = 0; g < (int) flw::Chart::LINE::SIZE; g++) {
-            auto line = area->lines[g];
-
-            if (line->points.size() > 0) {
-                auto& first = line->points.front();
-                auto& last  = line->points.back();
+    for (const auto& area : _areas) {
+        for (const auto& line : area.lines) {
+            if (line.points.size() > 0) {
+                auto& first = line.points.front();
+                auto& last  = line.points.back();
 
                 if (first.date < min) {
                     min = first.date;
@@ -582,42 +803,32 @@ void flw::Chart::_calc_dates() {
     _dates.clear();
 
     if (min != "99991231") {
-        _dates = Price::DateSerie(min.c_str(), max.c_str(), _range, _blocks);
+        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates);
         redraw();
     }
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::_calc_ymin_ymax() {
-    for (auto f = 0; f < (int) flw::Chart::AREA::SIZE; f++) {
-        auto area = _areas[f];
+    for (auto& area : _areas) {
+        area.left.clear();
+        area.right.clear();
 
-        area->left->clear();
-        area->right->clear();
-
-        for (auto g = 0; g < (int) flw::Chart::LINE::SIZE; g++) {
-            auto line = area->lines[g];
-
-            if (line->points.size() > 0) {
-                int     stop    = _date_start + _ticks;
-                int     current = _date_start;
-                double  max     = flw::Chart::MIN;
-                double  min     = flw::Chart::MAX;
-                int     c       = 0;
-                int64_t t       = util::time_micro();
+        for (const auto& line : area.lines) {
+            if (line.points.size() > 0) {
+                const int stop    = _date_start + _ticks;
+                int       current = _date_start;
+                double    max     = flw::chart::MIN_VAL;
+                double    min     = flw::chart::MAX_VAL;
 
                 while (current <= stop && current < (int) _dates.size()) {
-                    Price& date  = _dates[current];
-                    int    index = flw::_chart_bsearch(line->points, date);
+                    const flw::Price& date  = _dates[current];
+                    const size_t      index = flw::chart::bsearch(line.points, date);
 
-                    if (index != -1) {
-                        c++;
-                        Price& price = line->points[index];
+                    if (index != (size_t) -1) {
+                        const flw::Price& price = line.points[index];
 
-                        if (line->chart_type == flw::Chart::TYPE::BAR ||
-                            line->chart_type == flw::Chart::TYPE::VERTICAL ||
-                            line->chart_type == flw::Chart::TYPE::VERTICAL2) {
-
+                        if (flw::chart::has_high_low(line.type) == true) {
                             min = price.low;
                             max = price.high;
                         }
@@ -626,440 +837,577 @@ void flw::Chart::_calc_ymin_ymax() {
                             max = price.close;
                         }
 
-                        if ((int64_t) line->clamp_min > MIN) {
-                            min = line->clamp_min;
+                        if ((int64_t) line.clamp_min > flw::chart::MIN_VAL) {
+                            min = line.clamp_min;
                         }
 
-                        if ((int64_t) line->clamp_max < MAX) {
-                            max = line->clamp_max;
+                        if ((int64_t) line.clamp_max < flw::chart::MAX_VAL) {
+                            max = line.clamp_max;
                         }
 
-                        if (line->align == FL_ALIGN_LEFT) {
-                            if (min < area->left->min) {
-                                area->left->min = min;
+                        if (line.align == FL_ALIGN_LEFT) {
+                            if (min < area.left.min) {
+                                area.left.min = min;
                             }
 
-                            if (max > area->left->max) {
-                                area->left->max = max;
+                            if (max > area.left.max) {
+                                area.left.max = max;
                             }
                         }
                         else {
-                            if (min < area->right->min) {
-                                area->right->min = min;
+                            if (min < area.right.min) {
+                                area.right.min = min;
                             }
 
-                            if (max > area->right->max) {
-                                area->right->max = max;
+                            if (max > area.right.max) {
+                                area.right.max = max;
                             }
                         }
                     }
 
                     current++;
                 }
-
-                #ifdef DEBUG
-                    printf("found %d in %d us\n", c, (int) (util::time_micro() - t)); fflush(stdout);
-                #endif
             }
         }
 
-        area->left->fix_height();
-        area->right->fix_height();
+        area.left.fix_height();
+        area.right.fix_height();
     }
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::_calc_yscale() {
-    for (auto f = 0; f < (int) flw::Chart::AREA::SIZE; f++) {
-        auto area = _areas[f];
-
-        area->left->calc(area->h);
-        area->right->calc(area->h);
+    for (auto& area : _areas) {
+        area.left.calc(area.h);
+        area.right.calc(area.h);
     }
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::_CallbackScrollbar(Fl_Widget* widget, void* chart_object) {
-    (void) widget;
+void flw::Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
+    auto self = (flw::Chart*) chart_object;
 
-    auto chart = (Chart*) chart_object;
-    chart->_date_start = chart->_scroll->value();
-    chart->init(false);
+    self->debug();
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::clamp(flw::Chart::AREA area, flw::Chart::LINE line, double clamp_min, double clamp_max) {
-    auto l = _areas[(int) area]->lines[(int) line];
+void flw::Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
+    auto self = (flw::Chart*) chart_object;
 
-    l->clamp_min = clamp_min;
-    l->clamp_max = clamp_max;
-    redraw();
+    self->_view.labels     = flw::util::menu_item_value(self->_menu, flw::chart::SHOW_LABELS);
+    self->_view.vertical   = flw::util::menu_item_value(self->_menu, flw::chart::SHOW_VLINES);
+    self->_view.horizontal = flw::util::menu_item_value(self->_menu, flw::chart::SHOW_HLINES);
+    self->redraw();
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
+    auto self = (flw::Chart*) chart_object;
+
+    for (auto& area : self->_areas) {
+        area.selected = 0;
+
+        for (auto& line : area.lines) {
+            line.visible = true;
+        }
+    }
+
+    self->redraw();
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
+    auto self = (flw::Chart*) chart_object;
+
+    flw::util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
+    auto self = (flw::Chart*) chart_object;
+
+    self->_date_start = self->_scroll->value();
+    self->init(false);
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::clear() {
     ((Fl_Valuator*) _scroll)->value(0);
 
-    _blocks.clear();
+    _block_dates.clear();
     _dates.clear();
 
-    _areas[0]->clear(true);
-    _areas[1]->clear(true);
-    _areas[2]->clear(true);
+    _areas[0].clear(true);
+    _areas[1].clear(true);
+    _areas[2].clear(true);
 
     _area         = nullptr;
-    _label[0]     = 0;
     _bottom_space = 0;
+    _cw           = 0;
     _date_start   = 0;
     _old_height   = -1;
     _old_width    = -1;
+    _tooltip      = "";
     _top_space    = 0;
     _ver_pos[0]   = -1;
 
     area_size();
-    font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     margin();
-    range();
-    support_lines();
+    date_range();
     tick_width();
-    tooltip();
-    zoom();
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::_create_tooltip() {
-    const int X    = Fl::event_x();
-    const int Y    = Fl::event_y();
-    auto      l    = *_label ? true : false;
-    auto      area = _inside_area(X, Y);
+// Create tooltip string either by using mouse cursor pos and convert it to real value or use price data
+// If ctrl is true then use actual price data
+//
+void flw::Chart::_create_tooltip(bool ctrl) {
+    const int X   = Fl::event_x();
+    const int Y   = Fl::event_y();
+    auto      old = _tooltip;
 
-    *_label = 0;
-    _area   = nullptr;
+    _tooltip = "";
 
-    if (area) {
-        const int stop  = _date_start + _ticks;
-        int  X1          = x() + _margin_left * _fs;
-        int  current     = _date_start;
-        auto date_format = _date_format == Date::FORMAT::ISO ? Date::FORMAT::NAME_LONG : Date::FORMAT::ISO_TIME_LONG;
+    if (_area != nullptr) { // Set in handle()
+        const flw::Date::FORMAT date_format = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
+        const int               stop        = _date_start + _ticks;
+        int                     start       = _date_start;
+        int                     X1          = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+        int                     left_dec    = 0;
+        int                     right_dec   = 0;
 
-        while (current <= stop && current < (int) _dates.size()) {
-            if (X >= X1 && X < (X1 + _tick_width)) { // Is mouse x pos inside current tick?
-                auto        ydiff  = (double) ((y() + area->y + area->h) - Y);
-                auto&       price  = _dates[current];
-                auto        date   = Date::FromString(price.date.c_str());
-                auto        string = date.format(date_format);
-                std::string left;
-                std::string right;
+        if (_area->left.tick < 10.0 ) {
+            left_dec = flw::util::count_decimals(_area->left.tick) + 1;
+        }
 
-                if (area->left->max > area->left->min) {
-                    left = flw::_chart_format_double(area->left->min + (ydiff / area->left->pixel), flw::_chart_count_decimals(area->left->tick) + 1, ' ');
+        if (_area->right.tick < 10.0 ) {
+            right_dec = flw::util::count_decimals(_area->right.tick) + 1;
+        }
+
+        while (start <= stop && start < (int) _dates.size()) {
+            if (X >= X1 && X <= X1 + _tick_width - 1) { // Is mouse x pos inside current tick?
+                const std::string fancy_date = flw::Date::FromString(_dates[start].date.c_str()).format(date_format);
+
+                _tooltip = fancy_date;
+
+                if (ctrl == false || _area->lines[_area->selected].points.size() == 0) { // Convert mouse pos to scale value
+                    const double ydiff = (double) ((y() + _area->y2()) - Y);
+                    std::string  left;
+                    std::string  right;
+
+                    if (_area->left.max > _area->left.min) {
+                        left = flw::util::format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
+                    }
+
+                    if (_area->right.max > _area->right.min) {
+                        right = flw::util::format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
+                    }
+
+                    const size_t len = (left.length() > right.length()) ? left.length() : right.length();
+
+                    if (left != "" && right != "") {
+                        _tooltip = flw::util::format("%s\nleft:  %*s\nright: %*s", fancy_date.c_str(), (int) len, left.c_str(), (int) len, right.c_str());
+                    }
+                    else if (left != "") {
+                        _tooltip = flw::util::format("%s\nleft: %*s", fancy_date.c_str(), (int) len, left.c_str());
+                    }
+                    else if (right != "") {
+                        _tooltip = flw::util::format("%s\nright: %*s", fancy_date.c_str(), (int) len, right.c_str());
+                    }
+                }
+                else { // Use actual price data
+                    const flw::chart::Line& line  = _area->lines[_area->selected];
+                    const size_t            index = flw::chart::bsearch(line.points, _dates[start].date);
+
+                    if (index != (size_t) -1) {
+                        const int         dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
+                        const flw::Price& price = line.points[index];
+                        const std::string high  = flw::util::format_double(price.high, dec, '\'');
+                        const std::string low   = flw::util::format_double(price.low, dec, '\'');
+                        const std::string close = flw::util::format_double(price.close, dec, '\'');
+                        const size_t      len   = (low.length() > high.length()) ? low.length() : high.length();
+
+                        _tooltip = flw::util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), (int) len, high.c_str(), (int) len, close.c_str(), (int) len, low.c_str());
+                    }
                 }
 
-                if (area->right->max > area->right->min) {
-                    right = flw::_chart_format_double(area->right->min + (ydiff / area->right->pixel), flw::_chart_count_decimals(area->right->tick) + 1, ' ');
-                }
-
-                if (left.size() && right.size()) {
-                    snprintf(_label, _CHART_LABEL_SIZE, "date:  %s\nleft:  %s\nright: %s", string.c_str(), left.c_str(), right.c_str());
-                }
-                else if (left.size()) {
-                    snprintf(_label, _CHART_LABEL_SIZE, "date:  %s\nleft:  %s", string.c_str(), left.c_str());
-                }
-                else if (right.size()) {
-                    snprintf(_label, _CHART_LABEL_SIZE, "date:  %s\nright: %s", string.c_str(), right.c_str());
-                }
-                else {
-                    snprintf(_label, _CHART_LABEL_SIZE, "date:  %s", string.c_str());
-                }
-
-                _area = area;
                 break;
             }
 
-            X1 += _tick_width;
-            current++;
+            X1    += _tick_width;
+            start += 1;
         }
     }
 
-    if (*_label || l) {
+    if (_tooltip != "" || old != "") {
         redraw();
     }
 }
 
 //------------------------------------------------------------------------------
+bool flw::Chart::date_range(flw::Date::RANGE range) {
+    if ((int) range < 0 || (int) range > (int) flw::Date::RANGE::LAST) {
+        assert(false);
+        return false;
+    }
+
+    _date_range  = range;
+    _date_format = (_date_range == flw::Date::RANGE::HOUR || _date_range == flw::Date::RANGE::MIN || _date_range == flw::Date::RANGE::SEC) ? flw::Date::FORMAT::ISO_TIME : flw::Date::FORMAT::ISO;
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
 void flw::Chart::debug() const {
-    #ifdef DEBUG
-        Price first, last, start, end;
+#ifdef DEBUG
+    Price first, last, start, end;
 
-        if (_dates.size()) {
-            first = _dates.front();
-        }
+    if (_dates.size()) {
+        first = _dates.front();
+    }
 
-        if (_dates.size() > 1) {
-            last = _dates.back();
-        }
+    if (_dates.size() > 1) {
+        last = _dates.back();
+    }
 
-        if ((int) _dates.size() > _date_start) {
-            start = _dates[_date_start];
-        }
+    if ((int) _dates.size() > _date_start) {
+        start = _dates[_date_start];
+    }
 
-        if (_ticks >= 0 && (int) _dates.size() > (_date_start + _ticks)) {
-            end = _dates[_date_start + _ticks];
-        }
+    if (_ticks >= 0 && (int) _dates.size() > (_date_start + _ticks)) {
+        end = _dates[_date_start + _ticks];
+    }
 
-        printf("\n");
-        printf("------------------------------\n");
-        printf("Chart:\n");
-        printf("\tobject: %9s%19d\n", "", (int) sizeof(Chart));
-        printf("\t_bottom_space: %2s%19d\n", "", _bottom_space);
-        printf("\t_top_space: %5s%19d\n", "", _top_space);
-        printf("\t_dates: %9s%19d\n", "", (int) _dates.size());
-        printf("\t_blocks: %8s%19d\n", "", (int) _blocks.size());
-        printf("\t_date_format: %3s%19d\n", "", (int) _date_format);
-        printf("\t_date_start: %4s%19d\n", "", _date_start);
-        printf("\t_date_end: %6s%19d\n", "", _date_start + _ticks);
-        printf("\t_margin_left: %3s%19d\n", "", _margin_left * _fs);
-        printf("\t_margin_right: %2s%19d\n", "", _margin_right * _fs);
-        printf("\t_range: %9s%19d\n", "", (int) _range);
-        printf("\t_ticks: %9s%19d\n", "", _ticks);
-        printf("\t_tick_width: %4s%19d\n", "", _tick_width);
-        printf("\t_tooltip: %7s%19s\n", "", _tooltip ? "true" : "false");
-        printf("\tx: %15s%19d\n", "", x());
-        printf("\ty: %15s%19d\n", "", y());
-        printf("\th: %15s%19d\n", "", h());
-        printf("\tw: %15s%19d\n", "", w());
-        printf("\tFirst Date: %6s%s\n", "", first.date.c_str());
-        printf("\tLast Date: %7s%s\n", "", last.date.c_str());
-        printf("\tStart Date: %6s%s\n", "", start.date.c_str());
-        printf("\tEnd Date: %8s%s\n", "", end.date.c_str());
+    fprintf(stderr, "\n");
+    fprintf(stderr, "--------------------------------------------\n");
+    fprintf(stderr, "flw::Chart:\n");
+    fprintf(stderr, "\tblock_dates:     %19d\n", (int) _block_dates.size());
+    fprintf(stderr, "\tbottom_space:    %19d\n", _bottom_space);
+    fprintf(stderr, "\tcw:              %19d\n", _cw);
+    fprintf(stderr, "\tdate_end:        %19d\n", _date_start + _ticks);
+    fprintf(stderr, "\tdate_format:     %19d\n", (int) _date_format);
+    fprintf(stderr, "\tdate_start:      %19d\n", _date_start);
+    fprintf(stderr, "\tdates:           %19d\n", (int) _dates.size());
+    fprintf(stderr, "\th:               %19d\n", h());
+    fprintf(stderr, "\thorizontal:      %19d\n", _view.horizontal);
+    fprintf(stderr, "\tlabels:          %19d\n", _view.labels);
+    fprintf(stderr, "\tmargin_left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
+    fprintf(stderr, "\tmargin_right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
+    fprintf(stderr, "\trange:           %19d\n", (int) _date_range);
+    fprintf(stderr, "\ttick_width:      %19d\n", _tick_width);
+    fprintf(stderr, "\tticks:           %19d\n", _ticks);
+    fprintf(stderr, "\ttop_space:       %19d\n", _top_space);
+    fprintf(stderr, "\tvertical:        %19d\n", _view.vertical);
+    fprintf(stderr, "\tw:               %19d\n", w());
+    fprintf(stderr, "\tx:               %19d\n", x());
+    fprintf(stderr, "\ty:               %19d\n", y());
+    fprintf(stderr, "\tfirst date:      %19s\n", first.date.c_str());
+    fprintf(stderr, "\tlast date:       %19s\n", last.date.c_str());
+    fprintf(stderr, "\tfirst visible:   %19s\n", start.date.c_str());
+    fprintf(stderr, "\tlast visible:    %19s\n", end.date.c_str());
 
-        _areas[0]->debug(0);
-        _areas[1]->debug(1);
-        _areas[2]->debug(2);
-        fflush(stdout);
-    #endif
+    _areas[0].debug(0);
+    _areas[1].debug(1);
+    _areas[2].debug(2);
+
+    fflush(stderr);
+#endif
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::draw() {
-    #ifdef DEBUG
-        auto t = util::time_micro();
-    #endif
+#ifdef DEBUG
+    // auto t = flw::util::time_milli();
+#endif
 
-        Fl_Group::draw();
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    Fl_Group::draw();
+    _cw = fl_width("X");
 
-        if (w() < (_fs * 10) ||
-            h() < (_fs * 8)) {
+    if (w() < 100 || h() < 100) {
+        return;
+    }
 
-            return;
+    fl_push_clip(x(), y(), w(), h() - _scroll->h());
+    _draw_xlabels();
+
+    for (const auto& area : _areas) {
+        if (area.percent >= 10) {
+            _draw_area(area);
         }
+    }
 
-        _PUSH_CLIP(x(), y(), w(), h());
-        _draw_xlabels();
+    _draw_tooltip();
+    fl_pop_clip();
+    fl_line_style(0);
 
-        for (auto f = 0; f < (int) flw::Chart::AREA::SIZE; f++) {
-            auto area = _areas[f];
-
-            if (area->percent >= 10) {
-                _draw_area(area);
-            }
-        }
-
-        if (*_label && _area) {
-            _draw_tooltip(_label, _area);
-        }
-
-        _POP_CLIP();
-
-    #ifdef DEBUG
-        printf("draw: %6lld us\n", (long long int) (util::time_micro() - t));
-        fflush(stdout);
-    #endif
+#ifdef DEBUG
+    // fprintf(stderr, "draw: %3d mS\n", flw::util::time_milli() - t);
+    // fflush(stdout);
+#endif
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::_draw_area(const ChartArea* area) {
-    if (_ver_lines) {
-        _draw_ver_lines(area);
-    }
+void flw::Chart::_draw_area(const flw::chart::Area& area) {
+    _draw_ver_lines(area);
+    _draw_ylabels(_margin_left * flw::PREF_FIXED_FONTSIZE, area.y + area.h, area.y, area.left, true);
+    _draw_ylabels(w() - _margin_right * flw::PREF_FIXED_FONTSIZE, area.y + area.h, area.y, area.right, false);
+    fl_push_matrix();
+    fl_push_clip(x() + area.x, y() + area.y - 1, area.w + 1, area.h + 2);
 
-    _draw_ylabels(_margin_left * _fs, area->y + area->h, area->y, area->left, true);
-    _draw_ylabels(w() - _margin_right * _fs, area->y + area->h, area->y, area->right, false);
-
-    for (auto f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-        auto line = area->lines[f];
-
-        if (line->points.size() > 0) {
-            _draw_line(line, line->align == FL_ALIGN_LEFT ? area->left : area->right, area->x, area->y, area->w, area->h);
-        }
+    for (const auto& line : area.lines) {
+        _draw_line(line, (line.align == FL_ALIGN_LEFT) ? area.left : area.right, area.x, area.y, area.w, area.h);
     }
 
     _draw_line_labels(area);
-    fl_rect(x() + area->x, y() + area->y - 1, area->w + 1, area->h + 2, labelcolor());
+    fl_rect(x() + area.x, y() + area.y - 1, area.w + 1, area.h + 2, labelcolor());
+    fl_pop_clip();
+    fl_pop_matrix();
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::_draw_line(const ChartLine* line, const ChartScale* scale, int X, const int Y, const int W, const int H) {
-    int y2      = y() + Y + H;
-    int lastX1  = -1;
-    int lastY   = -1;
-    int current = _date_start;
-    int stop    = _date_start + _ticks;
+void flw::Chart::_draw_line(const flw::chart::Line& line, const flw::chart::Scale& scale, int X, const int Y, const int W, const int H) {
+    if (line.points.size() > 0 && line.visible == true) {
+        const int y2      = y() + Y + H;
+        int       lastX   = -1;
+        int       lastY   = -1;
+        int       current = _date_start;
+        const int stop    = _date_start + _ticks + 1;
+        int       width   = line.width;
 
-    _PUSH_CLIP(x() + X, y() + Y, W + 1, H + 1);
-    fl_color(line->color);
-    fl_line_style(FL_SOLID, line->width);
-
-    while (current <= stop && current < (int) _dates.size()) {
-        auto& date  = _dates[current];
-        auto  index = flw::_chart_bsearch(line->points, date);
-
-        // auto string = date->format(_date_format);
-        // auto price  = (const Price*) line->points->find(string(), _chart_compare_date_and_price);
-
-        if (index != -1) {
-            auto& price = line->points[index];
-            auto  yh    = (int) ((price.high - scale->min) * scale->pixel);
-            auto  yl    = (int) ((price.low - scale->min) * scale->pixel);
-            auto  yc    = (int) ((price.close - scale->min) * scale->pixel);
-
-            if (line->chart_type == flw::Chart::TYPE::LINE) {
-                if (lastX1 > -1 && lastY > -1) {
-                    fl_line(x() + lastX1, y2 - lastY, x() + X, y2 - yc);
-                }
-            }
-            else if (line->chart_type == flw::Chart::TYPE::BAR) {
-                fl_line(x() + X, y2 - yl, x() + X, y2 - yh);
-                fl_line(x() + X, y2 - yc, x() + X + _tick_width - 1, y2 - yc);
-            }
-            else if (line->chart_type == flw::Chart::TYPE::VERTICAL) {
-                fl_rectf(x() + X, y2 - yh, line->width, (yh - yl) < 1 ? 1 : yh - yl);
-            }
-            else if (line->chart_type == flw::Chart::TYPE::VERTICAL2) {
-                fl_rectf(x() + X, y2 - yh, line->width, yh);
-            }
-            else if (line->chart_type == flw::Chart::TYPE::VERTICAL3) {
-                fl_line(x() + X, y2, x() + X, y() + Y);
-            }
-            else if (line->chart_type == flw::Chart::TYPE::HORIZONTAL) {
-                fl_line(x() + X, y2 - yc, x() + X + _tick_width, y2 - yc);
-            }
-            else if (line->chart_type == flw::Chart::TYPE::HORIZONTAL2) {
-                fl_line(x() + _margin_left * _fs, y2 - yc, x() + Fl_Widget::w() - _margin_right * _fs, y2 - yc);
-            }
-
-            lastX1 = X;
-            lastY  = yc;
+        if (line.width < 0) {
+            width  = _tick_width - 1;
+            width -= (int) (_tick_width / 10);
         }
 
-        X += _tick_width;
-        current++;
-    }
+        const int lw2 = width / 2;
+        const int lw4 = lw2 / 2;
 
-    fl_line_style(FL_SOLID, 0);
-    _POP_CLIP();
-}
+        fl_push_clip(x() + X, y() + Y, W + 1, H + 1);
+        fl_color(line.color);
 
-//------------------------------------------------------------------------------
-void flw::Chart::_draw_line_labels(const ChartArea* area) {
-    int y_left  = y() + area->y + (_fs * 0.5);
-    int y_right = y_left;
-
-    fl_font(_font, _fs);
-
-    for (auto f = 0; f < (int) flw::Chart::LINE::SIZE; f++) {
-        auto line = area->lines[f];
-
-        if (line->points.size() > 0 && *line->label) {
-            fl_color(line->color);
-
-            if (line->align == FL_ALIGN_LEFT) {
-                fl_draw(line->label, x() + area->x + _fs, y_left, area->w, _fs, FL_ALIGN_LEFT);
-                y_left += _fs;
-            }
-            else {
-                fl_draw(line->label, x() + area->x, y_right, area->w - _fs, _fs, FL_ALIGN_RIGHT);
-                y_right += _fs;
-            }
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
-void flw::Chart::_draw_tooltip(const char* label, const ChartArea* area) {
-    int X = Fl::event_x();
-    int Y = Fl::event_y();
-
-    if (X > x() + w() - _fs * 23) {
-        X = X - _fs * 23;
-    }
-    else {
-        X += _fs * 3;
-    }
-
-    if (Y < y() + _fs * 5) {
-        Y += _fs * 5;
-    }
-    else {
-        Y -= _fs * 5;
-    }
-
-    fl_font(flw::PREF_FIXED_FONT, _fs);
-    fl_color(color());
-    fl_rectf(X, Y, _fs * 20, _fs * 4);
-    fl_color(labelcolor());
-    fl_rect(X, Y, _fs * 20, _fs * 4);
-    fl_line(Fl::event_x(), y() + area->y,Fl::event_x(), y() + area->y + area->h);
-    fl_line(x() + area->x, Fl::event_y(), x() + area->x + area->w,Fl::event_y());
-    fl_draw(label, X + _fs, Y, _fs * 18, _fs * 4, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-}
-
-//------------------------------------------------------------------------------
-void flw::Chart::_draw_ver_lines(const ChartArea* area) {
-    fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-
-    for (auto i = 0; i < _CHART_VLINES; i++) {
-        if (_ver_pos[i] < 0) {
-            break;
+        if (line.type == flw::chart::TYPE::BAR) {
+            fl_line_style(FL_SOLID, lw2);
         }
         else {
-            fl_line(_ver_pos[i], y() + (int) area->y, _ver_pos[i], y() + (int) (area->y + area->h - 1));
+            fl_line_style(FL_SOLID, width);
+        }
+
+        while (current <= stop && current < (int) _dates.size()) {
+            const flw::Price& date  = _dates[current];
+            const size_t      index = flw::chart::bsearch(line.points, date);
+
+            if (index != (size_t) -1) {
+                const Price& pr = line.points[index];
+                const int    yh = (int) ((pr.high - scale.min) * scale.pixel);
+                const int    yl = (int) ((pr.low - scale.min) * scale.pixel);
+                const int    yc = (int) ((pr.close - scale.min) * scale.pixel);
+
+                if (line.type == flw::chart::TYPE::LINE) {
+                    if (lastX > -1 && lastY > -1) {
+                        fl_line(lastX + lw2, y2 - lastY, x() + X + lw2, y2 - yc);
+                    }
+                }
+                else if (line.type == flw::chart::TYPE::BAR) {
+                    fl_line(x() + X + lw4, y2 - yl, x() + X + lw4, y2 - yh);
+                    fl_line(x() + X, y2 - yc, x() + X + _tick_width - 1, y2 - yc);
+                }
+                else if (line.type == flw::chart::TYPE::HORIZONTAL) {
+                    fl_line(x() + X, y2 - yc, x() + X + _tick_width, y2 - yc);
+                }
+                else if (line.type == flw::chart::TYPE::VERTICAL) {
+                    auto h = yh - yl;
+                    fl_rectf(x() + X, y2 - yh, width, (h < 1) ? 1 : h);
+                }
+                else if (line.type == flw::chart::TYPE::CLAMP_VERTICAL) {
+                    fl_rectf(x() + X, y2 - yh, width, yh);
+                }
+                else if (line.type == flw::chart::TYPE::EXPAND_VERTICAL) {
+                    fl_line(x() + X, y2, x() + X, y() + Y);
+                }
+                else if (line.type == flw::chart::TYPE::EXPAND_HORIZONTAL) {
+                    fl_line(x() + _margin_left * flw::PREF_FIXED_FONTSIZE, y2 - yc, x() + Fl_Widget::w() - _margin_right * flw::PREF_FIXED_FONTSIZE, y2 - yc);
+                }
+
+                lastX = x() + X;
+                lastY = yc;
+            }
+
+            X += _tick_width;
+            current++;
+        }
+
+        fl_pop_clip();
+        fl_line_style(0);
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::_draw_line_labels(const flw::chart::Area& area) {
+    if (_view.labels == true) {
+        int       left_h  = 0;
+        int       left_w  = 0;
+        const int left_x  = x() + area.x + 6;
+        int       left_y  = y() + area.y + 6;
+        int       right_h = 0;
+        int       right_w = 0;
+        const int right_x = x() + area.x + area.w;
+        int       right_y = left_y;
+
+        for (const auto& line : area.lines) {
+            if (line.label == "") {
+                continue;
+            }
+
+            if (line.align == FL_ALIGN_RIGHT) {
+                right_h++;
+
+                if ((int) line.label.length() * _cw > right_w) {
+                    right_w = line.label.length() * _cw;
+                }
+            }
+            else {
+                left_h++;
+
+                if ((int) line.label.length() * _cw > left_w) {
+                    left_w = line.label.length() * _cw;
+                }
+            }
+        }
+
+        left_h  *= flw::PREF_FIXED_FONTSIZE;
+        right_h *= flw::PREF_FIXED_FONTSIZE;
+
+        if (left_w > 0) {
+            left_w += _cw * 2 + 4;
+            fl_color(FL_BACKGROUND2_COLOR);
+            fl_rectf(left_x, left_y, left_w + 8, left_h + 8);
+
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_rect(left_x, left_y, left_w + 8, left_h + 8);
+        }
+
+        if (right_w > 0) {
+            right_w += _cw * 2 + 4;
+            fl_color(FL_BACKGROUND2_COLOR);
+            fl_rectf(right_x - right_w - 14, left_y, right_w + 6, right_h + 8);
+
+            fl_color(FL_FOREGROUND_COLOR);
+            fl_rect(right_x - right_w - 14, left_y, right_w + 6, right_h + 8);
+        }
+
+        fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+
+        if (left_w > 0 || right_w > 0) {
+            size_t count   = 0;
+
+            for (const auto& line : area.lines) {
+                auto label = line.label;
+
+                if (label != "") {
+                    if (area.selected == count) {
+                        label = "@-> " + label;
+                    }
+
+                    fl_color((line.visible == false) ? FL_GRAY : line.color);
+
+                    if (line.align == FL_ALIGN_RIGHT) {
+                        fl_draw(label.c_str(), right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
+                        right_y += flw::PREF_FIXED_FONTSIZE;
+                    }
+                    else {
+                        fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
+                        left_y += flw::PREF_FIXED_FONTSIZE;
+                    }
+                }
+
+                count++;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::_draw_tooltip() {
+    if (_tooltip != "" && _area != nullptr) {
+        auto       X = Fl::event_x();
+        auto       Y = Fl::event_y();
+        const auto W = 14;
+        const auto H = 5;
+
+        if (X > _area->x2() - flw::PREF_FIXED_FONTSIZE * (W + 5)) {
+            X -= flw::PREF_FIXED_FONTSIZE * (W + 4);
+        }
+        else {
+            X += flw::PREF_FIXED_FONTSIZE * 2;
+        }
+
+        if (Y > y() + h() - flw::PREF_FIXED_FONTSIZE * (H + 7)) {
+            Y -= flw::PREF_FIXED_FONTSIZE * (H + 2);
+        }
+        else {
+            Y += flw::PREF_FIXED_FONTSIZE * 2;
+        }
+
+        fl_color(FL_BACKGROUND2_COLOR);
+        fl_rectf(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
+
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
+
+        fl_line(Fl::event_x(), y() + _area->y, Fl::event_x(), y() + _area->y + _area->h);
+        fl_line(x() + _area->x, Fl::event_y(), x() + _area->x + _area->w, Fl::event_y());
+
+        fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+        fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::_draw_ver_lines(const flw::chart::Area& area) {
+    if (_view.vertical == true) {
+        fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
+
+        for (auto i = 0; i < flw::chart::MAX_VLINES; i++) {
+            if (_ver_pos[i] < 0) {
+                break;
+            }
+            else {
+                fl_line(_ver_pos[i], y() + (int) area.y, _ver_pos[i], y() + (int) (area.y + area.h - 1));
+            }
         }
     }
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::_draw_xlabels() {
-    _ver_pos[0] = -1;
-
-    fl_font(_font, _fs);
-
-    const int  stop    = _date_start + _ticks;
-    const int  cw      = fl_width("0");
-    const int  cw2     = cw * 2;
-    const int  cw4     = cw * 4;
-    const int  fs05    = _fs * 0.5;
-    const int  fs08    = _fs * 0.8;
-    const int  Y       = y() + (h() - _bottom_space);
-    int        current = _date_start;
-    int        index   = 0;
-    int        last    = -1;
-    int        X1      = x() + _margin_left * _fs;
-    int        X2      = 0;
+    const int  stop  = _date_start + _ticks;
+    const int  cw2   = _cw * 2;
+    const int  cw4   = _cw * 4;
+    const int  fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
+    const int  Y     = y() + (h() - _bottom_space);
+    int        start = _date_start;
+    int        index = 0;
+    int        last  = -1;
+    int        X1    = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+    int        X2    = 0;
     char       buffer1[100];
     char       buffer2[100];
 
-    while (current <= stop && current < (int) _dates.size()) {
-        auto& price = _dates[current];
-        auto  date  = Date::FromString(price.date.c_str());
-        auto  addv  = false;
+    _ver_pos[0] = -1;
+
+    while (start <= stop && start < (int) _dates.size()) {
+        const flw::Price& price = _dates[start];
+        const flw::Date   date  = flw::Date::FromString(price.date.c_str());
+        auto              addv  = false;
 
         fl_color(labelcolor());
         fl_line(X1, Y, X1, Y + fs05);
+
         *buffer1 = 0;
         *buffer2 = 0;
 
-        if (_range == Date::RANGE::HOUR) {
+        if (_date_range == flw::Date::RANGE::HOUR) {
             if (date.day() != last) {
                 addv = true;
                 last = date.day();
@@ -1068,14 +1416,14 @@ void flw::Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d-%02d", date.year(), date.month(), date.day());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + _fs);
+                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
                 }
             }
             else {
                 snprintf(buffer2, 100, "%02d", date.hour());
             }
         }
-        else if (_range == Date::RANGE::MIN) {
+        else if (_date_range == flw::Date::RANGE::MIN) {
             if (date.hour() != last) {
                 addv = true;
                 last = date.hour();
@@ -1084,14 +1432,14 @@ void flw::Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d-%02d/%02d", date.year(), date.month(), date.day(), date.hour());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + _fs);
+                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
                 }
             }
             else {
                 snprintf(buffer2, 100, "%02d", date.minute());
             }
         }
-        else if (_range == Date::RANGE::SEC) {
+        else if (_date_range == flw::Date::RANGE::SEC) {
             if (date.minute() != last) {
                 addv = true;
                 last = date.minute();
@@ -1100,14 +1448,14 @@ void flw::Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d-%02d/%02d:%02d", date.year(), date.month(), date.day(), date.hour(), date.minute());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + _fs);
+                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
                 }
             }
             else {
                 snprintf(buffer2, 100, "%02d", date.second());
             }
         }
-        else if (_range == Date::RANGE::DAY || _range == Date::RANGE::WEEKDAY) {
+        else if (_date_range == flw::Date::RANGE::DAY || _date_range == flw::Date::RANGE::WEEKDAY) {
             if (date.month() != last) {
                 addv = true;
                 last = date.month();
@@ -1116,14 +1464,14 @@ void flw::Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d", date.year(), date.month());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + _fs);
+                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
                 }
             }
             else {
                 snprintf(buffer2, 100, "%02d", date.day());
             }
         }
-        else if (_range == Date::RANGE::FRIDAY || _range == Date::RANGE::SUNDAY) {
+        else if (_date_range == flw::Date::RANGE::FRIDAY || _date_range == flw::Date::RANGE::SUNDAY) {
             if (date.month() != last) {
                 addv = true;
                 last = date.month();
@@ -1132,13 +1480,13 @@ void flw::Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d/%02d", date.year(), date.month(), date.week());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + _fs);
+                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
                 }
             }
             else
                 snprintf(buffer2, 100, "%02d", date.week());
         }
-        else if (_range == Date::RANGE::MONTH) {
+        else if (_date_range == flw::Date::RANGE::MONTH) {
             if (date.month() != last) {
                 addv = true;
                 last = date.month();
@@ -1152,59 +1500,59 @@ void flw::Chart::_draw_xlabels() {
             }
         }
 
-        if (*buffer1) {
+        if (*buffer1 != 0) {
             auto len  = (double) strlen(buffer1);
-            auto half = (double) (len / 2.0 * cw);
+            auto half = (double) ((len / 2.0) * _cw);
 
-            fl_font(_font, _fs);
-            fl_draw(buffer1, X1 - half, Y + _fs + 6, half + half, _fs, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-            fl_line(X1, Y, X1, Y + _fs);
-            X2 = X1 + cw + half + half;
+            fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+            fl_draw(buffer1, X1 - half, Y + flw::PREF_FIXED_FONTSIZE + 6, half + half, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
+            X2 = X1 + _cw + half + half;
         }
 
-        if (*buffer2 && cw2 <= _tick_width) { // Draw x label
-            fl_font(_font, fs08);
-            fl_draw(buffer2, X1 - cw2, Y + fs05, cw4, fs08, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+        if (*buffer2 != 0 && cw2 <= _tick_width) { // Draw second x label
+            fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE - 2);
+            fl_draw(buffer2, X1 - cw2, Y + fs05, cw4, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
         }
 
-        if (addv && index < _CHART_VLINES) { // Save x pos for vertical lines
+        if (addv == true && index < flw::chart::MAX_VLINES) { // Save x pos for vertical lines
             _ver_pos[index++] = X1;
         }
 
-        X1 += _tick_width;
-        current++;
+        X1    += _tick_width;
+        start += 1;
     }
 
     _ver_pos[index] = -1;
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ChartScale* scale, const bool left) {
-    const double yinc  = (scale->pixel * scale->tick);
-    const int    fs05  = _fs * 0.5;
-    const int    fr    = flw::_chart_count_decimals(scale->tick);
-    int          width = w() - (_margin_left * _fs + _margin_right * _fs);
-    double       ylast = flw::Chart::MAX;
-    double       yval  = scale->min;
+void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const flw::chart::Scale& scale, const bool left) {
+    const double yinc  = (scale.pixel * scale.tick);
+    const int    fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
+    const int    fr    = flw::util::count_decimals(scale.tick);
+    int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
+    double       ylast = flw::chart::MAX_VAL;
+    double       yval  = scale.min;
 
-    if (scale->min >= scale->max) {
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+
+    if (scale.min >= scale.max || scale.pixel * scale.tick < 1.0) {
         return;
     }
 
-    fl_font(_font, _fs);
-
-    while ((int) (Y1 + 0.5) >= (int) Y2 && (scale->pixel * scale->tick) > 0.1) {
+    while ((int) (Y1 + 0.5) >= (int) Y2) {
         if (ylast > Y1) {
-            int  y1     = y() + (int) Y1;
-            int  x1     = x() + X;
-            auto string = flw::_chart_format_double(yval, fr, ' ');
+            auto y1     = y() + (int) Y1;
+            auto x1     = x() + X;
+            auto string = flw::util::format_double(yval, fr, '\'');
 
-            if (left) {
+            if (left == true) {
                 fl_color(labelcolor());
                 fl_line(x1 - fs05, y1, x1, y1);
-                fl_draw(string.c_str(), x(), y1 - fs05 - 2, _margin_left * _fs - _fs, _fs, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+                fl_draw(string.c_str(), x(), y1 - fs05, _margin_left * flw::PREF_FIXED_FONTSIZE - flw::PREF_FIXED_FONTSIZE, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 
-                if (_hor_lines && (int) Y1 >= (int) (Y2 + fs05)) {
+                if (_view.horizontal == true && (int) Y1 >= (int) (Y2 + fs05)) {
                     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
                     fl_line(x1 + 1, y1, x1 + width - 1, y1);
                 }
@@ -1212,79 +1560,71 @@ void flw::Chart::_draw_ylabels(const int X, double Y1, const double Y2, const Ch
             else {
                 fl_color(labelcolor());
                 fl_line(x1, y1, x1 + fs05, y1);
-                fl_draw(string.c_str(), x1 + _fs, y1 - fs05 - 2, _margin_right *_fs - _fs, _fs, FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                fl_draw(string.c_str(), x1 + flw::PREF_FIXED_FONTSIZE, y1 - fs05, _margin_right * flw::PREF_FIXED_FONTSIZE - (flw::PREF_FIXED_FONTSIZE * 2), flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 
-                if (_hor_lines && (int) Y1 >= (int) (Y2 + fs05)) {
+                if (_view.horizontal == true && (int) Y1 >= (int) (Y2 + fs05)) {
                     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
                     fl_line(x1 - width + 1, y1, x1 - 1, y1);
                 }
             }
 
-            ylast = Y1 - _fs - fs05;
+            ylast = Y1 - (flw::PREF_FIXED_FONTSIZE + fs05);
         }
 
-        Y1 -= yinc;
-        yval += scale->tick;
+        Y1   -= yinc;
+        yval += scale.tick;
     }
-}
-
-//------------------------------------------------------------------------------
-flw::ChartArea* flw::Chart::_inside_area(int X, int Y) {
-    for (int f = 0; f < (int) flw::Chart::AREA::SIZE; f++) {
-        auto area = _areas[f];
-
-        if (area->percent >= 10 &&
-            X >= x() + (int) area->x &&
-            Y >= y() + (int) area->y &&
-            X <= x() + (int) (area->x + area->w) &&
-            Y <= y() + (int) (area->y + area->h + 1)) {
-
-            return area;
-        }
-    }
-
-    return nullptr;
 }
 
 //------------------------------------------------------------------------------
 int flw::Chart::handle(int event) {
-    if (event == FL_PUSH && Fl::event_button1() && _tooltip) {
-        _create_tooltip();
+    if (event == FL_PUSH) {
+        if (Fl::event_button1() != 0) {
+            _area = _inside_area(Fl::event_x(), Fl::event_y());
+            _create_tooltip(Fl::event_ctrl());
 
-        if (*_label) {
+            if (_tooltip != "") {
+                return 1;
+            }
+        }
+        else if (Fl::event_button3() != 0) {
+            flw::util::menu_item_set(_menu, flw::chart::SHOW_LABELS, _view.labels);
+            flw::util::menu_item_set(_menu, flw::chart::SHOW_HLINES, _view.horizontal);
+            flw::util::menu_item_set(_menu, flw::chart::SHOW_VLINES, _view.vertical);
+            _menu->popup();
             return 1;
         }
     }
     else if (event == FL_DRAG) { // FL_PUSH must have been called before mouse drag
-        _create_tooltip();
+        _area = _inside_area(Fl::event_x(), Fl::event_y());
+        _create_tooltip(Fl::event_ctrl());
 
-        if (*_label) {
+        if (_tooltip != "") {
             return 1;
         }
     }
     else if (event == FL_MOVE) { // Remove tooltip if mouse is outside chart area
-        if (*_label) {
+        if (_tooltip != "") {
+            _tooltip = "";
             redraw();
         }
-
-        *_label = 0;
     }
     else if (event == FL_MOUSEWHEEL) {
-        double size = _dates.size() - _ticks;
-        double pos  = _scroll->value();
-        double dy   = (Fl::event_dy() * 10);
-        double dx   = (Fl::event_dx() * 10);
-        double dd   = fabs(dx) > fabs(dy) ? dx : dy;
-        double adj  = _ticks / dd;
+        const double size = _dates.size() - _ticks;
+        const double pos  = _scroll->value();
+        const double dy   = (Fl::event_dy() * 10);
+        const double dx   = (Fl::event_dx() * 10);
+        const double dd   = fabs(dx) > fabs(dy) ? dx : dy;
+        const double adj  = _ticks / dd;
 
         if (fabs(dd) < 1.0) {
             return Fl_Group::handle(event);
         }
         else if (Fl::event_ctrl() > 0) {
-            if (_zoom) {
-                int t = adj > 0.0 ? _tick_width + 1 : _tick_width - 1;
+            const int width = (adj > 0.0) ? _tick_width + 1 : _tick_width - 1;
 
-                tick_width(t);
+            if (width >= flw::chart::MIN_TICK && width <= flw::chart::MAX_TICK) {
+                tick_width(width);
                 init(false);
             }
 
@@ -1313,17 +1653,48 @@ int flw::Chart::handle(int event) {
             return 1;
         }
     }
+    else if (event == FL_KEYDOWN) {
+        auto key = Fl::event_key();
+
+        if (key >= '0' && key <= '9') {
+            if (_area == nullptr) {
+                fl_beep(FL_BEEP_ERROR);
+            }
+            else {
+                auto selected = key - '0';
+
+                if (selected == 0) {
+                    selected = 10;
+                }
+
+                selected--;
+
+                if ((size_t) selected >= _area->count) {
+                    selected = 0;
+                }
+
+                if (Fl::event_shift() != 0) {
+                    _area->lines[selected].visible = !_area->lines[selected].visible;
+                }
+                else {
+                    _area->selected = selected;
+                }
+
+                redraw();
+            }
+        }
+    }
 
     return Fl_Group::handle(event);
 }
 
 //------------------------------------------------------------------------------
 void flw::Chart::init(bool calc_dates) {
-    #ifdef DEBUG
-        auto t = util::time_micro();
-    #endif
+#ifdef DEBUG
+    // auto t = flw::util::time_milli();
+#endif
 
-    if (calc_dates) {
+    if (calc_dates == true) {
         _calc_dates();
     }
 
@@ -1331,36 +1702,40 @@ void flw::Chart::init(bool calc_dates) {
     _calc_area_width();
     _calc_ymin_ymax();
     _calc_yscale();
-
-    #ifdef DEBUG
-        printf("%s: %6lld us\n", calc_dates ? "INIT" : "init", (long long int) (util::time_micro() - t));
-        fflush(stdout);
-    #endif
-
     redraw();
+
+#ifdef DEBUG
+    // fprintf(stderr, "%s: %3d mS\n", (calc_dates == true) ? "INIT" : "init", (int) (util::time_milli() - t));
+    // fflush(stdout);
+#endif
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::line(flw::Chart::AREA area, flw::Chart::LINE line, const std::vector<flw::Price>& points, const char* line_label, flw::Chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width) {
-    auto l = _areas[(int) area]->lines[(int) line];
+flw::chart::Area* flw::Chart::_inside_area(int X, int Y) {
+    for (auto& area : _areas) {
+        if (area.percent >= 10 &&
+            X >= x() + (int) area.x &&
+            Y >= y() + (int) area.y &&
+            X <= x() + (int) (area.x + area.w) &&
+            Y <= y() + (int) (area.y + area.h + 1)) {
+            return &area;
+        }
+    }
 
-    l->set(points, line_label, chart_type, line_align, line_color, line_width);
-    redraw();
+    return nullptr;
 }
 
 //------------------------------------------------------------------------------
-void flw::Chart::range(Date::RANGE range) {
-    _range = range;
-
-    if (_range == Date::RANGE::HOUR ||
-        _range == Date::RANGE::MIN ||
-        _range == Date::RANGE::SEC) {
-
-        _date_format = Date::FORMAT::ISO_TIME;
+bool flw::Chart::margin(int left, int right) {
+    if (left < 1 || left > 20 || right < 1 || right > 20) {
+        assert(false);
+        return false;
     }
-    else {
-        _date_format = Date::FORMAT::ISO;
-    }
+
+    _margin_left  = left;
+    _margin_right = right;
+    redraw();
+    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -1373,13 +1748,23 @@ void flw::Chart::resize(int X, int Y, int W, int H) {
         init(false);
     }
 }
+
 //------------------------------------------------------------------------------
-void flw::Chart::tick_width(int tick_width) {
-    if (tick_width > 2 && tick_width <= 100) {
-        _tick_width = tick_width;
+bool flw::Chart::tick_width(int tick_width) {
+    if (tick_width < 3 || tick_width > 100) {
+        assert(false);
+        return false;
     }
 
+    _tick_width = tick_width;
     redraw();
+    return true;
+}
+
+//------------------------------------------------------------------------------
+void flw::Chart::update_pref() {
+    _menu->textfont(flw::PREF_FONT);
+    _menu->textsize(flw::PREF_FONTSIZE);
 }
 
 
@@ -2469,7 +2854,7 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
     _canvas->callback(flw::DateChooser::_Callback, this);
     _month_label->box(FL_UP_BOX);
 
-    flw::util::labelfont(this);
+    flw::theme::labelfont(this);
     tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
     flw::DateChooser::resize(X, Y, W, H);
 }
@@ -2664,7 +3049,7 @@ namespace flw {
                 _date_chooser->set(_value);
                 _ok->callback(Callback, this);
 
-                flw::util::labelfont(this);
+                flw::theme::labelfont(this);
                 callback(Callback, this);
                 copy_label(title);
                 size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
@@ -2702,7 +3087,7 @@ namespace flw {
 
             //------------------------------------------------------------------
             bool run(Fl_Window* parent) {
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
                 show();
 
                 while (visible() != 0) {
@@ -2720,7 +3105,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         bool date(const std::string& title, flw::Date& date, Fl_Window* parent) {
-            _DlgDate dlg(title.c_str(), date);
+            flw::dlg::_DlgDate dlg(title.c_str(), date);
             return dlg.run(parent);
         }
     }
@@ -2760,7 +3145,7 @@ namespace flw {
                 size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
             }
 
             //------------------------------------------------------------------
@@ -2836,7 +3221,7 @@ namespace flw {
                 size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
             }
 
             //------------------------------------------------------------------
@@ -2945,14 +3330,14 @@ namespace flw {
                 }
 
                 _filter->take_focus();
-                flw::util::labelfont(this);
+                flw::theme::labelfont(this);
                 callback(_DlgSelect::Callback, this);
                 copy_label(title);
                 activate_button();
                 size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
             }
 
             //------------------------------------------------------------------
@@ -3160,14 +3545,14 @@ namespace flw {
                     H = 8 * flw::PREF_FONTSIZE + 24;
                 }
 
-                flw::util::labelfont(this);
+                flw::theme::labelfont(this);
                 callback(_DlgPassword::Callback, this);
                 label(title);
                 size(W, H);
                 size_range(W, H);
                 set_modal();
                 resizable(this);
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
             }
 
             //------------------------------------------------------------------
@@ -3271,9 +3656,9 @@ namespace flw {
                     password = _password1->value();
                 }
 
-                util::zero_memory((void*) _password1->value(), strlen(_password1->value()));
-                util::zero_memory((void*) _password2->value(), strlen(_password2->value()));
-                util::zero_memory((void*) _file->value(), strlen(_file->value()));
+                flw::util::zero_memory((void*) _password1->value(), strlen(_password1->value()));
+                flw::util::zero_memory((void*) _password2->value(), strlen(_password2->value()));
+                flw::util::zero_memory((void*) _file->value(), strlen(_file->value()));
 
                 return _ret;
             }
@@ -3331,7 +3716,7 @@ namespace flw {
                 size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
                 set_modal();
                 resizable(this);
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
             }
 
             //------------------------------------------------------------------
@@ -3475,6 +3860,7 @@ flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0,
 
     size(W, H);
     size_range(W, H);
+    FLW_PRINT(W,H, w(), h())
     callback(AbortDialog::Callback, this);
     set_modal();
 }
@@ -3580,13 +3966,13 @@ flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool canc
         _pause->deactivate();
     }
 
-    flw::util::labelfont(this);
+    flw::theme::labelfont(this);
     callback(WorkDialog::Callback, this);
     copy_label(title);
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(this);
-    util::center_window(this, parent);
+    flw::util::center_window(this, parent);
     show();
 }
 
@@ -3605,7 +3991,7 @@ void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
         dlg->_pause->label("C&ontinue");
 
         while (dlg->_pause->value() != 0) {
-            util::time_sleep(10);
+            flw::util::time_sleep(10);
             Fl::check();
         }
 
@@ -3628,7 +4014,7 @@ void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
 
 //------------------------------------------------------------------------------
 bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = util::time();
+    auto now = flw::util::time();
 
     if (now - _last > update_time) {
         _label->clear();
@@ -3647,7 +4033,7 @@ bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages)
 
 //------------------------------------------------------------------------------
 bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
-    auto now = util::time();
+    auto now = flw::util::time();
 
     if (now - _last > update_time) {
         _label->clear();
@@ -3794,12 +4180,13 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
 void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
     end();
 
-    _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts  = new flw::ScrollBrowser(12);
-    _label  = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
-    _select = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes  = new flw::ScrollBrowser(6);
-    _ret    = false;
+    _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
+    _fonts    = new flw::ScrollBrowser(12);
+    _label    = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
+    _select   = new Fl_Button(0, 0, 0, 0, "&Select");
+    _sizes    = new flw::ScrollBrowser(6);
+    _fontsize = -1;
+    _ret      = false;
 
     add(_sizes);
     add(_fonts);
@@ -4597,6 +4984,63 @@ void flw::LcdNumber::value(const char *value) {
 
 
 namespace flw {
+#if FL_MINOR_VERSION == 4
+    Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
+        { FL_FOREGROUND_COLOR,          FL_COURIER,             14, 0, 0 }, // FOREGROUND
+        { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, 0, 0 }, // GRAY
+        { fl_rgb_color(255, 64, 64),    FL_COURIER,             14, 0, 0 }, // RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER,             14, 0, 0 }, // GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER,             14, 0, 0 }, // BLUE
+        { fl_rgb_color(192, 0, 0),      FL_COURIER,             14, 0, 0 }, // DARK_RED
+        { fl_rgb_color(0, 128, 0),      FL_COURIER,             14, 0, 0 }, // DARK_GREEN
+        { fl_rgb_color(0, 0, 255),      FL_COURIER,             14, 0, 0 }, // DARK_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER,             14, 0, 0 }, // ORANGE
+        { FL_MAGENTA,                   FL_COURIER,             14, 0, 0 }, // MAGENTA
+        { FL_YELLOW,                    FL_COURIER,             14, 0, 0 }, // YELLOW
+        { FL_CYAN,                      FL_COURIER,             14, 0, 0 }, // CYAN
+        { FL_DARK_MAGENTA,              FL_COURIER,             14, 0, 0 }, // DARK_MAGENTA
+        { FL_DARK_YELLOW,               FL_COURIER,             14, 0, 0 }, // DARK_YELLOW
+        { FL_DARK_CYAN,                 FL_COURIER,             14, 0, 0 }, // DARK_CYAN
+        { FL_BLACK,                     FL_COURIER,             14, 0, 0 }, // BLACK
+        { FL_WHITE,                     FL_COURIER,             14, 0, 0 }, // WHITE
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_FOREGROUND
+        { fl_rgb_color(115, 115, 115),  FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_GRAY
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_BLUE
+        { fl_rgb_color(192, 0, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_RED
+        { fl_rgb_color(0, 128, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_GREEN
+        { fl_rgb_color(0, 0, 255),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_YELLOW
+        { FL_CYAN,                      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_CYAN
+        { FL_DARK_MAGENTA,              FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_MAGENTA
+        { FL_DARK_YELLOW,               FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_YELLOW
+        { FL_DARK_CYAN,                 FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_CYAN
+        { FL_BLACK,                     FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_BLACK
+        { FL_WHITE,                     FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_WHITE
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_FOREGROUND
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_YELLOW
+        { FL_CYAN,                      FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_CYAN
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_FOREGROUND
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_YELLOW
+        { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_CYAN
+    };
+#else
     Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
         { FL_FOREGROUND_COLOR,          FL_COURIER,             14, 0 }, // FOREGROUND
         { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, 0 }, // GRAY
@@ -4652,6 +5096,7 @@ namespace flw {
         { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_YELLOW
         { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_CYAN
     };
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -4871,11 +5316,11 @@ flw::Price::Price(const std::string& date, double high, double low, double close
     this->close = close;
     this->vol   = vol;
 
-    #ifdef DEBUG
-        if (close > high || close < low || high < low) {
-            fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
-        }
-    #endif
+#ifdef DEBUG
+    if (close > high || close < low || high < low) {
+        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
+    }
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -4919,8 +5364,8 @@ flw::Price& flw::Price::operator=(Price&& price) {
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::Atr(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::Atr(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && in.size() > days) {
         auto        tot        = 0.0;
@@ -4971,11 +5416,11 @@ std::vector<flw::Price> flw::Price::Atr(const std::vector<Price>& in, std::size_
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const std::vector<Price>& block) {
+flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block) {
     int         month   = -1;
     Date        current = Date::FromString(start_date);
     Date        stop    = Date::FromString(stop_date);
-    std::vector<Price> res;
+    PriceVector res;
 
     if (range == Date::RANGE::HOUR && current.year() < 1970) {
         return res;
@@ -5053,8 +5498,8 @@ std::vector<flw::Price> flw::Price::DateSerie(const char* start_date, const char
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::DayToMonth(const std::vector<Price>& in) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::DayToMonth(const PriceVector& in) {
+    PriceVector res;
     Price       current;
     Date        stop;
     Date        pdate;
@@ -5106,11 +5551,11 @@ std::vector<flw::Price> flw::Price::DayToMonth(const std::vector<Price>& in) {
 
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::DayToWeek(const std::vector<Price>& in, Date::DAY weekday) {
+flw::PriceVector flw::Price::DayToWeek(const PriceVector& in, Date::DAY weekday) {
     Price       current;
     Date        stop;
     Date        pdate;
-    std::vector<Price> res;
+    PriceVector res;
     std::size_t f = 0;
 
     for (auto& price : in) {
@@ -5167,8 +5612,8 @@ std::vector<flw::Price> flw::Price::DayToWeek(const std::vector<Price>& in, Date
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::ExponentialMovingAverage(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::ExponentialMovingAverage(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && days < in.size()) {
         auto         sma   = 0.0;
@@ -5198,15 +5643,30 @@ std::vector<flw::Price> flw::Price::ExponentialMovingAverage(const std::vector<P
 }
 
 //------------------------------------------------------------------------------
-std::string flw::Price::format(Date::FORMAT format) const {
-    Date date(this->date.c_str());
+std::string flw::Price::format_date(Date::FORMAT format) const {
+    auto date = flw::Date::FromString(this->date.c_str());
     return date.format(format);
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::Momentum(const std::vector<Price>& in, std::size_t days) {
+std::string flw::Price::format_price(Date::FORMAT format, bool hlc, bool v) const {
+    auto d = flw::Date::FromString(this->date.c_str());
+
+    if (v == true) {
+        return flw::util::format("%s\t%f\t%f\t%f\t%f", d.format(format).c_str(), high, low, close, vol);
+    }
+    else if (hlc == false || (fabs(close - low) < 0.000001 && fabs(close - high) < 0.000001)) {
+        return flw::util::format("%s\t%f", d.format(format).c_str(), close);
+    }
+    else {
+        return flw::util::format("%s\t%f\t%f\t%f", d.format(format).c_str(), high, low, close);
+    }
+}
+
+//------------------------------------------------------------------------------
+flw::PriceVector flw::Price::Momentum(const PriceVector& in, std::size_t days) {
     std::size_t start = days - 1;
-    std::vector<Price> res;
+    PriceVector res;
 
     if (days > 1 && days < in.size()) {
         for (auto f = start; f < in.size(); f++) {
@@ -5222,8 +5682,8 @@ std::vector<flw::Price> flw::Price::Momentum(const std::vector<Price>& in, std::
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::MovingAverage(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::MovingAverage(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && days <= 500 && days < in.size()) {
         std::size_t count = 0;
@@ -5263,8 +5723,8 @@ void flw::Price::print() const {
 }
 
 //------------------------------------------------------------------------------
-void flw::Price::Print(const std::vector<Price>& in) {
-    printf("std::vector<Price>(%d)\n", (int) in.size());
+void flw::Price::Print(const PriceVector& in) {
+    printf("PriceVector(%d)\n", (int) in.size());
 
     for (auto& price : in) {
         price.print();
@@ -5272,8 +5732,8 @@ void flw::Price::Print(const std::vector<Price>& in) {
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::RSI(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::RSI(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && days <= in.size()) {
         auto avg_gain = 0.0;
@@ -5312,8 +5772,8 @@ std::vector<flw::Price> flw::Price::RSI(const std::vector<Price>& in, std::size_
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::StdDev(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::StdDev(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 2 && days <= in.size()) {
         std::size_t count  = 0;
@@ -5352,10 +5812,10 @@ std::vector<flw::Price> flw::Price::StdDev(const std::vector<Price>& in, std::si
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::Stochastics(const std::vector<Price>& in, std::size_t days) {
+flw::PriceVector flw::Price::Stochastics(const PriceVector& in, std::size_t days) {
     auto        high = 0.0;
     auto        low  = 0.0;
-    std::vector<Price> res;
+    PriceVector res;
 
     for (std::size_t f = 0; f < in.size(); f++) {
         auto& price = in[f];
@@ -5636,24 +6096,6 @@ void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION dire
 
 namespace flw {
     //--------------------------------------------------------------------------
-    enum class _TABLEDISPLAY_MOVE {
-        DOWN,
-        FIRST_COL,
-        FIRST_ROW,
-        LAST_COL,
-        LAST_ROW,
-        LEFT,
-        PAGE_DOWN,
-        PAGE_UP,
-        RIGHT,
-        SCROLL_DOWN,
-        SCROLL_LEFT,
-        SCROLL_RIGHT,
-        SCROLL_UP,
-        UP,
-    };
-
-    //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
 
@@ -5743,7 +6185,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         int col() const {
-            return *_col->value() >= '0' && *_col->value() <= '9' ? atoi(_col->value()) : 0;
+            return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
         }
 
         //----------------------------------------------------------------------
@@ -5756,7 +6198,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         int row() const {
-            return *_row->value() >= '0' && *_row->value() <= '9' ? atoi(_row->value()) : 0;
+            return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
         }
 
         //----------------------------------------------------------------------
@@ -5770,6 +6212,176 @@ namespace flw {
             }
 
             return _ret;
+        }
+    };
+
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------
+    class _TableDisplayFindDialog : public Fl_Double_Window {
+        Fl_Input*                   _text;
+        Fl_Button*                  _next;
+        Fl_Button*                  _prev;
+        Fl_Button*                  _close;
+        TableDisplay*               _table;
+        bool                        _repeat;
+
+    public:
+        _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+            end();
+
+            _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+            _next   = new Fl_Button(0, 0, 0, 0, "&Find next");
+            _prev   = new Fl_Button(0, 0, 0, 0, "Find &previous");
+            _text   = new Fl_Input(0, 0, 0, 0, "Search:");
+            _table  = table;
+            _repeat = true;
+
+            add(_text);
+            add(_prev);
+            add(_next);
+            add(_close);
+
+            _close->callback(_TableDisplayFindDialog::Callback, this);
+            _close->labelsize(flw::PREF_FONTSIZE);
+            _next->callback(_TableDisplayFindDialog::Callback, this);
+            _next->labelsize(flw::PREF_FONTSIZE);
+            _prev->callback(_TableDisplayFindDialog::Callback, this);
+            _prev->labelsize(flw::PREF_FONTSIZE);
+            _text->align(FL_ALIGN_LEFT);
+            _text->callback(_TableDisplayFindDialog::Callback, this);
+            _text->labelsize(flw::PREF_FONTSIZE);
+            _text->textfont(flw::PREF_FIXED_FONT);
+            _text->textsize(flw::PREF_FONTSIZE);
+            _text->value(_table->_find.c_str());
+            _text->when(FL_WHEN_ENTER_KEY_ALWAYS);
+
+            callback(_TableDisplayFindDialog::Callback, this);
+            set_modal();
+            resizable(this);
+            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 7);
+        }
+
+        //----------------------------------------------------------------------
+        static void Callback(Fl_Widget* w, void* o) {
+            auto dlg = (_TableDisplayFindDialog*) o;
+
+            if (w == dlg) {
+                dlg->hide();
+            }
+            else if (w == dlg->_close) {
+                dlg->_table->_find = dlg->_text->value();
+                dlg->hide();
+            }
+            else if (w == dlg->_next) {
+                dlg->find(true);
+            }
+            else if (w == dlg->_prev) {
+                dlg->find(false);
+            }
+            else if (w == dlg->_text) {
+                dlg->find(dlg->_repeat);
+            }
+        }
+
+        //----------------------------------------------------------------------
+        void find(bool next) {
+            auto find = _text->value();
+
+            _repeat = next;
+
+            if (*find == 0) {
+                fl_beep(FL_BEEP_ERROR);
+                return;
+            }
+
+            auto row = _table->row();
+            auto col = _table->column();
+
+            if (next == true) {
+                if (row < 1 || col < 1) {
+                    row = 1;
+                    col = 1;
+                }
+                else {
+                    col++;
+                }
+            }
+            else {
+                if (row < 1 || col < 1) {
+                    row = _table->rows();
+                    col = _table->columns();
+                }
+                else {
+                    col--;
+                }
+            }
+
+AGAIN:
+            if (next == true) {
+                for (int r = row; r <= _table->rows(); r++) {
+                    for (int c = col; c <= _table->columns(); c++) {
+                        auto v = _table->cell_value(r, c);
+
+                        if (v != nullptr && strstr(v, find) != nullptr) {
+                            _table->active_cell(r, c, true);
+                            _table->_find = find;
+                            return;
+                        }
+                    }
+
+                    col = 1;
+                }
+
+                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
+                    col = row = 1;
+                    goto AGAIN;
+                }
+            }
+            else {
+                for (int r = row; r >= 1; r--) {
+                    for (int c = col; c >= 1; c--) {
+                        auto v = _table->cell_value(r, c);
+
+                        if (v != nullptr && strstr(v, find) != nullptr) {
+                            _table->active_cell(r, c, true);
+                            _table->_find = find;
+                            return;
+                        }
+                    }
+
+                    col = _table->columns();
+                }
+
+                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
+                    row = _table->rows();
+                    col = _table->columns();
+                    goto AGAIN;
+                }
+            }
+        }
+
+        //----------------------------------------------------------------------
+        void resize(int X, int Y, int W, int H) {
+            Fl_Double_Window::resize(X, Y, W, H);
+
+            _text->resize  (flw::PREF_FONTSIZE * 5,             flw::PREF_FONTSIZE,                 W - flw::PREF_FONTSIZE * 5 - 4, flw::PREF_FONTSIZE * 2);
+            _prev->resize  (W - flw::PREF_FONTSIZE * 30 - 12,   H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+            _next->resize  (W - flw::PREF_FONTSIZE * 20 - 8,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+            _close->resize (W - flw::PREF_FONTSIZE * 10 - 4,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+        }
+
+        //----------------------------------------------------------------------
+        void run(Fl_Window* parent) {
+            flw::util::center_window(this, parent);
+            show();
+
+            while (visible() != 0) {
+                Fl::wait();
+                Fl::flush();
+            }
         }
     };
 }
@@ -5799,7 +6411,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
     clip_children(1);
-    flw::util::labelfont(this);
+    flw::theme::labelfont(this);
     clear();
 }
 
@@ -5916,7 +6528,7 @@ void flw::TableDisplay::clear() {
     _show_ver_lines  = false;
     _start_col       = 1;
     _start_row       = 1;
-
+    _find            = "";
     redraw();
 }
 
@@ -6070,74 +6682,80 @@ int flw::TableDisplay::_ev_keyboard_down() {
 
     // printf("key=%d <%s>, alt=%d, cmd=%d, shift=%d\n", key, text.c_str(), alt, cmd, shift); fflush(stdout);
 
-    if (cmd && key == FL_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_UP);
+    if (cmd == true && key == FL_Up) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
         return 1;
     }
     else if (key == FL_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::UP);
+        _move_cursor(_TABLEDISPLAY_MOVE::UP);
         return 1;
     }
-    else if (cmd && key == FL_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_DOWN);
+    else if (cmd == true && key == FL_Down) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_DOWN);
         return 1;
     }
     else if (key == FL_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::DOWN);
+        _move_cursor(_TABLEDISPLAY_MOVE::DOWN);
         return 1;
     }
-    else if (cmd && key == FL_Left) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_LEFT);
+    else if (cmd == true && key == FL_Left) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_LEFT);
         return 1;
     }
-    else if (key == FL_Left || (key == FL_Tab && shift)) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::LEFT);
+    else if (key == FL_Left || (key == FL_Tab && shift == true)) {
+        _move_cursor(_TABLEDISPLAY_MOVE::LEFT);
         return 1;
     }
-    else if (cmd && key == FL_Right) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_RIGHT);
+    else if (cmd == true && key == FL_Right) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_RIGHT);
         return 1;
     }
     else if (key == FL_Right || key == FL_Tab) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::RIGHT);
+        _move_cursor(_TABLEDISPLAY_MOVE::RIGHT);
         return 1;
     }
-    else if (cmd && key == FL_Page_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::FIRST_ROW);
+    else if (cmd == true && key == FL_Page_Up) {
+        _move_cursor(_TABLEDISPLAY_MOVE::FIRST_ROW);
         return 1;
     }
     else if (key == FL_Page_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::PAGE_UP);
+        _move_cursor(_TABLEDISPLAY_MOVE::PAGE_UP);
         return 1;
     }
-    else if (cmd && key == FL_Page_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::LAST_ROW);
+    else if (cmd == true && key == FL_Page_Down) {
+        _move_cursor(_TABLEDISPLAY_MOVE::LAST_ROW);
         return 1;
     }
     else if (key == FL_Page_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::PAGE_DOWN);
+        _move_cursor(_TABLEDISPLAY_MOVE::PAGE_DOWN);
         return 1;
     }
     else if (key == FL_Home) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::FIRST_COL);
+        _move_cursor(_TABLEDISPLAY_MOVE::FIRST_COL);
         return 1;
     }
     else if (key == FL_End) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::LAST_COL);
+        _move_cursor(_TABLEDISPLAY_MOVE::LAST_COL);
         return 1;
     }
-    else if (cmd && key == 'c') {
+    else if (cmd == true && key == 'c') {
         auto val = cell_value(_curr_row, _curr_col);
 
         Fl::copy(val, strlen(val), 1);
         return 1;
     }
-    else if (cmd && key == 'g') {
+    else if (cmd == true && key == 'g') {
         auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
 
-        if (dlg.run(window())) {
+        if (dlg.run(window()) == true) {
             active_cell(dlg.row(), dlg.col(), true);
         }
+
+        return 1;
+    }
+    else if (cmd == true && key == 'f') {
+        auto dlg = _TableDisplayFindDialog(this);
+        dlg.run(window());
 
         return 1;
     }
@@ -6147,74 +6765,75 @@ int flw::TableDisplay::_ev_keyboard_down() {
 
 //------------------------------------------------------------------------------
 int flw::TableDisplay::_ev_mouse_click () {
-    if (Fl::event_button1() && _drag) {
+    if (Fl::event_button1() && _drag == true) {
         return 1;
     }
-    else {
-        auto row         = 0;
-        auto col         = 0;
-        auto current_row = _curr_row;
-        auto current_col = _curr_col;
 
-        _get_cell_below_mouse(row, col);
+    auto row         = 0;
+    auto col         = 0;
+    auto current_row = _curr_row;
+    auto current_col = _curr_col;
 
-        if (_edit == nullptr) {
-            Fl::focus(this);
-        }
+    _get_cell_below_mouse(row, col);
 
-        if (row == 0 && col >= 1) { // Mouse click on top header cells
-            _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
-            do_callback();
-        }
-        else if (col == 0 && row >= 1) { // Mouse click on left header cells
-            _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
-            do_callback();
-        }
-        else if (row == -1 || col == -1) { // Mouse click outside cell
-            if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
-                ;
-            }
-            else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
-                ;
-            }
-            else { // If clicked in whitespace then deselect cell
-                active_cell(-1, -1);
-                return 0;
-            }
-        }
-        else if (row >= 1 && col >= 1 && (row != current_row || col != current_col) && _select != flw::TableDisplay::SELECT::NO) { // Set new current cell and send event
-            active_cell(row, col);
-        }
-
-        return 2;
+    if (_edit == nullptr) {
+        Fl::focus(this);
     }
+
+    if (row == 0 && col >= 1) { // Mouse click on top header cells
+        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+        do_callback();
+    }
+    else if (col == 0 && row >= 1) { // Mouse click on left header cells
+        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+        do_callback();
+    }
+    else if (row == -1 || col == -1) { // Mouse click outside cell
+        if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
+            ;
+        }
+        else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
+            ;
+        }
+        else { // If clicked in whitespace then deselect cell
+            active_cell(-1, -1);
+            return 0;
+        }
+    }
+    else if (row >= 1 && col >= 1 && (row != current_row || col != current_col) && _select != flw::TableDisplay::SELECT::NO) { // Set new current cell and send event
+        active_cell(row, col);
+    }
+
+    return 2;
 }
 
 //------------------------------------------------------------------------------
 int flw::TableDisplay::_ev_mouse_drag() {
-    if (_drag) {
-        auto xpos  = Fl::event_x();
-        auto currx = x();
+    if (_drag == false) {
+        return 2;
+    }
 
-        if (_show_row_header && _resize_col == 0) {
-            if ((xpos - currx) >= 10) {
-                cell_width(_resize_col, xpos - currx);
-                redraw();
-            }
+    auto xpos  = Fl::event_x();
+    auto currx = x();
+
+    if (_show_row_header && _resize_col == 0) {
+        if ((xpos - currx) >= 10) {
+            cell_width(_resize_col, xpos - currx);
+            redraw();
         }
-        else {
-            if (_show_row_header) {
-                currx += _cell_width(0);
-            }
+    }
+    else {
+        if (_show_row_header) {
+            currx += _cell_width(0);
+        }
 
-            for (auto c = _start_col; c < _resize_col; c++) {
-                currx += _cell_width(c);
-            }
+        for (auto c = _start_col; c < _resize_col; c++) {
+            currx += _cell_width(c);
+        }
 
-            if ((xpos - currx) >= 10) {
-                cell_width(_resize_col, xpos - currx);
-                redraw();
-            }
+        if ((xpos - currx) >= 10) {
+            cell_width(_resize_col, xpos - currx);
+            redraw();
         }
     }
 
@@ -6253,7 +6872,7 @@ int flw::TableDisplay::_ev_mouse_move() {
         }
     }
 
-    if (_drag) { // Set cursor to the default cursor only if it was set to another cursor before
+    if (_drag == true) { // Set cursor to the default cursor only if it was set to another cursor before
         _drag = false;
         fl_cursor(FL_CURSOR_DEFAULT);
     }
@@ -6363,7 +6982,7 @@ void flw::TableDisplay::lines(bool ver, bool hor) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableDisplay::move_cursor(int pos) {
+void flw::TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
     if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != flw::TableDisplay::SELECT::NO) {
         auto r     = _curr_row;
         auto c     = _curr_col;
@@ -6377,7 +6996,7 @@ void flw::TableDisplay::move_cursor(int pos) {
         }
         else {
             if (range > 0) {
-                switch ((_TABLEDISPLAY_MOVE) pos) {
+                switch (move) {
                     case _TABLEDISPLAY_MOVE::FIRST_ROW:
                         r = 1;
                         break;
@@ -6425,7 +7044,7 @@ void flw::TableDisplay::move_cursor(int pos) {
             c = _cols;
         }
         else {
-            switch ((_TABLEDISPLAY_MOVE) pos) {
+            switch (move) {
                 case _TABLEDISPLAY_MOVE::LEFT:
                     c = c > 1 ? c - 1 : 1;
                     break;
@@ -7638,6 +8257,7 @@ flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(
     _active = -1;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
+    _hide   = false;
 
     clip_children(1);
 }
@@ -7857,6 +8477,22 @@ int flw::TabsGroup::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
+void flw::TabsGroup::_hide_tab_buttons(bool hide) {
+    _hide = hide;
+
+    for (auto b : _buttons) {
+        if (_hide == true) {
+            b->hide();
+        }
+        else {
+            b->show();
+        }
+    }
+
+    resize();
+}
+
+//------------------------------------------------------------------------------
 void flw::TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
 
@@ -7902,91 +8538,105 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
         return;
     }
 
-    if (visible() != 0 && _widgets.size() > 0) {
-        auto height = flw::PREF_FONTSIZE + 8;
+    if (visible() == 0 || _widgets.size() == 0) {
+        return;
+    }
 
-        if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
-            auto space = 6;
-            auto x     = 0;
-            auto w     = 0;
-            auto th    = 0;
+    auto height = flw::PREF_FONTSIZE + 8;
 
-            fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-
-            for (auto b : _buttons) { // Calc total width of buttons
-                b->_tw = 0;
-                fl_measure(b->label(), b->_tw, th);
-
-                b->_tw += _TabsGroupButton::_BORDER;
-                w      += b->_tw + space;
-            }
-
-            if (w > W) { // If width is too large then divide equal
-                w = (W - (_buttons.size() * 4)) / _buttons.size();
-            }
-            else {
-                w = 0;
-            }
-
-            for (auto b : _buttons) { // Resize buttons
-                auto bw = (w != 0) ? w : b->_tw;
-
-                if (_tabs == TABS::NORTH) {
-                    b->resize(X + x, Y, bw, height);
-                }
-                else {
-                    b->resize(X + x, Y + H - height, bw, height);
-                }
-
-                x += bw;
-                x += space;
-            }
-        }
-        else { // TABS::WEST, TABS::EAST
-            auto y        = Y;
-            auto h        = height;
-            auto shrinked = false;
-            auto space    = 3;
-
-            if ((h + space) * (int) _buttons.size() > H) { // Shrink button height if any falls outside area
-                h = (H - _buttons.size()) / _buttons.size();
-                shrinked = true;
-            }
-
-            if (_pos < flw::PREF_FONTSIZE * space) { // Set min size for widgets on the left
-                _pos = flw::PREF_FONTSIZE * space;
-            }
-            else if (_pos > W - flw::PREF_FONTSIZE * 8) { // Set min size for widgets on the right
-                _pos = W - flw::PREF_FONTSIZE * 8;
-            }
-
-            for (auto b : _buttons) {
-                if (_tabs == TABS::WEST) {
-                    b->resize(X, y, _pos, h);
-                    y += h + (shrinked == false ? space : 1);
-                }
-                else {
-                    b->resize(X + W - _pos, y, _pos, h);
-                    y += h + (shrinked == false ? space : 1);
-                }
-            }
-        }
-
+    if (_hide == true) {
         for (auto w : _widgets) { // Resize widgets
             if (w->visible() == 0) {
             }
-            else if (_tabs == TABS::NORTH) {
-                w->resize(X, Y + height, W, H - height);
+            else {
+                w->resize(X, Y, W, H);
             }
-            else if (_tabs == TABS::SOUTH) {
-                w->resize(X, Y, W, H - height);
+        }
+
+        return;
+    }
+
+    if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
+        auto space = 6;
+        auto x     = 0;
+        auto w     = 0;
+        auto th    = 0;
+
+        fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
+
+        for (auto b : _buttons) { // Calc total width of buttons
+            b->_tw = 0;
+            fl_measure(b->label(), b->_tw, th);
+
+            b->_tw += _TabsGroupButton::_BORDER;
+            w      += b->_tw + space;
+        }
+
+        if (w > W) { // If width is too large then divide equal
+            w = (W - (_buttons.size() * 4)) / _buttons.size();
+        }
+        else {
+            w = 0;
+        }
+
+        for (auto b : _buttons) { // Resize buttons
+            auto bw = (w != 0) ? w : b->_tw;
+
+            if (_tabs == TABS::NORTH) {
+                b->resize(X + x, Y, bw, height);
             }
-            else if (_tabs == TABS::WEST) {
-                w->resize(X + _pos, Y, W - _pos, H);
+            else {
+                b->resize(X + x, Y + H - height, bw, height);
             }
-            else if (_tabs == TABS::EAST) {
-                w->resize(X, Y, W - _pos, H);
+
+            x += bw;
+            x += space;
+        }
+    }
+    else { // TABS::WEST, TABS::EAST
+        auto y        = Y;
+        auto h        = height;
+        auto shrinked = false;
+        auto space    = 3;
+
+        if ((h + space) * (int) _buttons.size() > H) { // Shrink button height if any falls outside area
+            h = (H - _buttons.size()) / _buttons.size();
+            shrinked = true;
+        }
+
+        if (_pos < flw::PREF_FONTSIZE * space) { // Set min size for widgets on the left
+            _pos = flw::PREF_FONTSIZE * space;
+        }
+        else if (_pos > W - flw::PREF_FONTSIZE * 8) { // Set min size for widgets on the right
+            _pos = W - flw::PREF_FONTSIZE * 8;
+        }
+
+        for (auto b : _buttons) {
+            if (_tabs == TABS::WEST) {
+                b->resize(X, y, _pos, h);
+                y += h + (shrinked == false ? space : 1);
             }
+            else {
+                b->resize(X + W - _pos, y, _pos, h);
+                y += h + (shrinked == false ? space : 1);
+            }
+        }
+    }
+
+    for (auto w : _widgets) { // Resize widgets
+        if (w->visible() == 0) {
+        }
+        else if (_tabs == TABS::NORTH) {
+            w->resize(X, Y + height, W, H - height);
+        }
+        else if (_tabs == TABS::SOUTH) {
+            w->resize(X, Y, W, H - height);
+        }
+        else if (_tabs == TABS::WEST) {
+            w->resize(X + _pos, Y, W - _pos, H);
+        }
+        else if (_tabs == TABS::EAST) {
+            w->resize(X, Y, W - _pos, H);
         }
     }
 }
@@ -8061,70 +8711,116 @@ void flw::TabsGroup::value(int num) {
 
 
 namespace flw {
-    namespace theme {
-        static unsigned char _OLD_R[256];
-        static unsigned char _OLD_G[256];
-        static unsigned char _OLD_B[256];
-        static unsigned char _SYS_R[256];
-        static unsigned char _SYS_G[256];
-        static unsigned char _SYS_B[256];
-        static bool          _SAVED_COLOR = false;
-        static bool          _SAVED_SYS   = false;
+    bool        PREF_IS_DARK        = false;
+    int         PREF_FIXED_FONT     = FL_COURIER;
+    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
+    int         PREF_FIXED_FONTSIZE = 14;
+    int         PREF_FONT           = FL_HELVETICA;
+    int         PREF_FONTSIZE       = 14;
+    std::string PREF_FONTNAME       = "FL_HELVETICA";
 
-        static const char*   _NAMES[] = {
-                "default",
-                "gleam",
-                "blue gleam",
-                "dark blue gleam",
-                "dark gleam",
-                "darker gleam",
-                "tan gleam",
-                "gtk",
-                "blue gtk",
-                "dark blue gtk",
-                "dark gtk",
-                "darker gtk",
-                "tan gtk",
-                "plastic",
-                "blue plastic",
-                "tan plastic",
-                "system"
+    namespace color {
+        Fl_Color RED     = fl_rgb_color(255, 0, 0);
+        Fl_Color LIME    = fl_rgb_color(0, 255, 0);
+        Fl_Color BLUE    = fl_rgb_color(0, 0, 255);
+        Fl_Color YELLOW  = fl_rgb_color(255, 255, 0);
+        Fl_Color CYAN    = fl_rgb_color(0, 255, 255);
+        Fl_Color MAGENTA = fl_rgb_color(255, 0, 255);
+        Fl_Color SILVER  = fl_rgb_color(192, 192, 192);
+        Fl_Color GRAY    = fl_rgb_color(128, 128, 128);
+        Fl_Color MAROON  = fl_rgb_color(128, 0, 0);
+        Fl_Color OLIVE   = fl_rgb_color(128, 128, 0);
+        Fl_Color GREEN   = fl_rgb_color(0, 128, 0);
+        Fl_Color PURPLE  = fl_rgb_color(128, 0, 128);
+        Fl_Color TEAL    = fl_rgb_color(0, 128, 128);
+        Fl_Color NAVY    = fl_rgb_color(0, 0, 128);
+        Fl_Color BROWN   = fl_rgb_color(210, 105, 30);
+        Fl_Color PINK    = fl_rgb_color(255, 192, 203);
+        Fl_Color BEIGE   = fl_rgb_color(245, 245, 220);
+        Fl_Color AZURE   = fl_rgb_color(240, 255, 250);
+    }
+
+    namespace theme {
+        static const char* _NAMES[] = {
+            "default",
+            "gleam",
+            "blue gleam",
+            "dark blue gleam",
+            "dark gleam",
+            "darker gleam",
+            "tan gleam",
+            "gtk",
+            "blue gtk",
+            "dark blue gtk",
+            "dark gtk",
+            "darker gtk",
+            "tan gtk",
+            "plastic",
+            "blue plastic",
+            "tan plastic",
+            "system"
         };
 
         enum {
-                _NAME_DEFAULT,
-                _NAME_GLEAM,
-                _NAME_GLEAM_BLUE,
-                _NAME_GLEAM_DARK_BLUE,
-                _NAME_GLEAM_DARK,
-                _NAME_GLEAM_DARKER,
-                _NAME_GLEAM_TAN,
-                _NAME_GTK,
-                _NAME_GTK_BLUE,
-                _NAME_GTK_DARK_BLUE,
-                _NAME_GTK_DARK,
-                _NAME_GTK_DARKER,
-                _NAME_GTK_TAN,
-                _NAME_PLASTIC,
-                _NAME_PLASTIC_BLUE,
-                _NAME_PLASTIC_TAN,
-                _NAME_SYSTEM,
+            _NAME_DEFAULT,
+            _NAME_GLEAM,
+            _NAME_GLEAM_BLUE,
+            _NAME_GLEAM_DARK_BLUE,
+            _NAME_GLEAM_DARK,
+            _NAME_GLEAM_DARKER,
+            _NAME_GLEAM_TAN,
+            _NAME_GTK,
+            _NAME_GTK_BLUE,
+            _NAME_GTK_DARK_BLUE,
+            _NAME_GTK_DARK,
+            _NAME_GTK_DARKER,
+            _NAME_GTK_TAN,
+            _NAME_PLASTIC,
+            _NAME_PLASTIC_BLUE,
+            _NAME_PLASTIC_TAN,
+            _NAME_SYSTEM,
         };
 
-        static std::string _NAME = _NAMES[_NAME_DEFAULT];
+        static unsigned char _OLD_R[256]  = { 0 };
+        static unsigned char _OLD_G[256]  = { 0 };
+        static unsigned char _OLD_B[256]  = { 0 };
+        static unsigned char _SYS_R[256]  = { 0 };
+        static unsigned char _SYS_G[256]  = { 0 };
+        static unsigned char _SYS_B[256]  = { 0 };
+        static bool          _SAVED_COLOR = false;
+        static bool          _SAVED_SYS   = false;
+        static std::string   _NAME        = _NAMES[_NAME_DEFAULT];
 
         //----------------------------------------------------------------------
-        static void _blue_colors() {
-            Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
-            Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
-            Fl::set_color(8,   130, 149, 166); // FL_INACTIVE_COLOR
-            Fl::set_color(15,  255, 160,  63); // FL_SELECTION_COLOR
-            Fl::set_color(255, 244, 244, 244); // FL_WHITE
-            Fl::background(170, 189, 206);
+        // Colors are reset every time a new theme has been selected
+        //!!! Colors are same for dark and light for now
+        //
+        static void _colors(bool dark) {
+            (void) dark;
+
+            color::AZURE   = fl_rgb_color(240, 255, 250);
+            color::BEIGE   = fl_rgb_color(245, 245, 220);
+            color::BLUE    = fl_rgb_color(0, 0, 255);
+            color::BLUE    = fl_rgb_color(0, 0, 255);
+            color::BROWN   = fl_rgb_color(210, 105, 30);
+            color::CYAN    = fl_rgb_color(0, 255, 255);
+            color::GRAY    = fl_rgb_color(128, 128, 128);
+            color::GREEN   = fl_rgb_color(0, 128, 0);
+            color::LIME    = fl_rgb_color(0, 255, 0);
+            color::MAGENTA = fl_rgb_color(255, 0, 255);
+            color::MAROON  = fl_rgb_color(128, 0, 0);
+            color::NAVY    = fl_rgb_color(0, 0, 128);
+            color::OLIVE   = fl_rgb_color(128, 128, 0);
+            color::PINK    = fl_rgb_color(255, 192, 203);
+            color::PURPLE  = fl_rgb_color(128, 0, 128);
+            color::RED     = fl_rgb_color(255, 0, 0);
+            color::SILVER  = fl_rgb_color(192, 192, 192);
+            color::TEAL    = fl_rgb_color(0, 128, 128);
+            color::YELLOW  = fl_rgb_color(255, 255, 0);
         }
 
         //----------------------------------------------------------------------
-        static void _darker_colors() {
+        static void _make_default_colors_darker() {
             Fl::set_color(60,    0,  63,   0); // FL_DARK_GREEN
             Fl::set_color(63,    0, 110,   0); // FL_GREEN
             Fl::set_color(72,   55,   0,   0); // FL_DARK_RED
@@ -8140,13 +8836,23 @@ namespace flw {
         }
 
         //----------------------------------------------------------------------
+        static void _blue_colors() {
+            Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
+            Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
+            Fl::set_color(8,   130, 149, 166); // FL_INACTIVE_COLOR
+            Fl::set_color(15,  255, 160,  63); // FL_SELECTION_COLOR
+            Fl::set_color(255, 244, 244, 244); // FL_WHITE
+            Fl::background(170, 189, 206);
+        }
+
+        //----------------------------------------------------------------------
         static void _dark_blue_colors() {
             Fl::set_color(0,   255, 255, 255); // FL_FOREGROUND_COLOR
             Fl::set_color(7,    31,  47,  55); // FL_BACKGROUND2_COLOR
             Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
             Fl::set_color(15,   68, 138, 255); // FL_SELECTION_COLOR
             Fl::set_color(56,    0,   0,   0); // FL_BLACK
-            Fl::background(69, 85, 92);
+            Fl::background(64, 80, 87);
         }
 
         //----------------------------------------------------------------------
@@ -8157,16 +8863,19 @@ namespace flw {
             Fl::set_color(15,  149,  75,  37); // FL_SELECTION_COLOR
             Fl::set_color(56,    0,   0,   0); // FL_BLACK
             Fl::background(85, 85, 85);
+            Fl::background(64, 64, 64);
         }
 
         //----------------------------------------------------------------------
-        static void _dark_colors2() {
+        static void _darker_colors() {
             Fl::set_color(0,   164, 164, 164); // FL_FOREGROUND_COLOR
             Fl::set_color(7,    16,  16,  16); // FL_BACKGROUND2_COLOR
+            Fl::set_color(7,    28,  28,  28); // FL_BACKGROUND2_COLOR
             Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
             Fl::set_color(15,  133,  59,  21); // FL_SELECTION_COLOR
             Fl::set_color(56,    0,   0,   0); // FL_BLACK
             Fl::background(32, 32, 32);
+            Fl::background(38, 38, 38);
         }
 
         //----------------------------------------------------------------------
@@ -8183,7 +8892,7 @@ namespace flw {
         static void _restore_colors() {
             if (_SAVED_COLOR == true) {
                 for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, theme::_OLD_R[f], theme::_OLD_G[f], theme::_OLD_B[f]);
+                    Fl::set_color(f, flw::theme::_OLD_R[f], flw::theme::_OLD_G[f], flw::theme::_OLD_B[f]);
                 }
             }
         }
@@ -8192,7 +8901,7 @@ namespace flw {
         static void _restore_sys() {
             if (_SAVED_SYS == true) {
                 for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, theme::_SYS_R[f], theme::_SYS_G[f], theme::_SYS_B[f]);
+                    Fl::set_color(f, flw::theme::_SYS_R[f], flw::theme::_SYS_G[f], flw::theme::_SYS_B[f]);
                 }
             }
         }
@@ -8203,9 +8912,9 @@ namespace flw {
                 for (int f = 0; f < 256; f++) {
                     unsigned char r1, g1, b1;
                     Fl::get_color(f, r1, g1, b1);
-                    theme::_OLD_R[f] = r1;
-                    theme::_OLD_G[f] = g1;
-                    theme::_OLD_B[f] = b1;
+                    flw::theme::_OLD_R[f] = r1;
+                    flw::theme::_OLD_G[f] = g1;
+                    flw::theme::_OLD_B[f] = b1;
                 }
 
                 _SAVED_COLOR = true;
@@ -8218,9 +8927,9 @@ namespace flw {
                 for (int f = 0; f < 256; f++) {
                     unsigned char r1, g1, b1;
                     Fl::get_color(f, r1, g1, b1);
-                    theme::_SYS_R[f] = r1;
-                    theme::_SYS_G[f] = g1;
-                    theme::_SYS_B[f] = b1;
+                    flw::theme::_SYS_R[f] = r1;
+                    flw::theme::_SYS_G[f] = g1;
+                    flw::theme::_SYS_B[f] = b1;
                 }
 
                 _SAVED_SYS = true;
@@ -8231,6 +8940,7 @@ namespace flw {
         static void _load_default() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
+            flw::theme::_colors(false);
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::scheme("none");
             Fl::redraw();
@@ -8242,6 +8952,7 @@ namespace flw {
         static void _load_gleam() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gleam");
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
@@ -8254,6 +8965,7 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_blue_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_BLUE];
@@ -8265,7 +8977,8 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_colors();
-            flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
             Fl::set_color(255, 125, 125, 125);
             Fl::scheme("gleam");
             Fl::redraw();
@@ -8277,8 +8990,9 @@ namespace flw {
         static void _load_gleam_darker() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
-            flw::theme::_dark_colors2();
             flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
             Fl::set_color(255, 125, 125, 125);
             Fl::scheme("gleam");
             Fl::redraw();
@@ -8291,7 +9005,8 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_blue_colors();
-            flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
             Fl::set_color(255, 101, 117, 125);
             Fl::scheme("gleam");
             Fl::redraw();
@@ -8304,6 +9019,7 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_tan_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_TAN];
@@ -8314,6 +9030,7 @@ namespace flw {
         static void _load_gtk() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gtk+");
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
@@ -8326,6 +9043,7 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_blue_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_BLUE];
@@ -8337,7 +9055,8 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_colors();
-            flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
             Fl::set_color(255, 185, 185, 185);
             Fl::scheme("gtk+");
             Fl::redraw();
@@ -8349,8 +9068,9 @@ namespace flw {
         static void _load_gtk_darker() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
-            flw::theme::_dark_colors2();
             flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
             Fl::set_color(255, 125, 125, 125);
             Fl::scheme("gtk+");
             Fl::redraw();
@@ -8363,7 +9083,8 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_dark_blue_colors();
-            flw::theme::_darker_colors();
+            flw::theme::_make_default_colors_darker();
+            flw::theme::_colors(true);
             Fl::set_color(255, 161, 177, 185);
             Fl::scheme("gtk+");
             Fl::redraw();
@@ -8376,6 +9097,7 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_tan_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_TAN];
@@ -8386,6 +9108,7 @@ namespace flw {
         static void _load_plastic() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
+            flw::theme::_colors(false);
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::scheme("plastic");
             Fl::redraw();
@@ -8398,6 +9121,7 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_blue_colors();
+            flw::theme::_colors(false);
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_BLUE];
@@ -8409,6 +9133,7 @@ namespace flw {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
             flw::theme::_tan_colors();
+            flw::theme::_colors(false);
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_TAN];
@@ -8419,6 +9144,7 @@ namespace flw {
         static void _load_system() {
             flw::theme::_save_colors();
             flw::theme::_restore_colors();
+            flw::theme::_colors(false);
             Fl::scheme("gtk+");
 
             if (theme::_SAVED_SYS) {
@@ -8486,7 +9212,7 @@ namespace flw {
                 _theme->callback(Callback, this);
                 _theme->textfont(flw::PREF_FONT);
 
-                for (int f = 0; f <= theme::_NAME_SYSTEM; f++) {
+                for (int f = 0; f <= flw::theme::_NAME_SYSTEM; f++) {
                     _theme->add(theme::_NAMES[f]);
                 }
 
@@ -8507,7 +9233,7 @@ namespace flw {
                 else if (w == dlg->_fixedfont) {
                     flw::dlg::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
 
-                    if (fd.run(Fl::first_window())) {
+                    if (fd.run(Fl::first_window()) == true) {
                         flw::PREF_FIXED_FONT     = fd.font();
                         flw::PREF_FIXED_FONTSIZE = fd.fontsize();
                         flw::PREF_FIXED_FONTNAME = fd.fontname();
@@ -8517,7 +9243,7 @@ namespace flw {
                 else if (w == dlg->_font) {
                     flw::dlg::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
 
-                    if (fd.run(Fl::first_window())) {
+                    if (fd.run(Fl::first_window()) == true) {
                         flw::PREF_FONT     = fd.font();
                         flw::PREF_FONTSIZE = fd.fontsize();
                         flw::PREF_FONTNAME = fd.fontname();
@@ -8527,56 +9253,56 @@ namespace flw {
                 else if (w == dlg->_theme) {
                     auto row = dlg->_theme->value() - 1;
 
-                    if (row == theme::_NAME_GLEAM) {
-                        theme::_load_gleam();
+                    if (row == flw::theme::_NAME_GLEAM) {
+                        flw::theme::_load_gleam();
                     }
-                    else if (row == theme::_NAME_GLEAM_BLUE) {
-                        theme::_load_gleam_blue();
+                    else if (row == flw::theme::_NAME_GLEAM_BLUE) {
+                        flw::theme::_load_gleam_blue();
                     }
-                    else if (row == theme::_NAME_GLEAM_DARK_BLUE) {
-                        theme::_load_gleam_dark_blue();
+                    else if (row == flw::theme::_NAME_GLEAM_DARK_BLUE) {
+                        flw::theme::_load_gleam_dark_blue();
                     }
-                    else if (row == theme::_NAME_GLEAM_DARK) {
-                        theme::_load_gleam_dark();
+                    else if (row == flw::theme::_NAME_GLEAM_DARK) {
+                        flw::theme::_load_gleam_dark();
                     }
-                    else if (row == theme::_NAME_GLEAM_DARKER) {
-                        theme::_load_gleam_darker();
+                    else if (row == flw::theme::_NAME_GLEAM_DARKER) {
+                        flw::theme::_load_gleam_darker();
                     }
-                    else if (row == theme::_NAME_GLEAM_TAN) {
-                        theme::_load_gleam_tan();
+                    else if (row == flw::theme::_NAME_GLEAM_TAN) {
+                        flw::theme::_load_gleam_tan();
                     }
-                    else if (row == theme::_NAME_GTK) {
-                        theme::_load_gtk();
+                    else if (row == flw::theme::_NAME_GTK) {
+                        flw::theme::_load_gtk();
                     }
-                    else if (row == theme::_NAME_GTK_BLUE) {
-                        theme::_load_gtk_blue();
+                    else if (row == flw::theme::_NAME_GTK_BLUE) {
+                        flw::theme::_load_gtk_blue();
                     }
-                    else if (row == theme::_NAME_GTK_DARK_BLUE) {
-                        theme::_load_gtk_dark_blue();
+                    else if (row == flw::theme::_NAME_GTK_DARK_BLUE) {
+                        flw::theme::_load_gtk_dark_blue();
                     }
-                    else if (row == theme::_NAME_GTK_DARK) {
-                        theme::_load_gtk_dark();
+                    else if (row == flw::theme::_NAME_GTK_DARK) {
+                        flw::theme::_load_gtk_dark();
                     }
-                    else if (row == theme::_NAME_GTK_DARKER) {
-                        theme::_load_gtk_darker();
+                    else if (row == flw::theme::_NAME_GTK_DARKER) {
+                        flw::theme::_load_gtk_darker();
                     }
-                    else if (row == theme::_NAME_GTK_TAN) {
-                        theme::_load_gtk_tan();
+                    else if (row == flw::theme::_NAME_GTK_TAN) {
+                        flw::theme::_load_gtk_tan();
                     }
-                    else if (row == theme::_NAME_PLASTIC) {
-                        theme::_load_plastic();
+                    else if (row == flw::theme::_NAME_PLASTIC) {
+                        flw::theme::_load_plastic();
                     }
-                    else if (row == theme::_NAME_PLASTIC_BLUE) {
-                        theme::_load_blue_plastic();
+                    else if (row == flw::theme::_NAME_PLASTIC_BLUE) {
+                        flw::theme::_load_blue_plastic();
                     }
-                    else if (row == theme::_NAME_PLASTIC_TAN) {
-                        theme::_load_tan_plastic();
+                    else if (row == flw::theme::_NAME_PLASTIC_TAN) {
+                        flw::theme::_load_tan_plastic();
                     }
-                    else if (row == theme::_NAME_SYSTEM) {
-                        theme::_load_system();
+                    else if (row == flw::theme::_NAME_SYSTEM) {
+                        flw::theme::_load_system();
                     }
                     else {
-                        theme::_load_default();
+                        flw::theme::_load_default();
                     }
 
                     Fl::redraw();
@@ -8612,7 +9338,7 @@ namespace flw {
 
             //------------------------------------------------------------------
             void update_pref() {
-                flw::util::labelfont(this);
+                flw::theme::labelfont(this);
                 _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
                 _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
                 _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
@@ -8620,8 +9346,8 @@ namespace flw {
                 _theme->textsize(flw::PREF_FONTSIZE);
                 size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
 
-                for (int f = 0; f <= theme::_NAME_SYSTEM; f++) {
-                    if (theme::_NAME == theme::_NAMES[f]) {
+                for (int f = 0; f <= flw::theme::_NAME_SYSTEM; f++) {
+                    if (theme::_NAME == flw::theme::_NAMES[f]) {
                         _theme->value(f + 1);
                         break;
                     }
@@ -8635,13 +9361,19 @@ namespace flw {
 }
 
 //------------------------------------------------------------------------------
+void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
+    auto dlg = dlg::_DlgTheme(enable_font, enable_fixedfont, parent);
+    dlg.run();
+}
+
+//------------------------------------------------------------------------------
 bool flw::theme::is_dark() {
-    if (theme::_NAME == theme::_NAMES[_NAME_GLEAM_DARK_BLUE] ||
-        theme::_NAME == theme::_NAMES[_NAME_GLEAM_DARK] ||
-        theme::_NAME == theme::_NAMES[_NAME_GLEAM_DARKER] ||
-        theme::_NAME == theme::_NAMES[_NAME_GTK_DARK_BLUE] ||
-        theme::_NAME == theme::_NAMES[_NAME_GTK_DARK] ||
-        theme::_NAME == theme::_NAMES[_NAME_GTK_DARKER]) {
+    if (theme::_NAME == flw::theme::_NAMES[_NAME_GLEAM_DARK_BLUE] ||
+        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GLEAM_DARK] ||
+        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GLEAM_DARKER] ||
+        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GTK_DARK_BLUE] ||
+        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GTK_DARK] ||
+        flw::theme::_NAME == flw::theme::_NAMES[_NAME_GTK_DARKER]) {
         return true;
     }
     else {
@@ -8650,54 +9382,73 @@ bool flw::theme::is_dark() {
 }
 
 //------------------------------------------------------------------------------
-bool flw::theme::load(const std::string& name) {
-    if (name == theme::_NAMES[_NAME_DEFAULT]) {
-        theme::_load_default();
+// Set label font properties for widget
+// If widget is an group widget set also the font for child widgets (recursive)
+//
+void flw::theme::labelfont(Fl_Widget* widget) {
+    assert(widget);
+
+    widget->labelfont(flw::PREF_FONT);
+    widget->labelsize(flw::PREF_FONTSIZE);
+
+    auto group = widget->as_group();
+
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            flw::theme::labelfont(group->child(f));
+        }
     }
-    else if (name == theme::_NAMES[_NAME_GLEAM]) {
-        theme::_load_gleam();
+}
+
+//------------------------------------------------------------------------------
+bool flw::theme::load(std::string name) {
+    if (name == flw::theme::_NAMES[_NAME_DEFAULT]) {
+        flw::theme::_load_default();
     }
-    else if (name == theme::_NAMES[_NAME_GLEAM_BLUE]) {
-        theme::_load_gleam_blue();
+    else if (name == flw::theme::_NAMES[_NAME_GLEAM]) {
+        flw::theme::_load_gleam();
     }
-    else if (name == theme::_NAMES[_NAME_GLEAM_DARK_BLUE]) {
-        theme::_load_gleam_dark_blue();
+    else if (name == flw::theme::_NAMES[_NAME_GLEAM_BLUE]) {
+        flw::theme::_load_gleam_blue();
     }
-    else if (name == theme::_NAMES[_NAME_GLEAM_DARK]) {
-        theme::_load_gleam_dark();
+    else if (name == flw::theme::_NAMES[_NAME_GLEAM_DARK_BLUE]) {
+        flw::theme::_load_gleam_dark_blue();
     }
-    else if (name == theme::_NAMES[_NAME_GLEAM_DARKER]) {
-        theme::_load_gleam_darker();
+    else if (name == flw::theme::_NAMES[_NAME_GLEAM_DARK]) {
+        flw::theme::_load_gleam_dark();
     }
-    else if (name == theme::_NAMES[_NAME_GLEAM_TAN]) {
-        theme::_load_gleam_tan();
+    else if (name == flw::theme::_NAMES[_NAME_GLEAM_DARKER]) {
+        flw::theme::_load_gleam_darker();
     }
-    else if (name == theme::_NAMES[_NAME_GTK]) {
-        theme::_load_gtk();
+    else if (name == flw::theme::_NAMES[_NAME_GLEAM_TAN]) {
+        flw::theme::_load_gleam_tan();
     }
-    else if (name == theme::_NAMES[_NAME_GTK_BLUE]) {
-        theme::_load_gtk_blue();
+    else if (name == flw::theme::_NAMES[_NAME_GTK]) {
+        flw::theme::_load_gtk();
     }
-    else if (name == theme::_NAMES[_NAME_GTK_DARK_BLUE]) {
-        theme::_load_gtk_dark_blue();
+    else if (name == flw::theme::_NAMES[_NAME_GTK_BLUE]) {
+        flw::theme::_load_gtk_blue();
     }
-    else if (name == theme::_NAMES[_NAME_GTK_DARK]) {
-        theme::_load_gtk_dark();
+    else if (name == flw::theme::_NAMES[_NAME_GTK_DARK_BLUE]) {
+        flw::theme::_load_gtk_dark_blue();
     }
-    else if (name == theme::_NAMES[_NAME_GTK_DARKER]) {
-        theme::_load_gtk_darker();
+    else if (name == flw::theme::_NAMES[_NAME_GTK_DARK]) {
+        flw::theme::_load_gtk_dark();
     }
-    else if (name == theme::_NAMES[_NAME_GTK_TAN]) {
-        theme::_load_gtk_tan();
+    else if (name == flw::theme::_NAMES[_NAME_GTK_DARKER]) {
+        flw::theme::_load_gtk_darker();
     }
-    else if (name == theme::_NAMES[_NAME_PLASTIC]) {
-        theme::_load_plastic();
+    else if (name == flw::theme::_NAMES[_NAME_GTK_TAN]) {
+        flw::theme::_load_gtk_tan();
     }
-    else if (name == theme::_NAMES[_NAME_PLASTIC_BLUE]) {
-        theme::_load_blue_plastic();
+    else if (name == flw::theme::_NAMES[_NAME_PLASTIC]) {
+        flw::theme::_load_plastic();
     }
-    else if (name == theme::_NAMES[_NAME_PLASTIC_TAN]) {
-        theme::_load_tan_plastic();
+    else if (name == flw::theme::_NAMES[_NAME_PLASTIC_BLUE]) {
+        flw::theme::_load_blue_plastic();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_PLASTIC_TAN]) {
+        flw::theme::_load_tan_plastic();
     }
     else {
         return false;
@@ -8708,7 +9459,15 @@ bool flw::theme::load(const std::string& name) {
 
 
 //------------------------------------------------------------------------------
+// Load icon before showing window
+//
 void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
+    assert(win);
+
+    if (win->shown() != 0) {
+        fl_alert("%s", "warning: load icon before showing window!");
+    }
+
 #if defined(_WIN32)
     win->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(win_resource)));
     (void) name;
@@ -8740,45 +9499,15 @@ std::string flw::theme::name() {
 bool flw::theme::parse(int argc, const char** argv) {
     auto res = false;
 
-    for (auto f = 0; f < argc; f++) {
-        auto arg = std::string(argv[f]);
-
-        if (res == false && f) {
-            res = flw::theme::load(arg);
+    for (auto f = 1; f < argc; f++) {
+        if (res == false) {
+            res = flw::theme::load(argv[f]);
         }
 
-        if (arg == "8") {
-            flw::PREF_FONTSIZE = 8;
-        }
-        else if (arg == "9") {
-            flw::PREF_FONTSIZE = 9;
-        }
-        else if (arg == "10") {
-            flw::PREF_FONTSIZE = 10;
-        }
-        else if (arg == "12") {
-            flw::PREF_FONTSIZE = 12;
-        }
-        else if (arg == "14") {
-            flw::PREF_FONTSIZE = 14;
-        }
-        else if (arg == "16") {
-            flw::PREF_FONTSIZE = 16;
-        }
-        else if (arg == "18") {
-            flw::PREF_FONTSIZE = 18;
-        }
-        else if (arg == "20") {
-            flw::PREF_FONTSIZE = 20;
-        }
-        else if (arg == "24") {
-            flw::PREF_FONTSIZE = 24;
-        }
-        else if (arg == "28") {
-            flw::PREF_FONTSIZE = 28;
-        }
-        else if (arg == "36") {
-            flw::PREF_FONTSIZE = 36;
+        auto fontsize = util::to_int(argv[f]);
+
+        if (fontsize >= 6 && fontsize <= 72) {
+            flw::PREF_FONTSIZE = fontsize;
         }
     }
 
@@ -8787,15 +9516,9 @@ bool flw::theme::parse(int argc, const char** argv) {
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
-    auto dlg = dlg::_DlgTheme(enable_font, enable_fixedfont, parent);
-    dlg.run();
-}
-
-//------------------------------------------------------------------------------
 // Load gui preferences and if window is set resize and show it
 //
-void flw::util::pref_load(Fl_Preferences& pref, Fl_Window* window) {
+void flw::theme::pref_load(Fl_Preferences& pref, Fl_Window* window) {
     auto val = 0;
     char buffer[4000];
 
@@ -8862,13 +9585,13 @@ void flw::util::pref_load(Fl_Preferences& pref, Fl_Window* window) {
     }
 
     pref.get("gui.theme", buffer, "gtk", 4000);
-    theme::load(buffer);
+    flw::theme::load(buffer);
 }
 
 //------------------------------------------------------------------------------
 // Save theme and fontnames and optionally window size
 //
-void flw::util::pref_save(Fl_Preferences& pref, Fl_Window* window) {
+void flw::theme::pref_save(Fl_Preferences& pref, Fl_Window* window) {
     if (window != nullptr) {
         pref.set("gui.x", window->x());
         pref.set("gui.y", window->y());
@@ -8887,13 +9610,32 @@ void flw::util::pref_save(Fl_Preferences& pref, Fl_Window* window) {
 
 
 namespace flw {
-    bool        PREF_IS_DARK        = false;
-    int         PREF_FIXED_FONT     = FL_COURIER;
-    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
-    int         PREF_FIXED_FONTSIZE = 14;
-    int         PREF_FONT           = FL_HELVETICA;
-    int         PREF_FONTSIZE       = 14;
-    std::string PREF_FONTNAME       = "FL_HELVETICA";
+    //--------------------------------------------------------------------------
+    static Fl_Menu_Item* _util_menu_item(Fl_Menu_* menu, const char* text) {
+        assert(menu && text);
+
+        auto item = menu->find_item(text);
+
+#ifdef DEBUG
+        if (item == nullptr) {
+            fprintf(stderr, "error: cant find menu item <%s>\n", text);
+        }
+#endif
+
+        return (Fl_Menu_Item*) item;
+    }
+}
+
+//------------------------------------------------------------------------------
+char* flw::util::allocate(size_t size, bool terminate) {
+    auto res = (char*) calloc(size + 1, 1);
+
+    if (res == nullptr && terminate == true) {
+        fl_alert("error: failed to allocate memory with size %lld\nI'm going to quit now!", (long long int) size);
+        exit(1);
+    }
+
+    return res;
 }
 
 //------------------------------------------------------------------------------
@@ -8909,12 +9651,65 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
 }
 
 //------------------------------------------------------------------------------
+int flw::util::count_decimals(double number) {
+    number = fabs(number);
+
+    int    res     = 0;
+    int    len     = 0;
+    char*  end     = 0;
+    double inumber = (int64_t) number;
+    double fnumber = number - inumber;
+    char   buffer[100];
+
+    if (number > 999999999999999) {
+        snprintf(buffer, 100, "%.1f", fnumber);
+    }
+    else if (number > 9999999999999) {
+        snprintf(buffer, 100, "%.2f", fnumber);
+    }
+    else if (number > 999999999999) {
+        snprintf(buffer, 100, "%.3f", fnumber);
+    }
+    else if (number > 99999999999) {
+        snprintf(buffer, 100, "%.4f", fnumber);
+    }
+    else if (number > 9999999999) {
+        snprintf(buffer, 100, "%.5f", fnumber);
+    }
+    else if (number > 999999999) {
+        snprintf(buffer, 100, "%.6f", fnumber);
+    }
+    else if (number > 99999999) {
+        snprintf(buffer, 100, "%.7f", fnumber);
+    }
+    else if (number > 9999999) {
+        snprintf(buffer, 100, "%.8f", fnumber);
+    }
+    else {
+        snprintf(buffer, 100, "%.9f", fnumber);
+    }
+
+    len = strlen(buffer);
+    end = buffer + len - 1;
+
+    while (*end == '0') {
+        *end = 0;
+        end--;
+    }
+
+    res = strlen(buffer) - 2;
+    return res;
+}
+
+//------------------------------------------------------------------------------
 std::string flw::util::fix_menu_string(std::string in) {
     std::string res = in;
-    flw::util::replace(res, "\\", "\\\\");
-    flw::util::replace(res, "_", "\\_");
-    flw::util::replace(res, "/", "\\/");
-    flw::util::replace(res, "&", "&&");
+
+    util::replace(res, "\\", "\\\\");
+    util::replace(res, "_", "\\_");
+    util::replace(res, "/", "\\/");
+    util::replace(res, "&", "&&");
+
     return res;
 }
 
@@ -8964,6 +9759,41 @@ std::string flw::util::format(const char* format, ...) {
 }
 
 //------------------------------------------------------------------------------
+std::string flw::util::format_double(double number, int decimals, char sep) {
+    char res[100];
+
+    *res = 0;
+
+    if (decimals < 0) {
+        decimals = util::count_decimals(number);
+    }
+
+    if (decimals == 0) {
+        return util::format_int((int64_t) number, sep);
+    }
+
+    if (fabs(number) < 9223372036854775807.0) {
+        char fr_str[100];
+        auto int_num    = (int64_t) fabs(number);
+        auto double_num = (double) (fabs(number) - int_num);
+        auto int_str    = util::format_int(int_num, sep);
+        auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+
+        if (len > 0 && len < 100) {
+            if (number < 0.0) {
+                res[0] = '-';
+                res[1] = 0;
+            }
+
+            strncat(res, int_str.c_str(), 99);
+            strncat(res, fr_str + 1, 99);
+        }
+    }
+
+    return res;
+}
+
+//------------------------------------------------------------------------------
 std::string flw::util::format_int(int64_t number, char sep) {
     auto pos = 0;
     char tmp1[100];
@@ -9004,22 +9834,173 @@ std::string flw::util::format_int(int64_t number, char sep) {
 }
 
 //------------------------------------------------------------------------------
-// Set label font properties for widget
-// If widget is an group widget set also the font for child widgets (recursive)
-//
-void flw::util::labelfont(Fl_Widget* widget) {
-    assert(widget);
+flw::Buf flw::util::file_load(std::string filename, bool alert) {
+    auto stat = flw::Stat(filename);
 
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
+    if (stat.mode != 2) {
+        if (alert == true) {
+            fl_alert("error: file %s is missing or not an file", filename.c_str());
+        }
 
-    auto group = widget->as_group();
+        return Buf();
+    }
 
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            flw::util::labelfont(group->child(f));
+    auto file = fopen(filename.c_str(), "rb");
+
+    if (file == nullptr) {
+        if (alert == true) {
+            fl_alert("error: can't open %s", filename.c_str());
+        }
+
+        return Buf();
+    }
+
+    auto buf  = Buf(stat.size);
+    auto read = fread(buf.p, 1, (size_t) stat.size, file);
+
+    fclose(file);
+
+    if (read != (size_t) stat.size) {
+        if (alert == true) {
+            fl_alert("error: failed to read %s", filename.c_str());
+        }
+
+        free(buf.p);
+        return Buf();
+    }
+
+    return buf;
+}
+
+//------------------------------------------------------------------------------
+bool flw::util::file_save(std::string filename, const void* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+
+            return false;
         }
     }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+Fl_Menu_Item* flw::util::menu_item_get(Fl_Menu_* menu, const char* text) {
+    assert(menu);
+    return flw::_util_menu_item(menu, text);
+}
+
+//------------------------------------------------------------------------------
+void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
+    assert(menu);
+    auto item = flw::_util_menu_item(menu, text);
+
+    if (item == nullptr) {
+        return;
+    }
+
+    if (value == true) {
+        item->set();
+    }
+    else {
+        item->clear();
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
+    assert(menu);
+    auto item = flw::_util_menu_item(menu, text);
+
+    if (item == nullptr) {
+        return;
+    }
+
+    menu->setonly(item);
+}
+
+//------------------------------------------------------------------------------
+bool flw::util::menu_item_value(Fl_Menu_* menu, const char* text) {
+    assert(menu);
+    auto item = flw::_util_menu_item(menu, text);
+
+    if (item == nullptr) {
+        return false;
+    }
+
+    return item->value();
+}
+
+//------------------------------------------------------------------------------
+// Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images)
+// If filename is empty you will be asked for the name
+//
+void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+#ifdef FLW_USE_PNG
+#if FL_MINOR_VERSION == 4
+    auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
+
+    if (filename != nullptr) {
+        window->make_current();
+
+        if (X == 0 && Y == 0 && W == 0 && H == 0) {
+            X = window->x();
+            Y = window->y();
+            W = window->w();
+            H = window->h();
+        }
+
+        auto image = fl_read_image(nullptr, X, Y, W, H);
+
+
+        if (image != nullptr) {
+            auto ret = fl_write_png(filename, image, W, H);
+
+            if (ret == 0) {
+            }
+            else if (ret == -1) {
+                fl_alert("%s", "error: missing libraries");
+            }
+            else if (ret == -1) {
+                fl_alert("error: failed to save image to %s", filename);
+            }
+
+            delete []image;
+        }
+        else {
+            fl_alert("%s", "error: failed to grab image");
+        }
+    }
+#else
+    (void) opt_name;
+    (void) window;
+    (void) X;
+    (void) Y;
+    (void) W;
+    (void) H;
+    fl_alert("error: does not work with fltk 1.3");
+#endif
+#else
+    (void) opt_name;
+    (void) window;
+    (void) X;
+    (void) Y;
+    (void) W;
+    (void) H;
+    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -9032,11 +10013,12 @@ void flw::util::print(Fl_Widget* widget, bool tab) {
 
 //------------------------------------------------------------------------------
 void flw::util::print(Fl_Group* group) {
+    assert(group);
     puts("");
-    flw::util::print((Fl_Widget*) group);
+    util::print((Fl_Widget*) group);
 
     for (int f = 0; f < group->children(); f++) {
-        flw::util::print(group->child(f), true);
+        util::print(group->child(f), true);
     }
 }
 
@@ -9078,7 +10060,7 @@ flw::StringVector flw::util::split(const std::string& string, std::string split)
     auto res = StringVector();
 
     try {
-        if (split.size() > 0) {
+        if (split != "") {
             auto pos1 = (std::string::size_type) 0;
             auto pos2 = string.find(split);
 
@@ -9088,10 +10070,8 @@ flw::StringVector flw::util::split(const std::string& string, std::string split)
                 pos2 = string.find(split, pos1);
             }
 
-            auto last = string.substr(pos1);
-
-            if (last != "") {
-                res.push_back(last);
+            if (pos1 <= string.size()) {
+                res.push_back(string.substr(pos1));
             }
         }
     }
@@ -9156,67 +10136,69 @@ double flw::util::time() {
     auto sec   = 0.0;
     auto milli = 0.0;
 
-    #ifdef _WIN32
-        struct __timeb64 timeVal;
+#ifdef _WIN32
+    struct __timeb64 timeVal;
 
-        _ftime64(&timeVal);
-        sec   = (double) timeVal.time;
-        milli = (double) timeVal.millitm;
-        return sec + (milli / 1000.0);
-    #else
-        struct timeb timeVal;
+    _ftime64(&timeVal);
+    sec   = (double) timeVal.time;
+    milli = (double) timeVal.millitm;
+    return sec + (milli / 1000.0);
+#else
+    struct timeb timeVal;
 
-        ftime(&timeVal);
-        sec   = (double) timeVal.time;
-        milli = (double) timeVal.millitm;
-        return sec + (milli / 1000.0);
-    #endif
+    ftime(&timeVal);
+    sec   = (double) timeVal.time;
+    milli = (double) timeVal.millitm;
+    return sec + (milli / 1000.0);
+#endif
 }
 
 //------------------------------------------------------------------------------
 // Return time stamp
 //
 int64_t flw::util::time_micro() {
-    #if defined(_WIN32)
-        LARGE_INTEGER StartingTime;
-        LARGE_INTEGER Frequency;
+#if defined(_WIN32)
+    LARGE_INTEGER StartingTime;
+    LARGE_INTEGER Frequency;
 
-        QueryPerformanceFrequency(&Frequency);
-        QueryPerformanceCounter(&StartingTime);
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
 
-        StartingTime.QuadPart *= 1000000;
-        StartingTime.QuadPart /= Frequency.QuadPart;
-        return StartingTime.QuadPart;
-    #else
-        timespec t;
-        clock_gettime(CLOCK_MONOTONIC, &t);
-        return t.tv_sec * 1000000 + t.tv_nsec / 1000;
-    #endif
+    StartingTime.QuadPart *= 1000000;
+    StartingTime.QuadPart /= Frequency.QuadPart;
+    return StartingTime.QuadPart;
+#else
+    timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec * 1000000 + t.tv_nsec / 1000;
+#endif
 }
 
 //------------------------------------------------------------------------------
 // Return time stamp
 //
-int64_t flw::util::time_milli() {
-    return flw::util::time_micro() / 1000;
+int32_t flw::util::time_milli() {
+    return (int) (util::time_micro() / 1000);
 }
 
 //------------------------------------------------------------------------------
 void flw::util::time_sleep(int milli) {
-    #ifdef _WIN32
-        Sleep(milli);
-    #else
-        usleep(milli * 1000);
-    #endif
+#ifdef _WIN32
+    Sleep(milli);
+#else
+    usleep(milli * 1000);
+#endif
 }
 
 //------------------------------------------------------------------------------
 double flw::util::to_double(const char* string, double def) {
     assert(string);
 
-    double result = def;
+    auto result = def;
+    auto first  = (string[0] == '-') ? 1 : 0;
+    first = (string[first] == '.') ? first + 1 : first;
 
-    if (*string >= '0' && *string <= '9') {
+    if (string[first] >= '0' && string[first] <= '9') {
         errno  = 0;
         result = strtod(string, nullptr);
         result = (errno == ERANGE) ? def : result;
@@ -9229,9 +10211,11 @@ double flw::util::to_double(const char* string, double def) {
 long double flw::util::to_double_l(const char* string, long double def) {
     assert(string);
 
-    long double result = def;
+    auto result = def;
+    auto first  = (string[0] == '-') ? 1 : 0;
+    first = (string[first] == '.') ? first + 1 : first;
 
-    if (*string >= '0' && *string <= '9') {
+    if (string[first] >= '0' && string[first] <= '9') {
         errno  = 0;
         result = strtold(string, nullptr);
         result = (errno == ERANGE) ? def : result;
@@ -9268,9 +10252,10 @@ int flw::util::to_doubles(const char* string, double numbers[], size_t size) {
 int64_t flw::util::to_int(const char* string, int64_t def) {
     assert(string);
 
-    int64_t res = def;
+    auto res = def;
+    auto first  = (string[0] == '-') ? 1 : 0;
 
-    if (*string >= '0' && *string <= '9') {
+    if (string[first] >= '0' && string[first] <= '9') {
         errno  = 0;
         res = strtoll(string, nullptr, 0);
         res = (errno == ERANGE) ? def : res;
@@ -9310,7 +10295,7 @@ void* flw::util::zero_memory(char* string) {
         return nullptr;
     }
 
-    return flw::util::zero_memory(string, strlen(string));
+    return util::zero_memory(string, strlen(string));
 }
 
 //------------------------------------------------------------------------------
@@ -9335,7 +10320,131 @@ void* flw::util::zero_memory(void* mem, size_t size) {
 
 //------------------------------------------------------------------------------
 void* flw::util::zero_memory(std::string& string) {
-    return flw::util::zero_memory((char*) string.data());
+    return util::zero_memory((char*) string.data());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(size_t size) {
+    p = util::allocate(size, 1);
+    s = size;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(const char* buffer, size_t size) {
+    p = util::allocate(size, 1);
+    s = size;
+
+    assert(buffer != p);
+    memcpy(p, buffer, s);
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(const Buf& other) {
+    p = nullptr;
+    s = 0;
+
+    if (other.p != nullptr && other.s > 0) {
+        s = other.s;
+        p = util::allocate(s);
+
+        assert(other.p != p);
+        memcpy(p, other.p, s);
+    }
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(Buf&& other) {
+    s       = other.s;
+    p       = other.p;
+    other.p = nullptr;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf& flw::Buf::operator=(const Buf& other) {
+    assert(other.p != p);
+
+    free(p);
+    p = nullptr;
+    s = 0;
+
+    if (other.p != nullptr && other.s > 0) {
+        s = other.s;
+        p = util::allocate(s);
+
+        assert(other.p != p);
+        memcpy(p, other.p, s);
+    }
+
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf& flw::Buf::operator=(Buf&& other) {
+    free(p);
+
+    s       = other.s;
+    p       = other.p;
+    other.p = nullptr;
+
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::Stat::Stat(std::string filename) {
+    size  = 0;
+    mtime = 0;
+    mode  = 0;
+
+#ifdef _WIN32
+    wchar_t wbuffer[1025];
+    struct __stat64 st;
+
+    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+        filename.pop_back();
+    }
+
+    fl_utf8towc	(filename.c_str(), filename.length(), wbuffer, 1024);
+
+    if (_wstat64(wbuffer, &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode)) {
+            mode = 1;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            mode = 2;
+        }
+        else {
+            mode = 3;
+        }
+    }
+#else
+    struct stat st;
+
+    if (stat(filename.c_str(), &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode)) {
+            mode = 1;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            mode = 2;
+        }
+        else {
+            mode = 3;
+        }
+    }
+#endif
 }
 
 

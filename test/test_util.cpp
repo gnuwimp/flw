@@ -9,18 +9,34 @@ using namespace flw;
 #define FLW_TRUE(X)             util::test(X,__LINE__,__func__);
 #define FLW_ASSERTD(X,Y,Z)      util::test(X,Y,Z,__LINE__,__func__);
 
+Buf create() {
+    return Buf("Hello World", 12);
+}
+
 int main() {
     {
         FLW_ASSERTD(1.0, util::to_double("", 1.0), 0.001)
         FLW_ASSERTD(1.0, util::to_double(":", 1.0), 0.001)
         FLW_ASSERTD(345.678, util::to_double("345.678", 1.0), 0.001)
+        FLW_ASSERTD(0.678, util::to_double(".678", 1.0), 0.001)
+        FLW_ASSERTD(-123.0, util::to_double("-", -123.0), 0.001)
+        FLW_ASSERTD(-123.0, util::to_double(".", -123.0), 0.001)
+        FLW_ASSERTD(-123.0, util::to_double("-.", -123.0), 0.001)
+        FLW_ASSERTD(-123.0, util::to_double(".-", -123.0), 0.001)
+        FLW_ASSERTD(0.0, util::to_double("-.0", -123.0), 0.001)
+        FLW_ASSERTD(999999999999999.000000, util::to_double("999999999999999.000000", 1.0), 0.001)
+        FLW_ASSERTD(-999999999999999.000000, util::to_double("-999999999999999.000000", 1.0), 0.001)
 
         FLW_ASSERTD(1.0, util::to_double_l("", 1.0), 0.001)
         FLW_ASSERTD(1.0, util::to_double_l(":", 1.0), 0.001)
         FLW_ASSERTD(345.678, util::to_double_l("345.678", 1.0), 0.001)
+        FLW_ASSERTD(0.678, util::to_double_l(".678", 1.0), 0.001)
+        FLW_ASSERTD(999999999999999.000000, util::to_double_l("999999999999999.000000", 1.0), 0.001)
+        FLW_ASSERTD(-999999999999999.000000, util::to_double_l("-999999999999999.000000", 1.0), 0.001)
 
         FLW_ASSERT(666, util::to_int("", 666))
         FLW_ASSERT(123456789012345, util::to_int("123456789012345", 666))
+        FLW_ASSERT(-123456789012345, util::to_int("-123456789012345", 666))
     }
 
     { // util::to_doubles()
@@ -68,6 +84,57 @@ int main() {
         auto t2 = (int) (util::time_milli() - t1);
         // printf("sleept %d mS\n", t2);
         FLW_TRUE(t2 >= 1'000 && t2 <= 1'020)
+    }
+
+    {
+        auto a = create();
+        auto b = a;
+        auto c = Buf(b);
+        auto d = Buf(1000);
+        auto e = std::move(create());
+        FLW_ASSERT("Hello World", a.p)
+        FLW_ASSERT(12, a.s)
+        FLW_ASSERT("Hello World", b.p)
+        FLW_ASSERT(12, b.s)
+        FLW_ASSERT("Hello World", c.p)
+        FLW_ASSERT(12, c.s)
+        FLW_ASSERT(1000, d.s)
+        FLW_ASSERT("Hello World", e.p)
+        FLW_ASSERT(12, e.s)
+
+        e = d;
+        FLW_ASSERT("", e.p)
+        FLW_ASSERT(1000, e.s)
+
+        // e = e;
+    }
+
+    {
+        auto s = util::split("abc\tdef", "\t");
+        FLW_ASSERT(2, s.size())
+        FLW_ASSERT("abc", s[0].c_str())
+        FLW_ASSERT("def", s[1].c_str())
+
+        s = util::split("abc\tdef\t\t", "\t");
+        FLW_ASSERT(4, s.size())
+        FLW_ASSERT("abc", s[0].c_str())
+        FLW_ASSERT("def", s[1].c_str())
+        FLW_ASSERT("", s[2].c_str())
+        FLW_ASSERT("", s[3].c_str())
+
+        s = util::split("\t\t\t", "\t");
+        FLW_ASSERT(4, s.size())
+        FLW_ASSERT("", s[0].c_str())
+        FLW_ASSERT("", s[1].c_str())
+        FLW_ASSERT("", s[2].c_str())
+
+        s = util::split("", "\t");
+        FLW_ASSERT(1, s.size())
+        FLW_ASSERT("", s[0].c_str())
+
+        s = util::split("HELLO", "\t");
+        FLW_ASSERT(1, s.size())
+        FLW_ASSERT("HELLO", s[0].c_str())
     }
 
     printf("\nTests Finished\n");

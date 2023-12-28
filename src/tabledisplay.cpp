@@ -329,7 +329,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
     clip_children(1);
-    flw::util::labelfont(this);
+    flw::theme::labelfont(this);
     clear();
 }
 

@@ -1,7 +1,9 @@
-// Copyright 2021 gnuwimp@gmail.com
+// Copyright 2021 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "widgets.h"
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Menu_Button.H>
 
 // MKALGAM_ON
 

@@ -1,7 +1,8 @@
-// Copyright 2019 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "price.h"
+#include "util.h"
 #include <math.h>
 #include <algorithm>
 
@@ -32,11 +33,11 @@ flw::Price::Price(const std::string& date, double high, double low, double close
     this->close = close;
     this->vol   = vol;
 
-    #ifdef DEBUG
-        if (close > high || close < low || high < low) {
-            fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
-        }
-    #endif
+#ifdef DEBUG
+    if (close > high || close < low || high < low) {
+        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
+    }
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -80,8 +81,8 @@ flw::Price& flw::Price::operator=(Price&& price) {
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::Atr(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::Atr(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && in.size() > days) {
         auto        tot        = 0.0;
@@ -132,11 +133,11 @@ std::vector<flw::Price> flw::Price::Atr(const std::vector<Price>& in, std::size_
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const std::vector<Price>& block) {
+flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block) {
     int         month   = -1;
     Date        current = Date::FromString(start_date);
     Date        stop    = Date::FromString(stop_date);
-    std::vector<Price> res;
+    PriceVector res;
 
     if (range == Date::RANGE::HOUR && current.year() < 1970) {
         return res;
@@ -214,8 +215,8 @@ std::vector<flw::Price> flw::Price::DateSerie(const char* start_date, const char
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::DayToMonth(const std::vector<Price>& in) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::DayToMonth(const PriceVector& in) {
+    PriceVector res;
     Price       current;
     Date        stop;
     Date        pdate;
@@ -267,11 +268,11 @@ std::vector<flw::Price> flw::Price::DayToMonth(const std::vector<Price>& in) {
 
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::DayToWeek(const std::vector<Price>& in, Date::DAY weekday) {
+flw::PriceVector flw::Price::DayToWeek(const PriceVector& in, Date::DAY weekday) {
     Price       current;
     Date        stop;
     Date        pdate;
-    std::vector<Price> res;
+    PriceVector res;
     std::size_t f = 0;
 
     for (auto& price : in) {
@@ -328,8 +329,8 @@ std::vector<flw::Price> flw::Price::DayToWeek(const std::vector<Price>& in, Date
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::ExponentialMovingAverage(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::ExponentialMovingAverage(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && days < in.size()) {
         auto         sma   = 0.0;
@@ -359,15 +360,30 @@ std::vector<flw::Price> flw::Price::ExponentialMovingAverage(const std::vector<P
 }
 
 //------------------------------------------------------------------------------
-std::string flw::Price::format(Date::FORMAT format) const {
-    Date date(this->date.c_str());
+std::string flw::Price::format_date(Date::FORMAT format) const {
+    auto date = flw::Date::FromString(this->date.c_str());
     return date.format(format);
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::Momentum(const std::vector<Price>& in, std::size_t days) {
+std::string flw::Price::format_price(Date::FORMAT format, bool hlc, bool v) const {
+    auto d = flw::Date::FromString(this->date.c_str());
+
+    if (v == true) {
+        return flw::util::format("%s\t%f\t%f\t%f\t%f", d.format(format).c_str(), high, low, close, vol);
+    }
+    else if (hlc == false || (fabs(close - low) < 0.000001 && fabs(close - high) < 0.000001)) {
+        return flw::util::format("%s\t%f", d.format(format).c_str(), close);
+    }
+    else {
+        return flw::util::format("%s\t%f\t%f\t%f", d.format(format).c_str(), high, low, close);
+    }
+}
+
+//------------------------------------------------------------------------------
+flw::PriceVector flw::Price::Momentum(const PriceVector& in, std::size_t days) {
     std::size_t start = days - 1;
-    std::vector<Price> res;
+    PriceVector res;
 
     if (days > 1 && days < in.size()) {
         for (auto f = start; f < in.size(); f++) {
@@ -383,8 +399,8 @@ std::vector<flw::Price> flw::Price::Momentum(const std::vector<Price>& in, std::
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::MovingAverage(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::MovingAverage(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && days <= 500 && days < in.size()) {
         std::size_t count = 0;
@@ -424,8 +440,8 @@ void flw::Price::print() const {
 }
 
 //------------------------------------------------------------------------------
-void flw::Price::Print(const std::vector<Price>& in) {
-    printf("std::vector<Price>(%d)\n", (int) in.size());
+void flw::Price::Print(const PriceVector& in) {
+    printf("PriceVector(%d)\n", (int) in.size());
 
     for (auto& price : in) {
         price.print();
@@ -433,8 +449,8 @@ void flw::Price::Print(const std::vector<Price>& in) {
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::RSI(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::RSI(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 1 && days <= in.size()) {
         auto avg_gain = 0.0;
@@ -473,8 +489,8 @@ std::vector<flw::Price> flw::Price::RSI(const std::vector<Price>& in, std::size_
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::StdDev(const std::vector<Price>& in, std::size_t days) {
-    std::vector<Price> res;
+flw::PriceVector flw::Price::StdDev(const PriceVector& in, std::size_t days) {
+    PriceVector res;
 
     if (days > 2 && days <= in.size()) {
         std::size_t count  = 0;
@@ -513,10 +529,10 @@ std::vector<flw::Price> flw::Price::StdDev(const std::vector<Price>& in, std::si
 }
 
 //------------------------------------------------------------------------------
-std::vector<flw::Price> flw::Price::Stochastics(const std::vector<Price>& in, std::size_t days) {
+flw::PriceVector flw::Price::Stochastics(const PriceVector& in, std::size_t days) {
     auto        high = 0.0;
     auto        low  = 0.0;
-    std::vector<Price> res;
+    PriceVector res;
 
     for (std::size_t f = 0; f < in.size(); f++) {
         auto& price = in[f];

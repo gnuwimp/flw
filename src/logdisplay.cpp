@@ -3,11 +3,69 @@
 
 #include "logdisplay.h"
 #include "util.h"
+#include "theme.h"
 #include <string.h>
 
 // MKALGAM_ON
 
 namespace flw {
+#if FL_MINOR_VERSION == 4
+    Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
+        { FL_FOREGROUND_COLOR,          FL_COURIER,             14, 0, 0 }, // FOREGROUND
+        { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, 0, 0 }, // GRAY
+        { fl_rgb_color(255, 64, 64),    FL_COURIER,             14, 0, 0 }, // RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER,             14, 0, 0 }, // GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER,             14, 0, 0 }, // BLUE
+        { fl_rgb_color(192, 0, 0),      FL_COURIER,             14, 0, 0 }, // DARK_RED
+        { fl_rgb_color(0, 128, 0),      FL_COURIER,             14, 0, 0 }, // DARK_GREEN
+        { fl_rgb_color(0, 0, 255),      FL_COURIER,             14, 0, 0 }, // DARK_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER,             14, 0, 0 }, // ORANGE
+        { FL_MAGENTA,                   FL_COURIER,             14, 0, 0 }, // MAGENTA
+        { FL_YELLOW,                    FL_COURIER,             14, 0, 0 }, // YELLOW
+        { FL_CYAN,                      FL_COURIER,             14, 0, 0 }, // CYAN
+        { FL_DARK_MAGENTA,              FL_COURIER,             14, 0, 0 }, // DARK_MAGENTA
+        { FL_DARK_YELLOW,               FL_COURIER,             14, 0, 0 }, // DARK_YELLOW
+        { FL_DARK_CYAN,                 FL_COURIER,             14, 0, 0 }, // DARK_CYAN
+        { FL_BLACK,                     FL_COURIER,             14, 0, 0 }, // BLACK
+        { FL_WHITE,                     FL_COURIER,             14, 0, 0 }, // WHITE
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_FOREGROUND
+        { fl_rgb_color(115, 115, 115),  FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_GRAY
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_BLUE
+        { fl_rgb_color(192, 0, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_RED
+        { fl_rgb_color(0, 128, 0),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_GREEN
+        { fl_rgb_color(0, 0, 255),      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_YELLOW
+        { FL_CYAN,                      FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_CYAN
+        { FL_DARK_MAGENTA,              FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_MAGENTA
+        { FL_DARK_YELLOW,               FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_YELLOW
+        { FL_DARK_CYAN,                 FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_DARK_CYAN
+        { FL_BLACK,                     FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_BLACK
+        { FL_WHITE,                     FL_COURIER_BOLD,        14, 0, 0 }, // BOLD_WHITE
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_FOREGROUND
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_YELLOW
+        { FL_CYAN,                      FL_COURIER_ITALIC,      14, 0, 0 }, // ITALIC_CYAN
+
+        { FL_FOREGROUND_COLOR,          FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_FOREGROUND
+        { fl_rgb_color(255, 64, 64),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_RED
+        { fl_rgb_color(0, 230, 0),      FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_GREEN
+        { fl_rgb_color(0, 168, 255),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_BLUE
+        { fl_rgb_color(255, 128, 0),    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_ORANGE
+        { FL_MAGENTA,                   FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_MAGENTA
+        { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_YELLOW
+        { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, 0, 0 }, // BOLD_ITALIC_CYAN
+    };
+#else
     Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE[] = {
         { FL_FOREGROUND_COLOR,          FL_COURIER,             14, 0 }, // FOREGROUND
         { fl_rgb_color(115, 115, 115),  FL_COURIER,             14, 0 }, // GRAY
@@ -63,6 +121,7 @@ namespace flw {
         { FL_YELLOW,                    FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_YELLOW
         { FL_CYAN,                      FL_COURIER_BOLD_ITALIC, 14, 0 }, // BOLD_ITALIC_CYAN
     };
+#endif
 }
 
 //------------------------------------------------------------------------------

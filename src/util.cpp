@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "util.h"
@@ -10,6 +10,14 @@
 #include <unistd.h>
 #include <FL/Fl_Window.H>
 #include <FL/Fl.H>
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Menu_.H>
+#include <FL/fl_ask.H>
+
+#ifdef FLW_USE_PNG
+    #include <FL/Fl_PNG_Image.H>
+    #include <FL/fl_draw.H>
+#endif
 
 #ifdef _WIN32
     #include <windows.h>
@@ -18,13 +26,32 @@
 // MKALGAM_ON
 
 namespace flw {
-    bool        PREF_IS_DARK        = false;
-    int         PREF_FIXED_FONT     = FL_COURIER;
-    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
-    int         PREF_FIXED_FONTSIZE = 14;
-    int         PREF_FONT           = FL_HELVETICA;
-    int         PREF_FONTSIZE       = 14;
-    std::string PREF_FONTNAME       = "FL_HELVETICA";
+    //--------------------------------------------------------------------------
+    static Fl_Menu_Item* _util_menu_item(Fl_Menu_* menu, const char* text) {
+        assert(menu && text);
+
+        auto item = menu->find_item(text);
+
+#ifdef DEBUG
+        if (item == nullptr) {
+            fprintf(stderr, "error: cant find menu item <%s>\n", text);
+        }
+#endif
+
+        return (Fl_Menu_Item*) item;
+    }
+}
+
+//------------------------------------------------------------------------------
+char* flw::util::allocate(size_t size, bool terminate) {
+    auto res = (char*) calloc(size + 1, 1);
+
+    if (res == nullptr && terminate == true) {
+        fl_alert("error: failed to allocate memory with size %lld\nI'm going to quit now!", (long long int) size);
+        exit(1);
+    }
+
+    return res;
 }
 
 //------------------------------------------------------------------------------
@@ -40,12 +67,65 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
 }
 
 //------------------------------------------------------------------------------
+int flw::util::count_decimals(double number) {
+    number = fabs(number);
+
+    int    res     = 0;
+    int    len     = 0;
+    char*  end     = 0;
+    double inumber = (int64_t) number;
+    double fnumber = number - inumber;
+    char   buffer[100];
+
+    if (number > 999999999999999) {
+        snprintf(buffer, 100, "%.1f", fnumber);
+    }
+    else if (number > 9999999999999) {
+        snprintf(buffer, 100, "%.2f", fnumber);
+    }
+    else if (number > 999999999999) {
+        snprintf(buffer, 100, "%.3f", fnumber);
+    }
+    else if (number > 99999999999) {
+        snprintf(buffer, 100, "%.4f", fnumber);
+    }
+    else if (number > 9999999999) {
+        snprintf(buffer, 100, "%.5f", fnumber);
+    }
+    else if (number > 999999999) {
+        snprintf(buffer, 100, "%.6f", fnumber);
+    }
+    else if (number > 99999999) {
+        snprintf(buffer, 100, "%.7f", fnumber);
+    }
+    else if (number > 9999999) {
+        snprintf(buffer, 100, "%.8f", fnumber);
+    }
+    else {
+        snprintf(buffer, 100, "%.9f", fnumber);
+    }
+
+    len = strlen(buffer);
+    end = buffer + len - 1;
+
+    while (*end == '0') {
+        *end = 0;
+        end--;
+    }
+
+    res = strlen(buffer) - 2;
+    return res;
+}
+
+//------------------------------------------------------------------------------
 std::string flw::util::fix_menu_string(std::string in) {
     std::string res = in;
-    flw::util::replace(res, "\\", "\\\\");
-    flw::util::replace(res, "_", "\\_");
-    flw::util::replace(res, "/", "\\/");
-    flw::util::replace(res, "&", "&&");
+
+    util::replace(res, "\\", "\\\\");
+    util::replace(res, "_", "\\_");
+    util::replace(res, "/", "\\/");
+    util::replace(res, "&", "&&");
+
     return res;
 }
 
@@ -95,6 +175,41 @@ std::string flw::util::format(const char* format, ...) {
 }
 
 //------------------------------------------------------------------------------
+std::string flw::util::format_double(double number, int decimals, char sep) {
+    char res[100];
+
+    *res = 0;
+
+    if (decimals < 0) {
+        decimals = util::count_decimals(number);
+    }
+
+    if (decimals == 0) {
+        return util::format_int((int64_t) number, sep);
+    }
+
+    if (fabs(number) < 9223372036854775807.0) {
+        char fr_str[100];
+        auto int_num    = (int64_t) fabs(number);
+        auto double_num = (double) (fabs(number) - int_num);
+        auto int_str    = util::format_int(int_num, sep);
+        auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+
+        if (len > 0 && len < 100) {
+            if (number < 0.0) {
+                res[0] = '-';
+                res[1] = 0;
+            }
+
+            strncat(res, int_str.c_str(), 99);
+            strncat(res, fr_str + 1, 99);
+        }
+    }
+
+    return res;
+}
+
+//------------------------------------------------------------------------------
 std::string flw::util::format_int(int64_t number, char sep) {
     auto pos = 0;
     char tmp1[100];
@@ -135,22 +250,173 @@ std::string flw::util::format_int(int64_t number, char sep) {
 }
 
 //------------------------------------------------------------------------------
-// Set label font properties for widget
-// If widget is an group widget set also the font for child widgets (recursive)
-//
-void flw::util::labelfont(Fl_Widget* widget) {
-    assert(widget);
+flw::Buf flw::util::file_load(std::string filename, bool alert) {
+    auto stat = flw::Stat(filename);
 
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
+    if (stat.mode != 2) {
+        if (alert == true) {
+            fl_alert("error: file %s is missing or not an file", filename.c_str());
+        }
 
-    auto group = widget->as_group();
+        return Buf();
+    }
 
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            flw::util::labelfont(group->child(f));
+    auto file = fopen(filename.c_str(), "rb");
+
+    if (file == nullptr) {
+        if (alert == true) {
+            fl_alert("error: can't open %s", filename.c_str());
+        }
+
+        return Buf();
+    }
+
+    auto buf  = Buf(stat.size);
+    auto read = fread(buf.p, 1, (size_t) stat.size, file);
+
+    fclose(file);
+
+    if (read != (size_t) stat.size) {
+        if (alert == true) {
+            fl_alert("error: failed to read %s", filename.c_str());
+        }
+
+        free(buf.p);
+        return Buf();
+    }
+
+    return buf;
+}
+
+//------------------------------------------------------------------------------
+bool flw::util::file_save(std::string filename, const void* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+
+            return false;
         }
     }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+Fl_Menu_Item* flw::util::menu_item_get(Fl_Menu_* menu, const char* text) {
+    assert(menu);
+    return flw::_util_menu_item(menu, text);
+}
+
+//------------------------------------------------------------------------------
+void flw::util::menu_item_set(Fl_Menu_* menu, const char* text, bool value) {
+    assert(menu);
+    auto item = flw::_util_menu_item(menu, text);
+
+    if (item == nullptr) {
+        return;
+    }
+
+    if (value == true) {
+        item->set();
+    }
+    else {
+        item->clear();
+    }
+}
+
+//------------------------------------------------------------------------------
+void flw::util::menu_item_set_only(Fl_Menu_* menu, const char* text) {
+    assert(menu);
+    auto item = flw::_util_menu_item(menu, text);
+
+    if (item == nullptr) {
+        return;
+    }
+
+    menu->setonly(item);
+}
+
+//------------------------------------------------------------------------------
+bool flw::util::menu_item_value(Fl_Menu_* menu, const char* text) {
+    assert(menu);
+    auto item = flw::_util_menu_item(menu, text);
+
+    if (item == nullptr) {
+        return false;
+    }
+
+    return item->value();
+}
+
+//------------------------------------------------------------------------------
+// Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images)
+// If filename is empty you will be asked for the name
+//
+void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+#ifdef FLW_USE_PNG
+#if FL_MINOR_VERSION == 4
+    auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
+
+    if (filename != nullptr) {
+        window->make_current();
+
+        if (X == 0 && Y == 0 && W == 0 && H == 0) {
+            X = window->x();
+            Y = window->y();
+            W = window->w();
+            H = window->h();
+        }
+
+        auto image = fl_read_image(nullptr, X, Y, W, H);
+
+
+        if (image != nullptr) {
+            auto ret = fl_write_png(filename, image, W, H);
+
+            if (ret == 0) {
+            }
+            else if (ret == -1) {
+                fl_alert("%s", "error: missing libraries");
+            }
+            else if (ret == -1) {
+                fl_alert("error: failed to save image to %s", filename);
+            }
+
+            delete []image;
+        }
+        else {
+            fl_alert("%s", "error: failed to grab image");
+        }
+    }
+#else
+    (void) opt_name;
+    (void) window;
+    (void) X;
+    (void) Y;
+    (void) W;
+    (void) H;
+    fl_alert("error: does not work with fltk 1.3");
+#endif
+#else
+    (void) opt_name;
+    (void) window;
+    (void) X;
+    (void) Y;
+    (void) W;
+    (void) H;
+    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -163,11 +429,12 @@ void flw::util::print(Fl_Widget* widget, bool tab) {
 
 //------------------------------------------------------------------------------
 void flw::util::print(Fl_Group* group) {
+    assert(group);
     puts("");
-    flw::util::print((Fl_Widget*) group);
+    util::print((Fl_Widget*) group);
 
     for (int f = 0; f < group->children(); f++) {
-        flw::util::print(group->child(f), true);
+        util::print(group->child(f), true);
     }
 }
 
@@ -209,7 +476,7 @@ flw::StringVector flw::util::split(const std::string& string, std::string split)
     auto res = StringVector();
 
     try {
-        if (split.size() > 0) {
+        if (split != "") {
             auto pos1 = (std::string::size_type) 0;
             auto pos2 = string.find(split);
 
@@ -219,10 +486,8 @@ flw::StringVector flw::util::split(const std::string& string, std::string split)
                 pos2 = string.find(split, pos1);
             }
 
-            auto last = string.substr(pos1);
-
-            if (last != "") {
-                res.push_back(last);
+            if (pos1 <= string.size()) {
+                res.push_back(string.substr(pos1));
             }
         }
     }
@@ -287,67 +552,69 @@ double flw::util::time() {
     auto sec   = 0.0;
     auto milli = 0.0;
 
-    #ifdef _WIN32
-        struct __timeb64 timeVal;
+#ifdef _WIN32
+    struct __timeb64 timeVal;
 
-        _ftime64(&timeVal);
-        sec   = (double) timeVal.time;
-        milli = (double) timeVal.millitm;
-        return sec + (milli / 1000.0);
-    #else
-        struct timeb timeVal;
+    _ftime64(&timeVal);
+    sec   = (double) timeVal.time;
+    milli = (double) timeVal.millitm;
+    return sec + (milli / 1000.0);
+#else
+    struct timeb timeVal;
 
-        ftime(&timeVal);
-        sec   = (double) timeVal.time;
-        milli = (double) timeVal.millitm;
-        return sec + (milli / 1000.0);
-    #endif
+    ftime(&timeVal);
+    sec   = (double) timeVal.time;
+    milli = (double) timeVal.millitm;
+    return sec + (milli / 1000.0);
+#endif
 }
 
 //------------------------------------------------------------------------------
 // Return time stamp
 //
 int64_t flw::util::time_micro() {
-    #if defined(_WIN32)
-        LARGE_INTEGER StartingTime;
-        LARGE_INTEGER Frequency;
+#if defined(_WIN32)
+    LARGE_INTEGER StartingTime;
+    LARGE_INTEGER Frequency;
 
-        QueryPerformanceFrequency(&Frequency);
-        QueryPerformanceCounter(&StartingTime);
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
 
-        StartingTime.QuadPart *= 1000000;
-        StartingTime.QuadPart /= Frequency.QuadPart;
-        return StartingTime.QuadPart;
-    #else
-        timespec t;
-        clock_gettime(CLOCK_MONOTONIC, &t);
-        return t.tv_sec * 1000000 + t.tv_nsec / 1000;
-    #endif
+    StartingTime.QuadPart *= 1000000;
+    StartingTime.QuadPart /= Frequency.QuadPart;
+    return StartingTime.QuadPart;
+#else
+    timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec * 1000000 + t.tv_nsec / 1000;
+#endif
 }
 
 //------------------------------------------------------------------------------
 // Return time stamp
 //
-int64_t flw::util::time_milli() {
-    return flw::util::time_micro() / 1000;
+int32_t flw::util::time_milli() {
+    return (int) (util::time_micro() / 1000);
 }
 
 //------------------------------------------------------------------------------
 void flw::util::time_sleep(int milli) {
-    #ifdef _WIN32
-        Sleep(milli);
-    #else
-        usleep(milli * 1000);
-    #endif
+#ifdef _WIN32
+    Sleep(milli);
+#else
+    usleep(milli * 1000);
+#endif
 }
 
 //------------------------------------------------------------------------------
 double flw::util::to_double(const char* string, double def) {
     assert(string);
 
-    double result = def;
+    auto result = def;
+    auto first  = (string[0] == '-') ? 1 : 0;
+    first = (string[first] == '.') ? first + 1 : first;
 
-    if (*string >= '0' && *string <= '9') {
+    if (string[first] >= '0' && string[first] <= '9') {
         errno  = 0;
         result = strtod(string, nullptr);
         result = (errno == ERANGE) ? def : result;
@@ -360,9 +627,11 @@ double flw::util::to_double(const char* string, double def) {
 long double flw::util::to_double_l(const char* string, long double def) {
     assert(string);
 
-    long double result = def;
+    auto result = def;
+    auto first  = (string[0] == '-') ? 1 : 0;
+    first = (string[first] == '.') ? first + 1 : first;
 
-    if (*string >= '0' && *string <= '9') {
+    if (string[first] >= '0' && string[first] <= '9') {
         errno  = 0;
         result = strtold(string, nullptr);
         result = (errno == ERANGE) ? def : result;
@@ -399,9 +668,10 @@ int flw::util::to_doubles(const char* string, double numbers[], size_t size) {
 int64_t flw::util::to_int(const char* string, int64_t def) {
     assert(string);
 
-    int64_t res = def;
+    auto res = def;
+    auto first  = (string[0] == '-') ? 1 : 0;
 
-    if (*string >= '0' && *string <= '9') {
+    if (string[first] >= '0' && string[first] <= '9') {
         errno  = 0;
         res = strtoll(string, nullptr, 0);
         res = (errno == ERANGE) ? def : res;
@@ -441,7 +711,7 @@ void* flw::util::zero_memory(char* string) {
         return nullptr;
     }
 
-    return flw::util::zero_memory(string, strlen(string));
+    return util::zero_memory(string, strlen(string));
 }
 
 //------------------------------------------------------------------------------
@@ -466,7 +736,131 @@ void* flw::util::zero_memory(void* mem, size_t size) {
 
 //------------------------------------------------------------------------------
 void* flw::util::zero_memory(std::string& string) {
-    return flw::util::zero_memory((char*) string.data());
+    return util::zero_memory((char*) string.data());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(size_t size) {
+    p = util::allocate(size, 1);
+    s = size;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(const char* buffer, size_t size) {
+    p = util::allocate(size, 1);
+    s = size;
+
+    assert(buffer != p);
+    memcpy(p, buffer, s);
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(const Buf& other) {
+    p = nullptr;
+    s = 0;
+
+    if (other.p != nullptr && other.s > 0) {
+        s = other.s;
+        p = util::allocate(s);
+
+        assert(other.p != p);
+        memcpy(p, other.p, s);
+    }
+}
+
+//------------------------------------------------------------------------------
+flw::Buf::Buf(Buf&& other) {
+    s       = other.s;
+    p       = other.p;
+    other.p = nullptr;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf& flw::Buf::operator=(const Buf& other) {
+    assert(other.p != p);
+
+    free(p);
+    p = nullptr;
+    s = 0;
+
+    if (other.p != nullptr && other.s > 0) {
+        s = other.s;
+        p = util::allocate(s);
+
+        assert(other.p != p);
+        memcpy(p, other.p, s);
+    }
+
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+flw::Buf& flw::Buf::operator=(Buf&& other) {
+    free(p);
+
+    s       = other.s;
+    p       = other.p;
+    other.p = nullptr;
+
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+flw::Stat::Stat(std::string filename) {
+    size  = 0;
+    mtime = 0;
+    mode  = 0;
+
+#ifdef _WIN32
+    wchar_t wbuffer[1025];
+    struct __stat64 st;
+
+    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+        filename.pop_back();
+    }
+
+    fl_utf8towc	(filename.c_str(), filename.length(), wbuffer, 1024);
+
+    if (_wstat64(wbuffer, &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode)) {
+            mode = 1;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            mode = 2;
+        }
+        else {
+            mode = 3;
+        }
+    }
+#else
+    struct stat st;
+
+    if (stat(filename.c_str(), &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode)) {
+            mode = 1;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            mode = 2;
+        }
+        else {
+            mode = 3;
+        }
+    }
+#endif
 }
 
 // MKALGAM_OFF

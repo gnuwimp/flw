@@ -101,12 +101,14 @@ int main(int argc, const char** argv) {
 #else
             auto dlg = dlg::FontDialog("Nimbus Sans", 15, "Test Font");
 #endif
-            dlg.run();
-            printf("font=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
 
-            if (dlg.fontsize() != -1) {
+            if (dlg.run() == true) {
+                printf("font set=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
                 PREF_FONT     = dlg.font();
                 PREF_FONTSIZE = dlg.fontsize();
+            }
+            else {
+                printf("aborted font dialog=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
             }
         }
 

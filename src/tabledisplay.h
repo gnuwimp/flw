@@ -5,6 +5,7 @@
 #define FLW_TABLEDISPLAY_H
 
 #include "util.h"
+#include "theme.h"
 #include <FL/Fl_Group.H>
 
 class Fl_Scrollbar;

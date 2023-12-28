@@ -1,14 +1,15 @@
-// Copyright 2021 gnuwimp@gmail.com
+// Copyright 2021 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #ifndef FLW_WIDGETS_H
 #define FLW_WIDGETS_H
 
 #include "util.h"
+#include "theme.h"
 #include <FL/Fl_Hold_Browser.H>
-#include <FL/Fl_Input.H>
-#include <FL/Fl_Menu_Button.H>
 
+class Fl_Input;
+class Fl_Menu_Button;
 
 // MKALGAM_ON
 

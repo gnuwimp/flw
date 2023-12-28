@@ -21,6 +21,7 @@ namespace flw {
                                         YYYYMMDDHH,
                                         YYYYMMDDHHMM,
                                         YYYYMMDDHHMMSS,
+                                        LAST = YYYYMMDDHHMMSS,
         };
 
         enum class DAY {
@@ -32,6 +33,7 @@ namespace flw {
                                         FRIDAY,
                                         SATURDAY,
                                         SUNDAY,
+                                        LAST = SUNDAY,
         };
 
         enum class FORMAT {
@@ -45,6 +47,7 @@ namespace flw {
                                         NAME_LONG,
                                         YEAR_MONTH,
                                         YEAR_MONTH_LONG,
+                                        LAST = YEAR_MONTH_LONG,
         };
 
         enum class RANGE {
@@ -56,6 +59,7 @@ namespace flw {
                                         HOUR,
                                         MIN,
                                         SEC,
+                                        LAST = SEC,
         };
 
         static const int                SECS_PER_HOUR;

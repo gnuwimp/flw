@@ -3,6 +3,7 @@
 
 #include "datechooser.h"
 #include "util.h"
+#include "theme.h"
 #include <FL/fl_draw.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Double_Window.H>
@@ -233,7 +234,7 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
     _canvas->callback(flw::DateChooser::_Callback, this);
     _month_label->box(FL_UP_BOX);
 
-    flw::util::labelfont(this);
+    flw::theme::labelfont(this);
     tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
     flw::DateChooser::resize(X, Y, W, H);
 }
@@ -428,7 +429,7 @@ namespace flw {
                 _date_chooser->set(_value);
                 _ok->callback(Callback, this);
 
-                flw::util::labelfont(this);
+                flw::theme::labelfont(this);
                 callback(Callback, this);
                 copy_label(title);
                 size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
@@ -466,7 +467,7 @@ namespace flw {
 
             //------------------------------------------------------------------
             bool run(Fl_Window* parent) {
-                util::center_window(this, parent);
+                flw::util::center_window(this, parent);
                 show();
 
                 while (visible() != 0) {
@@ -484,7 +485,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         bool date(const std::string& title, flw::Date& date, Fl_Window* parent) {
-            _DlgDate dlg(title.c_str(), date);
+            flw::dlg::_DlgDate dlg(title.c_str(), date);
             return dlg.run(parent);
         }
     }

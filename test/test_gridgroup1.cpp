@@ -54,8 +54,8 @@ public:
         size_range(64, 48);
         b1->callback(Callback1, this);
         b2->callback(Callback2, this);
-        flw::util::labelfont(grid1);
-        flw::util::labelfont(grid2);
+        flw::theme::labelfont(grid1);
+        flw::theme::labelfont(grid2);
         grid1->resize();
         grid2->resize();
     }

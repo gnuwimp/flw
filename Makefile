@@ -20,11 +20,11 @@ ifeq ($(OS),Linux)
 	RES =
 
 	ifeq ($(BUILD),release)
-		CXX = g++ -O2 -std=c++17 -DNDEBUG -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD  = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags`
+		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		LD  = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
 	else
-		CXX = g++ -g -std=c++17 -DDEBUG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD  = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags`
+		CXX = g++ -std=c++17 -DDEBUG -DFLW_USE_PNG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		LD  = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags --use-images`
 	endif
 
 else ifeq ($(findstring MINGW64,$(OS)), MINGW64)
@@ -32,11 +32,11 @@ else ifeq ($(findstring MINGW64,$(OS)), MINGW64)
 	RES = res/test.res
 
 	ifeq ($(BUILD),release)
-		CXX = g++ -O2 -std=c++17 -DNDEBUG -DPCRE_STATIC=1 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags`
+		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -DPCRE_STATIC=1 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
 	else
-		CXX = g++ -g -std=c++17 -DDEBUG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -W -Wall -Wno-unused-parameter -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags`
+		CXX = g++ -std=c++17 -DDEBUG -DFLW_USE_PNG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -W -Wall -Wno-unused-parameter -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
 	endif
 
 else

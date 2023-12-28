@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #ifndef FLW_PRICE_H
@@ -12,6 +12,8 @@
 
 namespace flw {
     struct Price;
+
+    typedef std::vector<Price> PriceVector;
 
     //------------------------------------------------------------------------------
     // Price object that is used by the Chart widget
@@ -34,20 +36,21 @@ namespace flw {
         bool                            operator<=(const Price& price) const { return date <= price.date; }
         bool                            operator==(const Price& price) const { return date == price.date; }
         bool                            operator!=(const Price& price) const { return date != price.date; }
-        std::string                     format(Date::FORMAT format = Date::FORMAT::ISO) const;
+        std::string                     format_date(Date::FORMAT format = Date::FORMAT::ISO) const;
+        std::string                     format_price(Date::FORMAT format = Date::FORMAT::ISO, bool hlc = true, bool v = true) const;
         void                            print() const;
 
-        static std::vector<Price>       Atr(const std::vector<Price>& in, std::size_t days);
-        static std::vector<Price>       DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const std::vector<Price>& block = std::vector<Price>());
-        static std::vector<Price>       DayToMonth(const std::vector<Price>& in);
-        static std::vector<Price>       DayToWeek(const std::vector<Price>& in, Date::DAY weekday);
-        static std::vector<Price>       ExponentialMovingAverage(const std::vector<Price>& in, std::size_t days);
-        static std::vector<Price>       Momentum(const std::vector<Price>& in, std::size_t days);
-        static std::vector<Price>       MovingAverage(const std::vector<Price>& in, std::size_t days);
-        static void                     Print(const std::vector<Price>& in);
-        static std::vector<Price>       RSI(const std::vector<Price>& in, std::size_t days);
-        static std::vector<Price>       StdDev(const std::vector<Price>& in, std::size_t days);
-        static std::vector<Price>       Stochastics(const std::vector<Price>& in, std::size_t days);
+        static PriceVector              Atr(const PriceVector& in, std::size_t days);
+        static PriceVector              DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const PriceVector& block = PriceVector());
+        static PriceVector              DayToMonth(const PriceVector& in);
+        static PriceVector              DayToWeek(const PriceVector& in, Date::DAY weekday);
+        static PriceVector              ExponentialMovingAverage(const PriceVector& in, std::size_t days);
+        static PriceVector              Momentum(const PriceVector& in, std::size_t days);
+        static PriceVector              MovingAverage(const PriceVector& in, std::size_t days);
+        static void                     Print(const PriceVector& in);
+        static PriceVector              RSI(const PriceVector& in, std::size_t days);
+        static PriceVector              StdDev(const PriceVector& in, std::size_t days);
+        static PriceVector              Stochastics(const PriceVector& in, std::size_t days);
     };
 }
 

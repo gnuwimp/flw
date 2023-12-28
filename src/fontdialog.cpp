@@ -1,4 +1,4 @@
-// Copyright 2021 gnuwimp@gmail.com
+// Copyright 2021 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "fontdialog.h"
@@ -144,12 +144,13 @@ void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
 void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
     end();
 
-    _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts  = new flw::ScrollBrowser(12);
-    _label  = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
-    _select = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes  = new flw::ScrollBrowser(6);
-    _ret    = false;
+    _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
+    _fonts    = new flw::ScrollBrowser(12);
+    _label    = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
+    _select   = new Fl_Button(0, 0, 0, 0, "&Select");
+    _sizes    = new flw::ScrollBrowser(6);
+    _fontsize = -1;
+    _ret      = false;
 
     add(_sizes);
     add(_fonts);
