@@ -150,7 +150,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
     auto textcolor = cell_textcolor(row, col);
     auto textfont  = cell_textfont(row, col);
     auto textsize  = cell_textsize(row, col);
-    auto val       = ((TableDisplay*) this)->cell_value(row, col);
+    auto val       = static_cast<TableDisplay*>(this)->cell_value(row, col);
 
     assert(val);
 
@@ -334,7 +334,7 @@ void flw::TableEditor::_edit_create() {
     auto textcolor = FL_FOREGROUND_COLOR;
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
-    auto val       = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+    auto val       = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
 
     assert(val);
 
@@ -411,7 +411,7 @@ void flw::TableEditor::_edit_create() {
             w->value(nums[0]);
             w->type(FL_HOR_FILL_SLIDER);
             w->box(FL_BORDER_BOX);
-            ((Fl_Value_Slider*) w)->textsize(textsize * 0.8);
+            static_cast<Fl_Value_Slider*>(w)->textsize(textsize * 0.8);
 
             _edit = w;
         }
@@ -431,7 +431,7 @@ void flw::TableEditor::_edit_create() {
             w->textsize(textsize);
 
             for (std::size_t f = 0; f < choices.size(); f++) {
-                auto& s = choices[f];
+                const auto& s = choices[f];
 
                 w->add(s.c_str());
 
@@ -461,7 +461,7 @@ void flw::TableEditor::_edit_create() {
             w->menubutton()->textsize(textsize);
             w->textsize(textsize);
 
-            for (auto& s : choices) {
+            for (const auto& s : choices) {
                 w->add(s.c_str());
             }
 
@@ -491,7 +491,7 @@ void flw::TableEditor::_edit_create() {
 //------------------------------------------------------------------------------
 void flw::TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
 
     assert(val);
@@ -626,14 +626,14 @@ void flw::TableEditor::_edit_quick(const char* key) {
 //------------------------------------------------------------------------------
 void flw::TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
-    char buffer[100];
+    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
 
     assert(val);
 
     if (rend == flw::TableEditor::REND::DLG_COLOR) {
         auto color1 = (int) tableeditor::to_int(val, 0);
         auto color2 = (int) fl_show_colormap((Fl_Color) color1);
+        char buffer[100];
 
         snprintf(buffer, 20, "%d", color2);
 
@@ -676,7 +676,7 @@ void flw::TableEditor::_edit_show() {
             auto row = dlg::select(flw::TableEditor::SELECT_LIST, choices, val);
 
             if (row > 0) {
-                auto& string = choices[row - 1];
+                const auto& string = choices[row - 1];
 
                 if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
                     _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
@@ -717,7 +717,7 @@ void flw::TableEditor::_edit_start(const char* key) {
 void flw::TableEditor::_edit_stop(bool save) {
     if (_edit) {
         auto rend = cell_rend(_curr_row, _curr_col);
-        auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+        auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
         auto stop = true;
 
         if (save == true) {
@@ -726,7 +726,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 rend == flw::TableEditor::REND::NUMBER ||
                 rend == flw::TableEditor::REND::SECRET) {
 
-                auto input = (Fl_Input*) _edit;
+                auto input = static_cast<Fl_Input*>(_edit);
                 auto val2  = input->value();
                 char buffer[100];
 
@@ -753,7 +753,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::BOOLEAN) {
-                auto button = (Fl_Check_Button*) _edit;
+                auto button = static_cast<Fl_Check_Button*>(_edit);
                 auto val2   = "0";
 
                 if (button->value())
@@ -768,7 +768,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-                auto slider = (Fl_Slider*) _edit;
+                auto slider = static_cast<Fl_Slider*>(_edit);
                 auto val2   = FormatSlider(slider->value(), slider->minimum(), slider->maximum(), slider->step());
 
                 if (strcmp(val, val2) == 0) {
@@ -780,7 +780,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::CHOICE) {
-                auto choice = (Fl_Choice*) _edit;
+                auto choice = static_cast<Fl_Choice*>(_edit);
                 auto val2   = choice->text();
 
                 if (val2 == 0) {
@@ -796,7 +796,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::INPUT_CHOICE) {
-                auto input_choice = (Fl_Input_Choice*) _edit;
+                auto input_choice = static_cast<Fl_Input_Choice*>(_edit);
                 auto val2         = input_choice->value();
 
                 if (val2 == 0) {
@@ -847,7 +847,7 @@ void flw::TableEditor::_edit_stop(bool save) {
 // Use alt + "+|-" to change value (+/-10 for integers)
 // Use alt + shift + "+|-" to change value (+/-100 for integers)
 //
-int flw::TableEditor::_ev_keyboard_down() {
+int flw::TableEditor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -879,7 +879,7 @@ int flw::TableEditor::_ev_keyboard_down() {
             _delete_current_cell();
         }
         else if (cmd == true && key == 'x') {
-            auto val = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+            auto val = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
 
             Fl::copy(val, strlen(val), 1);
             _delete_current_cell();
@@ -919,7 +919,7 @@ int flw::TableEditor::_ev_keyboard_down() {
 }
 
 //------------------------------------------------------------------------------
-int flw::TableEditor::_ev_mouse_click () {
+int flw::TableEditor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -945,7 +945,7 @@ int flw::TableEditor::_ev_paste() {
 
     if (_curr_row > 0 && _curr_col > 0 && text && *text) {
         auto        rend = cell_rend(_curr_row, _curr_col);
-        auto        val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+        auto        val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
         char        buffer[100];
         std::string string;
 
@@ -1052,10 +1052,10 @@ int flw::TableEditor::handle(int event) {
             ret = _ev_paste();
         }
         else if (event == FL_KEYDOWN) {
-            ret = _ev_keyboard_down();
+            ret = _ev_keyboard_down2();
         }
         else if (event == FL_PUSH) {
-            ret = _ev_mouse_click();
+            ret = _ev_mouse_click2();
         }
     }
 

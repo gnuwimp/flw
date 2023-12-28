@@ -64,7 +64,8 @@ public:
                                 BG_BOLD_CYAN        = '`',
                                 LAST                = '`',
     };
-                                LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    
+    explicit                    LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                 ~LogDisplay();
     void                        edit_styles();
     void                        find(bool next, bool force_ask);

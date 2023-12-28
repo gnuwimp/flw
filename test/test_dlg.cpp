@@ -52,8 +52,8 @@ int main(int argc, const char** argv) {
 #endif
 
             if (font != -1) {
-                PREF_FONT     = font;
-                PREF_FONTSIZE = 12;
+                flw::PREF_FONT     = font;
+                flw::PREF_FONTSIZE = 12;
             }
 
 #ifdef _WIN32
@@ -63,8 +63,8 @@ int main(int argc, const char** argv) {
 #endif
 
             if (font != -1) {
-                PREF_FIXED_FONT     = font;
-                PREF_FIXED_FONTSIZE = 12;
+                flw::PREF_FIXED_FONT     = font;
+                flw::PREF_FIXED_FONTSIZE = 12;
             }
 
             run = "";
@@ -78,8 +78,8 @@ int main(int argc, const char** argv) {
 #endif
 
             if (font != -1) {
-                PREF_FONT     = font;
-                PREF_FONTSIZE = 20;
+                flw::PREF_FONT     = font;
+                flw::PREF_FONTSIZE = 20;
             }
 
 #ifdef _WIN32
@@ -89,8 +89,8 @@ int main(int argc, const char** argv) {
 #endif
 
             if (font != -1) {
-                PREF_FIXED_FONT     = font;
-                PREF_FIXED_FONTSIZE = 20;
+                flw::PREF_FIXED_FONT     = font;
+                flw::PREF_FIXED_FONTSIZE = 20;
             }
 
             run = "";
@@ -111,11 +111,14 @@ int main(int argc, const char** argv) {
 #else
             auto dlg = dlg::FontDialog("Nimbus Sans", 15, "Test Font");
 #endif
+//            dlg.deactivate_font();
+//            dlg.deactivate_fontsize();
 
             if (dlg.run() == true) {
                 printf("font set=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
-                PREF_FONT     = dlg.font();
-                PREF_FONTSIZE = dlg.fontsize();
+                flw::PREF_FONT           = dlg.font();
+                flw::PREF_FONTSIZE       = dlg.fontsize();
+                flw::PREF_FIXED_FONTSIZE = dlg.fontsize();
             }
             else {
                 printf("aborted font dialog=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
@@ -160,8 +163,8 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "list") {
-            dlg::list("List Dialog", HAMLET_TEXT);
-            dlg::list("List Dialog - Fixed Font", HAMLET_TEXT, nullptr, true);
+            dlg::list("List Dialog", HAMLET_LIST);
+            dlg::list("List Dialog - Fixed Font", HAMLET_LIST, nullptr, true);
             dlg::list_file("List View - File", "test/browser.txt", nullptr, true);
         }
 

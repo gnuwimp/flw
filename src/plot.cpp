@@ -175,7 +175,7 @@ struct PlotArea {
     int                         w;
     int                         h;
 
-                                PlotArea(int x = 0, int y = 0, int w = 0, int h = 0) {
+    explicit                    PlotArea(int x = 0, int y = 0, int w = 0, int h = 0) {
                                     this->x = x;
                                     this->y = y;
                                     this->w = w;
@@ -462,7 +462,7 @@ void Plot::_calc_min_max() {
     _y->reset_min_max();
 
     for (size_t f = 0; f < _size; f++) {
-        for (auto& p : _lines[f]->points) {
+        for (const auto& p : _lines[f]->points) {
             if (p.x < _x->min) {
                 _x->min = p.x;
             }
@@ -1121,19 +1121,19 @@ void Plot::update_pref() {
 
 //------------------------------------------------------------------------------
 void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
+    auto self = static_cast<const Plot*>(plot_object);
     self->debug();
 }
 
 //------------------------------------------------------------------------------
 void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
+    auto self = static_cast<Plot*>(plot_object);
     flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
 }
 
 //------------------------------------------------------------------------------
 void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
+    auto self = static_cast<Plot*>(plot_object);
 
     self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
     self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
@@ -1172,7 +1172,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
 
     for (auto j : js.vo_to_va()) {
         if (j->name() == "descr" && j->is_object() == true) {
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "type" && j2->is_string() == true) {
                     if (j2->vs() != "flw::plot") FLW_PLOT_ERROR(j2)
                 }
@@ -1183,7 +1183,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
             }
         }
         else if (j->name() == "view" && j->is_object() == true) {
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "horizontal" && j2->is_bool() == true)    h = j2->vb();
                 else if (j2->name() == "labels" && j2->is_bool() == true)   l = j2->vb();
                 else if (j2->name() == "vertical" && j2->is_bool() == true) v = j2->vb();
@@ -1197,33 +1197,33 @@ bool Plot::Load(Plot* plot, std::string filename) {
                 if (s->name() == "color")      scale.color = s->vn_i();
                 else if (s->name() == "label") scale.label = s->vs_u();
                 else if (s->name() == "labels" && s->is_array() == true) {
-                    for (auto l : *s->va()) {
-                        if (l->is_string() == true) scale.labels.push_back(l->vs_u());
-                        else FLW_PLOT_ERROR(l)
+                    for (auto s2 : *s->va()) {
+                        if (s2->is_string() == true) scale.labels.push_back(s2->vs_u());
+                        else FLW_PLOT_ERROR(s2)
                     }
                 }
                 else FLW_PLOT_ERROR(s)
             }
         }
         else if (j->name() == "yxlines" && j->is_array() == true) {
-            for (auto j2 : *j->va()) {
+            for (const auto j2 : *j->va()) {
                 if (j2->is_object() == true) {
                     PlotLine line;
 
-                    for (auto l : j2->vo_to_va()) {
-                        if (l->name() == "color" && l->is_number() == true)      line.color = (Fl_Color) l->vn_i();
-                        else if (l->name() == "label" && l->is_string() == true) line.label = l->vs_u();
-                        else if (l->name() == "type" && l->is_string() == true)  line.type  = _plot_string_to_type(l->vs());
-                        else if (l->name() == "width" && l->is_number() == true) line.width = (unsigned) l->vn_i();
-                        else if (l->name() == "yx" && l->is_array() == true) {
-                            for (auto p : *l->va()) {
+                    for (auto j3 : j2->vo_to_va()) {
+                        if (j3->name() == "color" && j3->is_number() == true)      line.color = (Fl_Color) j3->vn_i();
+                        else if (j3->name() == "label" && j3->is_string() == true) line.label = j3->vs_u();
+                        else if (j3->name() == "type" && j3->is_string() == true)  line.type  = _plot_string_to_type(j3->vs());
+                        else if (j3->name() == "width" && j3->is_number() == true) line.width = (unsigned) j3->vn_i();
+                        else if (j3->name() == "yx" && j3->is_array() == true) {
+                            for (auto p : *j3->va()) {
                                 if (p->is_array() == true && p->size() == 2 && (*p)[0]->is_number() == true && (*p)[1]->is_number() == true) {
                                     line.points.push_back(Point((*p)[0]->vn(), (*p)[1]->vn()));
                                 }
                                 else FLW_PLOT_ERROR(p)
                             }
                         }
-                        else FLW_PLOT_ERROR(l)
+                        else FLW_PLOT_ERROR(j3)
                     }
 
                     if (plot->add_line(line.points, line.type, line.width, line.label, line.color) == false) FLW_PLOT_ERROR(j2)
@@ -1296,7 +1296,7 @@ bool Plot::Save(const Plot* plot, std::string filename) {
         auto js = jsb.encode();
         return util::save_file(filename, js.c_str(), js.length());
     }
-    catch(std::string e) {
+    catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }

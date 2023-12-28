@@ -57,7 +57,7 @@ namespace flw {
         static const char*              SELECT_FILE;
         static const char*              SELECT_LIST;
 
-                                        TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            send_changed_event_always(bool value)
                                             { _send_changed_event_always = value; }
         virtual StringVector            cell_choice(int row, int col)
@@ -84,10 +84,9 @@ namespace flw {
         void                            _edit_show();
         void                            _edit_start(const char* key = "");
         void                            _edit_stop(bool save = true);
-        int                             _ev_keyboard_down();
-        int                             _ev_mouse_click();
+        int                             _ev_keyboard_down2();
+        int                             _ev_mouse_click2();
         int                             _ev_paste();
-        void                            _update_scrollbars();
 
         Fl_Widget*                      _edit2;
         Fl_Widget*                      _edit3;

@@ -58,7 +58,7 @@ namespace flw {
         size_t                          s;
 
                                         Buf();
-                                        Buf(size_t S);
+        explicit                        Buf(size_t S);
                                         Buf(char* P, size_t S);
                                         Buf(const char* P, size_t S);
                                         Buf(const Buf& b);

@@ -38,8 +38,8 @@ namespace flw {
 
         }
 
-        for (const auto& file : _files) {
-            _menu->add((_base + "/" + flw::util::fix_menu_string(file)).c_str(), 0, _callback, _user);
+        for (const auto& f : _files) {
+            _menu->add((_base + "/" + flw::util::fix_menu_string(f)).c_str(), 0, _callback, _user);
         }
     }
 
@@ -60,7 +60,7 @@ namespace flw {
 
     //--------------------------------------------------------------------------
     void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
-        auto self = (RecentMenu*) o;
+        auto self = static_cast<RecentMenu*>(o);
         self->_add("", false);
     }
 
@@ -100,7 +100,7 @@ namespace flw {
     void RecentMenu::save_pref(Fl_Preferences& pref, std::string base_name) {
         auto index = 1;
 
-        for (auto& s : _files) {
+        for (const auto& s : _files) {
             pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), s.c_str());
         }
 

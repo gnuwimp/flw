@@ -37,7 +37,7 @@ namespace flw {
                                         SIZE,
         };
 
-                                        TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            active_cell(int row = -1, int col = -1, bool show = false);
         virtual Fl_Align                cell_align(int row, int col)
                                             { (void) row; (void) col; return FL_ALIGN_LEFT; }

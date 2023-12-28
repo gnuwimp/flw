@@ -5,6 +5,8 @@
 
 // MKALGAM_ON
 
+#include <algorithm>
+
 namespace flw {
     static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
 
@@ -88,28 +90,28 @@ flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::Callback(Fl_Widget* sender, void* self) {
-    auto w = (InputMenu*) self;
+void flw::InputMenu::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<InputMenu*>(o);
 
-    if (sender == w->_input) {
-        if (w->_input->show_menu) {
-            if (w->_menu->visible()) {
-                w->_menu->popup();
+    if (w == self->_input) {
+        if (self->_input->show_menu) {
+            if (self->_menu->visible()) {
+                self->_menu->popup();
             }
         }
         else {
-            w->do_callback();
+            self->do_callback();
         }
     }
-    else if (sender == w->_menu) {
-        auto index = w->_menu->find_index(w->_menu->text());
+    else if (w == self->_menu) {
+        auto index = self->_menu->find_index(self->_menu->text());
 
-        if (index >= 0 && index < (int) w->_input->history.size()) {
-            w->_input->value(w->_input->history[index].c_str());
-            w->_input->index = index;
+        if (index >= 0 && index < (int) self->_input->history.size()) {
+            self->_input->value(self->_input->history[index].c_str());
+            self->_input->index = index;
         }
 
-        w->_input->take_focus();
+        self->_input->take_focus();
     }
 }
 
@@ -126,7 +128,7 @@ flw::StringVector flw::InputMenu::get_history() const {
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::insert(const std::string& string, int max_list_len) {
+void flw::InputMenu::insert(std::string string, int max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);

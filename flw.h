@@ -58,7 +58,7 @@ namespace flw {
         size_t                          s;
 
                                         Buf();
-                                        Buf(size_t S);
+        explicit                        Buf(size_t S);
                                         Buf(char* P, size_t S);
                                         Buf(const char* P, size_t S);
                                         Buf(const Buf& b);
@@ -184,138 +184,149 @@ namespace flw {
 #include <string>
 
 namespace flw {
-    //--------------------------------------------------------------------------
-    // An date and time class
-    // Date range is from 1-1-1 00:00:00 to 9999-12-31 23:59:59
-    //
-    class Date {
-    public:
-        enum class COMPARE {
-                                        YYYYMM,
-                                        YYYYMMDD,
-                                        YYYYMMDDHH,
-                                        YYYYMMDDHHMM,
-                                        YYYYMMDDHHMMSS,
-                                        LAST = YYYYMMDDHHMMSS,
-        };
 
-        enum class DAY {
-                                        INVALID,
-                                        MONDAY,
-                                        TUESDAY,
-                                        WENDSDAY,
-                                        THURSDAY,
-                                        FRIDAY,
-                                        SATURDAY,
-                                        SUNDAY,
-                                        LAST = SUNDAY,
-        };
+/***
+ *      _____        _
+ *     |  __ \      | |
+ *     | |  | | __ _| |_ ___
+ *     | |  | |/ _` | __/ _ \
+ *     | |__| | (_| | ||  __/
+ *     |_____/ \__,_|\__\___|
+ *
+ *
+ */
 
-        enum class FORMAT {
-                                        ISO,
-                                        ISO_LONG,
-                                        ISO_TIME,
-                                        ISO_TIME_LONG,
-                                        US,
-                                        WORLD,
-                                        NAME,
-                                        NAME_LONG,
-                                        YEAR_MONTH,
-                                        YEAR_MONTH_LONG,
-                                        LAST = YEAR_MONTH_LONG,
-        };
-
-        enum class RANGE {
-                                        DAY,
-                                        WEEKDAY,
-                                        FRIDAY,
-                                        SUNDAY,
-                                        MONTH,
-                                        HOUR,
-                                        MIN,
-                                        SEC,
-                                        LAST = SEC,
-        };
-
-        static const int                SECS_PER_HOUR;
-        static const int                SECS_PER_DAY;
-        static const int                SECS_PER_WEEK;
-
-                                        Date(bool utc = false);
-                                        Date(const Date& other);
-                                        Date(Date&&);
-                                        Date(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
-        Date&                           operator=(const Date& other);
-        Date&                           operator=(Date&&);
-        bool                            operator<(const Date& other) const
-                                            { return compare(other) < 0 ? true : false; }
-        bool                            operator<=(const Date& other) const
-                                            { return compare(other) <= 0 ? true : false; }
-        bool                            operator>(const Date& other) const
-                                            { return compare(other) > 0 ? true : false; }
-        bool                            operator>=(const Date& other) const
-                                            { return compare(other) >= 0 ? true : false; }
-        bool                            operator==(const Date& other) const
-                                            { return compare(other) == 0 ? true : false; }
-        bool                            operator!=(const Date& other) const
-                                            { return compare(other) != 0 ? true : false; }
-        bool                            add_days(int days);
-        bool                            add_months(int months);
-        bool                            add_seconds(int64_t seconds);
-        int                             compare(const Date& other, Date::COMPARE flag = Date::COMPARE::YYYYMMDDHHMMSS) const;
-        int                             day() const
-                                            { return _day; }
-        Date&                           day(int day);
-        Date&                           day_last();
-        int                             diff_days(const Date& other) const;
-        int                             diff_months(const Date& other) const;
-        int                             diff_seconds(const Date& other) const;
-        std::string                     format(Date::FORMAT format = Date::FORMAT::ISO) const;
-        int                             hour() const
-                                            { return _hour; }
-        Date&                           hour(int hour);
-        bool                            is_leapyear() const;
-        int                             minute() const
-                                            { return _min; }
-        Date&                           minute(int min);
-        int                             month() const
-                                            { return _month; }
-        Date&                           month(int month);
-        int                             month_days() const;
-        const char*                     month_name() const;
-        const char*                     month_name_short() const;
-        void                            print() const;
-        int                             second() const
-                                            { return _sec; }
-        Date&                           second(int sec);
-        Date&                           set(const Date& other);
-        Date&                           set(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
-        int64_t                         time() const;
-        int                             week() const;
-        Date::DAY                       weekday() const;
-        Date&                           weekday(Date::DAY weekday);
-        const char*                     weekday_name() const;
-        const char*                     weekday_name_short() const;
-        int                             year() const
-                                            { return _year; }
-        Date&                           year(int year);
-        int                             yearday() const;
-
-        static int                      Compare(const void* a, const void* b);
-        static bool                     Compare(const Date& a, const Date& b);
-        static void                     Del(void* self);
-        static Date                     FromString(const char* string, bool us = false);
-        static Date                     FromTime(int64_t seconds, bool utc = false);
-
-    private:
-        short                           _year;
-        char                            _month;
-        char                            _day;
-        char                            _hour;
-        char                            _min;
-        char                            _sec;
+//------------------------------------------------------------------------------
+// An date and time class
+// Date range is from 1-1-1 00:00:00 to 9999-12-31 23:59:59
+//
+class Date {
+public:
+    enum class COMPARE {
+                                YYYYMM,
+                                YYYYMMDD,
+                                YYYYMMDDHH,
+                                YYYYMMDDHHMM,
+                                YYYYMMDDHHMMSS,
+                                LAST = YYYYMMDDHHMMSS,
     };
-}
+
+    enum class DAY {
+                                INVALID,
+                                MONDAY,
+                                TUESDAY,
+                                WENDSDAY,
+                                THURSDAY,
+                                FRIDAY,
+                                SATURDAY,
+                                SUNDAY,
+                                LAST = SUNDAY,
+    };
+
+    enum class FORMAT {
+                                ISO,
+                                ISO_LONG,
+                                ISO_TIME,
+                                ISO_TIME_LONG,
+                                US,
+                                WORLD,
+                                NAME,
+                                NAME_LONG,
+                                YEAR_MONTH,
+                                YEAR_MONTH_LONG,
+                                LAST = YEAR_MONTH_LONG,
+    };
+
+    enum class RANGE {
+                                DAY,
+                                WEEKDAY,
+                                FRIDAY,
+                                SUNDAY,
+                                MONTH,
+                                HOUR,
+                                MIN,
+                                SEC,
+                                LAST = SEC,
+    };
+
+    static const int            SECS_PER_HOUR;
+    static const int            SECS_PER_DAY;
+    static const int            SECS_PER_WEEK;
+
+    explicit                    Date(bool utc = false);
+                                Date(const Date& other);
+                                Date(Date&&);
+                                Date(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
+    Date&                       operator=(const Date& other);
+    Date&                       operator=(Date&&);
+    bool                        operator<(const Date& other) const
+                                    { return compare(other) < 0 ? true : false; }
+    bool                        operator<=(const Date& other) const
+                                    { return compare(other) <= 0 ? true : false; }
+    bool                        operator>(const Date& other) const
+                                    { return compare(other) > 0 ? true : false; }
+    bool                        operator>=(const Date& other) const
+                                    { return compare(other) >= 0 ? true : false; }
+    bool                        operator==(const Date& other) const
+                                    { return compare(other) == 0 ? true : false; }
+    bool                        operator!=(const Date& other) const
+                                    { return compare(other) != 0 ? true : false; }
+    bool                        add_days(int days);
+    bool                        add_months(int months);
+    bool                        add_seconds(int64_t seconds);
+    int                         compare(const Date& other, Date::COMPARE flag = Date::COMPARE::YYYYMMDDHHMMSS) const;
+    int                         day() const
+                                    { return _day; }
+    Date&                       day(int day);
+    Date&                       day_last();
+    int                         diff_days(const Date& other) const;
+    int                         diff_months(const Date& other) const;
+    int                         diff_seconds(const Date& other) const;
+    std::string                 format(Date::FORMAT format = Date::FORMAT::ISO) const;
+    int                         hour() const
+                                    { return _hour; }
+    Date&                       hour(int hour);
+    bool                        is_leapyear() const;
+    int                         minute() const
+                                    { return _min; }
+    Date&                       minute(int min);
+    int                         month() const
+                                    { return _month; }
+    Date&                       month(int month);
+    int                         month_days() const;
+    const char*                 month_name() const;
+    const char*                 month_name_short() const;
+    void                        print() const;
+    int                         second() const
+                                    { return _sec; }
+    Date&                       second(int sec);
+    Date&                       set(const Date& other);
+    Date&                       set(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
+    int64_t                     time() const;
+    int                         week() const;
+    Date::DAY                   weekday() const;
+    Date&                       weekday(Date::DAY weekday);
+    const char*                 weekday_name() const;
+    const char*                 weekday_name_short() const;
+    int                         year() const
+                                    { return _year; }
+    Date&                       year(int year);
+    int                         yearday() const;
+
+    static bool                 Compare(const Date& a, const Date& b);
+    static Date                 FromString(const char* string, bool us = false);
+    static Date                 FromTime(int64_t seconds, bool utc = false);
+
+private:
+    short                       _year;
+    char                        _month;
+    char                        _day;
+    char                        _hour;
+    char                        _min;
+    char                        _sec;
+};
+
+} // flw
 
 
 
@@ -325,6 +336,17 @@ namespace flw {
 #include <vector>
 
 namespace flw {
+
+/***
+ *      _____      _
+ *     |  __ \    (_)
+ *     | |__) | __ _  ___ ___
+ *     |  ___/ '__| |/ __/ _ \
+ *     | |   | |  | | (_|  __/
+ *     |_|   |_|  |_|\___\___|
+ *
+ *
+ */
 
 //--------------------------------------------------------------------------
 // Chart data
@@ -337,7 +359,7 @@ struct Price {
     double                      vol;
 
                                 Price();
-                                Price(const std::string& date_value, double value = 0.0);
+    explicit                    Price(const std::string& date_value, double value = 0.0);
                                 Price(const std::string& date, double high, double low, double close, double vol = 0.0);
     bool                        operator<(const Price& price) const { return date < price.date; }
     bool                        operator<=(const Price& price) const { return date <= price.date; }
@@ -352,6 +374,17 @@ struct ChartScale;
 typedef std::vector<Price>      PriceVector;
 typedef std::vector<ChartLine>  LineVector;
 typedef std::vector<ChartArea>  AreaVector;
+
+/***
+ *       _____ _                _
+ *      / ____| |              | |
+ *     | |    | |__   __ _ _ __| |_
+ *     | |    | '_ \ / _` | '__| __|
+ *     | |____| | | | (_| | |  | |_
+ *      \_____|_| |_|\__,_|_|   \__|
+ *
+ *
+ */
 
 //--------------------------------------------------------------------------
 // Chart widget that is using dates for the x scale
@@ -381,7 +414,7 @@ public:
     static constexpr double     MIN_VAL = -999'999'999'999'999.0;
     static constexpr double     MAX_VAL =  999'999'999'999'999.0;
 
-                                Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     bool                        add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, Chart::TYPE chart_type = Chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = Chart::MIN_VAL, double clamp_max = Chart::MAX_VAL);
     bool                        area_size(int area1 = 100, int area2 = 0, int area3 = 0);
     void                        block_dates(const PriceVector& block_dates)
@@ -466,42 +499,101 @@ private:
 #include <FL/Fl_Group.H>
 
 namespace flw {
-    //--------------------------------------------------------------------------
-    // An date chooser widget
-    // User can navigate with mouse or arrow keys within a month
-    // Or use buttons to jump 1 month/1 year/10 years
-    //
-    class DateChooser : public Fl_Group {
-    public:
-                                        DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        void                            draw() override;
-        void                            focus();
-        Date                            get() const;
-        int                             handle(int event) override;
-        void                            resize(int X, int Y, int W, int H) override;
-        void                            set(const Date& date);
 
+/***
+ *      _____        _        _____ _
+ *     |  __ \      | |      / ____| |
+ *     | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __
+ *     | |  | |/ _` | __/ _ \ |    | '_ \ / _ \ / _ \/ __|/ _ \ '__|
+ *     | |__| | (_| | ||  __/ |____| | | | (_) | (_) \__ \  __/ |
+ *     |_____/ \__,_|\__\___|\_____|_| |_|\___/ \___/|___/\___|_|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
+// An date chooser widget
+// User can navigate with mouse or arrow keys within a month
+// Or use buttons to jump 1 month/1 year/10 years
+//
+class DateChooser : public Fl_Group {
+public:
+    explicit                    DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    void                        draw() override;
+    void                        focus();
+    Date                        get() const;
+    int                         handle(int event) override;
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        set(const Date& date);
+
+
+private:
+    static void                 _Callback(Fl_Widget* w, void* o);
+    void                        _set_label();
+
+    Fl_Box*                     _month_label;
+    Fl_Button*                  _b1;
+    Fl_Button*                  _b2;
+    Fl_Button*                  _b3;
+    Fl_Button*                  _b4;
+    Fl_Button*                  _b5;
+    Fl_Button*                  _b6;
+    Fl_Button*                  _b7;
+    Fl_Widget*                  _canvas;
+    int                         _h;
+    int                         _w;
+};
+
+namespace dlg {
+
+/***
+ *       __                  _   _
+ *      / _|                | | (_)
+ *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
+ *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+ *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
+ *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+ *
+ *
+ */
+
+bool                            date(const std::string& title, Date& date, Fl_Window* parent);
+
+} // dlg
+} // flw
+
+
+
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Menu_Button.H>
+
+namespace flw {
+    //--------------------------------------------------------------------------
+    class ScrollBrowser : public Fl_Hold_Browser {
+    public:
+                                        ScrollBrowser(const ScrollBrowser&) = delete;
+                                        ScrollBrowser(ScrollBrowser&&) = delete;
+        ScrollBrowser&                  operator=(const ScrollBrowser&) = delete;
+        ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
+
+        explicit                        ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        void                            enable_menu(bool menu)
+                                            { _flag_menu = menu; }
+        void                            enable_pagemove(bool move)
+                                            { _flag_move = move; }
+        int                             handle(int event) override;
+        Fl_Menu_Button*                 menu()
+                                            { return _menu; }
+        void                            update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
+
+        static void                     Callback(Fl_Widget*, void*);
 
     private:
-        static void                     _Callback(Fl_Widget* w, void* o);
-        void                            _set_label();
-
-        Fl_Box*                         _month_label;
-        Fl_Button*                      _b1;
-        Fl_Button*                      _b2;
-        Fl_Button*                      _b3;
-        Fl_Button*                      _b4;
-        Fl_Button*                      _b5;
-        Fl_Button*                      _b6;
-        Fl_Button*                      _b7;
-        Fl_Widget*                      _canvas;
-        int                             _h;
-        int                             _w;
+        Fl_Menu_Button*                 _menu;
+        bool                            _flag_menu;
+        bool                            _flag_move;
+        int                             _scroll;
     };
-
-    namespace dlg {
-        bool                            date(const std::string& title, Date& date, Fl_Window* parent);
-    }
 }
 
 
@@ -514,126 +606,169 @@ namespace flw {
 #include <FL/Fl_Toggle_Button.H>
 
 namespace flw {
-    class ScrollBrowser;
+namespace dlg {
 
-    namespace dlg {
-        //----------------------------------------------------------------------
-        extern const char*              PASSWORD_CANCEL;
-        extern const char*              PASSWORD_OK;
+/***
+ *       __                  _   _
+ *      / _|                | | (_)
+ *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
+ *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+ *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
+ *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+ *
+ *
+ */
 
-        void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-        void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        void                            panic(std::string message);
-        bool                            password1(std::string title, std::string& password, Fl_Window* parent = nullptr);
-        bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
-        bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-        bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-        int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-        bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-        void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
+extern const char*              PASSWORD_CANCEL;
+extern const char*              PASSWORD_OK;
 
-        //----------------------------------------------------------------------
-        class AbortDialog : public Fl_Double_Window {
-            using Fl_Double_Window::show;
+void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            panic(std::string message);
+bool                            password1(std::string title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
 
-        public:
-                                        AbortDialog(const AbortDialog&) = delete;
-                                        AbortDialog(AbortDialog&&) = delete;
-            AbortDialog&                operator=(const AbortDialog&) = delete;
-            AbortDialog&                operator=(AbortDialog&&) = delete;
+/***
+ *               _                _   _____  _       _
+ *         /\   | |              | | |  __ \(_)     | |
+ *        /  \  | |__   ___  _ __| |_| |  | |_  __ _| | ___   __ _
+ *       / /\ \ | '_ \ / _ \| '__| __| |  | | |/ _` | |/ _ \ / _` |
+ *      / ____ \| |_) | (_) | |  | |_| |__| | | (_| | | (_) | (_| |
+ *     /_/    \_\_.__/ \___/|_|   \__|_____/|_|\__,_|_|\___/ \__, |
+ *                                                            __/ |
+ *                                                           |___/
+ */
 
-                                        AbortDialog(double min = 0.0, double max = 0.0);
-            bool                        check(int milliseconds = 200);
-            bool                        check(double value, double min, double max, int milliseconds = 200);
-            bool                        aborted()
-                                            { return _abort; }
-            void                        range(double min, double max);
-            void                        resize(int X, int Y, int W, int H) override;
-            void                        show(const std::string& label, Fl_Window* parent = nullptr);
-            void                        value(double value);
+//------------------------------------------------------------------------------
+class AbortDialog : public Fl_Double_Window {
+    using Fl_Double_Window::show;
+
+public:
+                                AbortDialog(const AbortDialog&) = delete;
+                                AbortDialog(AbortDialog&&) = delete;
+    AbortDialog&                operator=(const AbortDialog&) = delete;
+    AbortDialog&                operator=(AbortDialog&&) = delete;
+
+    explicit                    AbortDialog(double min = 0.0, double max = 0.0);
+    bool                        check(int milliseconds = 200);
+    bool                        check(double value, double min, double max, int milliseconds = 200);
+    bool                        aborted()
+                                    { return _abort; }
+    void                        range(double min, double max);
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        show(const std::string& label, Fl_Window* parent = nullptr);
+    void                        value(double value);
 
 
-            static void                 Callback(Fl_Widget* w, void* o);
+    static void                 Callback(Fl_Widget* w, void* o);
 
-        private:
-            Fl_Button*                  _button;
-            Fl_Hor_Fill_Slider*         _progress;
-            bool                        _abort;
-            int64_t                     _last;
-        };
+private:
+    Fl_Button*                  _button;
+    Fl_Hor_Fill_Slider*         _progress;
+    bool                        _abort;
+    int64_t                     _last;
+};
 
-        //----------------------------------------------------------------------
-        // Dialog for selecting font and font size
-        // FontDialog::LoadFonts() will be called automatically (or do it manually)
-        // It is only needed once
-        // Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied)
-        //
-        class FontDialog : public Fl_Double_Window {
-        public:
-                                        FontDialog(const FontDialog&) = delete;
-                                        FontDialog(FontDialog&&) = delete;
-            FontDialog&                 operator=(const FontDialog&) = delete;
-            FontDialog&                 operator=(FontDialog&&) = delete;
+/***
+ *      ______          _   _____  _       _
+ *     |  ____|        | | |  __ \(_)     | |
+ *     | |__ ___  _ __ | |_| |  | |_  __ _| | ___   __ _
+ *     |  __/ _ \| '_ \| __| |  | | |/ _` | |/ _ \ / _` |
+ *     | | | (_) | | | | |_| |__| | | (_| | | (_) | (_| |
+ *     |_|  \___/|_| |_|\__|_____/|_|\__,_|_|\___/ \__, |
+ *                                                  __/ |
+ *                                                 |___/
+ */
 
-                                        FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
-                                        FontDialog(std::string font, Fl_Fontsize fontsize, std::string label);
-            void                        activate_font()
-                                            { ((Fl_Widget*) _fonts)->activate(); }
-            void                        deactivate_font()
-                                            { ((Fl_Widget*) _fonts)->deactivate(); }
-            void                        deactivate_fontsize()
-                                            { ((Fl_Widget*) _sizes)->deactivate(); }
-            int                         font()
-                                            { return _font; }
-            std::string                 fontname()
-                                            { return _fontname; }
-            int                         fontsize()
-                                            { return _fontsize; }
-            void                        resize(int X, int Y, int W, int H) override;
-            bool                        run(Fl_Window* parent = nullptr);
+//------------------------------------------------------------------------------
+// Dialog for selecting font and font size
+// FontDialog::LoadFonts() will be called automatically (or do it manually)
+// It is only needed once
+// Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied)
+//
+class FontDialog : public Fl_Double_Window {
+public:
+                                FontDialog(const FontDialog&) = delete;
+                                FontDialog(FontDialog&&) = delete;
+    FontDialog&                 operator=(const FontDialog&) = delete;
+    FontDialog&                 operator=(FontDialog&&) = delete;
 
-            static void                 Callback(Fl_Widget* w, void* o);
+                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label);
+                                FontDialog(std::string font, Fl_Fontsize fontsize, std::string label);
+    void                        activate_font()
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); }
+    void                        deactivate_font()
+                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); }
+    void                        deactivate_fontsize()
+                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); }
+    int                         font()
+                                    { return _font; }
+    std::string                 fontname()
+                                    { return _fontname; }
+    int                         fontsize()
+                                    { return _fontsize; }
+    void                        resize(int X, int Y, int W, int H) override;
+    bool                        run(Fl_Window* parent = nullptr);
 
-        private:
-            void                        _activate();
-            void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label);
-            void                        _select_name(std::string font_name);
+    static void                 Callback(Fl_Widget* w, void* o);
 
-            Fl_Box*                     _label;
-            Fl_Button*                  _cancel;
-            Fl_Button*                  _select;
-            ScrollBrowser*              _fonts;
-            ScrollBrowser*              _sizes;
-            bool                        _ret;
-            int                         _font;
-            int                         _fontsize;
-            std::string                 _fontname;
-        };
+private:
+    void                        _activate();
+    void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label);
+    void                        _select_name(std::string font_name);
 
-        //----------------------------------------------------------------------
-        class WorkDialog : public Fl_Double_Window {
-        public:
-                                        WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-            void                        resize(int X, int Y, int W, int H) override;
-            bool                        run(double update_time, const StringVector& messages);
-            bool                        run(double update_time, const std::string& message);
+    Fl_Box*                     _label;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _select;
+    ScrollBrowser*              _fonts;
+    ScrollBrowser*              _sizes;
+    bool                        _ret;
+    int                         _font;
+    int                         _fontsize;
+    std::string                 _fontname;
+};
 
-            static void                 Callback(Fl_Widget* w, void* o);
+/***
+ *     __          __        _    _____  _       _
+ *     \ \        / /       | |  |  __ \(_)     | |
+ *      \ \  /\  / /__  _ __| | _| |  | |_  __ _| | ___   __ _
+ *       \ \/  \/ / _ \| '__| |/ / |  | | |/ _` | |/ _ \ / _` |
+ *        \  /\  / (_) | |  |   <| |__| | | (_| | | (_) | (_| |
+ *         \/  \/ \___/|_|  |_|\_\_____/|_|\__,_|_|\___/ \__, |
+ *                                                        __/ |
+ *                                                       |___/
+ */
 
-        private:
-            Fl_Button*                  _cancel;
-            Fl_Hold_Browser*            _label;
-            Fl_Toggle_Button*           _pause;
-            bool                        _ret;
-            double                      _last;
-            std::string                 _message;
-        };
-    }
-}
+//------------------------------------------------------------------------------
+class WorkDialog : public Fl_Double_Window {
+public:
+                                WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
+    void                        resize(int X, int Y, int W, int H) override;
+    bool                        run(double update_time, const StringVector& messages);
+    bool                        run(double update_time, const std::string& message);
+
+    static void                 Callback(Fl_Widget* w, void* o);
+
+private:
+    Fl_Button*                  _cancel;
+    Fl_Hold_Browser*            _label;
+    Fl_Toggle_Button*           _pause;
+    bool                        _ret;
+    double                      _last;
+    std::string                 _message;
+};
+
+} // dlg
+} // flw
 
 
 
@@ -650,7 +785,7 @@ namespace flw {
     public:
         static const int                MAX_WIDGETS = 100;
 
-                                        GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         virtual                         ~GridGroup();
         void                            add(Fl_Widget* widget, int X, int Y, int W, int H);
         void                            clear();
@@ -687,12 +822,12 @@ namespace flw {
         InputMenu&                      operator=(const InputMenu&) = delete;
         InputMenu&                      operator=(InputMenu&&) = delete;
 
-                                        InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            clear();
         StringVector                    get_history() const;
         Fl_Input*                       input()
                                             { return (Fl_Input*) _input; }
-        void                            insert(const std::string& string, int max_list_len);
+        void                            insert(std::string string, int max_list_len);
         Fl_Menu_Button*                 menu()
                                             { return _menu; }
         void                            resize(int X, int Y, int W, int H) override;
@@ -825,7 +960,7 @@ public:
     static std::string          Unescape(const char* string);
 
 private:
-                                JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
+    explicit                    JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
                                     { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
     bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
     bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);
@@ -926,7 +1061,7 @@ namespace flw {
     //
     class LcdNumber : public Fl_Box {
     public:
-                                        LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         Fl_Align                        align() const
                                             { return _align; }
         void                            align(Fl_Align align)
@@ -1039,7 +1174,8 @@ public:
                                 BG_BOLD_CYAN        = '`',
                                 LAST                = '`',
     };
-                                LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    
+    explicit                    LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                 ~LogDisplay();
     void                        edit_styles();
     void                        find(bool next, bool force_ask);
@@ -1100,7 +1236,7 @@ struct Point {
     double                      x;
     double                      y;
 
-                                Point(double x = 0.0, double y = 0.0) {
+    explicit                    Point(double x = 0.0, double y = 0.0) {
                                     this->x = x;
                                     this->y = y;
                                 }
@@ -1131,7 +1267,7 @@ public:
                                 SQUARE,
     };
 
-                                Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     virtual                     ~Plot();
     bool                        add_line(const PointVector& points, TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
     void                        clear();
@@ -1240,40 +1376,6 @@ namespace flw {
 
 
 
-#include <FL/Fl_Hold_Browser.H>
-#include <FL/Fl_Menu_Button.H>
-
-namespace flw {
-    //--------------------------------------------------------------------------
-    class ScrollBrowser : public Fl_Hold_Browser {
-    public:
-                                        ScrollBrowser(const ScrollBrowser&) = delete;
-                                        ScrollBrowser(ScrollBrowser&&) = delete;
-        ScrollBrowser&                  operator=(const ScrollBrowser&) = delete;
-        ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
-
-                                        ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        void                            enable_menu(bool menu)
-                                            { _flag_menu = menu; }
-        void                            enable_pagemove(bool move)
-                                            { _flag_move = move; }
-        int                             handle(int event) override;
-        Fl_Menu_Button*                 menu()
-                                            { return _menu; }
-        void                            update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
-
-        static void                     Callback(Fl_Widget*, void*);
-
-    private:
-        Fl_Menu_Button*                 _menu;
-        bool                            _flag_menu;
-        bool                            _flag_move;
-        int                             _scroll;
-    };
-}
-
-
-
 #include <FL/Fl_Group.H>
 #include <FL/Fl.H>
 
@@ -1294,7 +1396,8 @@ namespace flw {
                                         HORIZONTAL,
                                         VERTICAL,
         };
-                                        SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        
+        explicit                        SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            add(Fl_Widget* widget, SplitGroup::CHILD child);
         Fl_Widget*                      child(SplitGroup::CHILD child)
                                             { return (child == SplitGroup::CHILD::FIRST) ? _widgets[0] : _widgets[1]; }
@@ -1358,7 +1461,7 @@ namespace flw {
                                         SIZE,
         };
 
-                                        TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            active_cell(int row = -1, int col = -1, bool show = false);
         virtual Fl_Align                cell_align(int row, int col)
                                             { (void) row; (void) col; return FL_ALIGN_LEFT; }
@@ -1526,7 +1629,7 @@ namespace flw {
         static const char*              SELECT_FILE;
         static const char*              SELECT_LIST;
 
-                                        TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            send_changed_event_always(bool value)
                                             { _send_changed_event_always = value; }
         virtual StringVector            cell_choice(int row, int col)
@@ -1553,10 +1656,9 @@ namespace flw {
         void                            _edit_show();
         void                            _edit_start(const char* key = "");
         void                            _edit_stop(bool save = true);
-        int                             _ev_keyboard_down();
-        int                             _ev_mouse_click();
+        int                             _ev_keyboard_down2();
+        int                             _ev_mouse_click2();
         int                             _ev_paste();
-        void                            _update_scrollbars();
 
         Fl_Widget*                      _edit2;
         Fl_Widget*                      _edit3;
@@ -1644,7 +1746,7 @@ public:
                                 EAST,
     };
 
-                                TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; resize(); }

@@ -15,7 +15,7 @@ namespace flw {
 flw::Grid::Grid(int rows, int cols, int X, int Y, int W, int H, const char* l) : flw::TableEditor(X, Y, W, H, l) {
     rows    = rows < 1 ? 1 : rows;
     cols    = cols < 1 ? 1 : cols;
-    _buffer = (char*) calloc(_FLW_GRID_STRING_SIZE + 1, 1);
+    _buffer = static_cast<char*>(calloc(_FLW_GRID_STRING_SIZE + 1, 1));
 
     Grid::size(rows, cols);
     lines(true, true);

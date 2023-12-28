@@ -5,7 +5,6 @@
 
 // MKALGAM_ON
 
-#include <errno.h>
 #include <cstring>
 #include <cmath>
 
@@ -30,13 +29,13 @@ static const char* const _JSON_BOM = "\xef\xbb\xbf";
 //------------------------------------------------------------------------------
 static void _json_debug(const JS* js, std::string t) {
     if (js->is_array() == true) {
-        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
         t += "\t";
-        for (auto js2 : *js->va()) _json_debug(js2, t);
+        for (const auto js2 : *js->va()) _json_debug(js2, t);
         t.pop_back();
     }
     else if (js->is_object() == true) {
-        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
         t += "\t";
         for (auto js2 : *js->vo()) _json_debug(js2.second, t);
         t.pop_back();
@@ -359,7 +358,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
     auto line    = (unsigned) 1;
     auto n       = (JS*) nullptr;
     auto nVal    = (double) NAN;
-    auto pos     = (size_t) 0;
+    auto pos1    = (size_t) 0;
     auto pos2    = (size_t) 0;
     auto posn    = (size_t) 0;
     auto sVal1   = (char*) nullptr;
@@ -375,24 +374,24 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         current   = &tmp;
 
         if (strncmp(json, _JSON_BOM, 3) == 0) {
-            pos += 3;
+            pos1 += 3;
         }
 
-        while (pos < len) {
-            auto start = pos;
-            auto c     = (unsigned) json[pos];
+        while (pos1 < len) {
+            auto start = pos1;
+            auto c     = (unsigned) json[pos1];
 
             if (c == '\t' || c == '\r' || c == ' ') {
-                pos++;
+                pos1++;
             }
             else if (c == '\n') {
                 line++;
-                pos++;
+                pos1++;
             }
             else if (c == '"') {
-                pos2 = pos;
-                if (sVal1 == nullptr) posn = pos;
-                if (_json_parse_string(ignore_utf_check, json, len, pos, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
+                pos2 = pos1;
+                if (sVal1 == nullptr) posn = pos1;
+                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
 
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
                 auto add_array = (current->is_array() == true);
@@ -407,11 +406,11 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                     comma = 0;
                 }
 
-                pos++;
+                pos1++;
             }
             else if ((c >= '0' && c <= '9') || c == '-') {
-                pos2 = (sVal1 == nullptr) ? pos : posn;
-                if (_json_parse_number(json, len, pos, nVal) == false) throw JSON_ERROR(start, line);
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
+                if (_json_parse_number(json, len, pos1, nVal) == false) throw JSON_ERROR(start, line);
                 else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
                 else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
                 else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
@@ -419,38 +418,38 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
 
                 colon = 0;
                 comma = 0;
-                pos++;
+                pos1++;
             }
             else if (c == ',') {
-                if (comma > 0) throw JSON_ERROR(pos, line);
-                else if (current == &tmp) throw JSON_ERROR(pos, line);
+                if (comma > 0) throw JSON_ERROR(pos1, line);
+                else if (current == &tmp) throw JSON_ERROR(pos1, line);
 
                 comma++;
-                pos++;
+                pos1++;
             }
             else if (c == ':') {
-                if (colon > 0) throw JSON_ERROR(pos, line);
-                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
-                else if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                if (colon > 0) throw JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos1, line);
+                else if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
 
                 colon++;
-                pos++;
+                pos1++;
             }
             else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
-                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos1, line);
 
-                    n = JS::_MakeArray("", current, pos);
+                    n = JS::_MakeArray("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
-                    else if (colon != 1) throw JSON_ERROR(pos, line);
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw JSON_ERROR(pos1, line);
 
                     n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos1, line);
                     JSON_FREE_STRINGS(sVal1, sVal2)
                 }
 
@@ -458,35 +457,35 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                 colon = 0;
                 comma = 0;
                 count_a++;
-                pos++;
+                pos1++;
             }
             else if (c == ']') {
-                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
-                else if (current->is_array() == false) throw JSON_ERROR(pos, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
-                else if (count_a < 0) throw JSON_ERROR(pos, line);
+                if (current->_parent == nullptr) throw JSON_ERROR(pos1, line);
+                else if (current->is_array() == false) throw JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos1, line);
+                else if (count_a < 0) throw JSON_ERROR(pos1, line);
 
                 current = current->_parent;
                 comma = 0;
                 count_a--;
-                pos++;
+                pos1++;
             }
             else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
-                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos1, line);
 
-                    n = JS::_MakeObject("", current, pos);
+                    n = JS::_MakeObject("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
-                    else if (colon != 1) throw JSON_ERROR(pos, line);
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw JSON_ERROR(pos1, line);
 
                     n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos1, line);
                     JSON_FREE_STRINGS(sVal1, sVal2)
                 }
 
@@ -494,52 +493,50 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                 colon = 0;
                 comma = 0;
                 count_o++;
-                pos++;
+                pos1++;
             }
             else if (c == '}') {
-                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
-                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
-                else if (count_o < 0) throw JSON_ERROR(pos, line);
+                if (current->_parent == nullptr) throw JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos1, line);
+                else if (count_o < 0) throw JSON_ERROR(pos1, line);
 
                 current = current->_parent;
                 comma = 0;
                 count_o--;
-                pos++;
+                pos1++;
             }
-            else if ((c == 't' && json[pos + 1] == 'r' && json[pos + 2] == 'u' && json[pos + 3] == 'e') ||
-                    (c == 'f' && json[pos + 1] == 'a' && json[pos + 2] == 'l' && json[pos + 3] == 's' && json[pos + 4] == 'e')) {
-                pos2 = (sVal1 == nullptr) ? pos : posn;
+            else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
+                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
                 if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
                 else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
                 else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
                 else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
 
                 colon = 0;
                 comma = 0;
-                pos += 4;
-                pos += (c == 'f');
+                pos1 += 4;
+                pos1 += (c == 'f');
             }
-            else if (c == 'n' && json[pos + 1] == 'u' && json[pos + 2] == 'l' && json[pos + 3] == 'l') {
-                pos2 = (sVal1 == nullptr) ? pos : posn;
+            else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
                 if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
                 else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
                 else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos) == false) throw JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw JSON_ERROR(start, line);
 
                 colon = 0;
                 comma = 0;
-                pos += 4;
+                pos1 += 4;
             }
             else {
-                throw JSON_ERROR(pos, line);
+                throw JSON_ERROR(pos1, line);
             }
 
             if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
-                throw JSON_ERROR(pos, line);
+                throw JSON_ERROR(pos1, line);
             }
         }
 
@@ -552,7 +549,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         else if (tmp[0]->_type == JS::ARRAY) {
             _type = JS::ARRAY;
             _va = tmp[0]->_va;
-            ((JS*) tmp[0])->_type = JS::NIL;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
 
             for (auto o : *_va) {
                 o->_parent = this;
@@ -561,9 +558,9 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         else if (tmp[0]->_type == JS::OBJECT) {
             _type = JS::OBJECT;
             _vo = tmp[0]->_vo;
-            ((JS*) tmp[0])->_type = JS::NIL;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
 
-            for (auto& it : *_vo) {
+            for (const auto& it : *_vo) {
                 it.second->_parent = this;
             }
         }
@@ -578,7 +575,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         else if (tmp[0]->_type == JS::STRING) {
             _type = JS::STRING;
             _vs   = tmp[0]->_vs;
-            ((JS*) tmp[0])->_type = JS::NIL;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
         }
         else if (tmp[0]->_type == JS::NIL) {
             _type = JS::NIL;
@@ -587,7 +584,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             throw JSON_ERROR(0, 1);
         }
     }
-    catch(std::string err) {
+    catch(const std::string& err) {
         JSON_FREE_STRINGS(sVal1, sVal2)
         _clear(false);
         return err;
@@ -615,7 +612,7 @@ std::string JS::encode(int skip) const {
             return _encode(true, skip);
         }
     }
-    catch (std::string e) {
+    catch (const std::string& e) {
         j = e;
     }
 
@@ -627,9 +624,9 @@ std::string JS::_encode(bool ignore_name, int skip) const {
     static const std::string QUOTE = "\"";
 
     std::string res;
-    std::string arr = (skip == 0) ? "\": [" : "\":[";
-    std::string obj = (skip == 0) ? "\": {" : "\":{";
-    std::string name = (skip == 0) ? "\": " : "\":";
+    std::string arr   = (skip == 0) ? "\": [" : "\":[";
+    std::string obj   = (skip == 0) ? "\": {" : "\":{";
+    std::string name1 = (skip == 0) ? "\": " : "\":";
     bool object = (_parent != nullptr && _parent->is_object() == true);
 
     if (_type == ARRAY) {
@@ -639,7 +636,7 @@ std::string JS::_encode(bool ignore_name, int skip) const {
         res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
     }
     else {
-        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name);
+        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name1);
 
         if (_type == STRING) {
             res += QUOTE + _vs + QUOTE;
@@ -656,8 +653,8 @@ std::string JS::_encode(bool ignore_name, int skip) const {
         else if (_type == NUMBER) {
             char b[500];
 
-            auto n   = snprintf(b, 500, "%f", _vn);
-            auto dot = strstr(b, ".");
+            const size_t n  = snprintf(b, 500, "%f", _vn);
+            const char* dot = strstr(b, ".");
 
             if (n < 1 || n >= 500) {
                 strcpy(b, "0.0");
@@ -687,10 +684,10 @@ std::string JS::_encode(bool ignore_name, int skip) const {
 //------------------------------------------------------------------------------
 const JS* JS::find(std::string name, bool rec) const {
     if (is_object() == true) {
-        auto find = _vo->find(name);
+        auto find1 = _vo->find(name);
 
-        if (find != _vo->end()) {
-            return find->second;
+        if (find1 != _vo->end()) {
+            return find1->second;
         }
         else if (rec == true) {
             for (auto o : *_vo) {
@@ -707,9 +704,9 @@ const JS* JS::find(std::string name, bool rec) const {
 //------------------------------------------------------------------------------
 const JS* JS::_get_object(const char* name, bool escape) const {
     if (is_object() == true) {
-        auto key  = (escape == true) ? JS::Escape(name) : name;
-        auto find = _vo->find(key);
-        return (find != _vo->end()) ? find->second : nullptr;
+        auto key   = (escape == true) ? JS::Escape(name) : name;
+        auto find1 = _vo->find(key);
+        return (find1 != _vo->end()) ? find1->second : nullptr;
     }
 
     return nullptr;
@@ -720,15 +717,15 @@ const JS* JS::_get_object(const char* name, bool escape) const {
 //
 bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
     if (is_object() == true) {
-        auto find = _vo->find(name);
+        auto find1 = _vo->find(name);
 
-        if (find != _vo->end()) {
+        if (find1 != _vo->end()) {
             if (ignore_duplicates == false) {
                 delete js;
                 return false;
             }
             else {
-                delete find->second;
+                delete find1->second;
             }
         }
 
@@ -766,7 +763,7 @@ const JSArray JS::vo_to_va() const {
 size_t JS::CountUtf8(const char* p) {
     auto count = (size_t) 0;
     auto f     = (size_t) 0;
-    auto u     = (const unsigned char*) p;
+    auto u     = reinterpret_cast<const unsigned char*>(p);
     auto c     = (unsigned) u[0];
 
     while (c != 0) {
@@ -810,10 +807,10 @@ void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int s
     if (js->is_array() == true) {
         j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
 
-        for (auto n : *js->_va) {
+        for (const auto n2 : *js->_va) {
             if (skip == 0) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
-            else JS::_Encode(n, j, t, f < (js->_va->size() - 1), skip);
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), skip);
+            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), skip);
             if (skip == 0) t.pop_back();
             f++;
         }
@@ -823,10 +820,10 @@ void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int s
     else if (js->is_object() == true) {
         j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
 
-        for (auto& n : *js->_vo) {
+        for (const auto& n2 : *js->_vo) {
             if (skip == 0) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
-            else JS::_Encode(n.second, j, t, f < (js->_vo->size() - 1), skip);
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), skip);
+            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), skip);
             if (skip == 0) t.pop_back();
             f++;
         }
@@ -846,7 +843,7 @@ void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
     if (*js == ARRAY) {
         j += js->_encode(false, skip);
 
-        for (auto n : *js->_va) {
+        for (const auto n : *js->_va) {
             JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
             f++;
         }
@@ -856,7 +853,7 @@ void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
     else if (*js == OBJECT) {
         j += js->_encode(false, skip);
 
-        for (auto& n : *js->_vo) {
+        for (const auto& n : *js->_vo) {
             JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
             f++;
         }

@@ -20,7 +20,7 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     _flag_move = true;
     _flag_menu = true;
 
-    ((Fl_Group*) this)->add(_menu);
+    static_cast<Fl_Group*>(this)->add(_menu);
     _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->type(Fl_Menu_Button::POPUP3);
@@ -30,9 +30,9 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
 
 //------------------------------------------------------------------------------
 void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
-    auto self  = (ScrollBrowser*) o;
-    auto menu  = self->_menu->text();
-    auto label = std::string((menu != nullptr) ? menu : "");
+    auto self  = static_cast<ScrollBrowser*>(o);
+    auto txt   = self->_menu->text();
+    auto label = std::string((txt != nullptr) ? txt : "");
     auto clip  = std::string();
 
     clip.reserve(self->size() * 40 + 100);

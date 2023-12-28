@@ -31,7 +31,7 @@ public:
     int                         _tw;
 
     //--------------------------------------------------------------------------
-    _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
+    explicit _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
         _tw = 0;
         copy_label(label);
         copy_tooltip(label);
@@ -117,7 +117,7 @@ Fl_Widget* TabsGroup::child(int num) const {
 int TabsGroup::find(Fl_Widget* widget) const{
     auto num = 0;
 
-    for (auto w : _widgets) {
+    for (const auto w : _widgets) {
         if (w == widget) {
             return num;
         }
@@ -341,7 +341,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
 
         for (auto widget : _buttons) { // Calc total width of buttons
-            auto b = (_TabsGroupButton*) widget;
+            auto b = static_cast<_TabsGroupButton*>(widget);
             b->_tw = 0;
             fl_measure(b->label(), b->_tw, th);
 
@@ -360,7 +360,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         size_t count = 0;
 
         for (auto widget : _buttons) { // Resize buttons
-            auto b  = (_TabsGroupButton*) widget;
+            auto b  = static_cast<_TabsGroupButton*>(widget);
             auto bw = (w != 0) ? w : b->_tw;
 
             if (space == 2 && count == _buttons.size() - 1) {
@@ -524,20 +524,20 @@ void TabsGroup::BoxType(Fl_Boxtype boxtype) {
 //------------------------------------------------------------------------------
 void TabsGroup::Callback(Fl_Widget* sender, void* object) {
     if (sender) {
-        auto button = (_TabsGroupButton*) sender;
-        auto self   = (TabsGroup*) object;
+        auto button = static_cast<_TabsGroupButton*>(sender);
+        auto self   = static_cast<TabsGroup*>(object);
         auto count  = 0;
 
         self->_active = -1;
 
         for (auto b : self->_buttons) {
             if (b == button) {
-                ((Fl_Button*) b)->value(1);
+                static_cast<Fl_Button*>(b)->value(1);
                 self->_active = count;
                 self->_widgets[count]->show();
             }
             else {
-                ((Fl_Button*) b)->value(0);
+                static_cast<Fl_Button*>(b)->value(0);
                 self->_widgets[count]->hide();
             }
 

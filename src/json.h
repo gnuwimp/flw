@@ -1,8 +1,8 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#ifndef FLW_JSON_H
-#define FLW_JSON_H
+#ifndef GNU_JSON_H
+#define GNU_JSON_H
 
 // MKALGAM_ON
 
@@ -117,7 +117,7 @@ public:
     static std::string          Unescape(const char* string);
 
 private:
-                                JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
+    explicit                    JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
                                     { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
     bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
     bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);

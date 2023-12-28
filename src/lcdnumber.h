@@ -14,7 +14,7 @@ namespace flw {
     //
     class LcdNumber : public Fl_Box {
     public:
-                                        LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         Fl_Align                        align() const
                                             { return _align; }
         void                            align(Fl_Align align)

@@ -18,7 +18,7 @@ struct Point {
     double                      x;
     double                      y;
 
-                                Point(double x = 0.0, double y = 0.0) {
+    explicit                    Point(double x = 0.0, double y = 0.0) {
                                     this->x = x;
                                     this->y = y;
                                 }
@@ -49,7 +49,7 @@ public:
                                 SQUARE,
     };
 
-                                Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     virtual                     ~Plot();
     bool                        add_line(const PointVector& points, TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
     void                        clear();

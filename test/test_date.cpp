@@ -331,6 +331,10 @@ int main() {
         set();
     }
 
+//    flw::Date d = true;
+    flw::Date d(true);
+    printf("d(true)=%s\n", d.format().c_str());
+
     printf("Test Finished\n");
     return 0;
 }

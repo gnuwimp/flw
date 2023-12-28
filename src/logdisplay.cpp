@@ -307,7 +307,6 @@ static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
     else if (name == "BG_BOLD_MAGENTA") return LogDisplay::BG_BOLD_MAGENTA;
     else if (name == "BG_BOLD_YELLOW") return LogDisplay::BG_BOLD_YELLOW;
     else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
-    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
     else return LogDisplay::GRAY;
 }
 
@@ -326,11 +325,11 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
 
     if (js.is_array() == false) FLW_LOGDISPLAY_ERROR(&js)
 
-    for (auto j : *js.va()) {
+    for (const auto j : *js.va()) {
         if (j->is_object() == false) FLW_LOGDISPLAY_ERROR(j);
         auto style = _LogDisplayStyle();
 
-        for (auto j2 : j->vo_to_va()) {
+        for (const auto j2 : j->vo_to_va()) {
             if (j2->name() == "color" && j2->is_string() == true)           style.color     = _logdisplay_convert_color(j2->vs());
             else if (j2->name() == "count" && j2->is_number() == true)      style.count     = (size_t) j2->vn_i();
             else if (j2->name() == "inclusive" && j2->is_bool() == true)    style.inclusive = j2->vb();
@@ -381,10 +380,10 @@ static char* _logdisplay_win_to_unix(const char* string) {
     }
 
     auto len = strlen(string);
-    auto res = (char*) calloc(len + 1, 1);
-    auto pos = 0;
+    auto res = static_cast<char*>(calloc(len + 1, 1));
 
     if (res != nullptr) {
+        auto pos = 0;
         b = string;
 
         while (*b != 0) {
@@ -557,15 +556,15 @@ void LogDisplay::save_file() {
 // If input string is empty then LogDisplay::line_cb() is called (must be overriden)
 //
 void LogDisplay::style(std::string json) {
-    auto row = 1;
     auto ds  = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
 
     _json      = json;
     _tmp       = new Tmp();
     _tmp->size = _buffer->length();
-    _tmp->buf  = (char*) calloc(_tmp->size + 1, 1);
+    _tmp->buf  = static_cast<char*>(calloc(_tmp->size + 1, 1));
 
     if (_tmp->buf != nullptr) {
+        auto row = 1;
         memset(_tmp->buf, 'A', _tmp->size);
 
         while (_tmp->pos < (size_t) _buffer->length()) {
@@ -696,7 +695,7 @@ void LogDisplay::style_range(const std::string& line, const std::string& word1, 
             if (inclusive == false) {
                 style_line(pos_from + word1.length(), pos_to - 1, color);
             }
-            else if (inclusive == true) {
+            else {
                 style_line(pos_from, pos_to + word2.length() - 1, color);
             }
 

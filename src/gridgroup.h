@@ -19,7 +19,7 @@ namespace flw {
     public:
         static const int                MAX_WIDGETS = 100;
 
-                                        GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         virtual                         ~GridGroup();
         void                            add(Fl_Widget* widget, int X, int Y, int W, int H);
         void                            clear();

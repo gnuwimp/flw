@@ -25,12 +25,12 @@ namespace flw {
         InputMenu&                      operator=(const InputMenu&) = delete;
         InputMenu&                      operator=(InputMenu&&) = delete;
 
-                                        InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            clear();
         StringVector                    get_history() const;
         Fl_Input*                       input()
                                             { return (Fl_Input*) _input; }
-        void                            insert(const std::string& string, int max_list_len);
+        void                            insert(std::string string, int max_list_len);
         Fl_Menu_Button*                 menu()
                                             { return _menu; }
         void                            resize(int X, int Y, int W, int H) override;

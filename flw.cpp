@@ -176,7 +176,7 @@ static bool _chart_has_resizable_width(Chart::TYPE chart_type) {
 static bool _chart_has_time(Date::RANGE date_range) {
     return date_range == Date::RANGE::HOUR || date_range == Date::RANGE::MIN || date_range == Date::RANGE::SEC;
 }
-static Chart::TYPE _chart_string_to_type(std::string name) {
+static Chart::TYPE _chart_string_to_type(const std::string& name) {
     if (name == "LINE") return Chart::LINE;
     else if (name == "BAR") return Chart::BAR;
     else if (name == "VERTICAL") return Chart::VERTICAL;
@@ -407,16 +407,16 @@ void ChartArea::clear(bool clear_data) {
 }
 void ChartArea::debug(int num) const {
 #ifdef DEBUG
-    auto count = 0;
+    auto c = 0;
     for (const auto& line : lines) {
         if (line.points.size() > 0) {
-            count++;
+            c++;
         }
     }
-    if (count > 0 || num == 0) {
+    if (c > 0 || num == 0) {
         fprintf(stderr, "\t----------------------\n");
         fprintf(stderr, "\tChartArea: %d\n", num);
-        fprintf(stderr, "\t\tlines:    %4d\n", count);
+        fprintf(stderr, "\t\tlines:    %4d\n", c);
         fprintf(stderr, "\t\tx:        %4.0f\n", x);
         fprintf(stderr, "\t\ty:        %4.0f\n", y);
         fprintf(stderr, "\t\tw:        %4.0f\n", w);
@@ -425,10 +425,10 @@ void ChartArea::debug(int num) const {
         fprintf(stderr, "\t\tselected: %4d\n", (int) selected);
         left.debug("left");
         right.debug("right");
-        count = 0;
+        c = 0;
         for (const auto& line : lines) {
             if (line.points.size() > 0) {
-                line.debug(count++);
+                line.debug(c++);
             }
         }
     }
@@ -563,12 +563,12 @@ void Chart::_calc_area_width() {
         _scroll->slider_size((slider_size > 0.05) ? slider_size : 0.05);
         _scroll->range(0, _dates.size() - _ticks);
         if (_scroll->value() > _scroll->maximum()) {
-            ((Fl_Slider*) _scroll)->value(_scroll->maximum());
+            static_cast<Fl_Slider*>(_scroll)->value(_scroll->maximum());
             _date_start = _dates.size() - _ticks - 1;
         }
     }
     else {
-        ((Fl_Valuator*) _scroll)->value(0);
+        static_cast<Fl_Valuator*>(_scroll)->value(0);
         _scroll->range(0, 0);
         _scroll->slider_size(1.0);
         _scroll->deactivate();
@@ -580,14 +580,14 @@ void Chart::_calc_area_width() {
     }
 }
 void Chart::_calc_dates() {
-    std::string min       = "";
-    std::string max       = "";
-    bool        long_date = false;
+    auto min       = std::string();
+    auto max       = std::string();
+    auto long_date = false;
     for (const auto& area : _areas) {
         for (const auto& line : area.lines) {
             if (line.points.size() > 0) {
-                auto& first = line.points.front();
-                auto& last  = line.points.back();
+                const auto& first = line.points.front();
+                const auto& last  = line.points.back();
                 if (min.length() == 0) {
                     if (first.date.length() == 15) {
                         min = "99991231 232359";
@@ -631,8 +631,8 @@ void Chart::_calc_ymin_ymax() {
             if (line.points.size() > 0) {
                 const int stop    = _date_start + _ticks;
                 int       current = _date_start;
-                double    max     = Chart::MIN_VAL;
-                double    min     = Chart::MAX_VAL;
+                double    max;
+                double    min;
                 while (current <= stop && current < (int) _dates.size()) {
                     const Price& date  = _dates[current];
                     const size_t index = _chart_bsearch(line.points, date);
@@ -684,7 +684,7 @@ void Chart::_calc_yscale() {
     }
 }
 void Chart::clear() {
-    ((Fl_Valuator*) _scroll)->value(0);
+    static_cast<Fl_Valuator*>(_scroll)->value(0);
     _block_dates.clear();
     _dates.clear();
     _areas[0].clear(true);
@@ -714,12 +714,12 @@ void Chart::_create_tooltip(bool ctrl) {
         Fl::redraw();
         return;
     }
-    const auto date_format = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
-    const int  stop        = _date_start + _ticks;
-    int        start       = _date_start;
-    int        X1          = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
-    int        left_dec    = 0;
-    int        right_dec   = 0;
+    const auto format    = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
+    const int  stop      = _date_start + _ticks;
+    int        start     = _date_start;
+    int        X1        = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+    int        left_dec  = 0;
+    int        right_dec = 0;
     if (_area->left.tick < 10.0 ) {
         left_dec = _chart_count_decimals(_area->left.tick) + 1;
     }
@@ -728,7 +728,7 @@ void Chart::_create_tooltip(bool ctrl) {
     }
     while (start <= stop && start < (int) _dates.size()) {
         if (X >= X1 && X <= X1 + _tick_width - 1) {
-            const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(date_format);
+            const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(format);
             _tooltip = fancy_date;
             if (ctrl == false || _area->lines[_area->selected].points.size() == 0) {
                 const double ydiff = (double) ((y() + _area->y2()) - Y);
@@ -753,7 +753,7 @@ void Chart::_create_tooltip(bool ctrl) {
             }
             else {
                 const auto&  line  = _area->lines[_area->selected];
-                const size_t index = _chart_bsearch(line.points, _dates[start].date);
+                const size_t index = _chart_bsearch(line.points, _dates[start]);
                 if (index != (size_t) -1) {
                     const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
                     const auto price = line.points[index];
@@ -1257,18 +1257,18 @@ int Chart::handle(int event) {
         else {
             if (adj > 0) {
                 if ((pos + adj) > size) {
-                    ((Fl_Slider*) _scroll)->value(size);
+                    static_cast<Fl_Slider*>(_scroll)->value(size);
                 }
                 else {
-                    ((Fl_Slider*) _scroll)->value(pos + adj);
+                    static_cast<Fl_Slider*>(_scroll)->value(pos + adj);
                 }
             }
             else {
                 if ((pos + adj) < 0.0) {
-                    ((Fl_Slider*) _scroll)->value(0.0);
+                    static_cast<Fl_Slider*>(_scroll)->value(0.0);
                 }
                 else {
-                    ((Fl_Slider*) _scroll)->value(pos + adj);
+                    static_cast<Fl_Slider*>(_scroll)->value(pos + adj);
                 }
             }
             Chart::_CallbackScrollbar(0, this);
@@ -1363,18 +1363,18 @@ void Chart::update_pref() {
     _menu->textsize(flw::PREF_FONTSIZE);
 }
 void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<const Chart*>(chart_object);
     self->debug();
 }
 void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
     self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
     self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
     self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
     self->redraw();
 }
 void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
     for (auto& area : self->_areas) {
         area.selected = 0;
         for (auto& line : area.lines) {
@@ -1384,11 +1384,11 @@ void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
     self->redraw();
 }
 void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
     util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
 }
 void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
     self->_date_start = self->_scroll->value();
     self->init(false);
 }
@@ -1409,9 +1409,9 @@ bool Chart::Load(Chart* chart, std::string filename) {
         return false;
     }
     if (js.is_object() == false) FLW_CHART_ERROR(&js);
-    for (auto j : js.vo_to_va()) {
+    for (const auto j : js.vo_to_va()) {
         if (j->name() == "descr" && j->is_object() == true) {
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "type" && j2->is_string() == true) {
                     if (j2->vs() != "flw::chart") FLW_CHART_ERROR(j2)
                 }
@@ -1423,7 +1423,7 @@ bool Chart::Load(Chart* chart, std::string filename) {
         }
         else if (j->name() == "descr_area" && j->is_object() == true) {
             long long int area[11] = { 0 };
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "area0" && j2->is_number() == true)             area[0] = j2->vn_i();
                 else if (j2->name() == "area1" && j2->is_number() == true)        area[1] = j2->vn_i();
                 else if (j2->name() == "area2" && j2->is_number() == true)        area[2] = j2->vn_i();
@@ -1444,7 +1444,7 @@ bool Chart::Load(Chart* chart, std::string filename) {
             chart->view_options(area[5], area[4], area[9]);
         }
         else if (j->name() == "lines" && j->is_array() == true) {
-            for (auto j2 : *j->va()) {
+            for (const auto j2 : *j->va()) {
                 int         line[5]  = { 0 };
                 double      clamp[2] = { 0.0 };
                 std::string label;
@@ -1475,7 +1475,7 @@ bool Chart::Load(Chart* chart, std::string filename) {
         }
         else if (j->name() == "lines_block" && j->is_array() == true) {
             PriceVector dates;
-            for (auto d : *j->va()) {
+            for (const auto d : *j->va()) {
                 if (d->is_string() == true) dates.push_back(Price(d->vs()));
                 else FLW_CHART_ERROR(d)
             }
@@ -1487,7 +1487,6 @@ bool Chart::Load(Chart* chart, std::string filename) {
     return true;
 }
 bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_low) {
-    auto ac  = 0;
     auto wc  = WaitCursor();
     auto jsb = JSB();
     try {
@@ -1510,6 +1509,7 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
             jsb.end();
             jsb << JSB::MakeArray("lines");
                 for (const auto& area : chart->_areas) {
+                    auto ac = 0;
                     for (const auto& line : area.lines) {
                         if (line.points.size() > 0) {
                             jsb << JSB::MakeObject();
@@ -1522,7 +1522,7 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
                                 jsb << JSB::MakeNumber(line.clamp_min, "clamp_min");
                                 jsb << JSB::MakeNumber(line.clamp_max, "clamp_max");
                                 jsb << JSB::MakeArray("yx");
-                                for (auto& price : line.points) {
+                                for (const auto& price : line.points) {
                                     jsb << JSB::MakeArrayInline();
                                         jsb << JSB::MakeString(_chart_format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO));
                                         if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
@@ -1540,14 +1540,14 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
                 }
             jsb.end();
             jsb << JSB::MakeArray("lines_block");
-                for (auto& price : chart->_block_dates) {
+                for (const auto& price : chart->_block_dates) {
                     jsb << JSB::MakeString(price.date);
                 }
             jsb.end();
         auto js = jsb.encode();
         return util::save_file(filename, js.c_str(), js.length());
     }
-    catch(std::string e) {
+    catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }
@@ -1556,292 +1556,291 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
 #include <string.h>
 #include <time.h>
 namespace flw {
-    static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    static int          _DATE_DAYS_MONTH_LEAP[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""};
-    static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""};
-    static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
-    static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
-    const int Date::SECS_PER_HOUR = 3600;
-    const int Date::SECS_PER_DAY  = 3600 * 24;
-    const int Date::SECS_PER_WEEK = 3600 * 24 * 7;
-    static int _date_days(int year, int month) {
-        if (year < 1 || year > 9999 || month < 1 || month > 12) {
-            return 0;
-        }
-        else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-            return _DATE_DAYS_MONTH_LEAP[month];
-        }
-        return _DATE_DAYS_MONTH[month];
+static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static int          _DATE_DAYS_MONTH_LEAP[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""};
+static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""};
+static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
+static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
+const int Date::SECS_PER_HOUR = 3600;
+const int Date::SECS_PER_DAY  = 3600 * 24;
+const int Date::SECS_PER_WEEK = 3600 * 24 * 7;
+static int _date_days(int year, int month) {
+    if (year < 1 || year > 9999 || month < 1 || month > 12) {
+        return 0;
     }
-    static void _date_from_time(int64_t seconds, bool utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
-        year = month = day = 1;
-        hour = min = sec = 0;
-        if (seconds < 0) {
-            return;
-        }
-        auto rawtime  = (time_t) seconds;
-        auto timeinfo = utc ? gmtime(&rawtime) : localtime(&rawtime);
-        if (timeinfo == nullptr) {
-            return;
-        }
-        year  = timeinfo->tm_year + 1900;
-        month = timeinfo->tm_mon + 1;
-        day   = timeinfo->tm_mday;
-        hour  = timeinfo->tm_hour;
-        min   = timeinfo->tm_min;
-        sec   = timeinfo->tm_sec;
+    else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+        return _DATE_DAYS_MONTH_LEAP[month];
     }
-    static Date _date_parse(const char* string, bool us) {
-        auto space = strstr(string, " ");
-        int  tot   = strlen(string);
-        int  tlen  = space ? (int) (space - string) : 0;
-        int  len   = space ? tlen : tot;
-        int  year  = 1;
-        int  month = 1;
-        int  day   = 1;
-        int  hour  = 0;
-        int  min   = 0;
-        int  sec   = 0;
-        bool iso   = false;
-        int  Y     = 0;
-        int  val[15];
-        for (int f = 0; f < 15; f++) {
-            val[f] = 0;
+    return _DATE_DAYS_MONTH[month];
+}
+static void _date_from_time(int64_t seconds, bool utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
+    year = month = day = 1;
+    hour = min = sec = 0;
+    if (seconds < 0) {
+        return;
+    }
+    time_t    rawtime  = seconds;
+    const tm* timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
+    if (timeinfo == nullptr) {
+        return;
+    }
+    year  = timeinfo->tm_year + 1900;
+    month = timeinfo->tm_mon + 1;
+    day   = timeinfo->tm_mday;
+    hour  = timeinfo->tm_hour;
+    min   = timeinfo->tm_min;
+    sec   = timeinfo->tm_sec;
+}
+static Date _date_parse(const char* string, bool us) {
+    const char* space = strstr(string, " ");
+    int  tot   = strlen(string);
+    int  tlen  = space ? (int) (space - string) : 0;
+    int  len   = space ? tlen : tot;
+    int  year  = 1;
+    int  month = 1;
+    int  day   = 1;
+    int  hour  = 0;
+    int  min   = 0;
+    int  sec   = 0;
+    bool iso   = false;
+    int  Y     = 0;
+    int  val[15];
+    for (int f = 0; f < 15; f++) {
+        val[f] = 0;
+    }
+    if (len == 10 && string[4] == '-' && string[7] == '-') {
+        iso    = true;
+        val[4] = string[5] - '0';
+        val[5] = string[6] - '0';
+        val[6] = string[8] - '0';
+        val[7] = string[9] - '0';
+    }
+    else if (len == 8 && string[1] == '/' && string[3] == '/') {
+        Y      = 4;
+        val[4] = string[2] - '0';
+        val[5] = -1;
+        val[6] = string[0] - '0';
+        val[7] = -1;
+    }
+    else if (len == 9 && string[1] == '/' && string[4] == '/') {
+        Y      = 5;
+        val[4] = string[2] - '0';
+        val[5] = string[3] - '0';
+        val[6] = string[0] - '0';
+        val[7] = -1;
+    }
+    else if (len == 9 && string[2] == '/' && string[4]) {
+        Y      = 5;
+        val[4] = string[3] - '0';
+        val[5] = -1;
+        val[6] = string[0] - '0';
+        val[7] = string[1] - '0';
+    }
+    else if (len == 10 && string[2] == '/' && string[5] == '/') {
+        Y      = 6;
+        val[4] = string[3] - '0';
+        val[5] = string[4] - '0';
+        val[6] = string[0] - '0';
+        val[7] = string[1] - '0';
+    }
+    else if (len == 8) {
+        iso    = true;
+        val[4] = string[4] - '0';
+        val[5] = string[5] - '0';
+        val[6] = string[6] - '0';
+        val[7] = string[7] - '0';
+    }
+    else {
+        return Date(1, 1, 1);
+    }
+    val[0] = string[Y] - '0';
+    val[1] = string[Y + 1] - '0';
+    val[2] = string[Y + 2] - '0';
+    val[3] = string[Y + 3] - '0';
+    if (tlen && tot - tlen >= 9) {
+        val[8]  = string[tlen + 1] - '0';
+        val[9]  = string[tlen + 2] - '0';
+        val[10] = string[tlen + 4] - '0';
+        val[11] = string[tlen + 5] - '0';
+        val[12] = string[tlen + 7] - '0';
+        val[13] = string[tlen + 8] - '0';
+    }
+    else if (tlen && tot - tlen >= 7) {
+        val[8]  = string[tlen + 1] - '0';
+        val[9]  = string[tlen + 2] - '0';
+        val[10] = string[tlen + 3] - '0';
+        val[11] = string[tlen + 4] - '0';
+        val[12] = string[tlen + 5] - '0';
+        val[13] = string[tlen + 6] - '0';
+    }
+    for (int f = 0; f < 15; f++) {
+        if ((f == 5 || f == 7) && val[f] == -1) {
+            ;
         }
-        if (len == 10 && string[4] == '-' && string[7] == '-') {
-            iso    = true;
-            val[4] = string[5] - '0';
-            val[5] = string[6] - '0';
-            val[6] = string[8] - '0';
-            val[7] = string[9] - '0';
-        }
-        else if (len == 8 && string[1] == '/' && string[3] == '/') {
-            Y      = 4;
-            val[4] = string[2] - '0';
-            val[5] = -1;
-            val[6] = string[0] - '0';
-            val[7] = -1;
-        }
-        else if (len == 9 && string[1] == '/' && string[4] == '/') {
-            Y      = 5;
-            val[4] = string[2] - '0';
-            val[5] = string[3] - '0';
-            val[6] = string[0] - '0';
-            val[7] = -1;
-        }
-        else if (len == 9 && string[2] == '/' && string[4]) {
-            Y      = 5;
-            val[4] = string[3] - '0';
-            val[5] = -1;
-            val[6] = string[0] - '0';
-            val[7] = string[1] - '0';
-        }
-        else if (len == 10 && string[2] == '/' && string[5] == '/') {
-            Y      = 6;
-            val[4] = string[3] - '0';
-            val[5] = string[4] - '0';
-            val[6] = string[0] - '0';
-            val[7] = string[1] - '0';
-        }
-        else if (len == 8) {
-            iso    = true;
-            val[4] = string[4] - '0';
-            val[5] = string[5] - '0';
-            val[6] = string[6] - '0';
-            val[7] = string[7] - '0';
-        }
-        else {
+        else if (val[f] < 0 || val[f] > 9) {
             return Date(1, 1, 1);
         }
-        val[0] = string[Y] - '0';
-        val[1] = string[Y + 1] - '0';
-        val[2] = string[Y + 2] - '0';
-        val[3] = string[Y + 3] - '0';
-        if (tlen && tot - tlen >= 9) {
-            val[8]  = string[tlen + 1] - '0';
-            val[9]  = string[tlen + 2] - '0';
-            val[10] = string[tlen + 4] - '0';
-            val[11] = string[tlen + 5] - '0';
-            val[12] = string[tlen + 7] - '0';
-            val[13] = string[tlen + 8] - '0';
-        }
-        else if (tlen && tot - tlen >= 7) {
-            val[8]  = string[tlen + 1] - '0';
-            val[9]  = string[tlen + 2] - '0';
-            val[10] = string[tlen + 3] - '0';
-            val[11] = string[tlen + 4] - '0';
-            val[12] = string[tlen + 5] - '0';
-            val[13] = string[tlen + 6] - '0';
-        }
-        for (int f = 0; f < 15; f++) {
-            if ((f == 5 || f == 7) && val[f] == -1) {
-                ;
-            }
-            else if (val[f] < 0 || val[f] > 9) {
-                return Date(1, 1, 1);
-            }
-        }
-        year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
-        month = val[5] == -1 ? val[4] : val[4] * 10 + val[5];
-        day   = val[7] == -1 ? val[6] : val[6] * 10 + val[7];
-        hour  = val[8] * 10 + val[9];
-        min   = val[10] * 10 + val[11];
-        sec   = val[12] * 10 + val[13];
-        if (iso == false && us) {
-            int tmp = month;
-            month   = day;
-            day     = tmp;
-        }
-        return Date(year, month, day, hour, min, sec);
     }
-    static flw::Date::DAY _date_weekday(int year, int month, int day) {
-        if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days(year, month)) {
-            int start = 0;
-            int y1    = year - 1;
-            int pre   = ((year < 1582) || ((year == 1582) && (month <= 10)));
-            if (pre) {
-                start = 6 + y1 + (y1 / 4);
-            }
-            else {
-                start = 1 + y1 + (y1 / 4) - (y1 / 100) + (y1 / 400);
-            }
-            for (int i = 1; i < month; i++) {
-                int days = _date_days(year, i);
-                if (days) {
-                    start += days;
-                }
-                else {
-                    return flw::Date::DAY::INVALID;
-                }
-            }
-            start = start % 7;
-            start = start == 0 ? 7 : start;
-            for (int i = 2; i <= day; i++) {
-                start++;
-                if (start > 7) {
-                    start = 1;
-                }
-            }
-            if (start < 1 || start > 7) {
-                return flw::Date::DAY::INVALID;
-            }
-            else {
-                return (flw::Date::DAY) start;
-            }
-        }
-        return flw::Date::DAY::INVALID;
+    year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
+    month = val[5] == -1 ? val[4] : val[4] * 10 + val[5];
+    day   = val[7] == -1 ? val[6] : val[6] * 10 + val[7];
+    hour  = val[8] * 10 + val[9];
+    min   = val[10] * 10 + val[11];
+    sec   = val[12] * 10 + val[13];
+    if (iso == false && us) {
+        int tmp = month;
+        month   = day;
+        day     = tmp;
     }
-    static bool _date_is_leapyear(int year) {
-        if (year < 1 || year > 9999) {
-            return false;
-        }
-        else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-            return true;
+    return Date(year, month, day, hour, min, sec);
+}
+static Date::DAY _date_weekday(int year, int month, int day) {
+    if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days(year, month)) {
+        int start = 0;
+        int y1    = year - 1;
+        int pre   = ((year < 1582) || ((year == 1582) && (month <= 10)));
+        if (pre) {
+            start = 6 + y1 + (y1 / 4);
         }
         else {
-           return false;
+            start = 1 + y1 + (y1 / 4) - (y1 / 100) + (y1 / 400);
+        }
+        for (int i = 1; i < month; i++) {
+            int days = _date_days(year, i);
+            if (days) {
+                start += days;
+            }
+            else {
+                return Date::DAY::INVALID;
+            }
+        }
+        start = start % 7;
+        start = start == 0 ? 7 : start;
+        for (int i = 2; i <= day; i++) {
+            start++;
+            if (start > 7) {
+                start = 1;
+            }
+        }
+        if (start < 1 || start > 7) {
+            return Date::DAY::INVALID;
+        }
+        else {
+            return (Date::DAY) start;
         }
     }
+    return Date::DAY::INVALID;
 }
-flw::Date::Date(bool utc) {
-    int year, month, day, hour, min, sec;
-    _date_from_time(::time(nullptr), utc, year, month, day, hour, min, sec);
-    set(year, month, day, hour, min, sec);
+static bool _date_is_leapyear(int year) {
+    if (year < 1 || year > 9999) {
+        return false;
+    }
+    else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+        return true;
+    }
+    else {
+       return false;
+    }
 }
-flw::Date::Date(const Date& other) {
+Date::Date(bool utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
+    set(y, m, d, ho, mi, se);
+}
+Date::Date(const Date& other) {
     set(other);
 }
-flw::Date::Date(Date&& other) {
+Date::Date(Date&& other) {
     set(other);
 }
-flw::Date::Date(int year, int month, int day, int hour, int min, int sec) {
+Date::Date(int year, int month, int day, int hour, int min, int sec) {
     _year = _month = _day = 1;
     _hour = _min = _sec = 0;
     set(year, month, day, hour, min, sec);
 }
-flw::Date& flw::Date::operator=(const Date& date) {
+Date& Date::operator=(const Date& date) {
     set(date);
     return *this;
 }
-flw::Date& flw::Date::operator=(Date&& date) {
+Date& Date::operator=(Date&& date) {
     set(date);
     return *this;
 }
-bool flw::Date::add_days(const int days) {
+bool Date::add_days(const int days) {
     if (days) {
         int daym = _date_days(_year, _month);
         if (daym > 0) {
-            const int inc   = days > 0 ? 1 : -1;
-            int       year  = _year;
-            int       month = _month;
-            int       day   = _day;
+            int inc = days > 0 ? 1 : -1;
+            int y   = _year;
+            int m   = _month;
+            int d   = _day;
             for (int f = 0; f < abs(days); f++) {
-                day += inc;
-                if (inc < 0 && day == 0) {
-                    month--;
-                    if (month == 0) {
-                        month = 12;
-                        year--;
-                        if (year < 1) {
+                d += inc;
+                if (inc < 0 && d == 0) {
+                    m--;
+                    if (m == 0) {
+                        m = 12;
+                        y--;
+                        if (y < 1) {
                             return false;
                         }
                     }
-                    day = _date_days(year, month);
-                    if (day == 0) {
+                    d = _date_days(y, m);
+                    if (d == 0) {
                         return false;
                     }
                 }
-                else if (inc > 0 && day > daym) {
-                    day = 1;
-                    month++;
-                    if (month == 13) {
-                        month = 1;
-                        year++;
-                        if (year > 9999) {
+                else if (inc > 0 && d > daym) {
+                    d = 1;
+                    m++;
+                    if (m == 13) {
+                        m = 1;
+                        y++;
+                        if (y > 9999) {
                             return false;
                         }
                     }
-                    daym = _date_days(year, month);
+                    daym = _date_days(y, m);
                     if (daym == 0) {
                         return false;
                     }
                 }
             }
-            _year  = year;
-            _month = month;
-            _day   = day;
+            _year  = y;
+            _month = m;
+            _day   = d;
             return true;
         }
     }
     return false;
 }
-bool flw::Date::add_months(const int months) {
+bool Date::add_months(const int months) {
     if (months) {
-        const int inc   = months > 0 ? 1 : -1;
-        int       month = _month;
-        int       year  = _year;
+        int inc = months > 0 ? 1 : -1;
+        int m   = _month;
+        int y   = _year;
         for (int f = 0; f < abs(months); f++) {
-            month += inc;
-            if (month == 0) {
-                month = 12;
-                year--;
-                if (year < 1) {
+            m += inc;
+            if (m == 0) {
+                m = 12;
+                y--;
+                if (y < 1) {
                     return false;
                 }
             }
-            else if (month > 12) {
-                month = 1;
-                year++;
-                if (year > 9999) {
+            else if (m > 12) {
+                m = 1;
+                y++;
+                if (y > 9999) {
                     return false;
                 }
             }
         }
-        const int days = _date_days(year, month);
+        const int days = _date_days(y, m);
         if (days > 0) {
-            _year  = year;
-            _month = month;
+            _year  = y;
+            _month = m;
             if (_day > days) {
                 _day = days;
             }
@@ -1850,51 +1849,51 @@ bool flw::Date::add_months(const int months) {
     }
     return false;
 }
-bool flw::Date::add_seconds(const int64_t seconds) {
+bool Date::add_seconds(const int64_t seconds) {
     if (seconds) {
-        const int inc  = seconds > 0 ? 1 : -1;
-        int       hour = _hour;
-        int       min  = _min;
-        int       sec  = _sec;
+        int inc = seconds > 0 ? 1 : -1;
+        int h   = _hour;
+        int m   = _min;
+        int s   = _sec;
         for (int64_t f = 0; f < llabs(seconds); f++) {
-            sec += inc;
-            if (inc < 0 && sec == -1) {
-                min--;
-                if (min == -1) {
-                    min = 59;
-                    hour--;
-                    if (hour == -1) {
-                        hour = 23;
+            s += inc;
+            if (inc < 0 && s == -1) {
+                m--;
+                if (m == -1) {
+                    m = 59;
+                    h--;
+                    if (h == -1) {
+                        h = 23;
                         if (add_days(-1) == false) {
                             return false;
                         }
                     }
                 }
-                sec = 59;
+                s = 59;
             }
-            else if (inc > 0 && sec == 60) {
-                min++;
-                if (min == 60) {
-                    min = 0;
-                    hour++;
-                    if (hour == 24) {
-                        hour = 0;
+            else if (inc > 0 && s == 60) {
+                m++;
+                if (m == 60) {
+                    m = 0;
+                    h++;
+                    if (h == 24) {
+                        h = 0;
                         if (add_days(1) == false) {
                             return false;
                         }
                     }
                 }
-                sec = 0;
+                s = 0;
             }
         }
-        _hour = hour;
-        _min  = min;
-        _sec  = sec;
+        _hour = h;
+        _min  = m;
+        _sec  = s;
         return true;
     }
     return false;
 }
-int flw::Date::compare(const Date& other, flw::Date::COMPARE flag) const {
+int Date::compare(const Date& other, Date::COMPARE flag) const {
     if (_year < other._year) {
         return -1;
     }
@@ -1907,7 +1906,7 @@ int flw::Date::compare(const Date& other, flw::Date::COMPARE flag) const {
     else if (_month > other._month) {
         return 1;
     }
-    if (flag >= flw::Date::COMPARE::YYYYMMDD) {
+    if (flag >= Date::COMPARE::YYYYMMDD) {
         if (_day < other._day) {
             return -1;
         }
@@ -1915,7 +1914,7 @@ int flw::Date::compare(const Date& other, flw::Date::COMPARE flag) const {
             return 1;
         }
     }
-    if (flag >= flw::Date::COMPARE::YYYYMMDDHH) {
+    if (flag >= Date::COMPARE::YYYYMMDDHH) {
         if (_hour < other._hour) {
             return -1;
         }
@@ -1923,7 +1922,7 @@ int flw::Date::compare(const Date& other, flw::Date::COMPARE flag) const {
             return 1;
         }
     }
-    if (flag >= flw::Date::COMPARE::YYYYMMDDHHMM) {
+    if (flag >= Date::COMPARE::YYYYMMDDHHMM) {
         if (_min < other._min) {
             return -1;
         }
@@ -1931,7 +1930,7 @@ int flw::Date::compare(const Date& other, flw::Date::COMPARE flag) const {
             return 1;
         }
     }
-    if (flag >= flw::Date::COMPARE::YYYYMMDDHHMMSS) {
+    if (flag >= Date::COMPARE::YYYYMMDDHHMMSS) {
         if (_sec < other._sec) {
             return -1;
         }
@@ -1941,64 +1940,51 @@ int flw::Date::compare(const Date& other, flw::Date::COMPARE flag) const {
     }
     return 0;
 }
-int flw::Date::Compare(const void* a, const void* b) {
-    Date* A = *(Date**) a;
-    Date* B = *(Date**) b;
-    return A->compare(*B);
-}
-bool flw::Date::Compare(const Date& a, const Date& b) {
-    return a.compare(b) < 0;
-}
-flw::Date& flw::Date::day(int day) {
+Date& Date::day(int day) {
     if (day > 0 && day <= _date_days(_year, _month)) {
         _day = day;
     }
     return *this;
 }
-flw::Date& flw::Date::day_last() {
+Date& Date::day_last() {
     _day = month_days();
     return *this;
 }
-void flw::Date::Del(void* self) {
-    if (self) {
-        delete (Date*) self;
-    }
-}
-int flw::Date::diff_days(const Date& date) const {
+int Date::diff_days(const Date& date) const {
     Date d(date);
     int  res = 0;
-    if (compare(d, flw::Date::COMPARE::YYYYMMDD) < 0) {
-        while (compare(d, flw::Date::COMPARE::YYYYMMDD) != 0) {
+    if (compare(d, Date::COMPARE::YYYYMMDD) < 0) {
+        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
             d.add_days(-1);
             res++;
         }
     }
-    else if (compare(d, flw::Date::COMPARE::YYYYMMDD) > 0) {
-        while (compare(d, flw::Date::COMPARE::YYYYMMDD) != 0) {
+    else if (compare(d, Date::COMPARE::YYYYMMDD) > 0) {
+        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
             d.add_days(1);
             res--;
         }
     }
     return res;
 }
-int flw::Date::diff_months(const Date& date) const {
+int Date::diff_months(const Date& date) const {
     Date d(date);
     int  res = 0;
-    if (compare(d, flw::Date::COMPARE::YYYYMM) < 0) {
-        while (compare(d, flw::Date::COMPARE::YYYYMM)) {
+    if (compare(d, Date::COMPARE::YYYYMM) < 0) {
+        while (compare(d, Date::COMPARE::YYYYMM)) {
             d.add_months(-1);
             res++;
         }
     }
-    else if (compare(d, flw::Date::COMPARE::YYYYMM) > 0) {
-        while (compare(d, flw::Date::COMPARE::YYYYMM)) {
+    else if (compare(d, Date::COMPARE::YYYYMM) > 0) {
+        while (compare(d, Date::COMPARE::YYYYMM)) {
             d.add_months(1);
             res--;
         }
     }
     return res;
 }
-int flw::Date::diff_seconds(const Date& date) const {
+int Date::diff_seconds(const Date& date) const {
     int64_t unix1 = time();
     int64_t unix2 = date.time();
     if (unix1 >= 0 && unix2 >= 0) {
@@ -2006,34 +1992,34 @@ int flw::Date::diff_seconds(const Date& date) const {
     }
     return 0;
 }
-std::string flw::Date::format(flw::Date::FORMAT format) const {
+std::string Date::format(Date::FORMAT format) const {
     char tmp[100];
     int  n = 0;
-    if (format == flw::Date::FORMAT::ISO_LONG) {
+    if (format == Date::FORMAT::ISO_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d", _year, _month, _day);
     }
-    else if (format == flw::Date::FORMAT::US) {
+    else if (format == Date::FORMAT::US) {
         n = snprintf(tmp, 100, "%d/%d/%04d", _month, _day, _year);
     }
-    else if (format == flw::Date::FORMAT::WORLD) {
+    else if (format == Date::FORMAT::WORLD) {
         n = snprintf(tmp, 100, "%d/%d/%04d", _day, _month, _year);
     }
-    else if (format == flw::Date::FORMAT::NAME) {
+    else if (format == Date::FORMAT::NAME) {
         n = snprintf(tmp, 100, "%04d %s %d", _year, month_name_short(), _day);
     }
-    else if (format == flw::Date::FORMAT::NAME_LONG) {
+    else if (format == Date::FORMAT::NAME_LONG) {
         n = snprintf(tmp, 100, "%04d %s %d", _year, month_name(), _day);
     }
-    else if (format == flw::Date::FORMAT::YEAR_MONTH) {
+    else if (format == Date::FORMAT::YEAR_MONTH) {
         n = snprintf(tmp, 100, "%04d %s", _year, month_name_short());
     }
-    else if (format == flw::Date::FORMAT::YEAR_MONTH_LONG) {
+    else if (format == Date::FORMAT::YEAR_MONTH_LONG) {
         n = snprintf(tmp, 100, "%04d %s", _year, month_name());
     }
-    else if (format == flw::Date::FORMAT::ISO_TIME) {
+    else if (format == Date::FORMAT::ISO_TIME) {
         n = snprintf(tmp, 100, "%04d%02d%02d %02d%02d%02d", _year, _month, _day, _hour, _min, _sec);
     }
-    else if (format == flw::Date::FORMAT::ISO_TIME_LONG) {
+    else if (format == Date::FORMAT::ISO_TIME_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
     }
     else {
@@ -2044,61 +2030,48 @@ std::string flw::Date::format(flw::Date::FORMAT format) const {
     }
     return tmp;
 }
-flw::Date flw::Date::FromString(const char* buffer, bool us) {
-    if (buffer == nullptr) {
-        return Date(1, 1, 1);
-    }
-    else {
-         return _date_parse(buffer, us);
-    }
-}
-flw::Date flw::Date::FromTime(int64_t seconds, bool utc) {
-    int year, month, day, hour, min, sec;
-    _date_from_time(seconds, utc, year, month, day, hour, min, sec);
-    return Date(year, month, day, hour, min, sec);
-}
-flw::Date& flw::Date::hour(int hour) {
+Date& Date::hour(int hour) {
     if (hour >= 0 && hour <= 23) {
         _hour = hour;
     }
     return *this;
 }
-bool flw::Date::is_leapyear() const {
+bool Date::is_leapyear() const {
     return _date_is_leapyear(_year);
 }
-flw::Date& flw::Date::minute(int min) {
+Date& Date::minute(int min) {
     if (min >= 0 && min <= 59) {
         _min = min;
     }
     return *this;
 }
-flw::Date& flw::Date::month(int month) {
+Date& Date::month(int month) {
     if (month >= 1 && month <= 12) {
         _month = month;
     }
     return *this;
 }
-int flw::Date::month_days() const {
+int Date::month_days() const {
     return _date_days(_year, _month);
 }
-const char* flw::Date::month_name() const {
+const char* Date::month_name() const {
     return _DATE_MONTHS[(int) _month];
 }
-const char* flw::Date::month_name_short() const {
+const char* Date::month_name_short() const {
     return _DATE_MONTHS_SHORT[(int) _month];
 }
-void flw::Date::print() const {
-    auto string = format(flw::Date::FORMAT::ISO_TIME_LONG);
+void Date::print() const {
+    auto string = format(Date::FORMAT::ISO_TIME_LONG);
     printf("Date| %s\n", string.c_str());
     fflush(stdout);
 }
-flw::Date& flw::Date::second(int sec) {
+Date& Date::second(int sec) {
     if (sec >= 0 && sec <= 59) {
         _sec = sec;
     }
     return *this;
 }
-flw::Date& flw::Date::set(const Date& date) {
+Date& Date::set(const Date& date) {
     _year  = date._year;
     _month = date._month;
     _day   = date._day;
@@ -2107,7 +2080,7 @@ flw::Date& flw::Date::set(const Date& date) {
     _sec   = date._sec;
     return *this;
 }
-flw::Date& flw::Date::set(int year, int month, int day, int hour, int min, int sec) {
+Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
     if (year < 1 || year > 9999 ||
         month < 1 || month > 12 ||
         day < 1 || day > _date_days(year, month) ||
@@ -2126,7 +2099,7 @@ flw::Date& flw::Date::set(int year, int month, int day, int hour, int min, int s
         return *this;
     }
 }
-int64_t flw::Date::time() const {
+int64_t Date::time() const {
     tm t;
     if (_year < 1970) {
         return -1;
@@ -2140,47 +2113,47 @@ int64_t flw::Date::time() const {
     t.tm_sec  = _sec;
     return mktime(&t);
 }
-int flw::Date::week() const {
-    flw::Date::DAY wday  = _date_weekday(_year, _month, _day);
-    flw::Date::DAY wday1 = _date_weekday(_year, 1, 1);
-    if (wday != flw::Date::DAY::INVALID && wday1 != flw::Date::DAY::INVALID) {
-        auto week  = 0;
+int Date::week() const {
+    Date::DAY wday  = _date_weekday(_year, _month, _day);
+    Date::DAY wday1 = _date_weekday(_year, 1, 1);
+    if (wday != Date::DAY::INVALID && wday1 != Date::DAY::INVALID) {
+        auto w     = 0;
         auto y1    = _year - 1;
         auto leap  = _date_is_leapyear(_year);
         auto leap1 = _date_is_leapyear(y1);
         auto yday  = yearday();
-        if (yday <= (8 - (int) wday1) && wday1 > flw::Date::DAY::THURSDAY) {
-            if (wday1 == flw::Date::DAY::FRIDAY || (wday1 == flw::Date::DAY::SATURDAY && leap1)) {
-                week = 53;
+        if (yday <= (8 - (int) wday1) && wday1 > Date::DAY::THURSDAY) {
+            if (wday1 == Date::DAY::FRIDAY || (wday1 == Date::DAY::SATURDAY && leap1)) {
+                w = 53;
             }
             else {
-                week = 52;
+                w = 52;
             }
         }
         else {
             auto days = leap ? 366 : 365;
             if ((days - yday) < (4 - (int) wday)) {
-                week = 1;
+                w = 1;
             }
             else {
                 days = yday + (7 - (int) wday) + ((int) wday1 - 1);
                 days = days / 7;
-                if (wday1 > flw::Date::DAY::THURSDAY) {
+                if (wday1 > Date::DAY::THURSDAY) {
                     days--;
                 }
-                week = days;
+                w = days;
             }
         }
-        if (week > 0 && week < 54) {
-            return week;
+        if (w > 0 && w < 54) {
+            return w;
         }
     }
     return 0;
 }
-flw::Date::DAY flw::Date::weekday() const {
+Date::DAY Date::weekday() const {
     return _date_weekday(_year, _month, _day);
 }
-flw::Date& flw::Date::weekday(flw::Date::DAY day) {
+Date& Date::weekday(Date::DAY day) {
     if (weekday() < day) {
         while (weekday() < day) {
             add_days(1);
@@ -2193,19 +2166,19 @@ flw::Date& flw::Date::weekday(flw::Date::DAY day) {
     }
     return *this;
 }
-const char* flw::Date::weekday_name() const {
+const char* Date::weekday_name() const {
     return _DATE_WEEKDAYS[(int) _date_weekday(_year, _month, _day)];
 }
-const char* flw::Date::weekday_name_short() const {
+const char* Date::weekday_name_short() const {
     return _DATE_WEEKDAYS_SHORT[(int) _date_weekday(_year, _month, _day)];
 }
-flw::Date& flw::Date::year(int year) {
+Date& Date::year(int year) {
     if (year >= 1 && year <= 9999) {
         _year = year;
     }
     return *this;
 }
-int flw::Date::yearday() const {
+int Date::yearday() const {
     auto res  = 0;
     auto leap = _date_is_leapyear(_year);
     for (auto m = 1; m < _month && m < 13; m++) {
@@ -2217,6 +2190,23 @@ int flw::Date::yearday() const {
         }
     }
     return res + _day;
+}
+bool Date::Compare(const Date& a, const Date& b) {
+    return a.compare(b) < 0;
+}
+Date Date::FromString(const char* buffer, bool us) {
+    if (buffer == nullptr) {
+        return Date(1, 1, 1);
+    }
+    else {
+         return _date_parse(buffer, us);
+    }
+}
+Date Date::FromTime(int64_t seconds, bool utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
+    return Date(y, m, d, ho, mi, se);
+}
 }
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Repeat_Button.H>
@@ -2409,7 +2399,7 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
     flw::DateChooser::resize(X, Y, W, H);
 }
 void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
-    auto dc = (DateChooser*) o;
+    auto dc = static_cast<DateChooser*>(o);
     auto dt = dc->get();
     if (w == dc->_b6) {
         dt.add_months(-120);
@@ -2559,16 +2549,16 @@ public:
         resizable(this);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        _DateChooserDlg* dlg = (_DateChooserDlg*) o;
-        if (w == dlg) {
+        auto self = static_cast<_DateChooserDlg*>(o);
+        if (w == self) {
             ;
         }
-        else if (w == dlg->_cancel) {
-            dlg->hide();
+        else if (w == self->_cancel) {
+            self->hide();
         }
-        else if (w == dlg->_ok) {
-            dlg->hide();
-            dlg->_res = true;
+        else if (w == self->_ok) {
+            self->hide();
+            self->_res = true;
         }
     }
     void resize(int X, int Y, int W, int H) override {
@@ -2608,806 +2598,808 @@ bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Text_Editor.H>
 namespace flw {
-    namespace theme {
-        void _load_default();
-        void _load_oxy();
-        void _load_oxy_blue();
-        void _load_oxy_tan();
-        void _load_gleam();
-        void _load_gleam_blue();
-        void _load_gleam_dark();
-        void _load_gleam_darker();
-        void _load_gleam_dark_blue();
-        void _load_gleam_tan();
-        void _load_gtk();
-        void _load_gtk_blue();
-        void _load_gtk_dark();
-        void _load_gtk_darker();
-        void _load_gtk_dark_blue();
-        void _load_gtk_tan();
-        void _load_plastic();
-        void _load_blue_plastic();
-        void _load_tan_plastic();
-        void _load_system();
-        void _scrollbar();
+namespace theme {
+void _load_default();
+void _load_oxy();
+void _load_oxy_blue();
+void _load_oxy_tan();
+void _load_gleam();
+void _load_gleam_blue();
+void _load_gleam_dark();
+void _load_gleam_darker();
+void _load_gleam_dark_blue();
+void _load_gleam_tan();
+void _load_gtk();
+void _load_gtk_blue();
+void _load_gtk_dark();
+void _load_gtk_darker();
+void _load_gtk_dark_blue();
+void _load_gtk_tan();
+void _load_plastic();
+void _load_blue_plastic();
+void _load_tan_plastic();
+void _load_system();
+void _scrollbar();
+}
+namespace dlg {
+static void* _dlg_zero_memory(void* mem, size_t size) {
+    if (mem == nullptr || size == 0) return mem;
+#ifdef _WIN32
+    RtlSecureZeroMemory(mem, size);
+#else
+    auto p = static_cast<volatile unsigned char*>(mem);
+    while (size--) {
+        *p = 0;
+        p++;
     }
-    namespace dlg {
-        void* zero_memory(void* mem, size_t size) {
-            if (mem == nullptr || size == 0) return mem;
-        #ifdef _WIN32
-            RtlSecureZeroMemory(mem, size);
-        #else
-            auto p = (volatile unsigned char*) mem;
-            while (size--) {
-                *p = 0;
-                p++;
-            }
-        #endif
-            return mem;
+#endif
+    return mem;
+}
+class _DlgHtml  : public Fl_Double_Window {
+    Fl_Help_View*               _html;
+    Fl_Return_Button*           _close;
+public:
+    _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
+        end();
+        _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _html  = new Fl_Help_View(0, 0, 0, 0);
+        add(_close);
+        add(_html);
+        _close->callback(_DlgHtml::Callback, this);
+        _close->labelfont(flw::PREF_FONT);
+        _close->labelsize(flw::PREF_FONTSIZE);
+        _html->textfont(flw::PREF_FONT);
+        _html->textsize(flw::PREF_FONTSIZE);
+        _html->value(text);
+        callback(_DlgHtml::Callback, this);
+        copy_label(title);
+        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+        set_modal();
+        resizable(this);
+        flw::util::center_window(this, parent);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgHtml*>(o);
+        if (w == self || w == self->_close) {
+            self->hide();
         }
-        class _DlgHtml  : public Fl_Double_Window {
-            Fl_Help_View*               _html;
-            Fl_Return_Button*           _close;
-        public:
-            _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
-            Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
-                end();
-                _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _html  = new Fl_Help_View(0, 0, 0, 0);
-                add(_close);
-                add(_html);
-                _close->callback(_DlgHtml::Callback, this);
-                _close->labelfont(flw::PREF_FONT);
-                _close->labelsize(flw::PREF_FONTSIZE);
-                _html->textfont(flw::PREF_FONT);
-                _html->textsize(flw::PREF_FONTSIZE);
-                _html->value(text);
-                callback(_DlgHtml::Callback, this);
-                copy_label(title);
-                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
-                set_modal();
-                resizable(this);
-                flw::util::center_window(this, parent);
+    }
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _html->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    }
+    void run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+    }
+};
+class _DlgList : public Fl_Double_Window {
+    flw::ScrollBrowser*         _list;
+    Fl_Return_Button*           _close;
+public:
+    _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
+    Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
+        end();
+        _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _list  = new flw::ScrollBrowser();
+        add(_close);
+        add(_list);
+        _close->callback(_DlgList::Callback, this);
+        _close->labelfont(flw::PREF_FONT);
+        _close->labelsize(flw::PREF_FONTSIZE);
+        _list->take_focus();
+        if (fixed_font == true) {
+            _list->textfont(flw::PREF_FIXED_FONT);
+            _list->textsize(flw::PREF_FIXED_FONTSIZE);
+        }
+        else {
+            _list->textfont(flw::PREF_FONT);
+            _list->textsize(flw::PREF_FONTSIZE);
+        }
+        callback(_DlgList::Callback, this);
+        copy_label(title);
+        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+        set_modal();
+        resizable(this);
+        flw::util::center_window(this, parent);
+        if (list.size() > 0) {
+            for (const auto& s : list) {
+                _list->add(s.c_str());
             }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgHtml*) o;
-                if (w == dlg || w == dlg->_close) {
-                    dlg->hide();
+        }
+        else if (file != "") {
+            _list->load(file.c_str());
+        }
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgList*>(o);
+        if (w == self || w == self->_close) {
+            self->hide();
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _list->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    }
+    void run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+    }
+};
+class _DlgSelect : public Fl_Double_Window {
+    Fl_Button*                  _close;
+    Fl_Button*                  _cancel;
+    ScrollBrowser*              _list;
+    Fl_Input*                   _filter;
+    const StringVector&         _strings;
+public:
+    _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
+    Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
+    _strings(strings) {
+        end();
+        _filter = new Fl_Input(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _list   = new flw::ScrollBrowser(0, 0, 0, 0);
+        add(_filter);
+        add(_list);
+        add(_cancel);
+        add(_close);
+        _cancel->callback(_DlgSelect::Callback, this);
+        _close->callback(_DlgSelect::Callback, this);
+        _filter->callback(_DlgSelect::Callback, this);
+        _filter->tooltip("Enter text to filter rows that macthes the text\nPress tab to switch focus between input and list widget.");
+        _filter->when(FL_WHEN_CHANGED);
+        _list->callback(_DlgSelect::Callback, this);
+        _list->tooltip("Use Page Up or Page Down in list to scroll faster");
+        if (fixed_font == true) {
+            _filter->textfont(flw::PREF_FIXED_FONT);
+            _filter->textsize(flw::PREF_FIXED_FONTSIZE);
+            _list->textfont(flw::PREF_FIXED_FONT);
+            _list->textsize(flw::PREF_FIXED_FONTSIZE);
+        }
+        else {
+            _filter->textfont(flw::PREF_FONT);
+            _filter->textsize(flw::PREF_FONTSIZE);
+            _list->textfont(flw::PREF_FONT);
+            _list->textsize(flw::PREF_FONTSIZE);
+        }
+        {
+            auto r = 0;
+            auto f = 0;
+            for (const auto& string : _strings) {
+                _list->add(string.c_str());
+                if (string == selected_string) {
+                    r = f + 1;
                 }
+                f++;
             }
-            void resize(int X, int Y, int W, int H) override {
-                Fl_Double_Window::resize(X, Y, W, H);
-                _html->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+            if (selected_string_index > 0 && selected_string_index <= (int) _strings.size()) {
+                _list->value(selected_string_index);
+                _list->middleline(selected_string_index);
             }
-            void run() {
-                show();
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
+            else if (r > 0) {
+                _list->value(r);
+                _list->middleline(r);
             }
-        };
-        class _DlgList : public Fl_Double_Window {
-            flw::ScrollBrowser*         _list;
-            Fl_Return_Button*           _close;
-        public:
-            _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
-            Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
-                end();
-                _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _list  = new flw::ScrollBrowser();
-                add(_close);
-                add(_list);
-                _close->callback(_DlgList::Callback, this);
-                _close->labelfont(flw::PREF_FONT);
-                _close->labelsize(flw::PREF_FONTSIZE);
-                _list->take_focus();
-                if (fixed_font == true) {
-                    _list->textfont(flw::PREF_FIXED_FONT);
-                    _list->textsize(flw::PREF_FIXED_FONTSIZE);
-                }
-                else {
-                    _list->textfont(flw::PREF_FONT);
-                    _list->textsize(flw::PREF_FONTSIZE);
-                }
-                callback(_DlgList::Callback, this);
-                copy_label(title);
-                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
-                set_modal();
-                resizable(this);
-                flw::util::center_window(this, parent);
-                if (list.size() > 0) {
-                    for (auto& s : list) {
-                        _list->add(s.c_str());
-                    }
-                }
-                else if (file != "") {
-                    _list->load(file.c_str());
-                }
-            }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgList*) o;
-                if (w == dlg || w == dlg->_close) {
-                    dlg->hide();
-                }
-            }
-            void resize(int X, int Y, int W, int H) override {
-                Fl_Double_Window::resize(X, Y, W, H);
-                _list->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-            }
-            void run() {
-                show();
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-            }
-        };
-        class _DlgSelect : public Fl_Double_Window {
-            Fl_Button*                  _close;
-            Fl_Button*                  _cancel;
-            ScrollBrowser*              _list;
-            Fl_Input*                   _filter;
-            const StringVector&         _strings;
-        public:
-            _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
-            Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
-            _strings(strings) {
-                end();
-                _filter = new Fl_Input(0, 0, 0, 0);
-                _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
-                _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-                _list   = new flw::ScrollBrowser(0, 0, 0, 0);
-                add(_filter);
-                add(_list);
-                add(_cancel);
-                add(_close);
-                _cancel->callback(_DlgSelect::Callback, this);
-                _close->callback(_DlgSelect::Callback, this);
-                _filter->callback(_DlgSelect::Callback, this);
-                _filter->tooltip("Enter text to filter rows that macthes the text\nPress tab to switch focus between input and list widget.");
-                _filter->when(FL_WHEN_CHANGED);
-                _list->callback(_DlgSelect::Callback, this);
-                _list->tooltip("Use Page Up or Page Down in list to scroll faster");
-                if (fixed_font == true) {
-                    _filter->textfont(flw::PREF_FIXED_FONT);
-                    _filter->textsize(flw::PREF_FIXED_FONTSIZE);
-                    _list->textfont(flw::PREF_FIXED_FONT);
-                    _list->textsize(flw::PREF_FIXED_FONTSIZE);
-                }
-                else {
-                    _filter->textfont(flw::PREF_FONT);
-                    _filter->textsize(flw::PREF_FONTSIZE);
-                    _list->textfont(flw::PREF_FONT);
-                    _list->textsize(flw::PREF_FONTSIZE);
-                }
-                {
-                    auto r = 0;
-                    auto f = 0;
-                    for (auto& string : _strings) {
-                        _list->add(string.c_str());
-                        if (string == selected_string) {
-                            r = f + 1;
-                        }
-                        f++;
-                    }
-                    if (selected_string_index > 0 && selected_string_index <= (int) _strings.size()) {
-                        _list->value(selected_string_index);
-                        _list->middleline(selected_string_index);
-                    }
-                    else if (r > 0) {
-                        _list->value(r);
-                        _list->middleline(r);
-                    }
-                    else {
-                        _list->value(1);
-                    }
-                }
-                _filter->take_focus();
-                util::labelfont(this);
-                callback(_DlgSelect::Callback, this);
-                copy_label(title);
-                activate_button();
-                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
-                set_modal();
-                resizable(this);
-                flw::util::center_window(this, parent);
-            }
-            void activate_button() {
-                if (_list->value() == 0) {
-                    _close->deactivate();
-                }
-                else {
-                    _close->activate();
-                }
-            }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgSelect*) o;
-                if (w == dlg || w == dlg->_cancel) {
-                    dlg->_list->deselect();
-                    dlg->hide();
-                }
-                else if (w == dlg->_filter) {
-                    dlg->filter(dlg->_filter->value());
-                    dlg->activate_button();
-                }
-                else if (w == dlg->_list) {
-                    dlg->activate_button();
-                    if (Fl::event_clicks() > 0 && dlg->_close->active()) {
-                        Fl::event_clicks(0);
-                        dlg->hide();
-                    }
-                }
-                else if (w == dlg->_close) {
-                    dlg->hide();
-                }
-            }
-            void filter(const char* filter) {
-                _list->clear();
-                for (auto& string : _strings) {
-                    if (*filter == 0) {
-                        _list->add(string.c_str());
-                    }
-                    else if (strstr(string.c_str(), filter) != nullptr) {
-                        _list->add(string.c_str());
-                    }
-                }
+            else {
                 _list->value(1);
             }
-            int handle(int event) override {
-                if (event == FL_KEYDOWN) {
-                    if (Fl::event_key() == FL_Enter) {
-                        if (_list->value() > 0) {
-                            hide();
-                        }
-                        return 1;
-                    }
-                    else if (Fl::event_key() == FL_Tab) {
-                        if (Fl::focus() == _list || Fl::focus() == _list->menu()) {
-                            _filter->take_focus();
-                        }
-                        else {
-                            _list->take_focus();
-                        }
-                        return 1;
-                    }
-                }
-                return Fl_Double_Window::handle(event);
+        }
+        _filter->take_focus();
+        util::labelfont(this);
+        callback(_DlgSelect::Callback, this);
+        copy_label(title);
+        activate_button();
+        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+        set_modal();
+        resizable(this);
+        flw::util::center_window(this, parent);
+    }
+    void activate_button() {
+        if (_list->value() == 0) {
+            _close->deactivate();
+        }
+        else {
+            _close->activate();
+        }
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgSelect*>(o);
+        if (w == self || w == self->_cancel) {
+            self->_list->deselect();
+            self->hide();
+        }
+        else if (w == self->_filter) {
+            self->filter(self->_filter->value());
+            self->activate_button();
+        }
+        else if (w == self->_list) {
+            self->activate_button();
+            if (Fl::event_clicks() > 0 && self->_close->active()) {
+                Fl::event_clicks(0);
+                self->hide();
             }
-            void resize(int X, int Y, int W, int H) override {
-                Fl_Double_Window::resize(X, Y, W, H);
-                _filter->resize(4, 4, W - 8, flw::PREF_FONTSIZE * 2);
-                _list->resize(4, flw::PREF_FONTSIZE * 2  + 8, W - 8, H - flw::PREF_FONTSIZE * 4 - 20);
-                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        }
+        else if (w == self->_close) {
+            self->hide();
+        }
+    }
+    void filter(const char* filter) {
+        _list->clear();
+        for (const auto& string : _strings) {
+            if (*filter == 0) {
+                _list->add(string.c_str());
             }
-            int run() {
-                show();
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-                auto row = _list->value();
-                if (row > 0) {
-                    auto selected = _list->text(row);
-                    for (int f = 0; f < (int) _strings.size(); f++) {
-                        auto& string = _strings[f];
-                        if (string == selected) {
-                            return f + 1;
-                        }
-                    }
-                }
-                return 0;
+            else if (strstr(string.c_str(), filter) != nullptr) {
+                _list->add(string.c_str());
             }
-        };
-        const char* PASSWORD_CANCEL = "Cancel";
-        const char* PASSWORD_OK     = "Ok";
-        class _DlgPassword : public Fl_Double_Window {
-        public:
-            enum class TYPE {
-                                        ASK_PASSWORD,
-                                        ASK_PASSWORD_AND_KEYFILE,
-                                        CONFIRM_PASSWORD,
-                                        CONFIRM_PASSWORD_AND_KEYFILE,
-            };
-        private:
-            Fl_Button*                  _browse;
-            Fl_Button*                  _cancel;
-            Fl_Button*                  _close;
-            Fl_Input*                   _file;
-            Fl_Input*                   _password1;
-            Fl_Input*                   _password2;
-            _DlgPassword::TYPE          _mode;
-            bool                        _ret;
-        public:
-            _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
-            Fl_Double_Window(0, 0, 0, 0) {
-                end();
-                _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
-                _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter Password Again");
-                _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
-                _cancel    = new Fl_Button(0, 0, 0, 0, flw::dlg::PASSWORD_CANCEL);
-                _close     = new Fl_Return_Button(0, 0, 0, 0, flw::dlg::PASSWORD_OK);
-                _file      = new Fl_Output(0, 0, 0, 0, "Key File");
-                _mode      = mode;
-                _ret       = false;
-                add(_password1);
-                add(_password2);
-                add(_file);
-                add(_browse);
-                add(_cancel);
-                add(_close);
-                _browse->callback(_DlgPassword::Callback, this);
-                _cancel->callback(_DlgPassword::Callback, this);
-                _close->callback(_DlgPassword::Callback, this);
-                _close->deactivate();
-                _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-                _file->textfont(flw::PREF_FIXED_FONT);
-                _file->textsize(flw::PREF_FONTSIZE);
-                _file->tooltip("Select optional key file");
-                _password1->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-                _password1->callback(_DlgPassword::Callback, this);
-                _password1->textfont(flw::PREF_FIXED_FONT);
-                _password1->textsize(flw::PREF_FONTSIZE);
-                _password1->when(FL_WHEN_CHANGED);
-                _password2->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-                _password2->callback(_DlgPassword::Callback, this);
-                _password2->textfont(flw::PREF_FIXED_FONT);
-                _password2->textsize(flw::PREF_FONTSIZE);
-                _password2->when(FL_WHEN_CHANGED);
-                auto W = 40 * flw::PREF_FONTSIZE;
-                auto H = 11 * flw::PREF_FONTSIZE + 28;
-                if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
-                    _password2->hide();
-                    _browse->hide();
-                    _file->hide();
-                    W = 30 * flw::PREF_FONTSIZE;
-                    H = 5 * flw::PREF_FONTSIZE + 16;
+        }
+        _list->value(1);
+    }
+    int handle(int event) override {
+        if (event == FL_KEYDOWN) {
+            if (Fl::event_key() == FL_Enter) {
+                if (_list->value() > 0) {
+                    hide();
                 }
-                else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
-                    _browse->hide();
-                    _file->hide();
-                    W = 30 * flw::PREF_FONTSIZE;
-                    H = 8 * flw::PREF_FONTSIZE + 24;
-                }
-                else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-                    _password2->hide();
-                    W = 40 * flw::PREF_FONTSIZE;
-                    H = 8 * flw::PREF_FONTSIZE + 24;
-                }
-                util::labelfont(this);
-                callback(_DlgPassword::Callback, this);
-                label(title);
-                size(W, H);
-                size_range(W, H);
-                set_modal();
-                resizable(this);
-                flw::util::center_window(this, parent);
+                return 1;
             }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgPassword*) o;
-                if (w == dlg) {
-                    ;
-                }
-                else if (w == dlg->_password1) {
-                    dlg->check();
-                }
-                else if (w == dlg->_password2) {
-                    dlg->check();
-                }
-                else if (w == dlg->_browse) {
-                    auto filename = fl_file_chooser("Select Key File", nullptr, nullptr, 0);
-                    if (filename) {
-                        dlg->_file->value(filename);
-                    }
-                    else {
-                        dlg->_file->value("");
-                    }
-                }
-                else if (w == dlg->_cancel) {
-                    dlg->_ret = false;
-                    dlg->hide();
-                }
-                else if (w == dlg->_close) {
-                    dlg->_ret = true;
-                    dlg->hide();
-                }
-            }
-            void check() {
-                auto p1 = _password1->value();
-                auto p2 = _password2->value();
-                if (_mode == _DlgPassword::TYPE::ASK_PASSWORD ||
-                    _mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-                    if (strlen(p1)) {
-                        _close->activate();
-                    }
-                    else {
-                        _close->deactivate();
-                    }
-                }
-                else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD ||
-                         _mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-                    if (strlen(p1) && strcmp(p1, p2) == 0) {
-                        _close->activate();
-                    }
-                    else {
-                        _close->deactivate();
-                    }
-                }
-            }
-            void resize(int X, int Y, int W, int H) override {
-                Fl_Double_Window::resize(X, Y, W, H);
-                if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
-                    _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-                }
-                else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
-                    _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-                    _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-                }
-                else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-                    _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-                    _file->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
-                    _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 4 + 12, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-                }
-                else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-                    _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-                    _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-                    _file->resize(4, flw::PREF_FONTSIZE * 7 + 16, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
-                    _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 7 + 16, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-                }
-                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-            }
-            bool run(std::string& password, std::string& file) {
-                show();
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-                if (_ret) {
-                    file = _file->value();
-                    password = _password1->value();
-                }
-                dlg::zero_memory((void*) _password1->value(), strlen(_password1->value()));
-                dlg::zero_memory((void*) _password2->value(), strlen(_password2->value()));
-                dlg::zero_memory((void*) _file->value(), strlen(_file->value()));
-                return _ret;
-            }
-        };
-        class _DlgText : public Fl_Double_Window {
-            Fl_Button*                  _cancel;
-            Fl_Button*                  _close;
-            Fl_Button*                  _save;
-            Fl_Text_Buffer*             _buffer;
-            Fl_Text_Display*            _text;
-            bool                        _edit;
-            char*                       _res;
-        public:
-            _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
-            Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
-                end();
-                _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
-                _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
-                _save   = new Fl_Button(0, 0, 0, 0, "&Save");
-                _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
-                _buffer = new Fl_Text_Buffer();
-                _edit   = edit;
-                _res    = nullptr;
-                add(_save);
-                add(_cancel);
-                add(_close);
-                add(_text);
-                _buffer->text(text);
-                _cancel->callback(_DlgText::Callback, this);
-                _cancel->tooltip("Close and abort all changes.");
-                _close->callback(_DlgText::Callback, this);
-                _close->tooltip("Close and update text.");
-                _save->callback(_DlgText::Callback, this);
-                _save->tooltip("Save text to file.");
-                _text->buffer(_buffer);
-                _text->linenumber_align(FL_ALIGN_RIGHT);
-                _text->linenumber_bgcolor(FL_BACKGROUND_COLOR);
-                _text->linenumber_fgcolor(FL_FOREGROUND_COLOR);
-                _text->linenumber_font(flw::PREF_FIXED_FONT);
-                _text->linenumber_size(flw::PREF_FIXED_FONTSIZE);
-                _text->linenumber_width(flw::PREF_FIXED_FONTSIZE * 3);
-                _text->take_focus();
-                _text->textfont(flw::PREF_FIXED_FONT);
-                _text->textsize(flw::PREF_FIXED_FONTSIZE);
-                util::labelfont(this);
-                if (edit == false) {
-                    _cancel->hide();
-                }
-                callback(_DlgText::Callback, this);
-                copy_label(title);
-                size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
-                set_modal();
-                resizable(this);
-                flw::util::center_window(this, parent);
-            }
-            ~_DlgText() {
-               _text->buffer(nullptr);
-                delete _buffer;
-            }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgText*) o;
-                if (w == dlg || w == dlg->_cancel) {
-                    dlg->hide();
-                }
-                else if (w == dlg->_save) {
-                    auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
-                    if (filename != nullptr && dlg->_buffer->savefile(filename) != 0) {
-                        fl_alert("error: failed to save text to %s", filename);
-                    }
-                }
-                else if (w == dlg->_close) {
-                    if (dlg->_edit == true) {
-                        dlg->_res = dlg->_buffer->text();
-                    }
-                    dlg->hide();
-                }
-            }
-            void resize(int X, int Y, int W, int H) override {
-                Fl_Double_Window::resize(X, Y, W, H);
-                _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-                if (_cancel->visible() != 0) {
-                    _save->resize(W - flw::PREF_FONTSIZE * 24 - 12, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-                    _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+            else if (Fl::event_key() == FL_Tab) {
+                if (Fl::focus() == _list || Fl::focus() == _list->menu()) {
+                    _filter->take_focus();
                 }
                 else {
-                    _save->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                    _list->take_focus();
                 }
-                _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                return 1;
             }
-            char* run() {
-                show();
-                while (visible() != 0) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-                return _res;
-            }
-        };
-        class _DlgTheme : public Fl_Double_Window {
-            Fl_Box*                     _font_label;
-            Fl_Box*                     _fixedfont_label;
-            Fl_Browser*                 _theme;
-            Fl_Button*                  _close;
-            Fl_Button*                  _font;
-            Fl_Button*                  _fixedfont;
-            int                         _theme_row;
-        public:
-            _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
-                end();
-                _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
-                _fixedfont_label = new Fl_Box(0, 0, 0, 0);
-                _font            = new Fl_Button(0, 0, 0, 0, "&Font");
-                _font_label      = new Fl_Box(0, 0, 0, 0);
-                _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
-                _theme_row       = 0;
-                add(_theme);
-                add(_fixedfont);
-                add(_font);
-                add(_close);
-                add(_fixedfont_label);
-                add(_font_label);
-                if (enable_font == false) {
-                  _font->deactivate();
-                }
-                if (enable_fixedfont == false) {
-                  _fixedfont->deactivate();
-                }
-                _close->callback(Callback, this);
-                _font_label->color(FL_BACKGROUND2_COLOR);
-                _font_label->box(FL_DOWN_BOX);
-                _font->callback(Callback, this);
-                _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-                _fixedfont_label->color(FL_BACKGROUND2_COLOR);
-                _fixedfont_label->box(FL_DOWN_BOX);
-                _fixedfont->callback(Callback, this);
-                _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-                _theme->callback(Callback, this);
-                _theme->textfont(flw::PREF_FONT);
-                for (size_t f = 0; f < 100; f++) {
-                    auto theme = flw::PREF_THEMES[f];
-                    if (theme != nullptr) _theme->add(theme);
-                    else break;
-                }
-                resizable(this);
-                callback(Callback, this);
-                set_modal();
-                update_pref();
-                util::center_window(this, parent);
-            }
-            static void Callback(Fl_Widget* w, void* o) {
-                auto dlg = (_DlgTheme*) o;
-                if (w == dlg) {
-                    dlg->hide();
-                }
-                else if (w == dlg->_fixedfont) {
-                    flw::dlg::FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
-                    if (fd.run(Fl::first_window()) == true) {
-                        flw::PREF_FIXED_FONT     = fd.font();
-                        flw::PREF_FIXED_FONTSIZE = fd.fontsize();
-                        flw::PREF_FIXED_FONTNAME = fd.fontname();
-                        if (dlg->_font->active() == 0) {
-                            flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
-                        }
-                        dlg->update_pref();
-                    }
-                }
-                else if (w == dlg->_font) {
-                    flw::dlg::FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
-                    if (fd.run(Fl::first_window()) == true) {
-                        flw::PREF_FONT     = fd.font();
-                        flw::PREF_FONTSIZE = fd.fontsize();
-                        flw::PREF_FONTNAME = fd.fontname();
-                        if (dlg->_fixedfont->active() == 0) {
-                            flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
-                        }
-                        dlg->update_pref();
-                    }
-                }
-                else if (w == dlg->_theme) {
-                    auto row = dlg->_theme->value() - 1;
-                    if (row == theme::THEME_OXY) {
-                        theme::_load_oxy();
-                    }
-                    else if (row == theme::THEME_OXY_BLUE) {
-                        theme::_load_oxy_blue();
-                    }
-                    else if (row == theme::THEME_OXY_TAN) {
-                        theme::_load_oxy_tan();
-                    }
-                    else if (row == theme::THEME_GLEAM) {
-                        theme::_load_gleam();
-                    }
-                    else if (row == theme::THEME_GLEAM_BLUE) {
-                        theme::_load_gleam_blue();
-                    }
-                    else if (row == theme::THEME_GLEAM_DARK_BLUE) {
-                        theme::_load_gleam_dark_blue();
-                    }
-                    else if (row == theme::THEME_GLEAM_DARK) {
-                        theme::_load_gleam_dark();
-                    }
-                    else if (row == theme::THEME_GLEAM_DARKER) {
-                        theme::_load_gleam_darker();
-                    }
-                    else if (row == theme::THEME_GLEAM_TAN) {
-                        theme::_load_gleam_tan();
-                    }
-                    else if (row == theme::THEME_GTK) {
-                        theme::_load_gtk();
-                    }
-                    else if (row == theme::THEME_GTK_BLUE) {
-                        theme::_load_gtk_blue();
-                    }
-                    else if (row == theme::THEME_GTK_DARK_BLUE) {
-                        theme::_load_gtk_dark_blue();
-                    }
-                    else if (row == theme::THEME_GTK_DARK) {
-                        theme::_load_gtk_dark();
-                    }
-                    else if (row == theme::THEME_GTK_DARKER) {
-                        theme::_load_gtk_darker();
-                    }
-                    else if (row == theme::THEME_GTK_TAN) {
-                        theme::_load_gtk_tan();
-                    }
-                    else if (row == theme::THEME_PLASTIC) {
-                        theme::_load_plastic();
-                    }
-                    else if (row == theme::THEME_PLASTIC_BLUE) {
-                        theme::_load_blue_plastic();
-                    }
-                    else if (row == theme::THEME_PLASTIC_TAN) {
-                        theme::_load_tan_plastic();
-                    }
-                    else if (row == theme::THEME_SYSTEM) {
-                        theme::_load_system();
-                    }
-                    else {
-                        theme::_load_default();
-                    }
-                    dlg->update_pref();
-                }
-                else if (w == dlg->_close) {
-                    dlg->hide();
-                }
-            }
-            void resize(int X, int Y, int W, int H) override {
-                auto fs = flw::PREF_FONTSIZE;
-                Fl_Double_Window::resize(X, Y, W, H);
-                _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
-                _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
-                _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
-                _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
-                _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
-                _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
-            }
-            void run() {
-                show();
-                while (visible()) {
-                    Fl::wait();
-                    Fl::flush();
-                }
-            }
-            void update_pref() {
-                util::labelfont(this);
-                _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
-                _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
-                _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
-                _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
-                _theme->textsize(flw::PREF_FONTSIZE);
-                size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
-                theme::_scrollbar();
-                for (int f = 0; f <= theme::THEME_SYSTEM; f++) {
-                    if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
-                        _theme->value(f + 1);
-                        break;
-                    }
-                }
-                Fl::redraw();
-            }
-        };
+        }
+        return Fl_Double_Window::handle(event);
     }
-}
-void flw::dlg::html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _filter->resize(4, 4, W - 8, flw::PREF_FONTSIZE * 2);
+        _list->resize(4, flw::PREF_FONTSIZE * 2  + 8, W - 8, H - flw::PREF_FONTSIZE * 4 - 20);
+        _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    }
+    int run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        auto row = _list->value();
+        if (row > 0) {
+            auto selected = _list->text(row);
+            for (int f = 0; f < (int) _strings.size(); f++) {
+                const auto& string = _strings[f];
+                if (string == selected) {
+                    return f + 1;
+                }
+            }
+        }
+        return 0;
+    }
+};
+const char* PASSWORD_CANCEL = "Cancel";
+const char* PASSWORD_OK     = "Ok";
+class _DlgPassword : public Fl_Double_Window {
+public:
+    enum class TYPE {
+                                ASK_PASSWORD,
+                                ASK_PASSWORD_AND_KEYFILE,
+                                CONFIRM_PASSWORD,
+                                CONFIRM_PASSWORD_AND_KEYFILE,
+    };
+private:
+    Fl_Button*                  _browse;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Input*                   _file;
+    Fl_Input*                   _password1;
+    Fl_Input*                   _password2;
+    _DlgPassword::TYPE          _mode;
+    bool                        _ret;
+public:
+    _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
+    Fl_Double_Window(0, 0, 0, 0) {
+        end();
+        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
+        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter Password Again");
+        _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
+        _cancel    = new Fl_Button(0, 0, 0, 0, PASSWORD_CANCEL);
+        _close     = new Fl_Return_Button(0, 0, 0, 0, PASSWORD_OK);
+        _file      = new Fl_Output(0, 0, 0, 0, "Key File");
+        _mode      = mode;
+        _ret       = false;
+        add(_password1);
+        add(_password2);
+        add(_file);
+        add(_browse);
+        add(_cancel);
+        add(_close);
+        _browse->callback(_DlgPassword::Callback, this);
+        _cancel->callback(_DlgPassword::Callback, this);
+        _close->callback(_DlgPassword::Callback, this);
+        _close->deactivate();
+        _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _file->textfont(flw::PREF_FIXED_FONT);
+        _file->textsize(flw::PREF_FONTSIZE);
+        _file->tooltip("Select optional key file");
+        _password1->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _password1->callback(_DlgPassword::Callback, this);
+        _password1->textfont(flw::PREF_FIXED_FONT);
+        _password1->textsize(flw::PREF_FONTSIZE);
+        _password1->when(FL_WHEN_CHANGED);
+        _password2->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _password2->callback(_DlgPassword::Callback, this);
+        _password2->textfont(flw::PREF_FIXED_FONT);
+        _password2->textsize(flw::PREF_FONTSIZE);
+        _password2->when(FL_WHEN_CHANGED);
+        auto W = 40 * flw::PREF_FONTSIZE;
+        auto H = 11 * flw::PREF_FONTSIZE + 28;
+        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
+            _password2->hide();
+            _browse->hide();
+            _file->hide();
+            W = 30 * flw::PREF_FONTSIZE;
+            H = 5 * flw::PREF_FONTSIZE + 16;
+        }
+        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
+            _browse->hide();
+            _file->hide();
+            W = 30 * flw::PREF_FONTSIZE;
+            H = 8 * flw::PREF_FONTSIZE + 24;
+        }
+        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+            _password2->hide();
+            W = 40 * flw::PREF_FONTSIZE;
+            H = 8 * flw::PREF_FONTSIZE + 24;
+        }
+        util::labelfont(this);
+        callback(_DlgPassword::Callback, this);
+        label(title);
+        size(W, H);
+        size_range(W, H);
+        set_modal();
+        resizable(this);
+        flw::util::center_window(this, parent);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgPassword*>(o);
+        if (w == self) {
+            ;
+        }
+        else if (w == self->_password1) {
+            self->check();
+        }
+        else if (w == self->_password2) {
+            self->check();
+        }
+        else if (w == self->_browse) {
+            auto filename = fl_file_chooser("Select Key File", nullptr, nullptr, 0);
+            if (filename) {
+                self->_file->value(filename);
+            }
+            else {
+                self->_file->value("");
+            }
+        }
+        else if (w == self->_cancel) {
+            self->_ret = false;
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->hide();
+        }
+    }
+    void check() {
+        auto p1 = _password1->value();
+        auto p2 = _password2->value();
+        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD ||
+            _mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+            if (strlen(p1)) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD ||
+                 _mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
+            if (strlen(p1) && strcmp(p1, p2) == 0) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
+            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
+        }
+        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
+            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
+            _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
+        }
+        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
+            _file->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
+            _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 4 + 12, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        }
+        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
+            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
+            _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
+            _file->resize(4, flw::PREF_FONTSIZE * 7 + 16, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
+            _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 7 + 16, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        }
+        _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    }
+    bool run(std::string& password, std::string& file) {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        if (_ret) {
+            file = _file->value();
+            password = _password1->value();
+        }
+        _dlg_zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
+        _dlg_zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
+        _dlg_zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
+        return _ret;
+    }
+};
+class _DlgText : public Fl_Double_Window {
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Button*                  _save;
+    Fl_Text_Buffer*             _buffer;
+    Fl_Text_Display*            _text;
+    bool                        _edit;
+    char*                       _res;
+public:
+    _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
+        end();
+        _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
+        _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
+        _save   = new Fl_Button(0, 0, 0, 0, "&Save");
+        _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
+        _buffer = new Fl_Text_Buffer();
+        _edit   = edit;
+        _res    = nullptr;
+        add(_save);
+        add(_cancel);
+        add(_close);
+        add(_text);
+        _buffer->text(text);
+        _cancel->callback(_DlgText::Callback, this);
+        _cancel->tooltip("Close and abort all changes.");
+        _close->callback(_DlgText::Callback, this);
+        _close->tooltip("Close and update text.");
+        _save->callback(_DlgText::Callback, this);
+        _save->tooltip("Save text to file.");
+        _text->buffer(_buffer);
+        _text->linenumber_align(FL_ALIGN_RIGHT);
+        _text->linenumber_bgcolor(FL_BACKGROUND_COLOR);
+        _text->linenumber_fgcolor(FL_FOREGROUND_COLOR);
+        _text->linenumber_font(flw::PREF_FIXED_FONT);
+        _text->linenumber_size(flw::PREF_FIXED_FONTSIZE);
+        _text->linenumber_width(flw::PREF_FIXED_FONTSIZE * 3);
+        _text->take_focus();
+        _text->textfont(flw::PREF_FIXED_FONT);
+        _text->textsize(flw::PREF_FIXED_FONTSIZE);
+        util::labelfont(this);
+        if (edit == false) {
+            _cancel->hide();
+        }
+        callback(_DlgText::Callback, this);
+        copy_label(title);
+        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
+        set_modal();
+        resizable(this);
+        flw::util::center_window(this, parent);
+    }
+    ~_DlgText() {
+       _text->buffer(nullptr);
+        delete _buffer;
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgText*>(o);
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_save) {
+            auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
+            if (filename != nullptr && self->_buffer->savefile(filename) != 0) {
+                fl_alert("error: failed to save text to %s", filename);
+            }
+        }
+        else if (w == self->_close) {
+            if (self->_edit == true) {
+                self->_res = self->_buffer->text();
+            }
+            self->hide();
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+        if (_cancel->visible() != 0) {
+            _save->resize(W - flw::PREF_FONTSIZE * 24 - 12, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+            _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        }
+        else {
+            _save->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        }
+        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+    }
+    char* run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _res;
+    }
+};
+class _DlgTheme : public Fl_Double_Window {
+    Fl_Box*                     _font_label;
+    Fl_Box*                     _fixedfont_label;
+    Fl_Browser*                 _theme;
+    Fl_Button*                  _close;
+    Fl_Button*                  _font;
+    Fl_Button*                  _fixedfont;
+    int                         _theme_row;
+public:
+    _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
+        end();
+        _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+        _fixedfont_label = new Fl_Box(0, 0, 0, 0);
+        _font            = new Fl_Button(0, 0, 0, 0, "&Font");
+        _font_label      = new Fl_Box(0, 0, 0, 0);
+        _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
+        _theme_row       = 0;
+        add(_theme);
+        add(_fixedfont);
+        add(_font);
+        add(_close);
+        add(_fixedfont_label);
+        add(_font_label);
+        if (enable_font == false) {
+          _font->deactivate();
+        }
+        if (enable_fixedfont == false) {
+          _fixedfont->deactivate();
+        }
+        _close->callback(Callback, this);
+        _font_label->color(FL_BACKGROUND2_COLOR);
+        _font_label->box(FL_DOWN_BOX);
+        _font->callback(Callback, this);
+        _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _fixedfont_label->color(FL_BACKGROUND2_COLOR);
+        _fixedfont_label->box(FL_DOWN_BOX);
+        _fixedfont->callback(Callback, this);
+        _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _theme->callback(Callback, this);
+        _theme->textfont(flw::PREF_FONT);
+        for (size_t f = 0; f < 100; f++) {
+            auto t = flw::PREF_THEMES[f];
+            if (t != nullptr) {
+                _theme->add(t);
+            }
+            else {
+                break;
+            }
+        }
+        resizable(this);
+        callback(Callback, this);
+        set_modal();
+        update_pref();
+        util::center_window(this, parent);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgTheme*>(o);
+        if (w == self) {
+            self->hide();
+        }
+        else if (w == self->_fixedfont) {
+            FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
+            if (fd.run(Fl::first_window()) == true) {
+                flw::PREF_FIXED_FONT     = fd.font();
+                flw::PREF_FIXED_FONTSIZE = fd.fontsize();
+                flw::PREF_FIXED_FONTNAME = fd.fontname();
+                if (self->_font->active() == 0) {
+                    flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
+                }
+                self->update_pref();
+            }
+        }
+        else if (w == self->_font) {
+            FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
+            if (fd.run(Fl::first_window()) == true) {
+                flw::PREF_FONT     = fd.font();
+                flw::PREF_FONTSIZE = fd.fontsize();
+                flw::PREF_FONTNAME = fd.fontname();
+                if (self->_fixedfont->active() == 0) {
+                    flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+                }
+                self->update_pref();
+            }
+        }
+        else if (w == self->_theme) {
+            auto row = self->_theme->value() - 1;
+            if (row == theme::THEME_OXY) {
+                theme::_load_oxy();
+            }
+            else if (row == theme::THEME_OXY_BLUE) {
+                theme::_load_oxy_blue();
+            }
+            else if (row == theme::THEME_OXY_TAN) {
+                theme::_load_oxy_tan();
+            }
+            else if (row == theme::THEME_GLEAM) {
+                theme::_load_gleam();
+            }
+            else if (row == theme::THEME_GLEAM_BLUE) {
+                theme::_load_gleam_blue();
+            }
+            else if (row == theme::THEME_GLEAM_DARK_BLUE) {
+                theme::_load_gleam_dark_blue();
+            }
+            else if (row == theme::THEME_GLEAM_DARK) {
+                theme::_load_gleam_dark();
+            }
+            else if (row == theme::THEME_GLEAM_DARKER) {
+                theme::_load_gleam_darker();
+            }
+            else if (row == theme::THEME_GLEAM_TAN) {
+                theme::_load_gleam_tan();
+            }
+            else if (row == theme::THEME_GTK) {
+                theme::_load_gtk();
+            }
+            else if (row == theme::THEME_GTK_BLUE) {
+                theme::_load_gtk_blue();
+            }
+            else if (row == theme::THEME_GTK_DARK_BLUE) {
+                theme::_load_gtk_dark_blue();
+            }
+            else if (row == theme::THEME_GTK_DARK) {
+                theme::_load_gtk_dark();
+            }
+            else if (row == theme::THEME_GTK_DARKER) {
+                theme::_load_gtk_darker();
+            }
+            else if (row == theme::THEME_GTK_TAN) {
+                theme::_load_gtk_tan();
+            }
+            else if (row == theme::THEME_PLASTIC) {
+                theme::_load_plastic();
+            }
+            else if (row == theme::THEME_PLASTIC_BLUE) {
+                theme::_load_blue_plastic();
+            }
+            else if (row == theme::THEME_PLASTIC_TAN) {
+                theme::_load_tan_plastic();
+            }
+            else if (row == theme::THEME_SYSTEM) {
+                theme::_load_system();
+            }
+            else {
+                theme::_load_default();
+            }
+            self->update_pref();
+        }
+        else if (w == self->_close) {
+            self->hide();
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        auto fs = flw::PREF_FONTSIZE;
+        Fl_Double_Window::resize(X, Y, W, H);
+        _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
+        _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
+        _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
+        _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
+        _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
+        _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
+    }
+    void run() {
+        show();
+        while (visible()) {
+            Fl::wait();
+            Fl::flush();
+        }
+    }
+    void update_pref() {
+        util::labelfont(this);
+        _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
+        _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
+        _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
+        _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
+        _theme->textsize(flw::PREF_FONTSIZE);
+        size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+        theme::_scrollbar();
+        for (int f = 0; f <= theme::THEME_SYSTEM; f++) {
+            if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
+                _theme->value(f + 1);
+                break;
+            }
+        }
+        Fl::redraw();
+    }
+};
+void html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
     _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
     dlg.run();
 }
-void flw::dlg::list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgList dlg(title.c_str(), list, "", parent, fixed_font, W, H);
     dlg.run();
 }
-void flw::dlg::list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     auto list2 = flw::util::split( list, "\n");
     _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
     dlg.run();
 }
-void flw::dlg::list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgList dlg(title.c_str(), flw::StringVector(), file, parent, fixed_font, W, H);
     dlg.run();
 }
-void flw::dlg::panic(std::string message) {
+void panic(std::string message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
 }
-bool flw::dlg::password1(std::string title, std::string& password, Fl_Window* parent) {
+bool password1(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD);
     return dlg.run(password, file);
 }
-bool flw::dlg::password2(std::string title, std::string& password, Fl_Window* parent) {
+bool password2(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD);
     return dlg.run(password, file);
 }
-bool flw::dlg::password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+bool password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE);
     return dlg.run(password, file);
 }
-bool flw::dlg::password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+bool password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
     return dlg.run(password, file);
 }
-int flw::dlg::select(std::string title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int select(std::string title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
-int flw::dlg::select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
-void flw::dlg::text(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
+void text(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
     _DlgText dlg(title.c_str(), text.c_str(), false, parent, W, H);
     dlg.run();
 }
-bool flw::dlg::text_edit(std::string title, std::string& text, Fl_Window* parent, int W, int H) {
+bool text_edit(std::string title, std::string& text, Fl_Window* parent, int W, int H) {
     auto dlg = _DlgText(title.c_str(), text.c_str(), true, parent, W, H);
     auto res = dlg.run();
     if (res == nullptr) {
@@ -3417,11 +3409,11 @@ bool flw::dlg::text_edit(std::string title, std::string& text, Fl_Window* parent
     free(res);
     return true;
 }
-void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
-    auto dlg = dlg::_DlgTheme(enable_font, enable_fixedfont, parent);
+void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
+    auto dlg = _DlgTheme(enable_font, enable_fixedfont, parent);
     dlg.run();
 }
-flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
+AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
     _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
     _abort    = false;
@@ -3448,13 +3440,13 @@ flw::dlg::AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0,
     callback(AbortDialog::Callback, this);
     set_modal();
 }
-void flw::dlg::AbortDialog::Callback(Fl_Widget* w, void* o) {
-    auto dlg = (AbortDialog*) o;
-    if (w == dlg->_button) {
-        dlg->_abort = true;
+void AbortDialog::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<AbortDialog*>(o);
+    if (w == self->_button) {
+        self->_abort = true;
     }
 }
-bool flw::dlg::AbortDialog::check(int milliseconds) {
+bool AbortDialog::check(int milliseconds) {
     auto now = flw::util::milliseconds();
     if (now - _last > milliseconds) {
         _last = now;
@@ -3462,7 +3454,7 @@ bool flw::dlg::AbortDialog::check(int milliseconds) {
     }
     return _abort;
 }
-bool flw::dlg::AbortDialog::check(double value, double min, double max, int milliseconds) {
+bool AbortDialog::check(double value, double min, double max, int milliseconds) {
     auto now = flw::util::milliseconds();
     if (now - _last > milliseconds) {
         _progress->value(value);
@@ -3472,10 +3464,10 @@ bool flw::dlg::AbortDialog::check(double value, double min, double max, int mill
     }
     return _abort;
 }
-void flw::dlg::AbortDialog::range(double min, double max) {
+void AbortDialog::range(double min, double max) {
     _progress->range(min, max);
 }
-void flw::dlg::AbortDialog::resize(int X, int Y, int W, int H) {
+void AbortDialog::resize(int X, int Y, int W, int H) {
     Fl_Double_Window::resize(X, Y, W, H);
     if (_progress->visible() != 0) {
         _button->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
@@ -3485,7 +3477,7 @@ void flw::dlg::AbortDialog::resize(int X, int Y, int W, int H) {
         _button->resize(4, 4, W - 8, H - 8);
     }
 }
-void flw::dlg::AbortDialog::show(const std::string& label, Fl_Window* parent) {
+void AbortDialog::show(const std::string& label, Fl_Window* parent) {
     _abort = false;
     _last  = 0;
     _button->copy_label(label.c_str());
@@ -3493,12 +3485,10 @@ void flw::dlg::AbortDialog::show(const std::string& label, Fl_Window* parent) {
     Fl_Double_Window::show();
     Fl::flush();
 }
-void flw::dlg::AbortDialog::value(double value) {
+void AbortDialog::value(double value) {
     _progress->value(value);
 }
-namespace flw {
-    namespace dlg {
-        static const std::string    _FONTDIALOG_LABEL = R"(
+static const std::string _FONTDIALOG_LABEL = R"(
 ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
 abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
 –—‘“”„†•…‰™œŠŸž€ ΑΒΓΔΩαβγδω АБВГДабвгд
@@ -3526,84 +3516,82 @@ you will have a good life.
 A good life is not measured by any biblical span.”
 ― Ernest Hemingway, For Whom the Bell Tolls
 )";
-        class _FontDialogLabel : public Fl_Box {
-        public:
-            int font;
-            int size;
-            _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
-                font = FL_HELVETICA;
-                size = 14;
-                align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                box(FL_BORDER_BOX);
-                color(FL_BACKGROUND2_COLOR);
-            }
-            void draw() override {
-                draw_box();
-                fl_font((Fl_Font) font, size);
-                fl_color(FL_FOREGROUND_COLOR);
-                fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
-            }
-        };
+class _FontDialogLabel : public Fl_Box {
+public:
+    int font;
+    int size;
+    _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
+        font = FL_HELVETICA;
+        size = 14;
+        align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        box(FL_BORDER_BOX);
+        color(FL_BACKGROUND2_COLOR);
     }
-}
-flw::dlg::FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
+    void draw() override {
+        draw_box();
+        fl_font((Fl_Font) font, size);
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
+    }
+};
+FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(font, "", fontsize, label);
 }
-flw::dlg::FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
+FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
-void flw::dlg::FontDialog::_activate() {
-    if (_fonts->value() == 0 || _sizes->value() == 0) {
+void FontDialog::_activate() {
+    if (_fonts->value() == 0 || _sizes->value() == 0 || (_fonts->active() == 0 && _sizes->active() == 0)) {
         _select->deactivate();
     }
     else {
         _select->activate();
     }
 }
-void flw::dlg::FontDialog::Callback(Fl_Widget* w, void* o) {
-    FontDialog* dlg = (FontDialog*) o;
-    if (w == dlg) {
-        dlg->hide();
+void FontDialog::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<FontDialog*>(o);
+    if (w == self) {
+        self->hide();
     }
-    else if (w == dlg->_cancel) {
-        dlg->hide();
+    else if (w == self->_cancel) {
+        self->hide();
     }
-    else if (w == dlg->_fonts) {
-        auto row = dlg->_fonts->value();
+    else if (w == self->_fonts) {
+        auto row = self->_fonts->value();
         if (row > 0) {
-            ((_FontDialogLabel*) dlg->_label)->font = row - 1;
+            static_cast<_FontDialogLabel*>(self->_label)->font = row - 1;
         }
-        dlg->_activate();
+        self->_activate();
         Fl::redraw();
     }
-    else if (w == dlg->_select) {
-        auto row1 = dlg->_fonts->value();
-        auto row2 = dlg->_sizes->value();
+    else if (w == self->_select) {
+        auto row1 = self->_fonts->value();
+        auto row2 = self->_sizes->value();
         if (row1 > 0 && row2 > 0) {
             row1--;
-            dlg->_fontname = util::remove_browser_format(flw::PREF_FONTNAMES[row1]);
-            dlg->_font     = row1;
-            dlg->_fontsize = row2 + 5;
-            dlg->_ret      = true;
-            dlg->hide();
+            self->_fontname = util::remove_browser_format(flw::PREF_FONTNAMES[row1]);
+            self->_font     = row1;
+            self->_fontsize = row2 + 5;
+            self->_ret      = true;
+            self->hide();
         }
     }
-    else if (w == dlg->_sizes) {
-        auto row = dlg->_sizes->value();
+    else if (w == self->_sizes) {
+        auto row = self->_sizes->value();
         if (row > 0) {
-            ((_FontDialogLabel*) dlg->_label)->size = row + 5;
+            static_cast<_FontDialogLabel*>(self->_label)->size = row + 5;
         }
-        dlg->_activate();
+        self->_activate();
         Fl::redraw();
     }
 }
-void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
+void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
     end();
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
     _fonts    = new flw::ScrollBrowser(12);
-    _label    = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
+    _label    = new _FontDialogLabel(0, 0, 0, 0);
     _select   = new Fl_Button(0, 0, 0, 0, "&Select");
     _sizes    = new flw::ScrollBrowser(6);
     _font     = -1;
@@ -3614,18 +3602,18 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     add(_select);
     add(_cancel);
     add(_label);
-    _cancel->callback(flw::dlg::FontDialog::Callback, this);
+    _cancel->callback(FontDialog::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
     _cancel->labelsize(flw::PREF_FONTSIZE);
-    _fonts->callback(flw::dlg::FontDialog::Callback, this);
+    _fonts->callback(FontDialog::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
-    ((_FontDialogLabel*) _label)->font = font;
-    ((_FontDialogLabel*) _label)->size = fontsize;
-    _select->callback(flw::dlg::FontDialog::Callback, this);
+    static_cast<_FontDialogLabel*>(_label)->font = font;
+    static_cast<_FontDialogLabel*>(_label)->size = fontsize;
+    _select->callback(FontDialog::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
-    _sizes->callback(flw::dlg::FontDialog::Callback, this);
+    _sizes->callback(FontDialog::Callback, this);
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
     size(w(), h());
@@ -3641,12 +3629,12 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
         _sizes->middleline(fontsize - 5);
-        ((_FontDialogLabel*) _label)->font = fontsize;
+        static_cast<_FontDialogLabel*>(_label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
         _sizes->middleline(14 - 5);
-        ((_FontDialogLabel*) _label)->font = 14;
+        static_cast<_FontDialogLabel*>(_label)->font = 14;
     }
     if (fontname != "") {
         _select_name(fontname);
@@ -3654,7 +3642,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
         _fonts->middleline(font + 1);
-        ((_FontDialogLabel*) _label)->font = font;
+        static_cast<_FontDialogLabel*>(_label)->font = font;
     }
     else {
         _fonts->value(1);
@@ -3662,12 +3650,12 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     }
     resizable(this);
     copy_label(label.c_str());
-    callback(flw::dlg::FontDialog::Callback, this);
+    callback(FontDialog::Callback, this);
     size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
 }
-void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
+void FontDialog::resize(int X, int Y, int W, int H) {
     int fs = flw::PREF_FONTSIZE;
     Fl_Double_Window::resize(X, Y, W, H);
     _fonts->resize  (4,                 4,                  fs * 25,            H - fs * 2 - 16);
@@ -3676,7 +3664,7 @@ void flw::dlg::FontDialog::resize(int X, int Y, int W, int H) {
     _cancel->resize (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,             fs * 2);
     _select->resize (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,             fs * 2);
 }
-bool flw::dlg::FontDialog::run(Fl_Window* parent) {
+bool FontDialog::run(Fl_Window* parent) {
     _ret = false;
     _activate();
     flw::util::center_window(this, parent);
@@ -3687,22 +3675,22 @@ bool flw::dlg::FontDialog::run(Fl_Window* parent) {
     }
     return _ret;
 }
-void flw::dlg::FontDialog::_select_name(std::string fontname) {
+void FontDialog::_select_name(std::string fontname) {
     auto count = 1;
-    for (auto font : flw::PREF_FONTNAMES) {
-        auto font_without_style = util::remove_browser_format(font);
+    for (auto f : flw::PREF_FONTNAMES) {
+        auto font_without_style = util::remove_browser_format(f);
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
-            ((_FontDialogLabel*) _label)->font = count - 1;
+            static_cast<_FontDialogLabel*>(_label)->font = count - 1;
             return;
         }
         count++;
     }
     _fonts->value(1);
-    ((_FontDialogLabel*) _label)->font = 0;
+    static_cast<_FontDialogLabel*>(_label)->font = 0;
 }
-flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
     end();
     _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
     _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
@@ -3732,38 +3720,38 @@ flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool canc
     flw::util::center_window(this, parent);
     show();
 }
-void flw::dlg::WorkDialog::Callback(Fl_Widget* w, void* o) {
-    auto dlg = (flw::dlg::WorkDialog*) o;
-    if (w == dlg) {
+void WorkDialog::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<WorkDialog*>(o);
+    if (w == self) {
     }
-    else if (w == dlg->_cancel) {
-        dlg->_ret = false;
+    else if (w == self->_cancel) {
+        self->_ret = false;
     }
-    else if (w == dlg->_pause) {
-        bool cancel = dlg->_cancel->active();
-        dlg->_cancel->deactivate();
-        dlg->_pause->label("C&ontinue");
-        while (dlg->_pause->value() != 0) {
+    else if (w == self->_pause) {
+        bool cancel = self->_cancel->active();
+        self->_cancel->deactivate();
+        self->_pause->label("C&ontinue");
+        while (self->_pause->value() != 0) {
             flw::util::sleep(10);
             Fl::check();
         }
-        dlg->_pause->label("&Pause");
+        self->_pause->label("&Pause");
         if (cancel) {
-            dlg->_cancel->activate();
+            self->_cancel->activate();
         }
     }
 }
-void flw::dlg::WorkDialog::resize(int X, int Y, int W, int H) {
+void WorkDialog::resize(int X, int Y, int W, int H) {
     Fl_Double_Window::resize(X, Y, W, H);
     _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
     _pause->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
     _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
 }
-bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages) {
+bool WorkDialog::run(double update_time, const StringVector& messages) {
     auto now = flw::util::clock();
     if (now - _last > update_time) {
         _label->clear();
-        for (auto& s : messages) {
+        for (const auto& s : messages) {
             _label->add(s.c_str());
         }
         _last = now;
@@ -3772,7 +3760,7 @@ bool flw::dlg::WorkDialog::run(double update_time, const StringVector& messages)
     }
     return _ret;
 }
-bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
+bool WorkDialog::run(double update_time, const std::string& message) {
     auto now = flw::util::clock();
     if (now - _last > update_time) {
         _label->clear();
@@ -3782,6 +3770,8 @@ bool flw::dlg::WorkDialog::run(double update_time, const std::string& message) {
         Fl::flush();
     }
     return _ret;
+}
+}
 }
 #include <algorithm>
 #include <assert.h>
@@ -3842,7 +3832,7 @@ namespace flw {
         int                             mode;
          Stat()
             { size = mtime = 0; mode = 0; }
-         Stat(std::string filename) {
+         explicit Stat(std::string filename) {
             size  = 0;
             mtime = 0;
             mode  = 0;
@@ -3890,7 +3880,7 @@ flw::Buf::Buf() {
     s = 0;
 }
 flw::Buf::Buf(size_t S) {
-    p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
+    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
     s = 0;
     if (p != nullptr) {
         s = S;
@@ -3906,7 +3896,7 @@ flw::Buf::Buf(const char* P, size_t S) {
         s = 0;
     }
     else {
-        p = (char*) calloc(S + 1, 1);
+        p = static_cast<char*>(calloc(S + 1, 1));
         s = 0;
         if (p == nullptr) {
             return;
@@ -3921,7 +3911,7 @@ flw::Buf::Buf(const Buf& b) {
         s = 0;
     }
     else {
-        p = (char*) calloc(b.s + 1, 1);
+        p = static_cast<char*>(calloc(b.s + 1, 1));
         s = 0;
         if (p == nullptr) {
             return;
@@ -3936,6 +3926,8 @@ flw::Buf::Buf(Buf&& b) {
     b.p = nullptr;
 }
 flw::Buf& flw::Buf::operator=(const Buf& b) {
+    if (this == &b) {
+    }
     if (b.p == nullptr) {
         free(p);
         p = nullptr;
@@ -3943,7 +3935,7 @@ flw::Buf& flw::Buf::operator=(const Buf& b) {
     }
     else {
         free(p);
-        p = (char*) calloc(b.s + 1, 1);
+        p = static_cast<char*>(calloc(b.s + 1, 1));
         s = 0;
         if (p == nullptr) {
             return *this;
@@ -3967,7 +3959,7 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
         *this = b;
     }
     else {
-        auto t = (char*) calloc(s + b.s + 1, 1);
+        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
         if (t == nullptr) {
             return *this;
         }
@@ -3990,7 +3982,7 @@ void flw::debug::print(Fl_Widget* widget, bool tab) {
 void flw::debug::print(Fl_Group* group) {
     assert(group);
     puts("");
-    debug::print((Fl_Widget*) group);
+    debug::print(static_cast<Fl_Widget*>(group));
     for (int f = 0; f < group->children(); f++) {
         debug::print(group->child(f), true);
     }
@@ -4076,7 +4068,7 @@ std::string flw::util::format(const char* format, ...) {
     if (format == nullptr || *format == 0) return "";
     int         l   = 128;
     int         n   = 0;
-    char*       buf = (char*) calloc(l, 1);
+    char*       buf = static_cast<char*>(calloc(l, 1));
     std::string res;
     va_list     args;
     va_start(args, format);
@@ -4093,10 +4085,10 @@ std::string flw::util::format(const char* format, ...) {
     }
     free(buf);
     l = n + 1;
-    buf = (char*) calloc(l, 1);
+    buf = static_cast<char*>(calloc(l, 1));
     if (buf == nullptr) return res;
     va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
+    vsnprintf(buf, l, format, args);
     va_end(args);
     res = buf;
     free(buf);
@@ -4183,7 +4175,7 @@ void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, 
             else if (ret == -1) {
                 fl_alert("%s", "error: missing libraries");
             }
-            else if (ret == -1) {
+            else if (ret == -2) {
                 fl_alert("error: failed to save image to %s", filename);
             }
             delete []image;
@@ -4792,7 +4784,7 @@ void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_re
         fl_alert("%s", "warning: load icon before showing window!");
     }
 #if defined(_WIN32)
-    win->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(win_resource)));
+    win->icon(reinterpret_cast<char*>(LoadIcon(fl_display, MAKEINTRESOURCE(win_resource))));
     (void) name;
     (void) xpm_resource;
     (void) name;
@@ -4903,7 +4895,7 @@ namespace flw {
 flw::Grid::Grid(int rows, int cols, int X, int Y, int W, int H, const char* l) : flw::TableEditor(X, Y, W, H, l) {
     rows    = rows < 1 ? 1 : rows;
     cols    = cols < 1 ? 1 : cols;
-    _buffer = (char*) calloc(_FLW_GRID_STRING_SIZE + 1, 1);
+    _buffer = static_cast<char*>(calloc(_FLW_GRID_STRING_SIZE + 1, 1));
     Grid::size(rows, cols);
     lines(true, true);
     header(true, true);
@@ -5157,6 +5149,7 @@ void flw::GridGroup::resize(int X, int Y, int W, int H) {
         }
     }
 }
+#include <algorithm>
 namespace flw {
     static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
     class _InputMenu : public Fl_Input {
@@ -5216,25 +5209,25 @@ flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(
     _menu->callback(InputMenu::Callback, this);
     update_pref();
 }
-void flw::InputMenu::Callback(Fl_Widget* sender, void* self) {
-    auto w = (InputMenu*) self;
-    if (sender == w->_input) {
-        if (w->_input->show_menu) {
-            if (w->_menu->visible()) {
-                w->_menu->popup();
+void flw::InputMenu::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<InputMenu*>(o);
+    if (w == self->_input) {
+        if (self->_input->show_menu) {
+            if (self->_menu->visible()) {
+                self->_menu->popup();
             }
         }
         else {
-            w->do_callback();
+            self->do_callback();
         }
     }
-    else if (sender == w->_menu) {
-        auto index = w->_menu->find_index(w->_menu->text());
-        if (index >= 0 && index < (int) w->_input->history.size()) {
-            w->_input->value(w->_input->history[index].c_str());
-            w->_input->index = index;
+    else if (w == self->_menu) {
+        auto index = self->_menu->find_index(self->_menu->text());
+        if (index >= 0 && index < (int) self->_input->history.size()) {
+            self->_input->value(self->_input->history[index].c_str());
+            self->_input->index = index;
         }
-        w->_input->take_focus();
+        self->_input->take_focus();
     }
 }
 void flw::InputMenu::clear() {
@@ -5245,7 +5238,7 @@ void flw::InputMenu::clear() {
 flw::StringVector flw::InputMenu::get_history() const {
     return _input->history;
 }
-void flw::InputMenu::insert(const std::string& string, int max_list_len) {
+void flw::InputMenu::insert(std::string string, int max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);
@@ -5305,7 +5298,6 @@ const char* flw::InputMenu::value() const {
 void flw::InputMenu::value(const char* string) {
     _input->value(string ? string : "");
 }
-#include <errno.h>
 #include <cstring>
 #include <cmath>
 namespace flw {
@@ -5314,13 +5306,13 @@ namespace flw {
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
 static void _json_debug(const JS* js, std::string t) {
     if (js->is_array() == true) {
-        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
         t += "\t";
-        for (auto js2 : *js->va()) _json_debug(js2, t);
+        for (const auto js2 : *js->va()) _json_debug(js2, t);
         t.pop_back();
     }
     else if (js->is_object() == true) {
-        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (int) js->size(), js->name().c_str());
+        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
         t += "\t";
         for (auto js2 : *js->vo()) _json_debug(js2.second, t);
         t.pop_back();
@@ -5576,7 +5568,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
     auto line    = (unsigned) 1;
     auto n       = (JS*) nullptr;
     auto nVal    = (double) NAN;
-    auto pos     = (size_t) 0;
+    auto pos1    = (size_t) 0;
     auto pos2    = (size_t) 0;
     auto posn    = (size_t) 0;
     auto sVal1   = (char*) nullptr;
@@ -5589,22 +5581,22 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         tmp._va   = new JSArray();
         current   = &tmp;
         if (strncmp(json, _JSON_BOM, 3) == 0) {
-            pos += 3;
+            pos1 += 3;
         }
-        while (pos < len) {
-            auto start = pos;
-            auto c     = (unsigned) json[pos];
+        while (pos1 < len) {
+            auto start = pos1;
+            auto c     = (unsigned) json[pos1];
             if (c == '\t' || c == '\r' || c == ' ') {
-                pos++;
+                pos1++;
             }
             else if (c == '\n') {
                 line++;
-                pos++;
+                pos1++;
             }
             else if (c == '"') {
-                pos2 = pos;
-                if (sVal1 == nullptr) posn = pos;
-                if (_json_parse_string(ignore_utf_check, json, len, pos, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
+                pos2 = pos1;
+                if (sVal1 == nullptr) posn = pos1;
+                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
                 auto add_array = (current->is_array() == true);
                 if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
@@ -5616,125 +5608,123 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                     colon = 0;
                     comma = 0;
                 }
-                pos++;
+                pos1++;
             }
             else if ((c >= '0' && c <= '9') || c == '-') {
-                pos2 = (sVal1 == nullptr) ? pos : posn;
-                if (_json_parse_number(json, len, pos, nVal) == false) throw JSON_ERROR(start, line);
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
+                if (_json_parse_number(json, len, pos1, nVal) == false) throw JSON_ERROR(start, line);
                 else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
                 else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
                 else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
                 else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
-                pos++;
+                pos1++;
             }
             else if (c == ',') {
-                if (comma > 0) throw JSON_ERROR(pos, line);
-                else if (current == &tmp) throw JSON_ERROR(pos, line);
+                if (comma > 0) throw JSON_ERROR(pos1, line);
+                else if (current == &tmp) throw JSON_ERROR(pos1, line);
                 comma++;
-                pos++;
+                pos1++;
             }
             else if (c == ':') {
-                if (colon > 0) throw JSON_ERROR(pos, line);
-                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
-                else if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
+                if (colon > 0) throw JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos1, line);
+                else if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
                 colon++;
-                pos++;
+                pos1++;
             }
             else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
-                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
-                    n = JS::_MakeArray("", current, pos);
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos1, line);
+                    n = JS::_MakeArray("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
-                    else if (colon != 1) throw JSON_ERROR(pos, line);
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw JSON_ERROR(pos1, line);
                     n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos1, line);
                     JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
                 colon = 0;
                 comma = 0;
                 count_a++;
-                pos++;
+                pos1++;
             }
             else if (c == ']') {
-                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
-                else if (current->is_array() == false) throw JSON_ERROR(pos, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
-                else if (count_a < 0) throw JSON_ERROR(pos, line);
+                if (current->_parent == nullptr) throw JSON_ERROR(pos1, line);
+                else if (current->is_array() == false) throw JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos1, line);
+                else if (count_a < 0) throw JSON_ERROR(pos1, line);
                 current = current->_parent;
                 comma = 0;
                 count_a--;
-                pos++;
+                pos1++;
             }
             else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos, line);
-                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos, line);
+                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw JSON_ERROR(pos, line);
-                    n = JS::_MakeObject("", current, pos);
+                    if (sVal1 != nullptr) throw JSON_ERROR(pos1, line);
+                    n = JS::_MakeObject("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw JSON_ERROR(pos, line);
-                    else if (colon != 1) throw JSON_ERROR(pos, line);
+                    if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw JSON_ERROR(pos1, line);
                     n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos, line);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos1, line);
                     JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
                 colon = 0;
                 comma = 0;
                 count_o++;
-                pos++;
+                pos1++;
             }
             else if (c == '}') {
-                if (current->_parent == nullptr) throw JSON_ERROR(pos, line);
-                else if (current->is_object() == false) throw JSON_ERROR(pos, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos, line);
-                else if (count_o < 0) throw JSON_ERROR(pos, line);
+                if (current->_parent == nullptr) throw JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos1, line);
+                else if (count_o < 0) throw JSON_ERROR(pos1, line);
                 current = current->_parent;
                 comma = 0;
                 count_o--;
-                pos++;
+                pos1++;
             }
-            else if ((c == 't' && json[pos + 1] == 'r' && json[pos + 2] == 'u' && json[pos + 3] == 'e') ||
-                    (c == 'f' && json[pos + 1] == 'a' && json[pos + 2] == 'l' && json[pos + 3] == 's' && json[pos + 4] == 'e')) {
-                pos2 = (sVal1 == nullptr) ? pos : posn;
+            else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
+                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
                 if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
                 else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
                 else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
                 else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
-                pos += 4;
-                pos += (c == 'f');
+                pos1 += 4;
+                pos1 += (c == 'f');
             }
-            else if (c == 'n' && json[pos + 1] == 'u' && json[pos + 2] == 'l' && json[pos + 3] == 'l') {
-                pos2 = (sVal1 == nullptr) ? pos : posn;
+            else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
                 if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
                 else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
                 else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos) == false) throw JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
-                pos += 4;
+                pos1 += 4;
             }
             else {
-                throw JSON_ERROR(pos, line);
+                throw JSON_ERROR(pos1, line);
             }
             if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
-                throw JSON_ERROR(pos, line);
+                throw JSON_ERROR(pos1, line);
             }
         }
         if (count_a != 0 || count_o != 0) {
@@ -5746,7 +5736,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         else if (tmp[0]->_type == JS::ARRAY) {
             _type = JS::ARRAY;
             _va = tmp[0]->_va;
-            ((JS*) tmp[0])->_type = JS::NIL;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
             for (auto o : *_va) {
                 o->_parent = this;
             }
@@ -5754,8 +5744,8 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         else if (tmp[0]->_type == JS::OBJECT) {
             _type = JS::OBJECT;
             _vo = tmp[0]->_vo;
-            ((JS*) tmp[0])->_type = JS::NIL;
-            for (auto& it : *_vo) {
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
+            for (const auto& it : *_vo) {
                 it.second->_parent = this;
             }
         }
@@ -5770,7 +5760,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
         else if (tmp[0]->_type == JS::STRING) {
             _type = JS::STRING;
             _vs   = tmp[0]->_vs;
-            ((JS*) tmp[0])->_type = JS::NIL;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
         }
         else if (tmp[0]->_type == JS::NIL) {
             _type = JS::NIL;
@@ -5779,7 +5769,7 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             throw JSON_ERROR(0, 1);
         }
     }
-    catch(std::string err) {
+    catch(const std::string& err) {
         JSON_FREE_STRINGS(sVal1, sVal2)
         _clear(false);
         return err;
@@ -5801,7 +5791,7 @@ std::string JS::encode(int skip) const {
             return _encode(true, skip);
         }
     }
-    catch (std::string e) {
+    catch (const std::string& e) {
         j = e;
     }
     return j;
@@ -5809,9 +5799,9 @@ std::string JS::encode(int skip) const {
 std::string JS::_encode(bool ignore_name, int skip) const {
     static const std::string QUOTE = "\"";
     std::string res;
-    std::string arr = (skip == 0) ? "\": [" : "\":[";
-    std::string obj = (skip == 0) ? "\": {" : "\":{";
-    std::string name = (skip == 0) ? "\": " : "\":";
+    std::string arr   = (skip == 0) ? "\": [" : "\":[";
+    std::string obj   = (skip == 0) ? "\": {" : "\":{";
+    std::string name1 = (skip == 0) ? "\": " : "\":";
     bool object = (_parent != nullptr && _parent->is_object() == true);
     if (_type == ARRAY) {
         res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
@@ -5820,7 +5810,7 @@ std::string JS::_encode(bool ignore_name, int skip) const {
         res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
     }
     else {
-        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name);
+        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name1);
         if (_type == STRING) {
             res += QUOTE + _vs + QUOTE;
         }
@@ -5835,8 +5825,8 @@ std::string JS::_encode(bool ignore_name, int skip) const {
         }
         else if (_type == NUMBER) {
             char b[500];
-            auto n   = snprintf(b, 500, "%f", _vn);
-            auto dot = strstr(b, ".");
+            const size_t n  = snprintf(b, 500, "%f", _vn);
+            const char* dot = strstr(b, ".");
             if (n < 1 || n >= 500) {
                 strcpy(b, "0.0");
             }
@@ -5859,9 +5849,9 @@ std::string JS::_encode(bool ignore_name, int skip) const {
 }
 const JS* JS::find(std::string name, bool rec) const {
     if (is_object() == true) {
-        auto find = _vo->find(name);
-        if (find != _vo->end()) {
-            return find->second;
+        auto find1 = _vo->find(name);
+        if (find1 != _vo->end()) {
+            return find1->second;
         }
         else if (rec == true) {
             for (auto o : *_vo) {
@@ -5875,22 +5865,22 @@ const JS* JS::find(std::string name, bool rec) const {
 }
 const JS* JS::_get_object(const char* name, bool escape) const {
     if (is_object() == true) {
-        auto key  = (escape == true) ? JS::Escape(name) : name;
-        auto find = _vo->find(key);
-        return (find != _vo->end()) ? find->second : nullptr;
+        auto key   = (escape == true) ? JS::Escape(name) : name;
+        auto find1 = _vo->find(key);
+        return (find1 != _vo->end()) ? find1->second : nullptr;
     }
     return nullptr;
 }
 bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
     if (is_object() == true) {
-        auto find = _vo->find(name);
-        if (find != _vo->end()) {
+        auto find1 = _vo->find(name);
+        if (find1 != _vo->end()) {
             if (ignore_duplicates == false) {
                 delete js;
                 return false;
             }
             else {
-                delete find->second;
+                delete find1->second;
             }
         }
         (*_vo)[name] = js;
@@ -5909,7 +5899,7 @@ const JSArray JS::vo_to_va() const {
 size_t JS::CountUtf8(const char* p) {
     auto count = (size_t) 0;
     auto f     = (size_t) 0;
-    auto u     = (const unsigned char*) p;
+    auto u     = reinterpret_cast<const unsigned char*>(p);
     auto c     = (unsigned) u[0];
     while (c != 0) {
         if (c >= 128) {
@@ -5946,10 +5936,10 @@ void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int s
     size_t      f = 0;
     if (js->is_array() == true) {
         j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
-        for (auto n : *js->_va) {
+        for (const auto n2 : *js->_va) {
             if (skip == 0) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
-            else JS::_Encode(n, j, t, f < (js->_va->size() - 1), skip);
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), skip);
+            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), skip);
             if (skip == 0) t.pop_back();
             f++;
         }
@@ -5957,10 +5947,10 @@ void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int s
     }
     else if (js->is_object() == true) {
         j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
-        for (auto& n : *js->_vo) {
+        for (const auto& n2 : *js->_vo) {
             if (skip == 0) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
-            else JS::_Encode(n.second, j, t, f < (js->_vo->size() - 1), skip);
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), skip);
+            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), skip);
             if (skip == 0) t.pop_back();
             f++;
         }
@@ -5975,7 +5965,7 @@ void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
     size_t      f = 0;
     if (*js == ARRAY) {
         j += js->_encode(false, skip);
-        for (auto n : *js->_va) {
+        for (const auto n : *js->_va) {
             JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
             f++;
         }
@@ -5983,7 +5973,7 @@ void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
     }
     else if (*js == OBJECT) {
         j += js->_encode(false, skip);
-        for (auto& n : *js->_vo) {
+        for (const auto& n : *js->_vo) {
             JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
             f++;
         }
@@ -6588,7 +6578,6 @@ static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
     else if (name == "BG_BOLD_MAGENTA") return LogDisplay::BG_BOLD_MAGENTA;
     else if (name == "BG_BOLD_YELLOW") return LogDisplay::BG_BOLD_YELLOW;
     else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
-    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
     else return LogDisplay::GRAY;
 }
 static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
@@ -6601,10 +6590,10 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
         return res;
     }
     if (js.is_array() == false) FLW_LOGDISPLAY_ERROR(&js)
-    for (auto j : *js.va()) {
+    for (const auto j : *js.va()) {
         if (j->is_object() == false) FLW_LOGDISPLAY_ERROR(j);
         auto style = _LogDisplayStyle();
-        for (auto j2 : j->vo_to_va()) {
+        for (const auto j2 : j->vo_to_va()) {
             if (j2->name() == "color" && j2->is_string() == true)           style.color     = _logdisplay_convert_color(j2->vs());
             else if (j2->name() == "count" && j2->is_number() == true)      style.count     = (size_t) j2->vn_i();
             else if (j2->name() == "inclusive" && j2->is_bool() == true)    style.inclusive = j2->vb();
@@ -6645,9 +6634,9 @@ static char* _logdisplay_win_to_unix(const char* string) {
         return nullptr;
     }
     auto len = strlen(string);
-    auto res = (char*) calloc(len + 1, 1);
-    auto pos = 0;
+    auto res = static_cast<char*>(calloc(len + 1, 1));
     if (res != nullptr) {
+        auto pos = 0;
         b = string;
         while (*b != 0) {
             if (*b != '\r') {
@@ -6771,13 +6760,13 @@ void LogDisplay::save_file() {
     }
 }
 void LogDisplay::style(std::string json) {
-    auto row = 1;
     auto ds  = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
     _json      = json;
     _tmp       = new Tmp();
     _tmp->size = _buffer->length();
-    _tmp->buf  = (char*) calloc(_tmp->size + 1, 1);
+    _tmp->buf  = static_cast<char*>(calloc(_tmp->size + 1, 1));
     if (_tmp->buf != nullptr) {
+        auto row = 1;
         memset(_tmp->buf, 'A', _tmp->size);
         while (_tmp->pos < (size_t) _buffer->length()) {
             auto line = _buffer->line_text(_tmp->pos);
@@ -6876,7 +6865,7 @@ void LogDisplay::style_range(const std::string& line, const std::string& word1, 
             if (inclusive == false) {
                 style_line(pos_from + word1.length(), pos_to - 1, color);
             }
-            else if (inclusive == true) {
+            else {
                 style_line(pos_from, pos_to + word2.length() - 1, color);
             }
             pos_from = line.find(word1, pos_to + word2.length());
@@ -7059,7 +7048,7 @@ struct PlotArea {
     int                         y;
     int                         w;
     int                         h;
-                                PlotArea(int x = 0, int y = 0, int w = 0, int h = 0) {
+    explicit                    PlotArea(int x = 0, int y = 0, int w = 0, int h = 0) {
                                     this->x = x;
                                     this->y = y;
                                     this->w = w;
@@ -7256,7 +7245,7 @@ void Plot::_calc_min_max() {
     _x->reset_min_max();
     _y->reset_min_max();
     for (size_t f = 0; f < _size; f++) {
-        for (auto& p : _lines[f]->points) {
+        for (const auto& p : _lines[f]->points) {
             if (p.x < _x->min) {
                 _x->min = p.x;
             }
@@ -7769,15 +7758,15 @@ void Plot::update_pref() {
 }
 #define FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); plot->clear(); return false; }
 void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
+    auto self = static_cast<const Plot*>(plot_object);
     self->debug();
 }
 void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
+    auto self = static_cast<Plot*>(plot_object);
     flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
 }
 void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = (Plot*) plot_object;
+    auto self = static_cast<Plot*>(plot_object);
     self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
     self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
     self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
@@ -7806,7 +7795,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
     if (js.is_object() == false) FLW_PLOT_ERROR(&js);
     for (auto j : js.vo_to_va()) {
         if (j->name() == "descr" && j->is_object() == true) {
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "type" && j2->is_string() == true) {
                     if (j2->vs() != "flw::plot") FLW_PLOT_ERROR(j2)
                 }
@@ -7817,7 +7806,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
             }
         }
         else if (j->name() == "view" && j->is_object() == true) {
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "horizontal" && j2->is_bool() == true)    h = j2->vb();
                 else if (j2->name() == "labels" && j2->is_bool() == true)   l = j2->vb();
                 else if (j2->name() == "vertical" && j2->is_bool() == true) v = j2->vb();
@@ -7830,32 +7819,32 @@ bool Plot::Load(Plot* plot, std::string filename) {
                 if (s->name() == "color")      scale.color = s->vn_i();
                 else if (s->name() == "label") scale.label = s->vs_u();
                 else if (s->name() == "labels" && s->is_array() == true) {
-                    for (auto l : *s->va()) {
-                        if (l->is_string() == true) scale.labels.push_back(l->vs_u());
-                        else FLW_PLOT_ERROR(l)
+                    for (auto s2 : *s->va()) {
+                        if (s2->is_string() == true) scale.labels.push_back(s2->vs_u());
+                        else FLW_PLOT_ERROR(s2)
                     }
                 }
                 else FLW_PLOT_ERROR(s)
             }
         }
         else if (j->name() == "yxlines" && j->is_array() == true) {
-            for (auto j2 : *j->va()) {
+            for (const auto j2 : *j->va()) {
                 if (j2->is_object() == true) {
                     PlotLine line;
-                    for (auto l : j2->vo_to_va()) {
-                        if (l->name() == "color" && l->is_number() == true)      line.color = (Fl_Color) l->vn_i();
-                        else if (l->name() == "label" && l->is_string() == true) line.label = l->vs_u();
-                        else if (l->name() == "type" && l->is_string() == true)  line.type  = _plot_string_to_type(l->vs());
-                        else if (l->name() == "width" && l->is_number() == true) line.width = (unsigned) l->vn_i();
-                        else if (l->name() == "yx" && l->is_array() == true) {
-                            for (auto p : *l->va()) {
+                    for (auto j3 : j2->vo_to_va()) {
+                        if (j3->name() == "color" && j3->is_number() == true)      line.color = (Fl_Color) j3->vn_i();
+                        else if (j3->name() == "label" && j3->is_string() == true) line.label = j3->vs_u();
+                        else if (j3->name() == "type" && j3->is_string() == true)  line.type  = _plot_string_to_type(j3->vs());
+                        else if (j3->name() == "width" && j3->is_number() == true) line.width = (unsigned) j3->vn_i();
+                        else if (j3->name() == "yx" && j3->is_array() == true) {
+                            for (auto p : *j3->va()) {
                                 if (p->is_array() == true && p->size() == 2 && (*p)[0]->is_number() == true && (*p)[1]->is_number() == true) {
                                     line.points.push_back(Point((*p)[0]->vn(), (*p)[1]->vn()));
                                 }
                                 else FLW_PLOT_ERROR(p)
                             }
                         }
-                        else FLW_PLOT_ERROR(l)
+                        else FLW_PLOT_ERROR(j3)
                     }
                     if (plot->add_line(line.points, line.type, line.width, line.label, line.color) == false) FLW_PLOT_ERROR(j2)
                 }
@@ -7921,7 +7910,7 @@ bool Plot::Save(const Plot* plot, std::string filename) {
         auto js = jsb.encode();
         return util::save_file(filename, js.c_str(), js.length());
     }
-    catch(std::string e) {
+    catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }
@@ -7952,8 +7941,8 @@ namespace flw {
             _menu->clear_submenu(index);
             _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
         }
-        for (const auto& file : _files) {
-            _menu->add((_base + "/" + flw::util::fix_menu_string(file)).c_str(), 0, _callback, _user);
+        for (const auto& f : _files) {
+            _menu->add((_base + "/" + flw::util::fix_menu_string(f)).c_str(), 0, _callback, _user);
         }
     }
     size_t RecentMenu::_add_string(StringVector& in, size_t max_size, std::string string) {
@@ -7968,7 +7957,7 @@ namespace flw {
         return in.size();
     }
     void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
-        auto self = (RecentMenu*) o;
+        auto self = static_cast<RecentMenu*>(o);
         self->_add("", false);
     }
     size_t RecentMenu::_insert_string(StringVector& in, size_t max_size, std::string string) {
@@ -7996,7 +7985,7 @@ namespace flw {
     }
     void RecentMenu::save_pref(Fl_Preferences& pref, std::string base_name) {
         auto index = 1;
-        for (auto& s : _files) {
+        for (const auto& s : _files) {
             pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), s.c_str());
         }
         pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), "");
@@ -8013,7 +8002,7 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     _scroll    = (scroll > 0) ? scroll : 9;
     _flag_move = true;
     _flag_menu = true;
-    ((Fl_Group*) this)->add(_menu);
+    static_cast<Fl_Group*>(this)->add(_menu);
     _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->type(Fl_Menu_Button::POPUP3);
@@ -8021,9 +8010,9 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     update_pref();
 }
 void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
-    auto self  = (ScrollBrowser*) o;
-    auto menu  = self->_menu->text();
-    auto label = std::string((menu != nullptr) ? menu : "");
+    auto self  = static_cast<ScrollBrowser*>(o);
+    auto txt   = self->_menu->text();
+    auto label = std::string((txt != nullptr) ? txt : "");
     auto clip  = std::string();
     clip.reserve(self->size() * 40 + 100);
     if (label == _SCROLLBROWSER_MENU_LINE) {
@@ -8350,7 +8339,7 @@ namespace flw {
             resize(0, 0, flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 7);
         }
         static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = (_TableDisplayCellDialog*) o;
+            auto dlg = static_cast<_TableDisplayCellDialog*>(o);
             if (w == dlg) {
                 dlg->hide();
             }
@@ -8392,7 +8381,7 @@ namespace flw {
         TableDisplay*               _table;
         bool                        _repeat;
     public:
-        _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
             end();
             _close  = new Fl_Button(0, 0, 0, 0, "&Close");
             _next   = new Fl_Button(0, 0, 0, 0, "&Find next");
@@ -8423,7 +8412,7 @@ namespace flw {
             resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 7);
         }
         static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = (_TableDisplayFindDialog*) o;
+            auto dlg = static_cast<_TableDisplayFindDialog*>(o);
             if (w == dlg) {
                 dlg->hide();
             }
@@ -8564,12 +8553,12 @@ void flw::TableDisplay::active_cell(int row, int col, bool show) {
     }
 }
 void flw::TableDisplay::_CallbackVer(Fl_Widget*, void* o) {
-    auto table = (flw::TableDisplay*) o;
+    auto table = static_cast<flw::TableDisplay*>(o);
     table->_start_col = table->_hor->value();
     table->redraw();
 }
  void flw::TableDisplay::_CallbackHor(Fl_Widget*, void* o) {
-    auto table = (TableDisplay*) o;
+    auto table = static_cast<TableDisplay*>(o);
     table->_start_row = table->_ver->value();
     table->redraw();
 }
@@ -8826,27 +8815,27 @@ int flw::TableDisplay::_ev_mouse_click () {
     if (Fl::event_button1() && _drag == true) {
         return 1;
     }
-    auto row         = 0;
-    auto col         = 0;
-    auto current_row = _curr_row;
-    auto current_col = _curr_col;
-    _get_cell_below_mouse(row, col);
+    auto r  = 0;
+    auto c  = 0;
+    auto cr = _curr_row;
+    auto cc = _curr_col;
+    _get_cell_below_mouse(r, c);
     if (_edit == nullptr) {
         Fl::focus(this);
     }
-    if (row == 0 && col >= 1) {
-        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+    if (r == 0 && c >= 1) {
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
         do_callback();
     }
-    else if (col == 0 && row >= 1) {
-        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+    else if (c == 0 && r >= 1) {
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
         do_callback();
     }
-    else if (row == -1 || col == -1) {
-        if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) {
+    else if (r == -1 || c == -1) {
+        if (r == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) {
             ;
         }
-        else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) {
+        else if (c == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) {
             ;
         }
         else {
@@ -8854,8 +8843,8 @@ int flw::TableDisplay::_ev_mouse_click () {
             return 0;
         }
     }
-    else if (row >= 1 && col >= 1 && (row != current_row || col != current_col) && _select != flw::TableDisplay::SELECT::NO) {
-        active_cell(row, col);
+    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != flw::TableDisplay::SELECT::NO) {
+        active_cell(r, c);
     }
     return 2;
 }
@@ -9163,8 +9152,8 @@ void flw::TableDisplay::_update_scrollbars() {
             _ver->hide();
         }
         else {
-            auto rows = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
-            if (_rows > rows) {
+            auto r = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
+            if (_rows > r) {
                 _ver->slider_size(0.2);
                 _ver->range(1, _rows);
                 _ver->show();
@@ -9308,7 +9297,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
     auto textcolor = cell_textcolor(row, col);
     auto textfont  = cell_textfont(row, col);
     auto textsize  = cell_textsize(row, col);
-    auto val       = ((TableDisplay*) this)->cell_value(row, col);
+    auto val       = static_cast<TableDisplay*>(this)->cell_value(row, col);
     assert(val);
     if (row > 0 && col > 0) {
         auto format = cell_format(row, col);
@@ -9465,7 +9454,7 @@ void flw::TableEditor::_edit_create() {
     auto textcolor = FL_FOREGROUND_COLOR;
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
-    auto val       = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+    auto val       = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     assert(val);
     if (rend == flw::TableEditor::REND::TEXT ||
         rend == flw::TableEditor::REND::INTEGER ||
@@ -9531,7 +9520,7 @@ void flw::TableEditor::_edit_create() {
             w->value(nums[0]);
             w->type(FL_HOR_FILL_SLIDER);
             w->box(FL_BORDER_BOX);
-            ((Fl_Value_Slider*) w)->textsize(textsize * 0.8);
+            static_cast<Fl_Value_Slider*>(w)->textsize(textsize * 0.8);
             _edit = w;
         }
     }
@@ -9547,7 +9536,7 @@ void flw::TableEditor::_edit_create() {
             w->textfont(textfont);
             w->textsize(textsize);
             for (std::size_t f = 0; f < choices.size(); f++) {
-                auto& s = choices[f];
+                const auto& s = choices[f];
                 w->add(s.c_str());
                 if (s == val) {
                     select = f;
@@ -9571,7 +9560,7 @@ void flw::TableEditor::_edit_create() {
             w->menubutton()->textfont(textfont);
             w->menubutton()->textsize(textsize);
             w->textsize(textsize);
-            for (auto& s : choices) {
+            for (const auto& s : choices) {
                 w->add(s.c_str());
             }
             if (*val) {
@@ -9595,7 +9584,7 @@ void flw::TableEditor::_edit_create() {
 }
 void flw::TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
     assert(val);
     if (rend == flw::TableEditor::REND::INTEGER) {
@@ -9713,12 +9702,12 @@ void flw::TableEditor::_edit_quick(const char* key) {
 }
 void flw::TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
-    char buffer[100];
+    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     assert(val);
     if (rend == flw::TableEditor::REND::DLG_COLOR) {
         auto color1 = (int) tableeditor::to_int(val, 0);
         auto color2 = (int) fl_show_colormap((Fl_Color) color1);
+        char buffer[100];
         snprintf(buffer, 20, "%d", color2);
         if ((_send_changed_event_always == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
@@ -9754,7 +9743,7 @@ void flw::TableEditor::_edit_show() {
         if (choices.size() > 0) {
             auto row = dlg::select(flw::TableEditor::SELECT_LIST, choices, val);
             if (row > 0) {
-                auto& string = choices[row - 1];
+                const auto& string = choices[row - 1];
                 if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
                     _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
                     do_callback();
@@ -9787,14 +9776,14 @@ void flw::TableEditor::_edit_start(const char* key) {
 void flw::TableEditor::_edit_stop(bool save) {
     if (_edit) {
         auto rend = cell_rend(_curr_row, _curr_col);
-        auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+        auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
         auto stop = true;
         if (save == true) {
             if (rend == flw::TableEditor::REND::TEXT ||
                 rend == flw::TableEditor::REND::INTEGER ||
                 rend == flw::TableEditor::REND::NUMBER ||
                 rend == flw::TableEditor::REND::SECRET) {
-                auto input = (Fl_Input*) _edit;
+                auto input = static_cast<Fl_Input*>(_edit);
                 auto val2  = input->value();
                 char buffer[100];
                 if (rend == flw::TableEditor::REND::INTEGER) {
@@ -9819,7 +9808,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::BOOLEAN) {
-                auto button = (Fl_Check_Button*) _edit;
+                auto button = static_cast<Fl_Check_Button*>(_edit);
                 auto val2   = "0";
                 if (button->value())
                     val2 = "1";
@@ -9832,7 +9821,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-                auto slider = (Fl_Slider*) _edit;
+                auto slider = static_cast<Fl_Slider*>(_edit);
                 auto val2   = FormatSlider(slider->value(), slider->minimum(), slider->maximum(), slider->step());
                 if (strcmp(val, val2) == 0) {
                     stop = true;
@@ -9843,7 +9832,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::CHOICE) {
-                auto choice = (Fl_Choice*) _edit;
+                auto choice = static_cast<Fl_Choice*>(_edit);
                 auto val2   = choice->text();
                 if (val2 == 0) {
                     stop = true;
@@ -9858,7 +9847,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                 }
             }
             else if (rend == flw::TableEditor::REND::INPUT_CHOICE) {
-                auto input_choice = (Fl_Input_Choice*) _edit;
+                auto input_choice = static_cast<Fl_Input_Choice*>(_edit);
                 auto val2         = input_choice->value();
                 if (val2 == 0) {
                     stop = true;
@@ -9897,7 +9886,7 @@ void flw::TableEditor::_edit_stop(bool save) {
         }
     }
 }
-int flw::TableEditor::_ev_keyboard_down() {
+int flw::TableEditor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -9926,7 +9915,7 @@ int flw::TableEditor::_ev_keyboard_down() {
             _delete_current_cell();
         }
         else if (cmd == true && key == 'x') {
-            auto val = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+            auto val = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
             Fl::copy(val, strlen(val), 1);
             _delete_current_cell();
             return 1;
@@ -9962,7 +9951,7 @@ int flw::TableEditor::_ev_keyboard_down() {
     }
     return 0;
 }
-int flw::TableEditor::_ev_mouse_click () {
+int flw::TableEditor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -9982,7 +9971,7 @@ int flw::TableEditor::_ev_paste() {
     auto text = Fl::event_text();
     if (_curr_row > 0 && _curr_col > 0 && text && *text) {
         auto        rend = cell_rend(_curr_row, _curr_col);
-        auto        val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+        auto        val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
         char        buffer[100];
         std::string string;
         switch(rend) {
@@ -10073,10 +10062,10 @@ int flw::TableEditor::handle(int event) {
             ret = _ev_paste();
         }
         else if (event == FL_KEYDOWN) {
-            ret = _ev_keyboard_down();
+            ret = _ev_keyboard_down2();
         }
         else if (event == FL_PUSH) {
-            ret = _ev_mouse_click();
+            ret = _ev_mouse_click2();
         }
     }
     if (ret == 1) {
@@ -10096,7 +10085,7 @@ public:
     static Fl_Color             _BOXSELCOLOR;
     static Fl_Color             _BOXCOLOR;
     int                         _tw;
-    _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
+    explicit _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
         _tw = 0;
         copy_label(label);
         copy_tooltip(label);
@@ -10152,7 +10141,7 @@ Fl_Widget* TabsGroup::child(int num) const {
 }
 int TabsGroup::find(Fl_Widget* widget) const{
     auto num = 0;
-    for (auto w : _widgets) {
+    for (const auto w : _widgets) {
         if (w == widget) {
             return num;
         }
@@ -10334,7 +10323,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         auto th    = 0;
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
         for (auto widget : _buttons) {
-            auto b = (_TabsGroupButton*) widget;
+            auto b = static_cast<_TabsGroupButton*>(widget);
             b->_tw = 0;
             fl_measure(b->label(), b->_tw, th);
             b->_tw += _TabsGroupButton::_BORDER;
@@ -10349,7 +10338,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         }
         size_t count = 0;
         for (auto widget : _buttons) {
-            auto b  = (_TabsGroupButton*) widget;
+            auto b  = static_cast<_TabsGroupButton*>(widget);
             auto bw = (w != 0) ? w : b->_tw;
             if (space == 2 && count == _buttons.size() - 1) {
                 bw = W - x;
@@ -10469,18 +10458,18 @@ void TabsGroup::BoxType(Fl_Boxtype boxtype) {
 }
 void TabsGroup::Callback(Fl_Widget* sender, void* object) {
     if (sender) {
-        auto button = (_TabsGroupButton*) sender;
-        auto self   = (TabsGroup*) object;
+        auto button = static_cast<_TabsGroupButton*>(sender);
+        auto self   = static_cast<TabsGroup*>(object);
         auto count  = 0;
         self->_active = -1;
         for (auto b : self->_buttons) {
             if (b == button) {
-                ((Fl_Button*) b)->value(1);
+                static_cast<Fl_Button*>(b)->value(1);
                 self->_active = count;
                 self->_widgets[count]->show();
             }
             else {
-                ((Fl_Button*) b)->value(0);
+                static_cast<Fl_Button*>(b)->value(0);
                 self->_widgets[count]->hide();
             }
             count++;

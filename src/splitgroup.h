@@ -26,7 +26,8 @@ namespace flw {
                                         HORIZONTAL,
                                         VERTICAL,
         };
-                                        SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        
+        explicit                        SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            add(Fl_Widget* widget, SplitGroup::CHILD child);
         Fl_Widget*                      child(SplitGroup::CHILD child)
                                             { return (child == SplitGroup::CHILD::FIRST) ? _widgets[0] : _widgets[1]; }

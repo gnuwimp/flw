@@ -27,7 +27,7 @@ public:
                                 EAST,
     };
 
-                                TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; resize(); }

@@ -238,7 +238,7 @@ static bool _chart_has_time(Date::RANGE date_range) {
 }
 
 //----------------------------------------------------------------------
-static Chart::TYPE _chart_string_to_type(std::string name) {
+static Chart::TYPE _chart_string_to_type(const std::string& name) {
     if (name == "LINE") return Chart::LINE;
     else if (name == "BAR") return Chart::BAR;
     else if (name == "VERTICAL") return Chart::VERTICAL;
@@ -570,18 +570,18 @@ void ChartArea::clear(bool clear_data) {
 //------------------------------------------------------------------------------
 void ChartArea::debug(int num) const {
 #ifdef DEBUG
-    auto count = 0;
+    auto c = 0;
 
     for (const auto& line : lines) {
         if (line.points.size() > 0) {
-            count++;
+            c++;
         }
     }
 
-    if (count > 0 || num == 0) {
+    if (c > 0 || num == 0) {
         fprintf(stderr, "\t----------------------\n");
         fprintf(stderr, "\tChartArea: %d\n", num);
-        fprintf(stderr, "\t\tlines:    %4d\n", count);
+        fprintf(stderr, "\t\tlines:    %4d\n", c);
         fprintf(stderr, "\t\tx:        %4.0f\n", x);
         fprintf(stderr, "\t\ty:        %4.0f\n", y);
         fprintf(stderr, "\t\tw:        %4.0f\n", w);
@@ -591,11 +591,11 @@ void ChartArea::debug(int num) const {
 
         left.debug("left");
         right.debug("right");
-        count = 0;
+        c = 0;
 
         for (const auto& line : lines) {
             if (line.points.size() > 0) {
-                line.debug(count++);
+                line.debug(c++);
             }
         }
     }
@@ -791,12 +791,12 @@ void Chart::_calc_area_width() {
         _scroll->range(0, _dates.size() - _ticks);
 
         if (_scroll->value() > _scroll->maximum()) {
-            ((Fl_Slider*) _scroll)->value(_scroll->maximum());
+            static_cast<Fl_Slider*>(_scroll)->value(_scroll->maximum());
             _date_start = _dates.size() - _ticks - 1;
         }
     }
     else {
-        ((Fl_Valuator*) _scroll)->value(0);
+        static_cast<Fl_Valuator*>(_scroll)->value(0);
         _scroll->range(0, 0);
         _scroll->slider_size(1.0);
         _scroll->deactivate();
@@ -811,15 +811,15 @@ void Chart::_calc_area_width() {
 
 //------------------------------------------------------------------------------
 void Chart::_calc_dates() {
-    std::string min       = "";
-    std::string max       = "";
-    bool        long_date = false;
+    auto min       = std::string();
+    auto max       = std::string();
+    auto long_date = false;
 
     for (const auto& area : _areas) {
         for (const auto& line : area.lines) {
             if (line.points.size() > 0) {
-                auto& first = line.points.front();
-                auto& last  = line.points.back();
+                const auto& first = line.points.front();
+                const auto& last  = line.points.back();
 
                 if (min.length() == 0) {
                     if (first.date.length() == 15) {
@@ -871,8 +871,8 @@ void Chart::_calc_ymin_ymax() {
             if (line.points.size() > 0) {
                 const int stop    = _date_start + _ticks;
                 int       current = _date_start;
-                double    max     = Chart::MIN_VAL;
-                double    min     = Chart::MAX_VAL;
+                double    max;
+                double    min;
 
                 while (current <= stop && current < (int) _dates.size()) {
                     const Price& date  = _dates[current];
@@ -938,7 +938,7 @@ void Chart::_calc_yscale() {
 
 //------------------------------------------------------------------------------
 void Chart::clear() {
-    ((Fl_Valuator*) _scroll)->value(0);
+    static_cast<Fl_Valuator*>(_scroll)->value(0);
 
     _block_dates.clear();
     _dates.clear();
@@ -980,12 +980,12 @@ void Chart::_create_tooltip(bool ctrl) {
         return;
     }
 
-    const auto date_format = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
-    const int  stop        = _date_start + _ticks;
-    int        start       = _date_start;
-    int        X1          = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
-    int        left_dec    = 0;
-    int        right_dec   = 0;
+    const auto format    = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
+    const int  stop      = _date_start + _ticks;
+    int        start     = _date_start;
+    int        X1        = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+    int        left_dec  = 0;
+    int        right_dec = 0;
 
     if (_area->left.tick < 10.0 ) {
         left_dec = _chart_count_decimals(_area->left.tick) + 1;
@@ -997,7 +997,7 @@ void Chart::_create_tooltip(bool ctrl) {
 
     while (start <= stop && start < (int) _dates.size()) {
         if (X >= X1 && X <= X1 + _tick_width - 1) { // Is mouse x pos inside current tick?
-            const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(date_format);
+            const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(format);
 
             _tooltip = fancy_date;
 
@@ -1028,7 +1028,7 @@ void Chart::_create_tooltip(bool ctrl) {
             }
             else { // Use actual price data
                 const auto&  line  = _area->lines[_area->selected];
-                const size_t index = _chart_bsearch(line.points, _dates[start].date);
+                const size_t index = _chart_bsearch(line.points, _dates[start]);
 
                 if (index != (size_t) -1) {
                     const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
@@ -1642,18 +1642,18 @@ int Chart::handle(int event) {
         else {
             if (adj > 0) {
                 if ((pos + adj) > size) {
-                    ((Fl_Slider*) _scroll)->value(size);
+                    static_cast<Fl_Slider*>(_scroll)->value(size);
                 }
                 else {
-                    ((Fl_Slider*) _scroll)->value(pos + adj);
+                    static_cast<Fl_Slider*>(_scroll)->value(pos + adj);
                 }
             }
             else {
                 if ((pos + adj) < 0.0) {
-                    ((Fl_Slider*) _scroll)->value(0.0);
+                    static_cast<Fl_Slider*>(_scroll)->value(0.0);
                 }
                 else {
-                    ((Fl_Slider*) _scroll)->value(pos + adj);
+                    static_cast<Fl_Slider*>(_scroll)->value(pos + adj);
                 }
             }
 
@@ -1792,13 +1792,13 @@ void Chart::update_pref() {
 
 //------------------------------------------------------------------------------
 void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<const Chart*>(chart_object);
     self->debug();
 }
 
 //------------------------------------------------------------------------------
 void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
 
     self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
     self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
@@ -1808,7 +1808,7 @@ void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
 
 //------------------------------------------------------------------------------
 void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
 
     for (auto& area : self->_areas) {
         area.selected = 0;
@@ -1823,13 +1823,13 @@ void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
 
 //------------------------------------------------------------------------------
 void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
     util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
 }
 
 //------------------------------------------------------------------------------
 void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = (Chart*) chart_object;
+    auto self = static_cast<Chart*>(chart_object);
     self->_date_start = self->_scroll->value();
     self->init(false);
 }
@@ -1859,9 +1859,9 @@ bool Chart::Load(Chart* chart, std::string filename) {
 
     if (js.is_object() == false) FLW_CHART_ERROR(&js);
 
-    for (auto j : js.vo_to_va()) {
+    for (const auto j : js.vo_to_va()) {
         if (j->name() == "descr" && j->is_object() == true) {
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "type" && j2->is_string() == true) {
                     if (j2->vs() != "flw::chart") FLW_CHART_ERROR(j2)
                 }
@@ -1874,7 +1874,7 @@ bool Chart::Load(Chart* chart, std::string filename) {
         else if (j->name() == "descr_area" && j->is_object() == true) {
             long long int area[11] = { 0 };
 
-            for (auto j2 : j->vo_to_va()) {
+            for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "area0" && j2->is_number() == true)             area[0] = j2->vn_i();
                 else if (j2->name() == "area1" && j2->is_number() == true)        area[1] = j2->vn_i();
                 else if (j2->name() == "area2" && j2->is_number() == true)        area[2] = j2->vn_i();
@@ -1897,7 +1897,7 @@ bool Chart::Load(Chart* chart, std::string filename) {
             chart->view_options(area[5], area[4], area[9]);
         }
         else if (j->name() == "lines" && j->is_array() == true) {
-            for (auto j2 : *j->va()) {
+            for (const auto j2 : *j->va()) {
                 int         line[5]  = { 0 };
                 double      clamp[2] = { 0.0 };
                 std::string label;
@@ -1931,7 +1931,7 @@ bool Chart::Load(Chart* chart, std::string filename) {
         else if (j->name() == "lines_block" && j->is_array() == true) {
             PriceVector dates;
 
-            for (auto d : *j->va()) {
+            for (const auto d : *j->va()) {
                 if (d->is_string() == true) dates.push_back(Price(d->vs()));
                 else FLW_CHART_ERROR(d)
             }
@@ -1947,7 +1947,6 @@ bool Chart::Load(Chart* chart, std::string filename) {
 
 //----------------------------------------------------------------------
 bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_low) {
-    auto ac  = 0;
     auto wc  = WaitCursor();
     auto jsb = JSB();
 
@@ -1971,6 +1970,7 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
             jsb.end();
             jsb << JSB::MakeArray("lines");
                 for (const auto& area : chart->_areas) {
+                    auto ac = 0;
                     for (const auto& line : area.lines) {
                         if (line.points.size() > 0) {
                             jsb << JSB::MakeObject();
@@ -1983,7 +1983,7 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
                                 jsb << JSB::MakeNumber(line.clamp_min, "clamp_min");
                                 jsb << JSB::MakeNumber(line.clamp_max, "clamp_max");
                                 jsb << JSB::MakeArray("yx");
-                                for (auto& price : line.points) {
+                                for (const auto& price : line.points) {
                                     jsb << JSB::MakeArrayInline();
                                         jsb << JSB::MakeString(_chart_format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO));
                                         if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
@@ -2001,7 +2001,7 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
                 }
             jsb.end();
             jsb << JSB::MakeArray("lines_block");
-                for (auto& price : chart->_block_dates) {
+                for (const auto& price : chart->_block_dates) {
                     jsb << JSB::MakeString(price.date);
                 }
             jsb.end();
@@ -2009,7 +2009,7 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
         auto js = jsb.encode();
         return util::save_file(filename, js.c_str(), js.length());
     }
-    catch(std::string e) {
+    catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }

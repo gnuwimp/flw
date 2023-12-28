@@ -70,7 +70,7 @@ namespace flw {
          Stat()
             { size = mtime = 0; mode = 0; }
 
-         Stat(std::string filename) {
+         explicit Stat(std::string filename) {
             size  = 0;
             mtime = 0;
             mode  = 0;
@@ -133,7 +133,7 @@ flw::Buf::Buf() {
 
 //------------------------------------------------------------------------------
 flw::Buf::Buf(size_t S) {
-    p = (S < SIZE_MAX) ? (char*) calloc(S + 1, 1) : nullptr;
+    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
     s = 0;
 
     if (p != nullptr) {
@@ -154,7 +154,7 @@ flw::Buf::Buf(const char* P, size_t S) {
         s = 0;
     }
     else {
-        p = (char*) calloc(S + 1, 1);
+        p = static_cast<char*>(calloc(S + 1, 1));
         s = 0;
 
         if (p == nullptr) {
@@ -173,7 +173,7 @@ flw::Buf::Buf(const Buf& b) {
         s = 0;
     }
     else {
-        p = (char*) calloc(b.s + 1, 1);
+        p = static_cast<char*>(calloc(b.s + 1, 1));
         s = 0;
 
         if (p == nullptr) {
@@ -194,6 +194,8 @@ flw::Buf::Buf(Buf&& b) {
 
 //------------------------------------------------------------------------------
 flw::Buf& flw::Buf::operator=(const Buf& b) {
+    if (this == &b) {
+    }
     if (b.p == nullptr) {
         free(p);
         p = nullptr;
@@ -201,7 +203,7 @@ flw::Buf& flw::Buf::operator=(const Buf& b) {
     }
     else {
         free(p);
-        p = (char*) calloc(b.s + 1, 1);
+        p = static_cast<char*>(calloc(b.s + 1, 1));
         s = 0;
 
         if (p == nullptr) {
@@ -232,7 +234,7 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
         *this = b;
     }
     else {
-        auto t = (char*) calloc(s + b.s + 1, 1);
+        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
 
         if (t == nullptr) {
             return *this;
@@ -269,7 +271,7 @@ void flw::debug::print(Fl_Widget* widget, bool tab) {
 void flw::debug::print(Fl_Group* group) {
     assert(group);
     puts("");
-    debug::print((Fl_Widget*) group);
+    debug::print(static_cast<Fl_Widget*>(group));
 
     for (int f = 0; f < group->children(); f++) {
         debug::print(group->child(f), true);
@@ -397,7 +399,7 @@ std::string flw::util::format(const char* format, ...) {
 
     int         l   = 128;
     int         n   = 0;
-    char*       buf = (char*) calloc(l, 1);
+    char*       buf = static_cast<char*>(calloc(l, 1));
     std::string res;
     va_list     args;
 
@@ -418,11 +420,11 @@ std::string flw::util::format(const char* format, ...) {
 
     free(buf);
     l = n + 1;
-    buf = (char*) calloc(l, 1);
+    buf = static_cast<char*>(calloc(l, 1));
     if (buf == nullptr) return res;
 
     va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
+    vsnprintf(buf, l, format, args);
     va_end(args);
     res = buf;
     free(buf);
@@ -545,7 +547,7 @@ void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, 
             else if (ret == -1) {
                 fl_alert("%s", "error: missing libraries");
             }
-            else if (ret == -1) {
+            else if (ret == -2) {
                 fl_alert("error: failed to save image to %s", filename);
             }
 
@@ -1291,7 +1293,7 @@ void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_re
     }
 
 #if defined(_WIN32)
-    win->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(win_resource)));
+    win->icon(reinterpret_cast<char*>(LoadIcon(fl_display, MAKEINTRESOURCE(win_resource))));
     (void) name;
     (void) xpm_resource;
     (void) name;

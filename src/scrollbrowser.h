@@ -20,7 +20,7 @@ namespace flw {
         ScrollBrowser&                  operator=(const ScrollBrowser&) = delete;
         ScrollBrowser&                  operator=(ScrollBrowser&&) = delete;
 
-                                        ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        explicit                        ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                            enable_menu(bool menu)
                                             { _flag_menu = menu; }
         void                            enable_pagemove(bool move)

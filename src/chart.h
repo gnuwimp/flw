@@ -15,6 +15,17 @@
 
 namespace flw {
 
+/***
+ *      _____      _
+ *     |  __ \    (_)
+ *     | |__) | __ _  ___ ___
+ *     |  ___/ '__| |/ __/ _ \
+ *     | |   | |  | | (_|  __/
+ *     |_|   |_|  |_|\___\___|
+ *
+ *
+ */
+
 //--------------------------------------------------------------------------
 // Chart data
 //
@@ -26,7 +37,7 @@ struct Price {
     double                      vol;
 
                                 Price();
-                                Price(const std::string& date_value, double value = 0.0);
+    explicit                    Price(const std::string& date_value, double value = 0.0);
                                 Price(const std::string& date, double high, double low, double close, double vol = 0.0);
     bool                        operator<(const Price& price) const { return date < price.date; }
     bool                        operator<=(const Price& price) const { return date <= price.date; }
@@ -41,6 +52,17 @@ struct ChartScale;
 typedef std::vector<Price>      PriceVector;
 typedef std::vector<ChartLine>  LineVector;
 typedef std::vector<ChartArea>  AreaVector;
+
+/***
+ *       _____ _                _
+ *      / ____| |              | |
+ *     | |    | |__   __ _ _ __| |_
+ *     | |    | '_ \ / _` | '__| __|
+ *     | |____| | | | (_| | |  | |_
+ *      \_____|_| |_|\__,_|_|   \__|
+ *
+ *
+ */
 
 //--------------------------------------------------------------------------
 // Chart widget that is using dates for the x scale
@@ -70,7 +92,7 @@ public:
     static constexpr double     MIN_VAL = -999'999'999'999'999.0;
     static constexpr double     MAX_VAL =  999'999'999'999'999.0;
 
-                                Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     bool                        add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, Chart::TYPE chart_type = Chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = Chart::MIN_VAL, double clamp_max = Chart::MAX_VAL);
     bool                        area_size(int area1 = 100, int area2 = 0, int area3 = 0);
     void                        block_dates(const PriceVector& block_dates)

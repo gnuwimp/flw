@@ -86,7 +86,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = (_TableDisplayCellDialog*) o;
+            auto dlg = static_cast<_TableDisplayCellDialog*>(o);
 
             if (w == dlg) {
                 dlg->hide();
@@ -147,7 +147,7 @@ namespace flw {
         bool                        _repeat;
 
     public:
-        _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
             end();
 
             _close  = new Fl_Button(0, 0, 0, 0, "&Close");
@@ -184,7 +184,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = (_TableDisplayFindDialog*) o;
+            auto dlg = static_cast<_TableDisplayFindDialog*>(o);
 
             if (w == dlg) {
                 dlg->hide();
@@ -366,7 +366,7 @@ void flw::TableDisplay::active_cell(int row, int col, bool show) {
 
 //------------------------------------------------------------------------------
 void flw::TableDisplay::_CallbackVer(Fl_Widget*, void* o) {
-    auto table = (flw::TableDisplay*) o;
+    auto table = static_cast<flw::TableDisplay*>(o);
 
     table->_start_col = table->_hor->value();
     table->redraw();
@@ -374,7 +374,7 @@ void flw::TableDisplay::_CallbackVer(Fl_Widget*, void* o) {
 
 //------------------------------------------------------------------------------
  void flw::TableDisplay::_CallbackHor(Fl_Widget*, void* o) {
-    auto table = (TableDisplay*) o;
+    auto table = static_cast<TableDisplay*>(o);
 
     table->_start_row = table->_ver->value();
     table->redraw();
@@ -686,30 +686,30 @@ int flw::TableDisplay::_ev_mouse_click () {
         return 1;
     }
 
-    auto row         = 0;
-    auto col         = 0;
-    auto current_row = _curr_row;
-    auto current_col = _curr_col;
+    auto r  = 0;
+    auto c  = 0;
+    auto cr = _curr_row;
+    auto cc = _curr_col;
 
-    _get_cell_below_mouse(row, col);
+    _get_cell_below_mouse(r, c);
 
     if (_edit == nullptr) {
         Fl::focus(this);
     }
 
-    if (row == 0 && col >= 1) { // Mouse click on top header cells
-        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+    if (r == 0 && c >= 1) { // Mouse click on top header cells
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
         do_callback();
     }
-    else if (col == 0 && row >= 1) { // Mouse click on left header cells
-        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+    else if (c == 0 && r >= 1) { // Mouse click on left header cells
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
         do_callback();
     }
-    else if (row == -1 || col == -1) { // Mouse click outside cell
-        if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
+    else if (r == -1 || c == -1) { // Mouse click outside cell
+        if (r == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
             ;
         }
-        else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
+        else if (c == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
             ;
         }
         else { // If clicked in whitespace then deselect cell
@@ -717,8 +717,8 @@ int flw::TableDisplay::_ev_mouse_click () {
             return 0;
         }
     }
-    else if (row >= 1 && col >= 1 && (row != current_row || col != current_col) && _select != flw::TableDisplay::SELECT::NO) { // Set new current cell and send event
-        active_cell(row, col);
+    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != flw::TableDisplay::SELECT::NO) { // Set new current cell and send event
+        active_cell(r, c);
     }
 
     return 2;
@@ -1101,9 +1101,9 @@ void flw::TableDisplay::_update_scrollbars() {
             _ver->hide();
         }
         else {
-            auto rows = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
+            auto r = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
 
-            if (_rows > rows) {
+            if (_rows > r) {
                 _ver->slider_size(0.2);
                 _ver->range(1, _rows);
                 _ver->show();
