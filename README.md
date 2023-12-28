@@ -16,7 +16,7 @@ Widgets:
 * GridGroup - An layout widget using a grid.
 * InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list and use arrow keys in the input widget to switch between strings.
 * LcdNumber - Number widget in lcd style.
-* Plot - Numerical chart with numbers.
+* Plot - Numerical chart.
 * ScrollBrowser - Scroll faster and let user copy a line to clipboard.
 * SplitGroup - An layout widget for two widgets that can be resized with mouse.
 * TableDisplay - Show data in a grid.
