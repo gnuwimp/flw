@@ -1,6 +1,3 @@
-// This source file is an amalgamation of one or more source files.
-// And all comments and blank lines have been removed.
-// Created at 2023-02-14 22:12:57.
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #ifndef FLW_H
@@ -368,6 +365,7 @@ namespace flw {
         void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
         void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            panic(std::string message);
         bool                            password1(std::string title, std::string& password, Fl_Window* parent = nullptr);
         bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);

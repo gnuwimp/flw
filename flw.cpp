@@ -1,6 +1,3 @@
-// This source file is an amalgamation of one or more source files.
-// And all comments and blank lines have been removed.
-// Created at 2023-02-14 22:12:57.
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
@@ -2443,7 +2440,7 @@ namespace flw {
             flw::ScrollBrowser*         _list;
             Fl_Return_Button*           _close;
         public:
-            _DlgList(const char* title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
+            _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
             Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
                 end();
                 _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
@@ -2454,9 +2451,6 @@ namespace flw {
                 _close->labelfont(flw::PREF_FONT);
                 _close->labelsize(flw::PREF_FONTSIZE);
                 _list->take_focus();
-                for (auto& s : list) {
-                    _list->add(s.c_str());
-                }
                 if (fixed_font == true) {
                     _list->textfont(flw::PREF_FIXED_FONT);
                     _list->textsize(flw::PREF_FIXED_FONTSIZE);
@@ -2471,6 +2465,14 @@ namespace flw {
                 set_modal();
                 resizable(this);
                 flw::util::center_window(this, parent);
+                if (list.size() > 0) {
+                    for (auto& s : list) {
+                        _list->add(s.c_str());
+                    }
+                }
+                else if (file != "") {
+                    _list->load(file.c_str());
+                }
             }
             static void Callback(Fl_Widget* w, void* o) {
                 auto dlg = (_DlgList*) o;
@@ -2923,12 +2925,16 @@ void flw::dlg::html(std::string title, const std::string& text, Fl_Window* paren
     dlg.run();
 }
 void flw::dlg::list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgList dlg(title.c_str(), list, parent, fixed_font, W, H);
+    _DlgList dlg(title.c_str(), list, "", parent, fixed_font, W, H);
     dlg.run();
 }
 void flw::dlg::list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     auto list2 = flw::util::split( list, "\n");
-    _DlgList dlg(title.c_str(), list2, parent, fixed_font, W, H);
+    _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
+    dlg.run();
+}
+void flw::dlg::list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgList dlg(title.c_str(), flw::StringVector(), file, parent, fixed_font, W, H);
     dlg.run();
 }
 void flw::dlg::panic(std::string message) {
@@ -3746,8 +3752,9 @@ void flw::InputMenu::insert(const std::string& string, int max_list_len) {
 void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Group::resize(X, Y, W, H);
     if (_menu->visible() != 0) {
-        _input->resize(X, Y, W - flw::PREF_FONTSIZE * 2, H);
-        _menu->resize(X + W - flw::PREF_FONTSIZE * 2, Y, flw::PREF_FONTSIZE * 2, H);
+        auto mw = (int) flw::PREF_FONTSIZE / 2;
+        _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
+        _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y + 2, flw::PREF_FONTSIZE + mw, H - 4);
     }
     else {
         _input->resize(X, Y, W, H);
@@ -3768,6 +3775,8 @@ void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
 void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
+    _input->labelfont(text_font);
+    _input->labelsize(text_font);
     _input->textfont(text_font);
     _input->textsize(text_size);
     _menu->labelfont(text_font);
@@ -7587,6 +7596,7 @@ namespace flw {
         static bool          _IS_DARK     = false;
         static bool          _SAVED_COLOR = false;
         static bool          _SAVED_SYS   = false;
+        static int           _SCROLLBAR   = 2;
         static std::string   _NAME        = _NAMES[_NAME_DEFAULT];
         static void _colors(bool dark) {
             (void) dark;
@@ -7724,6 +7734,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_OXY];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_oxy_blue() {
             flw::theme::_save_colors();
@@ -7734,6 +7745,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_OXY_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_oxy_tan() {
             flw::theme::_save_colors();
@@ -7744,6 +7756,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_OXY_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_gleam() {
             flw::theme::_save_colors();
@@ -7754,6 +7767,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_gleam_blue() {
             flw::theme::_save_colors();
@@ -7764,6 +7778,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_gleam_dark() {
             flw::theme::_save_colors();
@@ -7776,6 +7791,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
         static void _load_gleam_darker() {
             flw::theme::_save_colors();
@@ -7788,6 +7804,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARKER];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
         static void _load_gleam_dark_blue() {
             flw::theme::_save_colors();
@@ -7800,6 +7817,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK_BLUE];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
         static void _load_gleam_tan() {
             flw::theme::_save_colors();
@@ -7810,6 +7828,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_gtk() {
             flw::theme::_save_colors();
@@ -7820,6 +7839,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_gtk_blue() {
             flw::theme::_save_colors();
@@ -7830,6 +7850,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_gtk_dark() {
             flw::theme::_save_colors();
@@ -7842,6 +7863,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
         static void _load_gtk_darker() {
             flw::theme::_save_colors();
@@ -7866,6 +7888,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK_BLUE];
             _IS_DARK = true;
+            _SCROLLBAR = 1;
         }
         static void _load_gtk_tan() {
             flw::theme::_save_colors();
@@ -7876,6 +7899,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
         }
         static void _load_plastic() {
             flw::theme::_save_colors();
@@ -7886,6 +7910,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC];
             _IS_DARK = false;
+            _SCROLLBAR = 2;
         }
         static void _load_blue_plastic() {
             flw::theme::_save_colors();
@@ -7896,6 +7921,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_BLUE];
             _IS_DARK = false;
+            _SCROLLBAR = 2;
         }
         static void _load_tan_plastic() {
             flw::theme::_save_colors();
@@ -7906,6 +7932,7 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_TAN];
             _IS_DARK = false;
+            _SCROLLBAR = 2;
         }
         static void _load_system() {
             flw::theme::_save_colors();
@@ -7922,6 +7949,11 @@ namespace flw {
             Fl::redraw();
             _NAME = _NAMES[_NAME_SYSTEM];
             _IS_DARK = false;
+            _SCROLLBAR = 1;
+        }
+        static void _scrollbar() {
+            auto s = (flw::PREF_FONTSIZE > flw::PREF_FIXED_FONTSIZE) ? flw::PREF_FONTSIZE : flw::PREF_FIXED_FONTSIZE;
+            Fl::scrollbar_size(s + _SCROLLBAR);
         }
     }
     namespace dlg {
@@ -7986,6 +8018,9 @@ namespace flw {
                         flw::PREF_FIXED_FONT     = fd.font();
                         flw::PREF_FIXED_FONTSIZE = fd.fontsize();
                         flw::PREF_FIXED_FONTNAME = fd.fontname();
+                        if (dlg->_font->active() == 0) {
+                            flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
+                        }
                         dlg->update_pref();
                     }
                 }
@@ -7995,6 +8030,9 @@ namespace flw {
                         flw::PREF_FONT     = fd.font();
                         flw::PREF_FONTSIZE = fd.fontsize();
                         flw::PREF_FONTNAME = fd.fontname();
+                        if (dlg->_fixedfont->active() == 0) {
+                            flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+                        }
                         dlg->update_pref();
                     }
                 }
@@ -8060,7 +8098,7 @@ namespace flw {
                     else {
                         flw::theme::_load_default();
                     }
-                    Fl::redraw();
+                    dlg->update_pref();
                 }
                 else if (w == dlg->_close) {
                     dlg->hide();
@@ -8091,6 +8129,7 @@ namespace flw {
                 _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
                 _theme->textsize(flw::PREF_FONTSIZE);
                 size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+                theme::_scrollbar();
                 for (int f = 0; f <= flw::theme::_NAME_SYSTEM; f++) {
                     if (theme::_NAME == flw::theme::_NAMES[f]) {
                         _theme->value(f + 1);
@@ -8180,6 +8219,7 @@ bool flw::theme::load(std::string name) {
     else {
         return false;
     }
+    theme::_scrollbar();
     return true;
 }
 void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
@@ -8252,9 +8292,11 @@ void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool sho
         x = 80;
         y = 60;
     }
-    window->resize(x, y, w, h);
-    if (show == true) {
+    if (show == true && window->shown() == 0) {
+        window->resize(x, y, w, h);
         window->show();
+    }
+    else {
         window->resize(x, y, w, h);
     }
     if (f == 1) {
@@ -8740,20 +8782,14 @@ bool flw::util::test(double ref, double val, double diff, int line, const char* 
     return true;
 }
 double flw::util::time() {
-    auto sec   = 0.0;
-    auto milli = 0.0;
 #ifdef _WIN32
-    struct __timeb64 timeVal;
-    _ftime64(&timeVal);
-    sec   = (double) timeVal.time;
-    milli = (double) timeVal.millitm;
-    return sec + (milli / 1000.0);
-#else
     struct timeb timeVal;
     ftime(&timeVal);
-    sec   = (double) timeVal.time;
-    milli = (double) timeVal.millitm;
-    return sec + (milli / 1000.0);
+    return (double) timeVal.time + (double) (timeVal.millitm / 1000.0);
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
 #endif
 }
 int64_t flw::util::time_micro() {
