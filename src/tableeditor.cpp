@@ -283,6 +283,8 @@ void flw::TableEditor::_edit_create() {
     auto textsize  = cell_textsize(_curr_row, _curr_col);
     auto val       = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
 
+    assert(val);
+
     if (rend == flw::TableEditor::REND::TEXT ||
         rend == flw::TableEditor::REND::INTEGER ||
         rend == flw::TableEditor::REND::NUMBER ||
@@ -311,7 +313,7 @@ void flw::TableEditor::_edit_create() {
         w->textfont(textfont);
         w->textsize(textsize);
         w->value(val);
-        w->position(0, strlen(val));
+        w->insert_position(0, strlen(val));
 
         _edit = w;
     }
@@ -412,7 +414,7 @@ void flw::TableEditor::_edit_create() {
 
             if (*val) {
                 w->value(val);
-                w->input()->position(0, strlen(val));
+                w->input()->insert_position(0, strlen(val));
             }
 
             _edit  = w;
@@ -438,6 +440,8 @@ void flw::TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
+
+    assert(val);
 
     if (rend == flw::TableEditor::REND::INTEGER) {
         auto num = util::to_int(val);
@@ -571,6 +575,8 @@ void flw::TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
+
+    assert(val);
 
     if (rend == flw::TableEditor::REND::DLG_COLOR) {
         auto color1 = (int) util::to_int(val);

@@ -144,20 +144,20 @@ void flw::InputMenu::insert(const std::string& string, int max_list_len) {
 
     _menu->clear();
 
-    for (auto& s : _input->history) {
+    for (const auto& s : _input->history) {
         _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
     }
 
     _input->index = -1;
     _input->value(string.c_str());
-    _input->position(string.length(), 0);
+    _input->insert_position(string.length(), 0);
 }
 
 //------------------------------------------------------------------------------
 void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Group::resize(X, Y, W, H);
 
-    if (_menu->visible()) {
+    if (_menu->visible() != 0) {
         _input->resize(X, Y, W - flw::PREF_FONTSIZE * 2, H);
         _menu->resize(X + W - flw::PREF_FONTSIZE * 2, Y, flw::PREF_FONTSIZE * 2, H);
     }
@@ -171,14 +171,14 @@ void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
     clear();
     _input->history = list;
 
-    for (auto& s : _input->history) {
+    for (const auto& s : _input->history) {
         _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
     }
 
-    if (list.size() && copy_first_to_input) {
+    if (list.size() > 0 && copy_first_to_input == true) {
         auto s = list.front();
         _input->value(s.c_str());
-        _input->position(s.length(), 0);
+        _input->insert_position(s.length(), 0);
     }
 }
 

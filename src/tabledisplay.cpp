@@ -237,7 +237,7 @@ namespace flw {
                 }
             }
 
-AGAIN:
+        AGAIN:
             if (next == true) {
                 for (int r = row; r <= _table->rows(); r++) {
                     for (int c = col; c <= _table->columns(); c++) {
