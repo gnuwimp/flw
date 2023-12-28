@@ -22,9 +22,9 @@
 #include <FL/Fl_Toggle_Button.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_show_colormap.H>
+#include <FL/x.H>
 #ifdef _WIN32
-    #include <profileapi.h>
-    #include <synchapi.h>
+    #include <windows.h>
 #endif
 
 
