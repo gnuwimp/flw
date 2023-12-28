@@ -2,7 +2,7 @@
 
 flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
 They work on all platforms that FLTK are supported.
-This library has been tested on Windows 10 + msys2, Ubuntu 21.04 (intel), Ubuntu mate (arm64 and with FLTK version 1.4.
+This library has been tested on Windows 10 + msys2, Ubuntu 21.04 (intel), Ubuntu mate (arm64) and with FLTK version 1.3.8 + 1.4.0 (unstable).
 They are compiled with c++17 flag and all are in the namespace flw. The source will not compile with Microsoft Visual Studio as it is.
 
 There is an amalgamated version of all source files in the top directory.
