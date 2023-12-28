@@ -66,12 +66,12 @@ namespace flw {
         Fl_Widget*                      _button();
         void                            _hide_tab_buttons(bool hide);
 
-        TABS                            _tabs;
-        bool                            _hide;
         int                             _active;
-        int                             _drag;
-        int                             _pos;
         std::vector<_TabsGroupButton*>  _buttons;
+        bool                            _drag;
+        bool                            _hide;
+        int                             _pos;
+        TABS                            _tabs;
         std::vector<Fl_Widget*>         _widgets;
     };
 }

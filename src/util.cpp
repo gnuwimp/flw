@@ -607,97 +607,67 @@ void flw::util::time_sleep(int milli) {
 }
 
 //------------------------------------------------------------------------------
-double flw::util::to_double(const char* string, double def) {
-    assert(string);
-
-    auto result = def;
-    auto first  = (string[0] == '-') ? 1 : 0;
-    first = (string[first] == '.') ? first + 1 : first;
-
-    if (string[first] >= '0' && string[first] <= '9') {
-        errno  = 0;
-        result = strtod(string, nullptr);
-        result = (errno == ERANGE) ? def : result;
+double flw::util::to_double(std::string string, double def) {
+    try {
+        return std::stod(string.c_str(), 0);
     }
-
-    return result;
-}
-
-//------------------------------------------------------------------------------
-long double flw::util::to_double_l(const char* string, long double def) {
-    assert(string);
-
-    auto result = def;
-    auto first  = (string[0] == '-') ? 1 : 0;
-    first = (string[first] == '.') ? first + 1 : first;
-
-    if (string[first] >= '0' && string[first] <= '9') {
-        errno  = 0;
-        result = strtold(string, nullptr);
-        result = (errno == ERANGE) ? def : result;
+    catch (...) {
+        return def;
     }
-
-    return result;
 }
 
 //------------------------------------------------------------------------------
 // Convert double numbers in string to actual numbers
 // Return number of set doubles
 //
-int flw::util::to_doubles(const char* string, double numbers[], size_t size) {
-    assert(string);
-
+int flw::util::to_doubles(std::string string, double numbers[], size_t size) {
     auto end = (char*) nullptr;
+    auto in  = string.c_str();
     auto f   = (size_t) 0;
+
     errno = 0;
 
     for (; f < size; f++) {
-        numbers[f] = strtod(string, &end);
+        numbers[f] = strtod(in, &end);
 
-        if (errno != 0 || string == end) {
+        if (errno != 0 || in == end) {
             return f;
         }
 
-        string = end;
+        in = end;
     }
 
     return f;
 }
 
 //------------------------------------------------------------------------------
-int64_t flw::util::to_int(const char* string, int64_t def) {
-    assert(string);
-
-    auto res = def;
-    auto first  = (string[0] == '-') ? 1 : 0;
-
-    if (string[first] >= '0' && string[first] <= '9') {
-        errno  = 0;
-        res = strtoll(string, nullptr, 0);
-        res = (errno == ERANGE) ? def : res;
+int64_t flw::util::to_int(std::string string, int64_t def) {
+    try {
+        return std::stoll(string.c_str(), 0, 0);
     }
-
-    return res;
+    catch (...) {
+        return def;
+    }
 }
 
 //------------------------------------------------------------------------------
 // Return number of set integers
 //
-int flw::util::to_ints(const char* string, int64_t numbers[], size_t size) {
-    assert(string);
-
+int flw::util::to_ints(std::string string, int64_t numbers[], size_t size) {
     auto end = (char*) nullptr;
+    auto in  = string.c_str();
     auto f   = (size_t) 0;
+
     errno = 0;
 
     for (; f < size; f++) {
-        numbers[f] = strtoll(string, &end, 10);
+        numbers[f] = strtoll(in, &end, 10);
 
-        if (errno != 0 || string == end) {
+        if (errno != 0 || in == end) {
             return f;
         }
 
-        string = end;
+        in = end;
     }
 
     return f;

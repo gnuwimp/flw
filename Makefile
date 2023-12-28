@@ -23,7 +23,7 @@ ifeq ($(OS),Linux)
 		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
 		LD  = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
 	else
-		CXX = g++ -std=c++17 -DDEBUG -DFLW_USE_PNG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+		CXX = g++ -g -std=c++17 -DDEBUG -DFLW_USE_PNG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
 		LD  = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags --use-images`
 	endif
 

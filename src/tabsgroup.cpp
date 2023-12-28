@@ -44,13 +44,13 @@ namespace flw {
 //------------------------------------------------------------------------------
 flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
+    clip_children(1);
 
     _active = -1;
+    _drag   = false;
+    _hide   = false;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
-    _hide   = false;
-
-    clip_children(1);
 }
 
 //------------------------------------------------------------------------------

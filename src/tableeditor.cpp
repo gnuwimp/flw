@@ -98,6 +98,8 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
     auto textsize  = cell_textsize(row, col);
     auto val       = ((TableDisplay*) this)->cell_value(row, col);
 
+    assert(val);
+
     if (row > 0 && col > 0) { // Draw normal cell
         auto format = cell_format(row, col);
         auto rend   = cell_rend(row, col);
@@ -197,7 +199,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
         }
         else if (rend == flw::TableEditor::REND::NUMBER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-            auto num = util::to_double_l(val);
+            auto num = util::to_double(val);
 
             if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
@@ -208,34 +210,34 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
 
             if (format == flw::TableEditor::FORMAT::DEC_0) {
-                snprintf(buffer, 100, "%.0Lf", num);
+                snprintf(buffer, 100, "%.0f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_1) {
-                snprintf(buffer, 100, "%.1Lf", num);
+                snprintf(buffer, 100, "%.1f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_2) {
-                snprintf(buffer, 100, "%.2Lf", num);
+                snprintf(buffer, 100, "%.2f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_3) {
-                snprintf(buffer, 100, "%.3Lf", num);
+                snprintf(buffer, 100, "%.3f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_4) {
-                snprintf(buffer, 100, "%.4Lf", num);
+                snprintf(buffer, 100, "%.4f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_5) {
-                snprintf(buffer, 100, "%.5Lf", num);
+                snprintf(buffer, 100, "%.5f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_6) {
-                snprintf(buffer, 100, "%.6Lf", num);
+                snprintf(buffer, 100, "%.6f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_7) {
-                snprintf(buffer, 100, "%.7Lf", num);
+                snprintf(buffer, 100, "%.7f", num);
             }
             else if (format == flw::TableEditor::FORMAT::DEC_8) {
-                snprintf(buffer, 100, "%.8Lf", num);
+                snprintf(buffer, 100, "%.8f", num);
             }
             else {
-                snprintf(buffer, 100, "%.19Lg", num);
+                snprintf(buffer, 100, "%f", num);
             }
 
             fl_font(textfont, textsize);

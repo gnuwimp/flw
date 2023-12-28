@@ -149,6 +149,7 @@ void flw::dlg::FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsi
     _label    = new flw::dlg::_FontDialogLabel(0, 0, 0, 0);
     _select   = new Fl_Button(0, 0, 0, 0, "&Select");
     _sizes    = new flw::ScrollBrowser(6);
+    _font     = -1;
     _fontsize = -1;
     _ret      = false;
 

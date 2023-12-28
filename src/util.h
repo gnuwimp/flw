@@ -96,11 +96,10 @@ namespace flw {
         int64_t                         time_micro();
         int32_t                         time_milli();
         void                            time_sleep(int milli);
-        double                          to_double(const char* string, double def = 0.0);
-        long double                     to_double_l(const char* string, long double def = 0.0);
-        int                             to_doubles(const char* string, double numbers[], size_t size);
-        int64_t                         to_int(const char* string, int64_t def = 0);
-        int                             to_ints(const char* string, int64_t numbers[], size_t size);
+        double                          to_double(std::string, double def = 0.0);
+        int                             to_doubles(std::string string, double numbers[], size_t size);
+        int64_t                         to_int(std::string string, int64_t def = 0);
+        int                             to_ints(std::string string, int64_t numbers[], size_t size);
         void*                           zero_memory(char* string);
         void*                           zero_memory(void* Buf, size_t size);
         void*                           zero_memory(std::string& string);

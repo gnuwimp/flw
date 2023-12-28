@@ -27,13 +27,6 @@ int main() {
         FLW_ASSERTD(999999999999999.000000, util::to_double("999999999999999.000000", 1.0), 0.001)
         FLW_ASSERTD(-999999999999999.000000, util::to_double("-999999999999999.000000", 1.0), 0.001)
 
-        FLW_ASSERTD(1.0, util::to_double_l("", 1.0), 0.001)
-        FLW_ASSERTD(1.0, util::to_double_l(":", 1.0), 0.001)
-        FLW_ASSERTD(345.678, util::to_double_l("345.678", 1.0), 0.001)
-        FLW_ASSERTD(0.678, util::to_double_l(".678", 1.0), 0.001)
-        FLW_ASSERTD(999999999999999.000000, util::to_double_l("999999999999999.000000", 1.0), 0.001)
-        FLW_ASSERTD(-999999999999999.000000, util::to_double_l("-999999999999999.000000", 1.0), 0.001)
-
         FLW_ASSERT(666, util::to_int("", 666))
         FLW_ASSERT(123456789012345, util::to_int("123456789012345", 666))
         FLW_ASSERT(-123456789012345, util::to_int("-123456789012345", 666))
