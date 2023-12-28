@@ -2871,16 +2871,16 @@ namespace flw {
 
         //----------------------------------------------------------------------
         class _DlgSelect : public Fl_Double_Window {
-            Fl_Button*                      _close;
-            Fl_Button*                      _cancel;
-            ScrollBrowser*                  _list;
-            Fl_Input*                       _filter;
-            const StringVector& _strings;
+            Fl_Button*                  _close;
+            Fl_Button*                  _cancel;
+            ScrollBrowser*              _list;
+            Fl_Input*                   _filter;
+            const StringVector&         _strings;
 
         public:
             //------------------------------------------------------------------
             _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
-            Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
+            Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
             _strings(strings) {
                 end();
 
@@ -2897,12 +2897,12 @@ namespace flw {
                 _cancel->callback(_DlgSelect::Callback, this);
                 _close->callback(_DlgSelect::Callback, this);
                 _filter->callback(_DlgSelect::Callback, this);
-                _filter->tooltip("Enter text to filter rows that macthes the text");
+                _filter->tooltip("Enter text to filter rows that macthes the text\nPress tab to switch focus between input and list widget.");
                 _filter->when(FL_WHEN_CHANGED);
                 _list->callback(_DlgSelect::Callback, this);
                 _list->tooltip("Use Page Up or Page Down in list to scroll faster");
 
-                if (fixed_font) {
+                if (fixed_font == true) {
                     _filter->textfont(flw::PREF_FIXED_FONT);
                     _filter->textsize(flw::PREF_FIXED_FONTSIZE);
                     _list->textfont(flw::PREF_FIXED_FONT);
@@ -2931,7 +2931,7 @@ namespace flw {
                         f++;
                     }
 
-                    if (selected_string_index && selected_string_index <= (int) _strings.size()) {
+                    if (selected_string_index > 0 && selected_string_index <= (int) _strings.size()) {
                         _list->value(selected_string_index);
                         _list->middleline(selected_string_index);
                     }
@@ -3005,18 +3005,20 @@ namespace flw {
                 _list->value(1);
             }
 
-            //--------------------------------------------------------------------------
+            //------------------------------------------------------------------
+            // Tab key changes focus between list and input
+            //
             int handle(int event) override {
                 if (event == FL_KEYDOWN) {
                     if (Fl::event_key() == FL_Enter) {
-                        if (_list->value()) {
+                        if (_list->value() > 0) {
                             hide();
                         }
 
                         return 1;
                     }
                     else if (Fl::event_key() == FL_Tab) {
-                        if (Fl::focus() == _list) {
+                        if (Fl::focus() == _list || Fl::focus() == _list->menu()) {
                             _filter->take_focus();
                         }
                         else {
@@ -9531,7 +9533,7 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     end();
 
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
-    _scroll    = scroll > 0 ? scroll : 9;
+    _scroll    = (scroll > 0) ? scroll : 9;
     _flag_move = true;
     _flag_menu = true;
 
@@ -9547,7 +9549,7 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
 void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     auto self  = (ScrollBrowser*) o;
     auto menu  = self->_menu->text();
-    auto label = std::string(menu != nullptr ? menu : "");
+    auto label = std::string((menu != nullptr) ? menu : "");
     auto clip  = std::string();
 
     clip.reserve(self->size() * 40 + 100);

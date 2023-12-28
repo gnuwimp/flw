@@ -217,7 +217,7 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     end();
 
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
-    _scroll    = scroll > 0 ? scroll : 9;
+    _scroll    = (scroll > 0) ? scroll : 9;
     _flag_move = true;
     _flag_menu = true;
 
@@ -233,7 +233,7 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
 void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     auto self  = (ScrollBrowser*) o;
     auto menu  = self->_menu->text();
-    auto label = std::string(menu != nullptr ? menu : "");
+    auto label = std::string((menu != nullptr) ? menu : "");
     auto clip  = std::string();
 
     clip.reserve(self->size() * 40 + 100);

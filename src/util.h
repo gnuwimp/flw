@@ -13,7 +13,7 @@ class Fl_Window;
 
 // MKALGAM_ON
 
-#define FLW_LINE { printf("%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stdout); }
+#define FLW_LINE { fprintf(stderr, "%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stderr); }
 
 namespace flw {
     typedef std::vector<std::string>    StringVector;
