@@ -34,6 +34,8 @@ namespace flw {
                                             { return (int) _widgets.size(); }
         int                             find(Fl_Widget* widget) const;
         int                             handle(int event) override;
+        void                            hide_tabs()
+                                            { _hide_tab_buttons(true); }
         void                            label(const std::string& label, Fl_Widget* widget);
         Fl_Widget*                      remove(int num);
         Fl_Widget*                      remove(Fl_Widget* widget)
@@ -41,11 +43,15 @@ namespace flw {
         void                            resize()
                                             { Fl::redraw(); resize(x(), y(), w(), h()); }
         void                            resize(int X, int Y, int W, int H) override;
+        void                            show_tabs()
+                                            { _hide_tab_buttons(false); }
         void                            swap(int from, int to);
         TABS                            tabs()
                                             { return _tabs; }
         void                            tabs(TABS value)
                                             { _tabs = value; }
+        bool                            tabs_visible() const
+                                            { return _hide == false; }
         Fl_Widget*                      value() const;
         void                            value(int num);
         void                            value(Fl_Widget* widget)
@@ -58,8 +64,10 @@ namespace flw {
 
     private:
         Fl_Widget*                      _button();
+        void                            _hide_tab_buttons(bool hide);
 
         TABS                            _tabs;
+        bool                            _hide;
         int                             _active;
         int                             _drag;
         int                             _pos;

@@ -20,7 +20,7 @@ public:
         auto e = new Fl_Button(0, 0, 0, 0, "TABS::EAST");
 
         b1 = new Fl_Button(0, 0, 0, 0, "Delete 1");
-        b2 = new Fl_Button(0, 0, 0, 0, "Widget 2");
+        b2 = new Fl_Button(0, 0, 0, 0, "Hide/Show");
         b3 = new Fl_Button(0, 0, 0, 0, "Delete 4");
         b4 = new Fl_Button(0, 0, 0, 0, "Widget 4");
 
@@ -54,6 +54,7 @@ public:
 
         tabs->child(8)->callback(CallbackStart, this);
         b1->callback(CallbackWidget1, this);
+        b2->callback(CallbackWidget2, this);
         b3->callback(CallbackWidget3, this);
 
         resizable(this);
@@ -89,6 +90,15 @@ public:
         auto w = TEST->tabs->remove(TEST->b1);
         TEST->tabs->resize();
         delete w;
+    }
+
+    static void CallbackWidget2(Fl_Widget*, void*) {
+        if (TEST->tabs->tabs_visible() == false) {
+            TEST->tabs->show_tabs();
+        }
+        else {
+            TEST->tabs->hide_tabs();
+        }
     }
 
     static void CallbackWidget3(Fl_Widget*, void*) {

@@ -47,6 +47,7 @@ flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(
     _active = -1;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
+    _hide   = false;
 
     clip_children(1);
 }
@@ -266,6 +267,22 @@ int flw::TabsGroup::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
+void flw::TabsGroup::_hide_tab_buttons(bool hide) {
+    _hide = hide;
+
+    for (auto b : _buttons) {
+        if (_hide == true) {
+            b->hide();
+        }
+        else {
+            b->show();
+        }
+    }
+
+    resize();
+}
+
+//------------------------------------------------------------------------------
 void flw::TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
 
@@ -311,91 +328,105 @@ void flw::TabsGroup::resize(int X, int Y, int W, int H) {
         return;
     }
 
-    if (visible() != 0 && _widgets.size() > 0) {
-        auto height = flw::PREF_FONTSIZE + 8;
+    if (visible() == 0 || _widgets.size() == 0) {
+        return;
+    }
 
-        if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
-            auto space = 6;
-            auto x     = 0;
-            auto w     = 0;
-            auto th    = 0;
+    auto height = flw::PREF_FONTSIZE + 8;
 
-            fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-
-            for (auto b : _buttons) { // Calc total width of buttons
-                b->_tw = 0;
-                fl_measure(b->label(), b->_tw, th);
-
-                b->_tw += _TabsGroupButton::_BORDER;
-                w      += b->_tw + space;
-            }
-
-            if (w > W) { // If width is too large then divide equal
-                w = (W - (_buttons.size() * 4)) / _buttons.size();
-            }
-            else {
-                w = 0;
-            }
-
-            for (auto b : _buttons) { // Resize buttons
-                auto bw = (w != 0) ? w : b->_tw;
-
-                if (_tabs == TABS::NORTH) {
-                    b->resize(X + x, Y, bw, height);
-                }
-                else {
-                    b->resize(X + x, Y + H - height, bw, height);
-                }
-
-                x += bw;
-                x += space;
-            }
-        }
-        else { // TABS::WEST, TABS::EAST
-            auto y        = Y;
-            auto h        = height;
-            auto shrinked = false;
-            auto space    = 3;
-
-            if ((h + space) * (int) _buttons.size() > H) { // Shrink button height if any falls outside area
-                h = (H - _buttons.size()) / _buttons.size();
-                shrinked = true;
-            }
-
-            if (_pos < flw::PREF_FONTSIZE * space) { // Set min size for widgets on the left
-                _pos = flw::PREF_FONTSIZE * space;
-            }
-            else if (_pos > W - flw::PREF_FONTSIZE * 8) { // Set min size for widgets on the right
-                _pos = W - flw::PREF_FONTSIZE * 8;
-            }
-
-            for (auto b : _buttons) {
-                if (_tabs == TABS::WEST) {
-                    b->resize(X, y, _pos, h);
-                    y += h + (shrinked == false ? space : 1);
-                }
-                else {
-                    b->resize(X + W - _pos, y, _pos, h);
-                    y += h + (shrinked == false ? space : 1);
-                }
-            }
-        }
-
+    if (_hide == true) {
         for (auto w : _widgets) { // Resize widgets
             if (w->visible() == 0) {
             }
-            else if (_tabs == TABS::NORTH) {
-                w->resize(X, Y + height, W, H - height);
+            else {
+                w->resize(X, Y, W, H);
             }
-            else if (_tabs == TABS::SOUTH) {
-                w->resize(X, Y, W, H - height);
+        }
+
+        return;
+    }
+
+    if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
+        auto space = 6;
+        auto x     = 0;
+        auto w     = 0;
+        auto th    = 0;
+
+        fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
+
+        for (auto b : _buttons) { // Calc total width of buttons
+            b->_tw = 0;
+            fl_measure(b->label(), b->_tw, th);
+
+            b->_tw += _TabsGroupButton::_BORDER;
+            w      += b->_tw + space;
+        }
+
+        if (w > W) { // If width is too large then divide equal
+            w = (W - (_buttons.size() * 4)) / _buttons.size();
+        }
+        else {
+            w = 0;
+        }
+
+        for (auto b : _buttons) { // Resize buttons
+            auto bw = (w != 0) ? w : b->_tw;
+
+            if (_tabs == TABS::NORTH) {
+                b->resize(X + x, Y, bw, height);
             }
-            else if (_tabs == TABS::WEST) {
-                w->resize(X + _pos, Y, W - _pos, H);
+            else {
+                b->resize(X + x, Y + H - height, bw, height);
             }
-            else if (_tabs == TABS::EAST) {
-                w->resize(X, Y, W - _pos, H);
+
+            x += bw;
+            x += space;
+        }
+    }
+    else { // TABS::WEST, TABS::EAST
+        auto y        = Y;
+        auto h        = height;
+        auto shrinked = false;
+        auto space    = 3;
+
+        if ((h + space) * (int) _buttons.size() > H) { // Shrink button height if any falls outside area
+            h = (H - _buttons.size()) / _buttons.size();
+            shrinked = true;
+        }
+
+        if (_pos < flw::PREF_FONTSIZE * space) { // Set min size for widgets on the left
+            _pos = flw::PREF_FONTSIZE * space;
+        }
+        else if (_pos > W - flw::PREF_FONTSIZE * 8) { // Set min size for widgets on the right
+            _pos = W - flw::PREF_FONTSIZE * 8;
+        }
+
+        for (auto b : _buttons) {
+            if (_tabs == TABS::WEST) {
+                b->resize(X, y, _pos, h);
+                y += h + (shrinked == false ? space : 1);
             }
+            else {
+                b->resize(X + W - _pos, y, _pos, h);
+                y += h + (shrinked == false ? space : 1);
+            }
+        }
+    }
+
+    for (auto w : _widgets) { // Resize widgets
+        if (w->visible() == 0) {
+        }
+        else if (_tabs == TABS::NORTH) {
+            w->resize(X, Y + height, W, H - height);
+        }
+        else if (_tabs == TABS::SOUTH) {
+            w->resize(X, Y, W, H - height);
+        }
+        else if (_tabs == TABS::WEST) {
+            w->resize(X + _pos, Y, W - _pos, H);
+        }
+        else if (_tabs == TABS::EAST) {
+            w->resize(X, Y, W - _pos, H);
         }
     }
 }
