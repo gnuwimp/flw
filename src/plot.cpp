@@ -3,6 +3,7 @@
 
 #include "plot.h"
 #include "util.h"
+#include "json.h"
 #include "theme.h"
 
 // MKALGAM_ON
@@ -38,7 +39,6 @@ namespace flw {
             auto l   = false;
             auto h   = false;
             auto v   = false;
-            auto err = (size_t) 0;
 
             plot->clear();
             plot->redraw();
@@ -47,8 +47,11 @@ namespace flw {
                 fl_alert("error: failed to load %s", filename.c_str());
                 return false;
             }
-            else if ((err = json::parse(buf.p, nv)) != (size_t) -1) {
-                fl_alert("error: failed to parse %s on position %u", filename.c_str(), (unsigned) err);
+
+            auto err = json::parse(buf.p, nv, true);
+
+            if (err.pos >= 0) {
+                fl_alert("error: failed to parse %s on line %d and byte %d", filename.c_str(), (int) err.line, (int) err.pos);
                 return false;
             }
 

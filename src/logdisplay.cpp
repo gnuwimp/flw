@@ -3,6 +3,7 @@
 
 #include "logdisplay.h"
 #include "dlg.h"
+#include "json.h"
 #include "util.h"
 #include "theme.h"
 
@@ -300,8 +301,8 @@ Ctrl + 'e' to edit style string.
             auto err = json::parse(json, nv);
             auto res = std::vector<Style>();
 
-            if (err != (size_t) -1) {
-                fl_alert("error: failed to parse json string at position %u", (unsigned) err);
+            if (err.pos >= 0) {
+                fl_alert("error: failed to parse json string at line %d and byte %d", (int) err.line, (int) err.pos);
                 return res;
             }
             else if (nv.size() < 3) {

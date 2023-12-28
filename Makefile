@@ -45,6 +45,7 @@ OBJ=obj/chart.o \
 	obj/grid.o \
 	obj/gridgroup.o \
 	obj/inputmenu.o \
+	obj/json.o \
 	obj/lcdnumber.o \
 	obj/logdisplay.o \
 	obj/plot.o \
@@ -90,6 +91,9 @@ obj/gridgroup.o: src/gridgroup.cpp src/gridgroup.h src/util.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/inputmenu.o: src/inputmenu.cpp src/inputmenu.h src/util.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/json.o: src/json.cpp src/json.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/lcdnumber.o: src/lcdnumber.cpp src/lcdnumber.h src/util.h

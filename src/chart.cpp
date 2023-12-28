@@ -3,6 +3,7 @@
 
 #include "chart.h"
 #include "util.h"
+#include "json.h"
 #include "waitcursor.h"
 #include "theme.h"
 
@@ -146,7 +147,6 @@ namespace flw {
             auto buf = util::load_file(filename);
             auto nv  = json::NodeVector();
             auto ok  = 0;
-            auto err = (size_t) 0;
 
             chart->clear();
             chart->redraw();
@@ -155,8 +155,11 @@ namespace flw {
                 fl_alert("error: failed to load %s", filename.c_str());
                 return false;
             }
-            else if ((err = json::parse(buf.p, nv, true)) != (size_t) -1) {
-                fl_alert("error: failed to parse %s (position %u)", filename.c_str(), (unsigned) err);
+
+            auto err = json::parse(buf.p, nv, true);
+
+            if (err.pos >= 0) {
+                fl_alert("error: failed to parse %s (line %d and byte %d)", filename.c_str(), (int) err.line, (int) err.pos);
                 return false;
             }
 
