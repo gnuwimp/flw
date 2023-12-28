@@ -13,13 +13,8 @@
 
 namespace flw {
     namespace logdisplay {
-    #if FL_MINOR_VERSION == 4
         #define STYLE_ATTRIBUTE 0, 0
         #define STYLE_ATTRIBUTE2 Fl_Text_Display::ATTR_BGCOLOR, 0
-    #else
-        #define STYLE_ATTRIBUTE 0
-        #define STYLE_ATTRIBUTE2 0
-    #endif
 
         Fl_Color BG_COLOR      = fl_lighter(FL_GRAY);
         Fl_Color BG_DARK_COLOR = FL_WHITE;

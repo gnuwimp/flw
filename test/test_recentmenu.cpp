@@ -75,13 +75,13 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    static void CallbackAdd(Fl_Widget* w, void* o) {
+    static void CallbackAdd(Fl_Widget*, void* o) {
         auto self = (Test*) o;
         self->add_button->copy_label(self->menu->text());
     }
 
     //--------------------------------------------------------------------------
-    static void CallbackInsert(Fl_Widget* w, void* o) {
+    static void CallbackInsert(Fl_Widget*, void* o) {
         auto self = (Test*) o;
         self->insert_button->copy_label(self->menu->text());
     }

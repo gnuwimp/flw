@@ -425,7 +425,6 @@ bool flw::util::menu_item_value(Fl_Menu_* menu, const char* text) {
 //
 void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
 #ifdef FLW_USE_PNG
-#if FL_MINOR_VERSION == 4
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
 
     if (filename != nullptr) {
@@ -459,15 +458,6 @@ void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, 
             fl_alert("%s", "error: failed to grab image");
         }
     }
-#else
-    (void) opt_name;
-    (void) window;
-    (void) X;
-    (void) Y;
-    (void) W;
-    (void) H;
-    fl_alert("error: does not work with fltk 1.3");
-#endif
 #else
     (void) opt_name;
     (void) window;

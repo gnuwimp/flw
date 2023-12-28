@@ -1,0 +1,68 @@
+OS := $(shell uname -s)
+
+ifeq ($(findstring MINGW64, $(OS)), MINGW64)
+	OS = Windows
+else ifeq ($(findstring inux, $(OS)), inux)
+	OS = Linux
+else
+$(error Unknow operating system $(OS))
+endif
+
+ifeq ($(OS), Windows)
+	FLTO    =
+	STATIC  = -static
+	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always
+else ifeq ($(OS), Linux)
+	FLTO    = -flto
+	STATIC  =
+	OSFLAGS =
+endif
+
+ifeq ($(build), sanitize)
+	CXXFLAGS = -fsanitize=address -g -DDEBUG $(OSFLAGS)
+	CFLAGS   = -DDEBUG
+	LDFLAGS  = -fsanitize=address
+else ifeq ($(build), debug)
+	CXXFLAGS = -g -DDEBUG $(OSFLAGS)
+	CFLAGS   = -DDEBUG
+	LDFLAGS  =
+else ifeq ($(build), release)
+	CXXFLAGS = -O2 -DNDEBUG $(OSFLAGS)
+	CFLAGS   = -O2
+	LDFLAGS  = $(STATIC) $(FLTO)
+else ifeq ($(build), profile1)
+	CXXFLAGS = -O2 -DNDEBUG -fprofile-generate=obj $(OSFLAGS)
+	CFLAGS   = -O2
+	LDFLAGS  = -fprofile-generate=obj
+else ifeq ($(build), profile2)
+	CXXFLAGS = -O2 -DNDEBUG -fprofile-use=obj $(OSFLAGS)
+	CFLAGS   = -O2
+	LDFLAGS  = $(STATIC) $(FLTO) -fprofile-use=obj
+else
+	CXXFLAGS = -DDEBUG $(OSFLAGS)
+	CFLAGS   = -DDEBUG
+	LDFLAGS  =
+endif
+
+FLTK_CXXFLAGS = $(shell /usr/local/bin/fltk-config --cxxflags)
+FLTK_LDFLAGS  = $(shell /usr/local/bin/fltk-config --ldflags)
+FLTKI_LDFLAGS = $(shell /usr/local/bin/fltk-config --ldflags --use-images)
+
+CXX = g++
+CC  = gcc
+
+CXXFLAGS += -std=c++17
+CXXFLAGS += -W
+CXXFLAGS += -Wall
+
+$(info >>>>>> flags from makeinclude)
+$(info OS            = $(OS))
+$(info CXXFLAGS      = $(CXXFLAGS))
+$(info CFLAGS        = $(CFLAGS))
+$(info LDFLAGS       = $(LDFLAGS))
+$(info FLTK_CXXFLAGS = $(FLTK_CXXFLAGS))
+$(info FLTK_LDFLAGS  = $(FLTK_LDFLAGS))
+$(info FLTKI_LDFLAGS = $(FLTKI_LDFLAGS))
+$(info CXX           = $(CXX))
+$(info CC            = $(CC))
+$(info $())

@@ -1,0 +1,761 @@
+001: To be, or not to be: that is the question:
+002:
+003: Whether 'tis nobler in the mind to suffer
+004: The slings and arrows of outrageous fortune,
+005: Or to take arms against a sea of troubles,
+006: And by opposing end them? To die: to sleep;
+007: No more; and by a sleep to say we end
+008: The heart-ache and the thousand natural shocks
+009: That flesh is heir to, 'tis a consummation
+010: Devoutly to be wish'd. To die, to sleep;
+011: To sleep: perchance to dream: ay, there's the rub;
+012: For in that sleep of death what dreams may come
+013: When we have shuffled off this mortal coil,
+014: Must give us pause: there's the respect
+015: That makes calamity of so long life;
+016: For who would bear the whips and scorns of time,
+017: The oppressor's wrong, the proud man's contumely,
+018: The pangs of despised love, the law's delay,
+019: The insolence of office and the spurns
+020: That patient merit of the unworthy takes,
+021: When he himself might his quietus make
+022: With a bare bodkin? who would fardels bear,
+023: To grunt and sweat under a weary life,
+024: But that the dread of something after death,
+025: The undiscover'd country from whose bourn
+026: No traveller returns, puzzles the will
+027: And makes us rather bear those ills we have
+028: Than fly to others that we know not of?
+029: Thus conscience does make cowards of us all;
+030: And thus the native hue of resolution
+031: Is sicklied o'er with the pale cast of thought,
+032: And enterprises of great pith and moment
+033: With this regard their currents turn awry,
+034: And lose the name of action.--Soft you now!
+035: The fair Ophelia! Nymph, in thy orisons
+036: Be all my sins remember'd!
+037: ― William Shakespeare, Hamlet
+038:
+039: To be, or not to be: that is the question:
+040:
+041: Whether 'tis nobler in the mind to suffer
+042: The slings and arrows of outrageous fortune,
+043: Or to take arms against a sea of troubles,
+044: And by opposing end them? To die: to sleep;
+045: No more; and by a sleep to say we end
+046: The heart-ache and the thousand natural shocks
+047: That flesh is heir to, 'tis a consummation
+048: Devoutly to be wish'd. To die, to sleep;
+049: To sleep: perchance to dream: ay, there's the rub;
+050: For in that sleep of death what dreams may come
+051: When we have shuffled off this mortal coil,
+052: Must give us pause: there's the respect
+053: That makes calamity of so long life;
+054: For who would bear the whips and scorns of time,
+055: The oppressor's wrong, the proud man's contumely,
+056: The pangs of despised love, the law's delay,
+057: The insolence of office and the spurns
+058: That patient merit of the unworthy takes,
+059: When he himself might his quietus make
+060: With a bare bodkin? who would fardels bear,
+061: To grunt and sweat under a weary life,
+062: But that the dread of something after death,
+063: The undiscover'd country from whose bourn
+064: No traveller returns, puzzles the will
+065: And makes us rather bear those ills we have
+066: Than fly to others that we know not of?
+067: Thus conscience does make cowards of us all;
+068: And thus the native hue of resolution
+069: Is sicklied o'er with the pale cast of thought,
+070: And enterprises of great pith and moment
+071: With this regard their currents turn awry,
+072: And lose the name of action.--Soft you now!
+073: The fair Ophelia! Nymph, in thy orisons
+074: Be all my sins remember'd!
+075: ― William Shakespeare, Hamlet
+076:
+077: To be, or not to be: that is the question:
+078:
+079: Whether 'tis nobler in the mind to suffer
+080: The slings and arrows of outrageous fortune,
+081: Or to take arms against a sea of troubles,
+082: And by opposing end them? To die: to sleep;
+083: No more; and by a sleep to say we end
+084: The heart-ache and the thousand natural shocks
+085: That flesh is heir to, 'tis a consummation
+086: Devoutly to be wish'd. To die, to sleep;
+087: To sleep: perchance to dream: ay, there's the rub;
+088: For in that sleep of death what dreams may come
+089: When we have shuffled off this mortal coil,
+090: Must give us pause: there's the respect
+091: That makes calamity of so long life;
+092: For who would bear the whips and scorns of time,
+093: The oppressor's wrong, the proud man's contumely,
+094: The pangs of despised love, the law's delay,
+095: The insolence of office and the spurns
+096: That patient merit of the unworthy takes,
+097: When he himself might his quietus make
+098: With a bare bodkin? who would fardels bear,
+099: To grunt and sweat under a weary life,
+100: But that the dread of something after death,
+101: The undiscover'd country from whose bourn
+102: No traveller returns, puzzles the will
+103: And makes us rather bear those ills we have
+104: Than fly to others that we know not of?
+105: Thus conscience does make cowards of us all;
+106: And thus the native hue of resolution
+107: Is sicklied o'er with the pale cast of thought,
+108: And enterprises of great pith and moment
+109: With this regard their currents turn awry,
+110: And lose the name of action.--Soft you now!
+111: The fair Ophelia! Nymph, in thy orisons
+112: Be all my sins remember'd!
+113: ― William Shakespeare, Hamlet
+114:
+115: To be, or not to be: that is the question:
+116:
+117: Whether 'tis nobler in the mind to suffer
+118: The slings and arrows of outrageous fortune,
+119: Or to take arms against a sea of troubles,
+120: And by opposing end them? To die: to sleep;
+121: No more; and by a sleep to say we end
+122: The heart-ache and the thousand natural shocks
+123: That flesh is heir to, 'tis a consummation
+124: Devoutly to be wish'd. To die, to sleep;
+125: To sleep: perchance to dream: ay, there's the rub;
+126: For in that sleep of death what dreams may come
+127: When we have shuffled off this mortal coil,
+128: Must give us pause: there's the respect
+129: That makes calamity of so long life;
+130: For who would bear the whips and scorns of time,
+131: The oppressor's wrong, the proud man's contumely,
+132: The pangs of despised love, the law's delay,
+133: The insolence of office and the spurns
+134: That patient merit of the unworthy takes,
+135: When he himself might his quietus make
+136: With a bare bodkin? who would fardels bear,
+137: To grunt and sweat under a weary life,
+138: But that the dread of something after death,
+139: The undiscover'd country from whose bourn
+140: No traveller returns, puzzles the will
+141: And makes us rather bear those ills we have
+142: Than fly to others that we know not of?
+143: Thus conscience does make cowards of us all;
+144: And thus the native hue of resolution
+145: Is sicklied o'er with the pale cast of thought,
+146: And enterprises of great pith and moment
+147: With this regard their currents turn awry,
+148: And lose the name of action.--Soft you now!
+149: The fair Ophelia! Nymph, in thy orisons
+150: Be all my sins remember'd!
+151: ― William Shakespeare, Hamlet
+152:
+153: To be, or not to be: that is the question:
+154:
+155: Whether 'tis nobler in the mind to suffer
+156: The slings and arrows of outrageous fortune,
+157: Or to take arms against a sea of troubles,
+158: And by opposing end them? To die: to sleep;
+159: No more; and by a sleep to say we end
+160: The heart-ache and the thousand natural shocks
+161: That flesh is heir to, 'tis a consummation
+162: Devoutly to be wish'd. To die, to sleep;
+163: To sleep: perchance to dream: ay, there's the rub;
+164: For in that sleep of death what dreams may come
+165: When we have shuffled off this mortal coil,
+166: Must give us pause: there's the respect
+167: That makes calamity of so long life;
+168: For who would bear the whips and scorns of time,
+169: The oppressor's wrong, the proud man's contumely,
+170: The pangs of despised love, the law's delay,
+171: The insolence of office and the spurns
+172: That patient merit of the unworthy takes,
+173: When he himself might his quietus make
+174: With a bare bodkin? who would fardels bear,
+175: To grunt and sweat under a weary life,
+176: But that the dread of something after death,
+177: The undiscover'd country from whose bourn
+178: No traveller returns, puzzles the will
+179: And makes us rather bear those ills we have
+180: Than fly to others that we know not of?
+181: Thus conscience does make cowards of us all;
+182: And thus the native hue of resolution
+183: Is sicklied o'er with the pale cast of thought,
+184: And enterprises of great pith and moment
+185: With this regard their currents turn awry,
+186: And lose the name of action.--Soft you now!
+187: The fair Ophelia! Nymph, in thy orisons
+188: Be all my sins remember'd!
+189: ― William Shakespeare, Hamlet
+190:
+191: To be, or not to be: that is the question:
+192:
+193: Whether 'tis nobler in the mind to suffer
+194: The slings and arrows of outrageous fortune,
+195: Or to take arms against a sea of troubles,
+196: And by opposing end them? To die: to sleep;
+197: No more; and by a sleep to say we end
+198: The heart-ache and the thousand natural shocks
+199: That flesh is heir to, 'tis a consummation
+200: Devoutly to be wish'd. To die, to sleep;
+201: To sleep: perchance to dream: ay, there's the rub;
+202: For in that sleep of death what dreams may come
+203: When we have shuffled off this mortal coil,
+204: Must give us pause: there's the respect
+205: That makes calamity of so long life;
+206: For who would bear the whips and scorns of time,
+207: The oppressor's wrong, the proud man's contumely,
+208: The pangs of despised love, the law's delay,
+209: The insolence of office and the spurns
+210: That patient merit of the unworthy takes,
+211: When he himself might his quietus make
+212: With a bare bodkin? who would fardels bear,
+213: To grunt and sweat under a weary life,
+214: But that the dread of something after death,
+215: The undiscover'd country from whose bourn
+216: No traveller returns, puzzles the will
+217: And makes us rather bear those ills we have
+218: Than fly to others that we know not of?
+219: Thus conscience does make cowards of us all;
+220: And thus the native hue of resolution
+221: Is sicklied o'er with the pale cast of thought,
+222: And enterprises of great pith and moment
+223: With this regard their currents turn awry,
+224: And lose the name of action.--Soft you now!
+225: The fair Ophelia! Nymph, in thy orisons
+226: Be all my sins remember'd!
+227: ― William Shakespeare, Hamlet
+228:
+229: To be, or not to be: that is the question:
+230:
+231: Whether 'tis nobler in the mind to suffer
+232: The slings and arrows of outrageous fortune,
+233: Or to take arms against a sea of troubles,
+234: And by opposing end them? To die: to sleep;
+235: No more; and by a sleep to say we end
+236: The heart-ache and the thousand natural shocks
+237: That flesh is heir to, 'tis a consummation
+238: Devoutly to be wish'd. To die, to sleep;
+239: To sleep: perchance to dream: ay, there's the rub;
+240: For in that sleep of death what dreams may come
+241: When we have shuffled off this mortal coil,
+242: Must give us pause: there's the respect
+243: That makes calamity of so long life;
+244: For who would bear the whips and scorns of time,
+245: The oppressor's wrong, the proud man's contumely,
+246: The pangs of despised love, the law's delay,
+247: The insolence of office and the spurns
+248: That patient merit of the unworthy takes,
+249: When he himself might his quietus make
+250: With a bare bodkin? who would fardels bear,
+251: To grunt and sweat under a weary life,
+252: But that the dread of something after death,
+253: The undiscover'd country from whose bourn
+254: No traveller returns, puzzles the will
+255: And makes us rather bear those ills we have
+256: Than fly to others that we know not of?
+257: Thus conscience does make cowards of us all;
+258: And thus the native hue of resolution
+259: Is sicklied o'er with the pale cast of thought,
+260: And enterprises of great pith and moment
+261: With this regard their currents turn awry,
+262: And lose the name of action.--Soft you now!
+263: The fair Ophelia! Nymph, in thy orisons
+264: Be all my sins remember'd!
+265: ― William Shakespeare, Hamlet
+266:
+267: To be, or not to be: that is the question:
+268:
+269: Whether 'tis nobler in the mind to suffer
+270: The slings and arrows of outrageous fortune,
+271: Or to take arms against a sea of troubles,
+272: And by opposing end them? To die: to sleep;
+273: No more; and by a sleep to say we end
+274: The heart-ache and the thousand natural shocks
+275: That flesh is heir to, 'tis a consummation
+276: Devoutly to be wish'd. To die, to sleep;
+277: To sleep: perchance to dream: ay, there's the rub;
+278: For in that sleep of death what dreams may come
+279: When we have shuffled off this mortal coil,
+280: Must give us pause: there's the respect
+281: That makes calamity of so long life;
+282: For who would bear the whips and scorns of time,
+283: The oppressor's wrong, the proud man's contumely,
+284: The pangs of despised love, the law's delay,
+285: The insolence of office and the spurns
+286: That patient merit of the unworthy takes,
+287: When he himself might his quietus make
+288: With a bare bodkin? who would fardels bear,
+289: To grunt and sweat under a weary life,
+290: But that the dread of something after death,
+291: The undiscover'd country from whose bourn
+292: No traveller returns, puzzles the will
+293: And makes us rather bear those ills we have
+294: Than fly to others that we know not of?
+295: Thus conscience does make cowards of us all;
+296: And thus the native hue of resolution
+297: Is sicklied o'er with the pale cast of thought,
+298: And enterprises of great pith and moment
+299: With this regard their currents turn awry,
+300: And lose the name of action.--Soft you now!
+301: The fair Ophelia! Nymph, in thy orisons
+302: Be all my sins remember'd!
+303: ― William Shakespeare, Hamlet
+304:
+305: To be, or not to be: that is the question:
+306:
+307: Whether 'tis nobler in the mind to suffer
+308: The slings and arrows of outrageous fortune,
+309: Or to take arms against a sea of troubles,
+310: And by opposing end them? To die: to sleep;
+311: No more; and by a sleep to say we end
+312: The heart-ache and the thousand natural shocks
+313: That flesh is heir to, 'tis a consummation
+314: Devoutly to be wish'd. To die, to sleep;
+315: To sleep: perchance to dream: ay, there's the rub;
+316: For in that sleep of death what dreams may come
+317: When we have shuffled off this mortal coil,
+318: Must give us pause: there's the respect
+319: That makes calamity of so long life;
+320: For who would bear the whips and scorns of time,
+321: The oppressor's wrong, the proud man's contumely,
+322: The pangs of despised love, the law's delay,
+323: The insolence of office and the spurns
+324: That patient merit of the unworthy takes,
+325: When he himself might his quietus make
+326: With a bare bodkin? who would fardels bear,
+327: To grunt and sweat under a weary life,
+328: But that the dread of something after death,
+329: The undiscover'd country from whose bourn
+330: No traveller returns, puzzles the will
+331: And makes us rather bear those ills we have
+332: Than fly to others that we know not of?
+333: Thus conscience does make cowards of us all;
+334: And thus the native hue of resolution
+335: Is sicklied o'er with the pale cast of thought,
+336: And enterprises of great pith and moment
+337: With this regard their currents turn awry,
+338: And lose the name of action.--Soft you now!
+339: The fair Ophelia! Nymph, in thy orisons
+340: Be all my sins remember'd!
+341: ― William Shakespeare, Hamlet
+342:
+343: To be, or not to be: that is the question:
+344:
+345: Whether 'tis nobler in the mind to suffer
+346: The slings and arrows of outrageous fortune,
+347: Or to take arms against a sea of troubles,
+348: And by opposing end them? To die: to sleep;
+349: No more; and by a sleep to say we end
+350: The heart-ache and the thousand natural shocks
+351: That flesh is heir to, 'tis a consummation
+352: Devoutly to be wish'd. To die, to sleep;
+353: To sleep: perchance to dream: ay, there's the rub;
+354: For in that sleep of death what dreams may come
+355: When we have shuffled off this mortal coil,
+356: Must give us pause: there's the respect
+357: That makes calamity of so long life;
+358: For who would bear the whips and scorns of time,
+359: The oppressor's wrong, the proud man's contumely,
+360: The pangs of despised love, the law's delay,
+361: The insolence of office and the spurns
+362: That patient merit of the unworthy takes,
+363: When he himself might his quietus make
+364: With a bare bodkin? who would fardels bear,
+365: To grunt and sweat under a weary life,
+366: But that the dread of something after death,
+367: The undiscover'd country from whose bourn
+368: No traveller returns, puzzles the will
+369: And makes us rather bear those ills we have
+370: Than fly to others that we know not of?
+371: Thus conscience does make cowards of us all;
+372: And thus the native hue of resolution
+373: Is sicklied o'er with the pale cast of thought,
+374: And enterprises of great pith and moment
+375: With this regard their currents turn awry,
+376: And lose the name of action.--Soft you now!
+377: The fair Ophelia! Nymph, in thy orisons
+378: Be all my sins remember'd!
+379: ― William Shakespeare, Hamlet
+380:
+381: To be, or not to be: that is the question:
+382:
+383: Whether 'tis nobler in the mind to suffer
+384: The slings and arrows of outrageous fortune,
+385: Or to take arms against a sea of troubles,
+386: And by opposing end them? To die: to sleep;
+387: No more; and by a sleep to say we end
+388: The heart-ache and the thousand natural shocks
+389: That flesh is heir to, 'tis a consummation
+390: Devoutly to be wish'd. To die, to sleep;
+391: To sleep: perchance to dream: ay, there's the rub;
+392: For in that sleep of death what dreams may come
+393: When we have shuffled off this mortal coil,
+394: Must give us pause: there's the respect
+395: That makes calamity of so long life;
+396: For who would bear the whips and scorns of time,
+397: The oppressor's wrong, the proud man's contumely,
+398: The pangs of despised love, the law's delay,
+399: The insolence of office and the spurns
+400: That patient merit of the unworthy takes,
+401: When he himself might his quietus make
+402: With a bare bodkin? who would fardels bear,
+403: To grunt and sweat under a weary life,
+404: But that the dread of something after death,
+405: The undiscover'd country from whose bourn
+406: No traveller returns, puzzles the will
+407: And makes us rather bear those ills we have
+408: Than fly to others that we know not of?
+409: Thus conscience does make cowards of us all;
+410: And thus the native hue of resolution
+411: Is sicklied o'er with the pale cast of thought,
+412: And enterprises of great pith and moment
+413: With this regard their currents turn awry,
+414: And lose the name of action.--Soft you now!
+415: The fair Ophelia! Nymph, in thy orisons
+416: Be all my sins remember'd!
+417: ― William Shakespeare, Hamlet
+418:
+419: To be, or not to be: that is the question:
+420:
+421: Whether 'tis nobler in the mind to suffer
+422: The slings and arrows of outrageous fortune,
+423: Or to take arms against a sea of troubles,
+424: And by opposing end them? To die: to sleep;
+425: No more; and by a sleep to say we end
+426: The heart-ache and the thousand natural shocks
+427: That flesh is heir to, 'tis a consummation
+428: Devoutly to be wish'd. To die, to sleep;
+429: To sleep: perchance to dream: ay, there's the rub;
+430: For in that sleep of death what dreams may come
+431: When we have shuffled off this mortal coil,
+432: Must give us pause: there's the respect
+433: That makes calamity of so long life;
+434: For who would bear the whips and scorns of time,
+435: The oppressor's wrong, the proud man's contumely,
+436: The pangs of despised love, the law's delay,
+437: The insolence of office and the spurns
+438: That patient merit of the unworthy takes,
+439: When he himself might his quietus make
+440: With a bare bodkin? who would fardels bear,
+441: To grunt and sweat under a weary life,
+442: But that the dread of something after death,
+443: The undiscover'd country from whose bourn
+444: No traveller returns, puzzles the will
+445: And makes us rather bear those ills we have
+446: Than fly to others that we know not of?
+447: Thus conscience does make cowards of us all;
+448: And thus the native hue of resolution
+449: Is sicklied o'er with the pale cast of thought,
+450: And enterprises of great pith and moment
+451: With this regard their currents turn awry,
+452: And lose the name of action.--Soft you now!
+453: The fair Ophelia! Nymph, in thy orisons
+454: Be all my sins remember'd!
+455: ― William Shakespeare, Hamlet
+456:
+457: To be, or not to be: that is the question:
+458:
+459: Whether 'tis nobler in the mind to suffer
+460: The slings and arrows of outrageous fortune,
+461: Or to take arms against a sea of troubles,
+462: And by opposing end them? To die: to sleep;
+463: No more; and by a sleep to say we end
+464: The heart-ache and the thousand natural shocks
+465: That flesh is heir to, 'tis a consummation
+466: Devoutly to be wish'd. To die, to sleep;
+467: To sleep: perchance to dream: ay, there's the rub;
+468: For in that sleep of death what dreams may come
+469: When we have shuffled off this mortal coil,
+470: Must give us pause: there's the respect
+471: That makes calamity of so long life;
+472: For who would bear the whips and scorns of time,
+473: The oppressor's wrong, the proud man's contumely,
+474: The pangs of despised love, the law's delay,
+475: The insolence of office and the spurns
+476: That patient merit of the unworthy takes,
+477: When he himself might his quietus make
+478: With a bare bodkin? who would fardels bear,
+479: To grunt and sweat under a weary life,
+480: But that the dread of something after death,
+481: The undiscover'd country from whose bourn
+482: No traveller returns, puzzles the will
+483: And makes us rather bear those ills we have
+484: Than fly to others that we know not of?
+485: Thus conscience does make cowards of us all;
+486: And thus the native hue of resolution
+487: Is sicklied o'er with the pale cast of thought,
+488: And enterprises of great pith and moment
+489: With this regard their currents turn awry,
+490: And lose the name of action.--Soft you now!
+491: The fair Ophelia! Nymph, in thy orisons
+492: Be all my sins remember'd!
+493: ― William Shakespeare, Hamlet
+494:
+495: To be, or not to be: that is the question:
+496:
+497: Whether 'tis nobler in the mind to suffer
+498: The slings and arrows of outrageous fortune,
+499: Or to take arms against a sea of troubles,
+500: And by opposing end them? To die: to sleep;
+501: No more; and by a sleep to say we end
+502: The heart-ache and the thousand natural shocks
+503: That flesh is heir to, 'tis a consummation
+504: Devoutly to be wish'd. To die, to sleep;
+505: To sleep: perchance to dream: ay, there's the rub;
+506: For in that sleep of death what dreams may come
+507: When we have shuffled off this mortal coil,
+508: Must give us pause: there's the respect
+509: That makes calamity of so long life;
+510: For who would bear the whips and scorns of time,
+511: The oppressor's wrong, the proud man's contumely,
+512: The pangs of despised love, the law's delay,
+513: The insolence of office and the spurns
+514: That patient merit of the unworthy takes,
+515: When he himself might his quietus make
+516: With a bare bodkin? who would fardels bear,
+517: To grunt and sweat under a weary life,
+518: But that the dread of something after death,
+519: The undiscover'd country from whose bourn
+520: No traveller returns, puzzles the will
+521: And makes us rather bear those ills we have
+522: Than fly to others that we know not of?
+523: Thus conscience does make cowards of us all;
+524: And thus the native hue of resolution
+525: Is sicklied o'er with the pale cast of thought,
+526: And enterprises of great pith and moment
+527: With this regard their currents turn awry,
+528: And lose the name of action.--Soft you now!
+529: The fair Ophelia! Nymph, in thy orisons
+530: Be all my sins remember'd!
+531: ― William Shakespeare, Hamlet
+532:
+533: To be, or not to be: that is the question:
+534:
+535: Whether 'tis nobler in the mind to suffer
+536: The slings and arrows of outrageous fortune,
+537: Or to take arms against a sea of troubles,
+538: And by opposing end them? To die: to sleep;
+539: No more; and by a sleep to say we end
+540: The heart-ache and the thousand natural shocks
+541: That flesh is heir to, 'tis a consummation
+542: Devoutly to be wish'd. To die, to sleep;
+543: To sleep: perchance to dream: ay, there's the rub;
+544: For in that sleep of death what dreams may come
+545: When we have shuffled off this mortal coil,
+546: Must give us pause: there's the respect
+547: That makes calamity of so long life;
+548: For who would bear the whips and scorns of time,
+549: The oppressor's wrong, the proud man's contumely,
+550: The pangs of despised love, the law's delay,
+551: The insolence of office and the spurns
+552: That patient merit of the unworthy takes,
+553: When he himself might his quietus make
+554: With a bare bodkin? who would fardels bear,
+555: To grunt and sweat under a weary life,
+556: But that the dread of something after death,
+557: The undiscover'd country from whose bourn
+558: No traveller returns, puzzles the will
+559: And makes us rather bear those ills we have
+560: Than fly to others that we know not of?
+561: Thus conscience does make cowards of us all;
+562: And thus the native hue of resolution
+563: Is sicklied o'er with the pale cast of thought,
+564: And enterprises of great pith and moment
+565: With this regard their currents turn awry,
+566: And lose the name of action.--Soft you now!
+567: The fair Ophelia! Nymph, in thy orisons
+568: Be all my sins remember'd!
+569: ― William Shakespeare, Hamlet
+570:
+571: To be, or not to be: that is the question:
+572:
+573: Whether 'tis nobler in the mind to suffer
+574: The slings and arrows of outrageous fortune,
+575: Or to take arms against a sea of troubles,
+576: And by opposing end them? To die: to sleep;
+577: No more; and by a sleep to say we end
+578: The heart-ache and the thousand natural shocks
+579: That flesh is heir to, 'tis a consummation
+580: Devoutly to be wish'd. To die, to sleep;
+581: To sleep: perchance to dream: ay, there's the rub;
+582: For in that sleep of death what dreams may come
+583: When we have shuffled off this mortal coil,
+584: Must give us pause: there's the respect
+585: That makes calamity of so long life;
+586: For who would bear the whips and scorns of time,
+587: The oppressor's wrong, the proud man's contumely,
+588: The pangs of despised love, the law's delay,
+589: The insolence of office and the spurns
+590: That patient merit of the unworthy takes,
+591: When he himself might his quietus make
+592: With a bare bodkin? who would fardels bear,
+593: To grunt and sweat under a weary life,
+594: But that the dread of something after death,
+595: The undiscover'd country from whose bourn
+596: No traveller returns, puzzles the will
+597: And makes us rather bear those ills we have
+598: Than fly to others that we know not of?
+599: Thus conscience does make cowards of us all;
+600: And thus the native hue of resolution
+601: Is sicklied o'er with the pale cast of thought,
+602: And enterprises of great pith and moment
+603: With this regard their currents turn awry,
+604: And lose the name of action.--Soft you now!
+605: The fair Ophelia! Nymph, in thy orisons
+606: Be all my sins remember'd!
+607: ― William Shakespeare, Hamlet
+608:
+609: To be, or not to be: that is the question:
+610:
+611: Whether 'tis nobler in the mind to suffer
+612: The slings and arrows of outrageous fortune,
+613: Or to take arms against a sea of troubles,
+614: And by opposing end them? To die: to sleep;
+615: No more; and by a sleep to say we end
+616: The heart-ache and the thousand natural shocks
+617: That flesh is heir to, 'tis a consummation
+618: Devoutly to be wish'd. To die, to sleep;
+619: To sleep: perchance to dream: ay, there's the rub;
+620: For in that sleep of death what dreams may come
+621: When we have shuffled off this mortal coil,
+622: Must give us pause: there's the respect
+623: That makes calamity of so long life;
+624: For who would bear the whips and scorns of time,
+625: The oppressor's wrong, the proud man's contumely,
+626: The pangs of despised love, the law's delay,
+627: The insolence of office and the spurns
+628: That patient merit of the unworthy takes,
+629: When he himself might his quietus make
+630: With a bare bodkin? who would fardels bear,
+631: To grunt and sweat under a weary life,
+632: But that the dread of something after death,
+633: The undiscover'd country from whose bourn
+634: No traveller returns, puzzles the will
+635: And makes us rather bear those ills we have
+636: Than fly to others that we know not of?
+637: Thus conscience does make cowards of us all;
+638: And thus the native hue of resolution
+639: Is sicklied o'er with the pale cast of thought,
+640: And enterprises of great pith and moment
+641: With this regard their currents turn awry,
+642: And lose the name of action.--Soft you now!
+643: The fair Ophelia! Nymph, in thy orisons
+644: Be all my sins remember'd!
+645: ― William Shakespeare, Hamlet
+646:
+647: To be, or not to be: that is the question:
+648:
+649: Whether 'tis nobler in the mind to suffer
+650: The slings and arrows of outrageous fortune,
+651: Or to take arms against a sea of troubles,
+652: And by opposing end them? To die: to sleep;
+653: No more; and by a sleep to say we end
+654: The heart-ache and the thousand natural shocks
+655: That flesh is heir to, 'tis a consummation
+656: Devoutly to be wish'd. To die, to sleep;
+657: To sleep: perchance to dream: ay, there's the rub;
+658: For in that sleep of death what dreams may come
+659: When we have shuffled off this mortal coil,
+660: Must give us pause: there's the respect
+661: That makes calamity of so long life;
+662: For who would bear the whips and scorns of time,
+663: The oppressor's wrong, the proud man's contumely,
+664: The pangs of despised love, the law's delay,
+665: The insolence of office and the spurns
+666: That patient merit of the unworthy takes,
+667: When he himself might his quietus make
+668: With a bare bodkin? who would fardels bear,
+669: To grunt and sweat under a weary life,
+670: But that the dread of something after death,
+671: The undiscover'd country from whose bourn
+672: No traveller returns, puzzles the will
+673: And makes us rather bear those ills we have
+674: Than fly to others that we know not of?
+675: Thus conscience does make cowards of us all;
+676: And thus the native hue of resolution
+677: Is sicklied o'er with the pale cast of thought,
+678: And enterprises of great pith and moment
+679: With this regard their currents turn awry,
+680: And lose the name of action.--Soft you now!
+681: The fair Ophelia! Nymph, in thy orisons
+682: Be all my sins remember'd!
+683: ― William Shakespeare, Hamlet
+684:
+685: To be, or not to be: that is the question:
+686:
+687: Whether 'tis nobler in the mind to suffer
+688: The slings and arrows of outrageous fortune,
+689: Or to take arms against a sea of troubles,
+690: And by opposing end them? To die: to sleep;
+691: No more; and by a sleep to say we end
+692: The heart-ache and the thousand natural shocks
+693: That flesh is heir to, 'tis a consummation
+694: Devoutly to be wish'd. To die, to sleep;
+695: To sleep: perchance to dream: ay, there's the rub;
+696: For in that sleep of death what dreams may come
+697: When we have shuffled off this mortal coil,
+698: Must give us pause: there's the respect
+699: That makes calamity of so long life;
+700: For who would bear the whips and scorns of time,
+701: The oppressor's wrong, the proud man's contumely,
+702: The pangs of despised love, the law's delay,
+703: The insolence of office and the spurns
+704: That patient merit of the unworthy takes,
+705: When he himself might his quietus make
+706: With a bare bodkin? who would fardels bear,
+707: To grunt and sweat under a weary life,
+708: But that the dread of something after death,
+709: The undiscover'd country from whose bourn
+710: No traveller returns, puzzles the will
+711: And makes us rather bear those ills we have
+712: Than fly to others that we know not of?
+713: Thus conscience does make cowards of us all;
+714: And thus the native hue of resolution
+715: Is sicklied o'er with the pale cast of thought,
+716: And enterprises of great pith and moment
+717: With this regard their currents turn awry,
+718: And lose the name of action.--Soft you now!
+719: The fair Ophelia! Nymph, in thy orisons
+720: Be all my sins remember'd!
+721: ― William Shakespeare, Hamlet
+722:
+723: To be, or not to be: that is the question:
+724:
+725: Whether 'tis nobler in the mind to suffer
+726: The slings and arrows of outrageous fortune,
+727: Or to take arms against a sea of troubles,
+728: And by opposing end them? To die: to sleep;
+729: No more; and by a sleep to say we end
+730: The heart-ache and the thousand natural shocks
+731: That flesh is heir to, 'tis a consummation
+732: Devoutly to be wish'd. To die, to sleep;
+733: To sleep: perchance to dream: ay, there's the rub;
+734: For in that sleep of death what dreams may come
+735: When we have shuffled off this mortal coil,
+736: Must give us pause: there's the respect
+737: That makes calamity of so long life;
+738: For who would bear the whips and scorns of time,
+739: The oppressor's wrong, the proud man's contumely,
+740: The pangs of despised love, the law's delay,
+741: The insolence of office and the spurns
+742: That patient merit of the unworthy takes,
+743: When he himself might his quietus make
+744: With a bare bodkin? who would fardels bear,
+745: To grunt and sweat under a weary life,
+746: But that the dread of something after death,
+747: The undiscover'd country from whose bourn
+748: No traveller returns, puzzles the will
+749: And makes us rather bear those ills we have
+750: Than fly to others that we know not of?
+751: Thus conscience does make cowards of us all;
+752: And thus the native hue of resolution
+753: Is sicklied o'er with the pale cast of thought,
+754: And enterprises of great pith and moment
+755: With this regard their currents turn awry,
+756: And lose the name of action.--Soft you now!
+757: The fair Ophelia! Nymph, in thy orisons
+758: Be all my sins remember'd!
+759: ― William Shakespeare, Hamlet
+760:
+761: LAST LINE

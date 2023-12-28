@@ -1,4 +1,4 @@
-666 ICON "res/test.ico"
+666 ICON "res/theme.ico"
 1 VERSIONINFO
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0
@@ -11,7 +11,7 @@ BEGIN
       VALUE "FileDescription", "test_theme"
       VALUE "FileVersion", "1.0"
       VALUE "InternalName", "test_theme"
-      VALUE "LegalCopyright", "Copyright 2021 gnuwimp"
+      VALUE "LegalCopyright", "Copyright gnuwimp"
       VALUE "OriginalFilename", "test_theme.exe"
       VALUE "ProductName", "test_theme"
       VALUE "ProductVersion", "1.0"
