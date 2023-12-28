@@ -2,33 +2,17 @@
 // Released under the GNU General Public License v3.0
 
 #include "tabledisplay.h"
-#include <FL/Fl_Scrollbar.H>
-#include <FL/Fl_Int_Input.H>
-#include <FL/Fl_Double_Window.H>
-#include <FL/fl_draw.H>
 #include <FL/Fl.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Int_Input.H>
+#include <FL/Fl_Scrollbar.H>
+#include <FL/fl_draw.H>
+#include <FL/fl_ask.H>
 
 // MKALGAM_ON
 
 namespace flw {
-    //--------------------------------------------------------------------------
-    enum class _TABLEDISPLAY_MOVE {
-        DOWN,
-        FIRST_COL,
-        FIRST_ROW,
-        LAST_COL,
-        LAST_ROW,
-        LEFT,
-        PAGE_DOWN,
-        PAGE_UP,
-        RIGHT,
-        SCROLL_DOWN,
-        SCROLL_LEFT,
-        SCROLL_RIGHT,
-        SCROLL_UP,
-        UP,
-    };
-
     //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
@@ -119,7 +103,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         int col() const {
-            return *_col->value() >= '0' && *_col->value() <= '9' ? atoi(_col->value()) : 0;
+            return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
         }
 
         //----------------------------------------------------------------------
@@ -132,7 +116,7 @@ namespace flw {
 
         //----------------------------------------------------------------------
         int row() const {
-            return *_row->value() >= '0' && *_row->value() <= '9' ? atoi(_row->value()) : 0;
+            return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
         }
 
         //----------------------------------------------------------------------
@@ -146,6 +130,176 @@ namespace flw {
             }
 
             return _ret;
+        }
+    };
+
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------
+    class _TableDisplayFindDialog : public Fl_Double_Window {
+        Fl_Input*                   _text;
+        Fl_Button*                  _next;
+        Fl_Button*                  _prev;
+        Fl_Button*                  _close;
+        TableDisplay*               _table;
+        bool                        _repeat;
+
+    public:
+        _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+            end();
+
+            _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+            _next   = new Fl_Button(0, 0, 0, 0, "&Find next");
+            _prev   = new Fl_Button(0, 0, 0, 0, "Find &previous");
+            _text   = new Fl_Input(0, 0, 0, 0, "Search:");
+            _table  = table;
+            _repeat = true;
+
+            add(_text);
+            add(_prev);
+            add(_next);
+            add(_close);
+
+            _close->callback(_TableDisplayFindDialog::Callback, this);
+            _close->labelsize(flw::PREF_FONTSIZE);
+            _next->callback(_TableDisplayFindDialog::Callback, this);
+            _next->labelsize(flw::PREF_FONTSIZE);
+            _prev->callback(_TableDisplayFindDialog::Callback, this);
+            _prev->labelsize(flw::PREF_FONTSIZE);
+            _text->align(FL_ALIGN_LEFT);
+            _text->callback(_TableDisplayFindDialog::Callback, this);
+            _text->labelsize(flw::PREF_FONTSIZE);
+            _text->textfont(flw::PREF_FIXED_FONT);
+            _text->textsize(flw::PREF_FONTSIZE);
+            _text->value(_table->_find.c_str());
+            _text->when(FL_WHEN_ENTER_KEY_ALWAYS);
+
+            callback(_TableDisplayFindDialog::Callback, this);
+            set_modal();
+            resizable(this);
+            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 7);
+        }
+
+        //----------------------------------------------------------------------
+        static void Callback(Fl_Widget* w, void* o) {
+            auto dlg = (_TableDisplayFindDialog*) o;
+
+            if (w == dlg) {
+                dlg->hide();
+            }
+            else if (w == dlg->_close) {
+                dlg->_table->_find = dlg->_text->value();
+                dlg->hide();
+            }
+            else if (w == dlg->_next) {
+                dlg->find(true);
+            }
+            else if (w == dlg->_prev) {
+                dlg->find(false);
+            }
+            else if (w == dlg->_text) {
+                dlg->find(dlg->_repeat);
+            }
+        }
+
+        //----------------------------------------------------------------------
+        void find(bool next) {
+            auto find = _text->value();
+
+            _repeat = next;
+
+            if (*find == 0) {
+                fl_beep(FL_BEEP_ERROR);
+                return;
+            }
+
+            auto row = _table->row();
+            auto col = _table->column();
+
+            if (next == true) {
+                if (row < 1 || col < 1) {
+                    row = 1;
+                    col = 1;
+                }
+                else {
+                    col++;
+                }
+            }
+            else {
+                if (row < 1 || col < 1) {
+                    row = _table->rows();
+                    col = _table->columns();
+                }
+                else {
+                    col--;
+                }
+            }
+
+AGAIN:
+            if (next == true) {
+                for (int r = row; r <= _table->rows(); r++) {
+                    for (int c = col; c <= _table->columns(); c++) {
+                        auto v = _table->cell_value(r, c);
+
+                        if (v != nullptr && strstr(v, find) != nullptr) {
+                            _table->active_cell(r, c, true);
+                            _table->_find = find;
+                            return;
+                        }
+                    }
+
+                    col = 1;
+                }
+
+                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
+                    col = row = 1;
+                    goto AGAIN;
+                }
+            }
+            else {
+                for (int r = row; r >= 1; r--) {
+                    for (int c = col; c >= 1; c--) {
+                        auto v = _table->cell_value(r, c);
+
+                        if (v != nullptr && strstr(v, find) != nullptr) {
+                            _table->active_cell(r, c, true);
+                            _table->_find = find;
+                            return;
+                        }
+                    }
+
+                    col = _table->columns();
+                }
+
+                if (fl_choice("Sorry, I didn't find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
+                    row = _table->rows();
+                    col = _table->columns();
+                    goto AGAIN;
+                }
+            }
+        }
+
+        //----------------------------------------------------------------------
+        void resize(int X, int Y, int W, int H) {
+            Fl_Double_Window::resize(X, Y, W, H);
+
+            _text->resize  (flw::PREF_FONTSIZE * 5,             flw::PREF_FONTSIZE,                 W - flw::PREF_FONTSIZE * 5 - 4, flw::PREF_FONTSIZE * 2);
+            _prev->resize  (W - flw::PREF_FONTSIZE * 30 - 12,   H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+            _next->resize  (W - flw::PREF_FONTSIZE * 20 - 8,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+            _close->resize (W - flw::PREF_FONTSIZE * 10 - 4,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+        }
+
+        //----------------------------------------------------------------------
+        void run(Fl_Window* parent) {
+            flw::util::center_window(this, parent);
+            show();
+
+            while (visible() != 0) {
+                Fl::wait();
+                Fl::flush();
+            }
         }
     };
 }
@@ -292,7 +446,7 @@ void flw::TableDisplay::clear() {
     _show_ver_lines  = false;
     _start_col       = 1;
     _start_row       = 1;
-
+    _find            = "";
     redraw();
 }
 
@@ -446,74 +600,80 @@ int flw::TableDisplay::_ev_keyboard_down() {
 
     // printf("key=%d <%s>, alt=%d, cmd=%d, shift=%d\n", key, text.c_str(), alt, cmd, shift); fflush(stdout);
 
-    if (cmd && key == FL_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_UP);
+    if (cmd == true && key == FL_Up) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
         return 1;
     }
     else if (key == FL_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::UP);
+        _move_cursor(_TABLEDISPLAY_MOVE::UP);
         return 1;
     }
-    else if (cmd && key == FL_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_DOWN);
+    else if (cmd == true && key == FL_Down) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_DOWN);
         return 1;
     }
     else if (key == FL_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::DOWN);
+        _move_cursor(_TABLEDISPLAY_MOVE::DOWN);
         return 1;
     }
-    else if (cmd && key == FL_Left) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_LEFT);
+    else if (cmd == true && key == FL_Left) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_LEFT);
         return 1;
     }
-    else if (key == FL_Left || (key == FL_Tab && shift)) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::LEFT);
+    else if (key == FL_Left || (key == FL_Tab && shift == true)) {
+        _move_cursor(_TABLEDISPLAY_MOVE::LEFT);
         return 1;
     }
-    else if (cmd && key == FL_Right) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::SCROLL_RIGHT);
+    else if (cmd == true && key == FL_Right) {
+        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_RIGHT);
         return 1;
     }
     else if (key == FL_Right || key == FL_Tab) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::RIGHT);
+        _move_cursor(_TABLEDISPLAY_MOVE::RIGHT);
         return 1;
     }
-    else if (cmd && key == FL_Page_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::FIRST_ROW);
+    else if (cmd == true && key == FL_Page_Up) {
+        _move_cursor(_TABLEDISPLAY_MOVE::FIRST_ROW);
         return 1;
     }
     else if (key == FL_Page_Up) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::PAGE_UP);
+        _move_cursor(_TABLEDISPLAY_MOVE::PAGE_UP);
         return 1;
     }
-    else if (cmd && key == FL_Page_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::LAST_ROW);
+    else if (cmd == true && key == FL_Page_Down) {
+        _move_cursor(_TABLEDISPLAY_MOVE::LAST_ROW);
         return 1;
     }
     else if (key == FL_Page_Down) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::PAGE_DOWN);
+        _move_cursor(_TABLEDISPLAY_MOVE::PAGE_DOWN);
         return 1;
     }
     else if (key == FL_Home) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::FIRST_COL);
+        _move_cursor(_TABLEDISPLAY_MOVE::FIRST_COL);
         return 1;
     }
     else if (key == FL_End) {
-        move_cursor((int) _TABLEDISPLAY_MOVE::LAST_COL);
+        _move_cursor(_TABLEDISPLAY_MOVE::LAST_COL);
         return 1;
     }
-    else if (cmd && key == 'c') {
+    else if (cmd == true && key == 'c') {
         auto val = cell_value(_curr_row, _curr_col);
 
         Fl::copy(val, strlen(val), 1);
         return 1;
     }
-    else if (cmd && key == 'g') {
+    else if (cmd == true && key == 'g') {
         auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
 
-        if (dlg.run(window())) {
+        if (dlg.run(window()) == true) {
             active_cell(dlg.row(), dlg.col(), true);
         }
+
+        return 1;
+    }
+    else if (cmd == true && key == 'f') {
+        auto dlg = _TableDisplayFindDialog(this);
+        dlg.run(window());
 
         return 1;
     }
@@ -523,74 +683,75 @@ int flw::TableDisplay::_ev_keyboard_down() {
 
 //------------------------------------------------------------------------------
 int flw::TableDisplay::_ev_mouse_click () {
-    if (Fl::event_button1() && _drag) {
+    if (Fl::event_button1() && _drag == true) {
         return 1;
     }
-    else {
-        auto row         = 0;
-        auto col         = 0;
-        auto current_row = _curr_row;
-        auto current_col = _curr_col;
 
-        _get_cell_below_mouse(row, col);
+    auto row         = 0;
+    auto col         = 0;
+    auto current_row = _curr_row;
+    auto current_col = _curr_col;
 
-        if (_edit == nullptr) {
-            Fl::focus(this);
-        }
+    _get_cell_below_mouse(row, col);
 
-        if (row == 0 && col >= 1) { // Mouse click on top header cells
-            _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
-            do_callback();
-        }
-        else if (col == 0 && row >= 1) { // Mouse click on left header cells
-            _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
-            do_callback();
-        }
-        else if (row == -1 || col == -1) { // Mouse click outside cell
-            if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
-                ;
-            }
-            else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
-                ;
-            }
-            else { // If clicked in whitespace then deselect cell
-                active_cell(-1, -1);
-                return 0;
-            }
-        }
-        else if (row >= 1 && col >= 1 && (row != current_row || col != current_col) && _select != flw::TableDisplay::SELECT::NO) { // Set new current cell and send event
-            active_cell(row, col);
-        }
-
-        return 2;
+    if (_edit == nullptr) {
+        Fl::focus(this);
     }
+
+    if (row == 0 && col >= 1) { // Mouse click on top header cells
+        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+        do_callback();
+    }
+    else if (col == 0 && row >= 1) { // Mouse click on left header cells
+        _set_event(row, col, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+        do_callback();
+    }
+    else if (row == -1 || col == -1) { // Mouse click outside cell
+        if (row == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
+            ;
+        }
+        else if (col == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
+            ;
+        }
+        else { // If clicked in whitespace then deselect cell
+            active_cell(-1, -1);
+            return 0;
+        }
+    }
+    else if (row >= 1 && col >= 1 && (row != current_row || col != current_col) && _select != flw::TableDisplay::SELECT::NO) { // Set new current cell and send event
+        active_cell(row, col);
+    }
+
+    return 2;
 }
 
 //------------------------------------------------------------------------------
 int flw::TableDisplay::_ev_mouse_drag() {
-    if (_drag) {
-        auto xpos  = Fl::event_x();
-        auto currx = x();
+    if (_drag == false) {
+        return 2;
+    }
 
-        if (_show_row_header && _resize_col == 0) {
-            if ((xpos - currx) >= 10) {
-                cell_width(_resize_col, xpos - currx);
-                redraw();
-            }
+    auto xpos  = Fl::event_x();
+    auto currx = x();
+
+    if (_show_row_header && _resize_col == 0) {
+        if ((xpos - currx) >= 10) {
+            cell_width(_resize_col, xpos - currx);
+            redraw();
         }
-        else {
-            if (_show_row_header) {
-                currx += _cell_width(0);
-            }
+    }
+    else {
+        if (_show_row_header) {
+            currx += _cell_width(0);
+        }
 
-            for (auto c = _start_col; c < _resize_col; c++) {
-                currx += _cell_width(c);
-            }
+        for (auto c = _start_col; c < _resize_col; c++) {
+            currx += _cell_width(c);
+        }
 
-            if ((xpos - currx) >= 10) {
-                cell_width(_resize_col, xpos - currx);
-                redraw();
-            }
+        if ((xpos - currx) >= 10) {
+            cell_width(_resize_col, xpos - currx);
+            redraw();
         }
     }
 
@@ -629,7 +790,7 @@ int flw::TableDisplay::_ev_mouse_move() {
         }
     }
 
-    if (_drag) { // Set cursor to the default cursor only if it was set to another cursor before
+    if (_drag == true) { // Set cursor to the default cursor only if it was set to another cursor before
         _drag = false;
         fl_cursor(FL_CURSOR_DEFAULT);
     }
@@ -739,7 +900,7 @@ void flw::TableDisplay::lines(bool ver, bool hor) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableDisplay::move_cursor(int pos) {
+void flw::TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
     if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != flw::TableDisplay::SELECT::NO) {
         auto r     = _curr_row;
         auto c     = _curr_col;
@@ -753,7 +914,7 @@ void flw::TableDisplay::move_cursor(int pos) {
         }
         else {
             if (range > 0) {
-                switch ((_TABLEDISPLAY_MOVE) pos) {
+                switch (move) {
                     case _TABLEDISPLAY_MOVE::FIRST_ROW:
                         r = 1;
                         break;
@@ -801,7 +962,7 @@ void flw::TableDisplay::move_cursor(int pos) {
             c = _cols;
         }
         else {
-            switch ((_TABLEDISPLAY_MOVE) pos) {
+            switch (move) {
                 case _TABLEDISPLAY_MOVE::LEFT:
                     c = c > 1 ? c - 1 : 1;
                     break;

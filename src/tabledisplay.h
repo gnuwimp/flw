@@ -16,6 +16,8 @@ namespace flw {
     // A table display widget
     //
     class TableDisplay : public Fl_Group {
+        friend class _TableDisplayFindDialog;
+
     public:
         enum class SELECT {
                                         NO,
@@ -73,7 +75,6 @@ namespace flw {
         void                            height(int height)
                                             { _height = height; }
         void                            lines(bool ver = false, bool hor = false);
-        void                            move_cursor(int pos);
         void                            resize_column_width(bool resize = false)
                                             { _resize = resize; }
         int                             row() const
@@ -88,6 +89,23 @@ namespace flw {
         virtual void                    size(int rows, int cols);
 
     protected:
+        enum class _TABLEDISPLAY_MOVE {
+                                        DOWN,
+                                        FIRST_COL,
+                                        FIRST_ROW,
+                                        LAST_COL,
+                                        LAST_ROW,
+                                        LEFT,
+                                        PAGE_DOWN,
+                                        PAGE_UP,
+                                        RIGHT,
+                                        SCROLL_DOWN,
+                                        SCROLL_LEFT,
+                                        SCROLL_RIGHT,
+                                        SCROLL_UP,
+                                        UP,
+        };
+
         int                             _cell_height(int Y = -1);
         int                             _cell_width(int col, int X = -1);
         virtual void                    _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false);
@@ -98,6 +116,7 @@ namespace flw {
         int                             _ev_mouse_drag();
         int                             _ev_mouse_move();
         void                            _get_cell_below_mouse(int& row, int& col);
+        void                            _move_cursor(_TABLEDISPLAY_MOVE move);
         void                            _update_scrollbars();
         void                            _set_event(int row, int col, TableDisplay::EVENT event)
                                             { _event_row = row; _event_col = col; _event = event; }
@@ -110,6 +129,7 @@ namespace flw {
         Fl_Scrollbar*                   _hor;
         Fl_Scrollbar*                   _ver;
         Fl_Widget*                      _edit;
+        std::string                     _find;
         bool                            _disable_hor;
         bool                            _disable_ver;
         bool                            _drag;

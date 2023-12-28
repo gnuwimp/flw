@@ -11,8 +11,8 @@
 
 using namespace flw;
 
-#define ROWS 100'000
-#define COLS 100'000
+#define ROWS 10'000
+#define COLS 100
 
 class TestTable : public TableDisplay {
 public:
@@ -100,13 +100,13 @@ public:
             return "";
         }
         else if (col == 0) {
-            sprintf(buffer, "%d\n", row);
+            sprintf(buffer, "%d", row);
         }
         else if (row == 0) {
-            sprintf(buffer, "%d\n", col);
+            sprintf(buffer, "%d", col);
         }
         else {
-            sprintf(buffer, "%06d - %06d\n", row, col);
+            sprintf(buffer, "%06d - %06d", row, col);
         }
 
         return buffer;

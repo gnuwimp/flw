@@ -321,8 +321,8 @@ public:
 
     bool cell_value(int row, int col, const char* value) override {
         if (col == 9) {
-            printf("%f\n", atof(value));
-            fflush(stdout);
+            fprintf(stderr, "%f\n", atof(value));
+            fflush(stderr);
         }
 
         if (strcmp(value, "hello") == 0) {
