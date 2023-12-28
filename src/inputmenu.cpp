@@ -156,9 +156,9 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Group::resize(X, Y, W, H);
 
     if (_menu->visible() != 0) {
-        auto mw = (int) flw::PREF_FONTSIZE / 2;
+        auto mw = (int) flw::PREF_FONTSIZE;
         _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
-        _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y + 2, flw::PREF_FONTSIZE + mw, H - 4);
+        _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y, flw::PREF_FONTSIZE + mw, H);
     }
     else {
         _input->resize(X, Y, W, H);

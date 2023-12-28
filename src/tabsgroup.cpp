@@ -73,6 +73,10 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _hide   = false;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
+    _n      = 0;
+    _s      = 0;
+    _w      = 0;
+    _e      = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -317,11 +321,11 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     auto height = flw::PREF_FONTSIZE + 8;
 
     if (_hide == true) {
-        for (auto w : _widgets) { // Resize widgets
+        for (auto w : _widgets) { // Resize widgets when tabs are hidden
             if (w->visible() == 0) {
             }
             else {
-                w->resize(X, Y, W, H);
+                w->resize(X + _w, Y + _n, W - _w - _e, H - _n - _s);
             }
         }
 
@@ -329,7 +333,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     }
 
     if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
-        auto space = 6;
+        auto space = 4;
         auto x     = 0;
         auto w     = 0;
         auto th    = 0;
@@ -346,15 +350,22 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         }
 
         if (w > W) { // If width is too large then divide equal
-            w = (W - (_buttons.size() * 4)) / _buttons.size();
+            w = (W - (_buttons.size() * 2)) / _buttons.size();
+            space = 2;
         }
         else {
             w = 0;
         }
 
+        size_t count = 0;
+
         for (auto widget : _buttons) { // Resize buttons
             auto b  = (_TabsGroupButton*) widget;
             auto bw = (w != 0) ? w : b->_tw;
+
+            if (space == 2 && count == _buttons.size() - 1) {
+                bw = W - x;
+            }
 
             if (_tabs == TABS::NORTH) {
                 b->resize(X + x, Y, bw, height);
@@ -365,6 +376,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
 
             x += bw;
             x += space;
+            count++;
         }
     }
     else { // TABS::WEST, TABS::EAST
@@ -401,16 +413,16 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         if (w->visible() == 0) {
         }
         else if (_tabs == TABS::NORTH) {
-            w->resize(X, Y + height, W, H - height);
+            w->resize(X + _w, Y + height + _n, W - _w - _e, H - height - _n - _s);
         }
         else if (_tabs == TABS::SOUTH) {
-            w->resize(X, Y, W, H - height);
+            w->resize(X + _w, Y + _n, W - _w - _e, H - height - _n - _s);
         }
         else if (_tabs == TABS::WEST) {
-            w->resize(X + _pos, Y, W - _pos, H);
+            w->resize(X + _pos + _w, Y + _n, W - _pos - _w - _e, H - _n - _s);
         }
         else if (_tabs == TABS::EAST) {
-            w->resize(X, Y, W - _pos, H);
+            w->resize(X + _w, Y + _n, W - _pos - _w - _e, H - _n - _s);
         }
     }
 }

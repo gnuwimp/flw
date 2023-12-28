@@ -12,6 +12,8 @@
 
 using namespace flw;
 
+int BORDER = 0;
+
 class Test : public Fl_Double_Window {
 public:
     Test(int W, int H) : Fl_Double_Window(W, H, "test_tabsgroup.cpp") {
@@ -22,10 +24,10 @@ public:
         auto w = new Fl_Button(0, 0, 0, 0, "TABS::WEST");
         auto e = new Fl_Button(0, 0, 0, 0, "TABS::EAST");
 
-        b1 = new Fl_Button(0, 0, 0, 0, "Delete 1");
+        b1 = new Fl_Button(0, 0, 0, 0, "Delete Me");
         b2 = new Fl_Button(0, 0, 0, 0, "Hide/Show");
-        b3 = new Fl_Button(0, 0, 0, 0, "Delete 4");
-        b4 = new Fl_Button(0, 0, 0, 0, "Widget 4");
+        b3 = new Fl_Button(0, 0, 0, 0, "Delete Border");
+        b4 = new Fl_Button(0, 0, 0, 0, "Set Border");
 
         n->callback(CallbackNorth, this);
         s->callback(CallbackSouth, this);
@@ -34,10 +36,10 @@ public:
 
         tabs = new TabsGroup(0, 0, W, H);
         // tabs = new TabsGroup(10, 10, W-20, H-20);
-        tabs->add("Widget 1", b1);
-        tabs->add("Widget 2", b2);
-        tabs->add("Widget 3", b3);
-        tabs->add("Widget 4", b4);
+        tabs->add("Delete", b1);
+        tabs->add("Hide/Show", b2);
+        tabs->add("Delete", b3);
+        tabs->add("Border", b4);
         tabs->add("NORTH", n);
         tabs->add("SOUTH", s);
         tabs->add("WEST", w);
@@ -56,12 +58,22 @@ public:
         // TabsGroup::BoxSelectionColor(FL_GREEN);
 
         tabs->child(8)->callback(CallbackStart, this);
+        tabs->color(FL_YELLOW);
+        tabs->box(FL_FLAT_BOX);
         b1->callback(CallbackWidget1, this);
         b2->callback(CallbackWidget2, this);
         b3->callback(CallbackWidget3, this);
+        b4->callback(CallbackWidget4, this);
 
+        color(FL_BLUE);
         resizable(this);
         size_range(64, 48);
+    }
+
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        tabs->resize(10, 10, W - 20, H - 20);
+//        tabs->resize(0, 0, W, H);
     }
 
     static void CallbackEast(Fl_Widget*, void*) {
@@ -108,6 +120,28 @@ public:
         auto w = TEST->tabs->remove(TEST->b4);
         TEST->tabs->resize();
         delete w;
+    }
+
+    static void CallbackWidget4(Fl_Widget*, void*) {
+        BORDER++;
+
+        if (BORDER == 1) {
+            TEST->tabs->border(4, 20, 4, 20);
+            TabsGroup::BoxType(FL_UP_BOX);
+        }
+        else if (BORDER == 2) {
+            TEST->tabs->border(0, 0, 20, 20);
+            TabsGroup::BoxType(FL_DOWN_BOX);
+        }
+        else if (BORDER == 3) {
+            TEST->tabs->border(20, 20);
+            TabsGroup::BoxType(FL_ENGRAVED_BOX);
+        }
+        else {
+            TEST->tabs->border();
+            TabsGroup::BoxType();
+            BORDER = 0;
+        }
     }
 
     TabsGroup* tabs;

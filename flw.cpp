@@ -5267,9 +5267,9 @@ void flw::InputMenu::insert(const std::string& string, int max_list_len) {
 void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Group::resize(X, Y, W, H);
     if (_menu->visible() != 0) {
-        auto mw = (int) flw::PREF_FONTSIZE / 2;
+        auto mw = (int) flw::PREF_FONTSIZE;
         _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
-        _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y + 2, flw::PREF_FONTSIZE + mw, H - 4);
+        _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y, flw::PREF_FONTSIZE + mw, H);
     }
     else {
         _input->resize(X, Y, W, H);
@@ -10121,6 +10121,10 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _hide   = false;
     _pos    = flw::PREF_FONTSIZE * 10;
     _tabs   = TABS::NORTH;
+    _n      = 0;
+    _s      = 0;
+    _w      = 0;
+    _e      = 0;
 }
 void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
     auto button = new _TabsGroupButton(label.c_str());
@@ -10318,13 +10322,13 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
             if (w->visible() == 0) {
             }
             else {
-                w->resize(X, Y, W, H);
+                w->resize(X + _w, Y + _n, W - _w - _e, H - _n - _s);
             }
         }
         return;
     }
     if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
-        auto space = 6;
+        auto space = 4;
         auto x     = 0;
         auto w     = 0;
         auto th    = 0;
@@ -10337,14 +10341,19 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
             w      += b->_tw + space;
         }
         if (w > W) {
-            w = (W - (_buttons.size() * 4)) / _buttons.size();
+            w = (W - (_buttons.size() * 2)) / _buttons.size();
+            space = 2;
         }
         else {
             w = 0;
         }
+        size_t count = 0;
         for (auto widget : _buttons) {
             auto b  = (_TabsGroupButton*) widget;
             auto bw = (w != 0) ? w : b->_tw;
+            if (space == 2 && count == _buttons.size() - 1) {
+                bw = W - x;
+            }
             if (_tabs == TABS::NORTH) {
                 b->resize(X + x, Y, bw, height);
             }
@@ -10353,6 +10362,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
             }
             x += bw;
             x += space;
+            count++;
         }
     }
     else {
@@ -10385,16 +10395,16 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         if (w->visible() == 0) {
         }
         else if (_tabs == TABS::NORTH) {
-            w->resize(X, Y + height, W, H - height);
+            w->resize(X + _w, Y + height + _n, W - _w - _e, H - height - _n - _s);
         }
         else if (_tabs == TABS::SOUTH) {
-            w->resize(X, Y, W, H - height);
+            w->resize(X + _w, Y + _n, W - _w - _e, H - height - _n - _s);
         }
         else if (_tabs == TABS::WEST) {
-            w->resize(X + _pos, Y, W - _pos, H);
+            w->resize(X + _pos + _w, Y + _n, W - _pos - _w - _e, H - _n - _s);
         }
         else if (_tabs == TABS::EAST) {
-            w->resize(X, Y, W - _pos, H);
+            w->resize(X + _w, Y + _n, W - _pos - _w - _e, H - _n - _s);
         }
     }
 }

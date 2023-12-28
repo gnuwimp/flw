@@ -29,6 +29,8 @@ public:
 
                                 TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget);
+    void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
+                                    { _n = n; _s = s; _w = w; _e = e; resize(); }
     Fl_Widget*                  child(int num) const;
     int                         children() const
                                     { return (int) _widgets.size(); }
@@ -57,9 +59,9 @@ public:
     void                        value(Fl_Widget* widget)
                                     { value(find(widget)); }
 
-    static void                 BoxColor(Fl_Color boxcolor);
-    static void                 BoxSelectionColor(Fl_Color boxcolor);
-    static void                 BoxType(Fl_Boxtype boxtype);
+    static void                 BoxColor(Fl_Color boxcolor = FL_DARK1);
+    static void                 BoxSelectionColor(Fl_Color boxcolor = FL_SELECTION_COLOR);
+    static void                 BoxType(Fl_Boxtype boxtype = FL_FLAT_BOX);
     static void                 Callback(Fl_Widget* sender, void* object);
     static const char*          Help();
 
@@ -73,7 +75,11 @@ private:
     bool                        _drag;
     bool                        _hide;
     int                         _active;
+    int                         _e;
+    int                         _n;
     int                         _pos;
+    int                         _s;
+    int                         _w;
 };
 
 } // flw
