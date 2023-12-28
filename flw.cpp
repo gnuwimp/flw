@@ -1,6 +1,6 @@
 // This source file is an amalgamation of one or more source files.
 // And all comments and blank lines have been removed.
-// Created at 2023-01-15 22:42:39.
+// Created at 2023-02-14 22:12:57.
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
@@ -3736,16 +3736,16 @@ void flw::InputMenu::insert(const std::string& string, int max_list_len) {
         _input->history.pop_back();
     }
     _menu->clear();
-    for (auto& s : _input->history) {
+    for (const auto& s : _input->history) {
         _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
     }
     _input->index = -1;
     _input->value(string.c_str());
-    _input->position(string.length(), 0);
+    _input->insert_position(string.length(), 0);
 }
 void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Group::resize(X, Y, W, H);
-    if (_menu->visible()) {
+    if (_menu->visible() != 0) {
         _input->resize(X, Y, W - flw::PREF_FONTSIZE * 2, H);
         _menu->resize(X + W - flw::PREF_FONTSIZE * 2, Y, flw::PREF_FONTSIZE * 2, H);
     }
@@ -3756,13 +3756,13 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
 void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
     clear();
     _input->history = list;
-    for (auto& s : _input->history) {
+    for (const auto& s : _input->history) {
         _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
     }
-    if (list.size() && copy_first_to_input) {
+    if (list.size() > 0 && copy_first_to_input == true) {
         auto s = list.front();
         _input->value(s.c_str());
-        _input->position(s.length(), 0);
+        _input->insert_position(s.length(), 0);
     }
 }
 void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
@@ -5553,7 +5553,7 @@ namespace flw {
                     col--;
                 }
             }
-AGAIN:
+        AGAIN:
             if (next == true) {
                 for (int r = row; r <= _table->rows(); r++) {
                     for (int c = col; c <= _table->columns(); c++) {
@@ -6503,6 +6503,7 @@ void flw::TableEditor::_edit_create() {
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
     auto val       = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
+    assert(val);
     if (rend == flw::TableEditor::REND::TEXT ||
         rend == flw::TableEditor::REND::INTEGER ||
         rend == flw::TableEditor::REND::NUMBER ||
@@ -6528,7 +6529,7 @@ void flw::TableEditor::_edit_create() {
         w->textfont(textfont);
         w->textsize(textsize);
         w->value(val);
-        w->position(0, strlen(val));
+        w->insert_position(0, strlen(val));
         _edit = w;
     }
     else if (rend == flw::TableEditor::REND::BOOLEAN) {
@@ -6612,7 +6613,7 @@ void flw::TableEditor::_edit_create() {
             }
             if (*val) {
                 w->value(val);
-                w->input()->position(0, strlen(val));
+                w->input()->insert_position(0, strlen(val));
             }
             _edit  = w;
             _edit2 = w->input();
@@ -6633,6 +6634,7 @@ void flw::TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
+    assert(val);
     if (rend == flw::TableEditor::REND::INTEGER) {
         auto num = util::to_int(val);
         if (strcmp(key, "+") == 0) {
@@ -6750,6 +6752,7 @@ void flw::TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = ((TableDisplay*) this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
+    assert(val);
     if (rend == flw::TableEditor::REND::DLG_COLOR) {
         auto color1 = (int) util::to_int(val);
         auto color2 = (int) fl_show_colormap((Fl_Color) color1);
@@ -7533,6 +7536,9 @@ namespace flw {
     namespace theme {
         static const char* _NAMES[] = {
             "default",
+            "oxy",
+            "blue oxy",
+            "tan oxy",
             "gleam",
             "blue gleam",
             "dark blue gleam",
@@ -7552,6 +7558,9 @@ namespace flw {
         };
         enum {
             _NAME_DEFAULT,
+            _NAME_OXY,
+            _NAME_OXY_BLUE,
+            _NAME_OXY_TAN,
             _NAME_GLEAM,
             _NAME_GLEAM_BLUE,
             _NAME_GLEAM_DARK_BLUE,
@@ -7704,6 +7713,36 @@ namespace flw {
             Fl::scheme("none");
             Fl::redraw();
             _NAME = _NAMES[_NAME_DEFAULT];
+            _IS_DARK = false;
+        }
+        static void _load_oxy() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_OXY];
+            _IS_DARK = false;
+        }
+        static void _load_oxy_blue() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_blue_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_OXY_BLUE];
+            _IS_DARK = false;
+        }
+        static void _load_oxy_tan() {
+            flw::theme::_save_colors();
+            flw::theme::_restore_colors();
+            flw::theme::_tan_colors();
+            flw::theme::_colors(false);
+            Fl::scheme("oxy");
+            Fl::redraw();
+            _NAME = _NAMES[_NAME_OXY_TAN];
             _IS_DARK = false;
         }
         static void _load_gleam() {
@@ -7961,7 +8000,16 @@ namespace flw {
                 }
                 else if (w == dlg->_theme) {
                     auto row = dlg->_theme->value() - 1;
-                    if (row == flw::theme::_NAME_GLEAM) {
+                    if (row == flw::theme::_NAME_OXY) {
+                        flw::theme::_load_oxy();
+                    }
+                    else if (row == flw::theme::_NAME_OXY_BLUE) {
+                        flw::theme::_load_oxy_blue();
+                    }
+                    else if (row == flw::theme::_NAME_OXY_TAN) {
+                        flw::theme::_load_oxy_tan();
+                    }
+                    else if (row == flw::theme::_NAME_GLEAM) {
                         flw::theme::_load_gleam();
                     }
                     else if (row == flw::theme::_NAME_GLEAM_BLUE) {
@@ -8074,6 +8122,15 @@ bool flw::theme::is_dark() {
 bool flw::theme::load(std::string name) {
     if (name == flw::theme::_NAMES[_NAME_DEFAULT]) {
         flw::theme::_load_default();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_OXY]) {
+        flw::theme::_load_oxy();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_OXY_BLUE]) {
+        flw::theme::_load_oxy_blue();
+    }
+    else if (name == flw::theme::_NAMES[_NAME_OXY_TAN]) {
+        flw::theme::_load_oxy_tan();
     }
     else if (name == flw::theme::_NAMES[_NAME_GLEAM]) {
         flw::theme::_load_gleam();
