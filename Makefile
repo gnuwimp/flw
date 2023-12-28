@@ -13,7 +13,7 @@ endif
 ifeq ($(findstring MINGW64,$(OS)), MINGW64)
 	RES = res/test.res
 
-	CXX = g++ $(FLAGS) -std=c++17 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+	CXX = g++ $(FLAGS) -std=c++17 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
 	LD  = g++ $(FLAGS) -o $@ $^ -Isrc `/usr/local/bin/fltk-config --cxxflags --ldflags --use-images`
 else
 	RES =
@@ -195,4 +195,4 @@ test_widgets.exe: test/test_widgets.cpp obj/libflw.a
 #-------------------------------------------------------------------------------
 
 clean:
-	rm -f obj/* *.exe res/test.res
+	rm -f obj/* $(LIB) $(EXE) res/test.res
