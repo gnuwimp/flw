@@ -696,6 +696,42 @@ int flw::util::to_ints(std::string string, int64_t numbers[], size_t size) {
 }
 
 //------------------------------------------------------------------------------
+// Returns new converted buffer if it does contain \r
+// Otherwise it returns nullptr
+//
+char* flw::util::win_to_unix(const char* string) {
+    auto r = false;
+    auto b = string;
+
+    while (*b != 0) {
+        if (*b++ == '\r') {
+            r = true;
+            break;
+        }
+    }
+
+    if (r == false) {
+        return nullptr;
+    }
+
+    auto len = strlen(string);
+    auto res = util::allocate(len);
+    auto pos = 0;
+
+    b = string;
+
+    while (*b != 0) {
+        if (*b != '\r') {
+            res[pos++] = *b;
+        }
+
+        b++;
+    }
+
+    return res;
+}
+
+//------------------------------------------------------------------------------
 void* flw::util::zero_memory(char* string) {
     assert(string);
 

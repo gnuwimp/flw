@@ -7,7 +7,7 @@
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Text_Buffer.H>
-#include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Text_Editor.H>
 #include <assert.h>
 #include <iostream>
 #include <map>
@@ -104,6 +104,7 @@ namespace flw {
         int                             to_doubles(std::string string, double numbers[], size_t size);
         int64_t                         to_int(std::string string, int64_t def = 0);
         int                             to_ints(std::string string, int64_t numbers[], size_t size);
+        char*                           win_to_unix(const char* string);
         void*                           zero_memory(char* string);
         void*                           zero_memory(void* Buf, size_t size);
         void*                           zero_memory(std::string& string);
@@ -146,7 +147,7 @@ namespace flw {
         bool                            load(std::string name);
         void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
         void                            load_theme_pref(Fl_Preferences& pref);
-        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.", bool show = true);
+        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
         std::string                     name();
         bool                            parse(int argc, const char** argv);
         void                            save_theme_pref(Fl_Preferences& pref);
@@ -375,17 +376,18 @@ namespace flw {
         extern const char*              PASSWORD_CANCEL;
         extern const char*              PASSWORD_OK;
 
-        void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-        void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+        void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
         void                            panic(std::string message);
-        bool                            password1(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
-        bool                            password2(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
-        bool                            password3(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-        bool                            password4(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-        int                             select(const std::string& title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        int                             select(const std::string& title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-        void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        bool                            password1(std::string title, std::string& password, Fl_Window* parent = nullptr);
+        bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
+        bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+        bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+        int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+        void                            text(std::string title, const std::string&, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+        bool                            text_edit(std::string title, std::string&, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 
         //----------------------------------------------------------------------
         class AbortDialog : public Fl_Double_Window {

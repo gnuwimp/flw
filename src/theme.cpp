@@ -851,15 +851,15 @@ void flw::theme::load_theme_pref(Fl_Preferences& pref) {
 //------------------------------------------------------------------------------
 // Load window size
 //
-void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename, bool show) {
+void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
     assert(window);
 
     int  x, y, w, h, f;
 
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
-    pref.get((basename + "w").c_str(), w, 800);
-    pref.get((basename + "h").c_str(), h, 600);
+    pref.get((basename + "w").c_str(), w, defw);
+    pref.get((basename + "h").c_str(), h, defh);
     pref.get((basename + "fullscreen").c_str(), f, 0);
 
     if (w == 0 || h == 0) {

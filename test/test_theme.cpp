@@ -486,7 +486,7 @@ int main(int argc, const char** argv) {
     flw::theme::parse(argc, argv);
     flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
     flw::theme::load_theme_pref(pref);
-    flw::theme::load_win_pref(pref, &win);
+    flw::theme::load_win_pref(pref, &win, true);
     win.create();
     win.update_pref();
     Fl::run();

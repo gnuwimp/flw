@@ -101,6 +101,7 @@ namespace flw {
         int                             to_doubles(std::string string, double numbers[], size_t size);
         int64_t                         to_int(std::string string, int64_t def = 0);
         int                             to_ints(std::string string, int64_t numbers[], size_t size);
+        char*                           win_to_unix(const char* string);
         void*                           zero_memory(char* string);
         void*                           zero_memory(void* Buf, size_t size);
         void*                           zero_memory(std::string& string);

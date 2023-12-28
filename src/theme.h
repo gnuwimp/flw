@@ -30,7 +30,7 @@ namespace flw {
         bool                            load(std::string name);
         void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
         void                            load_theme_pref(Fl_Preferences& pref);
-        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.", bool show = true);
+        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
         std::string                     name();
         bool                            parse(int argc, const char** argv);
         void                            save_theme_pref(Fl_Preferences& pref);

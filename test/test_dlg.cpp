@@ -210,7 +210,8 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "text") {
             dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT);
-            dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT, nullptr, true, 70, 50);
+            auto t = HAMLET_TEXT;
+            printf("dlg::text_edit: %d\n%s\n", dlg::text_edit("test_dlg.cpp - dlg::text_edit", t, nullptr, 70, 50), t.c_str());
         }
 
         if (run == "" || run == "work")  {

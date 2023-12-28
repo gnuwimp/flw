@@ -3668,45 +3668,50 @@ namespace flw {
 
         //----------------------------------------------------------------------
         class _DlgText : public Fl_Double_Window {
-            Fl_Return_Button*           _close;
+            Fl_Button*                  _close;
+            Fl_Button*                  _cancel;
             Fl_Text_Buffer*             _buffer;
             Fl_Text_Display*            _text;
+            bool                        _edit;
+            char*                       _res;
 
         public:
             //------------------------------------------------------------------
-            _DlgText(const char* title, const char* text, Fl_Window* parent, bool fixed_font, int W, int H) :
-            Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
+            _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
+            Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
                 end();
 
-                _close   = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-                _text = new Fl_Text_Display(0, 0, w(), h());
-                _buffer  = new Fl_Text_Buffer();
+                _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
+                _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
+                _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
+                _buffer = new Fl_Text_Buffer();
+                _edit   = edit;
+                _res    = nullptr;
 
+                add(_cancel);
                 add(_close);
                 add(_text);
 
                 _buffer->text(text);
+                _cancel->callback(_DlgText::Callback, this);
+                _cancel->labelfont(flw::PREF_FONT);
+                _cancel->labelsize(flw::PREF_FONTSIZE);
                 _close->callback(_DlgText::Callback, this);
                 _close->labelfont(flw::PREF_FONT);
                 _close->labelsize(flw::PREF_FONTSIZE);
+                _text->buffer(_buffer);
                 _text->linenumber_align(FL_ALIGN_RIGHT);
                 _text->linenumber_bgcolor(FL_BACKGROUND_COLOR);
                 _text->linenumber_fgcolor(FL_FOREGROUND_COLOR);
-                _text->buffer(_buffer);
+                _text->linenumber_font(flw::PREF_FIXED_FONT);
+                _text->linenumber_size(flw::PREF_FIXED_FONTSIZE);
+                _text->linenumber_width(flw::PREF_FIXED_FONTSIZE * 3);
+                _text->take_focus();
+                _text->textfont(flw::PREF_FIXED_FONT);
+                _text->textsize(flw::PREF_FIXED_FONTSIZE);
 
-                if (fixed_font) {
-                    _text->linenumber_font(flw::PREF_FIXED_FONT);
-                    _text->linenumber_size(flw::PREF_FIXED_FONTSIZE);
-                    _text->linenumber_width(flw::PREF_FIXED_FONTSIZE * 3);
-                    _text->textfont(flw::PREF_FIXED_FONT);
-                    _text->textsize(flw::PREF_FIXED_FONTSIZE);
-                }
-                else {
-                    _text->linenumber_font(flw::PREF_FONT);
-                    _text->linenumber_size(flw::PREF_FONTSIZE);
-                    _text->linenumber_width(flw::PREF_FONTSIZE * 3);
-                    _text->textfont(flw::PREF_FONT);
-                    _text->textsize(flw::PREF_FONTSIZE);
+                if (edit == false) {
+                    _cancel->hide();
                 }
 
                 callback(_DlgText::Callback, this);
@@ -3727,7 +3732,14 @@ namespace flw {
             static void Callback(Fl_Widget* w, void* o) {
                 auto dlg = (_DlgText*) o;
 
-                if (w == dlg || w == dlg->_close) {
+                if (w == dlg || w == dlg->_cancel) {
+                    dlg->hide();
+                }
+                else if (w == dlg->_close) {
+                    if (dlg->_edit == true) {
+                        dlg->_res = dlg->_buffer->text();
+                    }
+
                     dlg->hide();
                 }
             }
@@ -3737,36 +3749,39 @@ namespace flw {
                 Fl_Double_Window::resize(X, Y, W, H);
 
                 _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
+                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
                 _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
             //------------------------------------------------------------------
-            void run() {
+            char* run() {
                 show();
 
                 while (visible() != 0) {
                     Fl::wait();
                     Fl::flush();
                 }
+
+                return _res;
             }
         };
     }
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::html(const std::string& title, const std::string& text, Fl_Window* parent, int W, int H) {
+void flw::dlg::html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
     _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
     dlg.run();
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::list(const std::string& title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void flw::dlg::list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgList dlg(title.c_str(), list, parent, fixed_font, W, H);
     dlg.run();
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::list(const std::string& title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void flw::dlg::list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     auto list2 = flw::util::split( list, "\n");
     _DlgList dlg(title.c_str(), list2, parent, fixed_font, W, H);
     dlg.run();
@@ -3779,47 +3794,61 @@ void flw::dlg::panic(std::string message) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::password1(const std::string& title, std::string& password, Fl_Window* parent) {
+bool flw::dlg::password1(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD);
     return dlg.run(password, file);
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::password2(const std::string& title, std::string& password, Fl_Window* parent) {
+bool flw::dlg::password2(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD);
     return dlg.run(password, file);
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::password3(const std::string& title, std::string& password, std::string& file, Fl_Window* parent) {
+bool flw::dlg::password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE);
     return dlg.run(password, file);
 }
 
 //------------------------------------------------------------------------------
-bool flw::dlg::password4(const std::string& title, std::string& password, std::string& file, Fl_Window* parent) {
+bool flw::dlg::password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
     return dlg.run(password, file);
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::select(const std::string& title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int flw::dlg::select(std::string title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 
 //------------------------------------------------------------------------------
-int flw::dlg::select(const std::string& title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+int flw::dlg::select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 
 //------------------------------------------------------------------------------
-void flw::dlg::text(const std::string& title, const std::string& text, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgText dlg(title.c_str(), text.c_str(), parent, fixed_font, W, H);
+void flw::dlg::text(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
+    _DlgText dlg(title.c_str(), text.c_str(), false, parent, W, H);
     dlg.run();
+}
+
+//------------------------------------------------------------------------------
+bool flw::dlg::text_edit(std::string title, std::string& text, Fl_Window* parent, int W, int H) {
+    auto dlg = _DlgText(title.c_str(), text.c_str(), true, parent, W, H);
+    auto res = dlg.run();
+
+    if (res == nullptr) {
+        return false;
+    }
+
+    text = res;
+    free(res);
+    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -9487,15 +9516,15 @@ void flw::theme::load_theme_pref(Fl_Preferences& pref) {
 //------------------------------------------------------------------------------
 // Load window size
 //
-void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename, bool show) {
+void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
     assert(window);
 
     int  x, y, w, h, f;
 
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
-    pref.get((basename + "w").c_str(), w, 800);
-    pref.get((basename + "h").c_str(), h, 600);
+    pref.get((basename + "w").c_str(), w, defw);
+    pref.get((basename + "h").c_str(), h, defh);
     pref.get((basename + "fullscreen").c_str(), f, 0);
 
     if (w == 0 || h == 0) {
@@ -10239,6 +10268,42 @@ int flw::util::to_ints(std::string string, int64_t numbers[], size_t size) {
     }
 
     return f;
+}
+
+//------------------------------------------------------------------------------
+// Returns new converted buffer if it does contain \r
+// Otherwise it returns nullptr
+//
+char* flw::util::win_to_unix(const char* string) {
+    auto r = false;
+    auto b = string;
+
+    while (*b != 0) {
+        if (*b++ == '\r') {
+            r = true;
+            break;
+        }
+    }
+
+    if (r == false) {
+        return nullptr;
+    }
+
+    auto len = strlen(string);
+    auto res = util::allocate(len);
+    auto pos = 0;
+
+    b = string;
+
+    while (*b != 0) {
+        if (*b != '\r') {
+            res[pos++] = *b;
+        }
+
+        b++;
+    }
+
+    return res;
 }
 
 //------------------------------------------------------------------------------
