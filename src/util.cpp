@@ -29,7 +29,7 @@ namespace flw {
 
 //------------------------------------------------------------------------------
 void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
-    if (parent) {
+    if (parent != nullptr) {
         int x = parent->x() + parent->w() / 2;
         int y = parent->y() + parent->h() / 2;
         window->position(x - window->w() / 2, y - window->h() / 2);
@@ -40,7 +40,7 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
 }
 
 //------------------------------------------------------------------------------
-std::string flw::util::fix_menu_string(const std::string& in) {
+std::string flw::util::fix_menu_string(std::string in) {
     std::string res = in;
     flw::util::replace(res, "\\", "\\\\");
     flw::util::replace(res, "_", "\\_");
@@ -51,6 +51,8 @@ std::string flw::util::fix_menu_string(const std::string& in) {
 
 //------------------------------------------------------------------------------
 std::string flw::util::format(const char* format, ...) {
+    assert(format);
+
     std::string res;
     int         l = 100;
     int         n = 0;
@@ -122,6 +124,7 @@ std::string flw::util::format_int(int64_t number, char sep) {
 
     tmp2[pos] = 0;
     len = strlen(tmp2);
+
     for (auto f = 0; f < len / 2; f++) {
         auto c = tmp2[f];
         tmp2[f] = tmp2[len - f - 1];
@@ -132,13 +135,18 @@ std::string flw::util::format_int(int64_t number, char sep) {
 }
 
 //------------------------------------------------------------------------------
+// Set label font properties for widget
+// If widget is an group widget set also the font for child widgets (recursive)
+//
 void flw::util::labelfont(Fl_Widget* widget) {
+    assert(widget);
+
     widget->labelfont(flw::PREF_FONT);
     widget->labelsize(flw::PREF_FONTSIZE);
 
     auto group = widget->as_group();
 
-    if (group) {
+    if (group != nullptr) {
         for (auto f = 0; f < group->children(); f++) {
             flw::util::labelfont(group->child(f));
         }
@@ -147,6 +155,8 @@ void flw::util::labelfont(Fl_Widget* widget) {
 
 //------------------------------------------------------------------------------
 void flw::util::print(Fl_Widget* widget, bool tab) {
+    assert(widget);
+
     printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
     fflush(stdout);
 }
@@ -155,18 +165,21 @@ void flw::util::print(Fl_Widget* widget, bool tab) {
 void flw::util::print(Fl_Group* group) {
     puts("");
     flw::util::print((Fl_Widget*) group);
+
     for (int f = 0; f < group->children(); f++) {
         flw::util::print(group->child(f), true);
     }
 }
 
 //------------------------------------------------------------------------------
-int flw::util::replace(std::string& string, const std::string& find, const std::string& replace) {
+// Replace string and return number of replacements or -1 for error
+//
+int flw::util::replace(std::string& string, std::string find, std::string replace) {
     auto index = (size_t) 0;
     auto count = (size_t) 0;
 
     try {
-        if (string.size() && find.size()) {
+        if (string.size() > 0 && find.size() > 0) {
             while (true) {
                 index = string.find(find, index);
 
@@ -190,11 +203,13 @@ int flw::util::replace(std::string& string, const std::string& find, const std::
 }
 
 //------------------------------------------------------------------------------
-flw::StringVector flw::util::split(const std::string& string, const std::string& split) {
+// Split string and return an vector with splitted strings
+//
+flw::StringVector flw::util::split(const std::string& string, std::string split) {
     auto res = StringVector();
 
     try {
-        if (split.size()) {
+        if (split.size() > 0) {
             auto pos1 = (std::string::size_type) 0;
             auto pos2 = string.find(split);
 
@@ -216,22 +231,6 @@ flw::StringVector flw::util::split(const std::string& string, const std::string&
     }
 
     return res;
-}
-
-//------------------------------------------------------------------------------
-const char* flw::util::str_copy(char* dest, const char* src, int dest_size) {
-    if (dest == nullptr || src == nullptr || dest_size < 2) {
-        return "";
-    }
-
-    int len = strlen(src);
-    *dest = 0;
-
-    if (len && len + 1 <= dest_size) {
-        memcpy(dest, src, len + 1);
-    }
-
-    return dest;
 }
 
 //------------------------------------------------------------------------------
@@ -282,6 +281,8 @@ bool flw::util::test(double ref, double val, double diff, int line, const char* 
 }
 
 //------------------------------------------------------------------------------
+// Return time as seconds since 1970
+//
 double flw::util::time() {
     auto sec   = 0.0;
     auto milli = 0.0;
@@ -304,6 +305,8 @@ double flw::util::time() {
 }
 
 //------------------------------------------------------------------------------
+// Return time stamp
+//
 int64_t flw::util::time_micro() {
     #if defined(_WIN32)
         LARGE_INTEGER StartingTime;
@@ -323,6 +326,8 @@ int64_t flw::util::time_micro() {
 }
 
 //------------------------------------------------------------------------------
+// Return time stamp
+//
 int64_t flw::util::time_milli() {
     return flw::util::time_micro() / 1000;
 }
@@ -337,12 +342,14 @@ void flw::util::time_sleep(int milli) {
 }
 
 //------------------------------------------------------------------------------
-double flw::util::to_double(const char* buffer, double def) {
+double flw::util::to_double(const char* string, double def) {
+    assert(string);
+
     double result = def;
 
-    if (buffer && *buffer && *buffer >= '0' && *buffer <= '9') {
+    if (*string >= '0' && *string <= '9') {
         errno  = 0;
-        result = strtod(buffer, nullptr);
+        result = strtod(string, nullptr);
         result = (errno == ERANGE) ? def : result;
     }
 
@@ -350,12 +357,14 @@ double flw::util::to_double(const char* buffer, double def) {
 }
 
 //------------------------------------------------------------------------------
-long double flw::util::to_double_l(const char* buffer, long double def) {
+long double flw::util::to_double_l(const char* string, long double def) {
+    assert(string);
+
     long double result = def;
 
-    if (buffer && *buffer && *buffer >= '0' && *buffer <= '9') {
+    if (*string >= '0' && *string <= '9') {
         errno  = 0;
-        result = strtold(buffer, nullptr);
+        result = strtold(string, nullptr);
         result = (errno == ERANGE) ? def : result;
     }
 
@@ -363,68 +372,38 @@ long double flw::util::to_double_l(const char* buffer, long double def) {
 }
 
 //------------------------------------------------------------------------------
-int flw::util::to_doubles(const char* val, double* num1, double* num2, double* num3, double* num4, double* num5) {
-    int res = 0;
+// Convert double numbers in string to actual numbers
+// Return number of set doubles
+//
+int flw::util::to_doubles(const char* string, double numbers[], size_t size) {
+    assert(string);
 
-    if (val == nullptr || *val == 0) {
-        return 0;
-    }
-
-    char* end = nullptr;
-
+    auto end = (char*) nullptr;
+    auto f   = (size_t) 0;
     errno = 0;
-    *num1 = strtod(val, &end);
 
-    if (errno == 0 && val != end) {
-        res++;
-        val = end;
+    for (; f < size; f++) {
+        numbers[f] = strtod(string, &end);
 
-        if (num2) {
-            *num2 = strtod(val, &end);
-
-            if (errno == 0 && val != end) {
-                res++;
-                val = end;
-
-                if (num3) {
-                    *num3 = strtod(val, &end);
-
-                    if (errno == 0 && val != end) {
-                        res++;
-                        val = end;
-
-                        if (num4) {
-                            *num4 = strtod(val, &end);
-
-                            if (errno == 0 && val != end) {
-                                res++;
-                                val = end;
-
-                                if (num5) {
-                                    *num5 = strtod(val, &end);
-
-                                    if (errno == 0 && val != end) {
-                                        res++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if (errno != 0 || string == end) {
+            return f;
         }
+
+        string = end;
     }
 
-    return res;
+    return f;
 }
 
 //------------------------------------------------------------------------------
-int64_t flw::util::to_int(const char* buffer, int64_t def) {
+int64_t flw::util::to_int(const char* string, int64_t def) {
+    assert(string);
+
     int64_t res = def;
 
-    if (buffer && *buffer && *buffer >= '0' && *buffer <= '9') {
+    if (*string >= '0' && *string <= '9') {
         errno  = 0;
-        res = strtoll(buffer, nullptr, 0);
+        res = strtoll(string, nullptr, 0);
         res = (errno == ERANGE) ? def : res;
     }
 
@@ -433,6 +412,8 @@ int64_t flw::util::to_int(const char* buffer, int64_t def) {
 
 //------------------------------------------------------------------------------
 void* flw::util::zero_memory(char* string) {
+    assert(string);
+
     if (string == nullptr) {
         return nullptr;
     }
@@ -446,21 +427,21 @@ void* flw::util::zero_memory(void* mem, size_t size) {
         return mem;
     }
 
-    #ifdef _WIN32
-        RtlSecureZeroMemory(mem, size);
-    #else
-        auto p = (volatile unsigned char*) mem;
+#ifdef _WIN32
+    RtlSecureZeroMemory(mem, size);
+#else
+    auto p = (volatile unsigned char*) mem;
 
-        while (size--) {
-            *p = 0;
-            p++;
-        }
-    #endif
+    while (size--) {
+        *p = 0;
+        p++;
+    }
+#endif
 
     return mem;
 }
-//------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
 void* flw::util::zero_memory(std::string& string) {
     return flw::util::zero_memory((char*) string.data());
 }

@@ -1,0 +1,24 @@
+666 ICON "res/test.ico"
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "gnuwimp"
+      VALUE "FileDescription", "test_theme"
+      VALUE "FileVersion", "1.0"
+      VALUE "InternalName", "test_theme"
+      VALUE "LegalCopyright", "Copyright 2021 gnuwimp"
+      VALUE "OriginalFilename", "test_theme.exe"
+      VALUE "ProductName", "test_theme"
+      VALUE "ProductVersion", "1.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END

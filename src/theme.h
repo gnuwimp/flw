@@ -8,14 +8,14 @@
 
 // MKALGAM_ON
 
-class Fl_Window;
 class Fl_Preferences;
+class Fl_Window;
 
 namespace flw {
     namespace theme {
-        //----------------------------------------------------------------------
         bool                            is_dark();
         bool                            load(const std::string& name);
+        void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
         std::string                     name();
         bool                            parse(int argc, const char** argv);
     }
@@ -25,7 +25,7 @@ namespace flw {
     }
 
     namespace util {
-        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr, int resource = 0);
+        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr);
         void                            pref_save(Fl_Preferences& pref, Fl_Window* window = nullptr);
     }
 }

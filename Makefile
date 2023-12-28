@@ -1,35 +1,35 @@
 OS := $(shell uname -s)
 
 ifeq ($(build),sanitize)
-	SANITIZE = -fsanitize=address
-	BUILD = debug
-	BUILD_DIR = build/debug
+	SANITIZE   = -fsanitize=address
+	BUILD      = debug
+	BUILD_DIR  = build/debug
 	BUILD_NAME = _d
 else ifeq ($(build),release)
-	BUILD = release
-	BUILD_DIR = build/release
+	BUILD      = release
+	BUILD_DIR  = build/release
 	BUILD_NAME =
 else
-	BUILD = debug
-	BUILD_DIR = build/debug
+	BUILD      = debug
+	BUILD_DIR  = build/debug
 	BUILD_NAME = _d
 endif
 
 ifeq ($(OS),Linux)
 	EXT = $(BUILD_NAME)
+	RES =
 
 	ifeq ($(BUILD),release)
 		CXX = g++ -O2 -std=c++17 -DNDEBUG -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags`
-
+		LD  = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags`
 	else
 		CXX = g++ -g -std=c++17 -DDEBUG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags`
+		LD  = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags`
 	endif
 
 else ifeq ($(findstring MINGW64,$(OS)), MINGW64)
 	EXT = $(BUILD_NAME).exe
-	INSTALL = /C/bin
+	RES = res/test.res
 
 	ifeq ($(BUILD),release)
 		CXX = g++ -O2 -std=c++17 -DNDEBUG -DPCRE_STATIC=1 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
@@ -40,7 +40,7 @@ else ifeq ($(findstring MINGW64,$(OS)), MINGW64)
 	endif
 
 else
-$(error error: unknown compiler)
+    $(error error: unknown compiler)
 endif
 
 OBJ=$(BUILD_DIR)/chart.o \
@@ -102,6 +102,9 @@ EXE=test_chart$(EXT) \
 all: $(OBJ) $(LIB) $(EXE)
 
 #-------------------------------------------------------------------------------
+
+res/test.res: res/test.rc
+	windres res/test.rc -O coff -o res/test.res
 
 $(BUILD_DIR)/chart.o: src/chart.cpp src/chart.h src/date.h src/price.h src/util.h
 	$(CXX)
@@ -257,7 +260,7 @@ test_tableeditor$(EXT): $(BUILD_DIR)/test_tableeditor.o $(BUILD_DIR)/libflw.a
 test_tabsgroup$(EXT): $(BUILD_DIR)/test_tabsgroup.o $(BUILD_DIR)/libflw.a
 	$(LD)
 
-test_theme$(EXT): $(BUILD_DIR)/test_theme.o $(BUILD_DIR)/libflw.a
+test_theme$(EXT): $(BUILD_DIR)/test_theme.o $(BUILD_DIR)/libflw.a $(RES)
 	$(LD)
 
 test_util$(EXT): $(BUILD_DIR)/test_util.o $(BUILD_DIR)/libflw.a
@@ -269,4 +272,4 @@ test_widgets$(EXT): $(BUILD_DIR)/test_widgets.o $(BUILD_DIR)/libflw.a
 #-------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJ) $(LIB) $(EXE)
+	rm -f $(OBJ) $(LIB) $(EXE) res/test.res

@@ -10,10 +10,14 @@
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Preferences.H>
-#include <FL/x.H>
 
 #ifdef _WIN32
+    #include <FL/x.H>
     #include <windows.h>
+#elif defined(__linux__)
+    #include <FL/Fl_Window.H>
+    #include <FL/Fl_Pixmap.H>
+    #include <FL/Fl_RGB_Image.H>
 #endif
 
 // MKALGAM_ON
@@ -664,6 +668,31 @@ bool flw::theme::load(const std::string& name) {
     return true;
 }
 
+
+//------------------------------------------------------------------------------
+void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
+#if defined(_WIN32)
+    win->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(win_resource)));
+    (void) name;
+    (void) xpm_resource;
+    (void) name;
+#elif defined(__linux__)
+    assert(xpm_resource);
+
+    Fl_Pixmap    pix(xpm_resource);
+    Fl_RGB_Image rgb(&pix, Fl_Color(0));
+
+    win->icon(&rgb);
+    win->xclass((name != nullptr) ? name : "FLTK");
+    (void) win_resource;
+#else
+    (void) win;
+    (void) win_resource;
+    (void) xpm_resource;
+    (void) name;
+#endif
+}
+
 //------------------------------------------------------------------------------
 std::string flw::theme::name() {
     return _NAME;
@@ -728,26 +757,28 @@ void flw::dlg::theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent)
 //------------------------------------------------------------------------------
 // Load gui preferences and if window is set resize and show it
 //
-void flw::util::pref_load(Fl_Preferences& pref, Fl_Window* window, int resource) {
+void flw::util::pref_load(Fl_Preferences& pref, Fl_Window* window) {
     auto val = 0;
     char buffer[4000];
 
     if (window != nullptr) {
         int x, y, w, h, f;
 
-#ifdef _WIN32
-        if (resource != 0) {
-            window->icon((char*) LoadIcon(fl_display, MAKEINTRESOURCE(resource)));
-        }
-#else
-        (void) resource;
-#endif
-
         pref.get("gui.x", x, 80);
         pref.get("gui.y", y, 60);
         pref.get("gui.w", w, 800);
         pref.get("gui.h", h, 600);
         pref.get("gui.fullscreen", f, 0);
+
+        if (w == 0 || h == 0) {
+            w = 800;
+            h = 600;
+        }
+
+        if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
+            x = 80;
+            y = 60;
+        }
 
         window->resize(x, y, w, h);
         window->show();

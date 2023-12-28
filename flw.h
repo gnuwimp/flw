@@ -8,6 +8,8 @@
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Text_Display.H>
+#include <assert.h>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -18,7 +20,18 @@ class Fl_Input;
 class Fl_Menu_Button;
 
 
-#define FLW_LINE { fprintf(stderr, "%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stderr); }
+#define FLW_LINE                    { fprintf(stderr, "%5d: %s - %s\n", __LINE__, __func__, __FILE__); fflush(stderr); }
+#define _FLW_TOSTRING(X)            #X
+#define FLW_TOSTRING(X)             _FLW_TOSTRING(X)
+#define FLW_PRINT(...)              FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
+#define FLW_PRINT1(A)               { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << std::endl; fflush(stderr); }
+#define FLW_PRINT2(A,B)             { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << std::endl; fflush(stderr); }
+#define FLW_PRINT3(A,B,C)           { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << std::endl; fflush(stderr); }
+#define FLW_PRINT4(A,B,C,D)         { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << std::endl; fflush(stderr); }
+#define FLW_PRINT5(A,B,C,D,E)       { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << ", (" FLW_TOSTRING(E) ")=" << (E) << std::endl; fflush(stderr); }
+#define FLW_PRINT6(A,B,C,D,E,F)     { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << ", (" FLW_TOSTRING(E) ")=" << (E) << ", (" FLW_TOSTRING(F) ")=" << (F) << std::endl; fflush(stderr); }
+#define FLW_PRINT7(A,B,C,D,E,F,G)   { std::cerr << __FILE__ << "::" << __func__ << "::" << __LINE__ << " (" FLW_TOSTRING(A) ")=" << (A) << ", (" FLW_TOSTRING(B) ")=" << (B) << ", (" FLW_TOSTRING(C) ")=" << (C) << ", (" FLW_TOSTRING(D) ")=" << (D) << ", (" FLW_TOSTRING(E) ")=" << (E) << ", (" FLW_TOSTRING(F) ")=" << (F) << ", (" FLW_TOSTRING(G) ")=" << (G) << std::endl; fflush(stderr); }
+#define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
 
 namespace flw {
     typedef std::vector<std::string>    StringVector;
@@ -36,15 +49,14 @@ namespace flw {
         // Collection of utility functions
         //
         void                            center_window(Fl_Window* window, Fl_Window* parent = nullptr);
-        std::string                     fix_menu_string(const std::string& in);
+        std::string                     fix_menu_string(std::string in);
         std::string                     format(const char* format, ...);
         std::string                     format_int(int64_t number, char sep = ' ');
         void                            labelfont(Fl_Widget* widget);
         void                            print(Fl_Widget* widget, bool tab = false);
         void                            print(Fl_Group* group);
-        int                             replace(std::string& string, const std::string& find, const std::string& replace);
-        StringVector                    split(const std::string& string, const std::string& split);
-        const char*                     str_copy(char* dest, const char* src, int dest_size);
+        int                             replace(std::string& string, std::string find, std::string replace);
+        StringVector                    split(const std::string& string, std::string split);
         bool                            test(bool val, int line, const char* func);
         bool                            test(const char* ref, const char* val, int line, const char* func);
         bool                            test(int64_t ref, int64_t val, int line, const char* func);
@@ -53,10 +65,10 @@ namespace flw {
         int64_t                         time_micro();
         int64_t                         time_milli();
         void                            time_sleep(int milli);
-        double                          to_double(const char* buffer, double def = 0.0);
-        long double                     to_double_l(const char* buffer, long double def = 0.0);
-        int                             to_doubles(const char* val, double* num1, double* num2 = nullptr, double* num3 = nullptr, double* num4 = nullptr, double* num5 = nullptr);
-        int64_t                         to_int(const char* buffer, int64_t def = 0);
+        double                          to_double(const char* string, double def = 0.0);
+        long double                     to_double_l(const char* string, long double def = 0.0);
+        int                             to_doubles(const char* string, double numbers[], size_t size);
+        int64_t                         to_int(const char* string, int64_t def = 0);
         void*                           zero_memory(char* string);
         void*                           zero_memory(void* mem, size_t size);
         void*                           zero_memory(std::string& string);
@@ -1106,14 +1118,14 @@ namespace flw {
 
 
 
-class Fl_Window;
 class Fl_Preferences;
+class Fl_Window;
 
 namespace flw {
     namespace theme {
-        //----------------------------------------------------------------------
         bool                            is_dark();
         bool                            load(const std::string& name);
+        void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
         std::string                     name();
         bool                            parse(int argc, const char** argv);
     }
@@ -1123,7 +1135,7 @@ namespace flw {
     }
 
     namespace util {
-        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr, int resource = 0);
+        void                            pref_load(Fl_Preferences& pref, Fl_Window* window = nullptr);
         void                            pref_save(Fl_Preferences& pref, Fl_Window* window = nullptr);
     }
 }

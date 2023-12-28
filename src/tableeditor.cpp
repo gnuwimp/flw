@@ -122,19 +122,16 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             }
         }
         else if (rend == flw::TableEditor::REND::SLIDER) {
-            auto curr  = 0.0;
-            auto min   = 0.0;
-            auto max   = 100.0;
-            auto step  = 0.0;
-            auto width = 0.0;
-            auto range = 0.0;
+            double nums[4];
 
-            if (util::to_doubles(val, &curr, &min, &max, &step) == 4) {
-                if ((max - min) > 0.0001) {
-                    range = (curr - min) / (max - min);
+            if (util::to_doubles(val, nums, 4) == 4) {
+                auto range = 0.0;
+
+                if ((nums[2] - nums[1]) > 0.0001) {
+                    range = (nums[0] - nums[1]) / (nums[2] - nums[1]);
                 }
 
-                width = (int) (range * (W - 3));
+                auto width = (int) (range * (W - 3));
 
                 if (width > 0) {
                     fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, width, H - 3, textcolor);
@@ -203,10 +200,10 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             auto num = util::to_double_l(val);
 
             if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
-                auto curr = 0.0;
+                double nums[1];
 
-                if (util::to_doubles(val, &curr) == 1) {
-                    num = curr;
+                if (util::to_doubles(val, nums, 1) == 1) {
+                    num = nums[0];
                 }
             }
 
@@ -327,19 +324,16 @@ void flw::TableEditor::_edit_create() {
         _edit = w;
     }
     else if (rend == flw::TableEditor::REND::SLIDER) {
-        auto w    = (Fl_Slider*) nullptr;
-        auto curr = 0.0;
-        auto min  = 0.0;
-        auto max  = 0.0;
-        auto step = 0.0;
+        auto w = (Fl_Slider*) nullptr;
+        double nums[4];
 
-        if (util::to_doubles(val, &curr, &min, &max, &step) == 4) {
+        if (util::to_doubles(val, nums, 4) == 4) {
             w = new Fl_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
-            w->range(min, max);
-            w->step(step);
-            w->value(curr);
+            w->range(nums[1], nums[2]);
+            w->step(nums[3]);
+            w->value(nums[0]);
             w->type(FL_HOR_FILL_SLIDER);
             w->box(FL_BORDER_BOX);
 
@@ -347,19 +341,16 @@ void flw::TableEditor::_edit_create() {
         }
     }
     else if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
-        auto w    = (Fl_Slider*) nullptr;
-        auto curr = 0.0;
-        auto min  = 0.0;
-        auto max  = 0.0;
-        auto step = 0.0;
+        auto w = (Fl_Slider*) nullptr;
+        double nums[4];
 
-        if (util::to_doubles(val, &curr, &min, &max, &step) == 4) {
+        if (util::to_doubles(val, nums, 4) == 4) {
             w = new Fl_Value_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
-            w->range(min, max);
-            w->step(step);
-            w->value(curr);
+            w->range(nums[1], nums[2]);
+            w->step(nums[3]);
+            w->value(nums[0]);
             w->type(FL_HOR_FILL_SLIDER);
             w->box(FL_BORDER_BOX);
             ((Fl_Value_Slider*) w)->textsize(textsize * 0.8);
@@ -533,39 +524,36 @@ void flw::TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-        auto curr = 0.0;
-        auto min  = 0.0;
-        auto max  = 0.0;
-        auto step = 0.0;
+        double nums[4];
 
-        if (util::to_doubles(val, &curr, &min, &max, &step) == 4) {
+        if (util::to_doubles(val, nums, 4) == 4) {
             if (strcmp(key, "+") == 0) {
-                curr += step;
+                nums[0] += nums[3];
             }
             else if (strcmp(key, "++") == 0) {
-                curr += (step * 10);
+                nums[0] += (nums[3] * 10);
             }
             else if (strcmp(key, "+++") == 0) {
-                curr += (step * 100);
+                nums[0] += (nums[3] * 100);
             }
             else if (strcmp(key, "-") == 0) {
-                curr -= step;
+                nums[0] -= nums[3];
             }
             else if (strcmp(key, "--") == 0) {
-                curr -= (step * 10);
+                nums[0] -= (nums[3] * 10);
             }
             else if (strcmp(key, "---") == 0) {
-                curr -= (step * 100);
+                nums[0] -= (nums[3] * 100);
             }
 
-            if (curr < min) {
-                curr = min;
+            if (nums[0] < nums[1]) {
+                nums[0] = nums[1];
             }
-            else if (curr > max) {
-                curr = max;
+            else if (nums[0] > nums[2]) {
+                nums[0] = nums[2];
             }
 
-            auto val2 = FormatSlider(curr, min, max, step);
+            auto val2 = FormatSlider(nums[0], nums[1], nums[2], nums[3]);
 
             if ((_send_changed_event_always == true || strcmp(val, val2) != 0) && cell_value(_curr_row, _curr_col, val2) == true) {
                 _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);

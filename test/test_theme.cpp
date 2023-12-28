@@ -4,6 +4,7 @@
 #include "datechooser.h"
 #include "theme.h"
 #include "util.h"
+#include "icon.xpm"
 #include <FL/fl_show_colormap.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
@@ -88,7 +89,7 @@ public:
     Fl_Tree*             tree;
     Scale*               scale;
 
-    Test() : Fl_Double_Window(1000, 700, "test_theme.cpp") {
+    Test() : Fl_Double_Window(0, 0, "test_theme.cpp") {
         TEST         = this;
 
         check        = new Fl_Check_Button(0, 0, 0, 0, "Fl_Check_Button");
@@ -221,32 +222,6 @@ public:
         menu->add("Edit/Copy");
         menu->add("Edit/Cut");
         menu->add("Edit/Paste");
-        tree->add("Widget Colors/FL_BACKGROUND_COLOR");
-        tree->add("Widget Colors/FL_BACKGROUND2_COLOR");
-        tree->add("Widget Colors/FL_DARK1");
-        tree->add("Widget Colors/FL_DARK2");
-        tree->add("Widget Colors/FL_DARK3");
-        tree->add("Widget Colors/FL_FOREGROUND_COLOR");
-        tree->add("Widget Colors/FL_GRAY0");
-        tree->add("Widget Colors/FL_INACTIVE_COLOR");
-        tree->add("Widget Colors/FL_LIGHT1");
-        tree->add("Widget Colors/FL_LIGHT2");
-        tree->add("Widget Colors/FL_LIGHT3");
-        tree->add("Widget Colors/FL_SELECTION_COLOR");
-        tree->add("Named COlors/FL_BLACK");
-        tree->add("Named COlors/FL_DARK_GREEN");
-        tree->add("Named COlors/FL_GREEN");
-        tree->add("Named COlors/FL_DARK_RED");
-        tree->add("Named COlors/FL_DARK_YELLOW");
-        tree->add("Named COlors/FL_RED");
-        tree->add("Named COlors/FL_YELLOW");
-        tree->add("Named COlors/FL_DARK_BLUE");
-        tree->add("Named COlors/FL_DARK_CYAN");
-        tree->add("Named COlors/FL_DARK_MAGENTA");
-        tree->add("Named COlors/FL_BLUE");
-        tree->add("Named COlors/FL_CYAN");
-        tree->add("Named COlors/FL_MAGENTA");
-        tree->add("Named COlors/FL_WHITE");
 
         resizable(this);
     }
@@ -308,6 +283,36 @@ public:
         };
     }
 
+    void make_tree() {
+        tree->clear();
+        tree->add("Widget Colors/FL_BACKGROUND_COLOR");
+        tree->add("Widget Colors/FL_BACKGROUND2_COLOR");
+        tree->add("Widget Colors/FL_DARK1");
+        tree->add("Widget Colors/FL_DARK2");
+        tree->add("Widget Colors/FL_DARK3");
+        tree->add("Widget Colors/FL_FOREGROUND_COLOR");
+        tree->add("Widget Colors/FL_GRAY0");
+        tree->add("Widget Colors/FL_INACTIVE_COLOR");
+        tree->add("Widget Colors/FL_LIGHT1");
+        tree->add("Widget Colors/FL_LIGHT2");
+        tree->add("Widget Colors/FL_LIGHT3");
+        tree->add("Widget Colors/FL_SELECTION_COLOR");
+        tree->add("Named Colors/FL_BLACK");
+        tree->add("Named Colors/FL_DARK_GREEN");
+        tree->add("Named Colors/FL_GREEN");
+        tree->add("Named Colors/FL_DARK_RED");
+        tree->add("Named Colors/FL_DARK_YELLOW");
+        tree->add("Named Colors/FL_RED");
+        tree->add("Named Colors/FL_YELLOW");
+        tree->add("Named Colors/FL_DARK_BLUE");
+        tree->add("Named Colors/FL_DARK_CYAN");
+        tree->add("Named Colors/FL_DARK_MAGENTA");
+        tree->add("Named Colors/FL_BLUE");
+        tree->add("Named Colors/FL_CYAN");
+        tree->add("Named Colors/FL_MAGENTA");
+        tree->add("Named Colors/FL_WHITE");
+    }
+
     void resize(int X, int Y, int W, int H) override {
         auto fs = flw::PREF_FONTSIZE;
 
@@ -357,8 +362,6 @@ public:
         cyan->resize         (W - fs * 16 - 4, fs * 36 + 48, fs * 16, fs * 2);
         magenta->resize      (W - fs * 16 - 4, fs * 39 + 52, fs * 16, fs * 2);
         white->resize        (W - fs * 16 - 4, fs * 42 + 56, fs * 16, fs * 2);
-
-        Fl::redraw();
     }
 
     void update_pref() {
@@ -367,6 +370,9 @@ public:
         input->textsize(flw::PREF_FONTSIZE);
         browser->textfont(flw::PREF_FONT);
         browser->textsize(flw::PREF_FONTSIZE);
+        menu->textsize(flw::PREF_FONTSIZE);
+        tree->item_labelsize(flw::PREF_FONTSIZE);
+        make_tree();
         size(w(), h());
         Fl::redraw();
     }
@@ -378,7 +384,21 @@ int main(int argc, const char** argv) {
     flw::theme::parse(argc, argv);
 
     Test win;
-    win.show();
-    flw::util::center_window(&win);
-    return Fl::run();
+
+    {
+        flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
+        flw::util::pref_load(pref, &win);
+        win.update_pref();
+    }
+
+    Fl::run();
+
+    {
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_theme");
+        flw::util::pref_save(pref, &win);
+    }
+
+    return 0;
 }
