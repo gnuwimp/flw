@@ -97,9 +97,15 @@ EXE=test_chart$(EXT) \
 	test_util$(EXT) \
 	test_widgets$(EXT) \
 
-all: $(OBJ) $(LIB) $(EXE)
+all: build/debug build/release $(OBJ) $(LIB) $(EXE)
 
 #-------------------------------------------------------------------------------
+
+build/debug:
+	mkdir -p $@
+
+build/release:
+	mkdir -p $@
 
 res/test.res: res/test.rc
 	windres res/test.rc -O coff -o res/test.res
