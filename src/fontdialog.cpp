@@ -3,7 +3,7 @@
 
 #include "fontdialog.h"
 #include "util.h"
-#include "widgets.h"
+#include "scrollbrowser.h"
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #include <FL/Fl_Box.H>

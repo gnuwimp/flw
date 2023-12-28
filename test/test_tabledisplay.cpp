@@ -180,7 +180,7 @@ public:
         resize(x(), y(), w(), h());
         bar->textfont(flw::PREF_FONT);
         bar->textsize(flw::PREF_FONTSIZE);
-        flw::theme::labelfont(this);
+        util::labelfont(this);
     }
 
     void resize(int X, int Y, int W, int H) override {

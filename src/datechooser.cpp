@@ -234,7 +234,7 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
     _canvas->callback(flw::DateChooser::_Callback, this);
     _month_label->box(FL_UP_BOX);
 
-    flw::theme::labelfont(this);
+    util::labelfont(this);
     tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
     flw::DateChooser::resize(X, Y, W, H);
 }
@@ -429,7 +429,7 @@ namespace flw {
                 _date_chooser->set(_value);
                 _ok->callback(Callback, this);
 
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 callback(Callback, this);
                 copy_label(title);
                 size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);

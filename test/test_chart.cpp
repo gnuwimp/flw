@@ -114,7 +114,7 @@ public:
         util::menu_item_set(mb, "&Data/srand(time)", true);
         util::menu_item_set(mb, "&Data/All Days (LINE)", true);
         mb->textsize(flw::PREF_FONTSIZE);
-        flw::theme::labelfont(this);
+        util::labelfont(this);
 
         resize(0, 0, W, H);
         create_chart(this);

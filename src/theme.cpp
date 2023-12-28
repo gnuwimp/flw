@@ -24,14 +24,6 @@
 // MKALGAM_ON
 
 namespace flw {
-    bool        PREF_IS_DARK        = false;
-    int         PREF_FIXED_FONT     = FL_COURIER;
-    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
-    int         PREF_FIXED_FONTSIZE = 14;
-    int         PREF_FONT           = FL_HELVETICA;
-    int         PREF_FONTSIZE       = 14;
-    std::string PREF_FONTNAME       = "FL_HELVETICA";
-
     namespace color {
         Fl_Color RED     = fl_rgb_color(255, 0, 0);
         Fl_Color LIME    = fl_rgb_color(0, 255, 0);
@@ -100,6 +92,7 @@ namespace flw {
         static unsigned char _SYS_R[256]  = { 0 };
         static unsigned char _SYS_G[256]  = { 0 };
         static unsigned char _SYS_B[256]  = { 0 };
+        static bool          _IS_DARK     = false;
         static bool          _SAVED_COLOR = false;
         static bool          _SAVED_SYS   = false;
         static std::string   _NAME        = _NAMES[_NAME_DEFAULT];
@@ -258,7 +251,7 @@ namespace flw {
             Fl::scheme("none");
             Fl::redraw();
             _NAME = _NAMES[_NAME_DEFAULT];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -270,7 +263,7 @@ namespace flw {
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -282,7 +275,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_BLUE];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -296,7 +289,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
@@ -310,7 +303,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARKER];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
@@ -324,7 +317,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK_BLUE];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
@@ -336,7 +329,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_TAN];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -348,7 +341,7 @@ namespace flw {
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -360,7 +353,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_BLUE];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -374,7 +367,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
@@ -388,7 +381,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARKER];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
@@ -402,7 +395,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK_BLUE];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
 
         //------------------------------------------------------------------------------
@@ -414,7 +407,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_TAN];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -426,7 +419,7 @@ namespace flw {
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -438,7 +431,7 @@ namespace flw {
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_BLUE];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -450,7 +443,7 @@ namespace flw {
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_TAN];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
 
         //------------------------------------------------------------------------------
@@ -470,7 +463,7 @@ namespace flw {
 
             Fl::redraw();
             _NAME = _NAMES[_NAME_SYSTEM];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
     }
 
@@ -651,7 +644,7 @@ namespace flw {
 
             //------------------------------------------------------------------
             void update_pref() {
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
                 _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
                 _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
@@ -691,25 +684,6 @@ bool flw::theme::is_dark() {
     }
     else {
         return false;
-    }
-}
-
-//------------------------------------------------------------------------------
-// Set label font properties for widget
-// If widget is an group widget set also the font for child widgets (recursive)
-//
-void flw::theme::labelfont(Fl_Widget* widget) {
-    assert(widget);
-
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
-
-    auto group = widget->as_group();
-
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            flw::theme::labelfont(group->child(f));
-        }
     }
 }
 

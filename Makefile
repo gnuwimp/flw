@@ -1,279 +1,198 @@
 OS := $(shell uname -s)
 
 ifeq ($(build),sanitize)
-	SANITIZE   = -fsanitize=address
-	BUILD      = debug
-	BUILD_DIR  = build/debug
-	BUILD_NAME = _d
+	FLAGS = -fsanitize=address -g -DDEBUG
 else ifeq ($(build),release)
-	BUILD      = release
-	BUILD_DIR  = build/release
-	BUILD_NAME =
+	FLAGS = -O2 -DNDEBUG
+else ifeq ($(build),debug)
+	FLAGS = -g -DDEBUG
 else
-	BUILD      = debug
-	BUILD_DIR  = build/debug
-	BUILD_NAME = _d
+	FLAGS = -DDEBUG
 endif
 
 ifeq ($(findstring MINGW64,$(OS)), MINGW64)
-	EXT = $(BUILD_NAME).exe
 	RES = res/test.res
 
-	ifeq ($(BUILD),release)
-		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
-	else
-		CXX = g++ -std=c++17 -DDEBUG -DFLW_USE_PNG -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall -Wno-unused-parameter -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
-	endif
-
+	CXX = g++ $(FLAGS) -std=c++17 -D__USE_MINGW_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always -W -Wall -Wno-cast-function-type `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+	LD  = g++ $(FLAGS) -o $@ $^ -Isrc `/usr/local/bin/fltk-config --cxxflags --ldflags --use-images`
 else
-	EXT = $(BUILD_NAME)
 	RES =
-
-	ifeq ($(BUILD),release)
-		CXX = g++ -O2 -std=c++17 -DNDEBUG -DFLW_USE_PNG -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD  = g++ -o $@ $^ `/usr/local/bin/fltk-config --ldflags --use-images`
-	else
-		CXX = g++ -g -std=c++17 -DDEBUG -DFLW_USE_PNG $(SANITIZE) -W -Wall -Wno-deprecated-declarations `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
-		LD  = g++ -o $@ $^ $(SANITIZE) `/usr/local/bin/fltk-config --ldflags --use-images`
-	endif
-
+	CXX = g++ $(FLAGS) -std=c++17 -W -Wall `/usr/local/bin/fltk-config --cxxflags` -Isrc -c $< -o $@
+	LD  = g++ $(FLAGS) -o $@ $^ -Isrc `/usr/local/bin/fltk-config --cxxflags --ldflags --use-images`
 endif
 
-OBJ=$(BUILD_DIR)/chart.o \
-	$(BUILD_DIR)/date.o \
-	$(BUILD_DIR)/datechooser.o \
-	$(BUILD_DIR)/dlg.o \
-	$(BUILD_DIR)/fontdialog.o \
-	$(BUILD_DIR)/grid.o \
-	$(BUILD_DIR)/gridgroup.o \
-	$(BUILD_DIR)/lcdnumber.o \
-	$(BUILD_DIR)/logdisplay.o \
-	$(BUILD_DIR)/price.o \
-	$(BUILD_DIR)/splitgroup.o \
-	$(BUILD_DIR)/tabledisplay.o \
-	$(BUILD_DIR)/tableeditor.o \
-	$(BUILD_DIR)/tabsgroup.o \
-	$(BUILD_DIR)/theme.o \
-	$(BUILD_DIR)/util.o \
-	$(BUILD_DIR)/waitcursor.o \
-	$(BUILD_DIR)/widgets.o \
-	$(BUILD_DIR)/test_chart.o \
-	$(BUILD_DIR)/test_date.o \
-	$(BUILD_DIR)/test_datechooser.o \
-	$(BUILD_DIR)/test_dlg.o \
-	$(BUILD_DIR)/test_grid.o \
-	$(BUILD_DIR)/test_gridgroup1.o \
-	$(BUILD_DIR)/test_gridgroup2.o \
-	$(BUILD_DIR)/test_lcdnumber.o \
-	$(BUILD_DIR)/test_logdisplay.o \
-	$(BUILD_DIR)/test_price.o \
-	$(BUILD_DIR)/test_splitgroup.o \
-	$(BUILD_DIR)/test_tabledisplay.o \
-	$(BUILD_DIR)/test_tableeditor.o \
-	$(BUILD_DIR)/test_tabsgroup.o \
-	$(BUILD_DIR)/test_theme.o \
-	$(BUILD_DIR)/test_util.o \
-	$(BUILD_DIR)/test_widgets.o \
+OBJ=obj/chart.o \
+	obj/date.o \
+	obj/datechooser.o \
+	obj/dlg.o \
+	obj/fontdialog.o \
+	obj/grid.o \
+	obj/gridgroup.o \
+	obj/inputmenu.o \
+	obj/lcdnumber.o \
+	obj/logdisplay.o \
+	obj/price.o \
+	obj/recentmenu.o \
+	obj/scrollbrowser.o \
+	obj/splitgroup.o \
+	obj/tabledisplay.o \
+	obj/tableeditor.o \
+	obj/tabsgroup.o \
+	obj/theme.o \
+	obj/util.o \
+	obj/waitcursor.o \
 
-LIB=$(BUILD_DIR)/libflw.a
+LIB=obj/libflw.a
 
-EXE=test_chart$(EXT) \
-	test_date$(EXT) \
-	test_datechooser$(EXT) \
-	test_dlg$(EXT) \
-	test_grid$(EXT) \
-	test_gridgroup1$(EXT) \
-	test_gridgroup2$(EXT) \
-	test_lcdnumber$(EXT) \
-	test_logdisplay$(EXT) \
-	test_price$(EXT) \
-	test_splitgroup$(EXT) \
-	test_tabledisplay$(EXT) \
-	test_tableeditor$(EXT) \
-	test_tabsgroup$(EXT) \
-	test_theme$(EXT) \
-	test_util$(EXT) \
-	test_widgets$(EXT) \
+EXE=test_chart.exe \
+	test_date.exe \
+	test_datechooser.exe \
+	test_dlg.exe \
+	test_grid.exe \
+	test_gridgroup1.exe \
+	test_gridgroup2.exe \
+	test_lcdnumber.exe \
+	test_logdisplay.exe \
+	test_price.exe \
+	test_recentmenu.exe \
+	test_splitgroup.exe \
+	test_tabledisplay.exe \
+	test_tableeditor.exe \
+	test_tabsgroup.exe \
+	test_theme.exe \
+	test_util.exe \
+	test_widgets.exe \
 
-all: build/debug build/release $(OBJ) $(LIB) $(EXE)
+all: obj $(LIB) $(EXE)
 
 #-------------------------------------------------------------------------------
 
-build/debug:
-	mkdir -p $@
-
-build/release:
-	mkdir -p $@
+obj:
+	mkdir obj
 
 res/test.res: res/test.rc
 	windres res/test.rc -O coff -o res/test.res
 
-$(BUILD_DIR)/chart.o: src/chart.cpp src/chart.h src/date.h src/price.h src/util.h
+obj/chart.o: src/chart.cpp src/chart.h src/date.h src/price.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/date.o: src/date.cpp src/date.h
+obj/date.o: src/date.cpp src/date.h
 	$(CXX)
 
-$(BUILD_DIR)/datechooser.o: src/datechooser.cpp src/datechooser.h
+obj/datechooser.o: src/datechooser.cpp src/datechooser.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/util.h
+obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/fontdialog.o: src/fontdialog.cpp src/fontdialog.h src/util.h
+obj/fontdialog.o: src/fontdialog.cpp src/fontdialog.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/grid.o: src/grid.cpp src/grid.h src/tabledisplay.h  src/tableeditor.h src/util.h
+obj/grid.o: src/grid.cpp src/grid.h src/tabledisplay.h  src/tableeditor.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/gridgroup.o: src/gridgroup.cpp src/gridgroup.h
+obj/gridgroup.o: src/gridgroup.cpp src/gridgroup.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/lcdnumber.o: src/lcdnumber.cpp src/lcdnumber.h
+obj/inputmenu.o: src/inputmenu.cpp src/inputmenu.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/util.h
+obj/lcdnumber.o: src/lcdnumber.cpp src/lcdnumber.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/price.o: src/price.cpp src/price.h
+obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/splitgroup.o: src/splitgroup.cpp src/splitgroup.h
+obj/price.o: src/price.cpp src/price.h
 	$(CXX)
 
-$(BUILD_DIR)/tabledisplay.o: src/tabledisplay.cpp src/tabledisplay.h src/dlg.h src/util.h
+obj/recentmenu.o: src/recentmenu.cpp src/recentmenu.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/tableeditor.o: src/tableeditor.cpp src/tableeditor.h src/tabledisplay.h src/date.h src/dlg.h src/util.h
+obj/scrollbrowser.o: src/scrollbrowser.cpp src/scrollbrowser.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/tabsgroup.o: src/tabsgroup.cpp src/tabsgroup.h src/util.h
+obj/splitgroup.o: src/splitgroup.cpp src/splitgroup.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/theme.o: src/theme.cpp src/theme.h src/gridgroup.h src/util.h
+obj/tabledisplay.o: src/tabledisplay.cpp src/tabledisplay.h src/dlg.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/util.o: src/util.cpp src/util.h
+obj/tableeditor.o: src/tableeditor.cpp src/tableeditor.h src/tabledisplay.h src/date.h src/dlg.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/waitcursor.o: src/waitcursor.cpp src/waitcursor.h
+obj/tabsgroup.o: src/tabsgroup.cpp src/tabsgroup.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/widgets.o: src/widgets.cpp src/widgets.h
+obj/theme.o: src/theme.cpp src/theme.h src/gridgroup.h src/util.h
 	$(CXX)
 
-$(BUILD_DIR)/test_chart.o: test/test_chart.cpp $(BUILD_DIR)/libflw.a
+obj/util.o: src/util.cpp src/util.h
+	$(CXX) -DFLW_USE_PNG -Wno-deprecated-declarations
+
+obj/waitcursor.o: src/waitcursor.cpp src/waitcursor.h
 	$(CXX)
 
-$(BUILD_DIR)/test_date.o: test/test_date.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_datechooser.o: test/test_datechooser.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_dlg.o: test/test_dlg.cpp test/test.h $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_grid.o: test/test_grid.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_gridgroup1.o: test/test_gridgroup1.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_gridgroup2.o: test/test_gridgroup2.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_lcdnumber.o: test/test_lcdnumber.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_logdisplay.o: test/test_logdisplay.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_price.o: test/test_price.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_splitgroup.o: test/test_splitgroup.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_tabledisplay.o: test/test_tabledisplay.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_tableeditor.o: test/test_tableeditor.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_tabsgroup.o: test/test_tabsgroup.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_theme.o: test/test_theme.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_util.o: test/test_util.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-$(BUILD_DIR)/test_widgets.o: test/test_widgets.cpp $(BUILD_DIR)/libflw.a
-	$(CXX)
-
-#-------------------------------------------------------------------------------
-
-$(BUILD_DIR)/libflw.a: $(BUILD_DIR)/chart.o $(BUILD_DIR)/date.o $(BUILD_DIR)/datechooser.o $(BUILD_DIR)/dlg.o $(BUILD_DIR)/fontdialog.o $(BUILD_DIR)/grid.o $(BUILD_DIR)/gridgroup.o $(BUILD_DIR)/lcdnumber.o $(BUILD_DIR)/logdisplay.o $(BUILD_DIR)/price.o $(BUILD_DIR)/splitgroup.o $(BUILD_DIR)/tabledisplay.o $(BUILD_DIR)/tableeditor.o $(BUILD_DIR)/tabsgroup.o $(BUILD_DIR)/theme.o $(BUILD_DIR)/util.o $(BUILD_DIR)/waitcursor.o $(BUILD_DIR)/widgets.o
+obj/libflw.a: $(OBJ)
 	ar crs $@ $^
 
 #-------------------------------------------------------------------------------
 
-test_chart$(EXT): $(BUILD_DIR)/test_chart.o $(BUILD_DIR)/libflw.a
+test_chart.exe: test/test_chart.cpp obj/libflw.a
 	$(LD)
 
-test_date$(EXT): $(BUILD_DIR)/test_date.o $(BUILD_DIR)/libflw.a
+test_date.exe: test/test_date.cpp obj/libflw.a
 	$(LD)
 
-test_datechooser$(EXT): $(BUILD_DIR)/test_datechooser.o $(BUILD_DIR)/libflw.a
+test_datechooser.exe: test/test_datechooser.cpp obj/libflw.a
 	$(LD)
 
-test_dlg$(EXT): $(BUILD_DIR)/test_dlg.o $(BUILD_DIR)/libflw.a
+test_dlg.exe: test/test_dlg.cpp obj/libflw.a
 	$(LD)
 
-test_grid$(EXT): $(BUILD_DIR)/test_grid.o $(BUILD_DIR)/libflw.a
+test_grid.exe: test/test_grid.cpp obj/libflw.a
 	$(LD)
 
-test_gridgroup1$(EXT): $(BUILD_DIR)/test_gridgroup1.o $(BUILD_DIR)/libflw.a
+test_gridgroup1.exe: test/test_gridgroup1.cpp obj/libflw.a
 	$(LD)
 
-test_gridgroup2$(EXT): $(BUILD_DIR)/test_gridgroup2.o $(BUILD_DIR)/libflw.a
+test_gridgroup2.exe: test/test_gridgroup2.cpp obj/libflw.a
 	$(LD)
 
-test_lcdnumber$(EXT): $(BUILD_DIR)/test_lcdnumber.o $(BUILD_DIR)/libflw.a
+test_lcdnumber.exe: test/test_lcdnumber.cpp obj/libflw.a
 	$(LD)
 
-test_logdisplay$(EXT): $(BUILD_DIR)/test_logdisplay.o $(BUILD_DIR)/libflw.a
+test_logdisplay.exe: test/test_logdisplay.cpp obj/libflw.a
 	$(LD)
 
-test_price$(EXT): $(BUILD_DIR)/test_price.o $(BUILD_DIR)/libflw.a
+test_price.exe: test/test_price.cpp obj/libflw.a
 	$(LD)
 
-test_splitgroup$(EXT): $(BUILD_DIR)/test_splitgroup.o $(BUILD_DIR)/libflw.a
+test_recentmenu.exe: test/test_recentmenu.cpp obj/libflw.a
 	$(LD)
 
-test_tabledisplay$(EXT): $(BUILD_DIR)/test_tabledisplay.o $(BUILD_DIR)/libflw.a
+test_splitgroup.exe: test/test_splitgroup.cpp obj/libflw.a
 	$(LD)
 
-test_tableeditor$(EXT): $(BUILD_DIR)/test_tableeditor.o $(BUILD_DIR)/libflw.a
+test_tabledisplay.exe: test/test_tabledisplay.cpp obj/libflw.a
 	$(LD)
 
-test_tabsgroup$(EXT): $(BUILD_DIR)/test_tabsgroup.o $(BUILD_DIR)/libflw.a
+test_tableeditor.exe: test/test_tableeditor.cpp obj/libflw.a
 	$(LD)
 
-test_theme$(EXT): $(BUILD_DIR)/test_theme.o $(BUILD_DIR)/libflw.a $(RES)
+test_tabsgroup.exe: test/test_tabsgroup.cpp obj/libflw.a
 	$(LD)
 
-test_util$(EXT): $(BUILD_DIR)/test_util.o $(BUILD_DIR)/libflw.a
+test_theme.exe: test/test_theme.cpp obj/libflw.a $(RES)
 	$(LD)
 
-test_widgets$(EXT): $(BUILD_DIR)/test_widgets.o $(BUILD_DIR)/libflw.a
+test_util.exe: test/test_util.cpp obj/libflw.a
+	$(LD)
+
+test_widgets.exe: test/test_widgets.cpp obj/libflw.a
 	$(LD)
 
 #-------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJ) $(LIB) $(EXE) res/test.res
+	rm -f obj/* *.exe res/test.res

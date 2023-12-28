@@ -12,21 +12,14 @@
 class Fl_Preferences;
 class Fl_Window;
 
-namespace flw {
-    extern bool                         PREF_IS_DARK;
-    extern int                          PREF_FIXED_FONT;
-    extern std::string                  PREF_FIXED_FONTNAME;
-    extern int                          PREF_FIXED_FONTSIZE;
-    extern int                          PREF_FONT;
-    extern int                          PREF_FONTSIZE;
-    extern std::string                  PREF_FONTNAME;
+#define FLW_THEME 1
 
+namespace flw {
     //--------------------------------------------------------------------------
     // Load different themes
     //
     namespace theme {
         bool                            is_dark();
-        void                            labelfont(Fl_Widget* widget);
         bool                            load(std::string name);
         void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
         void                            load_theme_pref(Fl_Preferences& pref);

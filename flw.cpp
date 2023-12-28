@@ -1,6 +1,6 @@
 // This source file is an amalgamation of one or more source files.
 // And all comments and blank lines have been removed.
-// Created at 2022-04-09 20:42:46.
+// Created at 2022-04-16 20:15:01.
 // Copyright 2016 - 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
@@ -172,7 +172,7 @@ namespace flw {
                 }
             }
             chart->init(true);
-            return false;
+            return true;
         }
         bool save_data(const Chart* chart, std::string filename, double max_diff_high_low) {
             auto nv = json::NodeVector();
@@ -2177,7 +2177,7 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
     _b7->tooltip("10 years in the future");
     _canvas->callback(flw::DateChooser::_Callback, this);
     _month_label->box(FL_UP_BOX);
-    flw::theme::labelfont(this);
+    util::labelfont(this);
     tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
     flw::DateChooser::resize(X, Y, W, H);
 }
@@ -2325,7 +2325,7 @@ namespace flw {
                 _date_chooser->focus();
                 _date_chooser->set(_value);
                 _ok->callback(Callback, this);
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 callback(Callback, this);
                 copy_label(title);
                 size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
@@ -2530,7 +2530,7 @@ namespace flw {
                     }
                 }
                 _filter->take_focus();
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 callback(_DlgSelect::Callback, this);
                 copy_label(title);
                 activate_button();
@@ -2701,7 +2701,7 @@ namespace flw {
                     W = 40 * flw::PREF_FONTSIZE;
                     H = 8 * flw::PREF_FONTSIZE + 24;
                 }
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 callback(_DlgPassword::Callback, this);
                 label(title);
                 size(W, H);
@@ -2801,8 +2801,9 @@ namespace flw {
             }
         };
         class _DlgText : public Fl_Double_Window {
-            Fl_Button*                  _close;
             Fl_Button*                  _cancel;
+            Fl_Button*                  _close;
+            Fl_Button*                  _save;
             Fl_Text_Buffer*             _buffer;
             Fl_Text_Display*            _text;
             bool                        _edit;
@@ -2813,20 +2814,22 @@ namespace flw {
                 end();
                 _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
                 _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
+                _save   = new Fl_Button(0, 0, 0, 0, "&Save");
                 _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
                 _buffer = new Fl_Text_Buffer();
                 _edit   = edit;
                 _res    = nullptr;
+                add(_save);
                 add(_cancel);
                 add(_close);
                 add(_text);
                 _buffer->text(text);
                 _cancel->callback(_DlgText::Callback, this);
-                _cancel->labelfont(flw::PREF_FONT);
-                _cancel->labelsize(flw::PREF_FONTSIZE);
+                _cancel->tooltip("Close and abort all changes.");
                 _close->callback(_DlgText::Callback, this);
-                _close->labelfont(flw::PREF_FONT);
-                _close->labelsize(flw::PREF_FONTSIZE);
+                _close->tooltip("Close and update text.");
+                _save->callback(_DlgText::Callback, this);
+                _save->tooltip("Save text to file.");
                 _text->buffer(_buffer);
                 _text->linenumber_align(FL_ALIGN_RIGHT);
                 _text->linenumber_bgcolor(FL_BACKGROUND_COLOR);
@@ -2837,6 +2840,7 @@ namespace flw {
                 _text->take_focus();
                 _text->textfont(flw::PREF_FIXED_FONT);
                 _text->textsize(flw::PREF_FIXED_FONTSIZE);
+                util::labelfont(this);
                 if (edit == false) {
                     _cancel->hide();
                 }
@@ -2856,6 +2860,12 @@ namespace flw {
                 if (w == dlg || w == dlg->_cancel) {
                     dlg->hide();
                 }
+                else if (w == dlg->_save) {
+                    auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
+                    if (filename != nullptr && dlg->_buffer->savefile(filename) != 0) {
+                        fl_alert("error: failed to save text to %s", filename);
+                    }
+                }
                 else if (w == dlg->_close) {
                     if (dlg->_edit == true) {
                         dlg->_res = dlg->_buffer->text();
@@ -2866,7 +2876,13 @@ namespace flw {
             void resize(int X, int Y, int W, int H) override {
                 Fl_Double_Window::resize(X, Y, W, H);
                 _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                if (_cancel->visible() != 0) {
+                    _save->resize(W - flw::PREF_FONTSIZE * 24 - 12, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                    _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                }
+                else {
+                    _save->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                }
                 _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
             char* run() {
@@ -3034,7 +3050,7 @@ flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool canc
     if (pause == false) {
         _pause->deactivate();
     }
-    flw::theme::labelfont(this);
+    util::labelfont(this);
     callback(WorkDialog::Callback, this);
     copy_label(title);
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
@@ -3597,6 +3613,151 @@ void flw::GridGroup::resize(int X, int Y, int W, int H) {
             #endif
         }
     }
+}
+namespace flw {
+    static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
+    class _InputMenu : public Fl_Input {
+    public:
+        bool            show_menu;
+        int             index;
+        StringVector    history;
+        _InputMenu() : Fl_Input(0, 0, 0, 0) {
+            tooltip(_INPUTMENU_TOOLTIP.c_str());
+            index     = -1;
+            show_menu = false;
+        }
+        int handle(int event) override {
+            if (event == FL_KEYBOARD) {
+                auto key = Fl::event_key();
+                if (Fl::event_ctrl() != 0 && key == ' ') {
+                    if (history.size() > 0) {
+                        show_menu = true;
+                        do_callback();
+                    }
+                    return 1;
+                }
+                else if (key == FL_Up && history.size() > 0) {
+                    if (index <= 0) {
+                        value("");
+                        index = -1;
+                    }
+                    else {
+                        index--;
+                        show_menu = false;
+                        value(history[index].c_str());
+                    }
+                    return 1;
+                }
+                else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
+                    index++;
+                    value(history[index].c_str());
+                    show_menu = false;
+                    return 1;
+                }
+                else {
+                    show_menu = false;
+                }
+            }
+            return Fl_Input::handle(event);
+        }
+    };
+}
+flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+    end();
+    _input = new flw::_InputMenu();
+    _menu  = new Fl_Menu_Button(0, 0, 0, 0);
+    Fl_Group::add(_input);
+    Fl_Group::add(_menu);
+    _input->callback(InputMenu::Callback, this);
+    _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
+    _menu->callback(InputMenu::Callback, this);
+    update_pref();
+}
+void flw::InputMenu::Callback(Fl_Widget* sender, void* self) {
+    auto w = (InputMenu*) self;
+    if (sender == w->_input) {
+        if (w->_input->show_menu) {
+            if (w->_menu->visible()) {
+                w->_menu->popup();
+            }
+        }
+        else {
+            w->do_callback();
+        }
+    }
+    else if (sender == w->_menu) {
+        auto index = w->_menu->find_index(w->_menu->text());
+        if (index >= 0 && index < (int) w->_input->history.size()) {
+            w->_input->value(w->_input->history[index].c_str());
+            w->_input->index = index;
+        }
+        w->_input->take_focus();
+    }
+}
+void flw::InputMenu::clear() {
+    _menu->clear();
+    _input->history.clear();
+    _input->index = -1;
+}
+flw::StringVector flw::InputMenu::get_history() const {
+    return _input->history;
+}
+void flw::InputMenu::insert(const std::string& string, int max_list_len) {
+    for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
+        if (*it == string) {
+            _input->history.erase(it);
+            break;
+        }
+    }
+    _input->history.insert(_input->history.begin(), string);
+    while ((int) _input->history.size() > max_list_len) {
+        _input->history.pop_back();
+    }
+    _menu->clear();
+    for (auto& s : _input->history) {
+        _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
+    }
+    _input->index = -1;
+    _input->value(string.c_str());
+    _input->position(string.length(), 0);
+}
+void flw::InputMenu::resize(int X, int Y, int W, int H) {
+    Fl_Group::resize(X, Y, W, H);
+    if (_menu->visible()) {
+        _input->resize(X, Y, W - flw::PREF_FONTSIZE * 2, H);
+        _menu->resize(X + W - flw::PREF_FONTSIZE * 2, Y, flw::PREF_FONTSIZE * 2, H);
+    }
+    else {
+        _input->resize(X, Y, W, H);
+    }
+}
+void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
+    clear();
+    _input->history = list;
+    for (auto& s : _input->history) {
+        _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
+    }
+    if (list.size() && copy_first_to_input) {
+        auto s = list.front();
+        _input->value(s.c_str());
+        _input->position(s.length(), 0);
+    }
+}
+void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+    labelfont(flw::PREF_FONT);
+    labelsize(flw::PREF_FONTSIZE);
+    _input->textfont(text_font);
+    _input->textsize(text_size);
+    _menu->labelfont(text_font);
+    _menu->labelsize(text_size);
+    _menu->textfont(text_font);
+    _menu->textsize(text_size);
+}
+const char* flw::InputMenu::value() const {
+    return _input->value();
+}
+void flw::InputMenu::value(const char* string) {
+    _input->value(string ? string : "");
 }
 namespace flw {
     static const unsigned char _LCDNUMBER_SEGMENTS[20] = {
@@ -4452,6 +4613,133 @@ flw::PriceVector flw::Price::Stochastics(const PriceVector& in, std::size_t days
     }
     return res;
 }
+namespace flw {
+    static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
+    static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
+    static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
+}
+flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
+    end();
+    _menu      = new Fl_Menu_Button(0, 0, 0, 0);
+    _scroll    = (scroll > 0) ? scroll : 9;
+    _flag_move = true;
+    _flag_menu = true;
+    ((Fl_Group*) this)->add(_menu);
+    _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
+    _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
+    _menu->type(Fl_Menu_Button::POPUP3);
+    tooltip(_SCROLLBROWSER_TOOLTIP.c_str());
+    update_pref();
+}
+void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
+    auto self  = (ScrollBrowser*) o;
+    auto menu  = self->_menu->text();
+    auto label = std::string((menu != nullptr) ? menu : "");
+    auto clip  = std::string();
+    clip.reserve(self->size() * 40 + 100);
+    if (label == _SCROLLBROWSER_MENU_LINE) {
+        if (self->value() != 0) {
+            clip = ScrollBrowser::RemoveFormat(self->text(self->value()));
+        }
+    }
+    else if (label == _SCROLLBROWSER_MENU_ALL) {
+        for (auto f = 1; f <= self->size(); f++) {
+            auto s = ScrollBrowser::RemoveFormat(self->text(f));
+            clip += s;
+            clip += "\n";
+        }
+    }
+    if (clip != "") {
+        Fl::copy(clip.c_str(), clip.length(), 2);
+    }
+}
+int flw::ScrollBrowser::handle(int event) {
+    if (event == FL_MOUSEWHEEL) {
+        if (Fl::event_dy() > 0) {
+            topline(topline() + _scroll);
+        }
+        else if (Fl::event_dy() < 0) {
+            topline(topline() - _scroll);
+        }
+        return 1;
+    }
+    else if (event == FL_KEYBOARD) {
+        if (_flag_move == true) {
+            auto key = Fl::event_key();
+            if (key == FL_Page_Up) {
+                auto line = value();
+                if (line == 1) {
+                }
+                else if (line - _scroll < 1) {
+                    value(1);
+                    do_callback();
+                }
+                else {
+                    value(line - _scroll);
+                    topline(line - _scroll);
+                    do_callback();
+                }
+                return 1;
+            }
+            else if (key == FL_Page_Down) {
+                auto line = value();
+                if (line == size()) {
+                }
+                else if (line + _scroll > size()) {
+                    value(size());
+                    do_callback();
+                }
+                else {
+                    value(line + _scroll);
+                    bottomline(line + _scroll);
+                    do_callback();
+                }
+                return 1;
+            }
+        }
+    }
+    else if (event == FL_PUSH) {
+        if (_flag_menu == true && Fl::event_button() == FL_RIGHT_MOUSE) {
+            _menu->popup();
+            return 1;
+        }
+    }
+    return Fl_Hold_Browser::handle(event);
+}
+std::string flw::ScrollBrowser::RemoveFormat(const char* text) {
+    auto res = std::string(text);
+    auto f   = res.find_last_of("@");
+    if (f != std::string::npos) {
+        auto tmp = res.substr(f + 1);
+        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
+            res = tmp.substr(1);
+        }
+        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
+            auto s = std::string();
+            auto e = false;
+            tmp = tmp.substr(f + 1);
+            for (auto c : tmp) {
+                if (e == false && c >= '0' && c <= '9') {
+                }
+                else {
+                    e = true;
+                    s += c;
+                }
+            }
+            res = s;
+        }
+        else {
+            res = res.substr(f);
+        }
+    }
+    return res;
+}
+void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+    labelfont(flw::PREF_FONT);
+    labelsize(flw::PREF_FONTSIZE);
+    textfont(text_font);
+    textsize(text_size);
+}
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
@@ -4882,7 +5170,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
     clip_children(1);
-    flw::theme::labelfont(this);
+    util::labelfont(this);
     TableDisplay::clear();
 }
 void flw::TableDisplay::active_cell(int row, int col, bool show) {
@@ -6769,13 +7057,6 @@ void flw::TabsGroup::value(int num) {
     }
 }
 namespace flw {
-    bool        PREF_IS_DARK        = false;
-    int         PREF_FIXED_FONT     = FL_COURIER;
-    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
-    int         PREF_FIXED_FONTSIZE = 14;
-    int         PREF_FONT           = FL_HELVETICA;
-    int         PREF_FONTSIZE       = 14;
-    std::string PREF_FONTNAME       = "FL_HELVETICA";
     namespace color {
         Fl_Color RED     = fl_rgb_color(255, 0, 0);
         Fl_Color LIME    = fl_rgb_color(0, 255, 0);
@@ -6841,6 +7122,7 @@ namespace flw {
         static unsigned char _SYS_R[256]  = { 0 };
         static unsigned char _SYS_G[256]  = { 0 };
         static unsigned char _SYS_B[256]  = { 0 };
+        static bool          _IS_DARK     = false;
         static bool          _SAVED_COLOR = false;
         static bool          _SAVED_SYS   = false;
         static std::string   _NAME        = _NAMES[_NAME_DEFAULT];
@@ -6969,7 +7251,7 @@ namespace flw {
             Fl::scheme("none");
             Fl::redraw();
             _NAME = _NAMES[_NAME_DEFAULT];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_gleam() {
             flw::theme::_save_colors();
@@ -6979,7 +7261,7 @@ namespace flw {
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_gleam_blue() {
             flw::theme::_save_colors();
@@ -6989,7 +7271,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_BLUE];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_gleam_dark() {
             flw::theme::_save_colors();
@@ -7001,7 +7283,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
         static void _load_gleam_darker() {
             flw::theme::_save_colors();
@@ -7013,7 +7295,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARKER];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
         static void _load_gleam_dark_blue() {
             flw::theme::_save_colors();
@@ -7025,7 +7307,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_DARK_BLUE];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
         static void _load_gleam_tan() {
             flw::theme::_save_colors();
@@ -7035,7 +7317,7 @@ namespace flw {
             Fl::scheme("gleam");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GLEAM_TAN];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_gtk() {
             flw::theme::_save_colors();
@@ -7045,7 +7327,7 @@ namespace flw {
             Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_gtk_blue() {
             flw::theme::_save_colors();
@@ -7055,7 +7337,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_BLUE];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_gtk_dark() {
             flw::theme::_save_colors();
@@ -7067,7 +7349,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
         static void _load_gtk_darker() {
             flw::theme::_save_colors();
@@ -7079,7 +7361,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARKER];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
         static void _load_gtk_dark_blue() {
             flw::theme::_save_colors();
@@ -7091,7 +7373,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_DARK_BLUE];
-            flw::PREF_IS_DARK = true;
+            _IS_DARK = true;
         }
         static void _load_gtk_tan() {
             flw::theme::_save_colors();
@@ -7101,7 +7383,7 @@ namespace flw {
             Fl::scheme("gtk+");
             Fl::redraw();
             _NAME = _NAMES[_NAME_GTK_TAN];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_plastic() {
             flw::theme::_save_colors();
@@ -7111,7 +7393,7 @@ namespace flw {
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_blue_plastic() {
             flw::theme::_save_colors();
@@ -7121,7 +7403,7 @@ namespace flw {
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_BLUE];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_tan_plastic() {
             flw::theme::_save_colors();
@@ -7131,7 +7413,7 @@ namespace flw {
             Fl::scheme("plastic");
             Fl::redraw();
             _NAME = _NAMES[_NAME_PLASTIC_TAN];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
         static void _load_system() {
             flw::theme::_save_colors();
@@ -7147,7 +7429,7 @@ namespace flw {
             }
             Fl::redraw();
             _NAME = _NAMES[_NAME_SYSTEM];
-            flw::PREF_IS_DARK = false;
+            _IS_DARK = false;
         }
     }
     namespace dlg {
@@ -7301,7 +7583,7 @@ namespace flw {
                 }
             }
             void update_pref() {
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
                 _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
                 _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
@@ -7334,17 +7616,6 @@ bool flw::theme::is_dark() {
     }
     else {
         return false;
-    }
-}
-void flw::theme::labelfont(Fl_Widget* widget) {
-    assert(widget);
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
-    auto group = widget->as_group();
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            flw::theme::labelfont(group->child(f));
-        }
     }
 }
 bool flw::theme::load(std::string name) {
@@ -7513,6 +7784,12 @@ void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::str
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
 }
 namespace flw {
+    int         PREF_FIXED_FONT     = FL_COURIER;
+    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
+    int         PREF_FIXED_FONTSIZE = 14;
+    int         PREF_FONT           = FL_HELVETICA;
+    int         PREF_FONTSIZE       = 14;
+    std::string PREF_FONTNAME       = "FL_HELVETICA";
     static Fl_Menu_Item* _util_menu_item(Fl_Menu_* menu, const char* text) {
         assert(menu && text);
         auto item = menu->find_item(text);
@@ -7523,6 +7800,19 @@ namespace flw {
 #endif
         return (Fl_Menu_Item*) item;
     }
+}
+size_t flw::util::add_string(StringVector& in, size_t max_size, std::string string) {
+    for (auto it = in.begin(); it != in.end(); ++it) {
+        if (*it == string) {
+            in.erase(it);
+            break;
+        }
+    }
+    in.push_back(string);
+    while (in.size() > max_size) {
+        in.erase(in.begin());
+    }
+    return in.size();
 }
 char* flw::util::allocate(size_t size, bool terminate) {
     auto res = (char*) calloc(size + 1, 1);
@@ -7585,6 +7875,17 @@ int flw::util::count_decimals(double number) {
     }
     res = strlen(buffer) - 2;
     return res;
+}
+void flw::util::labelfont(Fl_Widget* widget) {
+    assert(widget);
+    widget->labelfont(flw::PREF_FONT);
+    widget->labelsize(flw::PREF_FONTSIZE);
+    auto group = widget->as_group();
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            util::labelfont(group->child(f));
+        }
+    }
 }
 std::string flw::util::fix_menu_string(std::string in) {
     std::string res = in;
@@ -7684,6 +7985,19 @@ std::string flw::util::format_int(int64_t number, char sep) {
         tmp2[len - f - 1] = c;
     }
     return tmp2;
+}
+size_t flw::util::insert_string(StringVector& in, size_t max_size, std::string string) {
+    for (auto it = in.begin(); it != in.end(); ++it) {
+        if (*it == string) {
+            in.erase(it);
+            break;
+        }
+    }
+    in.insert(in.begin(), string);
+    while (in.size() > max_size) {
+        in.pop_back();
+    }
+    return (int) in.size();
 }
 flw::Buf flw::util::load_file(std::string filename, bool alert) {
     auto stat = flw::Stat(filename);
@@ -8295,6 +8609,7 @@ namespace flw {
                 }
                 else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::OBJECT) {
                     if (T0.is_end() == true && T0.depth == T2.depth) _JSON_RETURN_POS(t)
+                    if (obj == 0) _JSON_RETURN_POS(t)
                     containers.push_back("O");
                     obj++;
                     nodes.push_back(Node(TYPE::OBJECT, t.value, "", T2.depth, t.pos));
@@ -8318,6 +8633,7 @@ namespace flw {
                 }
                 else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::ARRAY) {
                     if (T0.is_end() == true && T0.depth == T2.depth) _JSON_RETURN_POS(t)
+                    if (obj == 0) _JSON_RETURN_POS(t)
                     containers.push_back("A");
                     arr++;
                     nodes.push_back(Node(TYPE::ARRAY, t.value, "", T2.depth, t.pos));
@@ -8632,274 +8948,4 @@ flw::WaitCursor::~WaitCursor() {
         WaitCursor::WAITCURSOR = nullptr;
         fl_cursor(FL_CURSOR_DEFAULT);
     }
-}
-namespace flw {
-    static const std::string _INPUTMENU_TOOLTIP       = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
-    static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
-    static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
-    static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
-    class _InputMenu : public Fl_Input {
-    public:
-        bool            show_menu;
-        int             index;
-        StringVector    history;
-        _InputMenu() : Fl_Input(0, 0, 0, 0) {
-            tooltip(_INPUTMENU_TOOLTIP.c_str());
-            index     = -1;
-            show_menu = false;
-        }
-        int handle(int event) override {
-            if (event == FL_KEYBOARD) {
-                auto key = Fl::event_key();
-                if (Fl::event_ctrl() != 0 && key == ' ') {
-                    if (history.size() > 0) {
-                        show_menu = true;
-                        do_callback();
-                    }
-                    return 1;
-                }
-                else if (key == FL_Up && history.size() > 0) {
-                    if (index <= 0) {
-                        value("");
-                        index = -1;
-                    }
-                    else {
-                        index--;
-                        show_menu = false;
-                        value(history[index].c_str());
-                    }
-                    return 1;
-                }
-                else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
-                    index++;
-                    value(history[index].c_str());
-                    show_menu = false;
-                    return 1;
-                }
-                else {
-                    show_menu = false;
-                }
-            }
-            return Fl_Input::handle(event);
-        }
-    };
-}
-flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
-    end();
-    _input = new flw::_InputMenu();
-    _menu  = new Fl_Menu_Button(0, 0, 0, 0);
-    Fl_Group::add(_input);
-    Fl_Group::add(_menu);
-    _input->callback(InputMenu::Callback, this);
-    _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
-    _menu->callback(InputMenu::Callback, this);
-    update_pref();
-}
-void flw::InputMenu::Callback(Fl_Widget* sender, void* self) {
-    auto w = (InputMenu*) self;
-    if (sender == w->_input) {
-        if (w->_input->show_menu) {
-            if (w->_menu->visible()) {
-                w->_menu->popup();
-            }
-        }
-        else {
-            w->do_callback();
-        }
-    }
-    else if (sender == w->_menu) {
-        auto index = w->_menu->find_index(w->_menu->text());
-        if (index >= 0 && index < (int) w->_input->history.size()) {
-            w->_input->value(w->_input->history[index].c_str());
-            w->_input->index = index;
-        }
-        w->_input->take_focus();
-    }
-}
-void flw::InputMenu::clear() {
-    _menu->clear();
-    _input->history.clear();
-    _input->index = -1;
-}
-flw::StringVector flw::InputMenu::get_history() const {
-    return _input->history;
-}
-void flw::InputMenu::insert(const std::string& string, int max_list_len) {
-    for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
-        if (*it == string) {
-            _input->history.erase(it);
-            break;
-        }
-    }
-    _input->history.insert(_input->history.begin(), string);
-    while ((int) _input->history.size() > max_list_len) {
-        _input->history.pop_back();
-    }
-    _menu->clear();
-    for (auto& s : _input->history) {
-        _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
-    }
-    _input->index = -1;
-    _input->value(string.c_str());
-    _input->position(string.length(), 0);
-}
-void flw::InputMenu::resize(int X, int Y, int W, int H) {
-    Fl_Group::resize(X, Y, W, H);
-    if (_menu->visible()) {
-        _input->resize(X, Y, W - flw::PREF_FONTSIZE * 2, H);
-        _menu->resize(X + W - flw::PREF_FONTSIZE * 2, Y, flw::PREF_FONTSIZE * 2, H);
-    }
-    else {
-        _input->resize(X, Y, W, H);
-    }
-}
-void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
-    clear();
-    _input->history = list;
-    for (auto& s : _input->history) {
-        _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
-    }
-    if (list.size() && copy_first_to_input) {
-        auto s = list.front();
-        _input->value(s.c_str());
-        _input->position(s.length(), 0);
-    }
-}
-void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
-    labelfont(flw::PREF_FONT);
-    labelsize(flw::PREF_FONTSIZE);
-    _input->textfont(text_font);
-    _input->textsize(text_size);
-    _menu->labelfont(text_font);
-    _menu->labelsize(text_size);
-    _menu->textfont(text_font);
-    _menu->textsize(text_size);
-}
-const char* flw::InputMenu::value() const {
-    return _input->value();
-}
-void flw::InputMenu::value(const char* string) {
-    _input->value(string ? string : "");
-}
-flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
-    end();
-    _menu      = new Fl_Menu_Button(0, 0, 0, 0);
-    _scroll    = (scroll > 0) ? scroll : 9;
-    _flag_move = true;
-    _flag_menu = true;
-    ((Fl_Group*) this)->add(_menu);
-    _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
-    _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
-    _menu->type(Fl_Menu_Button::POPUP3);
-    tooltip(_SCROLLBROWSER_TOOLTIP.c_str());
-    update_pref();
-}
-void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
-    auto self  = (ScrollBrowser*) o;
-    auto menu  = self->_menu->text();
-    auto label = std::string((menu != nullptr) ? menu : "");
-    auto clip  = std::string();
-    clip.reserve(self->size() * 40 + 100);
-    if (label == _SCROLLBROWSER_MENU_LINE) {
-        if (self->value() != 0) {
-            clip = ScrollBrowser::RemoveFormat(self->text(self->value()));
-        }
-    }
-    else if (label == _SCROLLBROWSER_MENU_ALL) {
-        for (auto f = 1; f <= self->size(); f++) {
-            auto s = ScrollBrowser::RemoveFormat(self->text(f));
-            clip += s;
-            clip += "\n";
-        }
-    }
-    if (clip != "") {
-        Fl::copy(clip.c_str(), clip.length(), 2);
-    }
-}
-int flw::ScrollBrowser::handle(int event) {
-    if (event == FL_MOUSEWHEEL) {
-        if (Fl::event_dy() > 0) {
-            topline(topline() + _scroll);
-        }
-        else if (Fl::event_dy() < 0) {
-            topline(topline() - _scroll);
-        }
-        return 1;
-    }
-    else if (event == FL_KEYBOARD) {
-        if (_flag_move == true) {
-            auto key = Fl::event_key();
-            if (key == FL_Page_Up) {
-                auto line = value();
-                if (line == 1) {
-                }
-                else if (line - _scroll < 1) {
-                    value(1);
-                    do_callback();
-                }
-                else {
-                    value(line - _scroll);
-                    topline(line - _scroll);
-                    do_callback();
-                }
-                return 1;
-            }
-            else if (key == FL_Page_Down) {
-                auto line = value();
-                if (line == size()) {
-                }
-                else if (line + _scroll > size()) {
-                    value(size());
-                    do_callback();
-                }
-                else {
-                    value(line + _scroll);
-                    bottomline(line + _scroll);
-                    do_callback();
-                }
-                return 1;
-            }
-        }
-    }
-    else if (event == FL_PUSH) {
-        if (_flag_menu == true && Fl::event_button() == FL_RIGHT_MOUSE) {
-            _menu->popup();
-            return 1;
-        }
-    }
-    return Fl_Hold_Browser::handle(event);
-}
-std::string flw::ScrollBrowser::RemoveFormat(const char* text) {
-    auto res = std::string(text);
-    auto f   = res.find_last_of("@");
-    if (f != std::string::npos) {
-        auto tmp = res.substr(f + 1);
-        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
-            res = tmp.substr(1);
-        }
-        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
-            auto s = std::string();
-            auto e = false;
-            tmp = tmp.substr(f + 1);
-            for (auto c : tmp) {
-                if (e == false && c >= '0' && c <= '9') {
-                }
-                else {
-                    e = true;
-                    s += c;
-                }
-            }
-            res = s;
-        }
-        else {
-            res = res.substr(f);
-        }
-    }
-    return res;
-}
-void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
-    labelfont(flw::PREF_FONT);
-    labelsize(flw::PREF_FONTSIZE);
-    textfont(text_font);
-    textsize(text_size);
 }

@@ -39,6 +39,12 @@ class Fl_Menu_Item;
 #define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
 
 namespace flw {
+    extern int                          PREF_FIXED_FONT;
+    extern std::string                  PREF_FIXED_FONTNAME;
+    extern int                          PREF_FIXED_FONTSIZE;
+    extern int                          PREF_FONT;
+    extern int                          PREF_FONTSIZE;
+    extern std::string                  PREF_FONTNAME;
     typedef std::vector<std::string>    StringVector;
 
     //--------------------------------------------------------------------------
@@ -70,6 +76,7 @@ namespace flw {
         //----------------------------------------------------------------------
         // Collection of utility functions
         //
+        size_t                          add_string(StringVector& in, size_t max_size, std::string string);
         char*                           allocate(size_t size, bool terminate = true);
         void                            center_window(Fl_Window* window, Fl_Window* parent = nullptr);
         int                             count_decimals(double number);
@@ -77,6 +84,8 @@ namespace flw {
         std::string                     format(const char* format, ...);
         std::string                     format_double(double number, int decimals, char sep = ' ');
         std::string                     format_int(int64_t number, char sep = ' ');
+        size_t                          insert_string(StringVector& in, size_t max_size, std::string string);
+        void                            labelfont(Fl_Widget* widget);
         Buf                             load_file(std::string filename, bool alert = true);
         void                            menu_item_enable(Fl_Menu_* menu, const char* text, bool value);
         Fl_Menu_Item*                   menu_item_get(Fl_Menu_* menu, const char* text);

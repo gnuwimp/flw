@@ -26,6 +26,13 @@
 // MKALGAM_ON
 
 namespace flw {
+    int         PREF_FIXED_FONT     = FL_COURIER;
+    std::string PREF_FIXED_FONTNAME = "FL_COURIER";
+    int         PREF_FIXED_FONTSIZE = 14;
+    int         PREF_FONT           = FL_HELVETICA;
+    int         PREF_FONTSIZE       = 14;
+    std::string PREF_FONTNAME       = "FL_HELVETICA";
+
     //--------------------------------------------------------------------------
     static Fl_Menu_Item* _util_menu_item(Fl_Menu_* menu, const char* text) {
         assert(menu && text);
@@ -40,6 +47,24 @@ namespace flw {
 
         return (Fl_Menu_Item*) item;
     }
+}
+
+//------------------------------------------------------------------------------
+size_t flw::util::add_string(StringVector& in, size_t max_size, std::string string) {
+    for (auto it = in.begin(); it != in.end(); ++it) {
+        if (*it == string) {
+            in.erase(it);
+            break;
+        }
+    }
+
+    in.push_back(string);
+
+    while (in.size() > max_size) {
+        in.erase(in.begin());
+    }
+
+    return in.size();
 }
 
 //------------------------------------------------------------------------------
@@ -115,6 +140,25 @@ int flw::util::count_decimals(double number) {
 
     res = strlen(buffer) - 2;
     return res;
+}
+
+//------------------------------------------------------------------------------
+// Set label font properties for widget
+// If widget is an group widget set also the font for child widgets (recursive)
+//
+void flw::util::labelfont(Fl_Widget* widget) {
+    assert(widget);
+
+    widget->labelfont(flw::PREF_FONT);
+    widget->labelsize(flw::PREF_FONTSIZE);
+
+    auto group = widget->as_group();
+
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            util::labelfont(group->child(f));
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -247,6 +291,24 @@ std::string flw::util::format_int(int64_t number, char sep) {
     }
 
     return tmp2;
+}
+
+//------------------------------------------------------------------------------
+size_t flw::util::insert_string(StringVector& in, size_t max_size, std::string string) {
+    for (auto it = in.begin(); it != in.end(); ++it) {
+        if (*it == string) {
+            in.erase(it);
+            break;
+        }
+    }
+
+    in.insert(in.begin(), string);
+
+    while (in.size() > max_size) {
+        in.pop_back();
+    }
+
+    return (int) in.size();
 }
 
 //------------------------------------------------------------------------------
@@ -1098,6 +1160,7 @@ namespace flw {
                 }
                 else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::OBJECT) {
                     if (T0.is_end() == true && T0.depth == T2.depth) _JSON_RETURN_POS(t)
+                    if (obj == 0) _JSON_RETURN_POS(t)
                     containers.push_back("O");
                     obj++;
                     nodes.push_back(Node(TYPE::OBJECT, t.value, "", T2.depth, t.pos));
@@ -1121,6 +1184,7 @@ namespace flw {
                 }
                 else if (t.type == TYPE::STRING && T1.type == TYPE::COLON && T2.type == TYPE::ARRAY) {
                     if (T0.is_end() == true && T0.depth == T2.depth) _JSON_RETURN_POS(t)
+                    if (obj == 0) _JSON_RETURN_POS(t)
                     containers.push_back("A");
                     arr++;
                     nodes.push_back(Node(TYPE::ARRAY, t.value, "", T2.depth, t.pos));

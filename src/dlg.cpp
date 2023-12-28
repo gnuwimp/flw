@@ -2,7 +2,7 @@
 // Released under the GNU General Public License v3.0
 
 #include "dlg.h"
-#include "widgets.h"
+#include "scrollbrowser.h"
 #include <math.h>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
@@ -231,7 +231,7 @@ namespace flw {
                 }
 
                 _filter->take_focus();
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 callback(_DlgSelect::Callback, this);
                 copy_label(title);
                 activate_button();
@@ -446,7 +446,7 @@ namespace flw {
                     H = 8 * flw::PREF_FONTSIZE + 24;
                 }
 
-                flw::theme::labelfont(this);
+                util::labelfont(this);
                 callback(_DlgPassword::Callback, this);
                 label(title);
                 size(W, H);
@@ -571,8 +571,9 @@ namespace flw {
 
         //----------------------------------------------------------------------
         class _DlgText : public Fl_Double_Window {
-            Fl_Button*                  _close;
             Fl_Button*                  _cancel;
+            Fl_Button*                  _close;
+            Fl_Button*                  _save;
             Fl_Text_Buffer*             _buffer;
             Fl_Text_Display*            _text;
             bool                        _edit;
@@ -586,22 +587,24 @@ namespace flw {
 
                 _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
                 _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
+                _save   = new Fl_Button(0, 0, 0, 0, "&Save");
                 _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
                 _buffer = new Fl_Text_Buffer();
                 _edit   = edit;
                 _res    = nullptr;
 
+                add(_save);
                 add(_cancel);
                 add(_close);
                 add(_text);
 
                 _buffer->text(text);
                 _cancel->callback(_DlgText::Callback, this);
-                _cancel->labelfont(flw::PREF_FONT);
-                _cancel->labelsize(flw::PREF_FONTSIZE);
+                _cancel->tooltip("Close and abort all changes.");
                 _close->callback(_DlgText::Callback, this);
-                _close->labelfont(flw::PREF_FONT);
-                _close->labelsize(flw::PREF_FONTSIZE);
+                _close->tooltip("Close and update text.");
+                _save->callback(_DlgText::Callback, this);
+                _save->tooltip("Save text to file.");
                 _text->buffer(_buffer);
                 _text->linenumber_align(FL_ALIGN_RIGHT);
                 _text->linenumber_bgcolor(FL_BACKGROUND_COLOR);
@@ -612,6 +615,7 @@ namespace flw {
                 _text->take_focus();
                 _text->textfont(flw::PREF_FIXED_FONT);
                 _text->textsize(flw::PREF_FIXED_FONTSIZE);
+                util::labelfont(this);
 
                 if (edit == false) {
                     _cancel->hide();
@@ -638,6 +642,13 @@ namespace flw {
                 if (w == dlg || w == dlg->_cancel) {
                     dlg->hide();
                 }
+                else if (w == dlg->_save) {
+                    auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
+
+                    if (filename != nullptr && dlg->_buffer->savefile(filename) != 0) {
+                        fl_alert("error: failed to save text to %s", filename);
+                    }
+                }
                 else if (w == dlg->_close) {
                     if (dlg->_edit == true) {
                         dlg->_res = dlg->_buffer->text();
@@ -652,7 +663,15 @@ namespace flw {
                 Fl_Double_Window::resize(X, Y, W, H);
 
                 _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-                _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+
+                if (_cancel->visible() != 0) {
+                    _save->resize(W - flw::PREF_FONTSIZE * 24 - 12, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                    _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                }
+                else {
+                    _save->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+                }
+
                 _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
             }
 
@@ -896,7 +915,7 @@ flw::dlg::WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool canc
         _pause->deactivate();
     }
 
-    flw::theme::labelfont(this);
+    util::labelfont(this);
     callback(WorkDialog::Callback, this);
     copy_label(title);
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);

@@ -2,7 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "chart.h"
-#include "price.h"
 #include "util.h"
 #include "waitcursor.h"
 #include "theme.h"
@@ -182,7 +181,7 @@ namespace flw {
             }
 
             chart->init(true);
-            return false;
+            return true;
         }
 
         //----------------------------------------------------------------------

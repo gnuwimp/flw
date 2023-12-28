@@ -464,7 +464,7 @@ public:
     }
 
     void update_pref() {
-        flw::theme::labelfont(this);
+        util::labelfont(this);
         input->textfont(flw::PREF_FONT);
         input->textsize(flw::PREF_FONTSIZE);
         browser->textfont(flw::PREF_FONT);

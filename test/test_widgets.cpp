@@ -1,9 +1,10 @@
 // Copyright 2021 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#include "widgets.h"
-#include "theme.h"
+#include "inputmenu.h"
+#include "scrollbrowser.h"
 #include "util.h"
+#include "theme.h"
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
@@ -143,9 +144,11 @@ public:
 Test* Test::TEST = nullptr;
 
 int main(int argc, const char** argv) {
+#ifdef FLW_THEME
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("gtk");
     }
+#endif
 
     Test win(800, 480);
     win.show();
