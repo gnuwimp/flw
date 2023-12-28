@@ -1,4 +1,4 @@
-// Copyright 2021 - 2022 gnuwimp@gmail.com
+// Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "datechooser.h"

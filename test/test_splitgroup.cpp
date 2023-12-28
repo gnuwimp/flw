@@ -1,4 +1,4 @@
-// Copyright 2016 - 2021 gnuwimp@gmail.com
+// Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #include "splitgroup.h"

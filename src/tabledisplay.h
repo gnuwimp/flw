@@ -1,4 +1,4 @@
-// Copyright 2016 - 2022 gnuwimp@gmail.com
+// Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
 #ifndef FLW_TABLEDISPLAY_H

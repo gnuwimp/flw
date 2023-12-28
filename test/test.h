@@ -1,3 +1,6 @@
+// Copyright gnuwimp@gmail.com
+// Released under the GNU General Public License v3.0
+
 #ifndef FLW_TEST_H
 #define FLW_TEST_H
 

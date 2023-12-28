@@ -1,4 +1,4 @@
-// Copyright 2016 - 2022 gnuwimp@gmail.com
+// Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 // Colors in this file are based on a text file sent to fltk mailing list by Greg Ercolano <erco@seriss.com>
 
