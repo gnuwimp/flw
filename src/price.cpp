@@ -133,7 +133,7 @@ flw::PriceVector flw::Price::Atr(const PriceVector& in, std::size_t days) {
 }
 
 //------------------------------------------------------------------------------
-flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block) {
+flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
     int         month   = -1;
     Date        current = Date::FromString(start_date);
     Date        stop    = Date::FromString(stop_date);
@@ -199,10 +199,10 @@ flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_
             Price price;
 
             if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
-                price.date = date.format(Date::FORMAT::ISO_TIME);
+                price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
             }
             else {
-                price.date = date.format(Date::FORMAT::ISO);
+                price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
             }
 
             if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {

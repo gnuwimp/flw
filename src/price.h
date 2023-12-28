@@ -41,7 +41,7 @@ namespace flw {
         void                            print() const;
 
         static PriceVector              Atr(const PriceVector& in, std::size_t days);
-        static PriceVector              DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const PriceVector& block = PriceVector());
+        static PriceVector              DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const PriceVector& block = PriceVector(), bool long_format = false);
         static PriceVector              DayToMonth(const PriceVector& in);
         static PriceVector              DayToWeek(const PriceVector& in, Date::DAY weekday);
         static PriceVector              ExponentialMovingAverage(const PriceVector& in, std::size_t days);

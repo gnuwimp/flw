@@ -1,6 +1,6 @@
 // This source file is an amalgamation of one or more source files.
 // And all comments and blank lines have been removed.
-// Created at 2022-12-05 23:00:24.
+// Created at 2023-01-15 22:22:47.
 // Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
@@ -547,13 +547,34 @@ void flw::Chart::_calc_area_width() {
     }
 }
 void flw::Chart::_calc_dates() {
-    std::string min = "99991231";
-    std::string max = "01010101";
+    std::string min       = "";
+    std::string max       = "";
+    bool        long_date = false;
     for (const auto& area : _areas) {
         for (const auto& line : area.lines) {
             if (line.points.size() > 0) {
                 auto& first = line.points.front();
                 auto& last  = line.points.back();
+                if (min.length() == 0) {
+                    if (first.date.length() == 15) {
+                        min = "99991231 232359";
+                        max = "01010101 000000";
+                    }
+                    else if (first.date.length() == 19) {
+                        min = "9999-12-31 23:23:59";
+                        max = "0101-01-01 00:00:00";
+                        long_date = true;
+                    }
+                    else if (first.date.length() == 10) {
+                        min = "9999-12-31";
+                        max = "0101-01-01";
+                        long_date = true;
+                    }
+                    else {
+                        min = "99991231";
+                        max = "01010101";
+                    }
+                }
                 if (first.date < min) {
                     min = first.date;
                 }
@@ -564,8 +585,8 @@ void flw::Chart::_calc_dates() {
         }
     }
     _dates.clear();
-    if (min != "99991231") {
-        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates);
+    if (min != "") {
+        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
         redraw();
     }
 }
@@ -4706,7 +4727,7 @@ flw::PriceVector flw::Price::Atr(const PriceVector& in, std::size_t days) {
     }
     return res;
 }
-flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block) {
+flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
     int         month   = -1;
     Date        current = Date::FromString(start_date);
     Date        stop    = Date::FromString(stop_date);
@@ -4763,10 +4784,10 @@ flw::PriceVector flw::Price::DateSerie(const char* start_date, const char* stop_
         if (date.year() > 1) {
             Price price;
             if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
-                price.date = date.format(Date::FORMAT::ISO_TIME);
+                price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
             }
             else {
-                price.date = date.format(Date::FORMAT::ISO);
+                price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
             }
             if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
                 res.push_back(price);

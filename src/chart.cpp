@@ -664,14 +664,36 @@ void flw::Chart::_calc_area_width() {
 
 //------------------------------------------------------------------------------
 void flw::Chart::_calc_dates() {
-    std::string min = "99991231";
-    std::string max = "01010101";
+    std::string min       = "";
+    std::string max       = "";
+    bool        long_date = false;
 
     for (const auto& area : _areas) {
         for (const auto& line : area.lines) {
             if (line.points.size() > 0) {
                 auto& first = line.points.front();
                 auto& last  = line.points.back();
+
+                if (min.length() == 0) {
+                    if (first.date.length() == 15) {
+                        min = "99991231 232359";
+                        max = "01010101 000000";
+                    }
+                    else if (first.date.length() == 19) {
+                        min = "9999-12-31 23:23:59";
+                        max = "0101-01-01 00:00:00";
+                        long_date = true;
+                    }
+                    else if (first.date.length() == 10) {
+                        min = "9999-12-31";
+                        max = "0101-01-01";
+                        long_date = true;
+                    }
+                    else {
+                        min = "99991231";
+                        max = "01010101";
+                    }
+                }
 
                 if (first.date < min) {
                     min = first.date;
@@ -686,8 +708,8 @@ void flw::Chart::_calc_dates() {
 
     _dates.clear();
 
-    if (min != "99991231") {
-        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates);
+    if (min != "") {
+        _dates = Price::DateSerie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
         redraw();
     }
 }

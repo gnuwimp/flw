@@ -1,6 +1,6 @@
 // This source file is an amalgamation of one or more source files.
 // And all comments and blank lines have been removed.
-// Created at 2022-12-05 23:00:24.
+// Created at 2023-01-15 22:22:47.
 // Copyright 2016 - 2022 gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #ifndef FLW_H
@@ -675,7 +675,7 @@ namespace flw {
         std::string                     format_price(Date::FORMAT format = Date::FORMAT::ISO, bool hlc = true, bool v = true) const;
         void                            print() const;
         static PriceVector              Atr(const PriceVector& in, std::size_t days);
-        static PriceVector              DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const PriceVector& block = PriceVector());
+        static PriceVector              DateSerie(const char* start_date, const char* stop_date, Date::RANGE range = Date::RANGE::DAY, const PriceVector& block = PriceVector(), bool long_format = false);
         static PriceVector              DayToMonth(const PriceVector& in);
         static PriceVector              DayToWeek(const PriceVector& in, Date::DAY weekday);
         static PriceVector              ExponentialMovingAverage(const PriceVector& in, std::size_t days);

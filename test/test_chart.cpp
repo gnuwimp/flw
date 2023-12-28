@@ -276,11 +276,11 @@ PriceVector create_serie(const char* start, const char* stop, double value, doub
             date1.add_seconds(60);
         }
         else if (range == Date::RANGE::SEC) {
-            res.push_back(Price(date1.format(Date::FORMAT::ISO_TIME).c_str(), high, low, price));
+            res.push_back(Price(date1.format(Date::FORMAT::ISO_TIME_LONG).c_str(), high, low, price));
             date1.add_seconds(1);
         }
         else {
-            res.push_back(Price(date1.format(Date::FORMAT::ISO).c_str(), high, low, price));
+            res.push_back(Price(date1.format(Date::FORMAT::ISO_LONG).c_str(), high, low, price));
             date1.add_days(1);
         }
 
