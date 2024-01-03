@@ -6,6 +6,7 @@
 // MKALGAM_ON
 
 #include <algorithm>
+#include <cstdint>
 #include <assert.h>
 #include <math.h>
 #include <stdarg.h>

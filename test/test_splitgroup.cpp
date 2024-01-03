@@ -27,9 +27,10 @@ public:
         group->min_pos(75);
         group->split_pos(150);
 
-        group1->add(new Fl_Button(0, 0, 0, 0, "Left"), SplitGroup::CHILD::FIRST);
+        group1->add(new Fl_Button(0, 0, 0, 0, "Swap"), SplitGroup::CHILD::FIRST);
         group1->add(new Fl_Button(0, 0, 0, 0, "Hide/Show Left"), SplitGroup::CHILD::SECOND);
         group1->split_pos(200);
+        group1->child(SplitGroup::CHILD::FIRST)->callback(Callback1Left, this);
         group1->child(SplitGroup::CHILD::SECOND)->callback(Callback1Right, this);
 
         group2_direction = SplitGroup::DIRECTION::HORIZONTAL;
@@ -48,6 +49,11 @@ public:
         group->resize();
         resizable(this);
         size_range(64, 48);
+    }
+
+    static void Callback1Left(Fl_Widget*, void* o) {
+        auto w = (Test*) o;
+        w->group1->swap();
     }
 
     static void Callback1Right(Fl_Widget*, void* o) {

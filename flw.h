@@ -1388,45 +1388,47 @@ namespace flw {
     class SplitGroup : public Fl_Group {
     public:
         enum class CHILD {
-                                        FIRST,
-                                        SECOND,
+                                FIRST,
+                                SECOND,
         };
 
         enum class DIRECTION {
-                                        HORIZONTAL,
-                                        VERTICAL,
+                                HORIZONTAL,
+                                VERTICAL,
         };
-        
-        explicit                        SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        void                            add(Fl_Widget* widget, SplitGroup::CHILD child);
-        Fl_Widget*                      child(SplitGroup::CHILD child)
-                                            { return (child == SplitGroup::CHILD::FIRST) ? _widgets[0] : _widgets[1]; }
-        void                            clear();
-        DIRECTION                       direction() const
-                                            { return _direction; }
-        void                            direction(SplitGroup::DIRECTION direction);
-        int                             handle(int event) override;
-        int                             min_pos() const
-                                            { return _min; }
-        void                            min_pos(int value)
-                                            { _min = value; }
-        void                            resize()
-                                            { Fl::redraw(); SplitGroup::resize(x(), y(), w(), h()); }
-        void                            resize(int X, int Y, int W, int H) override;
-        int                             split_pos() const
-                                            { return _split_pos; }
-        void                            split_pos(int split_pos)
-                                            { _split_pos = split_pos; }
-        void                            toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
-        void                            toggle(SplitGroup::CHILD child, int second_size = -1)
-                                            { toggle(child, _direction, second_size); }
+
+        explicit                SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+        void                    add(Fl_Widget* widget, SplitGroup::CHILD child);
+        Fl_Widget*              child(SplitGroup::CHILD child)
+                                    { return (child == SplitGroup::CHILD::FIRST) ? _widgets[0] : _widgets[1]; }
+        void                    clear();
+        DIRECTION               direction() const
+                                    { return _direction; }
+        void                    direction(SplitGroup::DIRECTION direction);
+        int                     handle(int event) override;
+        int                     min_pos() const
+                                    { return _min; }
+        void                    min_pos(int value)
+                                    { _min = value; }
+        void                    resize()
+                                    { Fl::redraw(); SplitGroup::resize(x(), y(), w(), h()); }
+        void                    resize(int X, int Y, int W, int H) override;
+        int                     split_pos() const
+                                    { return _split_pos; }
+        void                    split_pos(int split_pos)
+                                    { _split_pos = split_pos; }
+        void                    swap()
+                                    { auto tmp = _widgets[0]; _widgets[0] = _widgets[1]; _widgets[1] = tmp; resize(); }
+        void                    toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
+        void                    toggle(SplitGroup::CHILD child, int second_size = -1)
+                                    { toggle(child, _direction, second_size); }
 
     private:
-        Fl_Widget*                      _widgets[2];
-        DIRECTION                       _direction;
-        bool                            _drag;
-        int                             _min;
-        int                             _split_pos;
+        Fl_Widget*              _widgets[2];
+        DIRECTION               _direction;
+        bool                    _drag;
+        int                     _min;
+        int                     _split_pos;
     };
 }
 
