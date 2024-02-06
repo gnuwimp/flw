@@ -155,7 +155,7 @@ void flw::InputMenu::insert(std::string string, int max_list_len) {
 
 //------------------------------------------------------------------------------
 void flw::InputMenu::resize(int X, int Y, int W, int H) {
-    Fl_Group::resize(X, Y, W, H);
+    Fl_Widget::resize(X, Y, W, H);
 
     if (_menu->visible() != 0) {
         auto mw = (int) flw::PREF_FONTSIZE;

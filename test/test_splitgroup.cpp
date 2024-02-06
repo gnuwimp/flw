@@ -46,7 +46,7 @@ public:
         group2->child(SplitGroup::CHILD::FIRST)->callback(Callback2Top, this);
         group2->child(SplitGroup::CHILD::SECOND)->callback(Callback2Top, this);
 
-        group->resize();
+        group->do_layout();
         resizable(this);
         size_range(64, 48);
     }
@@ -66,7 +66,7 @@ public:
             w->group1->child(SplitGroup::CHILD::FIRST)->show();
         }
 
-        w->group->resize();
+        w->group->do_layout();
     }
 
     static void Callback2Top(Fl_Widget*, void* o) {
@@ -158,7 +158,7 @@ public:
             }
         }
 
-        w->group->resize();
+        w->group->do_layout();
         Fl::redraw();
     }
 

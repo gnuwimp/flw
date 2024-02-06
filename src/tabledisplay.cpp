@@ -6,7 +6,7 @@
 // MKALGAM_ON
 
 #include <FL/Fl.H>
-#include <FL/Fl_Button.H>
+#include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/fl_ask.H>
@@ -81,7 +81,7 @@ namespace flw {
             callback(_TableDisplayCellDialog::Callback, this);
             set_modal();
             resizable(this);
-            resize(0, 0, flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 7);
+            resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
         }
 
         //----------------------------------------------------------------------
@@ -108,10 +108,11 @@ namespace flw {
 
         //----------------------------------------------------------------------
         void resize(int X, int Y, int W, int H) {
+            int fs = flw::PREF_FONTSIZE / 2;
+            
             Fl_Double_Window::resize(X, Y, W, H);
-
-            _row->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _col->resize(4, flw::PREF_FONTSIZE * 4 + 8, W - 8, flw::PREF_FONTSIZE * 2);
+            _row->resize(fs,  fs * 3,   W - fs * 2,  fs * 4);
+            _col->resize(fs,  fs * 10,  W - fs * 2,  fs * 4);
         }
 
         //----------------------------------------------------------------------
@@ -147,13 +148,13 @@ namespace flw {
         bool                        _repeat;
 
     public:
-        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Find Text In Table Cells") {
             end();
 
             _close  = new Fl_Button(0, 0, 0, 0, "&Close");
-            _next   = new Fl_Button(0, 0, 0, 0, "&Find next");
-            _prev   = new Fl_Button(0, 0, 0, 0, "Find &previous");
-            _text   = new Fl_Input(0, 0, 0, 0, "Search:");
+            _next   = new Fl_Return_Button(0, 0, 0, 0, "&Find");
+            _prev   = new Fl_Button(0, 0, 0, 0, "Find &prev");
+            _text   = new Fl_Input(0, 0, 0, 0, "Find:");
             _table  = table;
             _repeat = true;
 
@@ -179,7 +180,7 @@ namespace flw {
             callback(_TableDisplayFindDialog::Callback, this);
             set_modal();
             resizable(this);
-            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 7);
+            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 5.5);
         }
 
         //----------------------------------------------------------------------
@@ -283,12 +284,14 @@ namespace flw {
 
         //----------------------------------------------------------------------
         void resize(int X, int Y, int W, int H) {
+            int fs = flw::PREF_FONTSIZE / 2;
+
             Fl_Double_Window::resize(X, Y, W, H);
 
-            _text->resize  (flw::PREF_FONTSIZE * 5,             flw::PREF_FONTSIZE,                 W - flw::PREF_FONTSIZE * 5 - 4, flw::PREF_FONTSIZE * 2);
-            _prev->resize  (W - flw::PREF_FONTSIZE * 30 - 12,   H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
-            _next->resize  (W - flw::PREF_FONTSIZE * 20 - 8,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
-            _close->resize (W - flw::PREF_FONTSIZE * 10 - 4,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+            _text->resize  (fs * 10,      fs,          W - fs * 11,  fs * 4);
+            _prev->resize  (W - fs * 51,  H - fs * 5,  fs * 16,      fs * 4);
+            _next->resize  (W - fs * 34,  H - fs * 5,  fs * 16,      fs * 4);
+            _close->resize (W - fs * 17,  H - fs * 5,  fs * 16,      fs * 4);
         }
 
         //----------------------------------------------------------------------
@@ -325,6 +328,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     _ver->callback(&_CallbackHor, this);
     _ver->linesize(10);
 
+    resizable(nullptr);
     box(FL_BORDER_BOX);
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);

@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
 
@@ -36,147 +37,160 @@
 #endif
 
 namespace flw {
-    extern int                          PREF_FIXED_FONT;        // Fixed font - FL_COURIER
-    extern std::string                  PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
-    extern int                          PREF_FIXED_FONTSIZE;    // Fixed font size - default 14
-    extern int                          PREF_FONT;              // Default font - FL_HELVETICA
-    extern int                          PREF_FONTSIZE;          // Default font size - 14
-    extern std::string                  PREF_FONTNAME;          // Default font name - "FL_HELVETICA"
-    extern std::vector<char*>           PREF_FONTNAMES;         // List of font names - used internally - load with theme::load_fonts()
-    extern std::string                  PREF_THEME;             // Name of theme - default "default"
-    extern const char* const            PREF_THEMES[];          // Name of themes
-    extern int                          PREF_SCROLLBAR;         // Extra pixel width for scrollbar depending what theme are active - used internally
 
-    typedef std::vector<std::string>    StringVector;
-    typedef std::vector<Fl_Widget*>     WidgetVector;
+extern int                      PREF_FIXED_FONT;        // Fixed font - FL_COURIER
+extern std::string              PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
+extern int                      PREF_FIXED_FONTSIZE;    // Fixed font size - default 14
+extern Fl_Font                  PREF_FONT;              // Default font - FL_HELVETICA
+extern int                      PREF_FONTSIZE;          // Default font size - 14
+extern std::string              PREF_FONTNAME;          // Default font name - "FL_HELVETICA"
+extern std::vector<char*>       PREF_FONTNAMES;         // List of font names - used internally - load with theme::load_fonts()
+extern std::string              PREF_THEME;             // Name of theme - default "default"
+extern const char* const        PREF_THEMES[];          // Name of themes
 
-    //--------------------------------------------------------------------------
-    // Buffer container that frees memory automatically
-    //
-    struct Buf {
-        char*                           p;
-        size_t                          s;
+typedef std::vector<std::string> StringVector;
+typedef std::vector<Fl_Widget*>  WidgetVector;
 
-                                        Buf();
-        explicit                        Buf(size_t S);
-                                        Buf(char* P, size_t S);
-                                        Buf(const char* P, size_t S);
-                                        Buf(const Buf& b);
-                                        Buf(Buf&& b);
-        Buf&                            operator=(const Buf& b);
-        Buf&                            operator=(Buf&& b);
-        Buf&                            operator+=(const Buf& b);
-        bool                            operator==(const Buf& other) const;
-        virtual                         ~Buf()
-                                            { free(p); }
-    };
+//--------------------------------------------------------------------------
+// Buffer container that frees memory automatically
+//
+struct Buf {
+    char*                       p;
+    size_t                      s;
 
-    //--------------------------------------------------------------------------
-    // Print widget sizes
-    //
-    namespace debug {
-        void                            print(Fl_Widget* widget, bool tab = false);
-        void                            print(Fl_Group* group);
-    }
+                                Buf();
+    explicit                    Buf(size_t S);
+                                Buf(char* P, size_t S);
+                                Buf(const char* P, size_t S);
+                                Buf(const Buf& b);
+                                Buf(Buf&& b);
+    Buf&                        operator=(const Buf& b);
+    Buf&                        operator=(Buf&& b);
+    Buf&                        operator+=(const Buf& b);
+    bool                        operator==(const Buf& other) const;
+    virtual                     ~Buf()
+                                    { free(p); }
+};
 
-    //--------------------------------------------------------------------------
-    // Menu item functions
-    //
-    namespace menu {
-        void                            enable_item(Fl_Menu_* menu, const char* text, bool value);
-        Fl_Menu_Item*                   get_item(Fl_Menu_* menu, const char* text);
-        bool                            item_value(Fl_Menu_* menu, const char* text);
-        void                            set_item(Fl_Menu_* menu, const char* text, bool value);
-        void                            setonly_item(Fl_Menu_* menu, const char* text);
-    }
-
-    //--------------------------------------------------------------------------
-    // Assorted utility functions
-    //
-    namespace util {
-        void                            center_window(Fl_Window* window, Fl_Window* parent = nullptr);
-        double                          clock();
-        std::string                     fix_menu_string(std::string in);
-        std::string                     format(const char* format, ...);
-        std::string                     format_int(int64_t num, char del = ' ');
-        void                            labelfont(Fl_Widget* widget);
-        Buf                             load_file(std::string filename, bool alert = true);
-        int32_t                         milliseconds();
-        void                            png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
-        std::string                     remove_browser_format(std::string text);
-        std::string&                    replace(std::string& string, std::string find, std::string replace);
-        bool                            save_file(std::string filename, const void* data, size_t size, bool alert = true);
-        void                            sleep(int milli);
-        StringVector                    split(const std::string& string, std::string split);
-    }
-
-    //--------------------------------------------------------------------------
-    // Load different themes and save/load window preferences
-    //
-    namespace theme {
-        bool                            is_dark();
-        bool                            load(std::string name);
-        int                             load_font(std::string requested_font);
-        void                            load_fonts(bool iso8859_only = true);
-        void                            load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
-        void                            load_theme_pref(Fl_Preferences& pref);
-        void                            load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
-        bool                            parse(int argc, const char** argv);
-        void                            save_theme_pref(Fl_Preferences& pref);
-        void                            save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
-
-        //----------------------------------------------------------------------
-        // Internal usage only
-        //
-        enum {
-                                        THEME_DEFAULT,
-                                        THEME_OXY,
-                                        THEME_OXY_BLUE,
-                                        THEME_OXY_TAN,
-                                        THEME_GLEAM,
-                                        THEME_GLEAM_BLUE,
-                                        THEME_GLEAM_DARK_BLUE,
-                                        THEME_GLEAM_DARK,
-                                        THEME_GLEAM_DARKER,
-                                        THEME_GLEAM_TAN,
-                                        THEME_GTK,
-                                        THEME_GTK_BLUE,
-                                        THEME_GTK_DARK_BLUE,
-                                        THEME_GTK_DARK,
-                                        THEME_GTK_DARKER,
-                                        THEME_GTK_TAN,
-                                        THEME_PLASTIC,
-                                        THEME_PLASTIC_BLUE,
-                                        THEME_PLASTIC_TAN,
-                                        THEME_SYSTEM,
-                                        THEME_NIL,
-        };
-    }
-
-    //--------------------------------------------------------------------------
-    // Drawing colors
-    //
-    namespace color {
-        extern Fl_Color                 AZURE;
-        extern Fl_Color                 BEIGE;
-        extern Fl_Color                 BLUE;
-        extern Fl_Color                 BROWN;
-        extern Fl_Color                 CYAN;
-        extern Fl_Color                 GRAY;
-        extern Fl_Color                 GREEN;
-        extern Fl_Color                 LIME;
-        extern Fl_Color                 MAGENTA;
-        extern Fl_Color                 MAROON;
-        extern Fl_Color                 NAVY;
-        extern Fl_Color                 OLIVE;
-        extern Fl_Color                 PINK;
-        extern Fl_Color                 PURPLE;
-        extern Fl_Color                 RED;
-        extern Fl_Color                 SILVER;
-        extern Fl_Color                 TEAL;
-        extern Fl_Color                 YELLOW;
-    }
+//--------------------------------------------------------------------------
+namespace debug {
+    void                        print(Fl_Widget* widget);
+    void                        print(Fl_Widget* widget, std::string& indent);
 }
+
+//--------------------------------------------------------------------------
+// Menu item functions
+//
+namespace menu {
+    void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
+    Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
+    bool                        item_value(Fl_Menu_* menu, const char* text);
+    void                        set_item(Fl_Menu_* menu, const char* text, bool value);
+    void                        setonly_item(Fl_Menu_* menu, const char* text);
+}
+
+//--------------------------------------------------------------------------
+// Assorted utility functions
+//
+namespace util {
+    void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
+    double                      clock();
+    std::string                 fix_menu_string(std::string in);
+    std::string                 format(const char* format, ...);
+    std::string                 format_int(int64_t num, char del = ' ');
+    void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
+    Buf                         load_file(std::string filename, bool alert = true);
+    int32_t                     milliseconds();
+    void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    std::string                 remove_browser_format(std::string text);
+    std::string&                replace(std::string& string, std::string find, std::string replace);
+    bool                        save_file(std::string filename, const void* data, size_t size, bool alert = true);
+    void                        sleep(int milli);
+    StringVector                split(const std::string& string, std::string split);
+    Fl_Widget*                  widget(Fl_Group* group, std::string label);
+}
+
+//--------------------------------------------------------------------------
+// Load different themes and save/load window preferences
+//
+namespace theme {
+    bool                        is_dark();
+    bool                        load(std::string name);
+    int                         load_font(std::string requested_font);
+    void                        load_fonts(bool iso8859_only = true);
+    void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+    void                        load_theme_pref(Fl_Preferences& pref);
+    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2 = 1, int defw = 800, int defh = 600, std::string basename = "gui.");
+    bool                        parse(int argc, const char** argv);
+    void                        save_theme_pref(Fl_Preferences& pref);
+    void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
+
+    //----------------------------------------------------------------------
+    // Internal usage only
+    //
+    enum {
+                                THEME_DEFAULT,
+                                THEME_OXY,
+                                THEME_OXY_BLUE,
+                                THEME_OXY_TAN,
+                                THEME_GLEAM,
+                                THEME_GLEAM_BLUE,
+                                THEME_GLEAM_DARK_BLUE,
+                                THEME_GLEAM_DARK,
+                                THEME_GLEAM_DARKER,
+                                THEME_GLEAM_TAN,
+                                THEME_GTK,
+                                THEME_GTK_BLUE,
+                                THEME_GTK_DARK_BLUE,
+                                THEME_GTK_DARK,
+                                THEME_GTK_DARKER,
+                                THEME_GTK_TAN,
+                                THEME_PLASTIC,
+                                THEME_PLASTIC_BLUE,
+                                THEME_PLASTIC_TAN,
+                                THEME_SYSTEM,
+                                THEME_NIL,
+    };
+}
+
+//--------------------------------------------------------------------------
+// Drawing colors
+//
+namespace color {
+    extern Fl_Color             AZURE;
+    extern Fl_Color             BEIGE;
+    extern Fl_Color             BLUE;
+    extern Fl_Color             BROWN;
+    extern Fl_Color             CYAN;
+    extern Fl_Color             GRAY;
+    extern Fl_Color             GREEN;
+    extern Fl_Color             LIME;
+    extern Fl_Color             MAGENTA;
+    extern Fl_Color             MAROON;
+    extern Fl_Color             NAVY;
+    extern Fl_Color             OLIVE;
+    extern Fl_Color             PINK;
+    extern Fl_Color             PURPLE;
+    extern Fl_Color             RED;
+    extern Fl_Color             SILVER;
+    extern Fl_Color             TEAL;
+    extern Fl_Color             YELLOW;
+}
+
+//--------------------------------------------------------------------------
+class Group : public Fl_Group {
+public:
+    Group(int X = 0, int Y = 0, int W = 0, int H = 0, const char* L = nullptr) : Fl_Group(X, Y, W, H, L) {
+        end();
+        resizable(nullptr);
+    }
+    
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Widget::resize(X, Y, W, H);
+    }
+};
+
+} // flw
 
 
 
@@ -428,9 +442,9 @@ public:
     int                         handle(int event) override;
     bool                        has_time() const;
     void                        init(bool calc_dates);
-    bool                        margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
-    void                        resize()
+    void                        layout()
                                     { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
+    bool                        margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
     void                        resize(int X, int Y, int W, int H) override;
     bool                        tick_width(int tick_width_from_3_to_100 = Chart::MIN_TICK);
     void                        update_pref();
@@ -494,6 +508,94 @@ private:
 
 
 
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
+
+namespace flw {
+
+struct _GridGroupChild;
+
+//--------------------------------------------------------------------------
+// A simple layout widget that uses a grid for placing widgets.
+// One cell is set to flw::PREF_FONTSIZE / 2.
+// Override by calling size() method (min 4, max 72 pixels).
+//
+class GridGroup : public Fl_Group {
+public:
+    static const int            MAX_WIDGETS = 100;
+
+    explicit                    GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    virtual                     ~GridGroup();
+    void                        add(Fl_Widget* widget, int X, int Y, int W, int H);
+    void                        adjust(Fl_Widget* widget, int L = 0, int R = 0, int T = 0, int B = 0);
+    void                        clear();
+    void                        do_layout()
+                                    { resize(x(), y(), w(), h()); redraw(); }
+    int                         handle(int event) override;
+    void                        remove(Fl_Widget* widget);
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(Fl_Widget* widget, int X, int Y, int W, int H);
+    int                         size() const
+                                    { return _size; }
+    void                        size(int size)
+                                    { _size = (size >= 4 && size <= 72) ? size : 0; }
+    
+private:
+    void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
+    
+    _GridGroupChild*            _widgets[MAX_WIDGETS];
+    int                         _size;
+};
+
+}
+
+
+
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
+
+namespace flw {
+
+struct _ToolGroupChild;
+
+//--------------------------------------------------------------------------
+class ToolGroup : public Fl_Group {
+public:
+    enum class DIRECTION {
+                                HORIZONTAL,
+                                VERTICAL,
+    };
+
+    static const int            MAX_WIDGETS = 50;
+
+    explicit                    ToolGroup(DIRECTION direction = DIRECTION::HORIZONTAL, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    virtual                     ~ToolGroup();
+    void                        add(Fl_Widget* widget, int SIZE = 0);
+    void                        clear();
+    DIRECTION                   direction() const
+                                    { return _direction; }
+    void                        direction(DIRECTION direction)
+                                    { _direction = direction; }
+    void                        do_layout()
+                                    { resize(x(), y(), w(), h()); redraw(); }
+    bool                        expand_last() const
+                                    { return _expand; }
+    void                        expand_last(bool value)
+                                    { _expand = value; }
+    void                        remove(Fl_Widget* widget);
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(Fl_Widget* widget, int SIZE = 0);
+
+private:
+    DIRECTION                   _direction;
+    _ToolGroupChild*            _widgets[MAX_WIDGETS];
+    bool                        _expand;
+};
+
+}
+
+
+
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Group.H>
@@ -516,14 +618,13 @@ namespace flw {
 // User can navigate with mouse or arrow keys within a month
 // Or use buttons to jump 1 month/1 year/10 years
 //
-class DateChooser : public Fl_Group {
+class DateChooser : public GridGroup {
 public:
     explicit                    DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        draw() override;
     void                        focus();
     Date                        get() const;
     int                         handle(int event) override;
-    void                        resize(int X, int Y, int W, int H) override;
     void                        set(const Date& date);
 
 
@@ -540,6 +641,7 @@ private:
     Fl_Button*                  _b6;
     Fl_Button*                  _b7;
     Fl_Widget*                  _canvas;
+    ToolGroup*                  _buttons;
     int                         _h;
     int                         _w;
 };
@@ -664,7 +766,8 @@ public:
     bool                        aborted()
                                     { return _abort; }
     void                        range(double min, double max);
-    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(int X, int Y, int W, int H) override
+                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     void                        show(const std::string& label, Fl_Window* parent = nullptr);
     void                        value(double value);
 
@@ -674,6 +777,7 @@ public:
 private:
     Fl_Button*                  _button;
     Fl_Hor_Fill_Slider*         _progress;
+    GridGroup*                  _grid;
     bool                        _abort;
     int64_t                     _last;
 };
@@ -716,7 +820,8 @@ public:
                                     { return _fontname; }
     int                         fontsize()
                                     { return _fontsize; }
-    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(int X, int Y, int W, int H) override
+                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     bool                        run(Fl_Window* parent = nullptr);
 
     static void                 Callback(Fl_Widget* w, void* o);
@@ -729,6 +834,7 @@ private:
     Fl_Box*                     _label;
     Fl_Button*                  _cancel;
     Fl_Button*                  _select;
+    GridGroup*                  _grid;
     ScrollBrowser*              _fonts;
     ScrollBrowser*              _sizes;
     bool                        _ret;
@@ -752,7 +858,8 @@ private:
 class WorkDialog : public Fl_Double_Window {
 public:
                                 WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(int X, int Y, int W, int H) override
+                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     bool                        run(double update_time, const StringVector& messages);
     bool                        run(double update_time, const std::string& message);
 
@@ -762,6 +869,7 @@ private:
     Fl_Button*                  _cancel;
     Fl_Hold_Browser*            _label;
     Fl_Toggle_Button*           _pause;
+    GridGroup*                  _grid;
     bool                        _ret;
     double                      _last;
     std::string                 _message;
@@ -769,39 +877,6 @@ private:
 
 } // dlg
 } // flw
-
-
-
-#include <FL/Fl_Group.H>
-
-namespace flw {
-    struct _GridGroupChild;
-
-    //--------------------------------------------------------------------------
-    // A simple layout widget that uses a grid for placing widgets
-    // One cell is set to labelsize() at start, use set_size() to change it
-    //
-    class GridGroup : public Fl_Group {
-    public:
-        static const int                MAX_WIDGETS = 100;
-
-        explicit                        GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        virtual                         ~GridGroup();
-        void                            add(Fl_Widget* widget, int X, int Y, int W, int H);
-        void                            clear();
-        void                            remove(Fl_Widget* widget);
-        void                            resize();
-        void                            resize(int X, int Y, int W, int H) override;
-        int                             size() const
-                                            { return _size; }
-        void                            size(int size)
-                                            { _size = size; }
-
-    private:
-        _GridGroupChild*                _widgets[MAX_WIDGETS];
-        int                             _size;
-    };
-}
 
 
 
@@ -1278,7 +1353,7 @@ public:
     int                         handle(int event) override;
     void                        labels(std::string x, std::string y);
     void                        label_colors(Fl_Color x, Fl_Color y);
-    void                        resize()
+    void                        layout()
                                     { _calc = true; _w = _h = 0; resize(x(), y(), w(), h()); redraw(); }
     void                        resize(int X, int Y, int W, int H) override;
     void                        update_pref();
@@ -1376,8 +1451,9 @@ namespace flw {
 
 
 
-#include <FL/Fl_Group.H>
 #include <FL/Fl.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
 
 namespace flw {
     //--------------------------------------------------------------------------
@@ -1405,27 +1481,27 @@ namespace flw {
         DIRECTION               direction() const
                                     { return _direction; }
         void                    direction(SplitGroup::DIRECTION direction);
+        void                    do_layout()
+                                    { SplitGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
         int                     handle(int event) override;
         int                     min_pos() const
                                     { return _min; }
         void                    min_pos(int value)
                                     { _min = value; }
-        void                    resize()
-                                    { Fl::redraw(); SplitGroup::resize(x(), y(), w(), h()); }
         void                    resize(int X, int Y, int W, int H) override;
         int                     split_pos() const
                                     { return _split_pos; }
         void                    split_pos(int split_pos)
                                     { _split_pos = split_pos; }
         void                    swap()
-                                    { auto tmp = _widgets[0]; _widgets[0] = _widgets[1]; _widgets[1] = tmp; resize(); }
+                                    { auto tmp = _widgets[0]; _widgets[0] = _widgets[1]; _widgets[1] = tmp; do_layout(); }
         void                    toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
         void                    toggle(SplitGroup::CHILD child, int second_size = -1)
                                     { toggle(child, _direction, second_size); }
 
     private:
-        Fl_Widget*              _widgets[2];
         DIRECTION               _direction;
+        Fl_Widget*              _widgets[2];
         bool                    _drag;
         int                     _min;
         int                     _split_pos;
@@ -1587,6 +1663,8 @@ namespace flw {
     // A table editing widget
     //
     class TableEditor : public TableDisplay {
+        using TableDisplay::cell_value;
+
     public:
         enum class FORMAT {
                                         DEFAULT,
@@ -1730,6 +1808,7 @@ namespace flw {
 
 
 #include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
 
 namespace flw {
 
@@ -1751,10 +1830,12 @@ public:
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
-                                    { _n = n; _s = s; _w = w; _e = e; resize(); }
+                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); }
     Fl_Widget*                  child(int num) const;
     int                         children() const
                                     { return (int) _widgets.size(); }
+    void                        do_layout()
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
     int                         find(Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs()
@@ -1763,8 +1844,6 @@ public:
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
                                     { return remove(find(widget)); }
-    void                        resize()
-                                    { Fl::redraw(); resize(x(), y(), w(), h()); }
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs()
                                     { _hide_tab_buttons(false); }

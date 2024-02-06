@@ -19,6 +19,7 @@
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Text_Editor.H>
+#include <FL/Fl_Tooltip.H>
 
 namespace flw {
 namespace theme {
@@ -43,7 +44,6 @@ void _load_gtk_tan();
 void _load_plastic();
 void _load_blue_plastic();
 void _load_tan_plastic();
-void _load_system();
 void _scrollbar();
 
 } // theme
@@ -82,7 +82,8 @@ static void* _dlg_zero_memory(void* mem, size_t size) {
 class _DlgHtml  : public Fl_Double_Window {
     Fl_Help_View*               _html;
     Fl_Return_Button*           _close;
-
+    GridGroup*                  _grid;
+    
 public:
     //--------------------------------------------------------------------------
     _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
@@ -90,10 +91,12 @@ public:
         end();
 
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _grid  = new GridGroup();
         _html  = new Fl_Help_View(0, 0, 0, 0);
 
-        add(_close);
-        add(_html);
+        _grid->add(_html,    1,  1, -1, -6);
+        _grid->add(_close, -17, -5, 16,  4);
+        add(_grid);
 
         _close->callback(_DlgHtml::Callback, this);
         _close->labelfont(flw::PREF_FONT);
@@ -101,13 +104,13 @@ public:
         _html->textfont(flw::PREF_FONT);
         _html->textsize(flw::PREF_FONTSIZE);
         _html->value(text);
-
+        
         callback(_DlgHtml::Callback, this);
         copy_label(title);
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
 
     //--------------------------------------------------------------------------
@@ -122,9 +125,7 @@ public:
     //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-
-        _html->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
 
     //--------------------------------------------------------------------------
@@ -151,8 +152,9 @@ public:
 
 //------------------------------------------------------------------------------
 class _DlgList : public Fl_Double_Window {
-    flw::ScrollBrowser*         _list;
     Fl_Return_Button*           _close;
+    GridGroup*                  _grid;
+    ScrollBrowser*              _list;
 
 public:
     //--------------------------------------------------------------------------
@@ -161,17 +163,18 @@ public:
         end();
 
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _list  = new flw::ScrollBrowser();
+        _grid  = new GridGroup();
+        _list  = new ScrollBrowser();
 
-        add(_close);
-        add(_list);
+        _grid->add(_list,    1,  1, -1, -6);
+        _grid->add(_close, -17, -5, 16,  4);
+        add(_grid);
 
         _close->callback(_DlgList::Callback, this);
         _close->labelfont(flw::PREF_FONT);
         _close->labelsize(flw::PREF_FONTSIZE);
-
         _list->take_focus();
-
+        
         if (fixed_font == true) {
             _list->textfont(flw::PREF_FIXED_FONT);
             _list->textsize(flw::PREF_FIXED_FONTSIZE);
@@ -186,7 +189,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
 
         if (list.size() > 0) {
             for (const auto& s : list) {
@@ -210,9 +213,7 @@ public:
     //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-
-        _list->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
 
     //--------------------------------------------------------------------------
@@ -239,10 +240,11 @@ public:
 
 //------------------------------------------------------------------------------
 class _DlgSelect : public Fl_Double_Window {
-    Fl_Button*                  _close;
     Fl_Button*                  _cancel;
-    ScrollBrowser*              _list;
+    Fl_Button*                  _close;
     Fl_Input*                   _filter;
+    GridGroup*                  _grid;
+    ScrollBrowser*              _list;
     const StringVector&         _strings;
 
 public:
@@ -252,24 +254,26 @@ public:
     _strings(strings) {
         end();
 
-        _filter = new Fl_Input(0, 0, 0, 0);
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _list   = new flw::ScrollBrowser(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
+        _filter = new Fl_Input(0, 0, 0, 0);
+        _grid   = new GridGroup();
+        _list   = new ScrollBrowser(0, 0, 0, 0);
 
-        add(_filter);
-        add(_list);
-        add(_cancel);
-        add(_close);
+        _grid->add(_filter,   1,  1, -1,  4);
+        _grid->add(_list,     1,  6, -1, -6);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
 
         _cancel->callback(_DlgSelect::Callback, this);
         _close->callback(_DlgSelect::Callback, this);
         _filter->callback(_DlgSelect::Callback, this);
-        _filter->tooltip("Enter text to filter rows that macthes the text\nPress tab to switch focus between input and list widget.");
+        _filter->tooltip("Enter text to filter rows that macthes the text.\nPress tab to switch focus between input and list widget.");
         _filter->when(FL_WHEN_CHANGED);
         _list->callback(_DlgSelect::Callback, this);
-        _list->tooltip("Use Page Up or Page Down in list to scroll faster");
-
+        _list->tooltip("Use Page Up or Page Down in list to scroll faster,");
+        
         if (fixed_font == true) {
             _filter->textfont(flw::PREF_FIXED_FONT);
             _filter->textsize(flw::PREF_FIXED_FONTSIZE);
@@ -318,7 +322,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
 
     //--------------------------------------------------------------------------
@@ -402,11 +406,7 @@ public:
     //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-
-        _filter->resize(4, 4, W - 8, flw::PREF_FONTSIZE * 2);
-        _list->resize(4, flw::PREF_FONTSIZE * 2  + 8, W - 8, H - flw::PREF_FONTSIZE * 4 - 20);
-        _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
 
     //--------------------------------------------------------------------------
@@ -447,8 +447,8 @@ public:
  *     |______|       |___/
  */
 
-const char* PASSWORD_CANCEL = "Cancel";
-const char* PASSWORD_OK     = "Ok";
+const char* PASSWORD_CANCEL = "&Cancel";
+const char* PASSWORD_OK     = "&Ok";
 
 //------------------------------------------------------------------------------
 class _DlgPassword : public Fl_Double_Window {
@@ -467,6 +467,7 @@ private:
     Fl_Input*                   _file;
     Fl_Input*                   _password1;
     Fl_Input*                   _password2;
+    GridGroup*                  _grid;
     _DlgPassword::TYPE          _mode;
     bool                        _ret;
 
@@ -476,21 +477,23 @@ public:
     Fl_Double_Window(0, 0, 0, 0) {
         end();
 
-        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
-        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter Password Again");
         _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
         _cancel    = new Fl_Button(0, 0, 0, 0, PASSWORD_CANCEL);
         _close     = new Fl_Return_Button(0, 0, 0, 0, PASSWORD_OK);
-        _file      = new Fl_Output(0, 0, 0, 0, "Key File");
+        _file      = new Fl_Output(0, 0, 0, 0, "Key file");
+        _grid      = new GridGroup();
+        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
+        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
         _mode      = mode;
         _ret       = false;
 
-        add(_password1);
-        add(_password2);
-        add(_file);
-        add(_browse);
-        add(_cancel);
-        add(_close);
+        _grid->add(_password1,  1,   3,  -1,  4);
+        _grid->add(_password2,  1,  10,  -1,  4);
+        _grid->add(_file,       1,  17,  -1,  4);
+        _grid->add(_browse,   -51,  -5,  16,  4);
+        _grid->add(_cancel,   -34,  -5,  16,  4);
+        _grid->add(_close,    -17,  -5,  16,  4);
+        add(_grid);
 
         _browse->callback(_DlgPassword::Callback, this);
         _cancel->callback(_DlgPassword::Callback, this);
@@ -511,36 +514,34 @@ public:
         _password2->textsize(flw::PREF_FONTSIZE);
         _password2->when(FL_WHEN_CHANGED);
 
-        auto W = 40 * flw::PREF_FONTSIZE;
-        auto H = 11 * flw::PREF_FONTSIZE + 28;
+        auto W = flw::PREF_FONTSIZE * 35;
+        auto H = flw::PREF_FONTSIZE * 13.5;
 
         if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
             _password2->hide();
             _browse->hide();
             _file->hide();
-            W = 30 * flw::PREF_FONTSIZE;
-            H = 5 * flw::PREF_FONTSIZE + 16;
+            H = flw::PREF_FONTSIZE * 6.5;
         }
         else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
             _browse->hide();
             _file->hide();
-            W = 30 * flw::PREF_FONTSIZE;
-            H = 8 * flw::PREF_FONTSIZE + 24;
+            H = flw::PREF_FONTSIZE * 10;
         }
         else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
             _password2->hide();
-            W = 40 * flw::PREF_FONTSIZE;
-            H = 8 * flw::PREF_FONTSIZE + 24;
+            _grid->resize(_file, 1, 10, -1, 4);
+            H = flw::PREF_FONTSIZE * 10;
         }
 
+        resizable(this);
         util::labelfont(this);
         callback(_DlgPassword::Callback, this);
         label(title);
         size(W, H);
         size_range(W, H);
         set_modal();
-        resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
 
     //--------------------------------------------------------------------------
@@ -606,30 +607,9 @@ public:
     //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-        }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-        }
-        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _file->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
-            _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 4 + 12, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-            _file->resize(4, flw::PREF_FONTSIZE * 7 + 16, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
-            _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 7 + 16, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-
-        _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
-
+    
     //--------------------------------------------------------------------------
     bool run(std::string& password, std::string& file) {
         show();
@@ -670,6 +650,7 @@ class _DlgText : public Fl_Double_Window {
     Fl_Button*                  _save;
     Fl_Text_Buffer*             _buffer;
     Fl_Text_Display*            _text;
+    GridGroup*                  _grid;
     bool                        _edit;
     char*                       _res;
 
@@ -679,24 +660,26 @@ public:
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
         end();
 
+        _buffer = new Fl_Text_Buffer();
         _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
-        _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
+        _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Update");
+        _grid   = new GridGroup();
         _save   = new Fl_Button(0, 0, 0, 0, "&Save");
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
-        _buffer = new Fl_Text_Buffer();
         _edit   = edit;
         _res    = nullptr;
 
-        add(_save);
-        add(_cancel);
-        add(_close);
-        add(_text);
+        _grid->add(_text,     1,   1,  -1,  -6);
+        _grid->add(_cancel, -51,  -5,  16,   4);
+        _grid->add(_save,   -34,  -5,  16,   4);
+        _grid->add(_close,  -17,  -5,  16,   4);
+        add(_grid);
 
         _buffer->text(text);
         _cancel->callback(_DlgText::Callback, this);
         _cancel->tooltip("Close and abort all changes.");
         _close->callback(_DlgText::Callback, this);
-        _close->tooltip("Close and update text.");
+        _close->tooltip(_edit == true ? "Update text and close window." : "Close window.");
         _save->callback(_DlgText::Callback, this);
         _save->tooltip("Save text to file.");
         _text->buffer(_buffer);
@@ -720,7 +703,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
 
     //--------------------------------------------------------------------------
@@ -755,18 +738,7 @@ public:
     //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-
-        _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-
-        if (_cancel->visible() != 0) {
-            _save->resize(W - flw::PREF_FONTSIZE * 24 - 12, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-            _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-        else {
-            _save->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
 
     //--------------------------------------------------------------------------
@@ -795,33 +767,37 @@ public:
 
 //------------------------------------------------------------------------------
 class _DlgTheme : public Fl_Double_Window {
+    Fl_Box*                     _fixed_label;
     Fl_Box*                     _font_label;
-    Fl_Box*                     _fixedfont_label;
     Fl_Browser*                 _theme;
     Fl_Button*                  _close;
-    Fl_Button*                  _font;
     Fl_Button*                  _fixedfont;
+    Fl_Button*                  _font;
+    GridGroup*                  _grid;
     int                         _theme_row;
 
 public:
     //--------------------------------------------------------------------------
-    _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
+    _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) :
+    Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
         end();
 
-        _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
-        _fixedfont_label = new Fl_Box(0, 0, 0, 0);
-        _font            = new Fl_Button(0, 0, 0, 0, "&Font");
-        _font_label      = new Fl_Box(0, 0, 0, 0);
-        _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
-        _theme_row       = 0;
+        _close       = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _fixedfont   = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+        _fixed_label = new Fl_Box(0, 0, 0, 0);
+        _font        = new Fl_Button(0, 0, 0, 0, "&Font");
+        _font_label  = new Fl_Box(0, 0, 0, 0);
+        _grid        = new GridGroup();
+        _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
+        _theme_row   = 0;
 
-        add(_theme);
-        add(_fixedfont);
-        add(_font);
-        add(_close);
-        add(_fixedfont_label);
-        add(_font_label);
+        _grid->add(_theme,         1,   1,  -1, -16);
+        _grid->add(_font_label,    1, -15,  -1,   4);
+        _grid->add(_fixed_label,   1, -10,  -1,   4);
+        _grid->add(_font,        -51,  -5,  16,   4);
+        _grid->add(_fixedfont,   -34,  -5,  16,   4);
+        _grid->add(_close,       -17,  -5,  16,   4);
+        add(_grid);
 
         if (enable_font == false) {
           _font->deactivate();
@@ -832,14 +808,14 @@ public:
         }
 
         _close->callback(Callback, this);
-        _font_label->box(FL_BORDER_BOX);
-        _font_label->color(FL_BACKGROUND2_COLOR);
+        _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _fixed_label->box(FL_BORDER_BOX);
+        _fixed_label->color(FL_BACKGROUND2_COLOR);
+        _fixedfont->callback(Callback, this);
         _font->callback(Callback, this);
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _fixedfont_label->box(FL_BORDER_BOX);
-        _fixedfont_label->color(FL_BACKGROUND2_COLOR);
-        _fixedfont->callback(Callback, this);
-        _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _font_label->box(FL_BORDER_BOX);
+        _font_label->color(FL_BACKGROUND2_COLOR);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
@@ -956,9 +932,6 @@ public:
             else if (row == theme::THEME_PLASTIC_TAN) {
                 theme::_load_tan_plastic();
             }
-            else if (row == theme::THEME_SYSTEM) {
-                theme::_load_system();
-            }
             else {
                 theme::_load_default();
             }
@@ -972,16 +945,8 @@ public:
 
     //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
-        auto fs = flw::PREF_FONTSIZE;
-
         Fl_Double_Window::resize(X, Y, W, H);
-
-        _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
-        _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
-        _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
-        _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
-        _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
-        _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
+        _grid->resize(0, 0, W, H);
     }
 
     //--------------------------------------------------------------------------
@@ -996,13 +961,16 @@ public:
 
     //--------------------------------------------------------------------------
     void update_pref() {
+        Fl_Tooltip::font(flw::PREF_FONT);
+        Fl_Tooltip::size(flw::PREF_FONTSIZE);
         util::labelfont(this);
-        _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
-        _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
-        _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
-        _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
+        _font_label->copy_label(util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
+        _fixed_label->copy_label(util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
+        _fixed_label->labelfont(flw::PREF_FIXED_FONT);
+        _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 34);
+        size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 24);
         theme::_scrollbar();
 
         for (int f = 0; f <= theme::THEME_SYSTEM; f++) {
@@ -1042,7 +1010,7 @@ void list(std::string title, const StringVector& list, Fl_Window* parent, bool f
 
 //------------------------------------------------------------------------------
 void list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    auto list2 = flw::util::split( list, "\n");
+    auto list2 = util::split( list, "\n");
     _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
     dlg.run();
 }
@@ -1137,26 +1105,28 @@ void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
 //------------------------------------------------------------------------------
 // To disable progress set min and max to 0.0
 //
-AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
+AbortDialog::AbortDialog(double min, double max) :
+Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
+    _grid     = new GridGroup();
     _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
     _abort    = false;
     _last     = 0;
 
-    add(_button);
-    add(_progress);
+    _grid->add(_button,     1,   1,   -1,  -6);
+    _grid->add(_progress,   1,  -5,   -1,   4);
+    add(_grid);
 
     auto W = flw::PREF_FONTSIZE * 32;
-    auto H = 0;
+    auto H = flw::PREF_FONTSIZE * 12;
 
     if (min < max && fabs(max - min) > 0.001) {
         _progress->range(min, max);
         _progress->value(min);
-        H = flw::PREF_FONTSIZE * 6 + 12;
     }
     else {
         _progress->hide();
-        H = flw::PREF_FONTSIZE * 4 + 8;
+        _grid->resize(_button, 1, 1, -1, -1);
     }
 
     _button->callback(AbortDialog::Callback, this);
@@ -1164,6 +1134,7 @@ AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, 
     _button->labelsize(flw::PREF_FONTSIZE);
     _progress->color(FL_SELECTION_COLOR);
 
+    resizable(this);
     size(W, H);
     size_range(W, H);
     callback(AbortDialog::Callback, this);
@@ -1181,7 +1152,7 @@ void AbortDialog::Callback(Fl_Widget* w, void* o) {
 
 //------------------------------------------------------------------------------
 bool AbortDialog::check(int milliseconds) {
-    auto now = flw::util::milliseconds();
+    auto now = util::milliseconds();
 
     if (now - _last > milliseconds) {
         _last = now;
@@ -1193,7 +1164,7 @@ bool AbortDialog::check(int milliseconds) {
 
 //------------------------------------------------------------------------------
 bool AbortDialog::check(double value, double min, double max, int milliseconds) {
-    auto now = flw::util::milliseconds();
+    auto now = util::milliseconds();
 
     if (now - _last > milliseconds) {
         _progress->value(value);
@@ -1210,26 +1181,13 @@ void AbortDialog::range(double min, double max) {
     _progress->range(min, max);
 }
 
-//--------------------------------------------------------------------------
-void AbortDialog::resize(int X, int Y, int W, int H) {
-    Fl_Double_Window::resize(X, Y, W, H);
-
-    if (_progress->visible() != 0) {
-        _button->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
-        _progress->resize(4, H - flw::PREF_FONTSIZE * 2 - 4, W - 8, flw::PREF_FONTSIZE * 2);
-    }
-    else {
-        _button->resize(4, 4, W - 8, H - 8);
-    }
-}
-
 //------------------------------------------------------------------------------
 void AbortDialog::show(const std::string& label, Fl_Window* parent) {
     _abort = false;
     _last  = 0;
 
     _button->copy_label(label.c_str());
-    flw::util::center_window(this, parent);
+    util::center_window(this, parent);
     Fl_Double_Window::show();
     Fl::flush();
 }
@@ -1305,13 +1263,13 @@ public:
 
 //------------------------------------------------------------------------------
 FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
     _create(font, "", fontsize, label);
 }
 
 //------------------------------------------------------------------------------
 FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
 
@@ -1377,19 +1335,21 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     end();
 
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts    = new flw::ScrollBrowser(12);
+    _fonts    = new ScrollBrowser(12);
+    _grid     = new GridGroup();
     _label    = new _FontDialogLabel(0, 0, 0, 0);
     _select   = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes    = new flw::ScrollBrowser(6);
+    _sizes    = new ScrollBrowser(6);
     _font     = -1;
     _fontsize = -1;
     _ret      = false;
 
-    add(_sizes);
-    add(_fonts);
-    add(_select);
-    add(_cancel);
-    add(_label);
+    _grid->add(_fonts,    1,   1,  50,  -6);
+    _grid->add(_sizes,   52,   1,  12,  -6);
+    _grid->add(_label,   65,   1,  -1,  -6);
+    _grid->add(_cancel, -34,  -5,  16,   4);
+    _grid->add(_select, -17,  -5,  16,   4);
+    add(_grid);
 
     _cancel->callback(FontDialog::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
@@ -1408,7 +1368,6 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
 
-    size(w(), h());
     theme::load_fonts();
 
     for (auto name : flw::PREF_FONTNAMES) {
@@ -1451,19 +1410,7 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
-}
-
-//------------------------------------------------------------------------------
-void FontDialog::resize(int X, int Y, int W, int H) {
-    int fs = flw::PREF_FONTSIZE;
-
-    Fl_Double_Window::resize(X, Y, W, H);
-
-    _fonts->resize  (4,                 4,                  fs * 25,            H - fs * 2 - 16);
-    _sizes->resize  (fs * 25 + 8,       4,                  fs * 6,             H - fs * 2 - 16);
-    _label->resize  (fs * 31 + 12,      4,                  W - fs * 31 - 16,   H - fs * 2 - 16);
-    _cancel->resize (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,             fs * 2);
-    _select->resize (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,             fs * 2);
+    _grid->do_layout();
 }
 
 //------------------------------------------------------------------------------
@@ -1471,7 +1418,7 @@ bool FontDialog::run(Fl_Window* parent) {
     _ret = false;
 
     _activate();
-    flw::util::center_window(this, parent);
+    util::center_window(this, parent);
     show();
 
     while (visible() != 0) {
@@ -1515,18 +1462,21 @@ void FontDialog::_select_name(std::string fontname) {
  */
 
 //------------------------------------------------------------------------------
-WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) :
+Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
     end();
 
     _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
-    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
+    _grid   = new GridGroup();
     _label  = new Fl_Hold_Browser(0, 0, 0, 0);
+    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
     _ret    = true;
     _last   = 0.0;
 
-    add(_label);
-    add(_pause);
-    add(_cancel);
+    _grid->add(_label,    1,   1,  -1,  -6);
+    _grid->add(_pause,  -34,  -5,  16,   4);
+    _grid->add(_cancel, -17,  -5,  16,   4);
+    add(_grid);
 
     _cancel->callback(WorkDialog::Callback, this);
     _label->box(FL_BORDER_BOX);
@@ -1548,7 +1498,7 @@ WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool p
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(this);
-    flw::util::center_window(this, parent);
+    util::center_window(this, parent);
     show();
 }
 
@@ -1567,7 +1517,7 @@ void WorkDialog::Callback(Fl_Widget* w, void* o) {
         self->_pause->label("C&ontinue");
 
         while (self->_pause->value() != 0) {
-            flw::util::sleep(10);
+            util::sleep(10);
             Fl::check();
         }
 
@@ -1580,19 +1530,10 @@ void WorkDialog::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-void WorkDialog::resize(int X, int Y, int W, int H) {
-    Fl_Double_Window::resize(X, Y, W, H);
-
-    _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-    _pause->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-    _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-}
-
-//------------------------------------------------------------------------------
 bool WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = flw::util::clock();
+    auto now = util::clock();
 
-    if (now - _last > update_time) {
+    if ((now - _last) > update_time) {
         _label->clear();
 
         for (const auto& s : messages) {
@@ -1609,9 +1550,9 @@ bool WorkDialog::run(double update_time, const StringVector& messages) {
 
 //------------------------------------------------------------------------------
 bool WorkDialog::run(double update_time, const std::string& message) {
-    auto now = flw::util::clock();
+    auto now = util::clock();
 
-    if (now - _last > update_time) {
+    if ((now - _last) > update_time) {
         _label->clear();
         _label->add(message.c_str());
         _last = now;

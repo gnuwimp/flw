@@ -14,6 +14,7 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Tooltip.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 
@@ -29,111 +30,127 @@
     #include <FL/fl_draw.H>
 #endif
 
+/***
+ *       __ _          
+ *      / _| |         
+ *     | |_| |_      __
+ *     |  _| \ \ /\ / /
+ *     | | | |\ V  V / 
+ *     |_| |_| \_/\_/  
+ *                     
+ *                     
+ */
+
 namespace flw {
-    std::vector<char*>          PREF_FONTNAMES;
-    int                         PREF_FIXED_FONT         = FL_COURIER;
-    std::string                 PREF_FIXED_FONTNAME     = "FL_COURIER";
-    int                         PREF_FIXED_FONTSIZE     = 14;
-    int                         PREF_FONT               = FL_HELVETICA;
-    int                         PREF_FONTSIZE           = 14;
-    std::string                 PREF_FONTNAME           = "FL_HELVETICA";
-    int                         PREF_SCROLLBAR          = 2;
-    std::string                 PREF_THEME              = "default";
-    const char* const           PREF_THEMES[]           = {
-                                    "default",
-                                    "oxy",
-                                    "blue oxy",
-                                    "tan oxy",
-                                    "gleam",
-                                    "blue gleam",
-                                    "dark blue gleam",
-                                    "dark gleam",
-                                    "darker gleam",
-                                    "tan gleam",
-                                    "gtk",
-                                    "blue gtk",
-                                    "dark blue gtk",
-                                    "dark gtk",
-                                    "darker gtk",
-                                    "tan gtk",
-                                    "plastic",
-                                    "blue plastic",
-                                    "tan plastic",
-                                    "system",
-                                    nullptr,
-    };
 
-    struct Stat {
-        int64_t                         size;
-        int64_t                         mtime;
-        int                             mode;
+std::vector<char*>          PREF_FONTNAMES;
+int                         PREF_FIXED_FONT         = FL_COURIER;
+std::string                 PREF_FIXED_FONTNAME     = "FL_COURIER";
+int                         PREF_FIXED_FONTSIZE     = 14;
+int                         PREF_FONT               = FL_HELVETICA;
+int                         PREF_FONTSIZE           = 14;
+std::string                 PREF_FONTNAME           = "FL_HELVETICA";
+std::string                 PREF_THEME              = "default";
+const char* const           PREF_THEMES[]           = {
+                                "default",
+                                "oxy",
+                                "blue oxy",
+                                "tan oxy",
+                                "gleam",
+                                "blue gleam",
+                                "dark blue gleam",
+                                "dark gleam",
+                                "darker gleam",
+                                "tan gleam",
+                                "gtk",
+                                "blue gtk",
+                                "dark blue gtk",
+                                "dark gtk",
+                                "darker gtk",
+                                "tan gtk",
+                                "plastic",
+                                "blue plastic",
+                                "tan plastic",
+                                nullptr,
+};
 
-         Stat()
-            { size = mtime = 0; mode = 0; }
+struct Stat {
+    int64_t                         size;
+    int64_t                         mtime;
+    int                             mode;
 
-         explicit Stat(std::string filename) {
-            size  = 0;
-            mtime = 0;
-            mode  = 0;
+     Stat()
+        { size = mtime = 0; mode = 0; }
 
-        #ifdef _WIN32
-            wchar_t wbuffer[1025];
-            struct __stat64 st;
+     explicit Stat(std::string filename) {
+        size  = 0;
+        mtime = 0;
+        mode  = 0;
 
-            while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-                filename.pop_back();
-            }
+    #ifdef _WIN32
+        wchar_t wbuffer[1025];
+        struct __stat64 st;
 
-            fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-
-            if (_wstat64(wbuffer, &st) == 0) {
-                size  = st.st_size;
-                mtime = st.st_mtime;
-
-                if (S_ISDIR(st.st_mode)) {
-                    mode = 1;
-                }
-                else if (S_ISREG(st.st_mode)) {
-                    mode = 2;
-                }
-                else {
-                    mode = 3;
-                }
-            }
-        #else
-            struct stat st;
-
-            if (stat(filename.c_str(), &st) == 0) {
-                size  = st.st_size;
-                mtime = st.st_mtime;
-
-                if (S_ISDIR(st.st_mode)) {
-                    mode = 1;
-                }
-                else if (S_ISREG(st.st_mode)) {
-                    mode = 2;
-                }
-                else {
-                    mode = 3;
-                }
-            }
-        #endif
+        while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+            filename.pop_back();
         }
-   };
-}
+
+        fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
+
+        if (_wstat64(wbuffer, &st) == 0) {
+            size  = st.st_size;
+            mtime = st.st_mtime;
+
+            if (S_ISDIR(st.st_mode)) {
+                mode = 1;
+            }
+            else if (S_ISREG(st.st_mode)) {
+                mode = 2;
+            }
+            else {
+                mode = 3;
+            }
+        }
+    #else
+        struct stat st;
+
+        if (stat(filename.c_str(), &st) == 0) {
+            size  = st.st_size;
+            mtime = st.st_mtime;
+
+            if (S_ISDIR(st.st_mode)) {
+                mode = 1;
+            }
+            else if (S_ISREG(st.st_mode)) {
+                mode = 2;
+            }
+            else {
+                mode = 3;
+            }
+        }
+    #endif
+    }
+};
+
+/***
+ *      ____         __ 
+ *     |  _ \       / _|
+ *     | |_) |_   _| |_ 
+ *     |  _ <| | | |  _|
+ *     | |_) | |_| | |  
+ *     |____/ \__,_|_|  
+ *                      
+ *                      
+ */
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-flw::Buf::Buf() {
+Buf::Buf() {
     p = nullptr;
     s = 0;
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(size_t S) {
+Buf::Buf(size_t S) {
     p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
     s = 0;
 
@@ -143,13 +160,13 @@ flw::Buf::Buf(size_t S) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(char* P, size_t S) {
+Buf::Buf(char* P, size_t S) {
     p = P;
     s = S;
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(const char* P, size_t S) {
+Buf::Buf(const char* P, size_t S) {
     if (P == nullptr) {
         p = nullptr;
         s = 0;
@@ -168,7 +185,7 @@ flw::Buf::Buf(const char* P, size_t S) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(const Buf& b) {
+Buf::Buf(const Buf& b) {
     if (b.p == nullptr) {
         p = nullptr;
         s = 0;
@@ -187,14 +204,14 @@ flw::Buf::Buf(const Buf& b) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf::Buf(Buf&& b) {
+Buf::Buf(Buf&& b) {
     p = b.p;
     s = b.s;
     b.p = nullptr;
 }
 
 //------------------------------------------------------------------------------
-flw::Buf& flw::Buf::operator=(const Buf& b) {
+Buf& Buf::operator=(const Buf& b) {
     if (this == &b) {
     }
     if (b.p == nullptr) {
@@ -219,7 +236,7 @@ flw::Buf& flw::Buf::operator=(const Buf& b) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf& flw::Buf::operator=(Buf&& b) {
+Buf& Buf::operator=(Buf&& b) {
     free(p);
     p = b.p;
     s = b.s;
@@ -228,7 +245,7 @@ flw::Buf& flw::Buf::operator=(Buf&& b) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf& flw::Buf::operator+=(const Buf& b) {
+Buf& Buf::operator+=(const Buf& b) {
     if (b.p == nullptr) {
     }
     else if (p == nullptr) {
@@ -252,92 +269,120 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
 }
 
 //------------------------------------------------------------------------------
-bool flw::Buf::operator==(const Buf& other) const {
+bool Buf::operator==(const Buf& other) const {
     return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+/***
+ *          _      _                 
+ *         | |    | |                
+ *       __| | ___| |__  _   _  __ _ 
+ *      / _` |/ _ \ '_ \| | | |/ _` |
+ *     | (_| |  __/ |_) | |_| | (_| |
+ *      \__,_|\___|_.__/ \__,_|\__, |
+ *                              __/ |
+ *                             |___/ 
+ */
 
 //------------------------------------------------------------------------------
-void flw::debug::print(Fl_Widget* widget, bool tab) {
-    assert(widget);
+void debug::print(Fl_Widget* widget) {
+    std::string indent;
+    debug::print(widget, indent);
+}
 
-    printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
+//------------------------------------------------------------------------------
+void debug::print(Fl_Widget* widget, std::string& indent) {
+    if (widget == nullptr) {
+        puts("debug::print() null widget");
+    }
+    else {
+        printf("%sx=%4d, y=%4d, w=%4d, h=%4d \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->label() ? widget->label() : "NO_LABEL");
+        auto group = widget->as_group();
+        
+        if (group) {
+            indent += "\t";
+            for (int f = 0; f < group->children(); f++) {
+                debug::print(group->child(f), indent);
+            }
+            indent.pop_back();
+        }
+    }
     fflush(stdout);
 }
 
-//------------------------------------------------------------------------------
-void flw::debug::print(Fl_Group* group) {
-    assert(group);
-    puts("");
-    debug::print(static_cast<Fl_Widget*>(group));
+/***
+ *                                 
+ *                                 
+ *      _ __ ___   ___ _ __  _   _ 
+ *     | '_ ` _ \ / _ \ '_ \| | | |
+ *     | | | | | |  __/ | | | |_| |
+ *     |_| |_| |_|\___|_| |_|\__,_|
+ *                                 
+ *                                 
+ */
 
-    for (int f = 0; f < group->children(); f++) {
-        debug::print(group->child(f), true);
-    }
+namespace menu {
+
+//----------------------------------------------------------------------
+static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
+    assert(menu && text);
+    auto item = menu->find_item(text);
+#ifdef DEBUG
+    if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
+#endif
+    return (Fl_Menu_Item*) item;
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+} // menu
 
-namespace flw {
-    namespace menu {
-        //----------------------------------------------------------------------
-        static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
-            assert(menu && text);
-            auto item = menu->find_item(text);
-        #ifdef DEBUG
-            if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
-        #endif
-            return (Fl_Menu_Item*) item;
-        }
-
-        //----------------------------------------------------------------------
-        void enable_item(Fl_Menu_* menu, const char* text, bool value) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            if (value == true) item->activate();
-            else item->deactivate();
-        }
-
-        //----------------------------------------------------------------------
-        Fl_Menu_Item* get_item(Fl_Menu_* menu, const char* text) {
-            return _item(menu, text);
-        }
-
-        //----------------------------------------------------------------------
-        bool item_value(Fl_Menu_* menu, const char* text) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return false;
-            return item->value();
-        }
-
-        //----------------------------------------------------------------------
-        void set_item(Fl_Menu_* menu, const char* text, bool value) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            if (value == true) item->set();
-            else item->clear();
-        }
-
-        //----------------------------------------------------------------------
-        void setonly_item(Fl_Menu_* menu, const char* text) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            menu->setonly(item);
-        }
-    }
+//----------------------------------------------------------------------
+void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return;
+    if (value == true) item->activate();
+    else item->deactivate();
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//----------------------------------------------------------------------
+Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, const char* text) {
+    return _item(menu, text);
+}
+
+//----------------------------------------------------------------------
+bool menu::item_value(Fl_Menu_* menu, const char* text) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return false;
+    return item->value();
+}
+
+//----------------------------------------------------------------------
+void menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return;
+    if (value == true) item->set();
+    else item->clear();
+}
+
+//----------------------------------------------------------------------
+void menu::setonly_item(Fl_Menu_* menu, const char* text) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return;
+    menu->setonly(item);
+}
+
+/***
+ *            _   _ _ 
+ *           | | (_) |
+ *      _   _| |_ _| |
+ *     | | | | __| | |
+ *     | |_| | |_| | |
+ *      \__,_|\__|_|_|
+ *                    
+ *                    
+ */
 
 //------------------------------------------------------------------------------
-void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
+void util::center_window(Fl_Window* window, Fl_Window* parent) {
     if (parent != nullptr) {
         int x = parent->x() + parent->w() / 2;
         int y = parent->y() + parent->h() / 2;
@@ -351,7 +396,7 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
 //------------------------------------------------------------------------------
 // Return time as seconds since 1970
 //
-double flw::util::clock() {
+double util::clock() {
 #ifdef _WIN32
     struct timeb timeVal;
     ftime(&timeVal);
@@ -364,26 +409,7 @@ double flw::util::clock() {
 }
 
 //------------------------------------------------------------------------------
-// Set label font properties for widget
-// If widget is an group widget set also the font for child widgets (recursive)
-//
-void flw::util::labelfont(Fl_Widget* widget) {
-    assert(widget);
-
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
-
-    auto group = widget->as_group();
-
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            util::labelfont(group->child(f));
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
-std::string flw::util::fix_menu_string(std::string in) {
+std::string util::fix_menu_string(std::string in) {
     std::string res = in;
 
     util::replace(res, "\\", "\\\\");
@@ -395,7 +421,7 @@ std::string flw::util::fix_menu_string(std::string in) {
 }
 
 //------------------------------------------------------------------------------
-std::string flw::util::format(const char* format, ...) {
+std::string util::format(const char* format, ...) {
     if (format == nullptr || *format == 0) return "";
 
     int         l   = 128;
@@ -433,7 +459,7 @@ std::string flw::util::format(const char* format, ...) {
 }
 
 //------------------------------------------------------------------------------
-std::string flw::util::format_int(int64_t num, char del) {
+std::string util::format_int(int64_t num, char del) {
     auto pos = 0;
     char tmp1[32];
     char tmp2[32];
@@ -461,7 +487,26 @@ std::string flw::util::format_int(int64_t num, char del) {
 }
 
 //------------------------------------------------------------------------------
-flw::Buf flw::util::load_file(std::string filename, bool alert) {
+// Set label font properties for widget
+// If widget is an group widget set also the font for child widgets (recursive)
+//
+void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
+    assert(widget);
+
+    widget->labelfont(fn);
+    widget->labelsize(fs);
+
+    auto group = widget->as_group();
+
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            util::labelfont(group->child(f), fn, fs);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+Buf util::load_file(std::string filename, bool alert) {
     auto stat = flw::Stat(filename);
 
     if (stat.mode != 2) {
@@ -501,7 +546,7 @@ flw::Buf flw::util::load_file(std::string filename, bool alert) {
 //------------------------------------------------------------------------------
 // Return time stamp
 //
-int32_t flw::util::milliseconds() {
+int32_t util::milliseconds() {
 #if defined(_WIN32)
     LARGE_INTEGER StartingTime;
     LARGE_INTEGER Frequency;
@@ -523,7 +568,7 @@ int32_t flw::util::milliseconds() {
 // Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images)
 // If filename is empty you will be asked for the name
 //
-void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
 #ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
 
@@ -570,7 +615,7 @@ void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, 
 }
 
 //------------------------------------------------------------------------------
-std::string flw::util::remove_browser_format(std::string text) {
+std::string util::remove_browser_format(std::string text) {
     auto res = text;
     auto f   = res.find_last_of("@");
 
@@ -608,7 +653,7 @@ std::string flw::util::remove_browser_format(std::string text) {
 //------------------------------------------------------------------------------
 // Replace string and return number of replacements or -1 for error
 //
-std::string& flw::util::replace(std::string& string, std::string find, std::string replace) {
+std::string& util::replace(std::string& string, std::string find, std::string replace) {
     if (find == "") return string;
     size_t start = 0;
 
@@ -621,7 +666,7 @@ std::string& flw::util::replace(std::string& string, std::string find, std::stri
 }
 
 //------------------------------------------------------------------------------
-bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
+bool util::save_file(std::string filename, const void* data, size_t size, bool alert) {
     auto file = fl_fopen(filename.c_str(), "wb");
 
     if (file != nullptr) {
@@ -645,7 +690,7 @@ bool flw::util::save_file(std::string filename, const void* data, size_t size, b
 }
 
 //------------------------------------------------------------------------------
-void flw::util::sleep(int milli) {
+void util::sleep(int milli) {
 #ifdef _WIN32
     Sleep(milli);
 #else
@@ -657,7 +702,7 @@ void flw::util::sleep(int milli) {
 //------------------------------------------------------------------------------
 // Split string and return an vector with splitted strings
 //
-flw::StringVector flw::util::split(const std::string& string, std::string split) {
+flw::StringVector util::split(const std::string& string, std::string split) {
     auto res = StringVector();
 
     try {
@@ -684,475 +729,457 @@ flw::StringVector flw::util::split(const std::string& string, std::string split)
 }
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-
-namespace flw {
-    namespace color {
-        Fl_Color RED     = fl_rgb_color(255, 0, 0);
-        Fl_Color LIME    = fl_rgb_color(0, 255, 0);
-        Fl_Color BLUE    = fl_rgb_color(0, 0, 255);
-        Fl_Color YELLOW  = fl_rgb_color(255, 255, 0);
-        Fl_Color CYAN    = fl_rgb_color(0, 255, 255);
-        Fl_Color MAGENTA = fl_rgb_color(255, 0, 255);
-        Fl_Color SILVER  = fl_rgb_color(192, 192, 192);
-        Fl_Color GRAY    = fl_rgb_color(128, 128, 128);
-        Fl_Color MAROON  = fl_rgb_color(128, 0, 0);
-        Fl_Color OLIVE   = fl_rgb_color(128, 128, 0);
-        Fl_Color GREEN   = fl_rgb_color(0, 128, 0);
-        Fl_Color PURPLE  = fl_rgb_color(128, 0, 128);
-        Fl_Color TEAL    = fl_rgb_color(0, 128, 128);
-        Fl_Color NAVY    = fl_rgb_color(0, 0, 128);
-        Fl_Color BROWN   = fl_rgb_color(210, 105, 30);
-        Fl_Color PINK    = fl_rgb_color(255, 192, 203);
-        Fl_Color BEIGE   = fl_rgb_color(245, 245, 220);
-        Fl_Color AZURE   = fl_rgb_color(240, 255, 250);
+Fl_Widget* util::widget(Fl_Group* group, std::string label) {
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        
+        if (w->label() != nullptr && label == w->label()) {
+            return w;
+        }
     }
-
-    namespace theme {
-        static unsigned char _OLD_R[256]  = { 0 };
-        static unsigned char _OLD_G[256]  = { 0 };
-        static unsigned char _OLD_B[256]  = { 0 };
-        static unsigned char _SYS_R[256]  = { 0 };
-        static unsigned char _SYS_G[256]  = { 0 };
-        static unsigned char _SYS_B[256]  = { 0 };
-        static bool          _IS_DARK     = false;
-        static bool          _SAVED_COLOR = false;
-        static bool          _SAVED_SYS   = false;
-
-        //----------------------------------------------------------------------
-        // Colors are reset every time a new theme has been selected
-        //!!! Colors are same for dark and light for now
-        //
-        static void _colors(bool dark) {
-            (void) dark;
-
-            color::AZURE   = fl_rgb_color(240, 255, 250);
-            color::BEIGE   = fl_rgb_color(245, 245, 220);
-            color::BLUE    = fl_rgb_color(0, 0, 255);
-            color::BLUE    = fl_rgb_color(0, 0, 255);
-            color::BROWN   = fl_rgb_color(210, 105, 30);
-            color::CYAN    = fl_rgb_color(0, 255, 255);
-            color::GRAY    = fl_rgb_color(128, 128, 128);
-            color::GREEN   = fl_rgb_color(0, 128, 0);
-            color::LIME    = fl_rgb_color(0, 255, 0);
-            color::MAGENTA = fl_rgb_color(255, 0, 255);
-            color::MAROON  = fl_rgb_color(128, 0, 0);
-            color::NAVY    = fl_rgb_color(0, 0, 128);
-            color::OLIVE   = fl_rgb_color(128, 128, 0);
-            color::PINK    = fl_rgb_color(255, 192, 203);
-            color::PURPLE  = fl_rgb_color(128, 0, 128);
-            color::RED     = fl_rgb_color(255, 0, 0);
-            color::SILVER  = fl_rgb_color(192, 192, 192);
-            color::TEAL    = fl_rgb_color(0, 128, 128);
-            color::YELLOW  = fl_rgb_color(255, 255, 0);
-        }
-
-        //----------------------------------------------------------------------
-        static void _make_default_colors_darker() {
-            Fl::set_color(60,    0,  63,   0); // FL_DARK_GREEN
-            Fl::set_color(63,    0, 110,   0); // FL_GREEN
-            Fl::set_color(72,   55,   0,   0); // FL_DARK_RED
-            Fl::set_color(76,   55,  63,   0); // FL_DARK_YELLOW
-            Fl::set_color(88,  110,   0,   0); // FL_RED
-            Fl::set_color(95,  140, 140, 100); // FL_YELLOW
-            Fl::set_color(136,   0,   0,  55); // FL_DARK_BLUE
-            Fl::set_color(140,   0,  63,  55); // FL_DARK_CYAN
-            Fl::set_color(152,  55,   0,  55); // FL_DARK_MAGENTA
-            Fl::set_color(216,   0,   0, 110); // FL_BLUE
-            Fl::set_color(223,   0, 110, 110); // FL_CYAN
-            Fl::set_color(248, 110,   0, 110); // FL_MAGENTA
-        }
-
-        //----------------------------------------------------------------------
-        static void _blue_colors() {
-            Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
-            Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
-            Fl::set_color(8,   130, 149, 166); // FL_INACTIVE_COLOR
-            Fl::set_color(15,  255, 160,  63); // FL_SELECTION_COLOR
-            Fl::set_color(255, 244, 244, 244); // FL_WHITE
-            Fl::background(170, 189, 206);
-        }
-
-        //----------------------------------------------------------------------
-        static void _dark_blue_colors() {
-            Fl::set_color(0,   255, 255, 255); // FL_FOREGROUND_COLOR
-            Fl::set_color(7,    31,  47,  55); // FL_BACKGROUND2_COLOR
-            Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
-            Fl::set_color(15,   68, 138, 255); // FL_SELECTION_COLOR
-            Fl::set_color(56,    0,   0,   0); // FL_BLACK
-            Fl::background(64, 80, 87);
-        }
-
-        //----------------------------------------------------------------------
-        static void _dark_colors() {
-            Fl::set_color(0,   240, 240, 240); // FL_FOREGROUND_COLOR
-            Fl::set_color(7,    55,  55,  55); // FL_BACKGROUND2_COLOR
-            Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-            Fl::set_color(15,  149,  75,  37); // FL_SELECTION_COLOR
-            Fl::set_color(56,    0,   0,   0); // FL_BLACK
-            Fl::background(85, 85, 85);
-            Fl::background(64, 64, 64);
-        }
-
-        //----------------------------------------------------------------------
-        static void _darker_colors() {
-            Fl::set_color(0,   164, 164, 164); // FL_FOREGROUND_COLOR
-            Fl::set_color(7,    16,  16,  16); // FL_BACKGROUND2_COLOR
-            Fl::set_color(7,    28,  28,  28); // FL_BACKGROUND2_COLOR
-            Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-            Fl::set_color(15,  133,  59,  21); // FL_SELECTION_COLOR
-            Fl::set_color(56,    0,   0,   0); // FL_BLACK
-            Fl::background(32, 32, 32);
-            Fl::background(38, 38, 38);
-        }
-
-        //----------------------------------------------------------------------
-        static void _tan_colors() {
-            Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
-            Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
-            Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
-            Fl::set_color(15,  255, 160,  63); // FL_SELECTION_COLOR
-            Fl::set_color(255, 244, 244, 244); // FL_WHITE
-            Fl::background(206, 202, 187);
-        }
-
-        //----------------------------------------------------------------------
-        static void _restore_colors() {
-            if (_SAVED_COLOR == true) {
-                for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, flw::theme::_OLD_R[f], flw::theme::_OLD_G[f], flw::theme::_OLD_B[f]);
-                }
+    
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        auto g = w->as_group();
+        
+        if (g != nullptr) {
+            w = util::widget(g, label);
+            
+            if (w != nullptr) {
+                return w;
             }
         }
+    }
+    
+    return nullptr;
+}
 
-        //----------------------------------------------------------------------
-        static void _restore_sys() {
-            if (_SAVED_SYS == true) {
-                for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, flw::theme::_SYS_R[f], flw::theme::_SYS_G[f], flw::theme::_SYS_B[f]);
-                }
-            }
-        }
+/***
+ *                _            
+ *               | |           
+ *       ___ ___ | | ___  _ __ 
+ *      / __/ _ \| |/ _ \| '__|
+ *     | (_| (_) | | (_) | |   
+ *      \___\___/|_|\___/|_|   
+ *                             
+ *                             
+ */
 
-        //----------------------------------------------------------------------
-        static void _save_colors() {
-            if (_SAVED_COLOR == false) {
-                for (int f = 0; f < 256; f++) {
-                    unsigned char r1, g1, b1;
-                    Fl::get_color(f, r1, g1, b1);
-                    flw::theme::_OLD_R[f] = r1;
-                    flw::theme::_OLD_G[f] = g1;
-                    flw::theme::_OLD_B[f] = b1;
-                }
+Fl_Color color::RED     = fl_rgb_color(255, 0, 0);
+Fl_Color color::LIME    = fl_rgb_color(0, 255, 0);
+Fl_Color color::BLUE    = fl_rgb_color(0, 0, 255);
+Fl_Color color::YELLOW  = fl_rgb_color(255, 255, 0);
+Fl_Color color::CYAN    = fl_rgb_color(0, 255, 255);
+Fl_Color color::MAGENTA = fl_rgb_color(255, 0, 255);
+Fl_Color color::SILVER  = fl_rgb_color(192, 192, 192);
+Fl_Color color::GRAY    = fl_rgb_color(128, 128, 128);
+Fl_Color color::MAROON  = fl_rgb_color(128, 0, 0);
+Fl_Color color::OLIVE   = fl_rgb_color(128, 128, 0);
+Fl_Color color::GREEN   = fl_rgb_color(0, 128, 0);
+Fl_Color color::PURPLE  = fl_rgb_color(128, 0, 128);
+Fl_Color color::TEAL    = fl_rgb_color(0, 128, 128);
+Fl_Color color::NAVY    = fl_rgb_color(0, 0, 128);
+Fl_Color color::BROWN   = fl_rgb_color(210, 105, 30);
+Fl_Color color::PINK    = fl_rgb_color(255, 192, 203);
+Fl_Color color::BEIGE   = fl_rgb_color(245, 245, 220);
+Fl_Color color::AZURE   = fl_rgb_color(240, 255, 250);
 
-                _SAVED_COLOR = true;
-            }
-        }
+/***
+ *      _   _                         
+ *     | | | |                        
+ *     | |_| |__   ___ _ __ ___   ___ 
+ *     | __| '_ \ / _ \ '_ ` _ \ / _ \
+ *     | |_| | | |  __/ | | | | |  __/
+ *      \__|_| |_|\___|_| |_| |_|\___|
+ *                                    
+ *                                    
+ */
 
-        //----------------------------------------------------------------------
-        static void _save_sys() {
-            if (_SAVED_SYS == false) {
-                for (int f = 0; f < 256; f++) {
-                    unsigned char r1, g1, b1;
-                    Fl::get_color(f, r1, g1, b1);
-                    flw::theme::_SYS_R[f] = r1;
-                    flw::theme::_SYS_G[f] = g1;
-                    flw::theme::_SYS_B[f] = b1;
-                }
+namespace theme {
 
-                _SAVED_SYS = true;
-            }
-        }
+static unsigned char _OLD_R[256]  = { 0 };
+static unsigned char _OLD_G[256]  = { 0 };
+static unsigned char _OLD_B[256]  = { 0 };
+static bool          _IS_DARK     = false;
+static bool          _SAVED_COLOR = false;
+static int           _SCROLLSIZE  = Fl::scrollbar_size();
 
-        //------------------------------------------------------------------------------
-        void _load_default() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::scheme("none");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
-            _IS_DARK = false;
-        }
+//----------------------------------------------------------------------
+// Colors are reset every time a new theme has been selected
+//!!! Colors are same for dark and light for now
+//
+static void _colors(bool dark) {
+    (void) dark;
 
-        //------------------------------------------------------------------------------
-        void _load_oxy() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
+    color::AZURE   = fl_rgb_color(240, 255, 250);
+    color::BEIGE   = fl_rgb_color(245, 245, 220);
+    color::BLUE    = fl_rgb_color(0, 0, 255);
+    color::BLUE    = fl_rgb_color(0, 0, 255);
+    color::BROWN   = fl_rgb_color(210, 105, 30);
+    color::CYAN    = fl_rgb_color(0, 255, 255);
+    color::GRAY    = fl_rgb_color(128, 128, 128);
+    color::GREEN   = fl_rgb_color(0, 128, 0);
+    color::LIME    = fl_rgb_color(0, 255, 0);
+    color::MAGENTA = fl_rgb_color(255, 0, 255);
+    color::MAROON  = fl_rgb_color(128, 0, 0);
+    color::NAVY    = fl_rgb_color(0, 0, 128);
+    color::OLIVE   = fl_rgb_color(128, 128, 0);
+    color::PINK    = fl_rgb_color(255, 192, 203);
+    color::PURPLE  = fl_rgb_color(128, 0, 128);
+    color::RED     = fl_rgb_color(255, 0, 0);
+    color::SILVER  = fl_rgb_color(192, 192, 192);
+    color::TEAL    = fl_rgb_color(0, 128, 128);
+    color::YELLOW  = fl_rgb_color(255, 255, 0);
+}
 
-        //------------------------------------------------------------------------------
-        void _load_oxy_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
+//----------------------------------------------------------------------
+static void _make_default_colors_darker() {
+    Fl::set_color(60,    0,  63,   0); // FL_DARK_GREEN
+    Fl::set_color(63,    0, 110,   0); // FL_GREEN
+    Fl::set_color(72,   55,   0,   0); // FL_DARK_RED
+    Fl::set_color(76,   55,  63,   0); // FL_DARK_YELLOW
+    Fl::set_color(88,  110,   0,   0); // FL_RED
+    Fl::set_color(95,  140, 140, 100); // FL_YELLOW
+    Fl::set_color(136,   0,   0,  55); // FL_DARK_BLUE
+    Fl::set_color(140,   0,  63,  55); // FL_DARK_CYAN
+    Fl::set_color(152,  55,   0,  55); // FL_DARK_MAGENTA
+    Fl::set_color(216,   0,   0, 110); // FL_BLUE
+    Fl::set_color(223,   0, 110, 110); // FL_CYAN
+    Fl::set_color(248, 110,   0, 110); // FL_MAGENTA
+}
 
-        //------------------------------------------------------------------------------
-        void _load_oxy_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
+//----------------------------------------------------------------------
+static void _blue_colors() {
+    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,   130, 149, 166); // FL_INACTIVE_COLOR
+    Fl::set_color(15,   83, 180, 255); // FL_SELECTION_COLOR
+    Fl::set_color(255, 244, 244, 244); // FL_WHITE
+    Fl::background(170, 189, 206);
+}
 
-        //------------------------------------------------------------------------------
-        void _load_gleam() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
+//----------------------------------------------------------------------
+static void _dark_blue_colors() {
+    Fl::set_color(0,   255, 255, 255); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    31,  47,  55); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
+    Fl::set_color(15,   68, 138, 255); // FL_SELECTION_COLOR
+    Fl::set_color(56,    0,   0,   0); // FL_BLACK
+    Fl::background(64, 80, 87);
+}
 
-        //------------------------------------------------------------------------------
-        void _load_gleam_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
+//----------------------------------------------------------------------
+static void _dark_colors() {
+    Fl::set_color(0,   240, 240, 240); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    55,  55,  55); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  149,  75,  37); // FL_SELECTION_COLOR
+    Fl::set_color(56,    0,   0,   0); // FL_BLACK
+    Fl::background(85, 85, 85);
+    Fl::background(64, 64, 64);
+}
 
-        //------------------------------------------------------------------------------
-        void _load_gleam_dark() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
+//----------------------------------------------------------------------
+static void _darker_colors() {
+    Fl::set_color(0,   220, 220, 220); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    16,  16,  16); // FL_BACKGROUND2_COLOR
+    Fl::set_color(7,    28,  28,  28); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  133,  59,  21); // FL_SELECTION_COLOR
+    Fl::set_color(56,    0,   0,   0); // FL_BLACK
+    Fl::background(32, 32, 32);
+    Fl::background(38, 38, 38);
+}
 
-        //------------------------------------------------------------------------------
-        void _load_gleam_darker() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_darker_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
+//----------------------------------------------------------------------
+static void _tan_colors() {
+    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  255, 160,  63); // FL_SELECTION_COLOR
+    Fl::set_color(255, 244, 244, 244); // FL_WHITE
+    Fl::background(206, 202, 187);
+}
 
-        //------------------------------------------------------------------------------
-        void _load_gleam_dark_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_blue_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 101, 117, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gleam_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gtk() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gtk_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gtk_dark() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 185, 185, 185);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gtk_darker() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_darker_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
-            _IS_DARK = true;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gtk_dark_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_blue_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 161, 177, 185);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_gtk_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 2;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_blue_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 2;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_tan_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 2;
-        }
-
-        //------------------------------------------------------------------------------
-        void _load_system() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-
-            if (theme::_SAVED_SYS) {
-              flw::theme::_restore_sys();
-            }
-            else {
-              Fl::get_system_colors();
-              flw::theme::_save_sys();
-            }
-
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_SYSTEM];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-
-        //------------------------------------------------------------------------------
-        void _scrollbar() {
-            auto s = (flw::PREF_FONTSIZE > flw::PREF_FIXED_FONTSIZE) ? flw::PREF_FONTSIZE : flw::PREF_FIXED_FONTSIZE;
-            Fl::scrollbar_size(s + flw::PREF_SCROLLBAR);
+//----------------------------------------------------------------------
+static void _restore_colors() {
+    if (_SAVED_COLOR == true) {
+        for (int f = 0; f < 256; f++) {
+            Fl::set_color(f, theme::_OLD_R[f], theme::_OLD_G[f], theme::_OLD_B[f]);
         }
     }
 }
 
+//----------------------------------------------------------------------
+static void _save_colors() {
+    if (_SAVED_COLOR == false) {
+        for (int f = 0; f < 256; f++) {
+            unsigned char r1, g1, b1;
+            Fl::get_color(f, r1, g1, b1);
+            theme::_OLD_R[f] = r1;
+            theme::_OLD_G[f] = g1;
+            theme::_OLD_B[f] = b1;
+        }
+
+        _SAVED_COLOR = true;
+    }
+}
+
 //------------------------------------------------------------------------------
-bool flw::theme::is_dark() {
+void _load_default() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("none");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_oxy() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("oxy");
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_oxy_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("oxy");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_oxy_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("oxy");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("gleam");
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 125, 125, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_darker_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 125, 125, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_dark_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_blue_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("gtk+");
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 185, 185, 185);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_darker_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 125, 125, 125);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_dark_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_blue_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 161, 177, 185);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_plastic() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_blue_plastic() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_tan_plastic() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _scrollbar() {
+    if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
+        auto f = (double) flw::PREF_FONTSIZE / 14.0;
+        auto s = (int) (f * theme::_SCROLLSIZE);
+        Fl::scrollbar_size(s);
+    }
+    else if (theme::_SCROLLSIZE > 0) {
+        Fl::scrollbar_size(theme::_SCROLLSIZE);
+    }
+}
+
+} // theme
+
+//------------------------------------------------------------------------------
+bool theme::is_dark() {
     if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE] ||
         flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] ||
         flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER] ||
@@ -1167,66 +1194,67 @@ bool flw::theme::is_dark() {
 }
 
 //------------------------------------------------------------------------------
-bool flw::theme::load(std::string name) {
+bool theme::load(std::string name) {
+    if (theme::_SCROLLSIZE == 0) {
+        theme::_SCROLLSIZE = Fl::scrollbar_size();
+    }
+    
     if (name == flw::PREF_THEMES[theme::THEME_DEFAULT]) {
-        flw::theme::_load_default();
+        theme::_load_default();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_OXY]) {
-        flw::theme::_load_oxy();
+        theme::_load_oxy();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_OXY_BLUE]) {
-        flw::theme::_load_oxy_blue();
+        theme::_load_oxy_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_OXY_TAN]) {
-        flw::theme::_load_oxy_tan();
+        theme::_load_oxy_tan();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM]) {
-        flw::theme::_load_gleam();
+        theme::_load_gleam();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE]) {
-        flw::theme::_load_gleam_blue();
+        theme::_load_gleam_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE]) {
-        flw::theme::_load_gleam_dark_blue();
+        theme::_load_gleam_dark_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK]) {
-        flw::theme::_load_gleam_dark();
+        theme::_load_gleam_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER]) {
-        flw::theme::_load_gleam_darker();
+        theme::_load_gleam_darker();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_TAN]) {
-        flw::theme::_load_gleam_tan();
+        theme::_load_gleam_tan();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK]) {
-        flw::theme::_load_gtk();
+        theme::_load_gtk();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_BLUE]) {
-        flw::theme::_load_gtk_blue();
+        theme::_load_gtk_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE]) {
-        flw::theme::_load_gtk_dark_blue();
+        theme::_load_gtk_dark_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
-        flw::theme::_load_gtk_dark();
+        theme::_load_gtk_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARKER]) {
-        flw::theme::_load_gtk_darker();
+        theme::_load_gtk_darker();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_TAN]) {
-        flw::theme::_load_gtk_tan();
+        theme::_load_gtk_tan();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC]) {
-        flw::theme::_load_plastic();
+        theme::_load_plastic();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE]) {
-        flw::theme::_load_blue_plastic();
+        theme::_load_blue_plastic();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN]) {
-        flw::theme::_load_tan_plastic();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_SYSTEM]) {
-        flw::theme::_load_system();
+        theme::_load_tan_plastic();
     }
     else {
         return false;
@@ -1237,7 +1265,7 @@ bool flw::theme::load(std::string name) {
 }
 
 //------------------------------------------------------------------------------
-int flw::theme::load_font(std::string requested_font) {
+int theme::load_font(std::string requested_font) {
     theme::load_fonts();
 
     auto count = 0;
@@ -1258,7 +1286,7 @@ int flw::theme::load_font(std::string requested_font) {
 //------------------------------------------------------------------------------
 // Load fonts only once in the program
 //
-void flw::theme::load_fonts(bool iso8859_only) {
+void theme::load_fonts(bool iso8859_only) {
     if (flw::PREF_FONTNAMES.size() == 0) {
         auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
 
@@ -1286,7 +1314,7 @@ void flw::theme::load_fonts(bool iso8859_only) {
 //------------------------------------------------------------------------------
 // Load icon before showing window
 //
-void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
+void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
     assert(win);
 
     if (win->shown() != 0) {
@@ -1318,7 +1346,7 @@ void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_re
 //------------------------------------------------------------------------------
 // Load theme and font data
 //
-void flw::theme::load_theme_pref(Fl_Preferences& pref) {
+void theme::load_theme_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
 
@@ -1357,22 +1385,26 @@ void flw::theme::load_theme_pref(Fl_Preferences& pref) {
     }
 
     pref.get("theme", buffer, "oxy", 4000);
-    flw::theme::load(buffer);
+    theme::load(buffer);
+    Fl_Tooltip::font(flw::PREF_FONT);
+    Fl_Tooltip::size(flw::PREF_FONTSIZE);
+    _scrollbar();
 }
 
 //------------------------------------------------------------------------------
 // Load window size
 //
-void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
+void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2, int defw, int defh, std::string basename) {
     assert(window);
 
-    int  x, y, w, h, f;
+    int  x, y, w, h, f, m;
 
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
     pref.get((basename + "fullscreen").c_str(), f, 0);
+    pref.get((basename + "maximized").c_str(), m, 0);
 
     if (w == 0 || h == 0) {
         w = 800;
@@ -1384,26 +1416,31 @@ void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool sho
         y = 60;
     }
 
-    if (show == true && window->shown() == 0) {
-        window->resize(x, y, w, h);
+    if (show_0_1_2 > 1 && window->shown() == 0) {
         window->show();
     }
-    else {
-        window->resize(x, y, w, h);
-    }
 
+    window->resize(x, y, w, h);
+    
     if (f == 1) {
         window->fullscreen();
+    }
+    else if (m == 1) {
+        window->maximize();
+    }
+    
+    if (show_0_1_2 == 1 && window->shown() == 0) {
+        window->show();
     }
 }
 
 //------------------------------------------------------------------------------
-bool flw::theme::parse(int argc, const char** argv) {
+bool theme::parse(int argc, const char** argv) {
     auto res = false;
 
     for (auto f = 1; f < argc; f++) {
         if (res == false) {
-            res = flw::theme::load(argv[f]);
+            res = theme::load(argv[f]);
         }
 
         auto fontsize = atoi(argv[f]);
@@ -1420,7 +1457,7 @@ bool flw::theme::parse(int argc, const char** argv) {
 //------------------------------------------------------------------------------
 // Save theme and font data
 //
-void flw::theme::save_theme_pref(Fl_Preferences& pref) {
+void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
     pref.set("fontname", flw::PREF_FONTNAME.c_str());
     pref.set("fontsize", flw::PREF_FONTSIZE);
@@ -1431,7 +1468,7 @@ void flw::theme::save_theme_pref(Fl_Preferences& pref) {
 //------------------------------------------------------------------------------
 // Save window size
 //
-void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
+void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
     assert(window);
 
     pref.set((basename + "x").c_str(), window->x());
@@ -1439,6 +1476,9 @@ void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::str
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
+    pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
 }
+
+} // flw
 
 // MKALGAM_OFF

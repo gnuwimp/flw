@@ -106,9 +106,9 @@ public:
     int                         handle(int event) override;
     bool                        has_time() const;
     void                        init(bool calc_dates);
-    bool                        margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
-    void                        resize()
+    void                        layout()
                                     { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
+    bool                        margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
     void                        resize(int X, int Y, int W, int H) override;
     bool                        tick_width(int tick_width_from_3_to_100 = Chart::MIN_TICK);
     void                        update_pref();

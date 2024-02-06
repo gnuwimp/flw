@@ -17,6 +17,8 @@ int BORDER = 0;
 class Test : public Fl_Double_Window {
 public:
     Test(int W, int H) : Fl_Double_Window(W, H, "test_tabsgroup.cpp") {
+        end();
+        
         TEST = this;
 
         auto n = new Fl_Button(0, 0, 0, 0, "TABS::NORTH");
@@ -34,7 +36,8 @@ public:
         e->callback(CallbackEast, this);
         w->callback(CallbackWest, this);
 
-        tabs = new TabsGroup(0, 0, W, H);
+        tabs = new TabsGroup(10, 10, W - 20, H - 20);
+        add(tabs);
         // tabs = new TabsGroup(10, 10, W-20, H-20);
         tabs->add("Delete", b1);
         tabs->add("Hide/Show", b2);
@@ -53,7 +56,7 @@ public:
         // TabsGroup::BoxType(FL_ROUND_DOWN_BOX);
         // TabsGroup::BoxType(FL_THIN_UP_BOX);
         // TabsGroup::BoxType(FL_BORDER_BOX);
-        tabs->resize();
+//        tabs->do_layout();
         // TabsGroup::BoxColor(FL_YELLOW);
         // TabsGroup::BoxSelectionColor(FL_GREEN);
 
@@ -66,44 +69,44 @@ public:
         b4->callback(CallbackWidget4, this);
 
         color(FL_BLUE);
-        resizable(this);
+        resizable(tabs);
         size_range(64, 48);
     }
 
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        tabs->resize(10, 10, W - 20, H - 20);
-//        tabs->resize(0, 0, W, H);
-    }
+//    void resize(int X, int Y, int W, int H) override {
+//        Fl_Double_Window::resize(X, Y, W, H);
+//        tabs->resize(10, 10, W - 20, H - 20);
+////        tabs->resize(0, 0, W, H);
+//    }
 
     static void CallbackEast(Fl_Widget*, void*) {
         TEST->tabs->tabs(TabsGroup::TABS::EAST);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
     }
 
     static void CallbackNorth(Fl_Widget*, void*) {
         TEST->tabs->tabs(TabsGroup::TABS::NORTH);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
     }
 
     static void CallbackSouth(Fl_Widget*, void*) {
         TEST->tabs->tabs(TabsGroup::TABS::SOUTH);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
     }
 
     static void CallbackStart(Fl_Widget* widget, void*) {
         TEST->tabs->label("Label Changed", widget);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
     }
 
     static void CallbackWest(Fl_Widget*, void*) {
         TEST->tabs->tabs(TabsGroup::TABS::WEST);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
     }
 
     static void CallbackWidget1(Fl_Widget*, void*) {
         auto w = TEST->tabs->remove(TEST->b1);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
         delete w;
     }
 
@@ -118,7 +121,7 @@ public:
 
     static void CallbackWidget3(Fl_Widget*, void*) {
         auto w = TEST->tabs->remove(TEST->b4);
-        TEST->tabs->resize();
+        TEST->tabs->do_layout();
         delete w;
     }
 

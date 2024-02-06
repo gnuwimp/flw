@@ -60,7 +60,7 @@ public:
     int                         handle(int event) override;
     void                        labels(std::string x, std::string y);
     void                        label_colors(Fl_Color x, Fl_Color y);
-    void                        resize()
+    void                        layout()
                                     { _calc = true; _w = _h = 0; resize(x(), y(), w(), h()); redraw(); }
     void                        resize(int X, int Y, int W, int H) override;
     void                        update_pref();

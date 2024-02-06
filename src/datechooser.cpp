@@ -27,14 +27,15 @@ namespace flw {
 
 //------------------------------------------------------------------------------
 class _DateChooserCanvas : public Fl_Widget {
-    Date                    _date[7][8];
-    char                    _text[7][8][30];
-    int                     _col;
-    int                     _row;
+    Date                        _date[7][8];
+    char                        _text[7][8][30];
+    int                         _col;
+    int                         _row;
 
 public:
     //--------------------------------------------------------------------------
-    _DateChooserCanvas() : Fl_Widget(0, 0, 0, 0, 0) {
+    _DateChooserCanvas() :
+    Fl_Widget(0, 0, 0, 0, 0) {
         _row   = 1;
         _col   = 1;
 
@@ -80,6 +81,7 @@ public:
 
                     if (r == _row && c == _col) {
                         bg = FL_SELECTION_COLOR;
+                        fg = FL_BACKGROUND2_COLOR;
                     }
                     else if (col == 2) {
                         bg = FL_BACKGROUND2_COLOR;
@@ -208,35 +210,37 @@ public:
  *
  */
 
-//----------------------------------------------------------------------------------
-flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+//------------------------------------------------------------------------------
+flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) :
+GridGroup(X, Y, W, H, l) {
     end();
 
-    _h           = -1;
-    _w           = -1;
-    _month_label = new Fl_Box(0, 0, 0, 0, "");
-    _canvas      = new _DateChooserCanvas();
-    _b6          = new Fl_Repeat_Button(0, 0, 0, 0, "@|<");
     _b1          = new Fl_Repeat_Button(0, 0, 0, 0, "@<<");
     _b2          = new Fl_Repeat_Button(0, 0, 0, 0, "@<");
-    _b5          = new Fl_Button(0, 0, 0, 0, "@refresh");
     _b3          = new Fl_Repeat_Button(0, 0, 0, 0, "@>");
     _b4          = new Fl_Repeat_Button(0, 0, 0, 0, "@>>");
+    _b5          = new Fl_Button(0, 0, 0, 0, "@refresh");
+    _b6          = new Fl_Repeat_Button(0, 0, 0, 0, "@|<");
     _b7          = new Fl_Repeat_Button(0, 0, 0, 0, "@>|");
+    _buttons     = new ToolGroup();
+    _canvas      = new _DateChooserCanvas();
+    _month_label = new Fl_Box(0, 0, 0, 0, "");
 
     Date date;
     set(date);
     _set_label();
 
-    add(_b1);
-    add(_b2);
-    add(_b5);
-    add(_b3);
-    add(_b4);
-    add(_b6);
-    add(_b7);
-    add(_month_label);
-    add(_canvas);
+    _buttons->add(_b6);
+    _buttons->add(_b1);
+    _buttons->add(_b2);
+    _buttons->add(_b5, 8);
+    _buttons->add(_b3);
+    _buttons->add(_b4);
+    _buttons->add(_b7);
+    _buttons->expand_last(true);
+    add(_buttons,     0, 0, 0, 4);
+    add(_month_label, 0, 4, 0, 4);
+    add(_canvas,      0, 8, 0, 0);
 
     _b1->callback(flw::DateChooser::_Callback, this);
     _b1->tooltip("Previous year");
@@ -257,10 +261,11 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
 
     util::labelfont(this);
     tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
-    flw::DateChooser::resize(X, Y, W, H);
+    resizable(this);
+    do_layout();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
     auto dc = static_cast<DateChooser*>(o);
     auto dt = dc->get();
@@ -301,24 +306,24 @@ void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
     dc->_canvas->take_focus();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void flw::DateChooser::draw() {
     _month_label->labelfont(FL_HELVETICA_BOLD);
     Fl_Group::draw();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void flw::DateChooser::focus() {
     _canvas->take_focus();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 flw::Date flw::DateChooser::get() const {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     return canvas->get();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int flw::DateChooser::handle(int event) {
     if (event == FL_KEYDOWN) {
         if (Fl::event_command()) {
@@ -340,36 +345,7 @@ int flw::DateChooser::handle(int event) {
     return Fl_Group::handle(event);
 }
 
-//----------------------------------------------------------------------------------
-void flw::DateChooser::resize(int X, int Y, int W, int H) {
-    Fl_Widget::resize(X, Y, W, H);
-
-    if (W == _w && H == _h) {
-        return;
-    }
-
-    int w1 = W / 8;
-    int w2 = W - (w1 * 6);
-    int fs = flw::PREF_FONTSIZE;
-
-    _b6->resize(X, Y, w1, fs * 2);
-    _b1->resize(X + w1, Y, w1, fs * 2);
-    _b2->resize(X + w1 * 2, Y, w1, fs * 2);
-
-    _b3->resize(X + w1 * 3 + w2, Y, w1, fs * 2);
-    _b4->resize(X + w1 * 4 + w2, Y, w1, fs * 2);
-    _b7->resize(X + w1 * 5 + w2, Y, w1, fs * 2);
-
-    _b5->resize(X + w1 * 3, Y, w2, fs * 2);
-
-    _month_label->resize(X, Y + fs * 2, W, fs * 2);
-    _canvas->resize(X, Y + fs * 4, W, H - fs * 4);
-
-    _w = W;
-    _h = H;
-}
-
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void flw::DateChooser::set(const Date& date) {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date2  = date;
@@ -412,7 +388,7 @@ void flw::DateChooser::set(const Date& date) {
     redraw();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void flw::DateChooser::_set_label() {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date   = canvas->get();
@@ -432,27 +408,32 @@ void flw::DateChooser::_set_label() {
  *     |______|                                                                   |___/
  */
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class _DateChooserDlg : public Fl_Double_Window {
-    DateChooser*            _date_chooser;
-    Date&                   _value;
-    Fl_Button*              _cancel;
-    Fl_Button*              _ok;
-    bool                    _res;
+    Date&                       _value;
+    DateChooser*                _date_chooser;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _ok;
+    GridGroup*                  _grid;
+    bool                        _res;
 
 public:
-    //----------------------------------------------------------------------------------
-    _DateChooserDlg(const char* title, Date& date) : Fl_Double_Window(0, 0, 0, 0), _value(date) {
+    //--------------------------------------------------------------------------
+    _DateChooserDlg(const char* title, Date& date) :
+    Fl_Double_Window(0, 0, 0, 0),
+    _value(date) {
         end();
 
-        _date_chooser = new DateChooser();
-        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
+        _grid         = new GridGroup();
+        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _res          = false;
 
-        add(_date_chooser);
-        add(_ok);
-        add(_cancel);
+        _grid->add(_date_chooser,   0,   0,   0,  -6);
+        _grid->add(_cancel,       -34,  -5,  16,   4);
+        _grid->add(_ok,           -17,  -5,  16,   4);
+        add(_grid);
 
         _cancel->callback(Callback, this);
         _date_chooser->focus();
@@ -462,13 +443,13 @@ public:
         util::labelfont(this);
         callback(Callback, this);
         copy_label(title);
+        resizable(this);
         size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
         size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
         set_modal();
-        resizable(this);
     }
 
-    //----------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DateChooserDlg*>(o);
 
@@ -484,20 +465,15 @@ public:
         }
     }
 
-    //----------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
-        auto fs = flw::PREF_FONTSIZE;
-
         Fl_Double_Window::resize(X, Y, W, H);
-
-        _date_chooser->resize (4,                 4,                  W - 8,    H - fs * 2 - 16);
-        _cancel->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,   fs * 2);
-        _ok->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,   fs * 2);
+        _grid->resize(0, 0, W, H);
     }
 
-    //----------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     bool run(Fl_Window* parent) {
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
         show();
 
         while (visible() != 0) {
@@ -524,7 +500,7 @@ public:
  *
  */
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
     flw::_DateChooserDlg dlg(title.c_str(), date);
     return dlg.run(parent);

@@ -49,7 +49,7 @@ public:
 
 class Test : public Fl_Double_Window {
 public:
-    static Test* TEST;
+    static Test*         TEST;
     Fl_Button*           bg2;
     Fl_Button*           bg;
     Fl_Button*           dark1;
@@ -232,6 +232,7 @@ public:
         input->value("default");
         slider->type(4);
         theme->callback(CallbackTheme);
+        theme->tooltip("Select a theme.");
         browser->add("FL_BACKGROUND2_COLOR");
         browser->add("FL_BACKGROUND_COLOR");
         browser->add("FL_BLACK");
@@ -414,10 +415,10 @@ public:
         roller->resize  (fs * 2 + 8, fs * 14 + 28, fs * 2, fs * 12);
         scale->resize   (4, fs * 26 + 34, fs * 10, H - fs * 26 - 40);
 
-        input->resize  (fs * 10 + 8, fs * 2 + 4, fs * 24, fs * 2);
-        browser->resize(fs * 10 + 8, fs * 4 + 8, fs * 24, fs * 10);
-        date->resize   (fs * 10 + 8, fs * 14 + 12, fs * 24, fs * 20);
-        tree->resize   (fs * 10 + 8, fs * 34 + 16, fs * 24, H - fs * 34 - 20);
+        input->resize  (fs * 10 + 8, fs * 2 + 4, fs * 28, fs * 2);
+        browser->resize(fs * 10 + 8, fs * 4 + 8, fs * 28, fs * 10);
+        date->resize   (fs * 10 + 8, fs * 14 + 12, fs * 28, fs * 20);
+        tree->resize   (fs * 10 + 8, fs * 34 + 16, fs * 28, H - fs * 34 - 20);
 
         fg->resize       (W - fs * 48 - 8, fs * 3 + 4,   fs * 15, fs * 2);
         bg->resize       (W - fs * 48 - 8, fs * 6 + 8,   fs * 15, fs * 2);
@@ -473,7 +474,8 @@ public:
         browser->textfont(flw::PREF_FONT);
         browser->textsize(flw::PREF_FONTSIZE);
         menu->textsize(flw::PREF_FONTSIZE);
-        tree->item_labelsize(flw::PREF_FONTSIZE);
+        tree->item_labelfont(flw::PREF_FIXED_FONT);
+        tree->item_labelsize(flw::PREF_FIXED_FONTSIZE);
         make_tree();
         size(w(), h());
         Fl::redraw();
@@ -485,11 +487,11 @@ Test* Test::TEST = nullptr;
 int main(int argc, const char** argv) {
     Test win;
 
-    auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "theme");
+    auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_theme");
     flw::theme::parse(argc, argv);
     flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
     flw::theme::load_theme_pref(pref);
-    flw::theme::load_win_pref(pref, &win, true);
+    flw::theme::load_win_pref(pref, &win, 2);
     win.create();
     win.update_pref();
     Fl::run();

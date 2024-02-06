@@ -9,6 +9,7 @@
 // MKALGAM_ON
 
 #include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
 
 namespace flw {
 
@@ -30,10 +31,12 @@ public:
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
-                                    { _n = n; _s = s; _w = w; _e = e; resize(); }
+                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); }
     Fl_Widget*                  child(int num) const;
     int                         children() const
                                     { return (int) _widgets.size(); }
+    void                        do_layout()
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
     int                         find(Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs()
@@ -42,8 +45,6 @@ public:
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
                                     { return remove(find(widget)); }
-    void                        resize()
-                                    { Fl::redraw(); resize(x(), y(), w(), h()); }
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs()
                                     { _hide_tab_buttons(false); }

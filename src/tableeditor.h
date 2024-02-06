@@ -13,6 +13,8 @@ namespace flw {
     // A table editing widget
     //
     class TableEditor : public TableDisplay {
+        using TableDisplay::cell_value;
+
     public:
         enum class FORMAT {
                                         DEFAULT,

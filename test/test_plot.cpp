@@ -340,7 +340,7 @@ public:
             plot->add_line(create_line(-1), Plot::LINE, 3, "10 Plot::LINE", color::PINK);
             plot->labels(MENU_10LINEs, MENU_10LINEs);
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_BAR) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -348,7 +348,7 @@ public:
             plot->add_line(create_bar(100), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
             plot->labels(MENU_BAR, MENU_BAR);
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s=="1" || s == MENU_DAYS) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -357,7 +357,7 @@ public:
             plot->custom_ylabels_for_points0(create_days2());
             plot->labels(MENU_DAYS, "Sum");
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_LARGE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -366,7 +366,7 @@ public:
             plot->add_line(create_random_large(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::GREEN);
             plot->add_line(create_random_large(), Plot::LINE_DOT, 3, "Plot::LINE_DOT", color::RED);
             plot->labels(MENU_LARGE, MENU_LARGE);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_LINE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -374,7 +374,7 @@ public:
             plot->add_line(create_line(-10), Plot::LINE_WITH_SQUARE, 1, "Plot::LINE_WITH_SQUARE", color::TEAL);
             plot->labels(MENU_LINE, MENU_LINE);
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_MLINE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -382,7 +382,7 @@ public:
             plot->add_line(create_big_line(), Plot::LINE, 1, "Plot::LINE", color::TEAL);
             plot->labels("", MENU_MLINE);
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s=="1" || s == MENU_MONTHS) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -392,7 +392,7 @@ public:
             plot->custom_xlabels_for_points0(create_months2());
             plot->labels(MENU_MONTHS, "Y-Sum");
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_NP) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -400,7 +400,7 @@ public:
             plot->add_line(create_neg(), Plot::SQUARE, 7, "Plot::SQUARE", color::TEAL);
             plot->labels(MENU_NP, MENU_NP);
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_SMALL) {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -408,21 +408,21 @@ public:
             plot->add_line(create_random_small(), Plot::FILLED_CIRCLE, 21, "Plot::FILLED_CIRCLE", color::TEAL);
             plot->add_line(create_random_small(), Plot::SQUARE, 7, "Plot::SQUARE", color::RED);
             plot->labels(MENU_SMALL, MENU_SMALL);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_VECTOR) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
             plot->add_line(create_vector(), Plot::VECTOR, 2, "Plot::VECTOR", color::TEAL);
             plot->labels(MENU_VECTOR, MENU_VECTOR);
-            plot->resize();
+            plot->layout();
         }
         else if (s == MENU_VSMALL) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
             plot->add_line(create_random_very_small(), Plot::CIRCLE, 9, "Plot::CIRCLE", color::TEAL);
             plot->labels(MENU_VSMALL, MENU_VSMALL);
-            plot->resize();
+            plot->layout();
         }
         else {
             if (RAND_666) srand(666); else srand(time(nullptr));
@@ -431,7 +431,7 @@ public:
             plot->add_line(create_point(0.0, 0.0), Plot::SQUARE, 7, "Plot::SQUARE", color::RED);
             plot->labels(MENU_REF, MENU_REF);
             plot->label_colors(color::RED, color::TEAL);
-            plot->resize();
+            plot->layout();
         }
     }
 

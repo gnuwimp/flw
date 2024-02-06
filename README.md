@@ -14,25 +14,26 @@ Widgets:
 * Chart - Chart widget with dates as x data.
 * DateChooser - Show month date view.
 * Grid - Edit data in TableEditor with build in storage.
-* GridGroup - An layout widget using a grid.
+* GridGroup - A layout widget using a grid.
 * InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list and use arrow keys in the input widget to switch between strings.
 * LcdNumber - Number widget in lcd style.
 * Plot - Numerical chart.
 * ScrollBrowser - Scroll faster and let user copy a line to clipboard.
-* SplitGroup - An layout widget for two widgets that can be resized with mouse.
+* SplitGroup - A layout widget for two widgets that can be resized with mouse.
 * TableDisplay - Show data in a grid.
 * TableEditor - Edit data in a grid.
-* TabsGroup - An tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
+* ToolGroup - A layout widget for a horizontal or vertical group of widgets.
+* TabsGroup - A tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
 
 Dialogs:
+* AbortDialog - Show a message dialog and let user abort current work.
 * FontDialog - Select a font.
-* AbortDialog - Show an message dialog and let user abort current work.
+* dlg::date - Show a date selection dialog.
 * dlg::html - Show text in a html view.
-* dlg::list* - Show an list of strings.
+* dlg::list* - Show a list of strings.
 * dlg::password* - Ask user for password and optional password confirmation.
-* dlg::select* - Let user select a string from an list and also to filter shown strings.
+* dlg::select* - Let user select a string from a list and also to filter shown strings.
 * dlg::text - Show text in an editor widget.
-* dlg::date - Show an date selection dialog.
 * dlg::theme - Let user select a theme.
 
 ## Screenshots of some of the widgets

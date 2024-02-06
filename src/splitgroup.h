@@ -6,8 +6,9 @@
 
 // MKALGAM_ON
 
-#include <FL/Fl_Group.H>
 #include <FL/Fl.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
 
 namespace flw {
     //--------------------------------------------------------------------------
@@ -35,27 +36,27 @@ namespace flw {
         DIRECTION               direction() const
                                     { return _direction; }
         void                    direction(SplitGroup::DIRECTION direction);
+        void                    do_layout()
+                                    { SplitGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
         int                     handle(int event) override;
         int                     min_pos() const
                                     { return _min; }
         void                    min_pos(int value)
                                     { _min = value; }
-        void                    resize()
-                                    { Fl::redraw(); SplitGroup::resize(x(), y(), w(), h()); }
         void                    resize(int X, int Y, int W, int H) override;
         int                     split_pos() const
                                     { return _split_pos; }
         void                    split_pos(int split_pos)
                                     { _split_pos = split_pos; }
         void                    swap()
-                                    { auto tmp = _widgets[0]; _widgets[0] = _widgets[1]; _widgets[1] = tmp; resize(); }
+                                    { auto tmp = _widgets[0]; _widgets[0] = _widgets[1]; _widgets[1] = tmp; do_layout(); }
         void                    toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
         void                    toggle(SplitGroup::CHILD child, int second_size = -1)
                                     { toggle(child, _direction, second_size); }
 
     private:
-        Fl_Widget*              _widgets[2];
         DIRECTION               _direction;
+        Fl_Widget*              _widgets[2];
         bool                    _drag;
         int                     _min;
         int                     _split_pos;

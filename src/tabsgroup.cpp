@@ -5,6 +5,7 @@
 
 // MKALGAM_ON
 
+#include <assert.h>
 #include <FL/Fl_Toggle_Button.H>
 #include <FL/fl_draw.H>
 
@@ -41,7 +42,7 @@ public:
     void draw() override {
         fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        fl_color(FL_FOREGROUND_COLOR);
+        fl_color(value() ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };
@@ -66,6 +67,7 @@ Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
     tooltip(TabsGroup::Help());
 
     _active = -1;
@@ -104,8 +106,54 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
 }
 
 //------------------------------------------------------------------------------
+void TabsGroup::BoxColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::BoxType(Fl_Boxtype boxtype) {
+    flw::_TabsGroupButton::_BOXTYPE = boxtype;
+}
+
+//------------------------------------------------------------------------------
 Fl_Widget* TabsGroup::_button() {
     return (_active >= 0 && _active < (int) _buttons.size()) ? _buttons[_active] : nullptr;
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::Callback(Fl_Widget* sender, void* object) {
+    if (sender) {
+        auto button = static_cast<_TabsGroupButton*>(sender);
+        auto self   = static_cast<TabsGroup*>(object);
+        auto count  = 0;
+
+        self->_active = -1;
+
+        for (auto b : self->_buttons) {
+            if (b == button) {
+                static_cast<Fl_Button*>(b)->value(1);
+                self->_active = count;
+                self->_widgets[count]->show();
+            }
+            else {
+                static_cast<Fl_Button*>(b)->value(0);
+                self->_widgets[count]->hide();
+            }
+
+            count++;
+        }
+
+        if (self->value() != nullptr && Fl::focus() != self->value()) {
+            self->value()->take_focus();
+        }
+
+        self->do_layout();
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -149,7 +197,7 @@ int TabsGroup::handle(int event) {
 
                 if (pos != _pos) {
                     _pos = pos;
-                    resize();
+                    do_layout();
                 }
 
                 return 1;
@@ -265,7 +313,17 @@ void TabsGroup::_hide_tab_buttons(bool hide) {
         }
     }
 
-    resize();
+    do_layout();
+}
+
+//------------------------------------------------------------------------------
+const char* TabsGroup::Help() {
+    static const char* const HELP =
+    "Use alt + left/right to move between tabs.\n"
+    "Or alt (command key) + [1 - 9] to select tab.\n"
+    "And alt + shift + left/right to move tabs.\n"
+    "Tabs on the left/right side can have its width changed by dragging the mouse.";
+    return HELP;
 }
 
 //------------------------------------------------------------------------------
@@ -308,16 +366,14 @@ Fl_Widget* TabsGroup::remove(int num) {
 
 //------------------------------------------------------------------------------
 void TabsGroup::resize(int X, int Y, int W, int H) {
+    assert(_buttons.size() == _widgets.size());
+    
     Fl_Widget::resize(X, Y, W, H);
 
-    if (W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0) {
         return;
     }
-
-    if (visible() == 0 || _widgets.size() == 0) {
-        return;
-    }
-
+    
     auto height = flw::PREF_FONTSIZE + 8;
 
     if (_hide == true) {
@@ -474,11 +530,11 @@ void TabsGroup::swap(int from, int to) {
         from           = to;
     }
 
-    if (active) {
+    if (active == true) {
         _active = from;
     }
 
-    resize();
+    do_layout();
 }
 
 //------------------------------------------------------------------------------
@@ -491,74 +547,6 @@ void TabsGroup::value(int num) {
     if (num >= 0 && num < (int) _buttons.size()) {
         TabsGroup::Callback(_buttons[num], this);
     }
-}
-
-
-
-/***
- *      _______    _          _____                           _____ _        _   _
- *     |__   __|  | |        / ____|                         / ____| |      | | (_)
- *        | | __ _| |__  ___| |  __ _ __ ___  _   _ _ __    | (___ | |_ __ _| |_ _  ___
- *        | |/ _` | '_ \/ __| | |_ | '__/ _ \| | | | '_ \    \___ \| __/ _` | __| |/ __|
- *        | | (_| | |_) \__ \ |__| | | | (_) | |_| | |_) |   ____) | || (_| | |_| | (__
- *        |_|\__,_|_.__/|___/\_____|_|  \___/ \__,_| .__/   |_____/ \__\__,_|\__|_|\___|
- *                                                 | |
- *                                                 |_|
- */
-
-//------------------------------------------------------------------------------
-void TabsGroup::BoxColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
-}
-
-//------------------------------------------------------------------------------
-void TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
-}
-
-//------------------------------------------------------------------------------
-void TabsGroup::BoxType(Fl_Boxtype boxtype) {
-    flw::_TabsGroupButton::_BOXTYPE = boxtype;
-}
-
-//------------------------------------------------------------------------------
-void TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    if (sender) {
-        auto button = static_cast<_TabsGroupButton*>(sender);
-        auto self   = static_cast<TabsGroup*>(object);
-        auto count  = 0;
-
-        self->_active = -1;
-
-        for (auto b : self->_buttons) {
-            if (b == button) {
-                static_cast<Fl_Button*>(b)->value(1);
-                self->_active = count;
-                self->_widgets[count]->show();
-            }
-            else {
-                static_cast<Fl_Button*>(b)->value(0);
-                self->_widgets[count]->hide();
-            }
-
-            count++;
-        }
-
-        if (self->value() != nullptr && Fl::focus() != self->value()) {
-            self->value()->take_focus();
-        }
-
-        self->resize();
-    }
-}
-
-//------------------------------------------------------------------------------
-const char* TabsGroup::Help() {
-    static const char* const HELP =
-    "Use alt + left/right to move between tabs.\n"
-    "Or alt (command key) + [1 - 9] to select tab.\n"
-    "And alt + shift + left/right to move tabs.";
-    return HELP;
 }
 
 } // flw

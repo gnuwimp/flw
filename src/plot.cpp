@@ -392,6 +392,7 @@ void PlotScale::reset_min_max() {
 Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
     color(FL_BACKGROUND2_COLOR);
     labelcolor(FL_FOREGROUND_COLOR);
     box(FL_BORDER_BOX);
@@ -1237,7 +1238,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
     plot->view_options(l, h, v);
     plot->custom_xlabels_for_points0(x.labels);
     plot->custom_ylabels_for_points0(y.labels);
-    plot->resize();
+    plot->layout();
     return true;
 }
 

@@ -2,128 +2,211 @@
 // Released under the GNU General Public License v3.0
 
 #include "gridgroup.h"
+#include "flw.h"
 
 // MKALGAM_ON
 
 namespace flw {
-    //------------------------------------------------------------------------------
-    // Private struct to store layout data and widgets
-    //
-    struct _GridGroupChild {
-        Fl_Widget* widget;
-        int x;
-        int y;
-        int w;
-        int h;
 
-        _GridGroupChild() {
-            widget = nullptr;
-            x = 0;
-            y = 0;
-            w = 0;
-            h = 0;
-        }
-    };
-}
+/***
+ *                 _            _
+ *                (_)          | |
+ *      _ __  _ __ ___   ____ _| |_ ___
+ *     | '_ \| '__| \ \ / / _` | __/ _ \
+ *     | |_) | |  | |\ V / (_| | ||  __/
+ *     | .__/|_|  |_| \_/ \__,_|\__\___|
+ *     | |
+ *     |_|
+ */
 
 //------------------------------------------------------------------------------
-flw::GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+// Private struct to store layout data and widgets.
+//
+struct _GridGroupChild {
+    Fl_Widget* widget;
+    short x;
+    short y;
+    short w;
+    short h;
+    short l;
+    short r;
+    short t;
+    short b;
+
+    //--------------------------------------------------------------------------
+    _GridGroupChild() {
+        set();
+        adjust();
+    }
+
+    //--------------------------------------------------------------------------
+    void adjust(int L = 0, int R = 0, int T = 0, int B = 0) {
+        l  = L;
+        r  = R;
+        t  = T;
+        b  = B;
+    }
+
+    //--------------------------------------------------------------------------
+    void set(Fl_Widget* WIDGET = nullptr, int X = 0, int Y = 0, int W = 0, int H = 0) {
+        widget = WIDGET;
+        x      = X;
+        y      = Y;
+        w      = W;
+        h      = H;
+    }
+};
+
+/***
+ *       _____      _     _  _____
+ *      / ____|    (_)   | |/ ____|
+ *     | |  __ _ __ _  __| | |  __ _ __ ___  _   _ _ __
+ *     | | |_ | '__| |/ _` | | |_ | '__/ _ \| | | | '_ \
+ *     | |__| | |  | | (_| | |__| | | | (_) | |_| | |_) |
+ *      \_____|_|  |_|\__,_|\_____|_|  \___/ \__,_| .__/
+ *                                                | |
+ *                                                |_|
+ */
+
+//------------------------------------------------------------------------------
+GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
+    
+    _size = 0;
 
-    _size = labelsize();
-
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         _widgets[f] = new _GridGroupChild();
     }
 }
 
 //------------------------------------------------------------------------------
-flw::GridGroup::~GridGroup() {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+GridGroup::~GridGroup() {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         delete _widgets[f];
     }
 }
 
 //------------------------------------------------------------------------------
-void flw::GridGroup::add(Fl_Widget* widget, int x, int y, int w, int h) {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         if (_widgets[f]->widget == nullptr) {
             Fl_Group::add(widget);
-
-            _widgets[f]->widget = widget;
-            _widgets[f]->x      = x;
-            _widgets[f]->y      = y;
-            _widgets[f]->w      = w;
-            _widgets[f]->h      = h;
-
+            _widgets[f]->set(widget, X, Y, W, H);
             return;
         }
     }
 
     #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::add too many widgets\n");
+        fprintf(stderr, "error: flw::GridGroup::add() too many widgets (label=%s)\n", widget->label());
     #endif
 }
 
 //------------------------------------------------------------------------------
-void flw::GridGroup::clear() {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
-        _widgets[f]->widget = nullptr;
-        _widgets[f]->x      = 0;
-        _widgets[f]->y      = 0;
-        _widgets[f]->w      = 0;
-        _widgets[f]->h      = 0;
+void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == widget) {
+            _widgets[f]->adjust(L, R, T, B);
+            return;
+        }
+    }
+
+    #ifdef DEBUG
+        fprintf(stderr, "error: flw::GridGroup::adjust() failed to find widget (label=%s)\n", widget->label());
+    #endif
+}
+
+//------------------------------------------------------------------------------
+void GridGroup::clear() {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        _widgets[f]->set();
     }
 
     Fl_Group::clear();
 }
 
 //------------------------------------------------------------------------------
-void flw::GridGroup::remove(Fl_Widget* widget) {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+int GridGroup::handle(int event) {
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Tab) {
+        if (children() > 0) {
+            Fl_Widget* first   = nullptr;
+            Fl_Widget* last    = nullptr;
+            Fl_Widget* current = Fl::focus();
+
+            _last_active_widget(&first, &last);
+
+//            puts("");
+//            printf("FIRST: %p: %s\n", first ? first : 0, first && first->label() ? first->label() : "NULL");
+//            printf("LAST:  %p: %s\n", last ? last : 0, last && last->label() ? last->label() : "NULL");
+
+            if (Fl::event_shift() == 0) {               
+                if (first != nullptr && current != nullptr && current == last) {
+                    Fl::focus(first);
+                    first->redraw();
+                    return 1;
+                }
+            }
+            else {
+                if (first != nullptr && current != nullptr && current == first) {
+                    Fl::focus(last);
+                    last->redraw();
+                    return 1;
+                }
+            }
+        }
+    }
+    
+    return Fl_Group::handle(event);
+}
+
+//------------------------------------------------------------------------------
+void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
+    for (int f = 0; f < children(); f++) {
+        auto c = child(f);
+        auto g = c->as_group();
+        
+        if (g == nullptr) {
+            if (c->active() != 0) {
+                *last = c;
+            }
+
+            if (*first == nullptr && c->active() != 0) {
+                *first = c;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+void GridGroup::remove(Fl_Widget* widget) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         if (_widgets[f]->widget == widget) {
             Fl_Group::remove(widget);
-
-            _widgets[f]->widget = nullptr;
-            _widgets[f]->x      = 0;
-            _widgets[f]->y      = 0;
-            _widgets[f]->w      = 0;
-            _widgets[f]->h      = 0;
-
+            _widgets[f]->set();
             return;
         }
     }
 
     #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::remove can't find widget\n");
+        fprintf(stderr, "error: GridGroup::remove can't find widget\n");
     #endif
 }
 
 //------------------------------------------------------------------------------
-void flw::GridGroup::resize() {
-    resize(x(), y(), w(), h());
-    redraw();
-}
-
-
-//------------------------------------------------------------------------------
-void flw::GridGroup::resize(int X, int Y, int W, int H) {
+void GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
-    if (W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0) {
         return;
     }
 
-    #ifdef DEBUG
-        // fprintf(stderr, "\n%-20s (x=%4d y=%4d)  (w=%4d h=%4d)  (x2=%4d y2=%4d)\n", "GridGroup: ", X, Y, W, H, X + W, Y + H);
-        // fprintf(stderr, "%-20s (%4s, %4s)  (%4s, %4s)  (%4s, %4s) <=> (%3s, %3s, %3s, %3s)\n", "", "x", "y", "w", "h", "x+w", "y+h", "lx", "ly", "lw", "lh");
-    #endif
+    int size = (_size > 0) ? _size : flw::PREF_FONTSIZE / 2;
 
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
-        _GridGroupChild* widget = _widgets[f];
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        auto* c = _widgets[f];
 
-        if (widget->widget) {
+        if (c->widget != nullptr && c->widget->visible() != 0) {
             int widget_x  = 0;
             int widget_x2 = 0;
             int widget_y  = 0;
@@ -131,56 +214,67 @@ void flw::GridGroup::resize(int X, int Y, int W, int H) {
             int widget_w  = 0;
             int widget_h  = 0;
 
-            if (widget->x >= 0) {
-                widget_x = X + widget->x * _size;
+            if (c->x >= 0) {
+                widget_x = X + c->x * size;
             }
             else {
-                widget_x = X + W + widget->x * _size;
+                widget_x = X + W + c->x * size;
             }
 
-            if (widget->y >= 0) {
-                widget_y = Y + widget->y * _size;
+            if (c->y >= 0) {
+                widget_y = Y + c->y * size;
             }
             else {
-                widget_y = Y + H + widget->y * _size;
+                widget_y = Y + H + c->y * size;
             }
 
-            if (widget->w == 0) {
+            if (c->w == 0) {
                 widget_x2 = X + W;
             }
-            else if (widget->w > 0) {
-                widget_x2 = widget_x + widget->w * _size;
+            else if (c->w > 0) {
+                widget_x2 = widget_x + c->w * size;
             }
             else {
-                widget_x2 = X + W + widget->w * _size;
+                widget_x2 = X + W + c->w * size;
             }
 
-            if (widget->h == 0) {
+            if (c->h == 0) {
                 widget_y2 = Y + H;
             }
-            else if (widget->h > 0) {
-                widget_y2 = widget_y + widget->h * _size;
+            else if (c->h > 0) {
+                widget_y2 = widget_y + c->h * size;
             }
             else {
-                widget_y2 = Y + H + widget->h * _size;
+                widget_y2 = Y + H + c->h * size;
             }
 
             widget_w = widget_x2 - widget_x;
             widget_h = widget_y2 - widget_y;
 
-            // if (widget_w >= _size && widget_h >= _size && widget_x + widget_w >= _size && widget_y + widget_h >= _size) {
             if (widget_w >= 0 && widget_h >= 0) {
-                widget->widget->resize(widget_x, widget_y, widget_w, widget_h);
+                c->widget->resize(widget_x + c->l, widget_y + c->t, widget_w + c->r, widget_h + c->b);
             }
             else {
-                widget->widget->resize(widget_x, widget_y, 0, 0);
+                c->widget->resize(0, 0, 0, 0);
             }
-
-            #ifdef DEBUG
-                // fprintf(stderr, "%-20s (%4d, %4d)  (%4d, %4d)  (%4d, %4d) <=> (%3d, %3d, %3d, %3d)\n", widget->widget->label() ? widget->widget->label() : "", widget_x, widget_y, widget_w, widget_h, widget_x + widget_w, widget_y + widget_h, widget->x, widget->y, widget->w, widget->h);
-            #endif
         }
     }
 }
+
+//------------------------------------------------------------------------------
+void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == widget) {
+            _widgets[f]->set(widget, X, Y, W, H);
+            return;
+        }
+    }
+
+    #ifdef DEBUG
+        fprintf(stderr, "error: flw::GridGroup::resize() failed to find widget (label=%s)\n", widget->label());
+    #endif
+}
+
+} // flw
 
 // MKALGAM_OFF

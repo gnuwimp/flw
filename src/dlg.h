@@ -7,6 +7,7 @@
 #include "flw.h"
 #include "date.h"
 #include "scrollbrowser.h"
+#include "gridgroup.h"
 
 // MKALGAM_ON
 
@@ -76,7 +77,8 @@ public:
     bool                        aborted()
                                     { return _abort; }
     void                        range(double min, double max);
-    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(int X, int Y, int W, int H) override
+                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     void                        show(const std::string& label, Fl_Window* parent = nullptr);
     void                        value(double value);
 
@@ -86,6 +88,7 @@ public:
 private:
     Fl_Button*                  _button;
     Fl_Hor_Fill_Slider*         _progress;
+    GridGroup*                  _grid;
     bool                        _abort;
     int64_t                     _last;
 };
@@ -128,7 +131,8 @@ public:
                                     { return _fontname; }
     int                         fontsize()
                                     { return _fontsize; }
-    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(int X, int Y, int W, int H) override
+                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     bool                        run(Fl_Window* parent = nullptr);
 
     static void                 Callback(Fl_Widget* w, void* o);
@@ -141,6 +145,7 @@ private:
     Fl_Box*                     _label;
     Fl_Button*                  _cancel;
     Fl_Button*                  _select;
+    GridGroup*                  _grid;
     ScrollBrowser*              _fonts;
     ScrollBrowser*              _sizes;
     bool                        _ret;
@@ -164,7 +169,8 @@ private:
 class WorkDialog : public Fl_Double_Window {
 public:
                                 WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-    void                        resize(int X, int Y, int W, int H) override;
+    void                        resize(int X, int Y, int W, int H) override
+                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     bool                        run(double update_time, const StringVector& messages);
     bool                        run(double update_time, const std::string& message);
 
@@ -174,6 +180,7 @@ private:
     Fl_Button*                  _cancel;
     Fl_Hold_Browser*            _label;
     Fl_Toggle_Button*           _pause;
+    GridGroup*                  _grid;
     bool                        _ret;
     double                      _last;
     std::string                 _message;

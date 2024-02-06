@@ -1343,7 +1343,7 @@ bool Chart::margin(int left, int right) {
 }
 void Chart::resize(int X, int Y, int W, int H) {
     if (_old_width != W || _old_height != H) {
-        Fl_Group::resize(X, Y, W, H);
+        Fl_Widget::resize(X, Y, W, H);
         _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
         _old_width = W;
         _old_height = H;
@@ -2215,12 +2215,13 @@ Date Date::FromTime(int64_t seconds, bool utc) {
 #include <time.h>
 namespace flw {
 class _DateChooserCanvas : public Fl_Widget {
-    Date                    _date[7][8];
-    char                    _text[7][8][30];
-    int                     _col;
-    int                     _row;
+    Date                        _date[7][8];
+    char                        _text[7][8][30];
+    int                         _col;
+    int                         _row;
 public:
-    _DateChooserCanvas() : Fl_Widget(0, 0, 0, 0, 0) {
+    _DateChooserCanvas() :
+    Fl_Widget(0, 0, 0, 0, 0) {
         _row   = 1;
         _col   = 1;
         strncpy(_text[0][0], "Week", 20);
@@ -2258,6 +2259,7 @@ public:
                     }
                     if (r == _row && c == _col) {
                         bg = FL_SELECTION_COLOR;
+                        fg = FL_BACKGROUND2_COLOR;
                     }
                     else if (col == 2) {
                         bg = FL_BACKGROUND2_COLOR;
@@ -2353,31 +2355,33 @@ public:
         strncpy(_text[row][col], text, 30);
     }
 };
-flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) :
+GridGroup(X, Y, W, H, l) {
     end();
-    _h           = -1;
-    _w           = -1;
-    _month_label = new Fl_Box(0, 0, 0, 0, "");
-    _canvas      = new _DateChooserCanvas();
-    _b6          = new Fl_Repeat_Button(0, 0, 0, 0, "@|<");
     _b1          = new Fl_Repeat_Button(0, 0, 0, 0, "@<<");
     _b2          = new Fl_Repeat_Button(0, 0, 0, 0, "@<");
-    _b5          = new Fl_Button(0, 0, 0, 0, "@refresh");
     _b3          = new Fl_Repeat_Button(0, 0, 0, 0, "@>");
     _b4          = new Fl_Repeat_Button(0, 0, 0, 0, "@>>");
+    _b5          = new Fl_Button(0, 0, 0, 0, "@refresh");
+    _b6          = new Fl_Repeat_Button(0, 0, 0, 0, "@|<");
     _b7          = new Fl_Repeat_Button(0, 0, 0, 0, "@>|");
+    _buttons     = new ToolGroup();
+    _canvas      = new _DateChooserCanvas();
+    _month_label = new Fl_Box(0, 0, 0, 0, "");
     Date date;
     set(date);
     _set_label();
-    add(_b1);
-    add(_b2);
-    add(_b5);
-    add(_b3);
-    add(_b4);
-    add(_b6);
-    add(_b7);
-    add(_month_label);
-    add(_canvas);
+    _buttons->add(_b6);
+    _buttons->add(_b1);
+    _buttons->add(_b2);
+    _buttons->add(_b5, 8);
+    _buttons->add(_b3);
+    _buttons->add(_b4);
+    _buttons->add(_b7);
+    _buttons->expand_last(true);
+    add(_buttons,     0, 0, 0, 4);
+    add(_month_label, 0, 4, 0, 4);
+    add(_canvas,      0, 8, 0, 0);
     _b1->callback(flw::DateChooser::_Callback, this);
     _b1->tooltip("Previous year");
     _b2->callback(flw::DateChooser::_Callback, this);
@@ -2396,7 +2400,8 @@ flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) : Fl_Gr
     _month_label->box(FL_UP_BOX);
     util::labelfont(this);
     tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
-    flw::DateChooser::resize(X, Y, W, H);
+    resizable(this);
+    do_layout();
 }
 void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
     auto dc = static_cast<DateChooser*>(o);
@@ -2464,26 +2469,6 @@ int flw::DateChooser::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::DateChooser::resize(int X, int Y, int W, int H) {
-    Fl_Widget::resize(X, Y, W, H);
-    if (W == _w && H == _h) {
-        return;
-    }
-    int w1 = W / 8;
-    int w2 = W - (w1 * 6);
-    int fs = flw::PREF_FONTSIZE;
-    _b6->resize(X, Y, w1, fs * 2);
-    _b1->resize(X + w1, Y, w1, fs * 2);
-    _b2->resize(X + w1 * 2, Y, w1, fs * 2);
-    _b3->resize(X + w1 * 3 + w2, Y, w1, fs * 2);
-    _b4->resize(X + w1 * 4 + w2, Y, w1, fs * 2);
-    _b7->resize(X + w1 * 5 + w2, Y, w1, fs * 2);
-    _b5->resize(X + w1 * 3, Y, w2, fs * 2);
-    _month_label->resize(X, Y + fs * 2, W, fs * 2);
-    _canvas->resize(X, Y + fs * 4, W, H - fs * 4);
-    _w = W;
-    _h = H;
-}
 void flw::DateChooser::set(const Date& date) {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date2  = date;
@@ -2521,21 +2506,26 @@ void flw::DateChooser::_set_label() {
     _month_label->copy_label(string.c_str());
 }
 class _DateChooserDlg : public Fl_Double_Window {
-    DateChooser*            _date_chooser;
-    Date&                   _value;
-    Fl_Button*              _cancel;
-    Fl_Button*              _ok;
-    bool                    _res;
+    Date&                       _value;
+    DateChooser*                _date_chooser;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _ok;
+    GridGroup*                  _grid;
+    bool                        _res;
 public:
-    _DateChooserDlg(const char* title, Date& date) : Fl_Double_Window(0, 0, 0, 0), _value(date) {
+    _DateChooserDlg(const char* title, Date& date) :
+    Fl_Double_Window(0, 0, 0, 0),
+    _value(date) {
         end();
-        _date_chooser = new DateChooser();
-        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
+        _grid         = new GridGroup();
+        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _res          = false;
-        add(_date_chooser);
-        add(_ok);
-        add(_cancel);
+        _grid->add(_date_chooser,   0,   0,   0,  -6);
+        _grid->add(_cancel,       -34,  -5,  16,   4);
+        _grid->add(_ok,           -17,  -5,  16,   4);
+        add(_grid);
         _cancel->callback(Callback, this);
         _date_chooser->focus();
         _date_chooser->set(_value);
@@ -2543,10 +2533,10 @@ public:
         util::labelfont(this);
         callback(Callback, this);
         copy_label(title);
+        resizable(this);
         size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
         size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
         set_modal();
-        resizable(this);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DateChooserDlg*>(o);
@@ -2562,14 +2552,11 @@ public:
         }
     }
     void resize(int X, int Y, int W, int H) override {
-        auto fs = flw::PREF_FONTSIZE;
         Fl_Double_Window::resize(X, Y, W, H);
-        _date_chooser->resize (4,                 4,                  W - 8,    H - fs * 2 - 16);
-        _cancel->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,   fs * 2);
-        _ok->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,   fs * 2);
+        _grid->resize(0, 0, W, H);
     }
     bool run(Fl_Window* parent) {
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
         show();
         while (visible() != 0) {
             Fl::wait();
@@ -2597,6 +2584,7 @@ bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Text_Editor.H>
+#include <FL/Fl_Tooltip.H>
 namespace flw {
 namespace theme {
 void _load_default();
@@ -2618,7 +2606,6 @@ void _load_gtk_tan();
 void _load_plastic();
 void _load_blue_plastic();
 void _load_tan_plastic();
-void _load_system();
 void _scrollbar();
 }
 namespace dlg {
@@ -2638,14 +2625,17 @@ static void* _dlg_zero_memory(void* mem, size_t size) {
 class _DlgHtml  : public Fl_Double_Window {
     Fl_Help_View*               _html;
     Fl_Return_Button*           _close;
+    GridGroup*                  _grid;
 public:
     _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _grid  = new GridGroup();
         _html  = new Fl_Help_View(0, 0, 0, 0);
-        add(_close);
-        add(_html);
+        _grid->add(_html,    1,  1, -1, -6);
+        _grid->add(_close, -17, -5, 16,  4);
+        add(_grid);
         _close->callback(_DlgHtml::Callback, this);
         _close->labelfont(flw::PREF_FONT);
         _close->labelsize(flw::PREF_FONTSIZE);
@@ -2657,7 +2647,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
@@ -2667,8 +2657,7 @@ public:
     }
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-        _html->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
     void run() {
         show();
@@ -2679,16 +2668,19 @@ public:
     }
 };
 class _DlgList : public Fl_Double_Window {
-    flw::ScrollBrowser*         _list;
     Fl_Return_Button*           _close;
+    GridGroup*                  _grid;
+    ScrollBrowser*              _list;
 public:
     _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _list  = new flw::ScrollBrowser();
-        add(_close);
-        add(_list);
+        _grid  = new GridGroup();
+        _list  = new ScrollBrowser();
+        _grid->add(_list,    1,  1, -1, -6);
+        _grid->add(_close, -17, -5, 16,  4);
+        add(_grid);
         _close->callback(_DlgList::Callback, this);
         _close->labelfont(flw::PREF_FONT);
         _close->labelsize(flw::PREF_FONTSIZE);
@@ -2706,7 +2698,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
         if (list.size() > 0) {
             for (const auto& s : list) {
                 _list->add(s.c_str());
@@ -2724,8 +2716,7 @@ public:
     }
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-        _list->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
     void run() {
         show();
@@ -2736,31 +2727,34 @@ public:
     }
 };
 class _DlgSelect : public Fl_Double_Window {
-    Fl_Button*                  _close;
     Fl_Button*                  _cancel;
-    ScrollBrowser*              _list;
+    Fl_Button*                  _close;
     Fl_Input*                   _filter;
+    GridGroup*                  _grid;
+    ScrollBrowser*              _list;
     const StringVector&         _strings;
 public:
     _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
     Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
     _strings(strings) {
         end();
-        _filter = new Fl_Input(0, 0, 0, 0);
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _list   = new flw::ScrollBrowser(0, 0, 0, 0);
-        add(_filter);
-        add(_list);
-        add(_cancel);
-        add(_close);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
+        _filter = new Fl_Input(0, 0, 0, 0);
+        _grid   = new GridGroup();
+        _list   = new ScrollBrowser(0, 0, 0, 0);
+        _grid->add(_filter,   1,  1, -1,  4);
+        _grid->add(_list,     1,  6, -1, -6);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
         _cancel->callback(_DlgSelect::Callback, this);
         _close->callback(_DlgSelect::Callback, this);
         _filter->callback(_DlgSelect::Callback, this);
-        _filter->tooltip("Enter text to filter rows that macthes the text\nPress tab to switch focus between input and list widget.");
+        _filter->tooltip("Enter text to filter rows that macthes the text.\nPress tab to switch focus between input and list widget.");
         _filter->when(FL_WHEN_CHANGED);
         _list->callback(_DlgSelect::Callback, this);
-        _list->tooltip("Use Page Up or Page Down in list to scroll faster");
+        _list->tooltip("Use Page Up or Page Down in list to scroll faster,");
         if (fixed_font == true) {
             _filter->textfont(flw::PREF_FIXED_FONT);
             _filter->textsize(flw::PREF_FIXED_FONTSIZE);
@@ -2803,7 +2797,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
     void activate_button() {
         if (_list->value() == 0) {
@@ -2868,10 +2862,7 @@ public:
     }
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-        _filter->resize(4, 4, W - 8, flw::PREF_FONTSIZE * 2);
-        _list->resize(4, flw::PREF_FONTSIZE * 2  + 8, W - 8, H - flw::PREF_FONTSIZE * 4 - 20);
-        _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
     int run() {
         show();
@@ -2892,8 +2883,8 @@ public:
         return 0;
     }
 };
-const char* PASSWORD_CANCEL = "Cancel";
-const char* PASSWORD_OK     = "Ok";
+const char* PASSWORD_CANCEL = "&Cancel";
+const char* PASSWORD_OK     = "&Ok";
 class _DlgPassword : public Fl_Double_Window {
 public:
     enum class TYPE {
@@ -2909,26 +2900,29 @@ private:
     Fl_Input*                   _file;
     Fl_Input*                   _password1;
     Fl_Input*                   _password2;
+    GridGroup*                  _grid;
     _DlgPassword::TYPE          _mode;
     bool                        _ret;
 public:
     _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
     Fl_Double_Window(0, 0, 0, 0) {
         end();
-        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
-        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter Password Again");
         _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
         _cancel    = new Fl_Button(0, 0, 0, 0, PASSWORD_CANCEL);
         _close     = new Fl_Return_Button(0, 0, 0, 0, PASSWORD_OK);
-        _file      = new Fl_Output(0, 0, 0, 0, "Key File");
+        _file      = new Fl_Output(0, 0, 0, 0, "Key file");
+        _grid      = new GridGroup();
+        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
+        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
         _mode      = mode;
         _ret       = false;
-        add(_password1);
-        add(_password2);
-        add(_file);
-        add(_browse);
-        add(_cancel);
-        add(_close);
+        _grid->add(_password1,  1,   3,  -1,  4);
+        _grid->add(_password2,  1,  10,  -1,  4);
+        _grid->add(_file,       1,  17,  -1,  4);
+        _grid->add(_browse,   -51,  -5,  16,  4);
+        _grid->add(_cancel,   -34,  -5,  16,  4);
+        _grid->add(_close,    -17,  -5,  16,  4);
+        add(_grid);
         _browse->callback(_DlgPassword::Callback, this);
         _cancel->callback(_DlgPassword::Callback, this);
         _close->callback(_DlgPassword::Callback, this);
@@ -2947,34 +2941,32 @@ public:
         _password2->textfont(flw::PREF_FIXED_FONT);
         _password2->textsize(flw::PREF_FONTSIZE);
         _password2->when(FL_WHEN_CHANGED);
-        auto W = 40 * flw::PREF_FONTSIZE;
-        auto H = 11 * flw::PREF_FONTSIZE + 28;
+        auto W = flw::PREF_FONTSIZE * 35;
+        auto H = flw::PREF_FONTSIZE * 13.5;
         if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
             _password2->hide();
             _browse->hide();
             _file->hide();
-            W = 30 * flw::PREF_FONTSIZE;
-            H = 5 * flw::PREF_FONTSIZE + 16;
+            H = flw::PREF_FONTSIZE * 6.5;
         }
         else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
             _browse->hide();
             _file->hide();
-            W = 30 * flw::PREF_FONTSIZE;
-            H = 8 * flw::PREF_FONTSIZE + 24;
+            H = flw::PREF_FONTSIZE * 10;
         }
         else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
             _password2->hide();
-            W = 40 * flw::PREF_FONTSIZE;
-            H = 8 * flw::PREF_FONTSIZE + 24;
+            _grid->resize(_file, 1, 10, -1, 4);
+            H = flw::PREF_FONTSIZE * 10;
         }
+        resizable(this);
         util::labelfont(this);
         callback(_DlgPassword::Callback, this);
         label(title);
         size(W, H);
         size_range(W, H);
         set_modal();
-        resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPassword*>(o);
@@ -3029,26 +3021,7 @@ public:
     }
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-        }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-        }
-        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _file->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
-            _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 4 + 12, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-            _password1->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _password2->resize(4, flw::PREF_FONTSIZE * 4 + 12, W - 8, flw::PREF_FONTSIZE * 2);
-            _file->resize(4, flw::PREF_FONTSIZE * 7 + 16, W - flw::PREF_FONTSIZE * 8 - 12, flw::PREF_FONTSIZE * 2);
-            _browse->resize(W - flw::PREF_FONTSIZE * 8 - 4, flw::PREF_FONTSIZE * 7 + 16, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-        _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
     bool run(std::string& password, std::string& file) {
         show();
@@ -3072,28 +3045,31 @@ class _DlgText : public Fl_Double_Window {
     Fl_Button*                  _save;
     Fl_Text_Buffer*             _buffer;
     Fl_Text_Display*            _text;
+    GridGroup*                  _grid;
     bool                        _edit;
     char*                       _res;
 public:
     _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
         end();
+        _buffer = new Fl_Text_Buffer();
         _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
-        _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Close");
+        _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Update");
+        _grid   = new GridGroup();
         _save   = new Fl_Button(0, 0, 0, 0, "&Save");
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
-        _buffer = new Fl_Text_Buffer();
         _edit   = edit;
         _res    = nullptr;
-        add(_save);
-        add(_cancel);
-        add(_close);
-        add(_text);
+        _grid->add(_text,     1,   1,  -1,  -6);
+        _grid->add(_cancel, -51,  -5,  16,   4);
+        _grid->add(_save,   -34,  -5,  16,   4);
+        _grid->add(_close,  -17,  -5,  16,   4);
+        add(_grid);
         _buffer->text(text);
         _cancel->callback(_DlgText::Callback, this);
         _cancel->tooltip("Close and abort all changes.");
         _close->callback(_DlgText::Callback, this);
-        _close->tooltip("Close and update text.");
+        _close->tooltip(_edit == true ? "Update text and close window." : "Close window.");
         _save->callback(_DlgText::Callback, this);
         _save->tooltip("Save text to file.");
         _text->buffer(_buffer);
@@ -3115,7 +3091,7 @@ public:
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(this);
-        flw::util::center_window(this, parent);
+        util::center_window(this, parent);
     }
     ~_DlgText() {
        _text->buffer(nullptr);
@@ -3141,15 +3117,7 @@ public:
     }
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
-        _text->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-        if (_cancel->visible() != 0) {
-            _save->resize(W - flw::PREF_FONTSIZE * 24 - 12, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-            _cancel->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-        else {
-            _save->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-        }
-        _close->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
+        _grid->resize(0, 0, W, H);
     }
     char* run() {
         show();
@@ -3161,29 +3129,33 @@ public:
     }
 };
 class _DlgTheme : public Fl_Double_Window {
+    Fl_Box*                     _fixed_label;
     Fl_Box*                     _font_label;
-    Fl_Box*                     _fixedfont_label;
     Fl_Browser*                 _theme;
     Fl_Button*                  _close;
-    Fl_Button*                  _font;
     Fl_Button*                  _fixedfont;
+    Fl_Button*                  _font;
+    GridGroup*                  _grid;
     int                         _theme_row;
 public:
-    _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) : Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
+    _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) :
+    Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
         end();
-        _close           = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _fixedfont       = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
-        _fixedfont_label = new Fl_Box(0, 0, 0, 0);
-        _font            = new Fl_Button(0, 0, 0, 0, "&Font");
-        _font_label      = new Fl_Box(0, 0, 0, 0);
-        _theme           = new Fl_Hold_Browser(0, 0, 0, 0);
-        _theme_row       = 0;
-        add(_theme);
-        add(_fixedfont);
-        add(_font);
-        add(_close);
-        add(_fixedfont_label);
-        add(_font_label);
+        _close       = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _fixedfont   = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+        _fixed_label = new Fl_Box(0, 0, 0, 0);
+        _font        = new Fl_Button(0, 0, 0, 0, "&Font");
+        _font_label  = new Fl_Box(0, 0, 0, 0);
+        _grid        = new GridGroup();
+        _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
+        _theme_row   = 0;
+        _grid->add(_theme,         1,   1,  -1, -16);
+        _grid->add(_font_label,    1, -15,  -1,   4);
+        _grid->add(_fixed_label,   1, -10,  -1,   4);
+        _grid->add(_font,        -51,  -5,  16,   4);
+        _grid->add(_fixedfont,   -34,  -5,  16,   4);
+        _grid->add(_close,       -17,  -5,  16,   4);
+        add(_grid);
         if (enable_font == false) {
           _font->deactivate();
         }
@@ -3191,14 +3163,14 @@ public:
           _fixedfont->deactivate();
         }
         _close->callback(Callback, this);
-        _font_label->box(FL_BORDER_BOX);
-        _font_label->color(FL_BACKGROUND2_COLOR);
+        _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _fixed_label->box(FL_BORDER_BOX);
+        _fixed_label->color(FL_BACKGROUND2_COLOR);
+        _fixedfont->callback(Callback, this);
         _font->callback(Callback, this);
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _fixedfont_label->box(FL_BORDER_BOX);
-        _fixedfont_label->color(FL_BACKGROUND2_COLOR);
-        _fixedfont->callback(Callback, this);
-        _fixedfont_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _font_label->box(FL_BORDER_BOX);
+        _font_label->color(FL_BACKGROUND2_COLOR);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
@@ -3302,9 +3274,6 @@ public:
             else if (row == theme::THEME_PLASTIC_TAN) {
                 theme::_load_tan_plastic();
             }
-            else if (row == theme::THEME_SYSTEM) {
-                theme::_load_system();
-            }
             else {
                 theme::_load_default();
             }
@@ -3315,14 +3284,8 @@ public:
         }
     }
     void resize(int X, int Y, int W, int H) override {
-        auto fs = flw::PREF_FONTSIZE;
         Fl_Double_Window::resize(X, Y, W, H);
-        _theme->resize           (4,                 4,                  W - 8,     H - fs * 6 - 24);
-        _font_label->resize      (4,                 H - fs * 6 - 16,    W - 8,     fs * 2);
-        _fixedfont_label->resize (4,                 H - fs * 4 - 12,    W - 8,     fs * 2);
-        _font->resize            (W - fs * 24 - 12,  H - fs * 2 - 4,     fs * 8,    fs * 2);
-        _fixedfont->resize       (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,    fs * 2);
-        _close->resize           (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,    fs * 2);
+        _grid->resize(0, 0, W, H);
     }
     void run() {
         show();
@@ -3332,13 +3295,16 @@ public:
         }
     }
     void update_pref() {
+        Fl_Tooltip::font(flw::PREF_FONT);
+        Fl_Tooltip::size(flw::PREF_FONTSIZE);
         util::labelfont(this);
-        _font_label->copy_label(flw::util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
-        _fixedfont_label->copy_label(flw::util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
-        _fixedfont_label->labelfont(flw::PREF_FIXED_FONT);
-        _fixedfont_label->labelsize(flw::PREF_FIXED_FONTSIZE);
+        _font_label->copy_label(util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
+        _fixed_label->copy_label(util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
+        _fixed_label->labelfont(flw::PREF_FIXED_FONT);
+        _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 32, flw::PREF_FONTSIZE * 30);
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 34);
+        size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 24);
         theme::_scrollbar();
         for (int f = 0; f <= theme::THEME_SYSTEM; f++) {
             if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
@@ -3358,7 +3324,7 @@ void list(std::string title, const StringVector& list, Fl_Window* parent, bool f
     dlg.run();
 }
 void list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    auto list2 = flw::util::split( list, "\n");
+    auto list2 = util::split( list, "\n");
     _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
     dlg.run();
 }
@@ -3414,28 +3380,31 @@ void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
     auto dlg = _DlgTheme(enable_font, enable_fixedfont, parent);
     dlg.run();
 }
-AbortDialog::AbortDialog(double min, double max) : Fl_Double_Window(0, 0, 0, 0, "Working...") {
+AbortDialog::AbortDialog(double min, double max) :
+Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
+    _grid     = new GridGroup();
     _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
     _abort    = false;
     _last     = 0;
-    add(_button);
-    add(_progress);
+    _grid->add(_button,     1,   1,   -1,  -6);
+    _grid->add(_progress,   1,  -5,   -1,   4);
+    add(_grid);
     auto W = flw::PREF_FONTSIZE * 32;
-    auto H = 0;
+    auto H = flw::PREF_FONTSIZE * 12;
     if (min < max && fabs(max - min) > 0.001) {
         _progress->range(min, max);
         _progress->value(min);
-        H = flw::PREF_FONTSIZE * 6 + 12;
     }
     else {
         _progress->hide();
-        H = flw::PREF_FONTSIZE * 4 + 8;
+        _grid->resize(_button, 1, 1, -1, -1);
     }
     _button->callback(AbortDialog::Callback, this);
     _button->labelfont(flw::PREF_FONT);
     _button->labelsize(flw::PREF_FONTSIZE);
     _progress->color(FL_SELECTION_COLOR);
+    resizable(this);
     size(W, H);
     size_range(W, H);
     callback(AbortDialog::Callback, this);
@@ -3448,7 +3417,7 @@ void AbortDialog::Callback(Fl_Widget* w, void* o) {
     }
 }
 bool AbortDialog::check(int milliseconds) {
-    auto now = flw::util::milliseconds();
+    auto now = util::milliseconds();
     if (now - _last > milliseconds) {
         _last = now;
         Fl::check();
@@ -3456,7 +3425,7 @@ bool AbortDialog::check(int milliseconds) {
     return _abort;
 }
 bool AbortDialog::check(double value, double min, double max, int milliseconds) {
-    auto now = flw::util::milliseconds();
+    auto now = util::milliseconds();
     if (now - _last > milliseconds) {
         _progress->value(value);
         _progress->range(min, max);
@@ -3468,21 +3437,11 @@ bool AbortDialog::check(double value, double min, double max, int milliseconds) 
 void AbortDialog::range(double min, double max) {
     _progress->range(min, max);
 }
-void AbortDialog::resize(int X, int Y, int W, int H) {
-    Fl_Double_Window::resize(X, Y, W, H);
-    if (_progress->visible() != 0) {
-        _button->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 12);
-        _progress->resize(4, H - flw::PREF_FONTSIZE * 2 - 4, W - 8, flw::PREF_FONTSIZE * 2);
-    }
-    else {
-        _button->resize(4, 4, W - 8, H - 8);
-    }
-}
 void AbortDialog::show(const std::string& label, Fl_Window* parent) {
     _abort = false;
     _last  = 0;
     _button->copy_label(label.c_str());
-    flw::util::center_window(this, parent);
+    util::center_window(this, parent);
     Fl_Double_Window::show();
     Fl::flush();
 }
@@ -3535,11 +3494,11 @@ public:
     }
 };
 FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
     _create(font, "", fontsize, label);
 }
 FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 60, flw::PREF_FONTSIZE * 36) {
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, label);
 }
 void FontDialog::_activate() {
@@ -3590,18 +3549,20 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
 void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
     end();
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
-    _fonts    = new flw::ScrollBrowser(12);
+    _fonts    = new ScrollBrowser(12);
+    _grid     = new GridGroup();
     _label    = new _FontDialogLabel(0, 0, 0, 0);
     _select   = new Fl_Button(0, 0, 0, 0, "&Select");
-    _sizes    = new flw::ScrollBrowser(6);
+    _sizes    = new ScrollBrowser(6);
     _font     = -1;
     _fontsize = -1;
     _ret      = false;
-    add(_sizes);
-    add(_fonts);
-    add(_select);
-    add(_cancel);
-    add(_label);
+    _grid->add(_fonts,    1,   1,  50,  -6);
+    _grid->add(_sizes,   52,   1,  12,  -6);
+    _grid->add(_label,   65,   1,  -1,  -6);
+    _grid->add(_cancel, -34,  -5,  16,   4);
+    _grid->add(_select, -17,  -5,  16,   4);
+    add(_grid);
     _cancel->callback(FontDialog::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
     _cancel->labelsize(flw::PREF_FONTSIZE);
@@ -3618,7 +3579,6 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _sizes->callback(FontDialog::Callback, this);
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
-    size(w(), h());
     theme::load_fonts();
     for (auto name : flw::PREF_FONTNAMES) {
         _fonts->add(name);
@@ -3656,20 +3616,12 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
-}
-void FontDialog::resize(int X, int Y, int W, int H) {
-    int fs = flw::PREF_FONTSIZE;
-    Fl_Double_Window::resize(X, Y, W, H);
-    _fonts->resize  (4,                 4,                  fs * 25,            H - fs * 2 - 16);
-    _sizes->resize  (fs * 25 + 8,       4,                  fs * 6,             H - fs * 2 - 16);
-    _label->resize  (fs * 31 + 12,      4,                  W - fs * 31 - 16,   H - fs * 2 - 16);
-    _cancel->resize (W - fs * 16 - 8,   H - fs * 2 - 4,     fs * 8,             fs * 2);
-    _select->resize (W - fs * 8 - 4,    H - fs * 2 - 4,     fs * 8,             fs * 2);
+    _grid->do_layout();
 }
 bool FontDialog::run(Fl_Window* parent) {
     _ret = false;
     _activate();
-    flw::util::center_window(this, parent);
+    util::center_window(this, parent);
     show();
     while (visible() != 0) {
         Fl::wait();
@@ -3692,16 +3644,19 @@ void FontDialog::_select_name(std::string fontname) {
     _fonts->value(1);
     static_cast<_FontDialogLabel*>(_label)->font = 0;
 }
-WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) : Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) :
+Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
     end();
     _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
-    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
+    _grid   = new GridGroup();
     _label  = new Fl_Hold_Browser(0, 0, 0, 0);
+    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
     _ret    = true;
     _last   = 0.0;
-    add(_label);
-    add(_pause);
-    add(_cancel);
+    _grid->add(_label,    1,   1,  -1,  -6);
+    _grid->add(_pause,  -34,  -5,  16,   4);
+    _grid->add(_cancel, -17,  -5,  16,   4);
+    add(_grid);
     _cancel->callback(WorkDialog::Callback, this);
     _label->box(FL_BORDER_BOX);
     _label->textfont(flw::PREF_FONT);
@@ -3719,7 +3674,7 @@ WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool p
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(this);
-    flw::util::center_window(this, parent);
+    util::center_window(this, parent);
     show();
 }
 void WorkDialog::Callback(Fl_Widget* w, void* o) {
@@ -3734,7 +3689,7 @@ void WorkDialog::Callback(Fl_Widget* w, void* o) {
         self->_cancel->deactivate();
         self->_pause->label("C&ontinue");
         while (self->_pause->value() != 0) {
-            flw::util::sleep(10);
+            util::sleep(10);
             Fl::check();
         }
         self->_pause->label("&Pause");
@@ -3743,15 +3698,9 @@ void WorkDialog::Callback(Fl_Widget* w, void* o) {
         }
     }
 }
-void WorkDialog::resize(int X, int Y, int W, int H) {
-    Fl_Double_Window::resize(X, Y, W, H);
-    _label->resize(4, 4, W - 8, H - flw::PREF_FONTSIZE * 2 - 16);
-    _pause->resize(W - flw::PREF_FONTSIZE * 16 - 8, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-    _cancel->resize(W - flw::PREF_FONTSIZE * 8 - 4, H - flw::PREF_FONTSIZE * 2 - 4, flw::PREF_FONTSIZE * 8, flw::PREF_FONTSIZE * 2);
-}
 bool WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = flw::util::clock();
-    if (now - _last > update_time) {
+    auto now = util::clock();
+    if ((now - _last) > update_time) {
         _label->clear();
         for (const auto& s : messages) {
             _label->add(s.c_str());
@@ -3763,8 +3712,8 @@ bool WorkDialog::run(double update_time, const StringVector& messages) {
     return _ret;
 }
 bool WorkDialog::run(double update_time, const std::string& message) {
-    auto now = flw::util::clock();
-    if (now - _last > update_time) {
+    auto now = util::clock();
+    if ((now - _last) > update_time) {
         _label->clear();
         _label->add(message.c_str());
         _last = now;
@@ -3784,6 +3733,7 @@ bool WorkDialog::run(double update_time, const std::string& message) {
 #include <FL/Fl_Window.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Tooltip.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #ifdef _WIN32
@@ -3797,103 +3747,100 @@ bool WorkDialog::run(double update_time, const std::string& message) {
     #include <FL/fl_draw.H>
 #endif
 namespace flw {
-    std::vector<char*>          PREF_FONTNAMES;
-    int                         PREF_FIXED_FONT         = FL_COURIER;
-    std::string                 PREF_FIXED_FONTNAME     = "FL_COURIER";
-    int                         PREF_FIXED_FONTSIZE     = 14;
-    int                         PREF_FONT               = FL_HELVETICA;
-    int                         PREF_FONTSIZE           = 14;
-    std::string                 PREF_FONTNAME           = "FL_HELVETICA";
-    int                         PREF_SCROLLBAR          = 2;
-    std::string                 PREF_THEME              = "default";
-    const char* const           PREF_THEMES[]           = {
-                                    "default",
-                                    "oxy",
-                                    "blue oxy",
-                                    "tan oxy",
-                                    "gleam",
-                                    "blue gleam",
-                                    "dark blue gleam",
-                                    "dark gleam",
-                                    "darker gleam",
-                                    "tan gleam",
-                                    "gtk",
-                                    "blue gtk",
-                                    "dark blue gtk",
-                                    "dark gtk",
-                                    "darker gtk",
-                                    "tan gtk",
-                                    "plastic",
-                                    "blue plastic",
-                                    "tan plastic",
-                                    "system",
-                                    nullptr,
-    };
-    struct Stat {
-        int64_t                         size;
-        int64_t                         mtime;
-        int                             mode;
-         Stat()
-            { size = mtime = 0; mode = 0; }
-         explicit Stat(std::string filename) {
-            size  = 0;
-            mtime = 0;
-            mode  = 0;
-        #ifdef _WIN32
-            wchar_t wbuffer[1025];
-            struct __stat64 st;
-            while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-                filename.pop_back();
-            }
-            fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-            if (_wstat64(wbuffer, &st) == 0) {
-                size  = st.st_size;
-                mtime = st.st_mtime;
-                if (S_ISDIR(st.st_mode)) {
-                    mode = 1;
-                }
-                else if (S_ISREG(st.st_mode)) {
-                    mode = 2;
-                }
-                else {
-                    mode = 3;
-                }
-            }
-        #else
-            struct stat st;
-            if (stat(filename.c_str(), &st) == 0) {
-                size  = st.st_size;
-                mtime = st.st_mtime;
-                if (S_ISDIR(st.st_mode)) {
-                    mode = 1;
-                }
-                else if (S_ISREG(st.st_mode)) {
-                    mode = 2;
-                }
-                else {
-                    mode = 3;
-                }
-            }
-        #endif
+std::vector<char*>          PREF_FONTNAMES;
+int                         PREF_FIXED_FONT         = FL_COURIER;
+std::string                 PREF_FIXED_FONTNAME     = "FL_COURIER";
+int                         PREF_FIXED_FONTSIZE     = 14;
+int                         PREF_FONT               = FL_HELVETICA;
+int                         PREF_FONTSIZE           = 14;
+std::string                 PREF_FONTNAME           = "FL_HELVETICA";
+std::string                 PREF_THEME              = "default";
+const char* const           PREF_THEMES[]           = {
+                                "default",
+                                "oxy",
+                                "blue oxy",
+                                "tan oxy",
+                                "gleam",
+                                "blue gleam",
+                                "dark blue gleam",
+                                "dark gleam",
+                                "darker gleam",
+                                "tan gleam",
+                                "gtk",
+                                "blue gtk",
+                                "dark blue gtk",
+                                "dark gtk",
+                                "darker gtk",
+                                "tan gtk",
+                                "plastic",
+                                "blue plastic",
+                                "tan plastic",
+                                nullptr,
+};
+struct Stat {
+    int64_t                         size;
+    int64_t                         mtime;
+    int                             mode;
+     Stat()
+        { size = mtime = 0; mode = 0; }
+     explicit Stat(std::string filename) {
+        size  = 0;
+        mtime = 0;
+        mode  = 0;
+    #ifdef _WIN32
+        wchar_t wbuffer[1025];
+        struct __stat64 st;
+        while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+            filename.pop_back();
         }
-   };
-}
-flw::Buf::Buf() {
+        fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
+        if (_wstat64(wbuffer, &st) == 0) {
+            size  = st.st_size;
+            mtime = st.st_mtime;
+            if (S_ISDIR(st.st_mode)) {
+                mode = 1;
+            }
+            else if (S_ISREG(st.st_mode)) {
+                mode = 2;
+            }
+            else {
+                mode = 3;
+            }
+        }
+    #else
+        struct stat st;
+        if (stat(filename.c_str(), &st) == 0) {
+            size  = st.st_size;
+            mtime = st.st_mtime;
+            if (S_ISDIR(st.st_mode)) {
+                mode = 1;
+            }
+            else if (S_ISREG(st.st_mode)) {
+                mode = 2;
+            }
+            else {
+                mode = 3;
+            }
+        }
+    #endif
+    }
+};
+Buf::Buf() {
     p = nullptr;
     s = 0;
 }
-flw::Buf::Buf(size_t S) {
+Buf::Buf(size_t S) {
     p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
     s = 0;
     if (p != nullptr) {
         s = S;
     }
 }
-flw::Buf::Buf(char* P, size_t S) {
+Buf::Buf(char* P, size_t S) {
     p = P;
     s = S;
 }
-flw::Buf::Buf(const char* P, size_t S) {
+Buf::Buf(const char* P, size_t S) {
     if (P == nullptr) {
         p = nullptr;
         s = 0;
@@ -3908,7 +3855,7 @@ flw::Buf::Buf(const char* P, size_t S) {
         s = S;
     }
 }
-flw::Buf::Buf(const Buf& b) {
+Buf::Buf(const Buf& b) {
     if (b.p == nullptr) {
         p = nullptr;
         s = 0;
@@ -3923,12 +3870,12 @@ flw::Buf::Buf(const Buf& b) {
         s = b.s;
     }
 }
-flw::Buf::Buf(Buf&& b) {
+Buf::Buf(Buf&& b) {
     p = b.p;
     s = b.s;
     b.p = nullptr;
 }
-flw::Buf& flw::Buf::operator=(const Buf& b) {
+Buf& Buf::operator=(const Buf& b) {
     if (this == &b) {
     }
     if (b.p == nullptr) {
@@ -3948,14 +3895,14 @@ flw::Buf& flw::Buf::operator=(const Buf& b) {
     }
     return *this;
 }
-flw::Buf& flw::Buf::operator=(Buf&& b) {
+Buf& Buf::operator=(Buf&& b) {
     free(p);
     p = b.p;
     s = b.s;
     b.p = nullptr;
     return *this;
 }
-flw::Buf& flw::Buf::operator+=(const Buf& b) {
+Buf& Buf::operator+=(const Buf& b) {
     if (b.p == nullptr) {
     }
     else if (p == nullptr) {
@@ -3974,60 +3921,66 @@ flw::Buf& flw::Buf::operator+=(const Buf& b) {
     }
     return *this;
 }
-bool flw::Buf::operator==(const Buf& other) const {
+bool Buf::operator==(const Buf& other) const {
     return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
 }
-void flw::debug::print(Fl_Widget* widget, bool tab) {
-    assert(widget);
-    printf("%s%-*s| x=%4d, y=%4d, w=%4d, h=%4d\n", tab ? "    " : "", tab ? 16 : 20, widget->label() ? widget->label() : "NO_LABEL",  widget->x(),  widget->y(),  widget->w(),  widget->h());
+void debug::print(Fl_Widget* widget) {
+    std::string indent;
+    debug::print(widget, indent);
+}
+void debug::print(Fl_Widget* widget, std::string& indent) {
+    if (widget == nullptr) {
+        puts("debug::print() null widget");
+    }
+    else {
+        printf("%sx=%4d, y=%4d, w=%4d, h=%4d \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->label() ? widget->label() : "NO_LABEL");
+        auto group = widget->as_group();
+        if (group) {
+            indent += "\t";
+            for (int f = 0; f < group->children(); f++) {
+                debug::print(group->child(f), indent);
+            }
+            indent.pop_back();
+        }
+    }
     fflush(stdout);
 }
-void flw::debug::print(Fl_Group* group) {
-    assert(group);
-    puts("");
-    debug::print(static_cast<Fl_Widget*>(group));
-    for (int f = 0; f < group->children(); f++) {
-        debug::print(group->child(f), true);
-    }
+namespace menu {
+static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
+    assert(menu && text);
+    auto item = menu->find_item(text);
+#ifdef DEBUG
+    if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
+#endif
+    return (Fl_Menu_Item*) item;
 }
-namespace flw {
-    namespace menu {
-        static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
-            assert(menu && text);
-            auto item = menu->find_item(text);
-        #ifdef DEBUG
-            if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
-        #endif
-            return (Fl_Menu_Item*) item;
-        }
-        void enable_item(Fl_Menu_* menu, const char* text, bool value) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            if (value == true) item->activate();
-            else item->deactivate();
-        }
-        Fl_Menu_Item* get_item(Fl_Menu_* menu, const char* text) {
-            return _item(menu, text);
-        }
-        bool item_value(Fl_Menu_* menu, const char* text) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return false;
-            return item->value();
-        }
-        void set_item(Fl_Menu_* menu, const char* text, bool value) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            if (value == true) item->set();
-            else item->clear();
-        }
-        void setonly_item(Fl_Menu_* menu, const char* text) {
-            auto item = _item(menu, text);
-            if (item == nullptr) return;
-            menu->setonly(item);
-        }
-    }
 }
-void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
+void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return;
+    if (value == true) item->activate();
+    else item->deactivate();
+}
+Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, const char* text) {
+    return _item(menu, text);
+}
+bool menu::item_value(Fl_Menu_* menu, const char* text) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return false;
+    return item->value();
+}
+void menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return;
+    if (value == true) item->set();
+    else item->clear();
+}
+void menu::setonly_item(Fl_Menu_* menu, const char* text) {
+    auto item = _item(menu, text);
+    if (item == nullptr) return;
+    menu->setonly(item);
+}
+void util::center_window(Fl_Window* window, Fl_Window* parent) {
     if (parent != nullptr) {
         int x = parent->x() + parent->w() / 2;
         int y = parent->y() + parent->h() / 2;
@@ -4037,7 +3990,7 @@ void flw::util::center_window(Fl_Window* window, Fl_Window* parent) {
         window->resize((Fl::w() / 2) - (window->w() / 2), (Fl::h() / 2) - (window->h() / 2), window->w(), window->h());
     }
 }
-double flw::util::clock() {
+double util::clock() {
 #ifdef _WIN32
     struct timeb timeVal;
     ftime(&timeVal);
@@ -4048,18 +4001,7 @@ double flw::util::clock() {
     return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
 #endif
 }
-void flw::util::labelfont(Fl_Widget* widget) {
-    assert(widget);
-    widget->labelfont(flw::PREF_FONT);
-    widget->labelsize(flw::PREF_FONTSIZE);
-    auto group = widget->as_group();
-    if (group != nullptr) {
-        for (auto f = 0; f < group->children(); f++) {
-            util::labelfont(group->child(f));
-        }
-    }
-}
-std::string flw::util::fix_menu_string(std::string in) {
+std::string util::fix_menu_string(std::string in) {
     std::string res = in;
     util::replace(res, "\\", "\\\\");
     util::replace(res, "_", "\\_");
@@ -4067,7 +4009,7 @@ std::string flw::util::fix_menu_string(std::string in) {
     util::replace(res, "&", "&&");
     return res;
 }
-std::string flw::util::format(const char* format, ...) {
+std::string util::format(const char* format, ...) {
     if (format == nullptr || *format == 0) return "";
     int         l   = 128;
     int         n   = 0;
@@ -4097,7 +4039,7 @@ std::string flw::util::format(const char* format, ...) {
     free(buf);
     return res;
 }
-std::string flw::util::format_int(int64_t num, char del) {
+std::string util::format_int(int64_t num, char del) {
     auto pos = 0;
     char tmp1[32];
     char tmp2[32];
@@ -4118,7 +4060,18 @@ std::string flw::util::format_int(int64_t num, char del) {
     std::reverse(r.begin(), r.end());
     return r;
 }
-flw::Buf flw::util::load_file(std::string filename, bool alert) {
+void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
+    assert(widget);
+    widget->labelfont(fn);
+    widget->labelsize(fs);
+    auto group = widget->as_group();
+    if (group != nullptr) {
+        for (auto f = 0; f < group->children(); f++) {
+            util::labelfont(group->child(f), fn, fs);
+        }
+    }
+}
+Buf util::load_file(std::string filename, bool alert) {
     auto stat = flw::Stat(filename);
     if (stat.mode != 2) {
         if (alert == true) {
@@ -4144,7 +4097,7 @@ flw::Buf flw::util::load_file(std::string filename, bool alert) {
     }
     return buf;
 }
-int32_t flw::util::milliseconds() {
+int32_t util::milliseconds() {
 #if defined(_WIN32)
     LARGE_INTEGER StartingTime;
     LARGE_INTEGER Frequency;
@@ -4159,7 +4112,7 @@ int32_t flw::util::milliseconds() {
     return (t.tv_sec * 1000000 + t.tv_nsec / 1000) / 1000;
 #endif
 }
-void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
 #ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
     if (filename != nullptr) {
@@ -4197,7 +4150,7 @@ void flw::util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, 
     fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
 }
-std::string flw::util::remove_browser_format(std::string text) {
+std::string util::remove_browser_format(std::string text) {
     auto res = text;
     auto f   = res.find_last_of("@");
     if (f != std::string::npos) {
@@ -4225,7 +4178,7 @@ std::string flw::util::remove_browser_format(std::string text) {
     }
     return res;
 }
-std::string& flw::util::replace(std::string& string, std::string find, std::string replace) {
+std::string& util::replace(std::string& string, std::string find, std::string replace) {
     if (find == "") return string;
     size_t start = 0;
     while ((start = string.find(find, start)) != std::string::npos) {
@@ -4234,7 +4187,7 @@ std::string& flw::util::replace(std::string& string, std::string find, std::stri
     }
     return string;
 }
-bool flw::util::save_file(std::string filename, const void* data, size_t size, bool alert) {
+bool util::save_file(std::string filename, const void* data, size_t size, bool alert) {
     auto file = fl_fopen(filename.c_str(), "wb");
     if (file != nullptr) {
         auto wrote = fwrite(data, 1, size, file);
@@ -4252,14 +4205,14 @@ bool flw::util::save_file(std::string filename, const void* data, size_t size, b
     }
     return true;
 }
-void flw::util::sleep(int milli) {
+void util::sleep(int milli) {
 #ifdef _WIN32
     Sleep(milli);
 #else
     usleep(milli * 1000);
 #endif
 }
-flw::StringVector flw::util::split(const std::string& string, std::string split) {
+flw::StringVector util::split(const std::string& string, std::string split) {
     auto res = StringVector();
     try {
         if (split != "") {
@@ -4280,397 +4233,361 @@ flw::StringVector flw::util::split(const std::string& string, std::string split)
     }
     return res;
 }
-namespace flw {
-    namespace color {
-        Fl_Color RED     = fl_rgb_color(255, 0, 0);
-        Fl_Color LIME    = fl_rgb_color(0, 255, 0);
-        Fl_Color BLUE    = fl_rgb_color(0, 0, 255);
-        Fl_Color YELLOW  = fl_rgb_color(255, 255, 0);
-        Fl_Color CYAN    = fl_rgb_color(0, 255, 255);
-        Fl_Color MAGENTA = fl_rgb_color(255, 0, 255);
-        Fl_Color SILVER  = fl_rgb_color(192, 192, 192);
-        Fl_Color GRAY    = fl_rgb_color(128, 128, 128);
-        Fl_Color MAROON  = fl_rgb_color(128, 0, 0);
-        Fl_Color OLIVE   = fl_rgb_color(128, 128, 0);
-        Fl_Color GREEN   = fl_rgb_color(0, 128, 0);
-        Fl_Color PURPLE  = fl_rgb_color(128, 0, 128);
-        Fl_Color TEAL    = fl_rgb_color(0, 128, 128);
-        Fl_Color NAVY    = fl_rgb_color(0, 0, 128);
-        Fl_Color BROWN   = fl_rgb_color(210, 105, 30);
-        Fl_Color PINK    = fl_rgb_color(255, 192, 203);
-        Fl_Color BEIGE   = fl_rgb_color(245, 245, 220);
-        Fl_Color AZURE   = fl_rgb_color(240, 255, 250);
+Fl_Widget* util::widget(Fl_Group* group, std::string label) {
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        if (w->label() != nullptr && label == w->label()) {
+            return w;
+        }
     }
-    namespace theme {
-        static unsigned char _OLD_R[256]  = { 0 };
-        static unsigned char _OLD_G[256]  = { 0 };
-        static unsigned char _OLD_B[256]  = { 0 };
-        static unsigned char _SYS_R[256]  = { 0 };
-        static unsigned char _SYS_G[256]  = { 0 };
-        static unsigned char _SYS_B[256]  = { 0 };
-        static bool          _IS_DARK     = false;
-        static bool          _SAVED_COLOR = false;
-        static bool          _SAVED_SYS   = false;
-        static void _colors(bool dark) {
-            (void) dark;
-            color::AZURE   = fl_rgb_color(240, 255, 250);
-            color::BEIGE   = fl_rgb_color(245, 245, 220);
-            color::BLUE    = fl_rgb_color(0, 0, 255);
-            color::BLUE    = fl_rgb_color(0, 0, 255);
-            color::BROWN   = fl_rgb_color(210, 105, 30);
-            color::CYAN    = fl_rgb_color(0, 255, 255);
-            color::GRAY    = fl_rgb_color(128, 128, 128);
-            color::GREEN   = fl_rgb_color(0, 128, 0);
-            color::LIME    = fl_rgb_color(0, 255, 0);
-            color::MAGENTA = fl_rgb_color(255, 0, 255);
-            color::MAROON  = fl_rgb_color(128, 0, 0);
-            color::NAVY    = fl_rgb_color(0, 0, 128);
-            color::OLIVE   = fl_rgb_color(128, 128, 0);
-            color::PINK    = fl_rgb_color(255, 192, 203);
-            color::PURPLE  = fl_rgb_color(128, 0, 128);
-            color::RED     = fl_rgb_color(255, 0, 0);
-            color::SILVER  = fl_rgb_color(192, 192, 192);
-            color::TEAL    = fl_rgb_color(0, 128, 128);
-            color::YELLOW  = fl_rgb_color(255, 255, 0);
-        }
-        static void _make_default_colors_darker() {
-            Fl::set_color(60,    0,  63,   0);
-            Fl::set_color(63,    0, 110,   0);
-            Fl::set_color(72,   55,   0,   0);
-            Fl::set_color(76,   55,  63,   0);
-            Fl::set_color(88,  110,   0,   0);
-            Fl::set_color(95,  140, 140, 100);
-            Fl::set_color(136,   0,   0,  55);
-            Fl::set_color(140,   0,  63,  55);
-            Fl::set_color(152,  55,   0,  55);
-            Fl::set_color(216,   0,   0, 110);
-            Fl::set_color(223,   0, 110, 110);
-            Fl::set_color(248, 110,   0, 110);
-        }
-        static void _blue_colors() {
-            Fl::set_color(0,     0,   0,   0);
-            Fl::set_color(7,   255, 255, 255);
-            Fl::set_color(8,   130, 149, 166);
-            Fl::set_color(15,  255, 160,  63);
-            Fl::set_color(255, 244, 244, 244);
-            Fl::background(170, 189, 206);
-        }
-        static void _dark_blue_colors() {
-            Fl::set_color(0,   255, 255, 255);
-            Fl::set_color(7,    31,  47,  55);
-            Fl::set_color(8,   108, 113, 125);
-            Fl::set_color(15,   68, 138, 255);
-            Fl::set_color(56,    0,   0,   0);
-            Fl::background(64, 80, 87);
-        }
-        static void _dark_colors() {
-            Fl::set_color(0,   240, 240, 240);
-            Fl::set_color(7,    55,  55,  55);
-            Fl::set_color(8,   100, 100, 100);
-            Fl::set_color(15,  149,  75,  37);
-            Fl::set_color(56,    0,   0,   0);
-            Fl::background(85, 85, 85);
-            Fl::background(64, 64, 64);
-        }
-        static void _darker_colors() {
-            Fl::set_color(0,   164, 164, 164);
-            Fl::set_color(7,    16,  16,  16);
-            Fl::set_color(7,    28,  28,  28);
-            Fl::set_color(8,   100, 100, 100);
-            Fl::set_color(15,  133,  59,  21);
-            Fl::set_color(56,    0,   0,   0);
-            Fl::background(32, 32, 32);
-            Fl::background(38, 38, 38);
-        }
-        static void _tan_colors() {
-            Fl::set_color(0,     0,   0,   0);
-            Fl::set_color(7,   255, 255, 255);
-            Fl::set_color(8,    85,  85,  85);
-            Fl::set_color(15,  255, 160,  63);
-            Fl::set_color(255, 244, 244, 244);
-            Fl::background(206, 202, 187);
-        }
-        static void _restore_colors() {
-            if (_SAVED_COLOR == true) {
-                for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, flw::theme::_OLD_R[f], flw::theme::_OLD_G[f], flw::theme::_OLD_B[f]);
-                }
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        auto g = w->as_group();
+        if (g != nullptr) {
+            w = util::widget(g, label);
+            if (w != nullptr) {
+                return w;
             }
         }
-        static void _restore_sys() {
-            if (_SAVED_SYS == true) {
-                for (int f = 0; f < 256; f++) {
-                    Fl::set_color(f, flw::theme::_SYS_R[f], flw::theme::_SYS_G[f], flw::theme::_SYS_B[f]);
-                }
-            }
-        }
-        static void _save_colors() {
-            if (_SAVED_COLOR == false) {
-                for (int f = 0; f < 256; f++) {
-                    unsigned char r1, g1, b1;
-                    Fl::get_color(f, r1, g1, b1);
-                    flw::theme::_OLD_R[f] = r1;
-                    flw::theme::_OLD_G[f] = g1;
-                    flw::theme::_OLD_B[f] = b1;
-                }
-                _SAVED_COLOR = true;
-            }
-        }
-        static void _save_sys() {
-            if (_SAVED_SYS == false) {
-                for (int f = 0; f < 256; f++) {
-                    unsigned char r1, g1, b1;
-                    Fl::get_color(f, r1, g1, b1);
-                    flw::theme::_SYS_R[f] = r1;
-                    flw::theme::_SYS_G[f] = g1;
-                    flw::theme::_SYS_B[f] = b1;
-                }
-                _SAVED_SYS = true;
-            }
-        }
-        void _load_default() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::scheme("none");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
-            _IS_DARK = false;
-        }
-        void _load_oxy() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_oxy_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_oxy_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("oxy");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gleam() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gleam_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gleam_dark() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gleam_darker() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_darker_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gleam_dark_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_blue_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 101, 117, 125);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gleam_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gleam");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gtk() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gtk_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gtk_dark() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 185, 185, 185);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gtk_darker() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_darker_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 125, 125, 125);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
-            _IS_DARK = true;
-        }
-        void _load_gtk_dark_blue() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_dark_blue_colors();
-            flw::theme::_make_default_colors_darker();
-            flw::theme::_colors(true);
-            Fl::set_color(255, 161, 177, 185);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
-            _IS_DARK = true;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_gtk_tan() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _load_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 2;
-        }
-        void _load_blue_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_blue_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 2;
-        }
-        void _load_tan_plastic() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_tan_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("plastic");
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 2;
-        }
-        void _load_system() {
-            flw::theme::_save_colors();
-            flw::theme::_restore_colors();
-            flw::theme::_colors(false);
-            Fl::scheme("gtk+");
-            if (theme::_SAVED_SYS) {
-              flw::theme::_restore_sys();
-            }
-            else {
-              Fl::get_system_colors();
-              flw::theme::_save_sys();
-            }
-            Fl::redraw();
-            flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_SYSTEM];
-            _IS_DARK = false;
-            flw::PREF_SCROLLBAR = 1;
-        }
-        void _scrollbar() {
-            auto s = (flw::PREF_FONTSIZE > flw::PREF_FIXED_FONTSIZE) ? flw::PREF_FONTSIZE : flw::PREF_FIXED_FONTSIZE;
-            Fl::scrollbar_size(s + flw::PREF_SCROLLBAR);
+    }
+    return nullptr;
+}
+Fl_Color color::RED     = fl_rgb_color(255, 0, 0);
+Fl_Color color::LIME    = fl_rgb_color(0, 255, 0);
+Fl_Color color::BLUE    = fl_rgb_color(0, 0, 255);
+Fl_Color color::YELLOW  = fl_rgb_color(255, 255, 0);
+Fl_Color color::CYAN    = fl_rgb_color(0, 255, 255);
+Fl_Color color::MAGENTA = fl_rgb_color(255, 0, 255);
+Fl_Color color::SILVER  = fl_rgb_color(192, 192, 192);
+Fl_Color color::GRAY    = fl_rgb_color(128, 128, 128);
+Fl_Color color::MAROON  = fl_rgb_color(128, 0, 0);
+Fl_Color color::OLIVE   = fl_rgb_color(128, 128, 0);
+Fl_Color color::GREEN   = fl_rgb_color(0, 128, 0);
+Fl_Color color::PURPLE  = fl_rgb_color(128, 0, 128);
+Fl_Color color::TEAL    = fl_rgb_color(0, 128, 128);
+Fl_Color color::NAVY    = fl_rgb_color(0, 0, 128);
+Fl_Color color::BROWN   = fl_rgb_color(210, 105, 30);
+Fl_Color color::PINK    = fl_rgb_color(255, 192, 203);
+Fl_Color color::BEIGE   = fl_rgb_color(245, 245, 220);
+Fl_Color color::AZURE   = fl_rgb_color(240, 255, 250);
+namespace theme {
+static unsigned char _OLD_R[256]  = { 0 };
+static unsigned char _OLD_G[256]  = { 0 };
+static unsigned char _OLD_B[256]  = { 0 };
+static bool          _IS_DARK     = false;
+static bool          _SAVED_COLOR = false;
+static int           _SCROLLSIZE  = Fl::scrollbar_size();
+static void _colors(bool dark) {
+    (void) dark;
+    color::AZURE   = fl_rgb_color(240, 255, 250);
+    color::BEIGE   = fl_rgb_color(245, 245, 220);
+    color::BLUE    = fl_rgb_color(0, 0, 255);
+    color::BLUE    = fl_rgb_color(0, 0, 255);
+    color::BROWN   = fl_rgb_color(210, 105, 30);
+    color::CYAN    = fl_rgb_color(0, 255, 255);
+    color::GRAY    = fl_rgb_color(128, 128, 128);
+    color::GREEN   = fl_rgb_color(0, 128, 0);
+    color::LIME    = fl_rgb_color(0, 255, 0);
+    color::MAGENTA = fl_rgb_color(255, 0, 255);
+    color::MAROON  = fl_rgb_color(128, 0, 0);
+    color::NAVY    = fl_rgb_color(0, 0, 128);
+    color::OLIVE   = fl_rgb_color(128, 128, 0);
+    color::PINK    = fl_rgb_color(255, 192, 203);
+    color::PURPLE  = fl_rgb_color(128, 0, 128);
+    color::RED     = fl_rgb_color(255, 0, 0);
+    color::SILVER  = fl_rgb_color(192, 192, 192);
+    color::TEAL    = fl_rgb_color(0, 128, 128);
+    color::YELLOW  = fl_rgb_color(255, 255, 0);
+}
+static void _make_default_colors_darker() {
+    Fl::set_color(60,    0,  63,   0);
+    Fl::set_color(63,    0, 110,   0);
+    Fl::set_color(72,   55,   0,   0);
+    Fl::set_color(76,   55,  63,   0);
+    Fl::set_color(88,  110,   0,   0);
+    Fl::set_color(95,  140, 140, 100);
+    Fl::set_color(136,   0,   0,  55);
+    Fl::set_color(140,   0,  63,  55);
+    Fl::set_color(152,  55,   0,  55);
+    Fl::set_color(216,   0,   0, 110);
+    Fl::set_color(223,   0, 110, 110);
+    Fl::set_color(248, 110,   0, 110);
+}
+static void _blue_colors() {
+    Fl::set_color(0,     0,   0,   0);
+    Fl::set_color(7,   255, 255, 255);
+    Fl::set_color(8,   130, 149, 166);
+    Fl::set_color(15,   83, 180, 255);
+    Fl::set_color(255, 244, 244, 244);
+    Fl::background(170, 189, 206);
+}
+static void _dark_blue_colors() {
+    Fl::set_color(0,   255, 255, 255);
+    Fl::set_color(7,    31,  47,  55);
+    Fl::set_color(8,   108, 113, 125);
+    Fl::set_color(15,   68, 138, 255);
+    Fl::set_color(56,    0,   0,   0);
+    Fl::background(64, 80, 87);
+}
+static void _dark_colors() {
+    Fl::set_color(0,   240, 240, 240);
+    Fl::set_color(7,    55,  55,  55);
+    Fl::set_color(8,   100, 100, 100);
+    Fl::set_color(15,  149,  75,  37);
+    Fl::set_color(56,    0,   0,   0);
+    Fl::background(85, 85, 85);
+    Fl::background(64, 64, 64);
+}
+static void _darker_colors() {
+    Fl::set_color(0,   220, 220, 220);
+    Fl::set_color(7,    16,  16,  16);
+    Fl::set_color(7,    28,  28,  28);
+    Fl::set_color(8,   100, 100, 100);
+    Fl::set_color(15,  133,  59,  21);
+    Fl::set_color(56,    0,   0,   0);
+    Fl::background(32, 32, 32);
+    Fl::background(38, 38, 38);
+}
+static void _tan_colors() {
+    Fl::set_color(0,     0,   0,   0);
+    Fl::set_color(7,   255, 255, 255);
+    Fl::set_color(8,    85,  85,  85);
+    Fl::set_color(15,  255, 160,  63);
+    Fl::set_color(255, 244, 244, 244);
+    Fl::background(206, 202, 187);
+}
+static void _restore_colors() {
+    if (_SAVED_COLOR == true) {
+        for (int f = 0; f < 256; f++) {
+            Fl::set_color(f, theme::_OLD_R[f], theme::_OLD_G[f], theme::_OLD_B[f]);
         }
     }
 }
-bool flw::theme::is_dark() {
+static void _save_colors() {
+    if (_SAVED_COLOR == false) {
+        for (int f = 0; f < 256; f++) {
+            unsigned char r1, g1, b1;
+            Fl::get_color(f, r1, g1, b1);
+            theme::_OLD_R[f] = r1;
+            theme::_OLD_G[f] = g1;
+            theme::_OLD_B[f] = b1;
+        }
+        _SAVED_COLOR = true;
+    }
+}
+void _load_default() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("none");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
+    _IS_DARK = false;
+}
+void _load_oxy() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("oxy");
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
+    _IS_DARK = false;
+}
+void _load_oxy_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("oxy");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
+    _IS_DARK = false;
+}
+void _load_oxy_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("oxy");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
+    _IS_DARK = false;
+}
+void _load_gleam() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("gleam");
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
+    _IS_DARK = false;
+}
+void _load_gleam_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
+    _IS_DARK = false;
+}
+void _load_gleam_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 125, 125, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
+    _IS_DARK = true;
+}
+void _load_gleam_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_darker_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 125, 125, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
+    _IS_DARK = true;
+}
+void _load_gleam_dark_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_blue_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
+    _IS_DARK = true;
+}
+void _load_gleam_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
+    _IS_DARK = false;
+}
+void _load_gtk() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::scheme("gtk+");
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
+    _IS_DARK = false;
+}
+void _load_gtk_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
+    _IS_DARK = false;
+}
+void _load_gtk_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 185, 185, 185);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
+    _IS_DARK = true;
+}
+void _load_gtk_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_darker_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 125, 125, 125);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
+    _IS_DARK = true;
+}
+void _load_gtk_dark_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_dark_blue_colors();
+    theme::_make_default_colors_darker();
+    theme::_colors(true);
+    Fl::set_color(255, 161, 177, 185);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
+    _IS_DARK = true;
+}
+void _load_gtk_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
+    _IS_DARK = false;
+}
+void _load_plastic() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_colors(false);
+    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
+    _IS_DARK = false;
+}
+void _load_blue_plastic() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_colors(false);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
+    _IS_DARK = false;
+}
+void _load_tan_plastic() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_colors(false);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
+    _IS_DARK = false;
+}
+void _scrollbar() {
+    if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
+        auto f = (double) flw::PREF_FONTSIZE / 14.0;
+        auto s = (int) (f * theme::_SCROLLSIZE);
+        Fl::scrollbar_size(s);
+    }
+    else if (theme::_SCROLLSIZE > 0) {
+        Fl::scrollbar_size(theme::_SCROLLSIZE);
+    }
+}
+}
+bool theme::is_dark() {
     if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE] ||
         flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] ||
         flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER] ||
@@ -4683,66 +4600,66 @@ bool flw::theme::is_dark() {
         return false;
     }
 }
-bool flw::theme::load(std::string name) {
+bool theme::load(std::string name) {
+    if (theme::_SCROLLSIZE == 0) {
+        theme::_SCROLLSIZE = Fl::scrollbar_size();
+    }
     if (name == flw::PREF_THEMES[theme::THEME_DEFAULT]) {
-        flw::theme::_load_default();
+        theme::_load_default();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_OXY]) {
-        flw::theme::_load_oxy();
+        theme::_load_oxy();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_OXY_BLUE]) {
-        flw::theme::_load_oxy_blue();
+        theme::_load_oxy_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_OXY_TAN]) {
-        flw::theme::_load_oxy_tan();
+        theme::_load_oxy_tan();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM]) {
-        flw::theme::_load_gleam();
+        theme::_load_gleam();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE]) {
-        flw::theme::_load_gleam_blue();
+        theme::_load_gleam_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE]) {
-        flw::theme::_load_gleam_dark_blue();
+        theme::_load_gleam_dark_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK]) {
-        flw::theme::_load_gleam_dark();
+        theme::_load_gleam_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER]) {
-        flw::theme::_load_gleam_darker();
+        theme::_load_gleam_darker();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_TAN]) {
-        flw::theme::_load_gleam_tan();
+        theme::_load_gleam_tan();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK]) {
-        flw::theme::_load_gtk();
+        theme::_load_gtk();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_BLUE]) {
-        flw::theme::_load_gtk_blue();
+        theme::_load_gtk_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE]) {
-        flw::theme::_load_gtk_dark_blue();
+        theme::_load_gtk_dark_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
-        flw::theme::_load_gtk_dark();
+        theme::_load_gtk_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARKER]) {
-        flw::theme::_load_gtk_darker();
+        theme::_load_gtk_darker();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_TAN]) {
-        flw::theme::_load_gtk_tan();
+        theme::_load_gtk_tan();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC]) {
-        flw::theme::_load_plastic();
+        theme::_load_plastic();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE]) {
-        flw::theme::_load_blue_plastic();
+        theme::_load_blue_plastic();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN]) {
-        flw::theme::_load_tan_plastic();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_SYSTEM]) {
-        flw::theme::_load_system();
+        theme::_load_tan_plastic();
     }
     else {
         return false;
@@ -4750,7 +4667,7 @@ bool flw::theme::load(std::string name) {
     theme::_scrollbar();
     return true;
 }
-int flw::theme::load_font(std::string requested_font) {
+int theme::load_font(std::string requested_font) {
     theme::load_fonts();
     auto count = 0;
     for (auto font : flw::PREF_FONTNAMES) {
@@ -4762,7 +4679,7 @@ int flw::theme::load_font(std::string requested_font) {
     }
     return -1;
 }
-void flw::theme::load_fonts(bool iso8859_only) {
+void theme::load_fonts(bool iso8859_only) {
     if (flw::PREF_FONTNAMES.size() == 0) {
         auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
         for (int f = 0; f < fonts; f++) {
@@ -4781,7 +4698,7 @@ void flw::theme::load_fonts(bool iso8859_only) {
         }
     }
 }
-void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
+void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
     assert(win);
     if (win->shown() != 0) {
         fl_alert("%s", "warning: load icon before showing window!");
@@ -4805,7 +4722,7 @@ void flw::theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_re
     (void) name;
 #endif
 }
-void flw::theme::load_theme_pref(Fl_Preferences& pref) {
+void theme::load_theme_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
     pref.get("fontname", buffer, "", 4000);
@@ -4833,16 +4750,20 @@ void flw::theme::load_theme_pref(Fl_Preferences& pref) {
         flw::PREF_FIXED_FONTSIZE = val;
     }
     pref.get("theme", buffer, "oxy", 4000);
-    flw::theme::load(buffer);
+    theme::load(buffer);
+    Fl_Tooltip::font(flw::PREF_FONT);
+    Fl_Tooltip::size(flw::PREF_FONTSIZE);
+    _scrollbar();
 }
-void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
+void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2, int defw, int defh, std::string basename) {
     assert(window);
-    int  x, y, w, h, f;
+    int  x, y, w, h, f, m;
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
     pref.get((basename + "fullscreen").c_str(), f, 0);
+    pref.get((basename + "maximized").c_str(), m, 0);
     if (w == 0 || h == 0) {
         w = 800;
         h = 600;
@@ -4851,22 +4772,25 @@ void flw::theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool sho
         x = 80;
         y = 60;
     }
-    if (show == true && window->shown() == 0) {
-        window->resize(x, y, w, h);
+    if (show_0_1_2 > 1 && window->shown() == 0) {
         window->show();
     }
-    else {
-        window->resize(x, y, w, h);
-    }
+    window->resize(x, y, w, h);
     if (f == 1) {
         window->fullscreen();
     }
+    else if (m == 1) {
+        window->maximize();
+    }
+    if (show_0_1_2 == 1 && window->shown() == 0) {
+        window->show();
+    }
 }
-bool flw::theme::parse(int argc, const char** argv) {
+bool theme::parse(int argc, const char** argv) {
     auto res = false;
     for (auto f = 1; f < argc; f++) {
         if (res == false) {
-            res = flw::theme::load(argv[f]);
+            res = theme::load(argv[f]);
         }
         auto fontsize = atoi(argv[f]);
         if (fontsize >= 6 && fontsize <= 72) {
@@ -4876,20 +4800,22 @@ bool flw::theme::parse(int argc, const char** argv) {
     flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
     return res;
 }
-void flw::theme::save_theme_pref(Fl_Preferences& pref) {
+void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
     pref.set("fontname", flw::PREF_FONTNAME.c_str());
     pref.set("fontsize", flw::PREF_FONTSIZE);
     pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
     pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
 }
-void flw::theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
+void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
     assert(window);
     pref.set((basename + "x").c_str(), window->x());
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
+    pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
+}
 }
 #include <stdarg.h>
 namespace flw {
@@ -5019,138 +4945,195 @@ void flw::Grid::size(int rows, int cols) {
     }
 }
 namespace flw {
-    struct _GridGroupChild {
-        Fl_Widget* widget;
-        int x;
-        int y;
-        int w;
-        int h;
-        _GridGroupChild() {
-            widget = nullptr;
-            x = 0;
-            y = 0;
-            w = 0;
-            h = 0;
-        }
-    };
-}
-flw::GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+struct _GridGroupChild {
+    Fl_Widget* widget;
+    short x;
+    short y;
+    short w;
+    short h;
+    short l;
+    short r;
+    short t;
+    short b;
+    _GridGroupChild() {
+        set();
+        adjust();
+    }
+    void adjust(int L = 0, int R = 0, int T = 0, int B = 0) {
+        l  = L;
+        r  = R;
+        t  = T;
+        b  = B;
+    }
+    void set(Fl_Widget* WIDGET = nullptr, int X = 0, int Y = 0, int W = 0, int H = 0) {
+        widget = WIDGET;
+        x      = X;
+        y      = Y;
+        w      = W;
+        h      = H;
+    }
+};
+GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
-    _size = labelsize();
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+    resizable(nullptr);
+    _size = 0;
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         _widgets[f] = new _GridGroupChild();
     }
 }
-flw::GridGroup::~GridGroup() {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+GridGroup::~GridGroup() {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         delete _widgets[f];
     }
 }
-void flw::GridGroup::add(Fl_Widget* widget, int x, int y, int w, int h) {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         if (_widgets[f]->widget == nullptr) {
             Fl_Group::add(widget);
-            _widgets[f]->widget = widget;
-            _widgets[f]->x      = x;
-            _widgets[f]->y      = y;
-            _widgets[f]->w      = w;
-            _widgets[f]->h      = h;
+            _widgets[f]->set(widget, X, Y, W, H);
             return;
         }
     }
     #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::add too many widgets\n");
+        fprintf(stderr, "error: flw::GridGroup::add() too many widgets (label=%s)\n", widget->label());
     #endif
 }
-void flw::GridGroup::clear() {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
-        _widgets[f]->widget = nullptr;
-        _widgets[f]->x      = 0;
-        _widgets[f]->y      = 0;
-        _widgets[f]->w      = 0;
-        _widgets[f]->h      = 0;
+void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == widget) {
+            _widgets[f]->adjust(L, R, T, B);
+            return;
+        }
+    }
+    #ifdef DEBUG
+        fprintf(stderr, "error: flw::GridGroup::adjust() failed to find widget (label=%s)\n", widget->label());
+    #endif
+}
+void GridGroup::clear() {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        _widgets[f]->set();
     }
     Fl_Group::clear();
 }
-void flw::GridGroup::remove(Fl_Widget* widget) {
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
+int GridGroup::handle(int event) {
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Tab) {
+        if (children() > 0) {
+            Fl_Widget* first   = nullptr;
+            Fl_Widget* last    = nullptr;
+            Fl_Widget* current = Fl::focus();
+            _last_active_widget(&first, &last);
+            if (Fl::event_shift() == 0) {
+                if (first != nullptr && current != nullptr && current == last) {
+                    Fl::focus(first);
+                    first->redraw();
+                    return 1;
+                }
+            }
+            else {
+                if (first != nullptr && current != nullptr && current == first) {
+                    Fl::focus(last);
+                    last->redraw();
+                    return 1;
+                }
+            }
+        }
+    }
+    return Fl_Group::handle(event);
+}
+void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
+    for (int f = 0; f < children(); f++) {
+        auto c = child(f);
+        auto g = c->as_group();
+        if (g == nullptr) {
+            if (c->active() != 0) {
+                *last = c;
+            }
+            if (*first == nullptr && c->active() != 0) {
+                *first = c;
+            }
+        }
+    }
+}
+void GridGroup::remove(Fl_Widget* widget) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
         if (_widgets[f]->widget == widget) {
             Fl_Group::remove(widget);
-            _widgets[f]->widget = nullptr;
-            _widgets[f]->x      = 0;
-            _widgets[f]->y      = 0;
-            _widgets[f]->w      = 0;
-            _widgets[f]->h      = 0;
+            _widgets[f]->set();
             return;
         }
     }
     #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::remove can't find widget\n");
+        fprintf(stderr, "error: GridGroup::remove can't find widget\n");
     #endif
 }
-void flw::GridGroup::resize() {
-    resize(x(), y(), w(), h());
-    redraw();
-}
-void flw::GridGroup::resize(int X, int Y, int W, int H) {
+void GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
-    if (W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0) {
         return;
     }
-    #ifdef DEBUG
-    #endif
-    for (int f = 0; f < flw::GridGroup::MAX_WIDGETS; f++) {
-        _GridGroupChild* widget = _widgets[f];
-        if (widget->widget) {
+    int size = (_size > 0) ? _size : flw::PREF_FONTSIZE / 2;
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        auto* c = _widgets[f];
+        if (c->widget != nullptr && c->widget->visible() != 0) {
             int widget_x  = 0;
             int widget_x2 = 0;
             int widget_y  = 0;
             int widget_y2 = 0;
             int widget_w  = 0;
             int widget_h  = 0;
-            if (widget->x >= 0) {
-                widget_x = X + widget->x * _size;
+            if (c->x >= 0) {
+                widget_x = X + c->x * size;
             }
             else {
-                widget_x = X + W + widget->x * _size;
+                widget_x = X + W + c->x * size;
             }
-            if (widget->y >= 0) {
-                widget_y = Y + widget->y * _size;
+            if (c->y >= 0) {
+                widget_y = Y + c->y * size;
             }
             else {
-                widget_y = Y + H + widget->y * _size;
+                widget_y = Y + H + c->y * size;
             }
-            if (widget->w == 0) {
+            if (c->w == 0) {
                 widget_x2 = X + W;
             }
-            else if (widget->w > 0) {
-                widget_x2 = widget_x + widget->w * _size;
+            else if (c->w > 0) {
+                widget_x2 = widget_x + c->w * size;
             }
             else {
-                widget_x2 = X + W + widget->w * _size;
+                widget_x2 = X + W + c->w * size;
             }
-            if (widget->h == 0) {
+            if (c->h == 0) {
                 widget_y2 = Y + H;
             }
-            else if (widget->h > 0) {
-                widget_y2 = widget_y + widget->h * _size;
+            else if (c->h > 0) {
+                widget_y2 = widget_y + c->h * size;
             }
             else {
-                widget_y2 = Y + H + widget->h * _size;
+                widget_y2 = Y + H + c->h * size;
             }
             widget_w = widget_x2 - widget_x;
             widget_h = widget_y2 - widget_y;
             if (widget_w >= 0 && widget_h >= 0) {
-                widget->widget->resize(widget_x, widget_y, widget_w, widget_h);
+                c->widget->resize(widget_x + c->l, widget_y + c->t, widget_w + c->r, widget_h + c->b);
             }
             else {
-                widget->widget->resize(widget_x, widget_y, 0, 0);
+                c->widget->resize(0, 0, 0, 0);
             }
-            #ifdef DEBUG
-            #endif
         }
     }
+}
+void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
+    for (int f = 0; f < GridGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == widget) {
+            _widgets[f]->set(widget, X, Y, W, H);
+            return;
+        }
+    }
+    #ifdef DEBUG
+        fprintf(stderr, "error: flw::GridGroup::resize() failed to find widget (label=%s)\n", widget->label());
+    #endif
+}
 }
 #include <algorithm>
 namespace flw {
@@ -5261,7 +5244,7 @@ void flw::InputMenu::insert(std::string string, int max_list_len) {
     _input->insert_position(string.length(), 0);
 }
 void flw::InputMenu::resize(int X, int Y, int W, int H) {
-    Fl_Group::resize(X, Y, W, H);
+    Fl_Widget::resize(X, Y, W, H);
     if (_menu->visible() != 0) {
         auto mw = (int) flw::PREF_FONTSIZE;
         _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
@@ -7194,6 +7177,7 @@ void PlotScale::reset_min_max() {
 Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
     color(FL_BACKGROUND2_COLOR);
     labelcolor(FL_FOREGROUND_COLOR);
     box(FL_BORDER_BOX);
@@ -7860,7 +7844,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
     plot->view_options(l, h, v);
     plot->custom_xlabels_for_points0(x.labels);
     plot->custom_ylabels_for_points0(y.labels);
-    plot->resize();
+    plot->layout();
     return true;
 }
 bool Plot::Save(const Plot* plot, std::string filename) {
@@ -8098,16 +8082,17 @@ void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
     clear();
 }
 void flw::SplitGroup::add(Fl_Widget* widget, SplitGroup::CHILD child) {
     auto num = child == SplitGroup::CHILD::FIRST ? 0 : 1;
-    if (_widgets[num]) {
+    if (_widgets[num] != nullptr) {
         remove(_widgets[num]);
         delete _widgets[num];
     }
     _widgets[num] = widget;
-    if (widget) {
+    if (widget != nullptr) {
         Fl_Group::add(widget);
     }
 }
@@ -8137,7 +8122,7 @@ int flw::SplitGroup::handle(int event) {
             }
             if (pos != _split_pos) {
                 _split_pos = pos;
-                resize();
+                do_layout();
             }
             return 1;
         }
@@ -8195,7 +8180,7 @@ int flw::SplitGroup::handle(int event) {
 }
 void flw::SplitGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
-    if (W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0) {
         return;
     }
     auto currx = X;
@@ -8288,7 +8273,7 @@ void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION dire
     }
 }
 #include <FL/Fl.H>
-#include <FL/Fl_Button.H>
+#include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/fl_ask.H>
@@ -8340,7 +8325,7 @@ namespace flw {
             callback(_TableDisplayCellDialog::Callback, this);
             set_modal();
             resizable(this);
-            resize(0, 0, flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 7);
+            resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
         }
         static void Callback(Fl_Widget* w, void* o) {
             auto dlg = static_cast<_TableDisplayCellDialog*>(o);
@@ -8360,9 +8345,10 @@ namespace flw {
             return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
         }
         void resize(int X, int Y, int W, int H) {
+            int fs = flw::PREF_FONTSIZE / 2;
             Fl_Double_Window::resize(X, Y, W, H);
-            _row->resize(4, flw::PREF_FONTSIZE + 4, W - 8, flw::PREF_FONTSIZE * 2);
-            _col->resize(4, flw::PREF_FONTSIZE * 4 + 8, W - 8, flw::PREF_FONTSIZE * 2);
+            _row->resize(fs,  fs * 3,   W - fs * 2,  fs * 4);
+            _col->resize(fs,  fs * 10,  W - fs * 2,  fs * 4);
         }
         int row() const {
             return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
@@ -8385,12 +8371,12 @@ namespace flw {
         TableDisplay*               _table;
         bool                        _repeat;
     public:
-        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Find Text In Table Cells") {
             end();
             _close  = new Fl_Button(0, 0, 0, 0, "&Close");
-            _next   = new Fl_Button(0, 0, 0, 0, "&Find next");
-            _prev   = new Fl_Button(0, 0, 0, 0, "Find &previous");
-            _text   = new Fl_Input(0, 0, 0, 0, "Search:");
+            _next   = new Fl_Return_Button(0, 0, 0, 0, "&Find");
+            _prev   = new Fl_Button(0, 0, 0, 0, "Find &prev");
+            _text   = new Fl_Input(0, 0, 0, 0, "Find:");
             _table  = table;
             _repeat = true;
             add(_text);
@@ -8413,7 +8399,7 @@ namespace flw {
             callback(_TableDisplayFindDialog::Callback, this);
             set_modal();
             resizable(this);
-            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 7);
+            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 5.5);
         }
         static void Callback(Fl_Widget* w, void* o) {
             auto dlg = static_cast<_TableDisplayFindDialog*>(o);
@@ -8499,11 +8485,12 @@ namespace flw {
             }
         }
         void resize(int X, int Y, int W, int H) {
+            int fs = flw::PREF_FONTSIZE / 2;
             Fl_Double_Window::resize(X, Y, W, H);
-            _text->resize  (flw::PREF_FONTSIZE * 5,             flw::PREF_FONTSIZE,                 W - flw::PREF_FONTSIZE * 5 - 4, flw::PREF_FONTSIZE * 2);
-            _prev->resize  (W - flw::PREF_FONTSIZE * 30 - 12,   H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
-            _next->resize  (W - flw::PREF_FONTSIZE * 20 - 8,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
-            _close->resize (W - flw::PREF_FONTSIZE * 10 - 4,    H - flw::PREF_FONTSIZE * 2 - 4,     flw::PREF_FONTSIZE * 10,        flw::PREF_FONTSIZE * 2);
+            _text->resize  (fs * 10,      fs,          W - fs * 11,  fs * 4);
+            _prev->resize  (W - fs * 51,  H - fs * 5,  fs * 16,      fs * 4);
+            _next->resize  (W - fs * 34,  H - fs * 5,  fs * 16,      fs * 4);
+            _close->resize (W - fs * 17,  H - fs * 5,  fs * 16,      fs * 4);
         }
         void run(Fl_Window* parent) {
             flw::util::center_window(this, parent);
@@ -8527,6 +8514,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     _hor->type(FL_HORIZONTAL);
     _ver->callback(&_CallbackHor, this);
     _ver->linesize(10);
+    resizable(nullptr);
     box(FL_BORDER_BOX);
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
@@ -10079,6 +10067,7 @@ int flw::TableEditor::handle(int event) {
         return TableDisplay::handle(event);
     }
 }
+#include <assert.h>
 #include <FL/Fl_Toggle_Button.H>
 #include <FL/fl_draw.H>
 namespace flw {
@@ -10097,7 +10086,7 @@ public:
     void draw() override {
         fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        fl_color(FL_FOREGROUND_COLOR);
+        fl_color(value() ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };
@@ -10108,6 +10097,7 @@ Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
     tooltip(TabsGroup::Help());
     _active = -1;
     _drag   = false;
@@ -10137,8 +10127,41 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
     }
     TabsGroup::Callback(button, this);
 }
+void TabsGroup::BoxColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
+}
+void TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
+    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
+}
+void TabsGroup::BoxType(Fl_Boxtype boxtype) {
+    flw::_TabsGroupButton::_BOXTYPE = boxtype;
+}
 Fl_Widget* TabsGroup::_button() {
     return (_active >= 0 && _active < (int) _buttons.size()) ? _buttons[_active] : nullptr;
+}
+void TabsGroup::Callback(Fl_Widget* sender, void* object) {
+    if (sender) {
+        auto button = static_cast<_TabsGroupButton*>(sender);
+        auto self   = static_cast<TabsGroup*>(object);
+        auto count  = 0;
+        self->_active = -1;
+        for (auto b : self->_buttons) {
+            if (b == button) {
+                static_cast<Fl_Button*>(b)->value(1);
+                self->_active = count;
+                self->_widgets[count]->show();
+            }
+            else {
+                static_cast<Fl_Button*>(b)->value(0);
+                self->_widgets[count]->hide();
+            }
+            count++;
+        }
+        if (self->value() != nullptr && Fl::focus() != self->value()) {
+            self->value()->take_focus();
+        }
+        self->do_layout();
+    }
 }
 Fl_Widget* TabsGroup::child(int num) const {
     return (num >= 0 && num < (int) _widgets.size()) ? _widgets[num] : nullptr;
@@ -10171,7 +10194,7 @@ int TabsGroup::handle(int event) {
                 }
                 if (pos != _pos) {
                     _pos = pos;
-                    resize();
+                    do_layout();
                 }
                 return 1;
             }
@@ -10270,7 +10293,15 @@ void TabsGroup::_hide_tab_buttons(bool hide) {
             b->show();
         }
     }
-    resize();
+    do_layout();
+}
+const char* TabsGroup::Help() {
+    static const char* const HELP =
+    "Use alt + left/right to move between tabs.\n"
+    "Or alt (command key) + [1 - 9] to select tab.\n"
+    "And alt + shift + left/right to move tabs.\n"
+    "Tabs on the left/right side can have its width changed by dragging the mouse.";
+    return HELP;
 }
 void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
@@ -10302,11 +10333,9 @@ Fl_Widget* TabsGroup::remove(int num) {
     }
 }
 void TabsGroup::resize(int X, int Y, int W, int H) {
+    assert(_buttons.size() == _widgets.size());
     Fl_Widget::resize(X, Y, W, H);
-    if (W == 0 || H == 0) {
-        return;
-    }
-    if (visible() == 0 || _widgets.size() == 0) {
+    if (children() == 0 || W == 0 || H == 0) {
         return;
     }
     auto height = flw::PREF_FONTSIZE + 8;
@@ -10438,10 +10467,10 @@ void TabsGroup::swap(int from, int to) {
         _buttons[to]   = button;
         from           = to;
     }
-    if (active) {
+    if (active == true) {
         _active = from;
     }
-    resize();
+    do_layout();
 }
 Fl_Widget* TabsGroup::value() const {
     return (_active >= 0 && _active < (int) _widgets.size()) ? _widgets[_active] : nullptr;
@@ -10451,45 +10480,123 @@ void TabsGroup::value(int num) {
         TabsGroup::Callback(_buttons[num], this);
     }
 }
-void TabsGroup::BoxColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXCOLOR = boxcolor;
 }
-void TabsGroup::BoxSelectionColor(Fl_Color boxcolor) {
-    flw::_TabsGroupButton::_BOXSELCOLOR = boxcolor;
-}
-void TabsGroup::BoxType(Fl_Boxtype boxtype) {
-    flw::_TabsGroupButton::_BOXTYPE = boxtype;
-}
-void TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    if (sender) {
-        auto button = static_cast<_TabsGroupButton*>(sender);
-        auto self   = static_cast<TabsGroup*>(object);
-        auto count  = 0;
-        self->_active = -1;
-        for (auto b : self->_buttons) {
-            if (b == button) {
-                static_cast<Fl_Button*>(b)->value(1);
-                self->_active = count;
-                self->_widgets[count]->show();
-            }
-            else {
-                static_cast<Fl_Button*>(b)->value(0);
-                self->_widgets[count]->hide();
-            }
-            count++;
-        }
-        if (self->value() != nullptr && Fl::focus() != self->value()) {
-            self->value()->take_focus();
-        }
-        self->resize();
+namespace flw {
+struct _ToolGroupChild {
+    Fl_Widget* widget;
+    short      size;
+    _ToolGroupChild() {
+        set();
+    }
+    void set(Fl_Widget* WIDGET = nullptr, int SIZE = 0) {
+        widget = WIDGET;
+        size   = SIZE;
+    }
+};
+ToolGroup::ToolGroup(DIRECTION direction, int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+    end();
+    clip_children(1);
+    resizable(nullptr);
+    _direction = direction;
+    _expand    = false;
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        _widgets[f] = new _ToolGroupChild();
     }
 }
-const char* TabsGroup::Help() {
-    static const char* const HELP =
-    "Use alt + left/right to move between tabs.\n"
-    "Or alt (command key) + [1 - 9] to select tab.\n"
-    "And alt + shift + left/right to move tabs.";
-    return HELP;
+ToolGroup::~ToolGroup() {
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        delete _widgets[f];
+    }
+}
+void ToolGroup::add(Fl_Widget* widget, int SIZE) {
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == nullptr) {
+            Fl_Group::add(widget);
+            _widgets[f]->set(widget, SIZE);
+            return;
+        }
+    }
+}
+void ToolGroup::clear() {
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        _widgets[f]->set();
+    }
+    Fl_Group::clear();
+}
+void ToolGroup::remove(Fl_Widget* widget) {
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == widget) {
+            Fl_Group::remove(widget);
+            _widgets[f]->set();
+            return;
+        }
+    }
+}
+void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
+    Fl_Widget::resize(X, Y, W, H);
+    if (children() == 0 || W == 0 || H == 0) {
+        return;
+    }
+    auto leftover = (_direction == DIRECTION::HORIZONTAL) ? W : H;
+    auto count    = 0;
+    auto last     = 0;
+    auto avg      = 0;
+    auto xpos     = X;
+    auto ypos     = Y;
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        auto c = *_widgets[f];
+        if (c.widget != nullptr) {
+            last = f;
+            if (c.size > 0) {
+                leftover -= (c.size * flw::PREF_FONTSIZE);
+            }
+            else {
+                count++;
+            }
+        }
+    }
+    if (count > 0) {
+        avg = leftover / count;
+    }
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        auto c = *_widgets[f];
+        if (c.widget != nullptr) {
+            if (_direction == DIRECTION::HORIZONTAL) {
+                if (_expand == true && f == last) {
+                    c.widget->resize(xpos, Y, X + W - xpos, H);
+                }
+                else if (c.size > 0) {
+                    c.widget->resize(xpos, Y, c.size * flw::PREF_FONTSIZE, H);
+                    xpos += flw::PREF_FONTSIZE * c.size;
+                }
+                else {
+                    c.widget->resize(xpos, Y, avg, H);
+                    xpos += avg;
+                }
+            }
+            else {
+                if (_expand == true && f == last) {
+                    c.widget->resize(X, ypos, W, Y + H - ypos);
+                }
+                else if (c.size > 0) {
+                    c.widget->resize(X, ypos, W, c.size * flw::PREF_FONTSIZE);
+                    ypos += flw::PREF_FONTSIZE * c.size;
+                }
+                else {
+                    c.widget->resize(X, ypos, W, avg);
+                    ypos += avg;
+                }
+            }
+        }
+    }
+}
+void ToolGroup::resize(Fl_Widget* widget, int SIZE) {
+    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
+        if (_widgets[f]->widget == widget) {
+            _widgets[f]->set(widget, SIZE);
+            return;
+        }
+    }
 }
 }
 #include <FL/fl_draw.H>

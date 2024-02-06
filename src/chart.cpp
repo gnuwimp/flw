@@ -1754,7 +1754,7 @@ bool Chart::margin(int left, int right) {
 //------------------------------------------------------------------------------
 void Chart::resize(int X, int Y, int W, int H) {
     if (_old_width != W || _old_height != H) {
-        Fl_Group::resize(X, Y, W, H);
+        Fl_Widget::resize(X, Y, W, H);
         _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
         _old_width = W;
         _old_height = H;

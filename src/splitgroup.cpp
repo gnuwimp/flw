@@ -1,6 +1,7 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
+#include "flw.h"
 #include "splitgroup.h"
 
 // MKALGAM_ON
@@ -11,6 +12,7 @@
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
+    resizable(nullptr);
     clear();
 }
 
@@ -18,14 +20,14 @@ flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Grou
 void flw::SplitGroup::add(Fl_Widget* widget, SplitGroup::CHILD child) {
     auto num = child == SplitGroup::CHILD::FIRST ? 0 : 1;
 
-    if (_widgets[num]) {
+    if (_widgets[num] != nullptr) {
         remove(_widgets[num]);
         delete _widgets[num];
     }
 
     _widgets[num] = widget;
 
-    if (widget) {
+    if (widget != nullptr) {
         Fl_Group::add(widget);
     }
 }
@@ -68,7 +70,7 @@ int flw::SplitGroup::handle(int event) {
 
             if (pos != _split_pos) {
                 _split_pos = pos;
-                resize();
+                do_layout();
             }
 
             return 1;
@@ -136,7 +138,7 @@ int flw::SplitGroup::handle(int event) {
 void flw::SplitGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
-    if (W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0) {
         return;
     }
 
@@ -206,8 +208,6 @@ void flw::SplitGroup::resize(int X, int Y, int W, int H) {
 
         _widgets[0]->resize(currx, curry, currw, h1);
         _widgets[1]->resize(currx, curry + h1 + 4, currw, h2);
-        // fprintf(stderr, "%s %4d - %4d <=> %4d - %4d\n", _widgets[0]->label(), _widgets[0]->x(), _widgets[0]->y(), _widgets[0]->w(), _widgets[0]->h());
-        // fprintf(stderr, "%s %4d - %4d <=> %4d - %4d\n", _widgets[1]->label(), _widgets[1]->x(), _widgets[1]->y(), _widgets[1]->w(), _widgets[1]->h());
     }
     else if (_widgets[0] != nullptr && _widgets[0]->visible() != 0) {
         _widgets[0]->resize(currx, curry, currw, currh);

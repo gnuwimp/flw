@@ -13,7 +13,7 @@ endif
 ifeq ($(OS), Windows)
 	FLTO    =
 	STATIC  = -static
-	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-color=always
+	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800
 else ifeq ($(OS), Linux)
 	FLTO    = -flto
 	STATIC  =
@@ -61,6 +61,7 @@ endif
 CXXFLAGS += -std=c++17
 CXXFLAGS += -W
 CXXFLAGS += -Wall
+CXXFLAGS += -fdiagnostics-plain-output
 
 $(info >>>>>> flags from makeinclude)
 $(info OS            = $(OS))
