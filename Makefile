@@ -46,7 +46,8 @@ ifeq ($(amalgam), 1)
 	INC       = -I.
 endif
 
-all: $(OBJ) \
+all: obj \
+	$(OBJ) \
 	test_chart.exe \
 	test_date.exe \
 	test_datechooser.exe \
