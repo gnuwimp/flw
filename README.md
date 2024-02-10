@@ -48,7 +48,7 @@ Font dialog (flw::dlg::FontDialog)<br>
 <img src="images/font_dialog.png"/>
 
 Input menu (flw::InputMenu)<br>
-<img src="images/input_menu.png"/>
+<img src="images/inputmenu.png"/>
 
 List selection dialog (flw::dlg::select())<br>
 <img src="images/list_dialog.png"/>
