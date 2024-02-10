@@ -20,7 +20,7 @@ static std::string TEST     = "";
 
 void callback_timer(void *data);
 
-#define MENU_10LINEs    "10 Lines (Plot::LINE)"
+#define MENU_10LINES    "10 Lines (Plot::LINE)"
 #define MENU_AUTORUN    "Autorun"
 #define MENU_BAR        "Bar (Plot::VECTOR)"
 #define MENU_DAYS       "Custom Y (Plot::VECTOR)"
@@ -262,7 +262,7 @@ public:
         menu->add("&Data/" MENU_SRANDTIME, 0, Callback, this, FL_MENU_DIVIDER);
         menu->add("&Data/save", 0, CallbackSave, this);
         menu->add("&Data/Load", 0, CallbackLoad, this, FL_MENU_DIVIDER);
-        menu->add("&Data/" MENU_10LINEs, 0, Callback, this);
+        menu->add("&Data/" MENU_10LINES, 0, Callback, this);
         menu->add("&Data/" MENU_REF, 0, Callback, this);
         menu->add("&Data/" MENU_VSMALL, 0, Callback, this);
         menu->add("&Data/" MENU_SMALL, 0, Callback, this);
@@ -310,7 +310,7 @@ public:
         Fl_Double_Window::resize(X, Y, W, H);
         menu->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
         plot->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
-        // plot->resize(50, 50, W - 100, H - 100);
+//         plot->resize(50, 50, W - 100, H - 100);
     }
 
     void run_menu(std::string s) {
@@ -325,21 +325,21 @@ public:
             menu->deactivate();
             Fl::add_timeout(0.5, callback_timer, this);
         }
-        else if (s == "" || s == MENU_10LINEs) {
+        else if (s == "" || s == MENU_10LINES) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
-            plot->add_line(create_line(-10), Plot::LINE, 3, "1 Plot::LINE", color::RED);
-            plot->add_line(create_line(-9), Plot::LINE, 3, "2 Plot::LINE", color::LIME);
+            plot->add_line(create_line(-10), Plot::LINE, 3, "1 Plot::LINE", color::CRIMSON);
+            plot->add_line(create_line(-9), Plot::LINE, 3, "2 Plot::LINE", color::OLIVE);
             plot->add_line(create_line(-8), Plot::LINE, 3, "3 Plot::LINE", color::TEAL);
-            plot->add_line(create_line(-7), Plot::LINE, 3, "4 Plot::LINE", color::YELLOW);
-            plot->add_line(create_line(-6), Plot::LINE, 3, "5 Plot::LINE", color::CYAN);
-            plot->add_line(create_line(-5), Plot::LINE, 3, "6 Plot::LINE", color::BEIGE);
-            plot->add_line(create_line(-4), Plot::LINE, 3, "7 Plot::LINE", color::MAROON);
+            plot->add_line(create_line(-7), Plot::LINE, 3, "4 Plot::LINE", color::GOLD);
+            plot->add_line(create_line(-6), Plot::LINE, 3, "5 Plot::LINE", color::TURQUOISE);
+            plot->add_line(create_line(-5), Plot::LINE, 3, "6 Plot::LINE", color::ROYALBLUE);
+            plot->add_line(create_line(-4), Plot::LINE, 3, "7 Plot::LINE", color::PINK);
             plot->add_line(create_line(-3), Plot::LINE, 3, "8 Plot::LINE", color::OLIVE);
-            plot->add_line(create_line(-2), Plot::LINE, 3, "9 Plot::LINE", color::BROWN);
-            plot->add_line(create_line(-1), Plot::LINE, 3, "10 Plot::LINE", color::PINK);
-            plot->labels(MENU_10LINEs, MENU_10LINEs);
-            plot->label_colors(color::RED, color::TEAL);
+            plot->add_line(create_line(-2), Plot::LINE, 3, "9 Plot::LINE", color::CHOCOLATE);
+            plot->add_line(create_line(-1), Plot::LINE, 3, "10 Plot::LINE", color::FORESTGREEN);
+            plot->labels(MENU_10LINES, MENU_10LINES);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s == MENU_BAR) {
@@ -347,7 +347,7 @@ public:
             plot->clear();
             plot->add_line(create_bar(100), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
             plot->labels(MENU_BAR, MENU_BAR);
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s=="1" || s == MENU_DAYS) {
@@ -356,15 +356,15 @@ public:
             plot->add_line(create_days(), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
             plot->custom_ylabels_for_points0(create_days2());
             plot->labels(MENU_DAYS, "Sum");
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s == MENU_LARGE) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
             plot->add_line(create_random_large(), Plot::LINE, 3, "Plot::LINE", color::TEAL);
-            plot->add_line(create_random_large(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::GREEN);
-            plot->add_line(create_random_large(), Plot::LINE_DOT, 3, "Plot::LINE_DOT", color::RED);
+            plot->add_line(create_random_large(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::OLIVE);
+            plot->add_line(create_random_large(), Plot::LINE_DOT, 3, "Plot::LINE_DOT", color::CRIMSON);
             plot->labels(MENU_LARGE, MENU_LARGE);
             plot->layout();
         }
@@ -373,7 +373,7 @@ public:
             plot->clear();
             plot->add_line(create_line(-10), Plot::LINE_WITH_SQUARE, 1, "Plot::LINE_WITH_SQUARE", color::TEAL);
             plot->labels(MENU_LINE, MENU_LINE);
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s == MENU_MLINE) {
@@ -381,17 +381,17 @@ public:
             plot->clear();
             plot->add_line(create_big_line(), Plot::LINE, 1, "Plot::LINE", color::TEAL);
             plot->labels("", MENU_MLINE);
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s=="1" || s == MENU_MONTHS) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
             plot->add_line(create_months(), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
-            plot->add_line(create_months(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::RED);
+            plot->add_line(create_months(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::CRIMSON);
             plot->custom_xlabels_for_points0(create_months2());
             plot->labels(MENU_MONTHS, "Y-Sum");
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s == MENU_NP) {
@@ -399,14 +399,14 @@ public:
             plot->clear();
             plot->add_line(create_neg(), Plot::SQUARE, 7, "Plot::SQUARE", color::TEAL);
             plot->labels(MENU_NP, MENU_NP);
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
         else if (s == MENU_SMALL) {
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
             plot->add_line(create_random_small(), Plot::FILLED_CIRCLE, 21, "Plot::FILLED_CIRCLE", color::TEAL);
-            plot->add_line(create_random_small(), Plot::SQUARE, 7, "Plot::SQUARE", color::RED);
+            plot->add_line(create_random_small(), Plot::SQUARE, 7, "Plot::SQUARE", color::CRIMSON);
             plot->labels(MENU_SMALL, MENU_SMALL);
             plot->layout();
         }
@@ -428,9 +428,9 @@ public:
             if (RAND_666) srand(666); else srand(time(nullptr));
             plot->clear();
             plot->add_line(create_ref(), Plot::CIRCLE, 11, "Plot::CIRCLE", color::TEAL);
-            plot->add_line(create_point(0.0, 0.0), Plot::SQUARE, 7, "Plot::SQUARE", color::RED);
+            plot->add_line(create_point(0.0, 0.0), Plot::SQUARE, 7, "Plot::SQUARE", color::CRIMSON);
             plot->labels(MENU_REF, MENU_REF);
-            plot->label_colors(color::RED, color::TEAL);
+            plot->label_colors(color::CRIMSON, color::TEAL);
             plot->layout();
         }
     }
@@ -443,15 +443,15 @@ void callback_timer(void *data) {
     auto test = (Test*) data;
 
     if (TEST == MENU_DAYS) {
-        TEST = MENU_10LINEs;
+        TEST = MENU_10LINES;
         test->menu->activate();
         Fl::remove_timeout(callback_timer, data);
     }
     else {
         if (TEST == "") {
-            TEST = MENU_10LINEs;
+            TEST = MENU_10LINES;
         }
-        else if (TEST == MENU_10LINEs) {
+        else if (TEST == MENU_10LINES) {
             TEST = MENU_REF;
         }
         else if (TEST == MENU_REF) {
@@ -493,7 +493,7 @@ void callback_timer(void *data) {
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("gtk");
+        flw::theme::load("oxy");
     }
 
     Test win(1000, 600);

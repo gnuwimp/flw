@@ -6,7 +6,7 @@
 // MKALGAM_ON
 
 namespace flw {
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label, std::string clear_label) {
         _menu     = menu;
         _callback = file_callback;
@@ -18,7 +18,7 @@ namespace flw {
         _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void RecentMenu::_add(std::string file, bool append) {
         if (file == "") {
             _files.clear();
@@ -58,7 +58,7 @@ namespace flw {
         return in.size();
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
         auto self = static_cast<RecentMenu*>(o);
         self->_add("", false);
@@ -78,7 +78,7 @@ namespace flw {
         return (int) in.size();
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void RecentMenu::load_pref(Fl_Preferences& pref, std::string base_name) {
         auto index = 1;
         char buffer[1000];
@@ -96,7 +96,7 @@ namespace flw {
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void RecentMenu::save_pref(Fl_Preferences& pref, std::string base_name) {
         auto index = 1;
 

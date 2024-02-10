@@ -13,7 +13,7 @@ namespace flw {
 
 struct _ToolGroupChild;
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ToolGroup : public Fl_Group {
 public:
     enum class DIRECTION {

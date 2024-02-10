@@ -465,7 +465,7 @@ void test1(Chart* chart, const char* label, const double start, const double cha
     PriceVector prices1 = create_serie("20010101", "20191231", start, change, range);
 
     if (left == true) {
-        chart->add_line(0, prices1, label, type, FL_ALIGN_LEFT, color::BLUE, width, min, max);
+        chart->add_line(0, prices1, label, type, FL_ALIGN_LEFT, color::ROYALBLUE, width, min, max);
 
         if (start > 100000000.0) {
             chart->margin(10, 1);
@@ -478,7 +478,7 @@ void test1(Chart* chart, const char* label, const double start, const double cha
         }
     }
     else {
-        chart->add_line(0, prices1, label, type, FL_ALIGN_RIGHT, color::BLUE, width, min, max);
+        chart->add_line(0, prices1, label, type, FL_ALIGN_RIGHT, color::ROYALBLUE, width, min, max);
         chart->margin(3, 6);
     }
 
@@ -491,8 +491,8 @@ void test2(Chart* chart, const double start, const double change, const Date::RA
     PriceVector prices1 = create_serie("20010101", "20091231", start, change, range);
     PriceVector prices2 = create_serie("20010201", "20091130", start, change, range);
 
-    chart->add_line(0, prices1, "Line Chart", Chart::LINE, FL_ALIGN_LEFT, color::BLUE, 2);
-    chart->add_line(0, prices2, "Bar Chart", Chart::BAR, FL_ALIGN_RIGHT, color::RED, 2);
+    chart->add_line(0, prices1, "Line Chart", Chart::LINE, FL_ALIGN_LEFT, color::ROYALBLUE, 2);
+    chart->add_line(0, prices2, "Bar Chart", Chart::BAR, FL_ALIGN_RIGHT, color::CRIMSON, 2);
     chart->margin(6, 6);
     chart->date_range(range);
     chart->tick_width(10);
@@ -540,7 +540,7 @@ void test3(Chart* chart, const char* label, const Date::RANGE range, const bool 
         chart->tick_width(6);
     }
 
-    chart->add_line(0, prices2, label, Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 6);
+    chart->add_line(0, prices2, label, Chart::BAR, FL_ALIGN_LEFT, color::ROYALBLUE, 6);
     chart->date_range(range);
     chart->margin(6, 1);
     chart->block_dates(prices3);
@@ -552,9 +552,9 @@ void test4(Chart* chart, const double start, const double change) {
     PriceVector prices2 = create_serie("18100101", "20291231", start, change, Date::RANGE::DAY);
     PriceVector prices3 = create_serie("18200101", "19991231", start, change, Date::RANGE::DAY);
 
-    chart->add_line(0, prices1, "18000101 - 20191231", Chart::LINE, FL_ALIGN_LEFT, color::BLUE, 1);
+    chart->add_line(0, prices1, "18000101 - 20191231", Chart::LINE, FL_ALIGN_LEFT, color::ROYALBLUE, 1);
     chart->add_line(0, prices2, "18100101 - 20291231", Chart::LINE, FL_ALIGN_LEFT, FL_GREEN, 1);
-    chart->add_line(0, prices3, "18200101 - 19991231", Chart::LINE, FL_ALIGN_LEFT, color::RED, 1);
+    chart->add_line(0, prices3, "18200101 - 19991231", Chart::LINE, FL_ALIGN_LEFT, color::CRIMSON, 1);
     chart->margin(6, 1);
     chart->date_range(Date::RANGE::DAY);
     chart->tick_width(3);
@@ -569,18 +569,18 @@ void test5(Chart* chart, const bool three) {
 
     if (three == true) {
         chart->area_size(40, 40, 20);
-        chart->add_line(0, prices1, "Bar Chart", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 3);
-        chart->add_line(1, prices2, "Line Chart", Chart::LINE, FL_ALIGN_LEFT, color::RED, 3);
-        chart->add_line(2, prices3, "Volume", Chart::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, 3, 0.0);
+        chart->add_line(0, prices1, "Bar Chart", Chart::BAR, FL_ALIGN_LEFT, color::ROYALBLUE, 3);
+        chart->add_line(1, prices2, "Line Chart", Chart::LINE, FL_ALIGN_LEFT, color::CRIMSON, 3);
+        chart->add_line(2, prices3, "Volume", Chart::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::OLIVE, 3, 0.0);
         chart->margin(7, 1);
     }
     else {
         prices4 = moving_average(prices3, 20);
         chart->area_size(70, 30, 0);
-        chart->add_line(0, prices1, "Bar Chart", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, -1);
-        chart->add_line(0, prices2, "Line Chart", Chart::LINE, FL_ALIGN_RIGHT, color::RED, 3);
-        chart->add_line(1, prices3, "Volume", Chart::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::GREEN, -1);
-        chart->add_line(1, prices4, "AVG", Chart::LINE, FL_ALIGN_LEFT, color::BLUE, 3);
+        chart->add_line(0, prices1, "Bar Chart", Chart::BAR, FL_ALIGN_LEFT, color::ROYALBLUE, -1);
+        chart->add_line(0, prices2, "Line Chart", Chart::LINE, FL_ALIGN_RIGHT, color::CRIMSON, 3);
+        chart->add_line(1, prices3, "Volume", Chart::CLAMP_VERTICAL, FL_ALIGN_LEFT, color::OLIVE, -1);
+        chart->add_line(1, prices4, "AVG", Chart::LINE, FL_ALIGN_LEFT, color::ROYALBLUE, 3);
         chart->margin(7, 7);
     }
 
@@ -594,15 +594,15 @@ void test6(Chart* chart, const Date::RANGE range) {
     // fprintf(stderr, "size=%d\n", prices1.size());
 
     if (range == Date::RANGE::HOUR) {
-        chart->add_line(0, prices1, "Hour", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
+        chart->add_line(0, prices1, "Hour", Chart::BAR, FL_ALIGN_LEFT, color::ROYALBLUE, 4);
         chart->margin(6, 1);
     }
     else if (range == Date::RANGE::MIN) {
-        chart->add_line(0, prices1, "Minutes", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
+        chart->add_line(0, prices1, "Minutes", Chart::BAR, FL_ALIGN_LEFT, color::ROYALBLUE, 4);
         chart->margin(6, 1);
     }
     else if (range == Date::RANGE::SEC) {
-        chart->add_line(0, prices1, "Seconds", Chart::BAR, FL_ALIGN_LEFT, color::BLUE, 4);
+        chart->add_line(0, prices1, "Seconds", Chart::BAR, FL_ALIGN_LEFT, color::ROYALBLUE, 4);
         chart->margin(6, 1);
     }
 
@@ -629,7 +629,7 @@ void test7(Chart* chart) {
         }
     }
 
-    chart->add_line(0, prices1, "Small (LINE)", Chart::LINE, FL_ALIGN_RIGHT, color::BLUE, 2);
+    chart->add_line(0, prices1, "Small (LINE)", Chart::LINE, FL_ALIGN_RIGHT, color::ROYALBLUE, 2);
     chart->margin(3, 6);
     chart->date_range(Date::RANGE::DAY);
     chart->tick_width(6);
@@ -658,7 +658,7 @@ void test8(Chart* chart, const char* label, const Date::RANGE range, const Chart
         even++;
     }
 
-    chart->add_line(0, prices1, label, type, FL_ALIGN_LEFT, color::BLUE, width);
+    chart->add_line(0, prices1, label, type, FL_ALIGN_LEFT, color::ROYALBLUE, width);
     chart->margin(6, 1);
     chart->date_range(range);
     chart->tick_width(tick);
@@ -677,14 +677,14 @@ void test9(Chart* chart) {
     PriceVector prices9  = create_serie2("20010101", "20021231", 9.0);
     PriceVector prices10 = create_serie2("20010101", "20021231", 10.0);
 
-    chart->add_line(0, prices1, "One", Chart::LINE, FL_ALIGN_RIGHT, color::BLUE, 4);
-    chart->add_line(0, prices2, "Two", Chart::LINE, FL_ALIGN_RIGHT, color::RED, 4);
-    chart->add_line(0, prices3, "Three", Chart::LINE, FL_ALIGN_RIGHT, color::LIME, 4);
-    chart->add_line(0, prices4, "Four", Chart::LINE, FL_ALIGN_RIGHT, color::MAGENTA, 4);
-    chart->add_line(0, prices5, "Five", Chart::LINE, FL_ALIGN_RIGHT, color::CYAN, 4);
-    chart->add_line(0, prices6, "Six", Chart::LINE, FL_ALIGN_RIGHT, color::YELLOW, 2);
+    chart->add_line(0, prices1, "One", Chart::LINE, FL_ALIGN_RIGHT, color::ROYALBLUE, 4);
+    chart->add_line(0, prices2, "Two", Chart::LINE, FL_ALIGN_RIGHT, color::CRIMSON, 4);
+    chart->add_line(0, prices3, "Three", Chart::LINE, FL_ALIGN_RIGHT, color::GOLD, 4);
+    chart->add_line(0, prices4, "Four", Chart::LINE, FL_ALIGN_RIGHT, color::TURQUOISE, 4);
+    chart->add_line(0, prices5, "Five", Chart::LINE, FL_ALIGN_RIGHT, color::VIOLET, 4);
+    chart->add_line(0, prices6, "Six", Chart::LINE, FL_ALIGN_RIGHT, color::PINK, 2);
     chart->add_line(0, prices7, "Seven", Chart::LINE, FL_ALIGN_RIGHT, color::OLIVE, 4);
-    chart->add_line(0, prices8, "Eight", Chart::LINE, FL_ALIGN_RIGHT, color::BROWN, 4);
+    chart->add_line(0, prices8, "Eight", Chart::LINE, FL_ALIGN_RIGHT, color::CHOCOLATE, 4);
     chart->add_line(0, prices9, "Nine", Chart::LINE, FL_ALIGN_RIGHT, color::PINK, 4);
     chart->add_line(0, prices10, "Ten", Chart::LINE, FL_ALIGN_RIGHT, color::TEAL, 4);
     chart->margin(3, 5);
@@ -695,7 +695,7 @@ void test9(Chart* chart) {
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("gtk");
+        flw::theme::load("oxy");
     }
 
     {

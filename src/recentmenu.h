@@ -12,7 +12,7 @@
 #include <FL/Fl_Preferences.H>
 
 namespace flw {
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     class RecentMenu {
     public:
                                         RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label = "&File/Open recent", std::string clear_label = "/Clear");

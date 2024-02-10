@@ -20,69 +20,89 @@
 #include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
 
-const char* flw::TableEditor::SELECT_DATE = "Select Date";
-const char* flw::TableEditor::SELECT_DIR  = "Select Directory";
-const char* flw::TableEditor::SELECT_FILE = "Select File";
-const char* flw::TableEditor::SELECT_LIST = "Select String";
-
 namespace flw {
-    namespace tableeditor {
-        //----------------------------------------------------------------------
-        double to_double(std::string string, double def) {
-            try { return std::stod(string.c_str(), 0); }
-            catch (...) { return def; }
-        }
 
-        //----------------------------------------------------------------------
-        int to_doubles(std::string string, double numbers[], size_t size) {
-            auto end = (char*) nullptr;
-            auto in  = string.c_str();
-            auto f   = (size_t) 0;
+/***
+ *                 _            _       
+ *                (_)          | |      
+ *      _ __  _ __ ___   ____ _| |_ ___ 
+ *     | '_ \| '__| \ \ / / _` | __/ _ \
+ *     | |_) | |  | |\ V / (_| | ||  __/
+ *     | .__/|_|  |_| \_/ \__,_|\__\___|
+ *     | |                              
+ *     |_|                              
+ */
 
-            errno = 0;
-
-            for (; f < size; f++) {
-                numbers[f] = strtod(in, &end);
-                if (errno != 0 || in == end) return f;
-                in = end;
-            }
-
-            return f;
-        }
-        //----------------------------------------------------------------------
-        int64_t to_int(std::string string, int64_t def) {
-            try { return std::stoll(string.c_str(), 0, 0); }
-            catch (...) { return def; }
-        }
-
-        //----------------------------------------------------------------------
-        // Return number of set integers
-        //
-        int to_ints(std::string string, int64_t numbers[], size_t size) {
-            auto end = (char*) nullptr;
-            auto in  = string.c_str();
-            auto f   = (size_t) 0;
-
-            errno = 0;
-
-            for (; f < size; f++) {
-                numbers[f] = strtoll(in, &end, 10);
-                if (errno != 0 || in == end) return f;
-                in = end;
-            }
-
-            return f;
-        }
-    }
+//----------------------------------------------------------------------
+double _tableeditor_to_double(std::string string, double def) {
+    try { return std::stod(string.c_str(), 0); }
+    catch (...) { return def; }
 }
 
+//----------------------------------------------------------------------
+int _tableeditor_to_doubles(std::string string, double numbers[], size_t size) {
+    auto end = (char*) nullptr;
+    auto in  = string.c_str();
+    auto f   = (size_t) 0;
+
+    errno = 0;
+
+    for (; f < size; f++) {
+        numbers[f] = strtod(in, &end);
+        if (errno != 0 || in == end) return f;
+        in = end;
+    }
+
+    return f;
+}
+//----------------------------------------------------------------------
+int64_t _tableeditor_to_int(std::string string, int64_t def) {
+    try { return std::stoll(string.c_str(), 0, 0); }
+    catch (...) { return def; }
+}
+
+//----------------------------------------------------------------------
+// Return number of set integers
+//
+int _tableeditor_to_ints(std::string string, int64_t numbers[], size_t size) {
+    auto end = (char*) nullptr;
+    auto in  = string.c_str();
+    auto f   = (size_t) 0;
+
+    errno = 0;
+
+    for (; f < size; f++) {
+        numbers[f] = strtoll(in, &end, 10);
+        if (errno != 0 || in == end) return f;
+        in = end;
+    }
+
+    return f;
+}
+
+/***
+ *      _______    _     _      ______    _ _ _             
+ *     |__   __|  | |   | |    |  ____|  | (_) |            
+ *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __ 
+ *        | |/ _` | '_ \| |/ _ \  __| / _` | | __/ _ \| '__|
+ *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |   
+ *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|   
+ *                                                          
+ *                                                          
+ */
+
+const char* TableEditor::SELECT_DATE = "Select Date";
+const char* TableEditor::SELECT_DIR  = "Select Directory";
+const char* TableEditor::SELECT_FILE = "Select File";
+const char* TableEditor::SELECT_LIST = "Select String";
+
 //------------------------------------------------------------------------------
-flw::TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
+TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
     TableEditor::clear();
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::clear() {
+void TableEditor::clear() {
     TableDisplay::clear();
 
     _send_changed_event_always = false;
@@ -91,7 +111,7 @@ void flw::TableEditor::clear() {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_delete_current_cell() {
+void TableEditor::_delete_current_cell() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
 
@@ -100,32 +120,32 @@ void flw::TableEditor::_delete_current_cell() {
             auto set  = false;
 
             switch (rend) {
-                case flw::TableEditor::REND::TEXT:
-                case flw::TableEditor::REND::SECRET:
-                case flw::TableEditor::REND::INPUT_CHOICE:
-                case flw::TableEditor::REND::DLG_FILE:
-                case flw::TableEditor::REND::DLG_DIR:
-                case flw::TableEditor::REND::DLG_LIST:
+                case TableEditor::REND::TEXT:
+                case TableEditor::REND::SECRET:
+                case TableEditor::REND::INPUT_CHOICE:
+                case TableEditor::REND::DLG_FILE:
+                case TableEditor::REND::DLG_DIR:
+                case TableEditor::REND::DLG_LIST:
                     set = cell_value(_curr_row, _curr_col, "");
                     break;
 
-                case flw::TableEditor::REND::INTEGER:
+                case TableEditor::REND::INTEGER:
                     set = cell_value(_curr_row, _curr_col, "0");
                     break;
 
-                case flw::TableEditor::REND::NUMBER:
+                case TableEditor::REND::NUMBER:
                     set = cell_value(_curr_row, _curr_col, "0.0");
                     break;
 
-                case flw::TableEditor::REND::BOOLEAN:
+                case TableEditor::REND::BOOLEAN:
                     set = cell_value(_curr_row, _curr_col, "0");
                     break;
 
-                case flw::TableEditor::REND::DLG_DATE:
+                case TableEditor::REND::DLG_DATE:
                     set = cell_value(_curr_row, _curr_col, "1970-01-01");
                     break;
 
-                case flw::TableEditor::REND::DLG_COLOR:
+                case TableEditor::REND::DLG_COLOR:
                     set = cell_value(_curr_row, _curr_col, "56");
                     break;
 
@@ -134,7 +154,7 @@ void flw::TableEditor::_delete_current_cell() {
             }
 
             if (set == true) {
-                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                 do_callback();
                 redraw();
             }
@@ -143,7 +163,7 @@ void flw::TableEditor::_delete_current_cell() {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
 
     auto align     = cell_align(row, col);
@@ -160,27 +180,28 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
         auto color  = cell_color(row, col);
         char buffer[100];
 
-        if (current) {
-            color = selection_color();
+        if (current == true) {
+            color     = selection_color();
+            textcolor = FL_BACKGROUND2_COLOR;
         }
 
         fl_rectf(X + 1, Y, W + 1, H, color);
 
-        if (rend == flw::TableEditor::REND::SECRET) {
+        if (rend == TableEditor::REND::SECRET) {
             fl_font(textfont, textsize);
             fl_color(textcolor);
 
-            if (format == flw::TableEditor::FORMAT::SECRET_DOT) {
+            if (format == TableEditor::FORMAT::SECRET_DOT) {
                 fl_draw("••••••", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
             else {
                 fl_draw("******", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
         }
-        else if (rend == flw::TableEditor::REND::SLIDER) {
+        else if (rend == TableEditor::REND::SLIDER) {
             double nums[4];
 
-            if (tableeditor::to_doubles(val, nums, 4) == 4) {
+            if (_tableeditor_to_doubles(val, nums, 4) == 4) {
                 auto range = 0.0;
 
                 if ((nums[2] - nums[1]) > 0.0001) {
@@ -194,17 +215,17 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
                 }
             }
         }
-        else if (rend == flw::TableEditor::REND::DLG_COLOR) {
-            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) tableeditor::to_int(val, 0));
+        else if (rend == TableEditor::REND::DLG_COLOR) {
+            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
         }
-        else if (rend == flw::TableEditor::REND::DLG_DATE) {
+        else if (rend == TableEditor::REND::DLG_DATE) {
             auto        date = Date::FromString(val);
             std::string string;
 
-            if (format == flw::TableEditor::FORMAT::DATE_WORLD) {
+            if (format == TableEditor::FORMAT::DATE_WORLD) {
                 string = date.format(Date::FORMAT::WORLD);
             }
-            else if (format == flw::TableEditor::FORMAT::DATE_US) {
+            else if (format == TableEditor::FORMAT::DATE_US) {
                 string = date.format(Date::FORMAT::US);
             }
             else {
@@ -215,7 +236,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             fl_color(textcolor);
             _draw_text(string.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
-        else if (rend == flw::TableEditor::REND::BOOLEAN) {
+        else if (rend == TableEditor::REND::BOOLEAN) {
             auto bw  = textsize;
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
@@ -237,13 +258,13 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
                 fl_draw_check(r, selection_color());
             }
         }
-        else if (rend == flw::TableEditor::REND::INTEGER) {
-            auto num = tableeditor::to_int(val, 0);
+        else if (rend == TableEditor::REND::INTEGER) {
+            auto num = _tableeditor_to_int(val, 0);
 
             fl_font(textfont, textsize);
             fl_color(textcolor);
 
-            if (format == flw::TableEditor::FORMAT::INT_SEP) {
+            if (format == TableEditor::FORMAT::INT_SEP) {
                 auto s = util::format_int(num);
                 _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
             }
@@ -252,42 +273,42 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
                 _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
             }
         }
-        else if (rend == flw::TableEditor::REND::NUMBER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-            auto num = tableeditor::to_double(val, 0.0);
+        else if (rend == TableEditor::REND::NUMBER || rend == TableEditor::REND::VALUE_SLIDER) {
+            auto num = _tableeditor_to_double(val, 0.0);
 
-            if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
+            if (rend == TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
 
-                if (tableeditor::to_doubles(val, nums, 1) == 1) {
+                if (_tableeditor_to_doubles(val, nums, 1) == 1) {
                     num = nums[0];
                 }
             }
 
-            if (format == flw::TableEditor::FORMAT::DEC_0) {
+            if (format == TableEditor::FORMAT::DEC_0) {
                 snprintf(buffer, 100, "%.0f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_1) {
+            else if (format == TableEditor::FORMAT::DEC_1) {
                 snprintf(buffer, 100, "%.1f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_2) {
+            else if (format == TableEditor::FORMAT::DEC_2) {
                 snprintf(buffer, 100, "%.2f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_3) {
+            else if (format == TableEditor::FORMAT::DEC_3) {
                 snprintf(buffer, 100, "%.3f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_4) {
+            else if (format == TableEditor::FORMAT::DEC_4) {
                 snprintf(buffer, 100, "%.4f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_5) {
+            else if (format == TableEditor::FORMAT::DEC_5) {
                 snprintf(buffer, 100, "%.5f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_6) {
+            else if (format == TableEditor::FORMAT::DEC_6) {
                 snprintf(buffer, 100, "%.6f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_7) {
+            else if (format == TableEditor::FORMAT::DEC_7) {
                 snprintf(buffer, 100, "%.7f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_8) {
+            else if (format == TableEditor::FORMAT::DEC_8) {
                 snprintf(buffer, 100, "%.8f", num);
             }
             else {
@@ -327,7 +348,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_edit_create() {
+void TableEditor::_edit_create() {
     auto rend      = cell_rend(_curr_row, _curr_col);
     auto align     = cell_align(_curr_row, _curr_col);
     auto color     = cell_color(_curr_row, _curr_col);
@@ -338,23 +359,23 @@ void flw::TableEditor::_edit_create() {
 
     assert(val);
 
-    if (rend == flw::TableEditor::REND::TEXT ||
-        rend == flw::TableEditor::REND::INTEGER ||
-        rend == flw::TableEditor::REND::NUMBER ||
-        rend == flw::TableEditor::REND::SECRET) {
+    if (rend == TableEditor::REND::TEXT ||
+        rend == TableEditor::REND::INTEGER ||
+        rend == TableEditor::REND::NUMBER ||
+        rend == TableEditor::REND::SECRET) {
 
         auto w = (Fl_Input*) nullptr;
 
-        if (rend == flw::TableEditor::REND::TEXT) {
+        if (rend == TableEditor::REND::TEXT) {
             w = new Fl_Input(0, 0, 0, 0);
         }
-        else if (rend == flw::TableEditor::REND::INTEGER) {
+        else if (rend == TableEditor::REND::INTEGER) {
             w = new Fl_Int_Input(0, 0, 0, 0);
         }
-        else if (rend == flw::TableEditor::REND::NUMBER) {
+        else if (rend == TableEditor::REND::NUMBER) {
             w = new Fl_Float_Input(0, 0, 0, 0);
         }
-        else if (rend == flw::TableEditor::REND::SECRET) {
+        else if (rend == TableEditor::REND::SECRET) {
             w = new Fl_Secret_Input(0, 0, 0, 0);
         }
 
@@ -370,7 +391,7 @@ void flw::TableEditor::_edit_create() {
 
         _edit = w;
     }
-    else if (rend == flw::TableEditor::REND::BOOLEAN) {
+    else if (rend == TableEditor::REND::BOOLEAN) {
         auto w = new Fl_Check_Button(0, 0, 0, 0);
 
         w->box(FL_BORDER_BOX);
@@ -381,11 +402,11 @@ void flw::TableEditor::_edit_create() {
 
         _edit = w;
     }
-    else if (rend == flw::TableEditor::REND::SLIDER) {
+    else if (rend == TableEditor::REND::SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
 
-        if (tableeditor::to_doubles(val, nums, 4) == 4) {
+        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
             w = new Fl_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -398,11 +419,11 @@ void flw::TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
+    else if (rend == TableEditor::REND::VALUE_SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
 
-        if (tableeditor::to_doubles(val, nums, 4) == 4) {
+        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
             w = new Fl_Value_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -416,7 +437,7 @@ void flw::TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == flw::TableEditor::REND::CHOICE) {
+    else if (rend == TableEditor::REND::CHOICE) {
         auto choices = cell_choice(_curr_row, _curr_col);
 
         if (choices.size() > 0) {
@@ -444,7 +465,7 @@ void flw::TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == flw::TableEditor::REND::INPUT_CHOICE) {
+    else if (rend == TableEditor::REND::INPUT_CHOICE) {
         auto choices = cell_choice(_curr_row, _curr_col);
 
         if (choices.size() > 0) {
@@ -489,15 +510,15 @@ void flw::TableEditor::_edit_create() {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_edit_quick(const char* key) {
+void TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
 
     assert(val);
 
-    if (rend == flw::TableEditor::REND::INTEGER) {
-        auto num = tableeditor::to_int(val, 0);
+    if (rend == TableEditor::REND::INTEGER) {
+        auto num = _tableeditor_to_int(val, 0);
 
         if (strcmp(key, "+") == 0) {
             num++;
@@ -521,12 +542,12 @@ void flw::TableEditor::_edit_quick(const char* key) {
         snprintf(buffer, 100, "%lld", (long long int) num);
 
         if ((_send_changed_event_always == true || strcmp(val, buffer) != 0) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::NUMBER) {
-        auto num = tableeditor::to_double(val, 0.0);
+    else if (rend == TableEditor::REND::NUMBER) {
+        auto num = _tableeditor_to_double(val, 0.0);
 
         if (strcmp(key, "+") == 0) {
             num += 0.1;
@@ -550,11 +571,11 @@ void flw::TableEditor::_edit_quick(const char* key) {
         snprintf(buffer, 100, "%f", num);
 
         if ((_send_changed_event_always == true || strcmp(val, buffer) != 0) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_DATE) {
+    else if (rend == TableEditor::REND::DLG_DATE) {
         auto date = Date::FromString(val);
 
         if (strcmp(key, "+") == 0) {
@@ -579,14 +600,14 @@ void flw::TableEditor::_edit_quick(const char* key) {
         auto string = date.format(Date::FORMAT::ISO_LONG);
 
         if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
+    else if (rend == TableEditor::REND::SLIDER || rend == TableEditor::REND::VALUE_SLIDER) {
         double nums[4];
 
-        if (tableeditor::to_doubles(val, nums, 4) == 4) {
+        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
             if (strcmp(key, "+") == 0) {
                 nums[0] += nums[3];
             }
@@ -616,7 +637,7 @@ void flw::TableEditor::_edit_quick(const char* key) {
             auto val2 = FormatSlider(nums[0], nums[1], nums[2], nums[3]);
 
             if ((_send_changed_event_always == true || strcmp(val, val2) != 0) && cell_value(_curr_row, _curr_col, val2) == true) {
-                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                 do_callback();
             }
         }
@@ -624,62 +645,62 @@ void flw::TableEditor::_edit_quick(const char* key) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_edit_show() {
+void TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
 
     assert(val);
 
-    if (rend == flw::TableEditor::REND::DLG_COLOR) {
-        auto color1 = (int) tableeditor::to_int(val, 0);
+    if (rend == TableEditor::REND::DLG_COLOR) {
+        auto color1 = (int) _tableeditor_to_int(val, 0);
         auto color2 = (int) fl_show_colormap((Fl_Color) color1);
         char buffer[100];
 
         snprintf(buffer, 20, "%d", color2);
 
         if ((_send_changed_event_always == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_FILE) {
-        auto result = fl_file_chooser(flw::TableEditor::SELECT_FILE, "", val, 0);
+    else if (rend == TableEditor::REND::DLG_FILE) {
+        auto result = fl_file_chooser(TableEditor::SELECT_FILE, "", val, 0);
 
         if ((_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0)) && cell_value(_curr_row, _curr_col, result) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_DIR) {
-        auto result = fl_dir_chooser(flw::TableEditor::SELECT_DIR, val);
+    else if (rend == TableEditor::REND::DLG_DIR) {
+        auto result = fl_dir_chooser(TableEditor::SELECT_DIR, val);
 
         if ((_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0)) && cell_value(_curr_row, _curr_col, result) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_DATE) {
+    else if (rend == TableEditor::REND::DLG_DATE) {
         auto date1  = Date::FromString(val);
         auto date2  = Date(date1);
-        auto result = flw::dlg::date(flw::TableEditor::SELECT_DATE, date1, top_window());
+        auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
         auto string = date1.format(Date::FORMAT::ISO_LONG);
 
         if ((_send_changed_event_always == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_LIST) {
+    else if (rend == TableEditor::REND::DLG_LIST) {
         auto choices = cell_choice(_curr_row, _curr_col);
 
         if (choices.size() > 0) {
-            auto row = dlg::select(flw::TableEditor::SELECT_LIST, choices, val);
+            auto row = dlg::select(TableEditor::SELECT_LIST, choices, val);
 
             if (row > 0) {
                 const auto& string = choices[row - 1];
 
                 if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-                    _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                    _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                     do_callback();
                 }
             }
@@ -688,21 +709,21 @@ void flw::TableEditor::_edit_show() {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_edit_start(const char* key) {
-    if (_select != flw::TableEditor::SELECT::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
+void TableEditor::_edit_start(const char* key) {
+    if (_select != TableEditor::SELECT::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
         Fl::event_clicks(0);
         Fl::event_is_click(0);
 
-        flw::TableEditor::REND rend = cell_rend(_curr_row, _curr_col);
+        TableEditor::REND rend = cell_rend(_curr_row, _curr_col);
 
         if (*key != 0) {
             _edit_quick(key);
         }
-        else if (rend == flw::TableEditor::REND::DLG_COLOR ||
-                 rend == flw::TableEditor::REND::DLG_FILE ||
-                 rend == flw::TableEditor::REND::DLG_DIR ||
-                 rend == flw::TableEditor::REND::DLG_DATE ||
-                 rend == flw::TableEditor::REND::DLG_LIST) {
+        else if (rend == TableEditor::REND::DLG_COLOR ||
+                 rend == TableEditor::REND::DLG_FILE ||
+                 rend == TableEditor::REND::DLG_DIR ||
+                 rend == TableEditor::REND::DLG_DATE ||
+                 rend == TableEditor::REND::DLG_LIST) {
             _edit_show();
         }
         else {
@@ -714,28 +735,28 @@ void flw::TableEditor::_edit_start(const char* key) {
 }
 
 //------------------------------------------------------------------------------
-void flw::TableEditor::_edit_stop(bool save) {
+void TableEditor::_edit_stop(bool save) {
     if (_edit) {
         auto rend = cell_rend(_curr_row, _curr_col);
         auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
         auto stop = true;
 
         if (save == true) {
-            if (rend == flw::TableEditor::REND::TEXT ||
-                rend == flw::TableEditor::REND::INTEGER ||
-                rend == flw::TableEditor::REND::NUMBER ||
-                rend == flw::TableEditor::REND::SECRET) {
+            if (rend == TableEditor::REND::TEXT ||
+                rend == TableEditor::REND::INTEGER ||
+                rend == TableEditor::REND::NUMBER ||
+                rend == TableEditor::REND::SECRET) {
 
                 auto input = static_cast<Fl_Input*>(_edit);
                 auto val2  = input->value();
                 char buffer[100];
 
-                if (rend == flw::TableEditor::REND::INTEGER) {
-                    snprintf(buffer, 100, "%d", (int) tableeditor::to_int(val2, 0));
+                if (rend == TableEditor::REND::INTEGER) {
+                    snprintf(buffer, 100, "%d", (int) _tableeditor_to_int(val2, 0));
                     val2 = buffer;
                 }
-                else if (rend == flw::TableEditor::REND::NUMBER) {
-                    auto num = tableeditor::to_double(val2, 0.0);
+                else if (rend == TableEditor::REND::NUMBER) {
+                    auto num = _tableeditor_to_double(val2, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
@@ -752,7 +773,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::BOOLEAN) {
+            else if (rend == TableEditor::REND::BOOLEAN) {
                 auto button = static_cast<Fl_Check_Button*>(_edit);
                 auto val2   = "0";
 
@@ -767,7 +788,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
+            else if (rend == TableEditor::REND::SLIDER || rend == TableEditor::REND::VALUE_SLIDER) {
                 auto slider = static_cast<Fl_Slider*>(_edit);
                 auto val2   = FormatSlider(slider->value(), slider->minimum(), slider->maximum(), slider->step());
 
@@ -779,7 +800,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::CHOICE) {
+            else if (rend == TableEditor::REND::CHOICE) {
                 auto choice = static_cast<Fl_Choice*>(_edit);
                 auto val2   = choice->text();
 
@@ -795,7 +816,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::INPUT_CHOICE) {
+            else if (rend == TableEditor::REND::INPUT_CHOICE) {
                 auto input_choice = static_cast<Fl_Input_Choice*>(_edit);
                 auto val2         = input_choice->value();
 
@@ -826,7 +847,7 @@ void flw::TableEditor::_edit_stop(bool save) {
             _current_cell[3] = 0;
 
             if (_send_changed_event_always == true || save == true) {
-                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                 do_callback();
             }
 
@@ -847,7 +868,7 @@ void flw::TableEditor::_edit_stop(bool save) {
 // Use alt + "+|-" to change value (+/-10 for integers)
 // Use alt + shift + "+|-" to change value (+/-100 for integers)
 //
-int flw::TableEditor::_ev_keyboard_down2() {
+int TableEditor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -919,7 +940,7 @@ int flw::TableEditor::_ev_keyboard_down2() {
 }
 
 //------------------------------------------------------------------------------
-int flw::TableEditor::_ev_mouse_click2() {
+int TableEditor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -940,7 +961,7 @@ int flw::TableEditor::_ev_mouse_click2() {
 }
 
 //------------------------------------------------------------------------------
-int flw::TableEditor::_ev_paste() {
+int TableEditor::_ev_paste() {
     auto text = Fl::event_text();
 
     if (_curr_row > 0 && _curr_col > 0 && text && *text) {
@@ -950,20 +971,20 @@ int flw::TableEditor::_ev_paste() {
         std::string string;
 
         switch(rend) {
-            case flw::TableEditor::REND::CHOICE:
-            case flw::TableEditor::REND::DLG_LIST:
-            case flw::TableEditor::REND::SLIDER:
-            case flw::TableEditor::REND::VALUE_SLIDER:
+            case TableEditor::REND::CHOICE:
+            case TableEditor::REND::DLG_LIST:
+            case TableEditor::REND::SLIDER:
+            case TableEditor::REND::VALUE_SLIDER:
                 return 1;
 
-            case flw::TableEditor::REND::DLG_DIR:
-            case flw::TableEditor::REND::DLG_FILE:
-            case flw::TableEditor::REND::INPUT_CHOICE:
-            case flw::TableEditor::REND::SECRET:
-            case flw::TableEditor::REND::TEXT:
+            case TableEditor::REND::DLG_DIR:
+            case TableEditor::REND::DLG_FILE:
+            case TableEditor::REND::INPUT_CHOICE:
+            case TableEditor::REND::SECRET:
+            case TableEditor::REND::TEXT:
                 break;
 
-            case flw::TableEditor::REND::BOOLEAN:
+            case TableEditor::REND::BOOLEAN:
                 if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
                     text = "1";
                 }
@@ -974,17 +995,17 @@ int flw::TableEditor::_ev_paste() {
                     return 1;
                 }
 
-            case flw::TableEditor::REND::DLG_COLOR:
-            case flw::TableEditor::REND::INTEGER:
+            case TableEditor::REND::DLG_COLOR:
+            case TableEditor::REND::INTEGER:
                 if (*text < '0' || *text > '9') {
                     return 1;
                 }
                 else {
-                    auto num = tableeditor::to_int(text, 0);
+                    auto num = _tableeditor_to_int(text, 0);
                     snprintf(buffer, 100, "%lld", (long long int) num);
                     text = buffer;
 
-                    if (rend == flw::TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
+                    if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
                         return 1;
                     }
                     else {
@@ -992,19 +1013,19 @@ int flw::TableEditor::_ev_paste() {
                     }
                 }
 
-            case flw::TableEditor::REND::NUMBER: {
+            case TableEditor::REND::NUMBER: {
                 if (*text < '0' || *text > '9') {
                     return 1;
                 }
                 else {
-                    auto num = tableeditor::to_double(text, 0.0);
+                    auto num = _tableeditor_to_double(text, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
                     break;
                 }
             }
 
-            case flw::TableEditor::REND::DLG_DATE: {
+            case TableEditor::REND::DLG_DATE: {
                 auto date = Date::FromString(text);
 
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
@@ -1019,7 +1040,7 @@ int flw::TableEditor::_ev_paste() {
         }
 
         if ((_send_changed_event_always == true || strcmp(val, text) != 0) && cell_value(_curr_row, _curr_col, text) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
             redraw();
         }
@@ -1029,7 +1050,7 @@ int flw::TableEditor::_ev_paste() {
 }
 
 //------------------------------------------------------------------------------
-const char* flw::TableEditor::FormatSlider(double val, double min, double max, double step) {
+const char* TableEditor::FormatSlider(double val, double min, double max, double step) {
     static char result[200];
 
     snprintf(result, 200, "%.4f %.4f %.4f %.4f", val, min, max, step);
@@ -1037,7 +1058,7 @@ const char* flw::TableEditor::FormatSlider(double val, double min, double max, d
 }
 
 //------------------------------------------------------------------------------
-int flw::TableEditor::handle(int event) {
+int TableEditor::handle(int event) {
     auto ret = 2;
 
     if (_rows > 0 && _cols > 0) {
@@ -1066,5 +1087,7 @@ int flw::TableEditor::handle(int event) {
         return TableDisplay::handle(event);
     }
 }
+
+} // flw
 
 // MKALGAM_OFF

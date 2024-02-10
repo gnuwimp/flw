@@ -13,7 +13,7 @@ namespace flw {
 
 struct _GridGroupChild;
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A simple layout widget that uses a grid for placing widgets.
 // One cell is set to flw::PREF_FONTSIZE / 2.
 // Override by calling size() method (min 4, max 72 pixels).
@@ -45,7 +45,7 @@ private:
     int                         _size;
 };
 
-}
+} // flw
 
 // MKALGAM_OFF
 

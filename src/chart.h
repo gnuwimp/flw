@@ -26,7 +26,7 @@ namespace flw {
  *
  */
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Chart data
 //
 struct Price {
@@ -64,7 +64,7 @@ typedef std::vector<ChartArea>  AreaVector;
  *
  */
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Chart widget that is using dates for the x scale
 // It has an popup menu for a few settings and option to save chart to png image
 // It can also use date + hours/minutes/seconds
@@ -73,7 +73,7 @@ typedef std::vector<ChartArea>  AreaVector;
 //
 class Chart : public Fl_Group {
 public:
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     enum TYPE {
                                 LINE,
                                 BAR,

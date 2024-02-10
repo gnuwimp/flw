@@ -54,17 +54,18 @@ all: obj \
 	test_dlg.exe \
 	test_grid.exe \
 	test_gridgroup.exe \
+	test_inputmenu.exe \
 	test_lcdnumber.exe \
 	test_logdisplay.exe \
 	test_plot.exe \
 	test_recentmenu.exe \
+	test_scrollbrowser.exe \
 	test_splitgroup.exe \
 	test_tabledisplay.exe \
 	test_tableeditor.exe \
 	test_tabsgroup.exe \
 	test_theme.exe \
 	test_toolgroup.exe \
-	test_widgets.exe \
 
 #-------------------------------------------------------------------------------
 
@@ -145,6 +146,9 @@ obj/test_chart.o: test/test_chart.cpp $(OBJ)
 test_chart.exe: obj/test_chart.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
+run_chart: test_chart.exe
+	./test_chart.exe $(arg)
+
 obj/test_date.o: test/test_date.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -184,6 +188,15 @@ test_gridgroup.exe: obj/test_gridgroup.o $(OBJ)
 run_gridgroup: test_gridgroup.exe
 	./test_gridgroup.exe $(arg)
 
+obj/test_inputmenu.o: test/test_inputmenu.cpp $(OBJ)
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+test_inputmenu.exe: obj/test_inputmenu.o $(OBJ)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+run_inputmenu: test_inputmenu.exe
+	./test_inputmenu.exe $(arg)
+
 obj/test_lcdnumber.o: test/test_lcdnumber.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -205,6 +218,9 @@ obj/test_plot.o: test/test_plot.cpp $(OBJ)
 test_plot.exe: obj/test_plot.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
+run_plot: test_plot.exe
+	./test_plot.exe $(arg)
+
 obj/test_recentmenu.o: test/test_recentmenu.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -213,6 +229,15 @@ test_recentmenu.exe: obj/test_recentmenu.o $(OBJ)
 
 obj/test_splitgroup.o: test/test_splitgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/test_scrollbrowser.o: test/test_scrollbrowser.cpp $(OBJ)
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+test_scrollbrowser.exe: obj/test_scrollbrowser.o $(OBJ)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+run_scrollbrowser: test_scrollbrowser.exe
+	./test_scrollbrowser.exe $(arg)
 
 test_splitgroup.exe: obj/test_splitgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
@@ -263,15 +288,6 @@ test_theme.exe: obj/test_theme.o $(OBJ) $(THEME_RESOURCE)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_theme: test_theme.exe
-	./test_theme.exe $(arg)
-
-obj/test_widgets.o: test/test_widgets.cpp $(OBJ)
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
-test_widgets.exe: obj/test_widgets.o $(OBJ)
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-run_widgets: test_widgets.exe
 	./test_theme.exe $(arg)
 
 #-------------------------------------------------------------------------------

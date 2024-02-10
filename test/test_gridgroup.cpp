@@ -21,7 +21,7 @@ public:
     
     void draw() override {
         if (Fl::focus() == this) {
-            color(FL_GREEN);
+            color(color::TEAL);
         }
         else {
             color(FL_BACKGROUND_COLOR);
@@ -131,6 +131,9 @@ public:
  *                              
  */
 
+#define ADJUST "Toggle GridGroup::Adjust()\nFor GRID2"
+#define DEACT  "Deactivate\nor\nActivate\nbuttons"
+
 class Test2 : public Fl_Double_Window {
 public:
     Test2(int W, int H) : Fl_Double_Window(W, H, "test_gridgroup.cpp - Test2") {
@@ -140,17 +143,17 @@ public:
         toggle = true;
 //                                                         X    Y    W    H
         grid->add(new Button(0, 0, 0, 0, "&TOP"),        0,   0,   0,   4);
-        grid->add(new Button(0, 0, 0, 0, "&DEACTIVATE"),   0,   4,  16,   0);
-        grid->add(new Button(0, 0, 0, 0, "BOTTOM"),    16, -16,   0,   0);
+        grid->add(new Button(0, 0, 0, 0, DEACT),   0,   4,  16,   0);
+        grid->add(new Button(0, 0, 0, 0, ADJUST),    16, -16,   0,   0);
         grid->add(new Button(0, 0, 0, 0, "RIGHT1"),   -20,   4,  10,   4);
         grid->add(new Button(0, 0, 0, 0, "RIGHT2"),   -10,   8,   0,   4);
         grid->add(new Button(0, 0, 0, 0, "RIGHT3"),   -20,  12,   0, -18);
-        util::widget(grid, "BOTTOM")->tooltip("Press to toggle adjust on grid 2");
-        util::widget(grid, "BOTTOM")->callback(Callback1, this);
+        util::widget(grid, ADJUST)->tooltip("Press to toggle adjust on grid 2");
+        util::widget(grid, ADJUST)->callback(Callback1, this);
         util::widget(grid, "RIGHT1")->callback(Callback2, this);
         util::widget(grid, "RIGHT2")->callback(Callback2, this);
         util::widget(grid, "RIGHT3")->callback(Callback2, this);
-        util::widget(grid, "&DEACTIVATE")->callback(Callback3, this);
+        util::widget(grid, DEACT)->callback(Callback3, this);
         util::widget(grid, "&TOP")->callback(Callback2, this);
         util::widget(grid, "&TOP")->take_focus();
 //        util::widget(grid, "&TOP")->deactivate();
@@ -188,6 +191,7 @@ public:
         grid->add(grid2, 18,   8, -22, -18);
 
         grid->do_layout();
+        tooltip("Tab between widgets works only with current group.");
         add(grid);
         resizable(grid);
         size_range(64, 48);
@@ -259,7 +263,7 @@ public:
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("gtk");
+        flw::theme::load("oxy");
     }
 
     Test1 win1(800, 680);

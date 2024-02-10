@@ -6,6 +6,7 @@
 #ifndef FLW_AMALGAM
     #include "datechooser.h"
     #include "dlg.h"
+    #include "gridgroup.h"
 #endif
 
 #include "icon.xpm"
@@ -13,6 +14,7 @@
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Color_Chooser.H>
+#include <FL/Fl_Dial.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Hold_Browser.H>
@@ -67,46 +69,53 @@ public:
     Fl_Button*           colormap;
 
     Fl_Button*           black;
-    Fl_Button*           dark_green;
-    Fl_Button*           green;
-    Fl_Button*           dark_red;
-    Fl_Button*           dark_yellow;
-    Fl_Button*           red;
-    Fl_Button*           yellow;
+    Fl_Button*           blue;
+    Fl_Button*           color_beige;
+    Fl_Button*           color_choc;
+    Fl_Button*           color_crim;
+    Fl_Button*           color_darkog;
+    Fl_Button*           color_dodger;
+    Fl_Button*           color_forest;
+    Fl_Button*           color_gold;
+    Fl_Button*           color_gray;
+    Fl_Button*           color_indigo;
+    Fl_Button*           color_olive;
+    Fl_Button*           color_pink;
+    Fl_Button*           color_royal;
+    Fl_Button*           color_sienna;
+    Fl_Button*           color_silver;
+    Fl_Button*           color_slate;
+    Fl_Button*           color_teal;
+    Fl_Button*           color_turq;
+    Fl_Button*           color_violet;
+    Fl_Button*           cyan;
     Fl_Button*           dark_blue;
     Fl_Button*           dark_cyan;
+    Fl_Button*           dark_green;
     Fl_Button*           dark_magenta;
-    Fl_Button*           blue;
-    Fl_Button*           cyan;
+    Fl_Button*           dark_red;
+    Fl_Button*           dark_yellow;
+    Fl_Button*           green;
     Fl_Button*           magenta;
+    Fl_Button*           red;
     Fl_Button*           white;
-    Fl_Button*           color_red;
-    Fl_Button*           color_lime;
-    Fl_Button*           color_yellow;
-    Fl_Button*           color_cyan;
-    Fl_Button*           color_magenta;
-    Fl_Button*           color_maroon;
-    Fl_Button*           color_olive;
-    Fl_Button*           color_green;
-    Fl_Button*           color_purple;
-    Fl_Button*           color_teal;
-    Fl_Button*           color_navy;
-    Fl_Button*           color_brown;
-    Fl_Button*           color_pink;
-    Fl_Button*           color_beige;
-    Fl_Button*           color_azure;
-    Fl_Button*           color_blue;
+    Fl_Button*           yellow;
 
     DateChooser*         date;
+    Fl_Check_Button*     check;
+    Fl_Dial*             dial;
     Fl_Hold_Browser*     browser;
     Fl_Input*            input;
-    Fl_Menu_Bar*         menu;
     Fl_Light_Button*     light;
-    Fl_Check_Button*     check;
+    Fl_Menu_Bar*         menu;
+    Fl_Roller*           roller;
     Fl_Round_Button*     radio;
     Fl_Slider*           slider;
-    Fl_Roller*           roller;
     Fl_Tree*             tree;
+    GridGroup*           grid0;
+    GridGroup*           grid1;
+    GridGroup*           grid2;
+    GridGroup*           grid3;
     Scale*               scale;
 
     Test() : Fl_Double_Window(0, 0, "test_theme.cpp") {
@@ -117,24 +126,26 @@ public:
     }
 
     void create() {
-        begin();
-
+        browser      = new Fl_Hold_Browser(0, 0, 0, 0);
         check        = new Fl_Check_Button(0, 0, 0, 0, "Fl_Check_Button");
         colormap     = new Fl_Button(0, 0, 0, 0, "Color Map");
         date         = new DateChooser(0, 0, 0, 0);
+        dial         = new Fl_Dial(0, 0, 0, 0);
         disabled     = new Fl_Button(0, 0, 0, 0, "Deactivated");
+        grid0        = new GridGroup();
+        grid1        = new GridGroup();
+        grid2        = new GridGroup();
+        grid3        = new GridGroup();
+        input        = new Fl_Input(0, 0, 0, 0);
         light        = new Fl_Light_Button(0, 0, 0, 0, "File Chooser");
         menu         = new Fl_Menu_Bar(0, 0, 0, 0);
         radio        = new Fl_Round_Button(0, 0, 0, 0, "Fl_Round_Button");
         roller       = new Fl_Roller(0, 0, 0, 0, "");
+        scale        = new Scale();
         slider       = new Fl_Slider(0, 0, 0, 0);
         theme        = new Fl_Button(0, 0, 0, 0, "&Theme");
-
-        browser      = new Fl_Hold_Browser(0, 0, 0, 0);
-        input        = new Fl_Input(0, 0, 0, 0);
         tree         = new Fl_Tree(0, 0, 0, 0);
-        scale        = new Scale();
-
+    
         bg           = new Fl_Button(0, 0, 0, 0, "FL_BACKGROUND_COLOR (49)");
         bg2          = new Fl_Button(0, 0, 0, 0, "FL_BACKGROUND2_COLOR (7)");
         dark1        = new Fl_Button(0, 0, 0, 0, "FL_DARK1 (47)");
@@ -149,39 +160,108 @@ public:
         selection    = new Fl_Button(0, 0, 0, 0, "FL_SELECTION_COLOR (15)");
 
         black        = new Fl_Button(0, 0, 0, 0, "FL_BLACK (56)");
-        dark_green   = new Fl_Button(0, 0, 0, 0, "FL_DARK_GREEN (60)");
-        green        = new Fl_Button(0, 0, 0, 0, "FL_GREEN (63)");
-        dark_red     = new Fl_Button(0, 0, 0, 0, "FL_DARK_RED (72)");
-        dark_yellow  = new Fl_Button(0, 0, 0, 0, "FL_DARK_YELLOW (76)");
-        red          = new Fl_Button(0, 0, 0, 0, "FL_RED (88)");
-        yellow       = new Fl_Button(0, 0, 0, 0, "FL_YELLOW (95)");
-        dark_blue    = new Fl_Button(0, 0, 0, 0, "FL_DARK_BLUE (36)");
-        dark_cyan    = new Fl_Button(0, 0, 0, 0, "FL_DARK_CYAN (40)");
-        dark_magenta = new Fl_Button(0, 0, 0, 0, "FL_DARK_MAGENTA (52)");
         blue         = new Fl_Button(0, 0, 0, 0, "FL_BLUE (16)");
         cyan         = new Fl_Button(0, 0, 0, 0, "FL_CYAN (23)");
+        dark_blue    = new Fl_Button(0, 0, 0, 0, "FL_DARK_BLUE (36)");
+        dark_cyan    = new Fl_Button(0, 0, 0, 0, "FL_DARK_CYAN (40)");
+        dark_green   = new Fl_Button(0, 0, 0, 0, "FL_DARK_GREEN (60)");
+        dark_magenta = new Fl_Button(0, 0, 0, 0, "FL_DARK_MAGENTA (52)");
+        dark_red     = new Fl_Button(0, 0, 0, 0, "FL_DARK_RED (72)");
+        dark_yellow  = new Fl_Button(0, 0, 0, 0, "FL_DARK_YELLOW (76)");
+        green        = new Fl_Button(0, 0, 0, 0, "FL_GREEN (63)");
         magenta      = new Fl_Button(0, 0, 0, 0, "FL_MAGENTA (48)");
+        red          = new Fl_Button(0, 0, 0, 0, "FL_RED (88)");
         white        = new Fl_Button(0, 0, 0, 0, "FL_WHITE (55)");
+        yellow       = new Fl_Button(0, 0, 0, 0, "FL_YELLOW (95)");
 
-        color_red     = new Fl_Button(0, 0, 0, 0, "color::RED");
-        color_lime    = new Fl_Button(0, 0, 0, 0, "color::LIME");
-        color_yellow  = new Fl_Button(0, 0, 0, 0, "color::YELLOW");
-        color_cyan    = new Fl_Button(0, 0, 0, 0, "color::CYAN");
-        color_magenta = new Fl_Button(0, 0, 0, 0, "color::MAGENTA");
-        color_maroon  = new Fl_Button(0, 0, 0, 0, "color::MARRON");
-        color_olive   = new Fl_Button(0, 0, 0, 0, "color::OLIVE");
-        color_green   = new Fl_Button(0, 0, 0, 0, "color::GREEN");
-        color_purple  = new Fl_Button(0, 0, 0, 0, "color::PURPLE");
-        color_teal    = new Fl_Button(0, 0, 0, 0, "color::TEAL");
-        color_navy    = new Fl_Button(0, 0, 0, 0, "color::NAVY");
-        color_brown   = new Fl_Button(0, 0, 0, 0, "color::BROWN");
-        color_pink    = new Fl_Button(0, 0, 0, 0, "color::PINK");
-        color_beige   = new Fl_Button(0, 0, 0, 0, "color::BEIGE");
-        color_azure   = new Fl_Button(0, 0, 0, 0, "color::AZURE");
-        color_blue    = new Fl_Button(0, 0, 0, 0, "color::BLUE");
+        color_beige  = new Fl_Button(0, 0, 0, 0, "color::BEIGE");
+        color_choc   = new Fl_Button(0, 0, 0, 0, "color::CHOCOLATE");
+        color_crim   = new Fl_Button(0, 0, 0, 0, "color::CRIMSON");
+        color_darkog = new Fl_Button(0, 0, 0, 0, "color::DARKOLIVEGREEN");
+        color_dodger = new Fl_Button(0, 0, 0, 0, "color::DODGERBLUE");
+        color_forest = new Fl_Button(0, 0, 0, 0, "color::FORESTGREEN");
+        color_gold   = new Fl_Button(0, 0, 0, 0, "color::GOLD");
+        color_gray   = new Fl_Button(0, 0, 0, 0, "color::GRAY");
+        color_indigo = new Fl_Button(0, 0, 0, 0, "color::INDIGO");
+        color_olive  = new Fl_Button(0, 0, 0, 0, "color::OLIVE");
+        color_pink   = new Fl_Button(0, 0, 0, 0, "color::PINK");
+        color_royal  = new Fl_Button(0, 0, 0, 0, "color::ROYALBLUE");
+        color_sienna = new Fl_Button(0, 0, 0, 0, "color::SIENNA");
+        color_silver = new Fl_Button(0, 0, 0, 0, "color::SILVER");
+        color_slate  = new Fl_Button(0, 0, 0, 0, "color::SLATEGRAY");
+        color_teal   = new Fl_Button(0, 0, 0, 0, "color::TEAL");
+        color_turq   = new Fl_Button(0, 0, 0, 0, "color::TURQUOISE");
+        color_violet = new Fl_Button(0, 0, 0, 0, "color::VIOLET");
 
-        end();
+        add(menu);
+        add(grid0);
+        add(grid1);
+        add(grid2);
+        add(grid3);
 
+        grid0->add(theme,           0,   1,  26,  4);
+        grid0->add(colormap,        0,   6,  26,  4);
+        grid0->add(disabled,        0,  11,  26,  4);
+        grid0->add(radio,           0,  16,  26,  4);
+        grid0->add(check,           0,  21,  26,  4);
+        grid0->add(light,           0,  26,  26,  4);
+        grid0->add(slider,          0,  31,   4, 20);
+        grid0->add(roller,          5,  31,   4, 20);
+        grid0->add(dial,           10,  31,  16, 16);
+        grid0->add(scale,           0,  52,  26, -1);
+        
+        grid0->add(input,          28,   1,  -1,  4);
+        grid0->add(browser,        28,   6,  -1, 20);
+        grid0->add(date,           28,  27,  -1, 48);
+        grid0->add(tree,           28,  76,  -1, -1);
+
+        grid1->add(bg,              0,   3,   0,  4);
+        grid1->add(bg2,             0,  10,   0,  4);
+        grid1->add(dark1,           0,  17,   0,  4);
+        grid1->add(dark2,           0,  24,   0,  4);
+        grid1->add(dark3,           0,  31,   0,  4);
+        grid1->add(fg,              0,  38,   0,  4);
+        grid1->add(gray0,           0,  45,   0 , 4);
+        grid1->add(inactive,        0,  52,   0,  4);
+        grid1->add(light1,          0,  59,   0,  4);
+        grid1->add(light2,          0,  66,   0,  4);
+        grid1->add(light3,          0,  73,   0,  4);
+        grid1->add(selection,       0,  80,   0,  4);
+        
+        grid2->add(black,           0,   3,   0,  4);
+        grid2->add(white,           0,  10,   0,  4);
+        grid2->add(red,             0,  17,   0,  4);
+        grid2->add(dark_red,        0,  24,   0,  4);
+        grid2->add(green,           0,  31,   0,  4);
+        grid2->add(dark_green,      0,  38,   0,  4);
+        grid2->add(blue,            0,  45,   0,  4);
+        grid2->add(dark_blue,       0,  52,   0,  4);
+        grid2->add(yellow,          0,  59,   0,  4);
+        grid2->add(dark_yellow,     0,  66,   0,  4);
+        grid2->add(cyan,            0,  73,   0,  4);
+        grid2->add(dark_cyan,       0,  80,   0,  4);
+        grid2->add(magenta,         0,  87,   0,  4);
+        grid2->add(dark_magenta,    0,  94,   0,  4);
+
+        grid3->add(color_beige,     0,   3,   0,  4);
+        grid3->add(color_choc,      0,  10,   0,  4);
+        grid3->add(color_crim,      0,  17,   0,  4);
+        grid3->add(color_darkog,    0,  24,   0,  4);
+        grid3->add(color_dodger,    0,  31,   0,  4);
+        grid3->add(color_forest,    0,  38,   0,  4);
+        grid3->add(color_gold,      0,  45,   0,  4);
+        grid3->add(color_gray,      0,  52,   0,  4);
+        grid3->add(color_indigo,    0,  59,   0,  4);
+        grid3->add(color_olive,     0,  66,   0,  4);
+        grid3->add(color_pink,      0,  73,   0,  4);
+        grid3->add(color_royal,     0,  80,   0,  4);
+        grid3->add(color_sienna,    0,  87,   0,  4);
+        grid3->add(color_silver,    0,  94,   0,  4);
+        grid3->add(color_slate,     0, 101,   0,  4);
+        grid3->add(color_teal,      0, 108,   0,  4);
+        grid3->add(color_turq,      0, 115,   0,  4);
+        grid3->add(color_violet,    0, 122,   0,  4);
+        
         button(bg, FL_BACKGROUND_COLOR);
         button(bg2, FL_BACKGROUND2_COLOR);
         button(dark1, FL_DARK1);
@@ -210,29 +290,25 @@ public:
         button(magenta, FL_MAGENTA);
         button(white, FL_WHITE);
 
-        button2(color_red, color::RED);
-        button2(color_lime, color::LIME);
-        button2(color_yellow, color::YELLOW);
-        button2(color_cyan, color::CYAN);
-        button2(color_magenta, color::MAGENTA);
-        button2(color_maroon, color::MAROON);
-        button2(color_olive, color::OLIVE);
-        button2(color_green, color::GREEN);
-        button2(color_purple, color::PURPLE);
-        button2(color_teal, color::TEAL);
-        button2(color_navy, color::NAVY);
-        button2(color_brown, color::BROWN);
-        button2(color_pink, color::PINK);
         button2(color_beige, color::BEIGE);
-        button2(color_azure, color::AZURE);
-        button2(color_blue, color:: BLUE);
+        button2(color_choc, color::CHOCOLATE);
+        button2(color_crim, color::CRIMSON);
+        button2(color_darkog, color::DARKOLIVEGREEN);
+        button2(color_dodger, color::DODGERBLUE);
+        button2(color_forest, color::FORESTGREEN);
+        button2(color_gold, color::GOLD);
+        button2(color_gray, color::GRAY);
+        button2(color_indigo, color::INDIGO);
+        button2(color_olive, color::OLIVE);
+        button2(color_pink, color::PINK);
+        button2(color_royal, color::ROYALBLUE);
+        button2(color_sienna, color::SIENNA);
+        button2(color_silver, color::SILVER);
+        button2(color_slate, color::SLATEGRAY);
+        button2(color_teal, color::TEAL);
+        button2(color_turq, color::TURQUOISE);
+        button2(color_violet, color::VIOLET);
 
-        colormap->callback(CallbackColorMap);
-        disabled->deactivate();
-        input->value("default");
-        slider->type(4);
-        theme->callback(CallbackTheme);
-        theme->tooltip("Select a theme.");
         browser->add("FL_BACKGROUND2_COLOR");
         browser->add("FL_BACKGROUND_COLOR");
         browser->add("FL_BLACK");
@@ -240,7 +316,17 @@ public:
         browser->add("FL_INACTIVE_COLOR");
         browser->add("FL_SELECTION_COLOR");
         browser->add("FL_WHITE");
+        colormap->callback(CallbackColorMap);
+        dial->type(FL_FILL_DIAL);
+        dial->value(0.5);
+        disabled->deactivate();
+        input->value(flw::PREF_THEME.c_str());
         light->callback(CallbackFile);
+        slider->type(4);
+        theme->callback(CallbackTheme);
+        theme->tooltip("Select a theme.");
+        tree->connectorcolor(FL_FOREGROUND_COLOR);
+
         menu->add("File/Open");
         menu->add("File/Save");
         menu->add("Edit/Copy");
@@ -250,7 +336,6 @@ public:
         menu->add("Test/Toggle off", 0, nullptr, nullptr, FL_MENU_TOGGLE);
         menu->add("Test/Enabled");
         menu->add("Test/Disabled");
-
         menu::set_item(menu, "Test/Toggle on", true);
         menu::set_item(menu, "Test/Toggle off", true);
         menu::set_item(menu, "Test/Toggle off", false);
@@ -295,22 +380,6 @@ public:
         TEST->create();
         TEST->update_pref();
         TEST->input->value(flw::PREF_THEME.c_str());
-        TEST->button2(TEST->color_red, color::RED);
-        TEST->button2(TEST->color_lime, color::LIME);
-        TEST->button2(TEST->color_yellow, color::YELLOW);
-        TEST->button2(TEST->color_cyan, color::CYAN);
-        TEST->button2(TEST->color_magenta, color::MAGENTA);
-        TEST->button2(TEST->color_maroon, color::MAROON);
-        TEST->button2(TEST->color_olive, color::OLIVE);
-        TEST->button2(TEST->color_green, color::GREEN);
-        TEST->button2(TEST->color_purple, color::PURPLE);
-        TEST->button2(TEST->color_teal, color::TEAL);
-        TEST->button2(TEST->color_navy, color::NAVY);
-        TEST->button2(TEST->color_brown, color::BROWN);
-        TEST->button2(TEST->color_pink, color::PINK);
-        TEST->button2(TEST->color_beige, color::BEIGE);
-        TEST->button2(TEST->color_azure, color::AZURE);
-        TEST->button2(TEST->color_blue, color::BLUE);
     }
 
     void button(Fl_Button* button, Fl_Color color) {
@@ -395,76 +464,17 @@ public:
     }
 
     void resize(int X, int Y, int W, int H) override {
-        auto fs = flw::PREF_FONTSIZE;
-
         Fl_Double_Window::resize(X, Y, W, H);
+        
+        if (menu != nullptr) {
+            auto fs = flw::PREF_FONTSIZE;
 
-        if (menu == nullptr) {
-            return;
+            menu->resize    (0,        0,       W,        fs * 2);
+            grid0->resize   (fs,       fs * 2,  fs * 50,  H - fs * 3);
+            grid1->resize   (fs * 52,  fs * 2,  fs * 20,  H - fs * 3);
+            grid2->resize   (fs * 73,  fs * 2,  fs * 20,  H - fs * 3);
+            grid3->resize   (fs * 94,  fs * 2,  fs * 20,  H - fs * 3);
         }
-
-        menu->resize(0, 0, W, fs * 2);
-
-        theme->resize   (4, fs * 2 + 4, fs * 10, fs * 2);
-        colormap->resize(4, fs * 4 + 8, fs * 10, fs * 2);
-        disabled->resize(4, fs * 6 + 12, fs * 10, fs * 2);
-        radio->resize   (4, fs * 8 + 16, fs * 10, fs * 2);
-        check->resize   (4, fs * 10 + 20, fs * 10, fs * 2);
-        light->resize   (4, fs * 12 + 24, fs * 10, fs * 2);
-        slider->resize  (4, fs * 14 + 28, fs * 2, fs * 12);
-        roller->resize  (fs * 2 + 8, fs * 14 + 28, fs * 2, fs * 12);
-        scale->resize   (4, fs * 26 + 34, fs * 10, H - fs * 26 - 40);
-
-        input->resize  (fs * 10 + 8, fs * 2 + 4, fs * 28, fs * 2);
-        browser->resize(fs * 10 + 8, fs * 4 + 8, fs * 28, fs * 10);
-        date->resize   (fs * 10 + 8, fs * 14 + 12, fs * 28, fs * 20);
-        tree->resize   (fs * 10 + 8, fs * 34 + 16, fs * 28, H - fs * 34 - 20);
-
-        fg->resize       (W - fs * 48 - 8, fs * 3 + 4,   fs * 15, fs * 2);
-        bg->resize       (W - fs * 48 - 8, fs * 6 + 8,   fs * 15, fs * 2);
-        bg2->resize      (W - fs * 48 - 8, fs * 9 + 12,  fs * 15, fs * 2);
-        inactive->resize (W - fs * 48 - 8, fs * 12 + 16, fs * 15, fs * 2);
-        selection->resize(W - fs * 48 - 8, fs * 15 + 20, fs * 15, fs * 2);
-        gray0->resize    (W - fs * 48 - 8, fs * 18 + 24, fs * 15, fs * 2);
-        dark3->resize    (W - fs * 48 - 8, fs * 21 + 28, fs * 15, fs * 2);
-        dark2->resize    (W - fs * 48 - 8, fs * 24 + 32, fs * 15, fs * 2);
-        dark1->resize    (W - fs * 48 - 8, fs * 27 + 36, fs * 15, fs * 2);
-        light1->resize   (W - fs * 48 - 8, fs * 30 + 40, fs * 15, fs * 2);
-        light2->resize   (W - fs * 48 - 8, fs * 33 + 44, fs * 15, fs * 2);
-        light3->resize   (W - fs * 48 - 8, fs * 36 + 48, fs * 15, fs * 2);
-
-        black->resize        (W - fs * 32 - 4, fs * 3 + 4,   fs * 15, fs * 2);
-        dark_green->resize   (W - fs * 32 - 4, fs * 6 + 8,   fs * 15, fs * 2);
-        green->resize        (W - fs * 32 - 4, fs * 9 + 12,  fs * 15, fs * 2);
-        dark_red->resize     (W - fs * 32 - 4, fs * 12 + 16, fs * 15, fs * 2);
-        dark_yellow->resize  (W - fs * 32 - 4, fs * 15 + 20, fs * 15, fs * 2);
-        red->resize          (W - fs * 32 - 4, fs * 18 + 24, fs * 15, fs * 2);
-        yellow->resize       (W - fs * 32 - 4, fs * 21 + 28, fs * 15, fs * 2);
-        dark_blue->resize    (W - fs * 32 - 4, fs * 24 + 32, fs * 15, fs * 2);
-        dark_cyan->resize    (W - fs * 32 - 4, fs * 27 + 36, fs * 15, fs * 2);
-        dark_magenta->resize (W - fs * 32 - 4, fs * 30 + 40, fs * 15, fs * 2);
-        blue->resize         (W - fs * 32 - 4, fs * 33 + 44, fs * 15, fs * 2);
-        cyan->resize         (W - fs * 32 - 4, fs * 36 + 48, fs * 15, fs * 2);
-        magenta->resize      (W - fs * 32 - 4, fs * 39 + 52, fs * 15, fs * 2);
-        white->resize        (W - fs * 32 - 4, fs * 42 + 56, fs * 15, fs * 2);
-
-        auto y = fs * 3 + 4;
-        color_azure->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_beige->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_blue->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_brown->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_cyan->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_green->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_lime->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_magenta->resize (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_maroon->resize  (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_navy->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_olive->resize   (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_pink->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_purple->resize  (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_red->resize     (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_teal->resize    (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
-        color_yellow->resize  (W - fs * 16 - 4, y, fs * 15, fs * 2); y += fs * 3 + 4;
     }
 
     void update_pref() {

@@ -16,7 +16,7 @@ using namespace flw;
 
 class Test : public Fl_Double_Window {
 public:
-    Test(int W, int H) : Fl_Double_Window(W, H, "test_toolbar.cpp") {
+    Test(int W, int H) : Fl_Double_Window(W, H, "test_toolgroup.cpp") {
         end();
         
         tool_h = new ToolGroup();
@@ -27,23 +27,23 @@ public:
         add(tool_h);
         add(tool_v);
         
-        tool_h->add(new Fl_Button(0, 0, 0, 0, "T1"));
-        tool_h->add(new Fl_Button(0, 0, 0, 0, "T2"));
-        tool_h->add(new Fl_Button(0, 0, 0, 0, "T3\n4"), 4);
-        tool_h->add(new Fl_Button(0, 0, 0, 0, "T4"));
-        tool_h->add(new Fl_Button(0, 0, 0, 0, "T5"));
-        tool_h->add(new Fl_Button(0, 0, 0, 0, "T6\n2"), 2);
+        tool_h->add(new Fl_Button(0, 0, 0, 0, "EQUAL W"));
+        tool_h->add(new Fl_Button(0, 0, 0, 0, "EQUAL W"));
+        tool_h->add(new Fl_Button(0, 0, 0, 0, "W4"), 4);
+        tool_h->add(new Fl_Button(0, 0, 0, 0, "EQUAL W"));
+        tool_h->add(new Fl_Button(0, 0, 0, 0, "EQUAL W"));
+        tool_h->add(new Fl_Button(0, 0, 0, 0, "W2"), 2);
         tool_h->add(t17);
         tool_h->expand_last(true);
         tool_h->color(FL_YELLOW);
         tool_h->box(FL_FLAT_BOX);
         
-        tool_v->add(new Fl_Button(0, 0, 0, 0, "T1"));
-        tool_v->add(new Fl_Button(0, 0, 0, 0, "T2"));
-        tool_v->add(new Fl_Button(0, 0, 0, 0, "T3\n2"), 2);
-        tool_v->add(new Fl_Button(0, 0, 0, 0, "T4"));
-        tool_v->add(new Fl_Button(0, 0, 0, 0, "T5"));
-        tool_v->add(new Fl_Button(0, 0, 0, 0, "T6\n3"), 3);
+        tool_v->add(new Fl_Button(0, 0, 0, 0, "EQUAL H"));
+        tool_v->add(new Fl_Button(0, 0, 0, 0, "EQUAL H"));
+        tool_v->add(new Fl_Button(0, 0, 0, 0, "H3"), 3);
+        tool_v->add(new Fl_Button(0, 0, 0, 0, "EQUAL H"));
+        tool_v->add(new Fl_Button(0, 0, 0, 0, "EQUAL H"));
+        tool_v->add(new Fl_Button(0, 0, 0, 0, "H1"), 1);
         tool_v->add(t27);
         tool_v->expand_last(true);
         tool_v->color(FL_YELLOW);
@@ -71,8 +71,10 @@ public:
         Fl_Double_Window::resize(X, Y, W, H);
 
         if (r.w() != W || r.h() != H) {
-            tool_h->resize(80, 10, W - 80, 60);
-            tool_v->resize(80, 70, 120, H - 70);
+//            tool_h->resize(80, 10, W - 80, 60);
+//            tool_v->resize(80, 70, 120, H - 70);
+            tool_h->resize(0, 0, W, 60);
+            tool_v->resize(0, 60, 120, H - 60);
             r = Fl_Rect(this);
         }
     }
@@ -86,7 +88,7 @@ public:
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("gtk");
+        flw::theme::load("oxy");
     }
 
     Test win(812, 612);

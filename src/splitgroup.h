@@ -11,7 +11,7 @@
 #include <FL/Fl_Rect.H>
 
 namespace flw {
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     // A split view widget for two child widgets
     // That can be resized by dragging the border between the widgets
     // By default it places widgets in LAYOUT::VERTICAL direction (child widgets get full height)

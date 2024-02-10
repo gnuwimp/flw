@@ -47,9 +47,6 @@ Date chooser widget (flw::DateChooser)<br>
 Font dialog (flw::dlg::FontDialog)<br>
 <img src="images/font_dialog.png"/>
 
-Grid layout widget (flw::GridGroup)<br>
-<img src="images/gridgroup.png"/>
-
 Input menu (flw::InputMenu)<br>
 <img src="images/input_menu.png"/>
 
@@ -65,22 +62,28 @@ Plot widget (flw::Plot)<br>
 Table editor widget (flw::TableDisplay and flw::TableEditor)<br>
 <img src="images/tableeditor.png"/>
 
+Grid layout widget (flw::GridGroup)<br>
+<img src="images/gridgroup.png"/>
+
 Tab layout widget (flw::TabsGroup)<br>
 <img src="images/tabsgroup.png"/>
+
+Toolbar layout widget (flw::ToolGroup)<br>
+<img src="images/toolgroup.png"/>
 
 Theme dialog (flw::dlg::theme())<br>
 <img src="images/theme_dialog.png"/>
 
 ## Theme examples
 
-Dark blue gleam theme<br>
-<img src="images/darkblue_gleam_theme.png"/>
-
-Dark gtk theme<br>
-<img src="images/dark_gtk_theme.png"/>
-
 Tan gleam theme<br>
 <img src="images/tan_gleam_theme.png"/>
 
 Blue gtk theme<br>
 <img src="images/bluegtk_theme.png"/>
+
+Dark blue gleam theme<br>
+<img src="images/darkblue_gleam_theme.png"/>
+
+Dark gtk theme<br>
+<img src="images/dark_gtk_theme.png"/>

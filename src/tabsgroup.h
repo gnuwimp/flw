@@ -13,7 +13,7 @@
 
 namespace flw {
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Group widget that uses tabs for labels.
 // You can move between tabs using alt (or command key on macOS) + left/right.
 // Move tabs around by using alt + up/down.
@@ -41,7 +41,7 @@ public:
     int                         handle(int event) override;
     void                        hide_tabs()
                                     { _hide_tab_buttons(true); }
-    void                        label(const std::string& label, Fl_Widget* widget);
+    void                        label(std::string label, Fl_Widget* widget);
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
                                     { return remove(find(widget)); }

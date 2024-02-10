@@ -22,7 +22,7 @@ class Test : public Fl_Double_Window {
     Fl_Menu_Bar*        menu;
 
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     Test() : Fl_Double_Window(640, 480, "test_recentmenu.cpp") {
         end();
 
@@ -58,7 +58,7 @@ public:
         add_recent->load_pref(pref, "files2");
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     ~Test() {
         auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_recentmenu");
         pref.clear();
@@ -66,7 +66,7 @@ public:
         add_recent->save_pref(pref, "files2");
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = (Test*) o;
 
@@ -81,26 +81,26 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void CallbackAdd(Fl_Widget*, void* o) {
         auto self = (Test*) o;
         self->add_button->copy_label(self->menu->text());
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void CallbackInsert(Fl_Widget*, void* o) {
         auto self = (Test*) o;
         self->insert_button->copy_label(self->menu->text());
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void make_menu(flw::RecentMenu* recent, bool append) {
         auto label = flw::util::format("/this/is/a/file/number & _%d_", ++count);
         if (append == false) recent->insert(label);
         else recent->append(label);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         auto w = W / 2;
 
@@ -115,7 +115,7 @@ public:
 int main() {
 #ifdef FLW_THEME
     if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("gtk");
+        flw::theme::load("oxy");
     }
 #endif
 

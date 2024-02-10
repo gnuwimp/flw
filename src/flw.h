@@ -51,7 +51,7 @@ extern const char* const        PREF_THEMES[];          // Name of themes
 typedef std::vector<std::string> StringVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Buffer container that frees memory automatically
 //
 struct Buf {
@@ -72,13 +72,13 @@ struct Buf {
                                     { free(p); }
 };
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace debug {
     void                        print(Fl_Widget* widget);
     void                        print(Fl_Widget* widget, std::string& indent);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Menu item functions
 //
 namespace menu {
@@ -89,7 +89,7 @@ namespace menu {
     void                        setonly_item(Fl_Menu_* menu, const char* text);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Assorted utility functions
 //
 namespace util {
@@ -102,7 +102,7 @@ namespace util {
     Buf                         load_file(std::string filename, bool alert = true);
     int32_t                     milliseconds();
     void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
-    std::string                 remove_browser_format(std::string text);
+    std::string                 remove_browser_format(const char* text);
     std::string&                replace(std::string& string, std::string find, std::string replace);
     bool                        save_file(std::string filename, const void* data, size_t size, bool alert = true);
     void                        sleep(int milli);
@@ -110,7 +110,7 @@ namespace util {
     Fl_Widget*                  widget(Fl_Group* group, std::string label);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Load different themes and save/load window preferences
 //
 namespace theme {
@@ -125,7 +125,7 @@ namespace theme {
     void                        save_theme_pref(Fl_Preferences& pref);
     void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
 
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // Internal usage only
     //
     enum {
@@ -153,42 +153,29 @@ namespace theme {
     };
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Drawing colors
 //
 namespace color {
-    extern Fl_Color             AZURE;
     extern Fl_Color             BEIGE;
-    extern Fl_Color             BLUE;
-    extern Fl_Color             BROWN;
-    extern Fl_Color             CYAN;
+    extern Fl_Color             CHOCOLATE;
+    extern Fl_Color             CRIMSON;
+    extern Fl_Color             DARKOLIVEGREEN;
+    extern Fl_Color             DODGERBLUE;
+    extern Fl_Color             FORESTGREEN;
+    extern Fl_Color             GOLD;
     extern Fl_Color             GRAY;
-    extern Fl_Color             GREEN;
-    extern Fl_Color             LIME;
-    extern Fl_Color             MAGENTA;
-    extern Fl_Color             MAROON;
-    extern Fl_Color             NAVY;
+    extern Fl_Color             INDIGO;
     extern Fl_Color             OLIVE;
     extern Fl_Color             PINK;
-    extern Fl_Color             PURPLE;
-    extern Fl_Color             RED;
+    extern Fl_Color             ROYALBLUE;
+    extern Fl_Color             SIENNA;
     extern Fl_Color             SILVER;
+    extern Fl_Color             SLATEGRAY;
     extern Fl_Color             TEAL;
-    extern Fl_Color             YELLOW;
+    extern Fl_Color             TURQUOISE;
+    extern Fl_Color             VIOLET;
 }
-
-//--------------------------------------------------------------------------
-class Group : public Fl_Group {
-public:
-    Group(int X = 0, int Y = 0, int W = 0, int H = 0, const char* L = nullptr) : Fl_Group(X, Y, W, H, L) {
-        end();
-        resizable(nullptr);
-    }
-    
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Widget::resize(X, Y, W, H);
-    }
-};
 
 } // flw
 

@@ -7,7 +7,7 @@
 // MKALGAM_ON
 
 namespace flw {
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     // Show an wait mouse pointer until object is deleted
     //
     class WaitCursor {

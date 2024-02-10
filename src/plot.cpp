@@ -388,6 +388,8 @@ void PlotScale::reset_min_max() {
  *
  */
 
+#define FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); plot->clear(); return false; }
+
 //------------------------------------------------------------------------------
 Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
@@ -489,6 +491,29 @@ void Plot::_calc_min_max() {
 }
 
 //------------------------------------------------------------------------------
+void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
+    auto self = static_cast<const Plot*>(plot_object);
+    self->debug();
+}
+
+//------------------------------------------------------------------------------
+void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
+    auto self = static_cast<Plot*>(plot_object);
+    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
+}
+
+//------------------------------------------------------------------------------
+void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
+    auto self = static_cast<Plot*>(plot_object);
+
+    self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
+    self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
+    self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
+
+    self->redraw();
+}
+
+//------------------------------------------------------------------------------
 void Plot::clear() {
     delete _x;
     delete _y;
@@ -511,6 +536,7 @@ void Plot::clear() {
     }
 
     selection_color(FL_FOREGROUND_COLOR);
+    update_pref();
 }
 
 //------------------------------------------------------------------------------
@@ -614,7 +640,7 @@ void Plot::debug() const {
 //------------------------------------------------------------------------------
 void Plot::draw() {
 #ifdef DEBUG
-    // auto t = util::time_milli();
+//     auto t = util::milliseconds();
 #endif
 
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
@@ -644,8 +670,8 @@ void Plot::draw() {
     fl_line_style(0);
 
 #ifdef DEBUG
-    // fprintf(stderr, "Plot::draw: %d mS\n", util::time_milli() - t);
-    // fflush(stderr);
+//     fprintf(stderr, "Plot::draw: %d mS\n", util::milliseconds() - t);
+//     fflush(stderr);
 #endif
 }
 
@@ -657,7 +683,7 @@ void Plot::_draw_labels() {
     }
 
     if (_y->label != "") {
-        auto y = _area->y + (_area->h / 2) + (_y->label.length() * _cw / 2);
+        auto y = (int) (_area->y + (_area->h / 2) + (_y->label.length() / 2.0 * _cw));
         fl_color(_y->color);
         fl_draw (90, _y->label.c_str(), x() + _ch, y);
     }
@@ -1063,87 +1089,6 @@ void Plot::label_colors(Fl_Color x, Fl_Color y) {
 }
 
 //------------------------------------------------------------------------------
-void Plot::resize(int X, int Y, int W, int H) {
-    Fl_Widget::resize(X, Y, W, H);
-
-    if (_calc == false && _w == W && _h == H) {
-        return;
-    }
-
-    if (_size == 0) {
-        return;
-    }
-
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
-    _cw = 0;
-    _ch = 0;
-    fl_measure("X", _cw, _ch, 0);
-
-    if (_calc == true) { // Call Scale::calc() twice when new data has changed, first with default width
-        _calc_min_max();
-        _x->calc(W - flw::PREF_FIXED_FONTSIZE * 6);
-        _y->calc(H - flw::PREF_FIXED_FONTSIZE * 6);
-        _x->measure_text(_cw);
-        _y->measure_text(_cw);
-    }
-
-    _area->x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y->text + ((_y->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
-    _area->y = Y + flw::PREF_FIXED_FONTSIZE;
-    _area->w = W - (_area->x - X) - flw::PREF_FIXED_FONTSIZE * 2;
-    _area->h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
-
-    _x->calc(_area->w - 1);
-    _y->calc(_area->h - 1);
-
-    _calc = false;
-    _w    = W;
-    _h    = H;
-}
-
-//------------------------------------------------------------------------------
-void Plot::update_pref() {
-    _menu->textfont(flw::PREF_FONT);
-    _menu->textsize(flw::PREF_FONTSIZE);
-}
-
-/***
- *      _____  _       _       _____ _        _   _
- *     |  __ \| |     | |     / ____| |      | | (_)
- *     | |__) | | ___ | |_   | (___ | |_ __ _| |_ _  ___
- *     |  ___/| |/ _ \| __|   \___ \| __/ _` | __| |/ __|
- *     | |    | | (_) | |_    ____) | || (_| | |_| | (__
- *     |_|    |_|\___/ \__|  |_____/ \__\__,_|\__|_|\___|
- *
- *
- */
-
-#define FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); plot->clear(); return false; }
-
-//------------------------------------------------------------------------------
-void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<const Plot*>(plot_object);
-    self->debug();
-}
-
-//------------------------------------------------------------------------------
-void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
-    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
-}
-
-//------------------------------------------------------------------------------
-void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
-
-    self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
-    self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
-    self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
-
-    self->redraw();
-}
-
-//------------------------------------------------------------------------------
 bool Plot::Load(Plot* plot, std::string filename) {
     plot->clear();
     plot->redraw();
@@ -1242,6 +1187,38 @@ bool Plot::Load(Plot* plot, std::string filename) {
     return true;
 }
 
+//------------------------------------------------------------------------------
+void Plot::resize(int X, int Y, int W, int H) {
+    Fl_Widget::resize(X, Y, W, H);
+
+    if (_calc == false && _w == W && _h == H) {
+        return;
+    }
+    else if (_size == 0) {
+        return;
+    }
+
+    if (_calc == true) { // Call Scale::calc() twice when new data has changed, first with default width
+        _calc_min_max();
+        _x->calc(W - flw::PREF_FIXED_FONTSIZE * 6);
+        _y->calc(H - flw::PREF_FIXED_FONTSIZE * 6);
+        _x->measure_text(_cw);
+        _y->measure_text(_cw);
+    }
+
+    _area->x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y->text + ((_y->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _area->y = Y + flw::PREF_FIXED_FONTSIZE;
+    _area->w = W - (_area->x - X) - flw::PREF_FIXED_FONTSIZE * 2;
+    _area->h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+
+    _x->calc(_area->w - 1);
+    _y->calc(_area->h - 1);
+
+    _calc = false;
+    _w    = W;
+    _h    = H;
+}
+
 //----------------------------------------------------------------------
 bool Plot::Save(const Plot* plot, std::string filename) {
     auto wc  = WaitCursor();
@@ -1301,6 +1278,15 @@ bool Plot::Save(const Plot* plot, std::string filename) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }
+}
+
+//------------------------------------------------------------------------------
+void Plot::update_pref() {
+    _menu->textfont(flw::PREF_FONT);
+    _menu->textsize(flw::PREF_FONTSIZE);
+    _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    fl_measure("X", _cw, _ch, 0);
 }
 
 }

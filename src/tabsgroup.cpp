@@ -31,18 +31,18 @@ public:
     static Fl_Color             _BOXCOLOR;
     int                         _tw;
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     explicit _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
         _tw = 0;
         copy_label(label);
-        copy_tooltip(label);
+        tooltip("");
     }
 
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void draw() override {
-        fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
+        fl_draw_box(_BOXTYPE, x(), y(), w(), h(), (value() != 0) ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        fl_color(value() ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
+        fl_color((value() != 0) ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };
@@ -327,12 +327,12 @@ const char* TabsGroup::Help() {
 }
 
 //------------------------------------------------------------------------------
-void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::label(std::string label, Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num != -1) {
         _buttons[num]->copy_label(label.c_str());
-        _buttons[num]->copy_tooltip(label.c_str());
+        _buttons[num]->tooltip("");
     }
 }
 

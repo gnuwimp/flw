@@ -438,7 +438,7 @@ public:
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("gtk");
+        flw::theme::load("oxy");
     }
 
     Test win;

@@ -8,73 +8,91 @@
 #include <algorithm>
 
 namespace flw {
-    static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
+
+/***
+ *           _____                   _   __  __                  
+ *          |_   _|                 | | |  \/  |                 
+ *            | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
+ *            | | | '_ \| '_ \| | | | __| |\/| |/ _ \ '_ \| | | |
+ *           _| |_| | | | |_) | |_| | |_| |  | |  __/ | | | |_| |
+ *          |_____|_| |_| .__/ \__,_|\__|_|  |_|\___|_| |_|\__,_|
+ *      ______          | |                                      
+ *     |______|         |_|                                      
+ */
+
+static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
+
+//------------------------------------------------------------------------------
+class _InputMenu : public Fl_Input {
+public:
+
+    bool            show_menu;
+    int             index;
+    StringVector    history;
 
     //--------------------------------------------------------------------------
-    class _InputMenu : public Fl_Input {
-    public:
+    _InputMenu() : Fl_Input(0, 0, 0, 0) {
+        tooltip(_INPUTMENU_TOOLTIP.c_str());
 
-        bool            show_menu;
-        int             index;
-        StringVector    history;
+        index     = -1;
+        show_menu = false;
+    }
 
-        //----------------------------------------------------------------------
-        _InputMenu() : Fl_Input(0, 0, 0, 0) {
-            tooltip(_INPUTMENU_TOOLTIP.c_str());
+    //--------------------------------------------------------------------------
+    int handle(int event) override {
+        if (event == FL_KEYBOARD) {
+            auto key = Fl::event_key();
 
-            index     = -1;
-            show_menu = false;
-        }
-
-        //----------------------------------------------------------------------
-        int handle(int event) override {
-            if (event == FL_KEYBOARD) {
-                auto key = Fl::event_key();
-
-                if (Fl::event_ctrl() != 0 && key == ' ') {
-                    if (history.size() > 0) {
-                        show_menu = true;
-                        do_callback();
-                    }
-
-                    return 1;
+            if (Fl::event_ctrl() != 0 && key == ' ') {
+                if (history.size() > 0) {
+                    show_menu = true;
+                    do_callback();
                 }
-                else if (key == FL_Up && history.size() > 0) {
-                    if (index <= 0) {
-                        value("");
-                        index = -1;
-                    }
-                    else {
-                        index--;
-                        show_menu = false;
-                        value(history[index].c_str());
-                    }
 
-                    return 1;
-                }
-                else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
-                    index++;
-
-                    value(history[index].c_str());
-                    show_menu = false;
-                    return 1;
+                return 1;
+            }
+            else if (key == FL_Up && history.size() > 0) {
+                if (index <= 0) {
+                    value("");
+                    index = -1;
                 }
                 else {
+                    index--;
                     show_menu = false;
+                    value(history[index].c_str());
                 }
+
+                return 1;
             }
+            else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
+                index++;
 
-            return Fl_Input::handle(event);
+                value(history[index].c_str());
+                show_menu = false;
+                return 1;
+            }
+            else {
+                show_menu = false;
+            }
         }
-    };
-}
+
+        return Fl_Input::handle(event);
+    }
+};
+
+/***
+ *      _____                   _   __  __                  
+ *     |_   _|                 | | |  \/  |                 
+ *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
+ *       | | | '_ \| '_ \| | | | __| |\/| |/ _ \ '_ \| | | |
+ *      _| |_| | | | |_) | |_| | |_| |  | |  __/ | | | |_| |
+ *     |_____|_| |_| .__/ \__,_|\__|_|  |_|\___|_| |_|\__,_|
+ *                 | |                                      
+ *                 |_|                                      
+ */
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
 
     _input = new flw::_InputMenu();
@@ -90,7 +108,7 @@ flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::Callback(Fl_Widget* w, void* o) {
+void InputMenu::Callback(Fl_Widget* w, void* o) {
     auto self = static_cast<InputMenu*>(o);
 
     if (w == self->_input) {
@@ -116,19 +134,19 @@ void flw::InputMenu::Callback(Fl_Widget* w, void* o) {
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::clear() {
+void InputMenu::clear() {
     _menu->clear();
     _input->history.clear();
     _input->index = -1;
 }
 
 //------------------------------------------------------------------------------
-flw::StringVector flw::InputMenu::get_history() const {
+flw::StringVector InputMenu::get_history() const {
     return _input->history;
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::insert(std::string string, int max_list_len) {
+void InputMenu::insert(std::string string, int max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);
@@ -154,7 +172,7 @@ void flw::InputMenu::insert(std::string string, int max_list_len) {
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::resize(int X, int Y, int W, int H) {
+void InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (_menu->visible() != 0) {
@@ -168,7 +186,31 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
 }
 
 //------------------------------------------------------------------------------
-void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
+void InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+    labelfont(flw::PREF_FONT);
+    labelsize(flw::PREF_FONTSIZE);
+    _input->labelfont(text_font);
+    _input->labelsize(text_font);
+    _input->textfont(text_font);
+    _input->textsize(text_size);
+    _menu->labelfont(text_font);
+    _menu->labelsize(text_size);
+    _menu->textfont(text_font);
+    _menu->textsize(text_size);
+}
+
+//------------------------------------------------------------------------------
+const char* InputMenu::value() const {
+    return _input->value();
+}
+
+//------------------------------------------------------------------------------
+void InputMenu::value(const char* string) {
+    _input->value(string ? string : "");
+}
+
+//------------------------------------------------------------------------------
+void InputMenu::values(const StringVector& list, bool copy_first_to_input) {
     clear();
     _input->history = list;
 
@@ -183,28 +225,6 @@ void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
     }
 }
 
-//------------------------------------------------------------------------------
-void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
-    labelfont(flw::PREF_FONT);
-    labelsize(flw::PREF_FONTSIZE);
-    _input->labelfont(text_font);
-    _input->labelsize(text_font);
-    _input->textfont(text_font);
-    _input->textsize(text_size);
-    _menu->labelfont(text_font);
-    _menu->labelsize(text_size);
-    _menu->textfont(text_font);
-    _menu->textsize(text_size);
-}
-
-//------------------------------------------------------------------------------
-const char* flw::InputMenu::value() const {
-    return _input->value();
-}
-
-//------------------------------------------------------------------------------
-void flw::InputMenu::value(const char* string) {
-    _input->value(string ? string : "");
-}
+} // flw
 
 // MKALGAM_OFF

@@ -330,7 +330,7 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
 #ifdef DEBUG
     if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
 #endif
-    return (Fl_Menu_Item*) item;
+    return const_cast<Fl_Menu_Item*>(item);
 }
 
 } // menu
@@ -615,8 +615,8 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
 }
 
 //------------------------------------------------------------------------------
-std::string util::remove_browser_format(std::string text) {
-    auto res = text;
+std::string util::remove_browser_format(const char* text) {
+    auto res = std::string((text != nullptr) ? text : "");
     auto f   = res.find_last_of("@");
 
     if (f != std::string::npos) {
@@ -765,24 +765,24 @@ Fl_Widget* util::widget(Fl_Group* group, std::string label) {
  *                             
  */
 
-Fl_Color color::RED     = fl_rgb_color(255, 0, 0);
-Fl_Color color::LIME    = fl_rgb_color(0, 255, 0);
-Fl_Color color::BLUE    = fl_rgb_color(0, 0, 255);
-Fl_Color color::YELLOW  = fl_rgb_color(255, 255, 0);
-Fl_Color color::CYAN    = fl_rgb_color(0, 255, 255);
-Fl_Color color::MAGENTA = fl_rgb_color(255, 0, 255);
-Fl_Color color::SILVER  = fl_rgb_color(192, 192, 192);
-Fl_Color color::GRAY    = fl_rgb_color(128, 128, 128);
-Fl_Color color::MAROON  = fl_rgb_color(128, 0, 0);
-Fl_Color color::OLIVE   = fl_rgb_color(128, 128, 0);
-Fl_Color color::GREEN   = fl_rgb_color(0, 128, 0);
-Fl_Color color::PURPLE  = fl_rgb_color(128, 0, 128);
-Fl_Color color::TEAL    = fl_rgb_color(0, 128, 128);
-Fl_Color color::NAVY    = fl_rgb_color(0, 0, 128);
-Fl_Color color::BROWN   = fl_rgb_color(210, 105, 30);
-Fl_Color color::PINK    = fl_rgb_color(255, 192, 203);
-Fl_Color color::BEIGE   = fl_rgb_color(245, 245, 220);
-Fl_Color color::AZURE   = fl_rgb_color(240, 255, 250);
+Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
+Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
+Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
+Fl_Color color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
+Fl_Color color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
+Fl_Color color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
+Fl_Color color::GOLD             = fl_rgb_color(255, 215,   0);
+Fl_Color color::GRAY             = fl_rgb_color(128, 128, 128);
+Fl_Color color::INDIGO           = fl_rgb_color( 75,   0, 130);
+Fl_Color color::OLIVE            = fl_rgb_color(128, 128,   0);
+Fl_Color color::PINK             = fl_rgb_color(255, 192, 203);
+Fl_Color color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
+Fl_Color color::SIENNA           = fl_rgb_color(160,  82,  45);
+Fl_Color color::SILVER           = fl_rgb_color(192, 192, 192);
+Fl_Color color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
+Fl_Color color::TEAL             = fl_rgb_color(  0, 128, 128);
+Fl_Color color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
+Fl_Color color::VIOLET           = fl_rgb_color(238, 130, 238);
 
 /***
  *      _   _                         
@@ -806,46 +806,47 @@ static int           _SCROLLSIZE  = Fl::scrollbar_size();
 
 //----------------------------------------------------------------------
 // Colors are reset every time a new theme has been selected
-//!!! Colors are same for dark and light for now
 //
-static void _colors(bool dark) {
-    (void) dark;
-
-    color::AZURE   = fl_rgb_color(240, 255, 250);
-    color::BEIGE   = fl_rgb_color(245, 245, 220);
-    color::BLUE    = fl_rgb_color(0, 0, 255);
-    color::BLUE    = fl_rgb_color(0, 0, 255);
-    color::BROWN   = fl_rgb_color(210, 105, 30);
-    color::CYAN    = fl_rgb_color(0, 255, 255);
-    color::GRAY    = fl_rgb_color(128, 128, 128);
-    color::GREEN   = fl_rgb_color(0, 128, 0);
-    color::LIME    = fl_rgb_color(0, 255, 0);
-    color::MAGENTA = fl_rgb_color(255, 0, 255);
-    color::MAROON  = fl_rgb_color(128, 0, 0);
-    color::NAVY    = fl_rgb_color(0, 0, 128);
-    color::OLIVE   = fl_rgb_color(128, 128, 0);
-    color::PINK    = fl_rgb_color(255, 192, 203);
-    color::PURPLE  = fl_rgb_color(128, 0, 128);
-    color::RED     = fl_rgb_color(255, 0, 0);
-    color::SILVER  = fl_rgb_color(192, 192, 192);
-    color::TEAL    = fl_rgb_color(0, 128, 128);
-    color::YELLOW  = fl_rgb_color(255, 255, 0);
-}
-
-//----------------------------------------------------------------------
-static void _make_default_colors_darker() {
-    Fl::set_color(60,    0,  63,   0); // FL_DARK_GREEN
-    Fl::set_color(63,    0, 110,   0); // FL_GREEN
-    Fl::set_color(72,   55,   0,   0); // FL_DARK_RED
-    Fl::set_color(76,   55,  63,   0); // FL_DARK_YELLOW
-    Fl::set_color(88,  110,   0,   0); // FL_RED
-    Fl::set_color(95,  140, 140, 100); // FL_YELLOW
-    Fl::set_color(136,   0,   0,  55); // FL_DARK_BLUE
-    Fl::set_color(140,   0,  63,  55); // FL_DARK_CYAN
-    Fl::set_color(152,  55,   0,  55); // FL_DARK_MAGENTA
-    Fl::set_color(216,   0,   0, 110); // FL_BLUE
-    Fl::set_color(223,   0, 110, 110); // FL_CYAN
-    Fl::set_color(248, 110,   0, 110); // FL_MAGENTA
+static void _additional_colors(bool dark) {
+    color::BEIGE            = fl_rgb_color(245, 245, 220);
+    color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
+    color::CRIMSON          = fl_rgb_color(220,  20,  60);
+    color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
+    color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
+    color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
+    color::GOLD             = fl_rgb_color(255, 215,   0);
+    color::GRAY             = fl_rgb_color(128, 128, 128);
+    color::INDIGO           = fl_rgb_color( 75,   0, 130);
+    color::OLIVE            = fl_rgb_color(128, 128,   0);
+    color::PINK             = fl_rgb_color(255, 192, 203);
+    color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
+    color::SIENNA           = fl_rgb_color(160,  82,  45);
+    color::SILVER           = fl_rgb_color(192, 192, 192);
+    color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
+    color::TEAL             = fl_rgb_color(  0, 128, 128);
+    color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
+    color::VIOLET           = fl_rgb_color(238, 130, 238);
+    
+    if (dark == true) {
+        color::BEIGE            = fl_darker(color::BEIGE);
+        color::CHOCOLATE        = fl_darker(color::CHOCOLATE);
+        color::CRIMSON          = fl_darker(color::CRIMSON);
+        color::DARKOLIVEGREEN   = fl_darker(color::DARKOLIVEGREEN);
+        color::DODGERBLUE       = fl_darker(color::DODGERBLUE);
+        color::FORESTGREEN      = fl_darker(color::FORESTGREEN);
+        color::GOLD             = fl_darker(color::GOLD);
+        color::GRAY             = fl_darker(color::GRAY);
+        color::INDIGO           = fl_darker(color::INDIGO);
+        color::OLIVE            = fl_darker(color::OLIVE);
+        color::PINK             = fl_darker(color::PINK);
+        color::ROYALBLUE        = fl_darker(color::ROYALBLUE);
+        color::SIENNA           = fl_darker(color::SIENNA);
+        color::SILVER           = fl_darker(color::SILVER);
+        color::SLATEGRAY        = fl_darker(color::SLATEGRAY);
+        color::TEAL             = fl_darker(color::TEAL);
+        color::TURQUOISE        = fl_darker(color::TURQUOISE);
+        color::VIOLET           = fl_darker(color::VIOLET);
+    }
 }
 
 //----------------------------------------------------------------------
@@ -853,42 +854,54 @@ static void _blue_colors() {
     Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
     Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   130, 149, 166); // FL_INACTIVE_COLOR
-    Fl::set_color(15,   83, 180, 255); // FL_SELECTION_COLOR
-    Fl::set_color(255, 244, 244, 244); // FL_WHITE
+    Fl::set_color(15,   44, 100, 164); // FL_SELECTION_COLOR
     Fl::background(170, 189, 206);
 }
 
 //----------------------------------------------------------------------
-static void _dark_blue_colors() {
-    Fl::set_color(0,   255, 255, 255); // FL_FOREGROUND_COLOR
+static void _blue_dark_colors() {
+    Fl::set_color(0,   240, 240, 240); // FL_FOREGROUND_COLOR
     Fl::set_color(7,    31,  47,  55); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
-    Fl::set_color(15,   68, 138, 255); // FL_SELECTION_COLOR
+    Fl::set_color(15,   48, 138, 255); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(64, 80, 87);
+    Fl::background(51, 67, 75);
 }
 
 //----------------------------------------------------------------------
 static void _dark_colors() {
     Fl::set_color(0,   240, 240, 240); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    55,  55,  55); // FL_BACKGROUND2_COLOR
+    Fl::set_color(7,    48,  48,  48); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  149,  75,  37); // FL_SELECTION_COLOR
+    Fl::set_color(15,  128, 164, 128); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(85, 85, 85);
-    Fl::background(64, 64, 64);
+    Fl::background(68, 68, 68);
 }
 
 //----------------------------------------------------------------------
 static void _darker_colors() {
-    Fl::set_color(0,   220, 220, 220); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    16,  16,  16); // FL_BACKGROUND2_COLOR
+    Fl::set_color(0,   210, 210, 210); // FL_FOREGROUND_COLOR
     Fl::set_color(7,    28,  28,  28); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  133,  59,  21); // FL_SELECTION_COLOR
+    Fl::set_color(15,  112, 152, 112); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(32, 32, 32);
-    Fl::background(38, 38, 38);
+    Fl::background(48, 48, 48);
+}
+
+//----------------------------------------------------------------------
+static void _make_default_colors_darker() {
+    Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
+    Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
+    Fl::set_color(FL_RED, fl_darker(Fl::get_color(FL_RED)));
+    Fl::set_color(FL_DARK_RED, fl_darker(Fl::get_color(FL_DARK_RED)));
+    Fl::set_color(FL_YELLOW, fl_darker(Fl::get_color(FL_YELLOW)));
+    Fl::set_color(FL_DARK_YELLOW, fl_darker(Fl::get_color(FL_DARK_YELLOW)));
+    Fl::set_color(FL_BLUE, fl_darker(Fl::get_color(FL_BLUE)));
+    Fl::set_color(FL_DARK_BLUE, fl_darker(Fl::get_color(FL_DARK_BLUE)));
+    Fl::set_color(FL_CYAN, fl_darker(Fl::get_color(FL_CYAN)));
+    Fl::set_color(FL_DARK_CYAN, fl_darker(Fl::get_color(FL_DARK_CYAN)));
+    Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
+    Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
 }
 
 //----------------------------------------------------------------------
@@ -896,8 +909,7 @@ static void _tan_colors() {
     Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
     Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  255, 160,  63); // FL_SELECTION_COLOR
-    Fl::set_color(255, 244, 244, 244); // FL_WHITE
+    Fl::set_color(15,  164, 100,  44); // FL_SELECTION_COLOR
     Fl::background(206, 202, 187);
 }
 
@@ -929,7 +941,7 @@ static void _save_colors() {
 void _load_default() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("none");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
@@ -937,12 +949,165 @@ void _load_default() {
 }
 
 //------------------------------------------------------------------------------
+void _load_gleam() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_blue_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_blue_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 112, 112, 112);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_darker_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 96, 96, 96);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gleam_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_blue_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_blue_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 112, 112, 112);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    Fl::scheme("gtk+");
+    theme::_make_default_colors_darker();
+    theme::_darker_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 96, 96, 96);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
+    _IS_DARK = true;
+}
+
+//------------------------------------------------------------------------------
+void _load_gtk_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
+    _IS_DARK = false;
+}
+
+//------------------------------------------------------------------------------
 void _load_oxy() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("oxy");
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
     _IS_DARK = false;
@@ -953,7 +1118,7 @@ void _load_oxy_blue() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_blue_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
@@ -965,7 +1130,7 @@ void _load_oxy_tan() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_tan_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
@@ -973,167 +1138,10 @@ void _load_oxy_tan() {
 }
 
 //------------------------------------------------------------------------------
-void _load_gleam() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_colors(false);
-    Fl::scheme("gleam");
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 125, 125, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_darker() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_darker_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 125, 125, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_dark_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_blue_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 101, 117, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_colors(false);
-    Fl::scheme("gtk+");
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 185, 185, 185);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_darker() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_darker_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 125, 125, 125);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_dark_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_blue_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 161, 177, 185);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
 void _load_plastic() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_colors(false);
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    theme::_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
@@ -1141,11 +1149,11 @@ void _load_plastic() {
 }
 
 //------------------------------------------------------------------------------
-void _load_blue_plastic() {
+void _load_plastic_blue() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_blue_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
@@ -1153,11 +1161,11 @@ void _load_blue_plastic() {
 }
 
 //------------------------------------------------------------------------------
-void _load_tan_plastic() {
+void _load_plastic_tan() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_tan_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
@@ -1218,7 +1226,7 @@ bool theme::load(std::string name) {
         theme::_load_gleam_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE]) {
-        theme::_load_gleam_dark_blue();
+        theme::_load_gleam_blue_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK]) {
         theme::_load_gleam_dark();
@@ -1236,7 +1244,7 @@ bool theme::load(std::string name) {
         theme::_load_gtk_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE]) {
-        theme::_load_gtk_dark_blue();
+        theme::_load_gtk_blue_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
         theme::_load_gtk_dark();
@@ -1251,10 +1259,10 @@ bool theme::load(std::string name) {
         theme::_load_plastic();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE]) {
-        theme::_load_blue_plastic();
+        theme::_load_plastic_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN]) {
-        theme::_load_tan_plastic();
+        theme::_load_plastic_tan();
     }
     else {
         return false;

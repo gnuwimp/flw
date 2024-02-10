@@ -11,7 +11,7 @@
 
 namespace flw {
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A static text display widget with line based text coloring
 // LogDisplay will manage text and style buffers
 // Search text with ctrl + 'f', F3, shift + F3

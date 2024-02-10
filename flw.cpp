@@ -2593,19 +2593,19 @@ void _load_oxy_blue();
 void _load_oxy_tan();
 void _load_gleam();
 void _load_gleam_blue();
+void _load_gleam_blue_dark();
 void _load_gleam_dark();
 void _load_gleam_darker();
-void _load_gleam_dark_blue();
 void _load_gleam_tan();
 void _load_gtk();
 void _load_gtk_blue();
+void _load_gtk_blue_dark();
 void _load_gtk_dark();
 void _load_gtk_darker();
-void _load_gtk_dark_blue();
 void _load_gtk_tan();
 void _load_plastic();
-void _load_blue_plastic();
-void _load_tan_plastic();
+void _load_plastic_blue();
+void _load_plastic_tan();
 void _scrollbar();
 }
 namespace dlg {
@@ -3236,7 +3236,7 @@ public:
                 theme::_load_gleam_blue();
             }
             else if (row == theme::THEME_GLEAM_DARK_BLUE) {
-                theme::_load_gleam_dark_blue();
+                theme::_load_gleam_blue_dark();
             }
             else if (row == theme::THEME_GLEAM_DARK) {
                 theme::_load_gleam_dark();
@@ -3254,7 +3254,7 @@ public:
                 theme::_load_gtk_blue();
             }
             else if (row == theme::THEME_GTK_DARK_BLUE) {
-                theme::_load_gtk_dark_blue();
+                theme::_load_gtk_blue_dark();
             }
             else if (row == theme::THEME_GTK_DARK) {
                 theme::_load_gtk_dark();
@@ -3269,10 +3269,10 @@ public:
                 theme::_load_plastic();
             }
             else if (row == theme::THEME_PLASTIC_BLUE) {
-                theme::_load_blue_plastic();
+                theme::_load_plastic_blue();
             }
             else if (row == theme::THEME_PLASTIC_TAN) {
-                theme::_load_tan_plastic();
+                theme::_load_plastic_tan();
             }
             else {
                 theme::_load_default();
@@ -3952,7 +3952,7 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
 #ifdef DEBUG
     if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
 #endif
-    return (Fl_Menu_Item*) item;
+    return const_cast<Fl_Menu_Item*>(item);
 }
 }
 void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
@@ -4150,8 +4150,8 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
 }
-std::string util::remove_browser_format(std::string text) {
-    auto res = text;
+std::string util::remove_browser_format(const char* text) {
+    auto res = std::string((text != nullptr) ? text : "");
     auto f   = res.find_last_of("@");
     if (f != std::string::npos) {
         auto tmp = res.substr(f + 1);
@@ -4252,24 +4252,24 @@ Fl_Widget* util::widget(Fl_Group* group, std::string label) {
     }
     return nullptr;
 }
-Fl_Color color::RED     = fl_rgb_color(255, 0, 0);
-Fl_Color color::LIME    = fl_rgb_color(0, 255, 0);
-Fl_Color color::BLUE    = fl_rgb_color(0, 0, 255);
-Fl_Color color::YELLOW  = fl_rgb_color(255, 255, 0);
-Fl_Color color::CYAN    = fl_rgb_color(0, 255, 255);
-Fl_Color color::MAGENTA = fl_rgb_color(255, 0, 255);
-Fl_Color color::SILVER  = fl_rgb_color(192, 192, 192);
-Fl_Color color::GRAY    = fl_rgb_color(128, 128, 128);
-Fl_Color color::MAROON  = fl_rgb_color(128, 0, 0);
-Fl_Color color::OLIVE   = fl_rgb_color(128, 128, 0);
-Fl_Color color::GREEN   = fl_rgb_color(0, 128, 0);
-Fl_Color color::PURPLE  = fl_rgb_color(128, 0, 128);
-Fl_Color color::TEAL    = fl_rgb_color(0, 128, 128);
-Fl_Color color::NAVY    = fl_rgb_color(0, 0, 128);
-Fl_Color color::BROWN   = fl_rgb_color(210, 105, 30);
-Fl_Color color::PINK    = fl_rgb_color(255, 192, 203);
-Fl_Color color::BEIGE   = fl_rgb_color(245, 245, 220);
-Fl_Color color::AZURE   = fl_rgb_color(240, 255, 250);
+Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
+Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
+Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
+Fl_Color color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
+Fl_Color color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
+Fl_Color color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
+Fl_Color color::GOLD             = fl_rgb_color(255, 215,   0);
+Fl_Color color::GRAY             = fl_rgb_color(128, 128, 128);
+Fl_Color color::INDIGO           = fl_rgb_color( 75,   0, 130);
+Fl_Color color::OLIVE            = fl_rgb_color(128, 128,   0);
+Fl_Color color::PINK             = fl_rgb_color(255, 192, 203);
+Fl_Color color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
+Fl_Color color::SIENNA           = fl_rgb_color(160,  82,  45);
+Fl_Color color::SILVER           = fl_rgb_color(192, 192, 192);
+Fl_Color color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
+Fl_Color color::TEAL             = fl_rgb_color(  0, 128, 128);
+Fl_Color color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
+Fl_Color color::VIOLET           = fl_rgb_color(238, 130, 238);
 namespace theme {
 static unsigned char _OLD_R[256]  = { 0 };
 static unsigned char _OLD_G[256]  = { 0 };
@@ -4277,83 +4277,96 @@ static unsigned char _OLD_B[256]  = { 0 };
 static bool          _IS_DARK     = false;
 static bool          _SAVED_COLOR = false;
 static int           _SCROLLSIZE  = Fl::scrollbar_size();
-static void _colors(bool dark) {
-    (void) dark;
-    color::AZURE   = fl_rgb_color(240, 255, 250);
-    color::BEIGE   = fl_rgb_color(245, 245, 220);
-    color::BLUE    = fl_rgb_color(0, 0, 255);
-    color::BLUE    = fl_rgb_color(0, 0, 255);
-    color::BROWN   = fl_rgb_color(210, 105, 30);
-    color::CYAN    = fl_rgb_color(0, 255, 255);
-    color::GRAY    = fl_rgb_color(128, 128, 128);
-    color::GREEN   = fl_rgb_color(0, 128, 0);
-    color::LIME    = fl_rgb_color(0, 255, 0);
-    color::MAGENTA = fl_rgb_color(255, 0, 255);
-    color::MAROON  = fl_rgb_color(128, 0, 0);
-    color::NAVY    = fl_rgb_color(0, 0, 128);
-    color::OLIVE   = fl_rgb_color(128, 128, 0);
-    color::PINK    = fl_rgb_color(255, 192, 203);
-    color::PURPLE  = fl_rgb_color(128, 0, 128);
-    color::RED     = fl_rgb_color(255, 0, 0);
-    color::SILVER  = fl_rgb_color(192, 192, 192);
-    color::TEAL    = fl_rgb_color(0, 128, 128);
-    color::YELLOW  = fl_rgb_color(255, 255, 0);
-}
-static void _make_default_colors_darker() {
-    Fl::set_color(60,    0,  63,   0);
-    Fl::set_color(63,    0, 110,   0);
-    Fl::set_color(72,   55,   0,   0);
-    Fl::set_color(76,   55,  63,   0);
-    Fl::set_color(88,  110,   0,   0);
-    Fl::set_color(95,  140, 140, 100);
-    Fl::set_color(136,   0,   0,  55);
-    Fl::set_color(140,   0,  63,  55);
-    Fl::set_color(152,  55,   0,  55);
-    Fl::set_color(216,   0,   0, 110);
-    Fl::set_color(223,   0, 110, 110);
-    Fl::set_color(248, 110,   0, 110);
+static void _additional_colors(bool dark) {
+    color::BEIGE            = fl_rgb_color(245, 245, 220);
+    color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
+    color::CRIMSON          = fl_rgb_color(220,  20,  60);
+    color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
+    color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
+    color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
+    color::GOLD             = fl_rgb_color(255, 215,   0);
+    color::GRAY             = fl_rgb_color(128, 128, 128);
+    color::INDIGO           = fl_rgb_color( 75,   0, 130);
+    color::OLIVE            = fl_rgb_color(128, 128,   0);
+    color::PINK             = fl_rgb_color(255, 192, 203);
+    color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
+    color::SIENNA           = fl_rgb_color(160,  82,  45);
+    color::SILVER           = fl_rgb_color(192, 192, 192);
+    color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
+    color::TEAL             = fl_rgb_color(  0, 128, 128);
+    color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
+    color::VIOLET           = fl_rgb_color(238, 130, 238);
+    if (dark == true) {
+        color::BEIGE            = fl_darker(color::BEIGE);
+        color::CHOCOLATE        = fl_darker(color::CHOCOLATE);
+        color::CRIMSON          = fl_darker(color::CRIMSON);
+        color::DARKOLIVEGREEN   = fl_darker(color::DARKOLIVEGREEN);
+        color::DODGERBLUE       = fl_darker(color::DODGERBLUE);
+        color::FORESTGREEN      = fl_darker(color::FORESTGREEN);
+        color::GOLD             = fl_darker(color::GOLD);
+        color::GRAY             = fl_darker(color::GRAY);
+        color::INDIGO           = fl_darker(color::INDIGO);
+        color::OLIVE            = fl_darker(color::OLIVE);
+        color::PINK             = fl_darker(color::PINK);
+        color::ROYALBLUE        = fl_darker(color::ROYALBLUE);
+        color::SIENNA           = fl_darker(color::SIENNA);
+        color::SILVER           = fl_darker(color::SILVER);
+        color::SLATEGRAY        = fl_darker(color::SLATEGRAY);
+        color::TEAL             = fl_darker(color::TEAL);
+        color::TURQUOISE        = fl_darker(color::TURQUOISE);
+        color::VIOLET           = fl_darker(color::VIOLET);
+    }
 }
 static void _blue_colors() {
     Fl::set_color(0,     0,   0,   0);
     Fl::set_color(7,   255, 255, 255);
     Fl::set_color(8,   130, 149, 166);
-    Fl::set_color(15,   83, 180, 255);
-    Fl::set_color(255, 244, 244, 244);
+    Fl::set_color(15,   44, 100, 164);
     Fl::background(170, 189, 206);
 }
-static void _dark_blue_colors() {
-    Fl::set_color(0,   255, 255, 255);
+static void _blue_dark_colors() {
+    Fl::set_color(0,   240, 240, 240);
     Fl::set_color(7,    31,  47,  55);
     Fl::set_color(8,   108, 113, 125);
-    Fl::set_color(15,   68, 138, 255);
+    Fl::set_color(15,   48, 138, 255);
     Fl::set_color(56,    0,   0,   0);
-    Fl::background(64, 80, 87);
+    Fl::background(51, 67, 75);
 }
 static void _dark_colors() {
     Fl::set_color(0,   240, 240, 240);
-    Fl::set_color(7,    55,  55,  55);
+    Fl::set_color(7,    48,  48,  48);
     Fl::set_color(8,   100, 100, 100);
-    Fl::set_color(15,  149,  75,  37);
+    Fl::set_color(15,  128, 164, 128);
     Fl::set_color(56,    0,   0,   0);
-    Fl::background(85, 85, 85);
-    Fl::background(64, 64, 64);
+    Fl::background(68, 68, 68);
 }
 static void _darker_colors() {
-    Fl::set_color(0,   220, 220, 220);
-    Fl::set_color(7,    16,  16,  16);
+    Fl::set_color(0,   210, 210, 210);
     Fl::set_color(7,    28,  28,  28);
     Fl::set_color(8,   100, 100, 100);
-    Fl::set_color(15,  133,  59,  21);
+    Fl::set_color(15,  112, 152, 112);
     Fl::set_color(56,    0,   0,   0);
-    Fl::background(32, 32, 32);
-    Fl::background(38, 38, 38);
+    Fl::background(48, 48, 48);
+}
+static void _make_default_colors_darker() {
+    Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
+    Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
+    Fl::set_color(FL_RED, fl_darker(Fl::get_color(FL_RED)));
+    Fl::set_color(FL_DARK_RED, fl_darker(Fl::get_color(FL_DARK_RED)));
+    Fl::set_color(FL_YELLOW, fl_darker(Fl::get_color(FL_YELLOW)));
+    Fl::set_color(FL_DARK_YELLOW, fl_darker(Fl::get_color(FL_DARK_YELLOW)));
+    Fl::set_color(FL_BLUE, fl_darker(Fl::get_color(FL_BLUE)));
+    Fl::set_color(FL_DARK_BLUE, fl_darker(Fl::get_color(FL_DARK_BLUE)));
+    Fl::set_color(FL_CYAN, fl_darker(Fl::get_color(FL_CYAN)));
+    Fl::set_color(FL_DARK_CYAN, fl_darker(Fl::get_color(FL_DARK_CYAN)));
+    Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
+    Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
 }
 static void _tan_colors() {
     Fl::set_color(0,     0,   0,   0);
     Fl::set_color(7,   255, 255, 255);
     Fl::set_color(8,    85,  85,  85);
-    Fl::set_color(15,  255, 160,  63);
-    Fl::set_color(255, 244, 244, 244);
+    Fl::set_color(15,  164, 100,  44);
     Fl::background(206, 202, 187);
 }
 static void _restore_colors() {
@@ -4378,18 +4391,147 @@ static void _save_colors() {
 void _load_default() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("none");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
     _IS_DARK = false;
 }
+void _load_gleam() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
+    _IS_DARK = false;
+}
+void _load_gleam_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
+    _IS_DARK = false;
+}
+void _load_gleam_blue_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_blue_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
+    _IS_DARK = true;
+}
+void _load_gleam_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 112, 112, 112);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
+    _IS_DARK = true;
+}
+void _load_gleam_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_darker_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 96, 96, 96);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
+    _IS_DARK = true;
+}
+void _load_gleam_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
+    _IS_DARK = false;
+}
+void _load_gtk() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
+    _IS_DARK = false;
+}
+void _load_gtk_blue() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_blue_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
+    _IS_DARK = false;
+}
+void _load_gtk_blue_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_blue_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
+    _IS_DARK = true;
+}
+void _load_gtk_dark() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_make_default_colors_darker();
+    theme::_dark_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 112, 112, 112);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
+    _IS_DARK = true;
+}
+void _load_gtk_darker() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    Fl::scheme("gtk+");
+    theme::_make_default_colors_darker();
+    theme::_darker_colors();
+    theme::_additional_colors(true);
+    Fl::set_color(255, 96, 96, 96);
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
+    _IS_DARK = true;
+}
+void _load_gtk_tan() {
+    theme::_save_colors();
+    theme::_restore_colors();
+    theme::_tan_colors();
+    theme::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
+    _IS_DARK = false;
+}
 void _load_oxy() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("oxy");
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
     _IS_DARK = false;
@@ -4398,7 +4540,7 @@ void _load_oxy_blue() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_blue_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
@@ -4408,169 +4550,36 @@ void _load_oxy_tan() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_tan_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
     _IS_DARK = false;
 }
-void _load_gleam() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_colors(false);
-    Fl::scheme("gleam");
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
-    _IS_DARK = false;
-}
-void _load_gleam_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
-    _IS_DARK = false;
-}
-void _load_gleam_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 125, 125, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
-    _IS_DARK = true;
-}
-void _load_gleam_darker() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_darker_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 125, 125, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
-    _IS_DARK = true;
-}
-void _load_gleam_dark_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_blue_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 101, 117, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
-    _IS_DARK = true;
-}
-void _load_gleam_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
-    _IS_DARK = false;
-}
-void _load_gtk() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_colors(false);
-    Fl::scheme("gtk+");
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
-    _IS_DARK = false;
-}
-void _load_gtk_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
-    _IS_DARK = false;
-}
-void _load_gtk_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 185, 185, 185);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
-    _IS_DARK = true;
-}
-void _load_gtk_darker() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_darker_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 125, 125, 125);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
-    _IS_DARK = true;
-}
-void _load_gtk_dark_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_dark_blue_colors();
-    theme::_make_default_colors_darker();
-    theme::_colors(true);
-    Fl::set_color(255, 161, 177, 185);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
-    _IS_DARK = true;
-}
-void _load_gtk_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
-    _IS_DARK = false;
-}
 void _load_plastic() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_colors(false);
-    Fl::set_color(FL_SELECTION_COLOR, 0, 120, 200);
+    theme::_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
     _IS_DARK = false;
 }
-void _load_blue_plastic() {
+void _load_plastic_blue() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_blue_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
     _IS_DARK = false;
 }
-void _load_tan_plastic() {
+void _load_plastic_tan() {
     theme::_save_colors();
     theme::_restore_colors();
     theme::_tan_colors();
-    theme::_colors(false);
+    theme::_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
@@ -4623,7 +4632,7 @@ bool theme::load(std::string name) {
         theme::_load_gleam_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE]) {
-        theme::_load_gleam_dark_blue();
+        theme::_load_gleam_blue_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK]) {
         theme::_load_gleam_dark();
@@ -4641,7 +4650,7 @@ bool theme::load(std::string name) {
         theme::_load_gtk_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE]) {
-        theme::_load_gtk_dark_blue();
+        theme::_load_gtk_blue_dark();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
         theme::_load_gtk_dark();
@@ -4656,10 +4665,10 @@ bool theme::load(std::string name) {
         theme::_load_plastic();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE]) {
-        theme::_load_blue_plastic();
+        theme::_load_plastic_blue();
     }
     else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN]) {
-        theme::_load_tan_plastic();
+        theme::_load_plastic_tan();
     }
     else {
         return false;
@@ -5137,54 +5146,53 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
 }
 #include <algorithm>
 namespace flw {
-    static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
-    class _InputMenu : public Fl_Input {
-    public:
-        bool            show_menu;
-        int             index;
-        StringVector    history;
-        _InputMenu() : Fl_Input(0, 0, 0, 0) {
-            tooltip(_INPUTMENU_TOOLTIP.c_str());
-            index     = -1;
-            show_menu = false;
-        }
-        int handle(int event) override {
-            if (event == FL_KEYBOARD) {
-                auto key = Fl::event_key();
-                if (Fl::event_ctrl() != 0 && key == ' ') {
-                    if (history.size() > 0) {
-                        show_menu = true;
-                        do_callback();
-                    }
-                    return 1;
+static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
+class _InputMenu : public Fl_Input {
+public:
+    bool            show_menu;
+    int             index;
+    StringVector    history;
+    _InputMenu() : Fl_Input(0, 0, 0, 0) {
+        tooltip(_INPUTMENU_TOOLTIP.c_str());
+        index     = -1;
+        show_menu = false;
+    }
+    int handle(int event) override {
+        if (event == FL_KEYBOARD) {
+            auto key = Fl::event_key();
+            if (Fl::event_ctrl() != 0 && key == ' ') {
+                if (history.size() > 0) {
+                    show_menu = true;
+                    do_callback();
                 }
-                else if (key == FL_Up && history.size() > 0) {
-                    if (index <= 0) {
-                        value("");
-                        index = -1;
-                    }
-                    else {
-                        index--;
-                        show_menu = false;
-                        value(history[index].c_str());
-                    }
-                    return 1;
-                }
-                else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
-                    index++;
-                    value(history[index].c_str());
-                    show_menu = false;
-                    return 1;
+                return 1;
+            }
+            else if (key == FL_Up && history.size() > 0) {
+                if (index <= 0) {
+                    value("");
+                    index = -1;
                 }
                 else {
+                    index--;
                     show_menu = false;
+                    value(history[index].c_str());
                 }
+                return 1;
             }
-            return Fl_Input::handle(event);
+            else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
+                index++;
+                value(history[index].c_str());
+                show_menu = false;
+                return 1;
+            }
+            else {
+                show_menu = false;
+            }
         }
-    };
-}
-flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+        return Fl_Input::handle(event);
+    }
+};
+InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     _input = new flw::_InputMenu();
     _menu  = new Fl_Menu_Button(0, 0, 0, 0);
@@ -5195,7 +5203,7 @@ flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(
     _menu->callback(InputMenu::Callback, this);
     update_pref();
 }
-void flw::InputMenu::Callback(Fl_Widget* w, void* o) {
+void InputMenu::Callback(Fl_Widget* w, void* o) {
     auto self = static_cast<InputMenu*>(o);
     if (w == self->_input) {
         if (self->_input->show_menu) {
@@ -5216,15 +5224,15 @@ void flw::InputMenu::Callback(Fl_Widget* w, void* o) {
         self->_input->take_focus();
     }
 }
-void flw::InputMenu::clear() {
+void InputMenu::clear() {
     _menu->clear();
     _input->history.clear();
     _input->index = -1;
 }
-flw::StringVector flw::InputMenu::get_history() const {
+flw::StringVector InputMenu::get_history() const {
     return _input->history;
 }
-void flw::InputMenu::insert(std::string string, int max_list_len) {
+void InputMenu::insert(std::string string, int max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);
@@ -5243,7 +5251,7 @@ void flw::InputMenu::insert(std::string string, int max_list_len) {
     _input->value(string.c_str());
     _input->insert_position(string.length(), 0);
 }
-void flw::InputMenu::resize(int X, int Y, int W, int H) {
+void InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
     if (_menu->visible() != 0) {
         auto mw = (int) flw::PREF_FONTSIZE;
@@ -5254,19 +5262,7 @@ void flw::InputMenu::resize(int X, int Y, int W, int H) {
         _input->resize(X, Y, W, H);
     }
 }
-void flw::InputMenu::set(const StringVector& list, bool copy_first_to_input) {
-    clear();
-    _input->history = list;
-    for (const auto& s : _input->history) {
-        _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
-    }
-    if (list.size() > 0 && copy_first_to_input == true) {
-        auto s = list.front();
-        _input->value(s.c_str());
-        _input->insert_position(s.length(), 0);
-    }
-}
-void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+void InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
     _input->labelfont(text_font);
@@ -5278,11 +5274,24 @@ void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     _menu->textfont(text_font);
     _menu->textsize(text_size);
 }
-const char* flw::InputMenu::value() const {
+const char* InputMenu::value() const {
     return _input->value();
 }
-void flw::InputMenu::value(const char* string) {
+void InputMenu::value(const char* string) {
     _input->value(string ? string : "");
+}
+void InputMenu::values(const StringVector& list, bool copy_first_to_input) {
+    clear();
+    _input->history = list;
+    for (const auto& s : _input->history) {
+        _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
+    }
+    if (list.size() > 0 && copy_first_to_input == true) {
+        auto s = list.front();
+        _input->value(s.c_str());
+        _input->insert_position(s.length(), 0);
+    }
+}
 }
 #include <cstring>
 #include <cmath>
@@ -7174,6 +7183,7 @@ void PlotScale::reset_min_max() {
     min = min2 = Plot::MAX;
     max = max2 = Plot::MIN;
 }
+#define FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); plot->clear(); return false; }
 Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
@@ -7253,6 +7263,21 @@ void Plot::_calc_min_max() {
     _y->min2 = _y->min;
     _y->max2 = _y->max;
 }
+void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
+    auto self = static_cast<const Plot*>(plot_object);
+    self->debug();
+}
+void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
+    auto self = static_cast<Plot*>(plot_object);
+    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
+}
+void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
+    auto self = static_cast<Plot*>(plot_object);
+    self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
+    self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
+    self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
+    self->redraw();
+}
 void Plot::clear() {
     delete _x;
     delete _y;
@@ -7271,6 +7296,7 @@ void Plot::clear() {
         _lines[f]->clear();
     }
     selection_color(FL_FOREGROUND_COLOR);
+    update_pref();
 }
 void Plot::_create_tooltip(bool ctrl) {
     int         X   = Fl::event_x();
@@ -7379,7 +7405,7 @@ void Plot::_draw_labels() {
         fl_draw (_x->label.c_str(), _area->x, y() + h() - _ch, _area->w, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
     }
     if (_y->label != "") {
-        auto y = _area->y + (_area->h / 2) + (_y->label.length() * _cw / 2);
+        auto y = (int) (_area->y + (_area->h / 2) + (_y->label.length() / 2.0 * _cw));
         fl_color(_y->color);
         fl_draw (90, _y->label.c_str(), x() + _ch, y);
     }
@@ -7710,56 +7736,6 @@ void Plot::label_colors(Fl_Color x, Fl_Color y) {
     _x->color = x;
     _y->color = y;
 }
-void Plot::resize(int X, int Y, int W, int H) {
-    Fl_Widget::resize(X, Y, W, H);
-    if (_calc == false && _w == W && _h == H) {
-        return;
-    }
-    if (_size == 0) {
-        return;
-    }
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
-    _cw = 0;
-    _ch = 0;
-    fl_measure("X", _cw, _ch, 0);
-    if (_calc == true) {
-        _calc_min_max();
-        _x->calc(W - flw::PREF_FIXED_FONTSIZE * 6);
-        _y->calc(H - flw::PREF_FIXED_FONTSIZE * 6);
-        _x->measure_text(_cw);
-        _y->measure_text(_cw);
-    }
-    _area->x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y->text + ((_y->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
-    _area->y = Y + flw::PREF_FIXED_FONTSIZE;
-    _area->w = W - (_area->x - X) - flw::PREF_FIXED_FONTSIZE * 2;
-    _area->h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
-    _x->calc(_area->w - 1);
-    _y->calc(_area->h - 1);
-    _calc = false;
-    _w    = W;
-    _h    = H;
-}
-void Plot::update_pref() {
-    _menu->textfont(flw::PREF_FONT);
-    _menu->textsize(flw::PREF_FONTSIZE);
-}
-#define FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); plot->clear(); return false; }
-void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<const Plot*>(plot_object);
-    self->debug();
-}
-void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
-    flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
-}
-void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
-    self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
-    self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
-    self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
-    self->redraw();
-}
 bool Plot::Load(Plot* plot, std::string filename) {
     plot->clear();
     plot->redraw();
@@ -7847,6 +7823,31 @@ bool Plot::Load(Plot* plot, std::string filename) {
     plot->layout();
     return true;
 }
+void Plot::resize(int X, int Y, int W, int H) {
+    Fl_Widget::resize(X, Y, W, H);
+    if (_calc == false && _w == W && _h == H) {
+        return;
+    }
+    else if (_size == 0) {
+        return;
+    }
+    if (_calc == true) {
+        _calc_min_max();
+        _x->calc(W - flw::PREF_FIXED_FONTSIZE * 6);
+        _y->calc(H - flw::PREF_FIXED_FONTSIZE * 6);
+        _x->measure_text(_cw);
+        _y->measure_text(_cw);
+    }
+    _area->x = X + (flw::PREF_FIXED_FONTSIZE * 2) + _y->text + ((_y->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _area->y = Y + flw::PREF_FIXED_FONTSIZE;
+    _area->w = W - (_area->x - X) - flw::PREF_FIXED_FONTSIZE * 2;
+    _area->h = H - (flw::PREF_FIXED_FONTSIZE * 3) - ((_x->label != "") ? flw::PREF_FIXED_FONTSIZE : 0);
+    _x->calc(_area->w - 1);
+    _y->calc(_area->h - 1);
+    _calc = false;
+    _w    = W;
+    _h    = H;
+}
 bool Plot::Save(const Plot* plot, std::string filename) {
     auto wc  = WaitCursor();
     auto jsb = JSB();
@@ -7902,6 +7903,13 @@ bool Plot::Save(const Plot* plot, std::string filename) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }
+}
+void Plot::update_pref() {
+    _menu->textfont(flw::PREF_FONT);
+    _menu->textsize(flw::PREF_FONTSIZE);
+    _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    fl_measure("X", _cw, _ch, 0);
 }
 }
 namespace flw {
@@ -8279,233 +8287,232 @@ void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION dire
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
-    class _TableDisplay_Scrollbar : public Fl_Scrollbar {
-    public:
-        _TableDisplay_Scrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
+class _TableDisplayScrollbar : public Fl_Scrollbar {
+public:
+    _TableDisplayScrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
+    }
+    int handle(int event) override {
+        if (event == FL_FOCUS ||
+            event == FL_KEYUP ||
+            event == FL_KEYDOWN ||
+            event == FL_SHORTCUT) {
+            return 0;
         }
-        int handle(int event) override {
-            if (event == FL_FOCUS ||
-                event == FL_KEYUP ||
-                event == FL_KEYDOWN ||
-                event == FL_SHORTCUT) {
-                return 0;
-            }
-            return Fl_Scrollbar::handle(event);
+        return Fl_Scrollbar::handle(event);
+    }
+};
+class _TableDisplayCellDialog : public Fl_Double_Window {
+    Fl_Int_Input*                   _row;
+    Fl_Int_Input*                   _col;
+    bool                            _ret;
+public:
+    _TableDisplayCellDialog(int row, int col) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+        end();
+        _row = new Fl_Int_Input(0, 0, 0, 0, "Row:");
+        _col = new Fl_Int_Input(0, 0, 0, 0, "Column:");
+        _ret = false;
+        add(_row);
+        add(_col);
+        _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
+        _row->callback(_TableDisplayCellDialog::Callback, this);
+        _row->labelsize(flw::PREF_FONTSIZE);
+        _row->textfont(flw::PREF_FIXED_FONT);
+        _row->textsize(flw::PREF_FONTSIZE);
+        _row->when(FL_WHEN_ENTER_KEY_ALWAYS);
+        _col->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
+        _col->callback(_TableDisplayCellDialog::Callback, this);
+        _col->labelsize(flw::PREF_FONTSIZE);
+        _col->textfont(flw::PREF_FIXED_FONT);
+        _col->textsize(flw::PREF_FONTSIZE);
+        _col->when(FL_WHEN_ENTER_KEY_ALWAYS);
+        char b[100];
+        sprintf(b, "%d", row > 0 ? row : 1);
+        _row->value(b);
+        sprintf(b, "%d", col > 0 ? col : 1);
+        _col->value(b);
+        callback(_TableDisplayCellDialog::Callback, this);
+        set_modal();
+        resizable(this);
+        resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto dlg = static_cast<_TableDisplayCellDialog*>(o);
+        if (w == dlg) {
+            dlg->hide();
         }
-    };
-    class _TableDisplayCellDialog : public Fl_Double_Window {
-        Fl_Int_Input*                   _row;
-        Fl_Int_Input*                   _col;
-        bool                            _ret;
-    public:
-        _TableDisplayCellDialog(int row, int col) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
-            end();
-            _row = new Fl_Int_Input(0, 0, 0, 0, "Row:");
-            _col = new Fl_Int_Input(0, 0, 0, 0, "Column:");
-            _ret = false;
-            add(_row);
-            add(_col);
-            _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-            _row->callback(_TableDisplayCellDialog::Callback, this);
-            _row->labelsize(flw::PREF_FONTSIZE);
-            _row->textfont(flw::PREF_FIXED_FONT);
-            _row->textsize(flw::PREF_FONTSIZE);
-            _row->when(FL_WHEN_ENTER_KEY_ALWAYS);
-            _col->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-            _col->callback(_TableDisplayCellDialog::Callback, this);
-            _col->labelsize(flw::PREF_FONTSIZE);
-            _col->textfont(flw::PREF_FIXED_FONT);
-            _col->textsize(flw::PREF_FONTSIZE);
-            _col->when(FL_WHEN_ENTER_KEY_ALWAYS);
-            char b[100];
-            sprintf(b, "%d", row > 0 ? row : 1);
-            _row->value(b);
-            sprintf(b, "%d", col > 0 ? col : 1);
-            _col->value(b);
-            callback(_TableDisplayCellDialog::Callback, this);
-            set_modal();
-            resizable(this);
-            resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
+        else if (w == dlg->_row) {
+            dlg->_ret = true;
+            dlg->hide();
         }
-        static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = static_cast<_TableDisplayCellDialog*>(o);
-            if (w == dlg) {
-                dlg->hide();
-            }
-            else if (w == dlg->_row) {
-                dlg->_ret = true;
-                dlg->hide();
-            }
-            else if (w == dlg->_col) {
-                dlg->_ret = true;
-                dlg->hide();
-            }
+        else if (w == dlg->_col) {
+            dlg->_ret = true;
+            dlg->hide();
         }
-        int col() const {
-            return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
+    }
+    int col() const {
+        return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
+    }
+    void resize(int X, int Y, int W, int H) {
+        int fs = flw::PREF_FONTSIZE / 2;
+        Fl_Double_Window::resize(X, Y, W, H);
+        _row->resize(fs,  fs * 3,   W - fs * 2,  fs * 4);
+        _col->resize(fs,  fs * 10,  W - fs * 2,  fs * 4);
+    }
+    int row() const {
+        return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
+    }
+    bool run(Fl_Window* parent) {
+        flw::util::center_window(this, parent);
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
         }
-        void resize(int X, int Y, int W, int H) {
-            int fs = flw::PREF_FONTSIZE / 2;
-            Fl_Double_Window::resize(X, Y, W, H);
-            _row->resize(fs,  fs * 3,   W - fs * 2,  fs * 4);
-            _col->resize(fs,  fs * 10,  W - fs * 2,  fs * 4);
+        return _ret;
+    }
+};
+class _TableDisplayFindDialog : public Fl_Double_Window {
+    Fl_Input*                   _text;
+    Fl_Button*                  _next;
+    Fl_Button*                  _prev;
+    Fl_Button*                  _close;
+    TableDisplay*               _table;
+    bool                        _repeat;
+public:
+    explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Find Text In Table Cells") {
+        end();
+        _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Find");
+        _prev   = new Fl_Button(0, 0, 0, 0, "Find &prev");
+        _text   = new Fl_Input(0, 0, 0, 0, "Find:");
+        _table  = table;
+        _repeat = true;
+        add(_text);
+        add(_prev);
+        add(_next);
+        add(_close);
+        _close->callback(_TableDisplayFindDialog::Callback, this);
+        _close->labelsize(flw::PREF_FONTSIZE);
+        _next->callback(_TableDisplayFindDialog::Callback, this);
+        _next->labelsize(flw::PREF_FONTSIZE);
+        _prev->callback(_TableDisplayFindDialog::Callback, this);
+        _prev->labelsize(flw::PREF_FONTSIZE);
+        _text->align(FL_ALIGN_LEFT);
+        _text->callback(_TableDisplayFindDialog::Callback, this);
+        _text->labelsize(flw::PREF_FONTSIZE);
+        _text->textfont(flw::PREF_FIXED_FONT);
+        _text->textsize(flw::PREF_FONTSIZE);
+        _text->value(_table->_find.c_str());
+        _text->when(FL_WHEN_ENTER_KEY_ALWAYS);
+        callback(_TableDisplayFindDialog::Callback, this);
+        set_modal();
+        resizable(this);
+        resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 5.5);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto dlg = static_cast<_TableDisplayFindDialog*>(o);
+        if (w == dlg) {
+            dlg->hide();
         }
-        int row() const {
-            return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
+        else if (w == dlg->_close) {
+            dlg->_table->_find = dlg->_text->value();
+            dlg->hide();
         }
-        bool run(Fl_Window* parent) {
-            flw::util::center_window(this, parent);
-            show();
-            while (visible() != 0) {
-                Fl::wait();
-                Fl::flush();
-            }
-            return _ret;
+        else if (w == dlg->_next) {
+            dlg->find(true);
         }
-    };
-    class _TableDisplayFindDialog : public Fl_Double_Window {
-        Fl_Input*                   _text;
-        Fl_Button*                  _next;
-        Fl_Button*                  _prev;
-        Fl_Button*                  _close;
-        TableDisplay*               _table;
-        bool                        _repeat;
-    public:
-        explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Find Text In Table Cells") {
-            end();
-            _close  = new Fl_Button(0, 0, 0, 0, "&Close");
-            _next   = new Fl_Return_Button(0, 0, 0, 0, "&Find");
-            _prev   = new Fl_Button(0, 0, 0, 0, "Find &prev");
-            _text   = new Fl_Input(0, 0, 0, 0, "Find:");
-            _table  = table;
-            _repeat = true;
-            add(_text);
-            add(_prev);
-            add(_next);
-            add(_close);
-            _close->callback(_TableDisplayFindDialog::Callback, this);
-            _close->labelsize(flw::PREF_FONTSIZE);
-            _next->callback(_TableDisplayFindDialog::Callback, this);
-            _next->labelsize(flw::PREF_FONTSIZE);
-            _prev->callback(_TableDisplayFindDialog::Callback, this);
-            _prev->labelsize(flw::PREF_FONTSIZE);
-            _text->align(FL_ALIGN_LEFT);
-            _text->callback(_TableDisplayFindDialog::Callback, this);
-            _text->labelsize(flw::PREF_FONTSIZE);
-            _text->textfont(flw::PREF_FIXED_FONT);
-            _text->textsize(flw::PREF_FONTSIZE);
-            _text->value(_table->_find.c_str());
-            _text->when(FL_WHEN_ENTER_KEY_ALWAYS);
-            callback(_TableDisplayFindDialog::Callback, this);
-            set_modal();
-            resizable(this);
-            resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 5.5);
+        else if (w == dlg->_prev) {
+            dlg->find(false);
         }
-        static void Callback(Fl_Widget* w, void* o) {
-            auto dlg = static_cast<_TableDisplayFindDialog*>(o);
-            if (w == dlg) {
-                dlg->hide();
-            }
-            else if (w == dlg->_close) {
-                dlg->_table->_find = dlg->_text->value();
-                dlg->hide();
-            }
-            else if (w == dlg->_next) {
-                dlg->find(true);
-            }
-            else if (w == dlg->_prev) {
-                dlg->find(false);
-            }
-            else if (w == dlg->_text) {
-                dlg->find(dlg->_repeat);
-            }
+        else if (w == dlg->_text) {
+            dlg->find(dlg->_repeat);
         }
-        void find(bool next) {
-            auto find = _text->value();
-            _repeat = next;
-            if (*find == 0) {
-                fl_beep(FL_BEEP_ERROR);
-                return;
-            }
-            auto row = _table->row();
-            auto col = _table->column();
-            if (next == true) {
-                if (row < 1 || col < 1) {
-                    row = 1;
-                    col = 1;
-                }
-                else {
-                    col++;
-                }
+    }
+    void find(bool next) {
+        auto find = _text->value();
+        _repeat = next;
+        if (*find == 0) {
+            fl_beep(FL_BEEP_ERROR);
+            return;
+        }
+        auto row = _table->row();
+        auto col = _table->column();
+        if (next == true) {
+            if (row < 1 || col < 1) {
+                row = 1;
+                col = 1;
             }
             else {
-                if (row < 1 || col < 1) {
-                    row = _table->rows();
-                    col = _table->columns();
-                }
-                else {
-                    col--;
-                }
+                col++;
             }
-        AGAIN:
-            if (next == true) {
-                for (int r = row; r <= _table->rows(); r++) {
-                    for (int c = col; c <= _table->columns(); c++) {
-                        auto v = _table->cell_value(r, c);
-                        if (v != nullptr && strstr(v, find) != nullptr) {
-                            _table->active_cell(r, c, true);
-                            _table->_find = find;
-                            return;
-                        }
-                    }
-                    col = 1;
-                }
-                if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
-                    col = row = 1;
-                    goto AGAIN;
-                }
+        }
+        else {
+            if (row < 1 || col < 1) {
+                row = _table->rows();
+                col = _table->columns();
             }
             else {
-                for (int r = row; r >= 1; r--) {
-                    for (int c = col; c >= 1; c--) {
-                        auto v = _table->cell_value(r, c);
-                        if (v != nullptr && strstr(v, find) != nullptr) {
-                            _table->active_cell(r, c, true);
-                            _table->_find = find;
-                            return;
-                        }
+                col--;
+            }
+        }
+    AGAIN:
+        if (next == true) {
+            for (int r = row; r <= _table->rows(); r++) {
+                for (int c = col; c <= _table->columns(); c++) {
+                    auto v = _table->cell_value(r, c);
+                    if (v != nullptr && strstr(v, find) != nullptr) {
+                        _table->active_cell(r, c, true);
+                        _table->_find = find;
+                        return;
                     }
-                    col = _table->columns();
                 }
-                if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
-                    row = _table->rows();
-                    col = _table->columns();
-                    goto AGAIN;
-                }
+                col = 1;
+            }
+            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
+                col = row = 1;
+                goto AGAIN;
             }
         }
-        void resize(int X, int Y, int W, int H) {
-            int fs = flw::PREF_FONTSIZE / 2;
-            Fl_Double_Window::resize(X, Y, W, H);
-            _text->resize  (fs * 10,      fs,          W - fs * 11,  fs * 4);
-            _prev->resize  (W - fs * 51,  H - fs * 5,  fs * 16,      fs * 4);
-            _next->resize  (W - fs * 34,  H - fs * 5,  fs * 16,      fs * 4);
-            _close->resize (W - fs * 17,  H - fs * 5,  fs * 16,      fs * 4);
-        }
-        void run(Fl_Window* parent) {
-            flw::util::center_window(this, parent);
-            show();
-            while (visible() != 0) {
-                Fl::wait();
-                Fl::flush();
+        else {
+            for (int r = row; r >= 1; r--) {
+                for (int c = col; c >= 1; c--) {
+                    auto v = _table->cell_value(r, c);
+                    if (v != nullptr && strstr(v, find) != nullptr) {
+                        _table->active_cell(r, c, true);
+                        _table->_find = find;
+                        return;
+                    }
+                }
+                col = _table->columns();
+            }
+            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
+                row = _table->rows();
+                col = _table->columns();
+                goto AGAIN;
             }
         }
-    };
-}
-flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+    }
+    void resize(int X, int Y, int W, int H) {
+        int fs = flw::PREF_FONTSIZE / 2;
+        Fl_Double_Window::resize(X, Y, W, H);
+        _text->resize  (fs * 10,      fs,          W - fs * 11,  fs * 4);
+        _prev->resize  (W - fs * 51,  H - fs * 5,  fs * 16,      fs * 4);
+        _next->resize  (W - fs * 34,  H - fs * 5,  fs * 16,      fs * 4);
+        _close->resize (W - fs * 17,  H - fs * 5,  fs * 16,      fs * 4);
+    }
+    void run(Fl_Window* parent) {
+        flw::util::center_window(this, parent);
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+    }
+};
+TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
-    _hor  = new _TableDisplay_Scrollbar(0, 0, 0, 0);
-    _ver  = new _TableDisplay_Scrollbar(0, 0, 0, 0);
+    _hor  = new _TableDisplayScrollbar(0, 0, 0, 0);
+    _ver  = new _TableDisplayScrollbar(0, 0, 0, 0);
     _edit = nullptr;
     add(_ver);
     add(_hor);
@@ -8522,7 +8529,7 @@ flw::TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_
     util::labelfont(this);
     TableDisplay::clear();
 }
-void flw::TableDisplay::active_cell(int row, int col, bool show) {
+void TableDisplay::active_cell(int row, int col, bool show) {
     auto send = false;
     if (_rows == 0 || row < 1 || row > _rows || _cols == 0 || col < 1 || col > _cols) {
         row = -1;
@@ -8534,7 +8541,7 @@ void flw::TableDisplay::active_cell(int row, int col, bool show) {
     _curr_row = row;
     _curr_col = col;
     if (send) {
-        _set_event(_curr_row, _curr_col, flw::TableDisplay::EVENT::CURSOR);
+        _set_event(_curr_row, _curr_col, TableDisplay::EVENT::CURSOR);
         do_callback();
     }
     redraw();
@@ -8544,17 +8551,17 @@ void flw::TableDisplay::active_cell(int row, int col, bool show) {
         show_cell(_curr_row, _curr_col);
     }
 }
-void flw::TableDisplay::_CallbackVer(Fl_Widget*, void* o) {
-    auto table = static_cast<flw::TableDisplay*>(o);
+void TableDisplay::_CallbackVer(Fl_Widget*, void* o) {
+    auto table = static_cast<TableDisplay*>(o);
     table->_start_col = table->_hor->value();
     table->redraw();
 }
- void flw::TableDisplay::_CallbackHor(Fl_Widget*, void* o) {
+ void TableDisplay::_CallbackHor(Fl_Widget*, void* o) {
     auto table = static_cast<TableDisplay*>(o);
     table->_start_row = table->_ver->value();
     table->redraw();
 }
-int flw::TableDisplay::_cell_height(int Y) {
+int TableDisplay::_cell_height(int Y) {
     auto y2 = y() + h() - _hor->h();
     if (Y + _height >= y2) {
         return y2 - Y;
@@ -8563,7 +8570,7 @@ int flw::TableDisplay::_cell_height(int Y) {
         return _height;
     }
 }
-int flw::TableDisplay::_cell_width(int col, int X) {
+int TableDisplay::_cell_width(int col, int X) {
     auto cw  = cell_width(col);
     auto min = _height;
     if (cw < min) {
@@ -8583,7 +8590,7 @@ int flw::TableDisplay::_cell_width(int col, int X) {
     }
     return cw;
 }
-void flw::TableDisplay::clear() {
+void TableDisplay::clear() {
     _cols            = 0;
     _curr_col        = -1;
     _curr_row        = -1;
@@ -8595,7 +8602,7 @@ void flw::TableDisplay::clear() {
     _disable_ver     = false;
     _drag            = false;
     _edit            = nullptr;
-    _event           = flw::TableDisplay::EVENT::UNDEFINED;
+    _event           = TableDisplay::EVENT::UNDEFINED;
     _event_col       = -1;
     _event_row       = -1;
     _expand          = false;
@@ -8603,7 +8610,7 @@ void flw::TableDisplay::clear() {
     _resize          = false;
     _resize_col      = -1;
     _rows            = 0;
-    _select          = flw::TableDisplay::SELECT::NO;
+    _select          = TableDisplay::SELECT::NO;
     _show_col_header = false;
     _show_hor_lines  = false;
     _show_row_header = false;
@@ -8613,7 +8620,7 @@ void flw::TableDisplay::clear() {
     _find            = "";
     redraw();
 }
-void flw::TableDisplay::draw() {
+void TableDisplay::draw() {
     if (_edit) {
         _edit->resize(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
@@ -8651,7 +8658,7 @@ void flw::TableDisplay::draw() {
     }
     fl_pop_clip();
 }
-void flw::TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+void TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
     auto align    = cell_align(row, col);
     auto textfont = cell_textfont(row, col);
@@ -8661,8 +8668,9 @@ void flw::TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H,
     if (row > 0 && col > 0) {
         auto color     = cell_color(row, col);
         auto textcolor = cell_textcolor(row, col);
-        if (current) {
-            color = selection_color();
+        if (current == true) {
+            color     = selection_color();
+            textcolor = FL_BACKGROUND2_COLOR;
         }
         fl_color(color);
         fl_rectf(X + 1, Y, W + 1, H);
@@ -8687,7 +8695,7 @@ void flw::TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H,
     }
     fl_pop_clip();
 }
-void flw::TableDisplay::_draw_row(int row, int W, int Y, int H) {
+void TableDisplay::_draw_row(int row, int W, int Y, int H) {
     auto x1 = x();
     auto x2 = x() + W;
     for (auto c = (_show_row_header ? 0 : _start_col); c <= _cols; c++) {
@@ -8698,10 +8706,10 @@ void flw::TableDisplay::_draw_row(int row, int W, int Y, int H) {
             _current_cell[2] = cw;
             _current_cell[3] = H;
             if (_edit == nullptr) {
-                _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != flw::TableDisplay::SELECT::NO);
+                _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != TableDisplay::SELECT::NO);
             }
         }
-        else if (row > 0 && row == _curr_row && _select == flw::TableDisplay::SELECT::ROW) {
+        else if (row > 0 && row == _curr_row && _select == TableDisplay::SELECT::ROW) {
             _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, true);
         }
         else {
@@ -8716,7 +8724,7 @@ void flw::TableDisplay::_draw_row(int row, int W, int Y, int H) {
         }
     }
 }
-void flw::TableDisplay::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
+void TableDisplay::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
     if (align == FL_ALIGN_CENTER || align == FL_ALIGN_RIGHT) {
         if (fl_width(string) > W) {
             align = FL_ALIGN_LEFT;
@@ -8724,7 +8732,7 @@ void flw::TableDisplay::_draw_text(const char* string, int X, int Y, int W, int 
     }
     fl_draw(string, X, Y, W, H, align);
 }
-int flw::TableDisplay::_ev_keyboard_down() {
+int TableDisplay::_ev_keyboard_down() {
     auto key   = Fl::event_key();
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
@@ -8803,7 +8811,7 @@ int flw::TableDisplay::_ev_keyboard_down() {
     }
     return 0;
 }
-int flw::TableDisplay::_ev_mouse_click () {
+int TableDisplay::_ev_mouse_click () {
     if (Fl::event_button1() && _drag == true) {
         return 1;
     }
@@ -8816,11 +8824,11 @@ int flw::TableDisplay::_ev_mouse_click () {
         Fl::focus(this);
     }
     if (r == 0 && c >= 1) {
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::COLUMN_CTRL : flw::TableDisplay::EVENT::COLUMN);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? TableDisplay::EVENT::COLUMN_CTRL : TableDisplay::EVENT::COLUMN);
         do_callback();
     }
     else if (c == 0 && r >= 1) {
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? flw::TableDisplay::EVENT::ROW_CTRL : flw::TableDisplay::EVENT::ROW);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? TableDisplay::EVENT::ROW_CTRL : TableDisplay::EVENT::ROW);
         do_callback();
     }
     else if (r == -1 || c == -1) {
@@ -8835,12 +8843,12 @@ int flw::TableDisplay::_ev_mouse_click () {
             return 0;
         }
     }
-    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != flw::TableDisplay::SELECT::NO) {
+    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != TableDisplay::SELECT::NO) {
         active_cell(r, c);
     }
     return 2;
 }
-int flw::TableDisplay::_ev_mouse_drag() {
+int TableDisplay::_ev_mouse_drag() {
     if (_drag == false) {
         return 2;
     }
@@ -8866,7 +8874,7 @@ int flw::TableDisplay::_ev_mouse_drag() {
     }
     return 2;
 }
-int flw::TableDisplay::_ev_mouse_move() {
+int TableDisplay::_ev_mouse_move() {
     auto mx = Fl::event_x();
     auto x1 = x() + (_show_row_header ? _cell_width(0) : 0);
     auto x2 = x() + w() - _ver->w();
@@ -8899,7 +8907,7 @@ int flw::TableDisplay::_ev_mouse_move() {
     _resize_col = -1;
     return 2;
 }
-void flw::TableDisplay::_get_cell_below_mouse(int& row, int& col) {
+void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
     row = -1;
     col = -1;
     auto my = Fl::event_y();
@@ -8942,7 +8950,7 @@ void flw::TableDisplay::_get_cell_below_mouse(int& row, int& col) {
         }
     }
 }
-int flw::TableDisplay::handle(int event) {
+int TableDisplay::handle(int event) {
     auto ret = 2;
     if (_rows > 0 && _cols > 0) {
         if (event == FL_FOCUS) {
@@ -8971,18 +8979,18 @@ int flw::TableDisplay::handle(int event) {
         return Fl_Group::handle(event);
     }
 }
-void flw::TableDisplay::header(bool row, bool col) {
+void TableDisplay::header(bool row, bool col) {
     _show_row_header = row;
     _show_col_header = col;
     redraw();
 }
-void flw::TableDisplay::lines(bool ver, bool hor) {
+void TableDisplay::lines(bool ver, bool hor) {
     _show_ver_lines = ver;
     _show_hor_lines = hor;
     redraw();
 }
-void flw::TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
-    if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != flw::TableDisplay::SELECT::NO) {
+void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
+    if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != TableDisplay::SELECT::NO) {
         auto r     = _curr_row;
         auto c     = _curr_col;
         auto range = (int) ((h() - _hor->h() - (_show_row_header ? _height : 0)) / _height);
@@ -9061,7 +9069,7 @@ void flw::TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         }
     }
 }
-void flw::TableDisplay::show_cell(int row, int col) {
+void TableDisplay::show_cell(int row, int col) {
     if (_rows > 0 && row > 0 && row <= _rows) {
         auto rc = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
         if (row <= _start_row) {
@@ -9098,7 +9106,7 @@ void flw::TableDisplay::show_cell(int row, int col) {
     }
     redraw();
 }
-void flw::TableDisplay::size(int rows, int cols) {
+void TableDisplay::size(int rows, int cols) {
     if (rows > -1 && _cols > -1) {
         _rows      = rows;
         _cols      = cols;
@@ -9106,12 +9114,12 @@ void flw::TableDisplay::size(int rows, int cols) {
         _curr_col  = 1;
         _start_row = 1;
         _start_col = 1;
-        _set_event(_curr_row, _curr_col, flw::TableDisplay::EVENT::SIZE);
+        _set_event(_curr_row, _curr_col, TableDisplay::EVENT::SIZE);
         do_callback();
     }
     redraw();
 }
-void flw::TableDisplay::_update_scrollbars() {
+void TableDisplay::_update_scrollbars() {
     if (_rows > 0 && _cols > 0) {
         if (_disable_hor == true) {
             _hor->hide();
@@ -9181,6 +9189,7 @@ void flw::TableDisplay::_update_scrollbars() {
     _ver->Fl_Valuator::value(_start_row);
     _hor->Fl_Valuator::value(_start_col);
 }
+}
 #include <assert.h>
 #include <errno.h>
 #include <FL/Fl_Check_Button.H>
@@ -9193,97 +9202,94 @@ void flw::TableDisplay::_update_scrollbars() {
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
-const char* flw::TableEditor::SELECT_DATE = "Select Date";
-const char* flw::TableEditor::SELECT_DIR  = "Select Directory";
-const char* flw::TableEditor::SELECT_FILE = "Select File";
-const char* flw::TableEditor::SELECT_LIST = "Select String";
 namespace flw {
-    namespace tableeditor {
-        double to_double(std::string string, double def) {
-            try { return std::stod(string.c_str(), 0); }
-            catch (...) { return def; }
-        }
-        int to_doubles(std::string string, double numbers[], size_t size) {
-            auto end = (char*) nullptr;
-            auto in  = string.c_str();
-            auto f   = (size_t) 0;
-            errno = 0;
-            for (; f < size; f++) {
-                numbers[f] = strtod(in, &end);
-                if (errno != 0 || in == end) return f;
-                in = end;
-            }
-            return f;
-        }
-        int64_t to_int(std::string string, int64_t def) {
-            try { return std::stoll(string.c_str(), 0, 0); }
-            catch (...) { return def; }
-        }
-        int to_ints(std::string string, int64_t numbers[], size_t size) {
-            auto end = (char*) nullptr;
-            auto in  = string.c_str();
-            auto f   = (size_t) 0;
-            errno = 0;
-            for (; f < size; f++) {
-                numbers[f] = strtoll(in, &end, 10);
-                if (errno != 0 || in == end) return f;
-                in = end;
-            }
-            return f;
-        }
-    }
+double _tableeditor_to_double(std::string string, double def) {
+    try { return std::stod(string.c_str(), 0); }
+    catch (...) { return def; }
 }
-flw::TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
+int _tableeditor_to_doubles(std::string string, double numbers[], size_t size) {
+    auto end = (char*) nullptr;
+    auto in  = string.c_str();
+    auto f   = (size_t) 0;
+    errno = 0;
+    for (; f < size; f++) {
+        numbers[f] = strtod(in, &end);
+        if (errno != 0 || in == end) return f;
+        in = end;
+    }
+    return f;
+}
+int64_t _tableeditor_to_int(std::string string, int64_t def) {
+    try { return std::stoll(string.c_str(), 0, 0); }
+    catch (...) { return def; }
+}
+int _tableeditor_to_ints(std::string string, int64_t numbers[], size_t size) {
+    auto end = (char*) nullptr;
+    auto in  = string.c_str();
+    auto f   = (size_t) 0;
+    errno = 0;
+    for (; f < size; f++) {
+        numbers[f] = strtoll(in, &end, 10);
+        if (errno != 0 || in == end) return f;
+        in = end;
+    }
+    return f;
+}
+const char* TableEditor::SELECT_DATE = "Select Date";
+const char* TableEditor::SELECT_DIR  = "Select Directory";
+const char* TableEditor::SELECT_FILE = "Select File";
+const char* TableEditor::SELECT_LIST = "Select String";
+TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
     TableEditor::clear();
 }
-void flw::TableEditor::clear() {
+void TableEditor::clear() {
     TableDisplay::clear();
     _send_changed_event_always = false;
     _edit2 = nullptr;
     _edit3 = nullptr;
 }
-void flw::TableEditor::_delete_current_cell() {
+void TableEditor::_delete_current_cell() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
         if (edit == true) {
             auto rend = cell_rend(_curr_row, _curr_col);
             auto set  = false;
             switch (rend) {
-                case flw::TableEditor::REND::TEXT:
-                case flw::TableEditor::REND::SECRET:
-                case flw::TableEditor::REND::INPUT_CHOICE:
-                case flw::TableEditor::REND::DLG_FILE:
-                case flw::TableEditor::REND::DLG_DIR:
-                case flw::TableEditor::REND::DLG_LIST:
+                case TableEditor::REND::TEXT:
+                case TableEditor::REND::SECRET:
+                case TableEditor::REND::INPUT_CHOICE:
+                case TableEditor::REND::DLG_FILE:
+                case TableEditor::REND::DLG_DIR:
+                case TableEditor::REND::DLG_LIST:
                     set = cell_value(_curr_row, _curr_col, "");
                     break;
-                case flw::TableEditor::REND::INTEGER:
+                case TableEditor::REND::INTEGER:
                     set = cell_value(_curr_row, _curr_col, "0");
                     break;
-                case flw::TableEditor::REND::NUMBER:
+                case TableEditor::REND::NUMBER:
                     set = cell_value(_curr_row, _curr_col, "0.0");
                     break;
-                case flw::TableEditor::REND::BOOLEAN:
+                case TableEditor::REND::BOOLEAN:
                     set = cell_value(_curr_row, _curr_col, "0");
                     break;
-                case flw::TableEditor::REND::DLG_DATE:
+                case TableEditor::REND::DLG_DATE:
                     set = cell_value(_curr_row, _curr_col, "1970-01-01");
                     break;
-                case flw::TableEditor::REND::DLG_COLOR:
+                case TableEditor::REND::DLG_COLOR:
                     set = cell_value(_curr_row, _curr_col, "56");
                     break;
                 default:
                     break;
             }
             if (set == true) {
-                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                 do_callback();
                 redraw();
             }
         }
     }
 }
-void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
     auto align     = cell_align(row, col);
     auto textcolor = cell_textcolor(row, col);
@@ -9296,23 +9302,24 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
         auto rend   = cell_rend(row, col);
         auto color  = cell_color(row, col);
         char buffer[100];
-        if (current) {
-            color = selection_color();
+        if (current == true) {
+            color     = selection_color();
+            textcolor = FL_BACKGROUND2_COLOR;
         }
         fl_rectf(X + 1, Y, W + 1, H, color);
-        if (rend == flw::TableEditor::REND::SECRET) {
+        if (rend == TableEditor::REND::SECRET) {
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            if (format == flw::TableEditor::FORMAT::SECRET_DOT) {
+            if (format == TableEditor::FORMAT::SECRET_DOT) {
                 fl_draw("••••••", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
             else {
                 fl_draw("******", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
         }
-        else if (rend == flw::TableEditor::REND::SLIDER) {
+        else if (rend == TableEditor::REND::SLIDER) {
             double nums[4];
-            if (tableeditor::to_doubles(val, nums, 4) == 4) {
+            if (_tableeditor_to_doubles(val, nums, 4) == 4) {
                 auto range = 0.0;
                 if ((nums[2] - nums[1]) > 0.0001) {
                     range = (nums[0] - nums[1]) / (nums[2] - nums[1]);
@@ -9323,16 +9330,16 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
                 }
             }
         }
-        else if (rend == flw::TableEditor::REND::DLG_COLOR) {
-            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) tableeditor::to_int(val, 0));
+        else if (rend == TableEditor::REND::DLG_COLOR) {
+            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
         }
-        else if (rend == flw::TableEditor::REND::DLG_DATE) {
+        else if (rend == TableEditor::REND::DLG_DATE) {
             auto        date = Date::FromString(val);
             std::string string;
-            if (format == flw::TableEditor::FORMAT::DATE_WORLD) {
+            if (format == TableEditor::FORMAT::DATE_WORLD) {
                 string = date.format(Date::FORMAT::WORLD);
             }
-            else if (format == flw::TableEditor::FORMAT::DATE_US) {
+            else if (format == TableEditor::FORMAT::DATE_US) {
                 string = date.format(Date::FORMAT::US);
             }
             else {
@@ -9342,7 +9349,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
             fl_color(textcolor);
             _draw_text(string.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
-        else if (rend == flw::TableEditor::REND::BOOLEAN) {
+        else if (rend == TableEditor::REND::BOOLEAN) {
             auto bw  = textsize;
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
@@ -9361,11 +9368,11 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
                 fl_draw_check(r, selection_color());
             }
         }
-        else if (rend == flw::TableEditor::REND::INTEGER) {
-            auto num = tableeditor::to_int(val, 0);
+        else if (rend == TableEditor::REND::INTEGER) {
+            auto num = _tableeditor_to_int(val, 0);
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            if (format == flw::TableEditor::FORMAT::INT_SEP) {
+            if (format == TableEditor::FORMAT::INT_SEP) {
                 auto s = util::format_int(num);
                 _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
             }
@@ -9374,39 +9381,39 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
                 _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
             }
         }
-        else if (rend == flw::TableEditor::REND::NUMBER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
-            auto num = tableeditor::to_double(val, 0.0);
-            if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
+        else if (rend == TableEditor::REND::NUMBER || rend == TableEditor::REND::VALUE_SLIDER) {
+            auto num = _tableeditor_to_double(val, 0.0);
+            if (rend == TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
-                if (tableeditor::to_doubles(val, nums, 1) == 1) {
+                if (_tableeditor_to_doubles(val, nums, 1) == 1) {
                     num = nums[0];
                 }
             }
-            if (format == flw::TableEditor::FORMAT::DEC_0) {
+            if (format == TableEditor::FORMAT::DEC_0) {
                 snprintf(buffer, 100, "%.0f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_1) {
+            else if (format == TableEditor::FORMAT::DEC_1) {
                 snprintf(buffer, 100, "%.1f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_2) {
+            else if (format == TableEditor::FORMAT::DEC_2) {
                 snprintf(buffer, 100, "%.2f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_3) {
+            else if (format == TableEditor::FORMAT::DEC_3) {
                 snprintf(buffer, 100, "%.3f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_4) {
+            else if (format == TableEditor::FORMAT::DEC_4) {
                 snprintf(buffer, 100, "%.4f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_5) {
+            else if (format == TableEditor::FORMAT::DEC_5) {
                 snprintf(buffer, 100, "%.5f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_6) {
+            else if (format == TableEditor::FORMAT::DEC_6) {
                 snprintf(buffer, 100, "%.6f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_7) {
+            else if (format == TableEditor::FORMAT::DEC_7) {
                 snprintf(buffer, 100, "%.7f", num);
             }
-            else if (format == flw::TableEditor::FORMAT::DEC_8) {
+            else if (format == TableEditor::FORMAT::DEC_8) {
                 snprintf(buffer, 100, "%.8f", num);
             }
             else {
@@ -9439,7 +9446,7 @@ void flw::TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, 
     }
     fl_pop_clip();
 }
-void flw::TableEditor::_edit_create() {
+void TableEditor::_edit_create() {
     auto rend      = cell_rend(_curr_row, _curr_col);
     auto align     = cell_align(_curr_row, _curr_col);
     auto color     = cell_color(_curr_row, _curr_col);
@@ -9448,21 +9455,21 @@ void flw::TableEditor::_edit_create() {
     auto textsize  = cell_textsize(_curr_row, _curr_col);
     auto val       = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     assert(val);
-    if (rend == flw::TableEditor::REND::TEXT ||
-        rend == flw::TableEditor::REND::INTEGER ||
-        rend == flw::TableEditor::REND::NUMBER ||
-        rend == flw::TableEditor::REND::SECRET) {
+    if (rend == TableEditor::REND::TEXT ||
+        rend == TableEditor::REND::INTEGER ||
+        rend == TableEditor::REND::NUMBER ||
+        rend == TableEditor::REND::SECRET) {
         auto w = (Fl_Input*) nullptr;
-        if (rend == flw::TableEditor::REND::TEXT) {
+        if (rend == TableEditor::REND::TEXT) {
             w = new Fl_Input(0, 0, 0, 0);
         }
-        else if (rend == flw::TableEditor::REND::INTEGER) {
+        else if (rend == TableEditor::REND::INTEGER) {
             w = new Fl_Int_Input(0, 0, 0, 0);
         }
-        else if (rend == flw::TableEditor::REND::NUMBER) {
+        else if (rend == TableEditor::REND::NUMBER) {
             w = new Fl_Float_Input(0, 0, 0, 0);
         }
-        else if (rend == flw::TableEditor::REND::SECRET) {
+        else if (rend == TableEditor::REND::SECRET) {
             w = new Fl_Secret_Input(0, 0, 0, 0);
         }
         w->align(align);
@@ -9476,7 +9483,7 @@ void flw::TableEditor::_edit_create() {
         w->insert_position(0, strlen(val));
         _edit = w;
     }
-    else if (rend == flw::TableEditor::REND::BOOLEAN) {
+    else if (rend == TableEditor::REND::BOOLEAN) {
         auto w = new Fl_Check_Button(0, 0, 0, 0);
         w->box(FL_BORDER_BOX);
         w->color(color);
@@ -9485,10 +9492,10 @@ void flw::TableEditor::_edit_create() {
         w->value(*val && val[0] == '1' ? 1 : 0);
         _edit = w;
     }
-    else if (rend == flw::TableEditor::REND::SLIDER) {
+    else if (rend == TableEditor::REND::SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
-        if (tableeditor::to_doubles(val, nums, 4) == 4) {
+        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
             w = new Fl_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -9500,10 +9507,10 @@ void flw::TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == flw::TableEditor::REND::VALUE_SLIDER) {
+    else if (rend == TableEditor::REND::VALUE_SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
-        if (tableeditor::to_doubles(val, nums, 4) == 4) {
+        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
             w = new Fl_Value_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -9516,7 +9523,7 @@ void flw::TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == flw::TableEditor::REND::CHOICE) {
+    else if (rend == TableEditor::REND::CHOICE) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
             auto w      = new Fl_Choice(0, 0, 0, 0);
@@ -9538,7 +9545,7 @@ void flw::TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == flw::TableEditor::REND::INPUT_CHOICE) {
+    else if (rend == TableEditor::REND::INPUT_CHOICE) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
             auto w = new Fl_Input_Choice(0, 0, 0, 0);
@@ -9574,13 +9581,13 @@ void flw::TableEditor::_edit_create() {
         }
     }
 }
-void flw::TableEditor::_edit_quick(const char* key) {
+void TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     char buffer[100];
     assert(val);
-    if (rend == flw::TableEditor::REND::INTEGER) {
-        auto num = tableeditor::to_int(val, 0);
+    if (rend == TableEditor::REND::INTEGER) {
+        auto num = _tableeditor_to_int(val, 0);
         if (strcmp(key, "+") == 0) {
             num++;
         }
@@ -9601,12 +9608,12 @@ void flw::TableEditor::_edit_quick(const char* key) {
         }
         snprintf(buffer, 100, "%lld", (long long int) num);
         if ((_send_changed_event_always == true || strcmp(val, buffer) != 0) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::NUMBER) {
-        auto num = tableeditor::to_double(val, 0.0);
+    else if (rend == TableEditor::REND::NUMBER) {
+        auto num = _tableeditor_to_double(val, 0.0);
         if (strcmp(key, "+") == 0) {
             num += 0.1;
         }
@@ -9627,11 +9634,11 @@ void flw::TableEditor::_edit_quick(const char* key) {
         }
         snprintf(buffer, 100, "%f", num);
         if ((_send_changed_event_always == true || strcmp(val, buffer) != 0) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_DATE) {
+    else if (rend == TableEditor::REND::DLG_DATE) {
         auto date = Date::FromString(val);
         if (strcmp(key, "+") == 0) {
             date.add_days(1);
@@ -9653,13 +9660,13 @@ void flw::TableEditor::_edit_quick(const char* key) {
         }
         auto string = date.format(Date::FORMAT::ISO_LONG);
         if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
+    else if (rend == TableEditor::REND::SLIDER || rend == TableEditor::REND::VALUE_SLIDER) {
         double nums[4];
-        if (tableeditor::to_doubles(val, nums, 4) == 4) {
+        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
             if (strcmp(key, "+") == 0) {
                 nums[0] += nums[3];
             }
@@ -9686,77 +9693,77 @@ void flw::TableEditor::_edit_quick(const char* key) {
             }
             auto val2 = FormatSlider(nums[0], nums[1], nums[2], nums[3]);
             if ((_send_changed_event_always == true || strcmp(val, val2) != 0) && cell_value(_curr_row, _curr_col, val2) == true) {
-                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                 do_callback();
             }
         }
     }
 }
-void flw::TableEditor::_edit_show() {
+void TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
     auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
     assert(val);
-    if (rend == flw::TableEditor::REND::DLG_COLOR) {
-        auto color1 = (int) tableeditor::to_int(val, 0);
+    if (rend == TableEditor::REND::DLG_COLOR) {
+        auto color1 = (int) _tableeditor_to_int(val, 0);
         auto color2 = (int) fl_show_colormap((Fl_Color) color1);
         char buffer[100];
         snprintf(buffer, 20, "%d", color2);
         if ((_send_changed_event_always == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_FILE) {
-        auto result = fl_file_chooser(flw::TableEditor::SELECT_FILE, "", val, 0);
+    else if (rend == TableEditor::REND::DLG_FILE) {
+        auto result = fl_file_chooser(TableEditor::SELECT_FILE, "", val, 0);
         if ((_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0)) && cell_value(_curr_row, _curr_col, result) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_DIR) {
-        auto result = fl_dir_chooser(flw::TableEditor::SELECT_DIR, val);
+    else if (rend == TableEditor::REND::DLG_DIR) {
+        auto result = fl_dir_chooser(TableEditor::SELECT_DIR, val);
         if ((_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0)) && cell_value(_curr_row, _curr_col, result) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_DATE) {
+    else if (rend == TableEditor::REND::DLG_DATE) {
         auto date1  = Date::FromString(val);
         auto date2  = Date(date1);
-        auto result = flw::dlg::date(flw::TableEditor::SELECT_DATE, date1, top_window());
+        auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
         auto string = date1.format(Date::FORMAT::ISO_LONG);
         if ((_send_changed_event_always == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
         }
     }
-    else if (rend == flw::TableEditor::REND::DLG_LIST) {
+    else if (rend == TableEditor::REND::DLG_LIST) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
-            auto row = dlg::select(flw::TableEditor::SELECT_LIST, choices, val);
+            auto row = dlg::select(TableEditor::SELECT_LIST, choices, val);
             if (row > 0) {
                 const auto& string = choices[row - 1];
                 if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-                    _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                    _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                     do_callback();
                 }
             }
         }
     }
 }
-void flw::TableEditor::_edit_start(const char* key) {
-    if (_select != flw::TableEditor::SELECT::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
+void TableEditor::_edit_start(const char* key) {
+    if (_select != TableEditor::SELECT::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
         Fl::event_clicks(0);
         Fl::event_is_click(0);
-        flw::TableEditor::REND rend = cell_rend(_curr_row, _curr_col);
+        TableEditor::REND rend = cell_rend(_curr_row, _curr_col);
         if (*key != 0) {
             _edit_quick(key);
         }
-        else if (rend == flw::TableEditor::REND::DLG_COLOR ||
-                 rend == flw::TableEditor::REND::DLG_FILE ||
-                 rend == flw::TableEditor::REND::DLG_DIR ||
-                 rend == flw::TableEditor::REND::DLG_DATE ||
-                 rend == flw::TableEditor::REND::DLG_LIST) {
+        else if (rend == TableEditor::REND::DLG_COLOR ||
+                 rend == TableEditor::REND::DLG_FILE ||
+                 rend == TableEditor::REND::DLG_DIR ||
+                 rend == TableEditor::REND::DLG_DATE ||
+                 rend == TableEditor::REND::DLG_LIST) {
             _edit_show();
         }
         else {
@@ -9765,25 +9772,25 @@ void flw::TableEditor::_edit_start(const char* key) {
         redraw();
     }
 }
-void flw::TableEditor::_edit_stop(bool save) {
+void TableEditor::_edit_stop(bool save) {
     if (_edit) {
         auto rend = cell_rend(_curr_row, _curr_col);
         auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
         auto stop = true;
         if (save == true) {
-            if (rend == flw::TableEditor::REND::TEXT ||
-                rend == flw::TableEditor::REND::INTEGER ||
-                rend == flw::TableEditor::REND::NUMBER ||
-                rend == flw::TableEditor::REND::SECRET) {
+            if (rend == TableEditor::REND::TEXT ||
+                rend == TableEditor::REND::INTEGER ||
+                rend == TableEditor::REND::NUMBER ||
+                rend == TableEditor::REND::SECRET) {
                 auto input = static_cast<Fl_Input*>(_edit);
                 auto val2  = input->value();
                 char buffer[100];
-                if (rend == flw::TableEditor::REND::INTEGER) {
-                    snprintf(buffer, 100, "%d", (int) tableeditor::to_int(val2, 0));
+                if (rend == TableEditor::REND::INTEGER) {
+                    snprintf(buffer, 100, "%d", (int) _tableeditor_to_int(val2, 0));
                     val2 = buffer;
                 }
-                else if (rend == flw::TableEditor::REND::NUMBER) {
-                    auto num = tableeditor::to_double(val2, 0.0);
+                else if (rend == TableEditor::REND::NUMBER) {
+                    auto num = _tableeditor_to_double(val2, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
@@ -9799,7 +9806,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::BOOLEAN) {
+            else if (rend == TableEditor::REND::BOOLEAN) {
                 auto button = static_cast<Fl_Check_Button*>(_edit);
                 auto val2   = "0";
                 if (button->value())
@@ -9812,7 +9819,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::SLIDER || rend == flw::TableEditor::REND::VALUE_SLIDER) {
+            else if (rend == TableEditor::REND::SLIDER || rend == TableEditor::REND::VALUE_SLIDER) {
                 auto slider = static_cast<Fl_Slider*>(_edit);
                 auto val2   = FormatSlider(slider->value(), slider->minimum(), slider->maximum(), slider->step());
                 if (strcmp(val, val2) == 0) {
@@ -9823,7 +9830,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::CHOICE) {
+            else if (rend == TableEditor::REND::CHOICE) {
                 auto choice = static_cast<Fl_Choice*>(_edit);
                 auto val2   = choice->text();
                 if (val2 == 0) {
@@ -9838,7 +9845,7 @@ void flw::TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == flw::TableEditor::REND::INPUT_CHOICE) {
+            else if (rend == TableEditor::REND::INPUT_CHOICE) {
                 auto input_choice = static_cast<Fl_Input_Choice*>(_edit);
                 auto val2         = input_choice->value();
                 if (val2 == 0) {
@@ -9865,7 +9872,7 @@ void flw::TableEditor::_edit_stop(bool save) {
             _current_cell[2] = 0;
             _current_cell[3] = 0;
             if (_send_changed_event_always == true || save == true) {
-                _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                 do_callback();
             }
             Fl::check();
@@ -9878,7 +9885,7 @@ void flw::TableEditor::_edit_stop(bool save) {
         }
     }
 }
-int flw::TableEditor::_ev_keyboard_down2() {
+int TableEditor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -9943,7 +9950,7 @@ int flw::TableEditor::_ev_keyboard_down2() {
     }
     return 0;
 }
-int flw::TableEditor::_ev_mouse_click2() {
+int TableEditor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -9959,7 +9966,7 @@ int flw::TableEditor::_ev_mouse_click2() {
     }
     return 2;
 }
-int flw::TableEditor::_ev_paste() {
+int TableEditor::_ev_paste() {
     auto text = Fl::event_text();
     if (_curr_row > 0 && _curr_col > 0 && text && *text) {
         auto        rend = cell_rend(_curr_row, _curr_col);
@@ -9967,18 +9974,18 @@ int flw::TableEditor::_ev_paste() {
         char        buffer[100];
         std::string string;
         switch(rend) {
-            case flw::TableEditor::REND::CHOICE:
-            case flw::TableEditor::REND::DLG_LIST:
-            case flw::TableEditor::REND::SLIDER:
-            case flw::TableEditor::REND::VALUE_SLIDER:
+            case TableEditor::REND::CHOICE:
+            case TableEditor::REND::DLG_LIST:
+            case TableEditor::REND::SLIDER:
+            case TableEditor::REND::VALUE_SLIDER:
                 return 1;
-            case flw::TableEditor::REND::DLG_DIR:
-            case flw::TableEditor::REND::DLG_FILE:
-            case flw::TableEditor::REND::INPUT_CHOICE:
-            case flw::TableEditor::REND::SECRET:
-            case flw::TableEditor::REND::TEXT:
+            case TableEditor::REND::DLG_DIR:
+            case TableEditor::REND::DLG_FILE:
+            case TableEditor::REND::INPUT_CHOICE:
+            case TableEditor::REND::SECRET:
+            case TableEditor::REND::TEXT:
                 break;
-            case flw::TableEditor::REND::BOOLEAN:
+            case TableEditor::REND::BOOLEAN:
                 if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
                     text = "1";
                 }
@@ -9988,34 +9995,34 @@ int flw::TableEditor::_ev_paste() {
                 else {
                     return 1;
                 }
-            case flw::TableEditor::REND::DLG_COLOR:
-            case flw::TableEditor::REND::INTEGER:
+            case TableEditor::REND::DLG_COLOR:
+            case TableEditor::REND::INTEGER:
                 if (*text < '0' || *text > '9') {
                     return 1;
                 }
                 else {
-                    auto num = tableeditor::to_int(text, 0);
+                    auto num = _tableeditor_to_int(text, 0);
                     snprintf(buffer, 100, "%lld", (long long int) num);
                     text = buffer;
-                    if (rend == flw::TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
+                    if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
                         return 1;
                     }
                     else {
                         break;
                     }
                 }
-            case flw::TableEditor::REND::NUMBER: {
+            case TableEditor::REND::NUMBER: {
                 if (*text < '0' || *text > '9') {
                     return 1;
                 }
                 else {
-                    auto num = tableeditor::to_double(text, 0.0);
+                    auto num = _tableeditor_to_double(text, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
                     break;
                 }
             }
-            case flw::TableEditor::REND::DLG_DATE: {
+            case TableEditor::REND::DLG_DATE: {
                 auto date = Date::FromString(text);
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
                     return 1;
@@ -10028,19 +10035,19 @@ int flw::TableEditor::_ev_paste() {
             }
         }
         if ((_send_changed_event_always == true || strcmp(val, text) != 0) && cell_value(_curr_row, _curr_col, text) == true) {
-            _set_event(_curr_row, _curr_col, flw::TableEditor::EVENT::CHANGED);
+            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
             redraw();
         }
     }
     return 1;
 }
-const char* flw::TableEditor::FormatSlider(double val, double min, double max, double step) {
+const char* TableEditor::FormatSlider(double val, double min, double max, double step) {
     static char result[200];
     snprintf(result, 200, "%.4f %.4f %.4f %.4f", val, min, max, step);
     return result;
 }
-int flw::TableEditor::handle(int event) {
+int TableEditor::handle(int event) {
     auto ret = 2;
     if (_rows > 0 && _cols > 0) {
         if (event == FL_UNFOCUS) {
@@ -10067,6 +10074,7 @@ int flw::TableEditor::handle(int event) {
         return TableDisplay::handle(event);
     }
 }
+}
 #include <assert.h>
 #include <FL/Fl_Toggle_Button.H>
 #include <FL/fl_draw.H>
@@ -10081,12 +10089,12 @@ public:
     explicit _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
         _tw = 0;
         copy_label(label);
-        copy_tooltip(label);
+        tooltip("");
     }
     void draw() override {
-        fl_draw_box(_BOXTYPE, x(), y(), w(), h(), value() ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
+        fl_draw_box(_BOXTYPE, x(), y(), w(), h(), (value() != 0) ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        fl_color(value() ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
+        fl_color((value() != 0) ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };
@@ -10303,11 +10311,11 @@ const char* TabsGroup::Help() {
     "Tabs on the left/right side can have its width changed by dragging the mouse.";
     return HELP;
 }
-void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::label(std::string label, Fl_Widget* widget) {
     auto num = find(widget);
     if (num != -1) {
         _buttons[num]->copy_label(label.c_str());
-        _buttons[num]->copy_tooltip(label.c_str());
+        _buttons[num]->tooltip("");
     }
 }
 Fl_Widget* TabsGroup::remove(int num) {

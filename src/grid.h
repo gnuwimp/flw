@@ -14,7 +14,7 @@
 namespace flw {
     typedef std::map<std::string, std::string> StringMap;
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     // A Table editing widget with built in data storage
     //
     class Grid : public TableEditor {

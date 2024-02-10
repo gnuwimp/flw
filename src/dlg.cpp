@@ -31,19 +31,19 @@ void _load_oxy_blue();
 void _load_oxy_tan();
 void _load_gleam();
 void _load_gleam_blue();
+void _load_gleam_blue_dark();
 void _load_gleam_dark();
 void _load_gleam_darker();
-void _load_gleam_dark_blue();
 void _load_gleam_tan();
 void _load_gtk();
 void _load_gtk_blue();
+void _load_gtk_blue_dark();
 void _load_gtk_dark();
 void _load_gtk_darker();
-void _load_gtk_dark_blue();
 void _load_gtk_tan();
 void _load_plastic();
-void _load_blue_plastic();
-void _load_tan_plastic();
+void _load_plastic_blue();
+void _load_plastic_tan();
 void _scrollbar();
 
 } // theme
@@ -85,7 +85,7 @@ class _DlgHtml  : public Fl_Double_Window {
     GridGroup*                  _grid;
     
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
@@ -113,7 +113,7 @@ public:
         util::center_window(this, parent);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
 
@@ -122,13 +122,13 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void run() {
         show();
 
@@ -157,7 +157,7 @@ class _DlgList : public Fl_Double_Window {
     ScrollBrowser*              _list;
 
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
@@ -201,7 +201,7 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgList*>(o);
 
@@ -210,13 +210,13 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void run() {
         show();
 
@@ -248,7 +248,7 @@ class _DlgSelect : public Fl_Double_Window {
     const StringVector&         _strings;
 
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
     Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
     _strings(strings) {
@@ -325,7 +325,7 @@ public:
         util::center_window(this, parent);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void activate_button() {
         if (_list->value() == 0) {
             _close->deactivate();
@@ -335,7 +335,7 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelect*>(o);
 
@@ -360,7 +360,7 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void filter(const char* filter) {
         _list->clear();
 
@@ -376,7 +376,7 @@ public:
         _list->value(1);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     // Tab key changes focus between list and input
     //
     int handle(int event) override {
@@ -403,13 +403,13 @@ public:
         return Fl_Double_Window::handle(event);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     int run() {
         show();
 
@@ -472,7 +472,7 @@ private:
     bool                        _ret;
 
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
     Fl_Double_Window(0, 0, 0, 0) {
         end();
@@ -544,7 +544,7 @@ public:
         util::center_window(this, parent);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPassword*>(o);
 
@@ -577,7 +577,7 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void check() {
         auto p1 = _password1->value();
         auto p2 = _password2->value();
@@ -604,13 +604,13 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
     }
     
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     bool run(std::string& password, std::string& file) {
         show();
 
@@ -655,7 +655,7 @@ class _DlgText : public Fl_Double_Window {
     char*                       _res;
 
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
         end();
@@ -706,13 +706,13 @@ public:
         util::center_window(this, parent);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     ~_DlgText() {
        _text->buffer(nullptr);
         delete _buffer;
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgText*>(o);
 
@@ -735,13 +735,13 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     char* run() {
         show();
 
@@ -777,7 +777,7 @@ class _DlgTheme : public Fl_Double_Window {
     int                         _theme_row;
 
 public:
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) :
     Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
         end();
@@ -838,7 +838,7 @@ public:
         util::center_window(this, parent);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgTheme*>(o);
 
@@ -894,7 +894,7 @@ public:
                 theme::_load_gleam_blue();
             }
             else if (row == theme::THEME_GLEAM_DARK_BLUE) {
-                theme::_load_gleam_dark_blue();
+                theme::_load_gleam_blue_dark();
             }
             else if (row == theme::THEME_GLEAM_DARK) {
                 theme::_load_gleam_dark();
@@ -912,7 +912,7 @@ public:
                 theme::_load_gtk_blue();
             }
             else if (row == theme::THEME_GTK_DARK_BLUE) {
-                theme::_load_gtk_dark_blue();
+                theme::_load_gtk_blue_dark();
             }
             else if (row == theme::THEME_GTK_DARK) {
                 theme::_load_gtk_dark();
@@ -927,10 +927,10 @@ public:
                 theme::_load_plastic();
             }
             else if (row == theme::THEME_PLASTIC_BLUE) {
-                theme::_load_blue_plastic();
+                theme::_load_plastic_blue();
             }
             else if (row == theme::THEME_PLASTIC_TAN) {
-                theme::_load_tan_plastic();
+                theme::_load_plastic_tan();
             }
             else {
                 theme::_load_default();
@@ -943,13 +943,13 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void run() {
         show();
 
@@ -959,7 +959,7 @@ public:
         }
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void update_pref() {
         Fl_Tooltip::font(flw::PREF_FONT);
         Fl_Tooltip::size(flw::PREF_FONTSIZE);
@@ -1242,7 +1242,7 @@ public:
     int font;
     int size;
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
         font = FL_HELVETICA;
         size = 14;
@@ -1252,7 +1252,7 @@ public:
         color(FL_BACKGROUND2_COLOR);
     }
 
-    //--------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
     void draw() override {
         draw_box();
         fl_font((Fl_Font) font, size);
