@@ -3,8 +3,10 @@
 flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
 They work on all platforms that FLTK 1.4 are supported.
 This library has been tested on Windows 10 + msys2, Xubuntu 23.10 & 22.04 (intel).
-They are compiled with c++17 flag and all widgets are in the namespace flw.
-The source will not compile with Microsoft Visual Studio.
+Earlier versions have been compiled successfully on a Raspberry Pi 4.
+It might work on macOS with some tweaks.
+They are compiled with C++17 flag and all widgets are in the namespace flw.
+The source will NOT compile with Microsoft Visual Studio.
 
 Use then amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
 The source files in the src/ directory are intended for development of flw.
@@ -14,7 +16,7 @@ Most widgets are released under the [GNU General Public License v3.0](LICENSE).
 Widgets:
 * Chart - Chart widget with dates as x data.
 * DateChooser - Show month date view.
-* Grid - Edit data in TableEditor with build in storage.
+* Grid - Edit data in TableEditor with built in storage.
 * GridGroup - A layout widget using a grid.
 * InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list and use arrow keys in the input widget to switch between strings.
 * LcdNumber - Number widget in lcd style.
