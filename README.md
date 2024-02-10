@@ -1,7 +1,7 @@
 # flw (fast light widgets)
 
 flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
-They work on all platforms that FLTK 1.4 are supported.
+They work on most platforms that FLTK 1.4 are supported.
 This library has been tested on Windows 10 + msys2, Xubuntu 23.10 & 22.04 (intel).
 Earlier versions have been compiled successfully on a Raspberry Pi 4.
 It might work on macOS with some tweaks.
