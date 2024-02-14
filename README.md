@@ -79,13 +79,10 @@ Theme dialog (flw::dlg::theme())<br>
 ## Theme examples
 
 Tan gleam theme<br>
-<img src="images/tan_gleam_theme.png"/>
+<img src="images/tan_gleam.png"/>
 
 Blue gtk theme<br>
-<img src="images/bluegtk_theme.png"/>
-
-Dark blue gleam theme<br>
-<img src="images/darkblue_gleam_theme.png"/>
+<img src="images/blue_gtk.png"/>
 
 Dark gtk theme<br>
-<img src="images/dark_gtk_theme.png"/>
+<img src="images/dark_gleam.png"/>
