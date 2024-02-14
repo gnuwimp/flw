@@ -19,6 +19,12 @@ namespace flw {
 // Move tabs around by using alt + up/down.
 // Use shortcut keys (alt/command + 0-9).
 //
+// By default tabs are on the NORTH side and tabs size is font size * 10.
+// Change width of tabs for the WEST/EAST side with pos().
+// If tabs are on the NORTH/SOUTH side you can change the width by using the mouse.
+//
+// Do a resize after adding widgets by calling do_layout() or resize().
+//
 class TabsGroup : public Fl_Group {
 public:
     enum class TABS {
@@ -29,7 +35,7 @@ public:
     };
 
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        add(const std::string& label, Fl_Widget* widget);
+    void                        add(const std::string& label, Fl_Widget* widget, bool force_append = false);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; do_layout(); }
     Fl_Widget*                  child(int num) const;
@@ -55,6 +61,7 @@ public:
                                     { _tabs = value; }
     bool                        tabs_visible() const
                                     { return _hide == false; }
+    void                        update_pref(int pos = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
@@ -78,8 +85,8 @@ private:
     int                         _active;
     int                         _e;
     int                         _n;
-    int                         _pos;
     int                         _s;
+    int                         _pos;
     int                         _w;
 };
 

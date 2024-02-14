@@ -25,11 +25,13 @@ namespace flw {
 //------------------------------------------------------------------------------
 class _TabsGroupButton : public Fl_Toggle_Button {
 public:
-    static int                  _BORDER;
-    static Fl_Boxtype           _BOXTYPE;
-    static Fl_Color             _BOXSELCOLOR;
-    static Fl_Color             _BOXCOLOR;
     int                         _tw;
+    static Fl_Boxtype           _BOXTYPE;
+    static Fl_Color             _BOXCOLOR;
+    static Fl_Color             _BOXSELCOLOR;
+    static Fl_Font              _FONT;
+    static Fl_Fontsize          _FONTSIZE;
+    static int                  _BORDER;
 
     //------------------------------------------------------------------------------
     explicit _TabsGroupButton(const char* label) : Fl_Toggle_Button(0, 0, 0, 0) {
@@ -41,16 +43,18 @@ public:
     //--------------------------------------------------------------------------
     void draw() override {
         fl_draw_box(_BOXTYPE, x(), y(), w(), h(), (value() != 0) ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
-        fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
+        fl_font(_TabsGroupButton::_FONT, _TabsGroupButton::_FONTSIZE);
         fl_color((value() != 0) ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };
 
-int        _TabsGroupButton::_BORDER      = 6;
-Fl_Boxtype _TabsGroupButton::_BOXTYPE     = FL_FLAT_BOX;
-Fl_Color   _TabsGroupButton::_BOXSELCOLOR = FL_SELECTION_COLOR;
-Fl_Color   _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
+Fl_Boxtype  _TabsGroupButton::_BOXTYPE     = FL_FLAT_BOX;
+Fl_Color    _TabsGroupButton::_BOXCOLOR    = FL_DARK1;
+Fl_Color    _TabsGroupButton::_BOXSELCOLOR = FL_SELECTION_COLOR;
+Fl_Font     _TabsGroupButton::_FONT        = flw::PREF_FONT;
+Fl_Fontsize _TabsGroupButton::_FONTSIZE    = flw::PREF_FONTSIZE;
+int         _TabsGroupButton::_BORDER      = 6;
 
 /***
  *      _______    _          _____
@@ -73,16 +77,18 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _active = -1;
     _drag   = false;
     _hide   = false;
-    _pos    = flw::PREF_FONTSIZE * 10;
+    _pos    = 0;
     _tabs   = TABS::NORTH;
     _n      = 0;
     _s      = 0;
     _w      = 0;
     _e      = 0;
+    
+    update_pref();
 }
 
 //------------------------------------------------------------------------------
-void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
+void TabsGroup::add(const std::string& label, Fl_Widget* widget, bool force_append) {
     auto button = new _TabsGroupButton(label.c_str());
 
     button->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
@@ -93,16 +99,32 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget) {
     Fl_Group::add(widget);
     Fl_Group::add(button);
 
-    if (_active + 1 >= (int) _widgets.size()) {
+    if (force_append == true) {
+        for (auto b : _buttons) {
+            static_cast<Fl_Button*>(b)->value(0);
+        }
+    
+        for (auto w : _widgets) {
+            w->hide();
+        }
+        
+        _active = (int) _widgets.size();
         _widgets.push_back(widget);
         _buttons.push_back(button);
+        button->value(1);
     }
     else {
-        _widgets.insert(_widgets.begin() + _active + 1, widget);
-        _buttons.insert(_buttons.begin() + _active + 1, button);
-    }
-
-    TabsGroup::Callback(button, this);
+        if (_active + 1 >= (int) _widgets.size()) {
+            _widgets.push_back(widget);
+            _buttons.push_back(button);
+        }
+        else {
+            _widgets.insert(_widgets.begin() + _active + 1, widget);
+            _buttons.insert(_buttons.begin() + _active + 1, button);
+        }
+        
+        TabsGroup::Callback(button, this);
+    }    
 }
 
 //------------------------------------------------------------------------------
@@ -127,7 +149,7 @@ Fl_Widget* TabsGroup::_button() {
 
 //------------------------------------------------------------------------------
 void TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    if (sender) {
+    if (sender != nullptr) {
         auto button = static_cast<_TabsGroupButton*>(sender);
         auto self   = static_cast<TabsGroup*>(object);
         auto count  = 0;
@@ -449,8 +471,8 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         if (_pos < flw::PREF_FONTSIZE * space) { // Set min size for widgets on the left
             _pos = flw::PREF_FONTSIZE * space;
         }
-        else if (_pos > W - flw::PREF_FONTSIZE * 8) { // Set min size for widgets on the right
-            _pos = W - flw::PREF_FONTSIZE * 8;
+        else if (_pos > W - flw::PREF_FONTSIZE * 3) { // Set min size for widgets on the right
+            _pos = W - flw::PREF_FONTSIZE * 3;
         }
 
         for (auto b : _buttons) {
@@ -535,6 +557,13 @@ void TabsGroup::swap(int from, int to) {
     }
 
     do_layout();
+}
+
+//------------------------------------------------------------------------------
+void TabsGroup::update_pref(int pos, Fl_Font font, Fl_Fontsize fontsize) {
+    _TabsGroupButton::_FONT     = font;
+    _TabsGroupButton::_FONTSIZE = fontsize;
+    _pos                        = _TabsGroupButton::_FONTSIZE * pos;
 }
 
 //------------------------------------------------------------------------------

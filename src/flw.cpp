@@ -1314,7 +1314,7 @@ void theme::load_fonts(bool iso8859_only) {
             name2 += std::string("@.");
             name2 += name1;
             flw::PREF_FONTNAMES.push_back(strdup(name2.c_str()));
-            // printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
+//             printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
         }
     }
 }

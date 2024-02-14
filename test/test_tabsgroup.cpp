@@ -21,6 +21,9 @@ public:
         
         TEST = this;
 
+//        tabs = new TabsGroup(50, 50, W - 100, H - 100);
+        tabs = new TabsGroup(0, 0, W, H);
+
         auto n = new Fl_Button(0, 0, 0, 0, "TABS::NORTH");
         auto s = new Fl_Button(0, 0, 0, 0, "TABS::SOUTH");
         auto w = new Fl_Button(0, 0, 0, 0, "TABS::WEST");
@@ -36,20 +39,24 @@ public:
         e->callback(CallbackEast, this);
         w->callback(CallbackWest, this);
 
-        tabs = new TabsGroup();
         add(tabs);
-        // tabs = new TabsGroup(10, 10, W-20, H-20);
-        tabs->add("Delete", b1);
-        tabs->add("Hide/Show", b2);
-        tabs->add("Delete", b3);
-        tabs->add("Border", b4);
-        tabs->add("NORTH", n);
-        tabs->add("SOUTH", s);
-        tabs->add("WEST", w);
-        tabs->add("EAST", e);
-        tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
+        
+        bool force_append = false;
+        tabs->add("Delete", b1, force_append);
+        tabs->add("Hide/Show", b2, force_append);
+        tabs->add("Delete", b3, force_append);
+        tabs->add("Border", b4, force_append);
+        tabs->add("NORTH", n, force_append);
+        tabs->add("SOUTH", s, force_append);
+        tabs->add("WEST", w, force_append);
+        tabs->add("EAST", e, force_append);
+        tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()), force_append);
+        tabs->child(8)->callback(CallbackStart, this);
+        tabs->box(FL_BORDER_BOX);
+        
+//        tabs->color(FL_YELLOW);
 
-//        tabs->set(7);
+//        tabs->value(7);
 //        TabsGroup::BoxType(FL_UP_BOX);
 //        TabsGroup::BoxType(FL_ENGRAVED_BOX);
 //        TabsGroup::BoxType(FL_DIAMOND_UP_BOX);
@@ -57,28 +64,26 @@ public:
 //        TabsGroup::BoxType(FL_ROUND_DOWN_BOX);
 //        TabsGroup::BoxType(FL_THIN_UP_BOX);
 //        TabsGroup::BoxType(FL_BORDER_BOX);
-//        tabs->do_layout();
 //        TabsGroup::BoxColor(FL_YELLOW);
 //        TabsGroup::BoxSelectionColor(FL_GREEN);
 
-        tabs->child(8)->callback(CallbackStart, this);
-//        tabs->color(FL_YELLOW);
-//        tabs->box(FL_FLAT_BOX);
         b1->callback(CallbackWidget1, this);
         b2->callback(CallbackWidget2, this);
         b3->callback(CallbackWidget3, this);
         b4->callback(CallbackWidget4, this);
-
-//        color(FL_BLUE);
         resizable(tabs);
         size_range(64, 48);
-        CallbackWest(nullptr, nullptr);
-    }
 
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-//        tabs->resize(10, 10, W - 20, H - 20);
-        tabs->resize(0, 0, W, H);
+        if (force_append) {
+            tabs->do_layout();
+        }
+        
+        CallbackWest(nullptr, nullptr);
+//        tabs->pos(flw::PREF_FONTSIZE * 20);
+
+//        tabs->update_pref(23);
+//        tabs->update_pref(3);
+//        tabs->do_layout();
     }
 
     static void CallbackEast(Fl_Widget*, void*) {
