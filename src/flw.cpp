@@ -53,24 +53,35 @@ std::string                 PREF_FONTNAME           = "FL_HELVETICA";
 std::string                 PREF_THEME              = "default";
 const char* const           PREF_THEMES[]           = {
                                 "default",
-                                "oxy",
-                                "blue oxy",
-                                "tan oxy",
                                 "gleam",
                                 "blue gleam",
-                                "dark blue gleam",
                                 "dark gleam",
-                                "darker gleam",
                                 "tan gleam",
                                 "gtk",
                                 "blue gtk",
-                                "dark blue gtk",
                                 "dark gtk",
-                                "darker gtk",
                                 "tan gtk",
+                                "oxy",
+                                "tan oxy",
                                 "plastic",
-                                "blue plastic",
                                 "tan plastic",
+                                nullptr,
+};
+
+const char* const           PREF_THEMES2[]           = {
+                                "default",
+                                "gleam",
+                                "blue_gleam",
+                                "dark_gleam",
+                                "tan_gleam",
+                                "gtk",
+                                "blue_gtk",
+                                "dark_gtk",
+                                "tan_gtk",
+                                "oxy",
+                                "tan_oxy",
+                                "plastic",
+                                "tan_plastic",
                                 nullptr,
 };
 
@@ -851,41 +862,22 @@ static void _additional_colors(bool dark) {
 
 //----------------------------------------------------------------------
 static void _blue_colors() {
-    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,   130, 149, 166); // FL_INACTIVE_COLOR
-    Fl::set_color(15,   44, 100, 164); // FL_SELECTION_COLOR
-    Fl::background(170, 189, 206);
-}
-
-//----------------------------------------------------------------------
-static void _blue_dark_colors() {
-    Fl::set_color(0,   240, 240, 240); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    31,  47,  55); // FL_BACKGROUND2_COLOR
+    Fl::set_color(0,   228, 228, 228); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    79,  86,  94); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
-    Fl::set_color(15,   48, 138, 255); // FL_SELECTION_COLOR
+    Fl::set_color(15,  122, 143, 165); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(51, 67, 75);
+    Fl::background(48, 56, 65);
 }
 
 //----------------------------------------------------------------------
 static void _dark_colors() {
-    Fl::set_color(0,   240, 240, 240); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    48,  48,  48); // FL_BACKGROUND2_COLOR
+    Fl::set_color(0,   200, 200, 200); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    64,  64,  64); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  128, 164, 128); // FL_SELECTION_COLOR
+    Fl::set_color(15,  114, 147, 114); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(68, 68, 68);
-}
-
-//----------------------------------------------------------------------
-static void _darker_colors() {
-    Fl::set_color(0,   210, 210, 210); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    28,  28,  28); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  112, 152, 112); // FL_SELECTION_COLOR
-    Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(48, 48, 48);
+    Fl::background(43, 43, 43);
 }
 
 //----------------------------------------------------------------------
@@ -909,7 +901,7 @@ static void _tan_colors() {
     Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
     Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  164, 100,  44); // FL_SELECTION_COLOR
+    Fl::set_color(15,  188, 114,  50); // FL_SELECTION_COLOR
     Fl::background(206, 202, 187);
 }
 
@@ -963,25 +955,13 @@ void _load_gleam() {
 void _load_gleam_blue() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_blue_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
     theme::_make_default_colors_darker();
-    theme::_blue_dark_colors();
+    theme::_blue_colors();
     theme::_additional_colors(true);
     Fl::set_color(255, 101, 117, 125);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE];
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
     _IS_DARK = true;
 }
 
@@ -996,20 +976,6 @@ void _load_gleam_dark() {
     Fl::scheme("gleam");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gleam_darker() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_make_default_colors_darker();
-    theme::_darker_colors();
-    theme::_additional_colors(true);
-    Fl::set_color(255, 96, 96, 96);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARKER];
     _IS_DARK = true;
 }
 
@@ -1040,25 +1006,13 @@ void _load_gtk() {
 void _load_gtk_blue() {
     theme::_save_colors();
     theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_blue_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
     theme::_make_default_colors_darker();
-    theme::_blue_dark_colors();
+    theme::_blue_colors();
     theme::_additional_colors(true);
     Fl::set_color(255, 101, 117, 125);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE];
+    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
     _IS_DARK = true;
 }
 
@@ -1073,20 +1027,6 @@ void _load_gtk_dark() {
     Fl::scheme("gtk+");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
-    _IS_DARK = true;
-}
-
-//------------------------------------------------------------------------------
-void _load_gtk_darker() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    Fl::scheme("gtk+");
-    theme::_make_default_colors_darker();
-    theme::_darker_colors();
-    theme::_additional_colors(true);
-    Fl::set_color(255, 96, 96, 96);
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARKER];
     _IS_DARK = true;
 }
 
@@ -1114,18 +1054,6 @@ void _load_oxy() {
 }
 
 //------------------------------------------------------------------------------
-void _load_oxy_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("oxy");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_BLUE];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
 void _load_oxy_tan() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1145,18 +1073,6 @@ void _load_plastic() {
     Fl::scheme("plastic");
     Fl::redraw();
     flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
-    _IS_DARK = false;
-}
-
-//------------------------------------------------------------------------------
-void _load_plastic_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_blue_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("plastic");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE];
     _IS_DARK = false;
 }
 
@@ -1188,12 +1104,10 @@ void _scrollbar() {
 
 //------------------------------------------------------------------------------
 bool theme::is_dark() {
-    if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE] ||
+    if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE] ||
         flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARK] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARKER]) {
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
         return true;
     }
     else {
@@ -1206,62 +1120,44 @@ bool theme::load(std::string name) {
     if (theme::_SCROLLSIZE == 0) {
         theme::_SCROLLSIZE = Fl::scrollbar_size();
     }
-    
-    if (name == flw::PREF_THEMES[theme::THEME_DEFAULT]) {
+
+    if (name == flw::PREF_THEMES[theme::THEME_DEFAULT] || name == flw::PREF_THEMES2[theme::THEME_DEFAULT]) {
         theme::_load_default();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_OXY]) {
-        theme::_load_oxy();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_OXY_BLUE]) {
-        theme::_load_oxy_blue();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_OXY_TAN]) {
-        theme::_load_oxy_tan();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM] || name == flw::PREF_THEMES2[theme::THEME_GLEAM]) {
         theme::_load_gleam();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE] || name == flw::PREF_THEMES2[theme::THEME_GLEAM_BLUE]) {
         theme::_load_gleam_blue();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK_BLUE]) {
-        theme::_load_gleam_blue_dark();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] || name == flw::PREF_THEMES2[theme::THEME_GLEAM_DARK]) {
         theme::_load_gleam_dark();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARKER]) {
-        theme::_load_gleam_darker();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_TAN]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_TAN] || name == flw::PREF_THEMES2[theme::THEME_GLEAM_TAN]) {
         theme::_load_gleam_tan();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK] || name == flw::PREF_THEMES2[theme::THEME_GTK]) {
         theme::_load_gtk();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_BLUE]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_BLUE] || name == flw::PREF_THEMES2[theme::THEME_GTK_BLUE]) {
         theme::_load_gtk_blue();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK_BLUE]) {
-        theme::_load_gtk_blue_dark();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK] || name == flw::PREF_THEMES2[theme::THEME_GTK_DARK]) {
         theme::_load_gtk_dark();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARKER]) {
-        theme::_load_gtk_darker();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_TAN]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_GTK_TAN] || name == flw::PREF_THEMES2[theme::THEME_GTK_TAN]) {
         theme::_load_gtk_tan();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_OXY] || name == flw::PREF_THEMES2[theme::THEME_OXY]) {
+        theme::_load_oxy();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_OXY_TAN] || name == flw::PREF_THEMES2[theme::THEME_OXY_TAN]) {
+        theme::_load_oxy_tan();
+    }
+    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC] || name == flw::PREF_THEMES2[theme::THEME_PLASTIC]) {
         theme::_load_plastic();
     }
-    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_BLUE]) {
-        theme::_load_plastic_blue();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN]) {
+    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN] || name == flw::PREF_THEMES2[theme::THEME_PLASTIC_TAN]) {
         theme::_load_plastic_tan();
     }
     else {

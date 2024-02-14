@@ -26,23 +26,18 @@ namespace theme {
 
 // duplicated from flw.cpp so it can compile
 void _load_default();
-void _load_oxy();
-void _load_oxy_blue();
-void _load_oxy_tan();
 void _load_gleam();
 void _load_gleam_blue();
-void _load_gleam_blue_dark();
 void _load_gleam_dark();
-void _load_gleam_darker();
 void _load_gleam_tan();
 void _load_gtk();
 void _load_gtk_blue();
-void _load_gtk_blue_dark();
 void _load_gtk_dark();
-void _load_gtk_darker();
 void _load_gtk_tan();
+void _load_oxy();
+void _load_oxy_blue();
+void _load_oxy_tan();
 void _load_plastic();
-void _load_plastic_blue();
 void _load_plastic_tan();
 void _scrollbar();
 
@@ -878,29 +873,14 @@ public:
         else if (w == self->_theme) {
             auto row = self->_theme->value() - 1;
 
-            if (row == theme::THEME_OXY) {
-                theme::_load_oxy();
-            }
-            else if (row == theme::THEME_OXY_BLUE) {
-                theme::_load_oxy_blue();
-            }
-            else if (row == theme::THEME_OXY_TAN) {
-                theme::_load_oxy_tan();
-            }
-            else if (row == theme::THEME_GLEAM) {
+            if (row == theme::THEME_GLEAM) {
                 theme::_load_gleam();
             }
             else if (row == theme::THEME_GLEAM_BLUE) {
                 theme::_load_gleam_blue();
             }
-            else if (row == theme::THEME_GLEAM_DARK_BLUE) {
-                theme::_load_gleam_blue_dark();
-            }
             else if (row == theme::THEME_GLEAM_DARK) {
                 theme::_load_gleam_dark();
-            }
-            else if (row == theme::THEME_GLEAM_DARKER) {
-                theme::_load_gleam_darker();
             }
             else if (row == theme::THEME_GLEAM_TAN) {
                 theme::_load_gleam_tan();
@@ -911,23 +891,20 @@ public:
             else if (row == theme::THEME_GTK_BLUE) {
                 theme::_load_gtk_blue();
             }
-            else if (row == theme::THEME_GTK_DARK_BLUE) {
-                theme::_load_gtk_blue_dark();
-            }
             else if (row == theme::THEME_GTK_DARK) {
                 theme::_load_gtk_dark();
-            }
-            else if (row == theme::THEME_GTK_DARKER) {
-                theme::_load_gtk_darker();
             }
             else if (row == theme::THEME_GTK_TAN) {
                 theme::_load_gtk_tan();
             }
+            else if (row == theme::THEME_OXY) {
+                theme::_load_oxy();
+            }
+            else if (row == theme::THEME_OXY_TAN) {
+                theme::_load_oxy_tan();
+            }
             else if (row == theme::THEME_PLASTIC) {
                 theme::_load_plastic();
-            }
-            else if (row == theme::THEME_PLASTIC_BLUE) {
-                theme::_load_plastic_blue();
             }
             else if (row == theme::THEME_PLASTIC_TAN) {
                 theme::_load_plastic_tan();
@@ -969,11 +946,11 @@ public:
         _fixed_label->labelfont(flw::PREF_FIXED_FONT);
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 34);
-        size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 24);
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 28);
+        size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
         theme::_scrollbar();
 
-        for (int f = 0; f <= theme::THEME_SYSTEM; f++) {
+        for (int f = 0; f < theme::THEME_NIL; f++) {
             if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
                 _theme->value(f + 1);
                 break;

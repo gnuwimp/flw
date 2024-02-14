@@ -182,7 +182,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
 
         if (current == true) {
             color     = selection_color();
-            textcolor = FL_BACKGROUND2_COLOR;
+            textcolor = fl_contrast(FL_FOREGROUND_COLOR, color);
         }
 
         fl_rectf(X + 1, Y, W + 1, H, color);

@@ -130,25 +130,18 @@ namespace theme {
     //
     enum {
                                 THEME_DEFAULT,
-                                THEME_OXY,
-                                THEME_OXY_BLUE,
-                                THEME_OXY_TAN,
                                 THEME_GLEAM,
                                 THEME_GLEAM_BLUE,
-                                THEME_GLEAM_DARK_BLUE,
                                 THEME_GLEAM_DARK,
-                                THEME_GLEAM_DARKER,
                                 THEME_GLEAM_TAN,
                                 THEME_GTK,
                                 THEME_GTK_BLUE,
-                                THEME_GTK_DARK_BLUE,
                                 THEME_GTK_DARK,
-                                THEME_GTK_DARKER,
                                 THEME_GTK_TAN,
+                                THEME_OXY,
+                                THEME_OXY_TAN,
                                 THEME_PLASTIC,
-                                THEME_PLASTIC_BLUE,
                                 THEME_PLASTIC_TAN,
-                                THEME_SYSTEM,
                                 THEME_NIL,
     };
 }

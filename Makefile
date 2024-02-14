@@ -252,6 +252,7 @@ test_tabledisplay.exe: obj/test_tabledisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_tabledisplay: test_tabledisplay.exe
+	echo ./test_tabledisplay.exe $(arg)
 	./test_tabledisplay.exe $(arg)
 
 obj/test_tableeditor.o: test/test_tableeditor.cpp $(OBJ)

@@ -81,7 +81,7 @@ public:
 
                     if (r == _row && c == _col) {
                         bg = FL_SELECTION_COLOR;
-                        fg = FL_BACKGROUND2_COLOR;
+                        fg = fl_contrast(FL_FOREGROUND_COLOR, bg);
                     }
                     else if (col == 2) {
                         bg = FL_BACKGROUND2_COLOR;
