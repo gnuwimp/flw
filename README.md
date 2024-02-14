@@ -84,5 +84,5 @@ Tan gleam theme<br>
 Blue gtk theme<br>
 <img src="images/blue_gtk.png"/>
 
-Dark gtk theme<br>
+Dark gleam theme<br>
 <img src="images/dark_gleam.png"/>
