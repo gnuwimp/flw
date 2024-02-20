@@ -865,9 +865,29 @@ static void _blue_colors() {
     Fl::set_color(0,   228, 228, 228); // FL_FOREGROUND_COLOR
     Fl::set_color(7,    79,  86,  94); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  122, 143, 165); // FL_SELECTION_COLOR
+    Fl::set_color(15,  241, 196,  126); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
     Fl::background(48, 56, 65);
+
+    unsigned char r = 0;
+    unsigned char g = 0;
+    unsigned char b = 0;
+    
+    for (int f = 32; f < 49; f++) {
+        Fl::set_color(f, r, g, b);
+        
+        if (f == 32) {
+            r = 0;
+            g = 9;
+            b = 18;
+        }
+        else {
+            r += 2 + (f < 44);
+            g += 2 + (f < 44);
+            b += 2 + (f < 44);
+        }
+//        if (f > 40) c++;
+    }
 }
 
 //----------------------------------------------------------------------
@@ -875,9 +895,18 @@ static void _dark_colors() {
     Fl::set_color(0,   200, 200, 200); // FL_FOREGROUND_COLOR
     Fl::set_color(7,    64,  64,  64); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  114, 147, 114); // FL_SELECTION_COLOR
+    Fl::set_color(15,  177, 227, 177); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
+    Fl::set_color(49, 43, 43, 43);    
     Fl::background(43, 43, 43);
+    
+    unsigned char c = 0;
+    
+    for (int f = 32; f < 49; f++) {
+        Fl::set_color(f, c, c, c);
+        c += 2;
+        if (f > 40) c++;
+    }
 }
 
 //----------------------------------------------------------------------
@@ -894,15 +923,6 @@ static void _make_default_colors_darker() {
     Fl::set_color(FL_DARK_CYAN, fl_darker(Fl::get_color(FL_DARK_CYAN)));
     Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
     Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
-}
-
-//----------------------------------------------------------------------
-static void _tan_colors() {
-    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  188, 114,  50); // FL_SELECTION_COLOR
-    Fl::background(206, 202, 187);
 }
 
 //----------------------------------------------------------------------
@@ -927,6 +947,15 @@ static void _save_colors() {
 
         _SAVED_COLOR = true;
     }
+}
+
+//----------------------------------------------------------------------
+static void _tan_colors() {
+    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  188, 114,  50); // FL_SELECTION_COLOR
+    Fl::background(206, 202, 187);
 }
 
 //------------------------------------------------------------------------------
@@ -1254,7 +1283,7 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
 
-    pref.get("fontname", buffer, "", 4000);
+    pref.get("regular_name", buffer, "", 4000);
 
     if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
         auto font = theme::load_font(buffer);
@@ -1265,13 +1294,13 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
         }
     }
 
-    pref.get("fontsize", val, flw::PREF_FONTSIZE);
+    pref.get("regular_size", val, flw::PREF_FONTSIZE);
 
     if (val >= 6 && val <= 72) {
         flw::PREF_FONTSIZE = val;
     }
 
-    pref.get("fixedfontname", buffer, "", 1000);
+    pref.get("mono_name", buffer, "", 1000);
 
     if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
         auto font = theme::load_font(buffer);
@@ -1282,7 +1311,7 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
         }
     }
 
-    pref.get("fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
+    pref.get("mono_size", val, flw::PREF_FIXED_FONTSIZE);
 
     if (val >= 6 && val <= 72) {
         flw::PREF_FIXED_FONTSIZE = val;
@@ -1363,10 +1392,10 @@ bool theme::parse(int argc, const char** argv) {
 //
 void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
-    pref.set("fontname", flw::PREF_FONTNAME.c_str());
-    pref.set("fontsize", flw::PREF_FONTSIZE);
-    pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
-    pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
+    pref.set("regular_name", flw::PREF_FONTNAME.c_str());
+    pref.set("regular_size", flw::PREF_FONTSIZE);
+    pref.set("mono_name", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
 }
 
 //------------------------------------------------------------------------------

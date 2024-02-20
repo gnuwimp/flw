@@ -32,6 +32,8 @@ using namespace flw;
 
 class Scale : public Fl_Box {
 public:
+    bool labels = false;
+    
     Scale() : Fl_Box(0, 0, 0, 0) {
         box(FL_BORDER_BOX);
     }
@@ -43,7 +45,13 @@ public:
         auto Y = y() + 1;
 
         for (auto f = 0; f < 24; f++) {
+            char t[30];
+            unsigned char r, g, b;
+            Fl::get_color(32 + f, r, g, b);
+            snprintf(t, 30, "%d: r=%u, g=%u, b=%u", 32 + f, r, g, b);
             fl_rectf(x() + 1, Y, w() - 2, (int) H, 32 + f);
+            fl_color(FL_DARK_YELLOW);
+            if (labels) fl_draw(t, x(), Y, w(), H, FL_ALIGN_CENTER);
             Y += H;
         }
     }
@@ -106,7 +114,8 @@ public:
     Fl_Dial*             dial;
     Fl_Hold_Browser*     browser;
     Fl_Input*            input;
-    Fl_Light_Button*     light;
+    Fl_Button*           file;
+    Fl_Light_Button*     labels;
     Fl_Menu_Bar*         menu;
     Fl_Roller*           roller;
     Fl_Round_Button*     radio;
@@ -132,12 +141,13 @@ public:
         date         = new DateChooser(0, 0, 0, 0);
         dial         = new Fl_Dial(0, 0, 0, 0);
         disabled     = new Fl_Button(0, 0, 0, 0, "Deactivated");
+        file         = new Fl_Button(0, 0, 0, 0, "File chooser");
         grid0        = new GridGroup();
         grid1        = new GridGroup();
         grid2        = new GridGroup();
         grid3        = new GridGroup();
         input        = new Fl_Input(0, 0, 0, 0);
-        light        = new Fl_Light_Button(0, 0, 0, 0, "File Chooser");
+        labels       = new Fl_Light_Button(0, 0, 0, 0, "Scale labels");
         menu         = new Fl_Menu_Bar(0, 0, 0, 0);
         radio        = new Fl_Round_Button(0, 0, 0, 0, "Fl_Round_Button");
         roller       = new Fl_Roller(0, 0, 0, 0, "");
@@ -199,21 +209,22 @@ public:
         add(grid2);
         add(grid3);
 
-        grid0->add(theme,           0,   1,  26,  4);
-        grid0->add(colormap,        0,   6,  26,  4);
-        grid0->add(disabled,        0,  11,  26,  4);
-        grid0->add(radio,           0,  16,  26,  4);
-        grid0->add(check,           0,  21,  26,  4);
-        grid0->add(light,           0,  26,  26,  4);
+        grid0->add(theme,           0,   1,  31,  4);
+        grid0->add(colormap,        0,   6,  31,  4);
+        grid0->add(disabled,        0,  11,  31,  4);
+        grid0->add(radio,           0,  16,  31,  4);
+        grid0->add(check,           0,  21,  31,  4);
+        grid0->add(file,            0,  26,  31,  4);
         grid0->add(slider,          0,  31,   4, 20);
         grid0->add(roller,          5,  31,   4, 20);
         grid0->add(dial,           10,  31,  16, 16);
-        grid0->add(scale,           0,  52,  26, -1);
+        grid0->add(labels,          0,  52,  31,  4);
+        grid0->add(scale,           0,  57,  31, -1);
         
-        grid0->add(input,          28,   1,  -1,  4);
-        grid0->add(browser,        28,   6,  -1, 20);
-        grid0->add(date,           28,  27,  -1, 48);
-        grid0->add(tree,           28,  76,  -1, -1);
+        grid0->add(input,          33,   1,  -1,  4);
+        grid0->add(browser,        33,   6,  -1, 20);
+        grid0->add(date,           33,  27,  -1, 48);
+        grid0->add(tree,           33,  76,  -1, -1);
 
         grid1->add(bg,              0,   3,   0,  4);
         grid1->add(bg2,             0,  10,   0,  4);
@@ -321,7 +332,8 @@ public:
         dial->value(0.5);
         disabled->deactivate();
         input->value(flw::PREF_THEME.c_str());
-        light->callback(CallbackFile);
+        file->callback(CallbackFile);
+        labels->callback(CallbackLabels, this);
         slider->type(4);
         theme->callback(CallbackTheme);
         theme->tooltip("Select a theme.");
@@ -372,6 +384,12 @@ public:
 
     static void CallbackFile(Fl_Widget*, void*) {
         fl_file_chooser("fl_file_chooser", nullptr, nullptr, 0);
+    }
+
+    static void CallbackLabels(Fl_Widget* w, void* o) {
+        auto self = static_cast<Test*>(o);
+        self->scale->labels = static_cast<Fl_Light_Button*>(w)->value();
+        Fl::redraw();
     }
 
     static void CallbackTheme(Fl_Widget*, void*) {
@@ -470,10 +488,10 @@ public:
             auto fs = flw::PREF_FONTSIZE;
 
             menu->resize    (0,        0,       W,        fs * 2);
-            grid0->resize   (fs,       fs * 2,  fs * 50,  H - fs * 3);
-            grid1->resize   (fs * 52,  fs * 2,  fs * 20,  H - fs * 3);
-            grid2->resize   (fs * 73,  fs * 2,  fs * 20,  H - fs * 3);
-            grid3->resize   (fs * 94,  fs * 2,  fs * 20,  H - fs * 3);
+            grid0->resize   (fs,       fs * 2,  fs * 55,  H - fs * 3);
+            grid1->resize   (fs * 57,  fs * 2,  fs * 20,  H - fs * 3);
+            grid2->resize   (fs * 80,  fs * 2,  fs * 20,  H - fs * 3);
+            grid3->resize   (fs * 101,  fs * 2,  fs * 20,  H - fs * 3);
         }
     }
 

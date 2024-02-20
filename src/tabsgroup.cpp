@@ -44,7 +44,7 @@ public:
     void draw() override {
         fl_draw_box(_BOXTYPE, x(), y(), w(), h(), (value() != 0) ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
         fl_font(_TabsGroupButton::_FONT, _TabsGroupButton::_FONTSIZE);
-        fl_color((value() != 0) ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
+        fl_color((value() != 0) ? fl_contrast(FL_FOREGROUND_COLOR, _TabsGroupButton::_BOXSELCOLOR) : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };

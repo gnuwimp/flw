@@ -138,7 +138,7 @@ int flw::SplitGroup::handle(int event) {
 void flw::SplitGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
-    if (children() == 0 || W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
         return;
     }
 

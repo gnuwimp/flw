@@ -778,9 +778,9 @@ public:
         end();
 
         _close       = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _fixedfont   = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+        _fixedfont   = new Fl_Button(0, 0, 0, 0, "&Mono font");
         _fixed_label = new Fl_Box(0, 0, 0, 0);
-        _font        = new Fl_Button(0, 0, 0, 0, "&Font");
+        _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup();
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
@@ -856,7 +856,7 @@ public:
             }
         }
         else if (w == self->_font) {
-            FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
+            FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Regular Font");
 
             if (fd.run(Fl::first_window()) == true) {
                 flw::PREF_FONT     = fd.font();
@@ -1084,7 +1084,7 @@ void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
 //
 AbortDialog::AbortDialog(double min, double max) :
 Fl_Double_Window(0, 0, 0, 0, "Working...") {
-    _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
+    _button   = new Fl_Button(0, 0, 0, 0, "Press to abort");
     _grid     = new GridGroup();
     _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
     _abort    = false;
