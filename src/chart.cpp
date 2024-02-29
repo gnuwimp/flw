@@ -28,6 +28,8 @@ namespace flw {
  *     |_|
  */
 
+#define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
+
 static const int                _CHART_MAX_VLINES      = 100;
 static const int                _CHART_MAX_LINE_WIDTH  = 100;
 static const char* const        _CHART_SHOW_LABELS     = "Show line labels";
@@ -937,6 +939,50 @@ void Chart::_calc_yscale() {
 }
 
 //------------------------------------------------------------------------------
+void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<const Chart*>(chart_object);
+    self->debug();
+}
+
+//------------------------------------------------------------------------------
+void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+
+    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+    self->redraw();
+}
+
+//------------------------------------------------------------------------------
+void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+
+    for (auto& area : self->_areas) {
+        area.selected = 0;
+
+        for (auto& line : area.lines) {
+            line.visible = true;
+        }
+    }
+
+    self->redraw();
+}
+
+//------------------------------------------------------------------------------
+void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
+}
+
+//------------------------------------------------------------------------------
+void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    self->_date_start = self->_scroll->value();
+    self->init(false);
+}
+
+//------------------------------------------------------------------------------
 void Chart::clear() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
 
@@ -1740,109 +1786,12 @@ flw::ChartArea* Chart::_inside_area(int X, int Y) {
 }
 
 //------------------------------------------------------------------------------
-bool Chart::margin(int left, int right) {
-    if (left < 1 || left > 20 || right < 1 || right > 20) {
-        return false;
-    }
-
-    _margin_left  = left;
-    _margin_right = right;
-    redraw();
-    return true;
-}
-
-//------------------------------------------------------------------------------
-void Chart::resize(int X, int Y, int W, int H) {
-    if (_old_width != W || _old_height != H) {
-        Fl_Widget::resize(X, Y, W, H);
-        _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
-        _old_width = W;
-        _old_height = H;
-        init(false);
-    }
-}
-
-//------------------------------------------------------------------------------
-bool Chart::tick_width(int tick_width) {
-    if (tick_width < 3 || tick_width > 100) {
-        return false;
-    }
-
-    _tick_width = tick_width;
-    redraw();
-    return true;
-}
-
-//------------------------------------------------------------------------------
-void Chart::update_pref() {
-    _menu->textfont(flw::PREF_FONT);
-    _menu->textsize(flw::PREF_FONTSIZE);
-}
-
-/***
- *       _____ _                _       _____ _        _   _
- *      / ____| |              | |     / ____| |      | | (_)
- *     | |    | |__   __ _ _ __| |_   | (___ | |_ __ _| |_ _  ___
- *     | |    | '_ \ / _` | '__| __|   \___ \| __/ _` | __| |/ __|
- *     | |____| | | | (_| | |  | |_    ____) | || (_| | |_| | (__
- *      \_____|_| |_|\__,_|_|   \__|  |_____/ \__\__,_|\__|_|\___|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<const Chart*>(chart_object);
-    self->debug();
-}
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-
-    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
-    self->redraw();
-}
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-
-    for (auto& area : self->_areas) {
-        area.selected = 0;
-
-        for (auto& line : area.lines) {
-            line.visible = true;
-        }
-    }
-
-    self->redraw();
-}
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
-}
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    self->_date_start = self->_scroll->value();
-    self->init(false);
-}
-
-#define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
-
-//------------------------------------------------------------------------------
 bool Chart::Load(Chart* chart, std::string filename) {
     chart->clear();
     chart->redraw();
 
     auto wc  = WaitCursor();
-    auto buf = util::load_file(filename);
+    auto buf = File::Load(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
@@ -1945,6 +1894,29 @@ bool Chart::Load(Chart* chart, std::string filename) {
     return true;
 }
 
+//------------------------------------------------------------------------------
+bool Chart::margin(int left, int right) {
+    if (left < 1 || left > 20 || right < 1 || right > 20) {
+        return false;
+    }
+
+    _margin_left  = left;
+    _margin_right = right;
+    redraw();
+    return true;
+}
+
+//------------------------------------------------------------------------------
+void Chart::resize(int X, int Y, int W, int H) {
+    if (_old_width != W || _old_height != H) {
+        Fl_Widget::resize(X, Y, W, H);
+        _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
+        _old_width = W;
+        _old_height = H;
+        init(false);
+    }
+}
+
 //----------------------------------------------------------------------
 bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_low) {
     auto wc  = WaitCursor();
@@ -2007,12 +1979,29 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
             jsb.end();
 
         auto js = jsb.encode();
-        return util::save_file(filename, js.c_str(), js.length());
+        return File::Save(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }
+}
+
+//------------------------------------------------------------------------------
+bool Chart::tick_width(int tick_width) {
+    if (tick_width < 3 || tick_width > 100) {
+        return false;
+    }
+
+    _tick_width = tick_width;
+    redraw();
+    return true;
+}
+
+//------------------------------------------------------------------------------
+void Chart::update_pref() {
+    _menu->textfont(flw::PREF_FONT);
+    _menu->textsize(flw::PREF_FONTSIZE);
 }
 
 }

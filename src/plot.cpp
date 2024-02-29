@@ -1094,7 +1094,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
     plot->redraw();
 
     auto wc  = WaitCursor();
-    auto buf = util::load_file(filename);
+    auto buf = File::Load(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
@@ -1272,7 +1272,7 @@ bool Plot::Save(const Plot* plot, std::string filename) {
             }
 
         auto js = jsb.encode();
-        return util::save_file(filename, js.c_str(), js.length());
+        return File::Save(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

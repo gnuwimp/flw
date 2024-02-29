@@ -11,6 +11,7 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
+#include <FL/Fl_PostScript.H>
 
 #ifdef DEBUG
 #include <iostream>
@@ -52,27 +53,6 @@ typedef std::vector<std::string> StringVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
 
 //------------------------------------------------------------------------------
-// Buffer container that frees memory automatically
-//
-struct Buf {
-    char*                       p;
-    size_t                      s;
-
-                                Buf();
-    explicit                    Buf(size_t S);
-                                Buf(char* P, size_t S);
-                                Buf(const char* P, size_t S);
-                                Buf(const Buf& b);
-                                Buf(Buf&& b);
-    Buf&                        operator=(const Buf& b);
-    Buf&                        operator=(Buf&& b);
-    Buf&                        operator+=(const Buf& b);
-    bool                        operator==(const Buf& other) const;
-    virtual                     ~Buf()
-                                    { free(p); }
-};
-
-//------------------------------------------------------------------------------
 namespace debug {
     void                        print(Fl_Widget* widget);
     void                        print(Fl_Widget* widget, std::string& indent);
@@ -95,19 +75,19 @@ namespace menu {
 namespace util {
     void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
     double                      clock();
+    Fl_Widget*                  find_widget(Fl_Group* group, std::string label);
     std::string                 fix_menu_string(std::string in);
     std::string                 format(const char* format, ...);
     std::string                 format_int(int64_t num, char del = ' ');
+    bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
-    Buf                         load_file(std::string filename, bool alert = true);
     int32_t                     milliseconds();
     void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 remove_browser_format(const char* text);
-    std::string&                replace(std::string& string, std::string find, std::string replace);
-    bool                        save_file(std::string filename, const void* data, size_t size, bool alert = true);
+    std::string&                replace_string(std::string& string, std::string find, std::string replace);
     void                        sleep(int milli);
-    StringVector                split(const std::string& string, std::string split);
-    Fl_Widget*                  widget(Fl_Group* group, std::string label);
+    StringVector                split_string(const std::string& string, std::string split);
+    void*                       zero_memory(char* mem, size_t size);
 }
 
 //------------------------------------------------------------------------------
@@ -169,6 +149,141 @@ namespace color {
     extern Fl_Color             TURQUOISE;
     extern Fl_Color             VIOLET;
 }
+
+/***
+ *      ____         __ 
+ *     |  _ \       / _|
+ *     | |_) |_   _| |_ 
+ *     |  _ <| | | |  _|
+ *     | |_) | |_| | |  
+ *     |____/ \__,_|_|  
+ *                      
+ *                      
+ */
+
+//------------------------------------------------------------------------------
+// Buffer container that frees memory automatically.
+// If grab is true then it will take ownership of input buffer and will delete it later.
+//
+struct Buf {
+    char*                       p;
+    size_t                      s;
+
+                                Buf();
+    explicit                    Buf(size_t S);
+                                Buf(const char* P, size_t S, bool grab = false);
+                                Buf(const Buf& b);
+                                Buf(Buf&& b);
+    Buf&                        operator=(const Buf& b);
+    Buf&                        operator=(Buf&& b);
+    Buf&                        operator+=(const Buf& b);
+    bool                        operator==(const Buf& other) const;
+    virtual                     ~Buf()
+                                    { free(p); }
+};
+
+/***
+ *      ______ _ _      
+ *     |  ____(_) |     
+ *     | |__   _| | ___ 
+ *     |  __| | | |/ _ \
+ *     | |    | | |  __/
+ *     |_|    |_|_|\___|
+ *                      
+ *                      
+ */
+
+//------------------------------------------------------------------------------
+// Retrieve basic file info.
+// And some utility functions to read and save to files.
+//
+struct File {
+    enum class TYPE {
+                                NA,
+                                DIR,
+                                FILE,
+                                OTHER,
+    };
+    
+    int64_t                     size;
+    int64_t                     mtime;
+    TYPE                        type;
+                                
+                                File()
+                                    { size = mtime = 0; type = TYPE::NA; }
+                                File(std::string filename);
+
+    static Buf                  Load(std::string filename, bool alert = true);
+    static bool                 Save(std::string filename, const char* data, size_t size, bool alert = true);
+    static inline bool          Save(std::string filename, const Buf& buf, bool alert = true)
+                                    { return File::Save(filename, buf.p, buf.s, alert); }
+};
+
+/***
+ *      _____      _       _ _______        _   
+ *     |  __ \    (_)     | |__   __|      | |  
+ *     | |__) | __ _ _ __ | |_ | | _____  _| |_ 
+ *     |  ___/ '__| | '_ \| __|| |/ _ \ \/ / __|
+ *     | |   | |  | | | | | |_ | |  __/>  <| |_ 
+ *     |_|   |_|  |_|_| |_|\__||_|\___/_/\_\\__|
+ *                                              
+ *                                              
+ */
+
+//------------------------------------------------------------------------------
+// Line numbers are only used with FL_ALIGN_LEFT.
+//
+class PrintText {
+public:
+                                PrintText(std::string filename, 
+                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4, 
+                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT, 
+                                    Fl_Font font = FL_COURIER, 
+                                    Fl_Fontsize fontsize = 14, 
+                                    Fl_Align align = FL_ALIGN_LEFT, 
+                                    bool wrap = true, 
+                                    bool border = false, 
+                                    int line_num = 0);
+                                ~PrintText();
+
+    void                        debug() const;    
+    Fl_Fontsize                 fontsize() const
+                                    { return _fontsize; }
+    int                         page_count() const
+                                    { return _page_count; }
+    std::string                 print(const char* text, unsigned replace_tab_with_space = 0);
+    std::string                 print(const std::string& text, unsigned replace_tab_with_space = 0);
+    std::string                 print(const StringVector& lines, unsigned replace_tab_with_space = 0);
+
+private:
+    void                        check_for_new_page();
+    void                        measure_lw_lh(const std::string& text);
+    void                        print_line(const std::string& line);
+    void                        print_wrapped_line(const std::string& line);
+    std::string                 start();
+    std::string                 stop();
+
+    Fl_Align                    _align;
+    Fl_Font                     _font;
+    Fl_Fontsize                 _fontsize;
+    Fl_PostScript_File_Device*  _printer;
+    Fl_Paged_Device::Page_Format _page_format;
+    Fl_Paged_Device::Page_Layout _page_layout;
+    FILE*                       _file;
+    bool                        _border;
+    bool                        _wrap;
+    int                         _lh;
+    int                         _line_count;
+    int                         _line_num;
+    int                         _lw;
+    int                         _nw;
+    int                         _page_count;
+    int                         _ph;
+    int                         _pw;
+    int                         _px;
+    int                         _py;
+    std::string                 _filename;
+};
 
 } // flw
 

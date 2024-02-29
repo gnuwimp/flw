@@ -2,6 +2,7 @@
 // Released under the GNU General Public License v3.0
 
 #include "flw.h"
+#include "waitcursor.h"
 
 // MKALGAM_ON
 
@@ -31,14 +32,14 @@
 #endif
 
 /***
- *       __ _          
- *      / _| |         
+ *       __ _
+ *      / _| |
  *     | |_| |_      __
  *     |  _| \ \ /\ / /
- *     | | | |\ V  V / 
- *     |_| |_| \_/\_/  
- *                     
- *                     
+ *     | | | |\ V  V /
+ *     |_| |_| \_/\_/
+ *
+ *
  */
 
 namespace flw {
@@ -85,214 +86,20 @@ const char* const           PREF_THEMES2[]           = {
                                 nullptr,
 };
 
-struct Stat {
-    int64_t                         size;
-    int64_t                         mtime;
-    int                             mode;
-
-     Stat()
-        { size = mtime = 0; mode = 0; }
-
-     explicit Stat(std::string filename) {
-        size  = 0;
-        mtime = 0;
-        mode  = 0;
-
-    #ifdef _WIN32
-        wchar_t wbuffer[1025];
-        struct __stat64 st;
-
-        while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-            filename.pop_back();
-        }
-
-        fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-
-        if (_wstat64(wbuffer, &st) == 0) {
-            size  = st.st_size;
-            mtime = st.st_mtime;
-
-            if (S_ISDIR(st.st_mode)) {
-                mode = 1;
-            }
-            else if (S_ISREG(st.st_mode)) {
-                mode = 2;
-            }
-            else {
-                mode = 3;
-            }
-        }
-    #else
-        struct stat st;
-
-        if (stat(filename.c_str(), &st) == 0) {
-            size  = st.st_size;
-            mtime = st.st_mtime;
-
-            if (S_ISDIR(st.st_mode)) {
-                mode = 1;
-            }
-            else if (S_ISREG(st.st_mode)) {
-                mode = 2;
-            }
-            else {
-                mode = 3;
-            }
-        }
-    #endif
-    }
-};
-
-/***
- *      ____         __ 
- *     |  _ \       / _|
- *     | |_) |_   _| |_ 
- *     |  _ <| | | |  _|
- *     | |_) | |_| | |  
- *     |____/ \__,_|_|  
- *                      
- *                      
- */
-
-//------------------------------------------------------------------------------
-Buf::Buf() {
-    p = nullptr;
-    s = 0;
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(size_t S) {
-    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
-    s = 0;
-
-    if (p != nullptr) {
-        s = S;
-    }
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(char* P, size_t S) {
-    p = P;
-    s = S;
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(const char* P, size_t S) {
-    if (P == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(S + 1, 1));
-        s = 0;
-
-        if (p == nullptr) {
-            return;
-        }
-
-        memcpy(p, P, S);
-        s = S;
-    }
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(const Buf& b) {
-    if (b.p == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-
-        if (p == nullptr) {
-            return;
-        }
-
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(Buf&& b) {
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-}
-
-//------------------------------------------------------------------------------
-Buf& Buf::operator=(const Buf& b) {
-    if (this == &b) {
-    }
-    if (b.p == nullptr) {
-        free(p);
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        free(p);
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-
-        if (p == nullptr) {
-            return *this;
-        }
-
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-Buf& Buf::operator=(Buf&& b) {
-    free(p);
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-Buf& Buf::operator+=(const Buf& b) {
-    if (b.p == nullptr) {
-    }
-    else if (p == nullptr) {
-        *this = b;
-    }
-    else {
-        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
-
-        if (t == nullptr) {
-            return *this;
-        }
-
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
-    }
-
-    return *this;
-}
-
 //------------------------------------------------------------------------------
 bool Buf::operator==(const Buf& other) const {
     return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
 }
 
 /***
- *          _      _                 
- *         | |    | |                
- *       __| | ___| |__  _   _  __ _ 
+ *          _      _
+ *         | |    | |
+ *       __| | ___| |__  _   _  __ _
  *      / _` |/ _ \ '_ \| | | |/ _` |
  *     | (_| |  __/ |_) | |_| | (_| |
  *      \__,_|\___|_.__/ \__,_|\__, |
  *                              __/ |
- *                             |___/ 
+ *                             |___/
  */
 
 //------------------------------------------------------------------------------
@@ -309,7 +116,7 @@ void debug::print(Fl_Widget* widget, std::string& indent) {
     else {
         printf("%sx=%4d, y=%4d, w=%4d, h=%4d \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->label() ? widget->label() : "NO_LABEL");
         auto group = widget->as_group();
-        
+
         if (group) {
             indent += "\t";
             for (int f = 0; f < group->children(); f++) {
@@ -322,14 +129,14 @@ void debug::print(Fl_Widget* widget, std::string& indent) {
 }
 
 /***
- *                                 
- *                                 
- *      _ __ ___   ___ _ __  _   _ 
+ *
+ *
+ *      _ __ ___   ___ _ __  _   _
  *     | '_ ` _ \ / _ \ '_ \| | | |
  *     | | | | | |  __/ | | | |_| |
  *     |_| |_| |_|\___|_| |_|\__,_|
- *                                 
- *                                 
+ *
+ *
  */
 
 namespace menu {
@@ -382,14 +189,14 @@ void menu::setonly_item(Fl_Menu_* menu, const char* text) {
 }
 
 /***
- *            _   _ _ 
+ *            _   _ _
  *           | | (_) |
  *      _   _| |_ _| |
  *     | | | | __| | |
  *     | |_| | |_| | |
  *      \__,_|\__|_|_|
- *                    
- *                    
+ *
+ *
  */
 
 //------------------------------------------------------------------------------
@@ -420,13 +227,39 @@ double util::clock() {
 }
 
 //------------------------------------------------------------------------------
+Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+
+        if (w->label() != nullptr && label == w->label()) {
+            return w;
+        }
+    }
+
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        auto g = w->as_group();
+
+        if (g != nullptr) {
+            w = util::find_widget(g, label);
+
+            if (w != nullptr) {
+                return w;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+//------------------------------------------------------------------------------
 std::string util::fix_menu_string(std::string in) {
     std::string res = in;
 
-    util::replace(res, "\\", "\\\\");
-    util::replace(res, "_", "\\_");
-    util::replace(res, "/", "\\/");
-    util::replace(res, "&", "&&");
+    util::replace_string(res, "\\", "\\\\");
+    util::replace_string(res, "_", "\\_");
+    util::replace_string(res, "/", "\\/");
+    util::replace_string(res, "&", "&&");
 
     return res;
 }
@@ -498,6 +331,19 @@ std::string util::format_int(int64_t num, char del) {
 }
 
 //------------------------------------------------------------------------------
+bool util::is_whitespace_or_empty(const char* str) {
+    while (*str != 0) {
+        if (*str != 9 && *str != 32) {
+            return false;
+        }
+
+        str++;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
 // Set label font properties for widget
 // If widget is an group widget set also the font for child widgets (recursive)
 //
@@ -514,44 +360,6 @@ void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
             util::labelfont(group->child(f), fn, fs);
         }
     }
-}
-
-//------------------------------------------------------------------------------
-Buf util::load_file(std::string filename, bool alert) {
-    auto stat = flw::Stat(filename);
-
-    if (stat.mode != 2) {
-        if (alert == true) {
-            fl_alert("error: file %s is missing or not an file", filename.c_str());
-        }
-
-        return Buf();
-    }
-
-    auto file = fl_fopen(filename.c_str(), "rb");
-
-    if (file == nullptr) {
-        if (alert == true) {
-            fl_alert("error: can't open %s", filename.c_str());
-        }
-
-        return Buf();
-    }
-
-    auto buf  = Buf(stat.size);
-    auto read = fread(buf.p, 1, (size_t) stat.size, file);
-
-    fclose(file);
-
-    if (read != (size_t) stat.size) {
-        if (alert == true) {
-            fl_alert("error: failed to read %s", filename.c_str());
-        }
-
-        return Buf();
-    }
-
-    return buf;
 }
 
 //------------------------------------------------------------------------------
@@ -664,40 +472,25 @@ std::string util::remove_browser_format(const char* text) {
 //------------------------------------------------------------------------------
 // Replace string and return number of replacements or -1 for error
 //
-std::string& util::replace(std::string& string, std::string find, std::string replace) {
-    if (find == "") return string;
-    size_t start = 0;
+std::string& util::replace_string(std::string& string, std::string find, std::string replace) {
+    if (find == "") {
+        return string;
+    }
+    
+    try {
+        size_t start = 0;
 
-    while ((start = string.find(find, start)) != std::string::npos) {
-        string.replace(start, find.length(), replace);
-        start += replace.length();
+        while ((start = string.find(find, start)) != std::string::npos) {
+            string.replace(start, find.length(), replace);
+            start += replace.length();
+        }
+
+    }
+    catch(...) {
+        string = "";
     }
 
     return string;
-}
-
-//------------------------------------------------------------------------------
-bool util::save_file(std::string filename, const void* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
-
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
-
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-
-            return false;
-        }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
-    }
-
-    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -713,7 +506,7 @@ void util::sleep(int milli) {
 //------------------------------------------------------------------------------
 // Split string and return an vector with splitted strings
 //
-flw::StringVector util::split(const std::string& string, std::string split) {
+flw::StringVector util::split_string(const std::string& string, std::string split) {
     auto res = StringVector();
 
     try {
@@ -740,40 +533,31 @@ flw::StringVector util::split(const std::string& string, std::string split) {
 }
 
 //------------------------------------------------------------------------------
-Fl_Widget* util::widget(Fl_Group* group, std::string label) {
-    for (int f = 0; f < group->children(); f++) {
-        auto w = group->child(f);
-        
-        if (w->label() != nullptr && label == w->label()) {
-            return w;
-        }
+void* util::zero_memory(char* mem, size_t size) {
+    if (mem == nullptr || size == 0) return mem;
+#ifdef _WIN32
+    RtlSecureZeroMemory(mem, size);
+#else
+    auto p = reinterpret_cast<volatile unsigned char*>(mem);
+
+    while (size--) {
+        *p = 0;
+        p++;
     }
-    
-    for (int f = 0; f < group->children(); f++) {
-        auto w = group->child(f);
-        auto g = w->as_group();
-        
-        if (g != nullptr) {
-            w = util::widget(g, label);
-            
-            if (w != nullptr) {
-                return w;
-            }
-        }
-    }
-    
-    return nullptr;
+#endif
+
+    return mem;
 }
 
 /***
- *                _            
- *               | |           
- *       ___ ___ | | ___  _ __ 
+ *                _
+ *               | |
+ *       ___ ___ | | ___  _ __
  *      / __/ _ \| |/ _ \| '__|
- *     | (_| (_) | | (_) | |   
- *      \___\___/|_|\___/|_|   
- *                             
- *                             
+ *     | (_| (_) | | (_) | |
+ *      \___\___/|_|\___/|_|
+ *
+ *
  */
 
 Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
@@ -796,14 +580,14 @@ Fl_Color color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
 Fl_Color color::VIOLET           = fl_rgb_color(238, 130, 238);
 
 /***
- *      _   _                         
- *     | | | |                        
- *     | |_| |__   ___ _ __ ___   ___ 
+ *      _   _
+ *     | | | |
+ *     | |_| |__   ___ _ __ ___   ___
  *     | __| '_ \ / _ \ '_ ` _ \ / _ \
  *     | |_| | | |  __/ | | | | |  __/
  *      \__|_| |_|\___|_| |_| |_|\___|
- *                                    
- *                                    
+ *
+ *
  */
 
 namespace theme {
@@ -837,7 +621,7 @@ static void _additional_colors(bool dark) {
     color::TEAL             = fl_rgb_color(  0, 128, 128);
     color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
     color::VIOLET           = fl_rgb_color(238, 130, 238);
-    
+
     if (dark == true) {
         color::BEIGE            = fl_darker(color::BEIGE);
         color::CHOCOLATE        = fl_darker(color::CHOCOLATE);
@@ -872,10 +656,10 @@ static void _blue_colors() {
     unsigned char r = 0;
     unsigned char g = 0;
     unsigned char b = 0;
-    
+
     for (int f = 32; f < 49; f++) {
         Fl::set_color(f, r, g, b);
-        
+
         if (f == 32) {
             r = 0;
             g = 9;
@@ -897,11 +681,11 @@ static void _dark_colors() {
     Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
     Fl::set_color(15,  177, 227, 177); // FL_SELECTION_COLOR
     Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::set_color(49, 43, 43, 43);    
+    Fl::set_color(49, 43, 43, 43);
     Fl::background(43, 43, 43);
-    
+
     unsigned char c = 0;
-    
+
     for (int f = 32; f < 49; f++) {
         Fl::set_color(f, c, c, c);
         c += 2;
@@ -1354,14 +1138,14 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_
     }
 
     window->resize(x, y, w, h);
-    
+
     if (f == 1) {
         window->fullscreen();
     }
     else if (m == 1) {
         window->maximize();
     }
-    
+
     if (show_0_1_2 == 1 && window->shown() == 0) {
         window->show();
     }
@@ -1410,6 +1194,545 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
     pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
+}
+
+/***
+ *      ____         __
+ *     |  _ \       / _|
+ *     | |_) |_   _| |_
+ *     |  _ <| | | |  _|
+ *     | |_) | |_| | |
+ *     |____/ \__,_|_|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
+Buf::Buf() {
+    p = nullptr;
+    s = 0;
+}
+
+//------------------------------------------------------------------------------
+Buf::Buf(size_t S) {
+    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
+    s = 0;
+
+    if (p != nullptr) {
+        s = S;
+    }
+}
+
+//------------------------------------------------------------------------------
+Buf::Buf(const char* P, size_t S, bool grab) {
+    if (grab == true) {
+        p = const_cast<char*>(P);
+        s = S;
+    }
+    else if (P == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = static_cast<char*>(calloc(S + 1, 1));
+        s = 0;
+
+        if (p == nullptr) {
+            return;
+        }
+
+        memcpy(p, P, S);
+        s = S;
+    }
+}
+
+//------------------------------------------------------------------------------
+Buf::Buf(const Buf& b) {
+    if (b.p == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = static_cast<char*>(calloc(b.s + 1, 1));
+        s = 0;
+
+        if (p == nullptr) {
+            return;
+        }
+
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+}
+
+//------------------------------------------------------------------------------
+Buf::Buf(Buf&& b) {
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+}
+
+//------------------------------------------------------------------------------
+Buf& Buf::operator=(const Buf& b) {
+    if (this == &b) {
+    }
+    if (b.p == nullptr) {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        free(p);
+        p = static_cast<char*>(calloc(b.s + 1, 1));
+        s = 0;
+
+        if (p == nullptr) {
+            return *this;
+        }
+
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+Buf& Buf::operator=(Buf&& b) {
+    free(p);
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+    return *this;
+}
+
+//------------------------------------------------------------------------------
+Buf& Buf::operator+=(const Buf& b) {
+    if (b.p == nullptr) {
+    }
+    else if (p == nullptr) {
+        *this = b;
+    }
+    else {
+        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
+
+        if (t == nullptr) {
+            return *this;
+        }
+
+        memcpy(t, p, s);
+        memcpy(t + s, b.p, b.s);
+        free(p);
+        p = t;
+        s += b.s;
+    }
+
+    return *this;
+}
+
+/***
+ *      ______ _ _
+ *     |  ____(_) |
+ *     | |__   _| | ___
+ *     |  __| | | |/ _ \
+ *     | |    | | |  __/
+ *     |_|    |_|_|\___|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
+File::File(std::string filename) {
+    size  = 0;
+    mtime = 0;
+    type  = TYPE::NA;
+
+#ifdef _WIN32
+    wchar_t wbuffer[1025];
+    struct __stat64 st;
+
+    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+        filename.pop_back();
+    }
+
+    fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
+
+    if (_wstat64(wbuffer, &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode)) {
+            type = TYPE::DIR;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            type = TYPE::FILE;
+        }
+        else {
+            type = TYPE::OTHER;
+        }
+    }
+#else
+    struct stat st;
+
+    if (stat(filename.c_str(), &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode)) {
+            type = TYPE::DIR;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            type = TYPE::FILE;
+        }
+        else {
+            type = TYPE::OTHER;
+        }
+    }
+#endif
+}
+
+//------------------------------------------------------------------------------
+Buf File::Load(std::string filename, bool alert) {
+    auto file = File(filename);
+
+    if (file.type != TYPE::FILE) {
+        if (alert == true) {
+            fl_alert("error: file %s is missing or not an file", filename.c_str());
+        }
+
+        return Buf();
+    }
+
+    auto handle = fl_fopen(filename.c_str(), "rb");
+
+    if (handle == nullptr) {
+        if (alert == true) {
+            fl_alert("error: can't open %s", filename.c_str());
+        }
+
+        return Buf();
+    }
+
+    auto buf  = Buf(file.size);
+    auto read = fread(buf.p, 1, (size_t) file.size, handle);
+
+    fclose(handle);
+
+    if (read != (size_t) file.size) {
+        if (alert == true) {
+            fl_alert("error: failed to read %s", filename.c_str());
+        }
+
+        return Buf();
+    }
+
+    return buf;
+}
+
+//------------------------------------------------------------------------------
+bool File::Save(std::string filename, const char* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+
+            return false;
+        }
+    }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+/***
+ *      _____      _       _ _______        _
+ *     |  __ \    (_)     | |__   __|      | |
+ *     | |__) | __ _ _ __ | |_ | | _____  _| |_
+ *     |  ___/ '__| | '_ \| __|| |/ _ \ \/ / __|
+ *     | |   | |  | | | | | |_ | |  __/>  <| |_
+ *     |_|   |_|  |_|_| |_|\__||_|\___/_/\_\\__|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
+PrintText::PrintText(std::string filename, 
+    Fl_Paged_Device::Page_Format page_format, 
+    Fl_Paged_Device::Page_Layout page_layout, 
+    Fl_Font font, 
+    Fl_Fontsize fontsize, 
+    Fl_Align align, 
+    bool wrap, 
+    bool border, 
+    int line_num) {
+
+    _align       = FL_ALIGN_INSIDE | FL_ALIGN_TOP;
+    _align      |= (align == FL_ALIGN_CENTER || align == FL_ALIGN_RIGHT) ? align : FL_ALIGN_LEFT;
+    _border      = border;
+    _file        = nullptr;
+    _filename    = filename;
+    _font        = font;
+    _fontsize    = fontsize;
+    _line_num    = (align == FL_ALIGN_LEFT) ? line_num : 0;
+    _page_format = page_format;
+    _page_layout = page_layout;
+    _printer     = nullptr;
+    _wrap        = wrap;
+}
+
+//------------------------------------------------------------------------------
+PrintText::~PrintText() {
+    stop();
+}
+
+//------------------------------------------------------------------------------
+void PrintText::check_for_new_page() {
+    if (_py + _lh > _ph || _page_count == 0) {
+        if (_page_count > 0) {
+            fl_pop_clip();
+
+            if (_printer->end_page() != 0) {
+                throw "error: couldn't end current page";
+            }
+        }
+
+        if (_printer->begin_page() != 0) {
+            throw "error: couldn't create new page!";
+        }
+
+        if (_printer->printable_rect(&_pw, &_ph) != 0) {
+            throw "error: couldn't retrieve page size!";
+        }
+
+        fl_font(_font, _fontsize);
+        fl_color(FL_BLACK);
+        fl_line_style(FL_SOLID, 1);
+        fl_push_clip(0, 0, _pw, _ph);
+
+        if (_border == false) {
+            _px = 0;
+            _py = 0;
+        }
+        else {
+            fl_rect(0, 0, _pw, _ph);
+            measure_lw_lh("M");
+            
+            _px  = _lw;
+            _py  = _lh;
+            _pw -= _lw * 2;
+            _ph -= _lh * 2;
+        }
+
+        _page_count++;
+    }
+}
+
+//------------------------------------------------------------------------------
+void PrintText::debug() const {
+    FLW_PRINT(_filename)
+    FLW_PRINT(_font)
+    FLW_PRINT(_fontsize)
+    FLW_PRINT(_align)
+    FLW_PRINT(_page_format)
+    FLW_PRINT(_page_layout)
+    FLW_PRINT(_border)
+    FLW_PRINT(_wrap)
+}
+
+//------------------------------------------------------------------------------
+void PrintText::measure_lw_lh(const std::string& text) {
+    _lw = _lh = 0;
+    fl_measure(text.c_str(), _lw, _lh, 0);
+}
+
+//------------------------------------------------------------------------------
+std::string PrintText::print(const char* text, unsigned replace_tab_with_space) {
+    return print(util::split_string(text, "\n"), replace_tab_with_space);
+}
+
+//------------------------------------------------------------------------------
+std::string PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
+    return print(util::split_string(text.c_str(), "\n"), replace_tab_with_space);
+}
+
+//------------------------------------------------------------------------------
+std::string PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
+    std::string res;
+    std::string tab;
+
+    while (replace_tab_with_space > 0 && replace_tab_with_space <= 16) {
+        tab += " ";
+        replace_tab_with_space--;
+    }
+    
+    try {
+        auto wc = WaitCursor();
+
+        res = start();
+
+        if (res == "") {
+            for (auto& line : lines) {
+                if (tab != "") {
+                    auto l = line;
+                    util::replace_string(l, "\t", "    ");
+                    print_line(l == "" ? " " : l);
+                }
+                else {
+                    print_line(line == "" ? " " : line);
+                }
+            }
+
+            res = stop();
+        }
+    }
+    catch (const char* ex) {
+        res = ex;
+    }
+    catch (...) {
+        res = "error: unknown exception!";
+    }
+
+    return res;
+}
+
+//------------------------------------------------------------------------------
+void PrintText::print_line(const std::string& line) {
+    _line_count++;
+    check_for_new_page();
+
+    if (_line_num > 0) {
+        auto num = util::format("%*d: ", _line_num, _line_count);
+        measure_lw_lh(num);
+        fl_draw(num.c_str(), _px, _py, _pw, _lh, _align, nullptr, 0);
+        _nw = _lw;
+    }
+
+    measure_lw_lh(line);
+
+    if (_wrap == true && _lw > _pw - _nw) {
+        print_wrapped_line(line);
+    }
+    else {
+        fl_draw(line.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+        _py += _lh;
+    }
+}
+
+//------------------------------------------------------------------------------
+void PrintText::print_wrapped_line(const std::string& line) {
+    auto p1 = line.c_str();
+    auto s1 = std::string();
+    auto s2 = std::string();
+
+    while (*p1 != 0) {
+        auto cl = fl_wcwidth(p1);
+
+        if (cl > 1) { // Add utf8 character.
+            for (auto f = 0; f < cl && *p1 != 0; f++) {
+                s1 += *p1;
+                p1++;
+            }
+        }
+        else {
+            s1 += *p1;
+            p1++;
+        }
+
+        auto c = s1.back();
+
+        if (c == ' ' || c == '\t' || c == ',' || c == ';' || c == '.') { // Save word break.
+            s2 = s1;
+        }
+
+        measure_lw_lh(s1);
+
+        if (_lw >= _pw - _nw) {
+            check_for_new_page();
+
+            if (s2 != "") { // Last word delimiter string, s1 will contain the leftover.
+                fl_draw(s2.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+                s1 = (s2.length() < s1.length()) ? s1.substr(s2.length()) : "";
+                s2 = "";
+            }
+            else {
+                std::string s;
+
+                if (s1.length() > 1) { // Remove last char to be sure that it will be inside area.
+                    s  = s1.substr(s1.length() - 1);
+                    s1 = s1.substr(0, s1.length() - 1);
+                }
+
+                fl_draw(s1.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+                s1 = s;
+            }
+
+            _py += _lh;
+        }
+    }
+
+    if (s1 != "") { // Leftover string.
+        check_for_new_page();
+        fl_draw(s1.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+        _py += _lh;
+    }
+}
+
+//------------------------------------------------------------------------------
+// Create printer object.
+//
+std::string PrintText::start() {
+    if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
+        return "error: could not open file!";
+    }
+
+    _lh         = 0;
+    _line_count = 0;
+    _lw         = 0;
+    _nw         = 0;
+    _page_count = 0;
+    _ph         = 0;
+    _pw         = 0;
+    _px         = 0;
+    _py         = 0;
+    _printer    = new Fl_PostScript_File_Device();
+
+    _printer->begin_job(_file, 0, _page_format, _page_layout);
+    return "";
+}
+
+//------------------------------------------------------------------------------
+// End job and delete printer.
+//
+std::string PrintText::stop() {
+    std::string res = "";
+
+    if (_printer != nullptr) {
+        if (_page_count > 0) {
+            fl_pop_clip();
+            
+            if (_printer->end_page() != 0) {
+                res = "error: could not end page!";
+            }
+        }
+
+        _printer->end_job();
+        delete _printer;
+        fclose(_file);
+
+        _file    = nullptr;
+        _printer = nullptr;
+    }
+
+    return res;
 }
 
 } // flw

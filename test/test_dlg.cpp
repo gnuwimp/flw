@@ -11,6 +11,7 @@
 
 #include "test.h"
 #include <FL/Fl.H>
+#include <FL/fl_ask.H>
 
 using namespace flw;
 
@@ -18,13 +19,13 @@ using namespace flw;
 void test_abort() {
     {
         auto dialog = dlg::AbortDialog();
-        
+
         dialog.show("This will never stop until you press the button\nHello World");
-        
+
         while (dialog.check() == false) {
         }
     }
-    
+
     {
         auto dialog = dlg::AbortDialog(-100.0, 100.0);
         auto count  = -100.0;
@@ -138,6 +139,151 @@ void test_list() {
 }
 
 //------------------------------------------------------------------------------
+void test_print() {
+    auto r = 0;
+
+    while (r >= 0) {
+    #ifdef _WIN32
+        dlg::center_message_dialog();
+        r = fl_choice_n("%s", "Print Long Lines", "Print Hamlet", "Print UTF8", "Print some test texts.\nSome fonts might have issues.");
+
+        if (r == 0) dlg::print_text("test_dlg.cpp - dlg::print_text", LONG_TEXT);
+        else if (r == 1) dlg::print_text("test_dlg.cpp - dlg::print_text", HAMLET_TEXT);
+        else if (r == 2) dlg::print_text("test_dlg.cpp - dlg::print_text", UTF8_TEXT);
+    #else
+        std::string ps = "output.ps";
+        auto p = false;
+
+        dlg::center_message_dialog();
+        r = fl_choice_n("Print to the default %s file.\nIt will be opened with system default program.\nThere are font issues if you use any other than the normal fltk fonts.\nAnd lot of the utf8 characters does not print well.", "Print Long Lines", "Print Hamlet", "Print UTF8", ps.c_str());
+
+        if (r == 0) p = dlg::print_text("test_dlg.cpp - dlg::print_text", LONG_TEXT);
+        else if (r == 1) p = dlg::print_text("test_dlg.cpp - dlg::print_text", HAMLET_TEXT);
+        else if (r == 2) p = dlg::print_text("test_dlg.cpp - dlg::print_text", UTF8_TEXT);
+
+        if (p == true && r >= 0 && File(ps).size > 0) {
+            auto f = system((std::string("open ") + ps).c_str());
+            (void) f;
+        }
+    #endif
+    }
+}
+
+//------------------------------------------------------------------------------
+void test_print1() {
+    {
+        auto printer = PrintText("..", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
+        FLW_PRINT(printer.print(HAMLET_TEXT))
+    }
+
+    {
+        auto printer = PrintText("print_hamlet.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
+        printer.print(HAMLET_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_hamlet_center.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_CENTER, false, false, 0);
+        printer.print(HAMLET_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_hamlet_right.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_RIGHT, false, true, 0);
+        printer.print(HAMLET_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, false, true, 0);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_linenum.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, false, true, 4);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, false, 0);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_border.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, true, 0);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_a3.ps", Fl_Paged_Device::Page_Format::A3, Fl_Paged_Device::Page_Layout::REVERSED, FL_HELVETICA, 16, FL_ALIGN_LEFT, true, true, 0);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_a5.ps", Fl_Paged_Device::Page_Format::A5, Fl_Paged_Device::Page_Layout::LANDSCAPE, FL_TIMES_BOLD_ITALIC, 18, FL_ALIGN_LEFT, true, true, 0);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_border_linenum.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, true, 6);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_border_center.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_CENTER, true, true, 6);
+        printer.print(LONG_TEXT, 8);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_border_right.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 16, FL_ALIGN_RIGHT, true, true, 6);
+        printer.print(LONG_TEXT, 8);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_border_linenum_24.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 24, FL_ALIGN_LEFT, true, true, 6);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_long_wrapped_border_linenum_36.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 36, FL_ALIGN_LEFT, true, true, 6);
+        printer.print(LONG_TEXT);
+    }
+
+    {
+        auto printer = PrintText("print_utf8.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, false, false, 0);
+        printer.print(UTF8_TEXT);
+    }
+}
+
+//------------------------------------------------------------------------------
+void test_print2() {
+    auto r  = 0;
+    auto b1 = File::Load("flw.h");
+    auto b2 = File::Load("flw.cpp");
+    
+    while (r >= 0 && b1.p && b2.p) {
+    #ifdef _WIN32
+        dlg::center_message_dialog();
+        r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
+
+        if (r == 0) dlg::print_text("test_dlg.cpp - dlg::print_text", b1.p);
+        else if (r == 1) dlg::print_text("test_dlg.cpp - dlg::print_text", b2.p);
+    #else
+        std::string ps = "output.ps";
+        auto p = false;
+
+        dlg::center_message_dialog();
+        r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
+
+        if (r == 0) p = dlg::print_text("test_dlg.cpp - dlg::print_text", b1.p);
+        else if (r == 1) p = dlg::print_text("test_dlg.cpp - dlg::print_text", b2.p);
+
+        if (p == true && r >= 0 && File(ps).size > 0) {
+            auto f = system((std::string("open ") + ps).c_str());
+            (void) f;
+        }
+    #endif
+    }
+}
+
+//------------------------------------------------------------------------------
 void test_pwd() {
     std::string password, file;
     bool ret;
@@ -215,7 +361,7 @@ void test_work() {
             util::sleep(20);
         }
     }
-    
+
     {
         auto work = dlg::WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
         auto stop = util::clock() + 5.0;
@@ -249,6 +395,9 @@ int main(int argc, const char** argv) {
     puts("    font");
     puts("    html");
     puts("    list");
+    puts("    print");
+    puts("    print1");
+    puts("    print2");
     puts("    pwd");
     puts("    select");
     puts("    text");
@@ -290,8 +439,8 @@ int main(int argc, const char** argv) {
             test_abort();
         }
 
-        if (run == "" || run == "wait") {
-            test_wait();
+        if (run == "" || run == "date") {
+            test_date();
         }
 
         if (run == "" || run == "html") {
@@ -302,12 +451,20 @@ int main(int argc, const char** argv) {
             test_list();
         }
 
-        if (run == "" || run == "select") {
-            test_select();
+        if (run == "" || run == "print")  {
+            test_print();
         }
 
-        if (run == "" || run == "date") {
-            test_date();
+        if (run == "print1")  {
+            test_print1();
+        }
+
+        if (run == "print2")  {
+            test_print2();
+        }
+
+        if (run == "" || run == "select") {
+            test_select();
         }
 
         if (run == "" || run == "pwd")  {
@@ -316,6 +473,10 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "text") {
             test_text();
+        }
+
+        if (run == "" || run == "wait") {
+            test_wait();
         }
 
         if (run == "" || run == "work")  {

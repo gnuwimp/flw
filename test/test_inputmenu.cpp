@@ -26,9 +26,9 @@ public:
         hideb  = new Fl_Button(0, 0, 0, 0, "Toggle Menu Buttons");
 
         add(grid);
-        grid->add(input1,  1,  3,  -12,   4);
-        grid->add(input2,  1, 10,  -12,   4);
-        grid->add(hideb,   1, 15,  -12,   4);
+        grid->add(input1,   1,   3,  -1,   4);
+        grid->add(input2,   1,  10,  -1,   4);
+        grid->add(hideb,    1,  15,  -1,   4);
         grid->do_layout();
 
         input1->insert("History a", 10);

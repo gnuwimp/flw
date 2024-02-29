@@ -1,11 +1,12 @@
 # flw (fast light widgets)
 
 flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
-The flw library has been tested on Windows 10 + msys2, Xubuntu 23.10 & 22.04 (intel).
+The flw library has been tested on Windows 10 + msys2, Linux Mint 21.3 & Xubuntu 22.04 (intel).
 Earlier versions have been compiled successfully on a Raspberry Pi 4.
 It might work on macOS with some tweaks.
 They are compiled with C++17 flag and all widgets are in the namespace flw.
 The source will NOT compile with Microsoft Visual Studio.
+The API is not stable and may change from time to time.
 
 Use then amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
 The source files in the src/ directory are intended for development of flw.
@@ -34,6 +35,7 @@ Dialogs:
 * dlg::html - Show text in a html view.
 * dlg::list* - Show a list of strings.
 * dlg::password* - Ask user for password and optional password confirmation.
+* dlg::print_text* - Print plain text to postscript.
 * dlg::select* - Let user select a string from a list and also to filter shown strings.
 * dlg::text - Show text in an editor widget.
 * dlg::theme - Let user select a theme.
@@ -57,6 +59,9 @@ List selection dialog (flw::dlg::select())<br>
 
 Password dialog (flw::dlg::password4())<br>
 <img src="images/password_dialog.png"/>
+
+Print text dialog (flw::dlg::print_text())<br>
+<img src="images/print_text_dialog.png"/>
 
 Plot widget (flw::Plot)<br>
 <img src="images/plot.png"/>

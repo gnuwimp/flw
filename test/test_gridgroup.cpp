@@ -142,21 +142,21 @@ public:
         grid   = new GridGroup(0, 0, W, H, "GRID");
         toggle = true;
 //                                                         X    Y    W    H
-        grid->add(new Button(0, 0, 0, 0, "&TOP"),        0,   0,   0,   4);
-        grid->add(new Button(0, 0, 0, 0, DEACT),   0,   4,  16,   0);
-        grid->add(new Button(0, 0, 0, 0, ADJUST),    16, -16,   0,   0);
-        grid->add(new Button(0, 0, 0, 0, "RIGHT1"),   -20,   4,  10,   4);
-        grid->add(new Button(0, 0, 0, 0, "RIGHT2"),   -10,   8,   0,   4);
+        grid->add(new Button(0, 0, 0, 0, "&TOP"),       0,   0,   0,   4);
+        grid->add(new Button(0, 0, 0, 0, DEACT),        0,   4,  16,   0);
+        grid->add(new Button(0, 0, 0, 0, ADJUST),      16, -16,   0,   0);
         grid->add(new Button(0, 0, 0, 0, "RIGHT3"),   -20,  12,   0, -18);
-        util::widget(grid, ADJUST)->tooltip("Press to toggle adjust on grid 2");
-        util::widget(grid, ADJUST)->callback(Callback1, this);
-        util::widget(grid, "RIGHT1")->callback(Callback2, this);
-        util::widget(grid, "RIGHT2")->callback(Callback2, this);
-        util::widget(grid, "RIGHT3")->callback(Callback2, this);
-        util::widget(grid, DEACT)->callback(Callback3, this);
-        util::widget(grid, "&TOP")->callback(Callback2, this);
-        util::widget(grid, "&TOP")->take_focus();
-//        util::widget(grid, "&TOP")->deactivate();
+        grid->add(new Button(0, 0, 0, 0, "RIGHT2"),   -10,   8,   0,   4);
+        grid->add(new Button(0, 0, 0, 0, "RIGHT1"),   -20,   4,  10,   4);
+        util::find_widget(grid, ADJUST)->tooltip("Press to toggle adjust on grid 2");
+        util::find_widget(grid, ADJUST)->callback(Callback1, this);
+        util::find_widget(grid, "RIGHT1")->callback(Callback2, this);
+        util::find_widget(grid, "RIGHT2")->callback(Callback2, this);
+        util::find_widget(grid, "RIGHT3")->callback(Callback2, this);
+        util::find_widget(grid, DEACT)->callback(Callback3, this);
+        util::find_widget(grid, "&TOP")->callback(Callback2, this);
+        util::find_widget(grid, "&TOP")->take_focus();
+//        util::find_widget(grid, "&TOP")->deactivate();
         util::labelfont(grid);
         
         grid2  = new GridGroup(0, 0, 0, 0, "GRID2");
@@ -184,10 +184,10 @@ public:
         grid2->adjust(box3,  0, 0, -1, 1);
         grid2->adjust(box4, -1, 1, -1, 1);
         util::labelfont(grid2);
-        util::widget(grid2, "b1")->callback(Callback2, this);
-        util::widget(grid2, "&b2")->callback(Callback2, this);
-        util::widget(grid2, "b3")->callback(Callback2, this);
-        util::widget(grid2, "b4")->callback(Callback2, this);
+        util::find_widget(grid2, "b1")->callback(Callback2, this);
+        util::find_widget(grid2, "&b2")->callback(Callback2, this);
+        util::find_widget(grid2, "b3")->callback(Callback2, this);
+        util::find_widget(grid2, "b4")->callback(Callback2, this);
         grid->add(grid2, 18,   8, -22, -18);
 
         grid->do_layout();
@@ -204,14 +204,14 @@ public:
         t->toggle = !t->toggle;
 
         if (t->toggle) {
-            t->grid2->adjust(util::widget(t->grid, "&b2"), -1, 1,  0, 0);
-            t->grid2->adjust(util::widget(t->grid, "b3"),  0, 0, -1, 1);
-            t->grid2->adjust(util::widget(t->grid, "b4"), -1, 1, -1, 1);
+            t->grid2->adjust(util::find_widget(t->grid, "&b2"), -1, 1,  0, 0);
+            t->grid2->adjust(util::find_widget(t->grid, "b3"),  0, 0, -1, 1);
+            t->grid2->adjust(util::find_widget(t->grid, "b4"), -1, 1, -1, 1);
         }
         else {
-            t->grid2->adjust(util::widget(t->grid, "&b2"));
-            t->grid2->adjust(util::widget(t->grid, "b3"));
-            t->grid2->adjust(util::widget(t->grid, "b4"));
+            t->grid2->adjust(util::find_widget(t->grid, "&b2"));
+            t->grid2->adjust(util::find_widget(t->grid, "b3"));
+            t->grid2->adjust(util::find_widget(t->grid, "b4"));
         }
         
         t->grid2->do_layout();
@@ -226,13 +226,13 @@ public:
         
         Test2* t = (Test2*) v;
         
-        if (util::widget(t, "&TOP")->active()) {
-            util::widget(t, "&TOP")->deactivate();
-            util::widget(t, "b1")->deactivate();
+        if (util::find_widget(t, "&TOP")->active()) {
+            util::find_widget(t, "&TOP")->deactivate();
+            util::find_widget(t, "b1")->deactivate();
         }
         else {
-            util::widget(t, "&TOP")->activate();
-            util::widget(t, "b1")->activate();
+            util::find_widget(t, "&TOP")->activate();
+            util::find_widget(t, "b1")->activate();
         }
     }
 

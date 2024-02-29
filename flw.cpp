@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <math.h>
 namespace flw {
+#define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
 static const int                _CHART_MAX_VLINES      = 100;
 static const int                _CHART_MAX_LINE_WIDTH  = 100;
 static const char* const        _CHART_SHOW_LABELS     = "Show line labels";
@@ -683,6 +684,36 @@ void Chart::_calc_yscale() {
         area.right.calc(area.h);
     }
 }
+void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<const Chart*>(chart_object);
+    self->debug();
+}
+void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+    self->redraw();
+}
+void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    for (auto& area : self->_areas) {
+        area.selected = 0;
+        for (auto& line : area.lines) {
+            line.visible = true;
+        }
+    }
+    self->redraw();
+}
+void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
+}
+void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    self->_date_start = self->_scroll->value();
+    self->init(false);
+}
 void Chart::clear() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
     _block_dates.clear();
@@ -1332,72 +1363,11 @@ flw::ChartArea* Chart::_inside_area(int X, int Y) {
     }
     return nullptr;
 }
-bool Chart::margin(int left, int right) {
-    if (left < 1 || left > 20 || right < 1 || right > 20) {
-        return false;
-    }
-    _margin_left  = left;
-    _margin_right = right;
-    redraw();
-    return true;
-}
-void Chart::resize(int X, int Y, int W, int H) {
-    if (_old_width != W || _old_height != H) {
-        Fl_Widget::resize(X, Y, W, H);
-        _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
-        _old_width = W;
-        _old_height = H;
-        init(false);
-    }
-}
-bool Chart::tick_width(int tick_width) {
-    if (tick_width < 3 || tick_width > 100) {
-        return false;
-    }
-    _tick_width = tick_width;
-    redraw();
-    return true;
-}
-void Chart::update_pref() {
-    _menu->textfont(flw::PREF_FONT);
-    _menu->textsize(flw::PREF_FONTSIZE);
-}
-void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<const Chart*>(chart_object);
-    self->debug();
-}
-void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
-    self->redraw();
-}
-void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    for (auto& area : self->_areas) {
-        area.selected = 0;
-        for (auto& line : area.lines) {
-            line.visible = true;
-        }
-    }
-    self->redraw();
-}
-void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
-}
-void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    self->_date_start = self->_scroll->value();
-    self->init(false);
-}
-#define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
 bool Chart::Load(Chart* chart, std::string filename) {
     chart->clear();
     chart->redraw();
     auto wc  = WaitCursor();
-    auto buf = util::load_file(filename);
+    auto buf = File::Load(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
@@ -1486,6 +1456,24 @@ bool Chart::Load(Chart* chart, std::string filename) {
     chart->init(true);
     return true;
 }
+bool Chart::margin(int left, int right) {
+    if (left < 1 || left > 20 || right < 1 || right > 20) {
+        return false;
+    }
+    _margin_left  = left;
+    _margin_right = right;
+    redraw();
+    return true;
+}
+void Chart::resize(int X, int Y, int W, int H) {
+    if (_old_width != W || _old_height != H) {
+        Fl_Widget::resize(X, Y, W, H);
+        _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
+        _old_width = W;
+        _old_height = H;
+        init(false);
+    }
+}
 bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_low) {
     auto wc  = WaitCursor();
     auto jsb = JSB();
@@ -1545,12 +1533,24 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
                 }
             jsb.end();
         auto js = jsb.encode();
-        return util::save_file(filename, js.c_str(), js.length());
+        return File::Save(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
         return false;
     }
+}
+bool Chart::tick_width(int tick_width) {
+    if (tick_width < 3 || tick_width > 100) {
+        return false;
+    }
+    _tick_width = tick_width;
+    redraw();
+    return true;
+}
+void Chart::update_pref() {
+    _menu->textfont(flw::PREF_FONT);
+    _menu->textsize(flw::PREF_FONTSIZE);
 }
 }
 #include <string.h>
@@ -2580,9 +2580,10 @@ bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
 #include <math.h>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
-#include <FL/Fl_Secret_Input.H>
+#include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Editor.H>
 #include <FL/Fl_Tooltip.H>
 namespace flw {
@@ -2604,18 +2605,14 @@ void _load_plastic_tan();
 void _scrollbar();
 }
 namespace dlg {
-static void* _dlg_zero_memory(void* mem, size_t size) {
-    if (mem == nullptr || size == 0) return mem;
-#ifdef _WIN32
-    RtlSecureZeroMemory(mem, size);
-#else
-    auto p = static_cast<volatile unsigned char*>(mem);
-    while (size--) {
-        *p = 0;
-        p++;
-    }
-#endif
-    return mem;
+void center_message_dialog() {
+    int X, Y, W, H;
+    Fl::screen_xywh(X, Y, W, H);
+    fl_message_position(W / 2, H / 2, 1);
+}
+void panic(std::string message) {
+    fl_alert("panic! I have to quit\n%s", message.c_str());
+    exit(1);
 }
 class _DlgHtml  : public Fl_Double_Window {
     Fl_Help_View*               _html;
@@ -2626,7 +2623,7 @@ public:
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _grid  = new GridGroup();
+        _grid  = new GridGroup(0, 0, w(), h());
         _html  = new Fl_Help_View(0, 0, 0, 0);
         _grid->add(_html,    1,  1, -1, -6);
         _grid->add(_close, -17, -5, 16,  4);
@@ -2641,18 +2638,15 @@ public:
         copy_label(title);
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
-        resizable(this);
+        resizable(_grid);
         util::center_window(this, parent);
+        _grid->do_layout();
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
         if (w == self || w == self->_close) {
             self->hide();
         }
-    }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
     }
     void run() {
         show();
@@ -2662,6 +2656,10 @@ public:
         }
     }
 };
+void html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
+    _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
+    dlg.run();
+}
 class _DlgList : public Fl_Double_Window {
     Fl_Return_Button*           _close;
     GridGroup*                  _grid;
@@ -2671,7 +2669,7 @@ public:
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _grid  = new GridGroup();
+        _grid  = new GridGroup(0, 0, w(), h());
         _list  = new ScrollBrowser();
         _grid->add(_list,    1,  1, -1, -6);
         _grid->add(_close, -17, -5, 16,  4);
@@ -2692,8 +2690,9 @@ public:
         copy_label(title);
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
-        resizable(this);
+        resizable(_grid);
         util::center_window(this, parent);
+        _grid->do_layout();
         if (list.size() > 0) {
             for (const auto& s : list) {
                 _list->add(s.c_str());
@@ -2709,10 +2708,6 @@ public:
             self->hide();
         }
     }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
     void run() {
         show();
         while (visible() != 0) {
@@ -2721,6 +2716,412 @@ public:
         }
     }
 };
+void list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgList dlg(title.c_str(), list, "", parent, fixed_font, W, H);
+    dlg.run();
+}
+void list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
+    dlg.run();
+}
+void list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgList dlg(title.c_str(), flw::StringVector(), file, parent, fixed_font, W, H);
+    dlg.run();
+}
+const char* PASSWORD_CANCEL = "&Cancel";
+const char* PASSWORD_OK     = "&Ok";
+class _DlgPassword : public Fl_Double_Window {
+public:
+    enum class TYPE {
+                                ASK_PASSWORD,
+                                ASK_PASSWORD_AND_KEYFILE,
+                                CONFIRM_PASSWORD,
+                                CONFIRM_PASSWORD_AND_KEYFILE,
+    };
+private:
+    Fl_Button*                  _browse;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Input*                   _file;
+    Fl_Input*                   _password1;
+    Fl_Input*                   _password2;
+    GridGroup*                  _grid;
+    _DlgPassword::TYPE          _mode;
+    bool                        _ret;
+public:
+    _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
+    Fl_Double_Window(0, 0, 10, 10) {
+        end();
+        _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
+        _cancel    = new Fl_Button(0, 0, 0, 0, PASSWORD_CANCEL);
+        _close     = new Fl_Return_Button(0, 0, 0, 0, PASSWORD_OK);
+        _file      = new Fl_Output(0, 0, 0, 0, "Key file");
+        _grid      = new GridGroup(0, 0, w(), h());
+        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
+        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
+        _mode      = mode;
+        _ret       = false;
+        _grid->add(_password1,  1,   3,  -1,  4);
+        _grid->add(_password2,  1,  10,  -1,  4);
+        _grid->add(_file,       1,  17,  -1,  4);
+        _grid->add(_browse,   -51,  -5,  16,  4);
+        _grid->add(_cancel,   -34,  -5,  16,  4);
+        _grid->add(_close,    -17,  -5,  16,  4);
+        add(_grid);
+        _browse->callback(_DlgPassword::Callback, this);
+        _cancel->callback(_DlgPassword::Callback, this);
+        _close->callback(_DlgPassword::Callback, this);
+        _close->deactivate();
+        _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _file->textfont(flw::PREF_FIXED_FONT);
+        _file->textsize(flw::PREF_FONTSIZE);
+        _file->tooltip("Select optional key file");
+        _password1->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _password1->callback(_DlgPassword::Callback, this);
+        _password1->textfont(flw::PREF_FIXED_FONT);
+        _password1->textsize(flw::PREF_FONTSIZE);
+        _password1->when(FL_WHEN_CHANGED);
+        _password2->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _password2->callback(_DlgPassword::Callback, this);
+        _password2->textfont(flw::PREF_FIXED_FONT);
+        _password2->textsize(flw::PREF_FONTSIZE);
+        _password2->when(FL_WHEN_CHANGED);
+        auto W = flw::PREF_FONTSIZE * 35;
+        auto H = flw::PREF_FONTSIZE * 13.5;
+        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
+            _password2->hide();
+            _browse->hide();
+            _file->hide();
+            H = flw::PREF_FONTSIZE * 6.5;
+        }
+        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
+            _browse->hide();
+            _file->hide();
+            H = flw::PREF_FONTSIZE * 10;
+        }
+        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+            _password2->hide();
+            _grid->resize(_file, 1, 10, -1, 4);
+            H = flw::PREF_FONTSIZE * 10;
+        }
+        resizable(_grid);
+        util::labelfont(this);
+        callback(_DlgPassword::Callback, this);
+        label(title);
+        size(W, H);
+        size_range(W, H);
+        set_modal();
+        util::center_window(this, parent);
+        _grid->do_layout();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgPassword*>(o);
+        if (w == self) {
+            ;
+        }
+        else if (w == self->_password1) {
+            self->check();
+        }
+        else if (w == self->_password2) {
+            self->check();
+        }
+        else if (w == self->_browse) {
+            auto filename = fl_file_chooser("Select Key File", nullptr, nullptr, 0);
+            if (filename) {
+                self->_file->value(filename);
+            }
+            else {
+                self->_file->value("");
+            }
+        }
+        else if (w == self->_cancel) {
+            self->_ret = false;
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->hide();
+        }
+    }
+    void check() {
+        auto p1 = _password1->value();
+        auto p2 = _password2->value();
+        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD ||
+            _mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+            if (strlen(p1)) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD ||
+                 _mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
+            if (strlen(p1) && strcmp(p1, p2) == 0) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+    }
+    bool run(std::string& password, std::string& file) {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        if (_ret) {
+            file = _file->value();
+            password = _password1->value();
+        }
+        util::zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
+        util::zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
+        util::zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
+        return _ret;
+    }
+};
+bool password1(std::string title, std::string& password, Fl_Window* parent) {
+    std::string file;
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD);
+    return dlg.run(password, file);
+}
+bool password2(std::string title, std::string& password, Fl_Window* parent) {
+    std::string file;
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD);
+    return dlg.run(password, file);
+}
+bool password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE);
+    return dlg.run(password, file);
+}
+bool password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
+    return dlg.run(password, file);
+}
+class _DlgPrintText : public Fl_Double_Window {
+    Fl_Box*                     _label;
+    Fl_Button*                  _close;
+    Fl_Button*                  _file;
+    Fl_Button*                  _fonts;
+    Fl_Button*                  _print;
+    Fl_Check_Button*            _border;
+    Fl_Check_Button*            _wrap;
+    Fl_Choice*                  _align;
+    Fl_Choice*                  _format;
+    Fl_Choice*                  _layout;
+    Fl_Font                     _font;
+    Fl_Fontsize                 _fontsize;
+    Fl_Hor_Slider*              _line;
+    Fl_Hor_Slider*              _tab;
+    GridGroup*                  _grid;
+    bool                        _ret;
+    const StringVector&         _text;
+    std::string                 _label2;
+public:
+    _DlgPrintText(std::string title, Fl_Window* parent, const StringVector& text) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35),
+    _text(text) {
+        end();
+        _align    = new Fl_Choice(0, 0, 0, 0);
+        _border   = new Fl_Check_Button(0, 0, 0, 0, "Print border");
+        _close    = new Fl_Button(0, 0, 0, 0, "&Close");
+        _file     = new Fl_Button(0, 0, 0, 0, "output.ps");
+        _fonts    = new Fl_Button(0, 0, 0, 0, "Courier - 14");
+        _format   = new Fl_Choice(0, 0, 0, 0);
+        _grid     = new GridGroup(0, 0, w(), h());
+        _label    = new Fl_Box(0, 0, 0, 0);
+        _layout   = new Fl_Choice(0, 0, 0, 0);
+        _line     = new Fl_Hor_Slider(0, 0, 0, 0);
+        _print    = new Fl_Button(0, 0, 0, 0, "&Print");
+        _tab      = new Fl_Hor_Slider(0, 0, 0, 0);
+        _wrap     = new Fl_Check_Button(0, 0, 0, 0, "Wrap lines");
+        _ret      = false;
+        _font     = FL_COURIER;
+        _fontsize = 14;
+        _grid->add(_border,   1,  1, -1,  4);
+        _grid->add(_wrap,     1,  6, -1,  4);
+        _grid->add(_line,     1, 13, -1,  4);
+        _grid->add(_tab,      1, 20, -1,  4);
+        _grid->add(_format,   1, 25, -1,  4);
+        _grid->add(_layout,   1, 30, -1,  4);
+        _grid->add(_align,    1, 35, -1,  4);
+        _grid->add(_fonts,    1, 40, -1,  4);
+        _grid->add(_file,     1, 45, -1,  4);
+        _grid->add(_label,    1, 50, -1,  13);
+        _grid->add(_print,  -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+        util::labelfont(this);
+        _align->add("Left align");
+        _align->add("Center align");
+        _align->add("Right align");
+        _align->tooltip("Line numbers are only used for left aligned text.");
+        _align->value(0);
+        _border->tooltip("Print line border around the print area.");
+        _close->callback(_DlgPrintText::Callback, this);
+        _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _file->callback(_DlgPrintText::Callback, this);
+        _file->tooltip("Select output postscript file.");
+        _fonts->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _fonts->callback(_DlgPrintText::Callback, this);
+        _fonts->tooltip("Select font to use.");
+        _format->add("A0 format");
+        _format->add("A1 format");
+        _format->add("A2 format");
+        _format->add("A3 format");
+        _format->add("A4 format");
+        _format->add("A5 format");
+        _format->add("A6 format");
+        _format->add("A7 format");
+        _format->add("A8 format");
+        _format->add("A9 format");
+        _format->add("B0 format");
+        _format->add("B1 format");
+        _format->add("B2 format");
+        _format->add("B3 format");
+        _format->add("B4 format");
+        _format->add("B5 format");
+        _format->add("B6 format");
+        _format->add("B7 format");
+        _format->add("B8 format");
+        _format->add("B9 format");
+        _format->add("Executive format");
+        _format->add("Folio format");
+        _format->add("Ledger format");
+        _format->add("Legal format");
+        _format->add("Letter format");
+        _format->add("Tabloid format");
+        _format->tooltip("Select paper format.");
+        _format->value(4);
+        _label->align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _label->box(FL_BORDER_BOX);
+        _label->box(FL_THIN_DOWN_BOX);
+        _layout->add("Portrait");
+        _layout->add("Landscape");
+        _layout->tooltip("Select paper layout.");
+        _layout->value(0);
+        _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _line->callback(_DlgPrintText::Callback, this);
+        _line->scrollvalue(0, 0, 0, 6);
+        _line->tooltip("Set minimum line number width.\nSet to 0 to disable.");
+        _print->callback(_DlgPrintText::Callback, this);
+        _tab->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _tab->callback(_DlgPrintText::Callback, this);
+        _tab->scrollvalue(0, 0, 0, 16);
+        _tab->tooltip("Replace tabs with spaces.\nSet to 0 to disable.");
+        _wrap->tooltip("Wrap long lines or they will be clipped.");
+        _DlgPrintText::Callback(_line, this);
+        _DlgPrintText::Callback(_tab, this);
+        callback(_DlgPrintText::Callback, this);
+        copy_label(title.c_str());
+        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35);
+        set_modal();
+        resizable(_grid);
+        util::center_window(this, parent);
+        _grid->do_layout();
+        set_label();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgPrintText*>(o);
+        if (w == self) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->hide();
+        }
+        else if (w == self->_file) {
+            auto filename = fl_file_chooser("Save To Postscript File", "Postscript Files (*.ps)\tAll Files (*)", "");
+            if (filename != nullptr) {
+                self->_file->copy_label(filename);
+            }
+        }
+        else if (w == self->_fonts) {
+            auto dlg = FontDialog(self->_font, self->_fontsize, "Select Print Font", true);
+            if (dlg.run() == true) {
+                auto l = util::format("%s - %d", dlg.fontname().c_str(), dlg.fontsize());
+                self->_fonts->copy_label(l.c_str());
+                self->_font     = dlg.font();
+                self->_fontsize = dlg.fontsize();
+            }
+        }
+        else if (w == self->_line) {
+            auto l = util::format("Line number = %d", (int) self->_line->value());
+            self->_line->copy_label(l.c_str());
+            self->redraw();
+        }
+        else if (w == self->_print) {
+            self->print();
+        }
+        else if (w == self->_tab) {
+            auto l = util::format("Tab replacement = %d", (int) self->_tab->value());
+            self->_tab->copy_label(l.c_str());
+            self->redraw();
+        }
+    }
+    void print() {
+        auto border  = _border->value();
+        auto wrap    = _wrap->value();
+        auto line    = _line->value();
+        auto tab     = _tab->value();
+        auto format  = _format->value();
+        auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
+        auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
+        auto file    = _file->label();
+        auto printer = PrintText(file,
+            static_cast<Fl_Paged_Device::Page_Format>(format),
+            static_cast<Fl_Paged_Device::Page_Layout>(layout),
+            _font,
+            _fontsize,
+            align,
+            wrap,
+            border,
+            line);
+        auto err = printer.print(_text, tab);
+        if (err == "") {
+            auto s = _label2;
+            s += util::format("\n%d page%s was printed.", printer.page_count(), printer.page_count() > 1 ? "s" : "");
+            _label->copy_label(s.c_str());
+            _ret = true;
+        }
+        else {
+            auto s = _label2;
+            s += util::format("\nPrinting failed!\n%s", err.c_str());
+            _label->copy_label(s.c_str());
+            _ret = false;
+        }
+        redraw();
+    }
+    bool run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _ret;
+    }
+    void set_label() {
+        auto len = 0;
+        for (auto& s : _text) {
+            auto l = fl_utf_nb_char((unsigned char*) s.c_str(), (int) s.length());
+            if (l > len) {
+                len = l;
+            }
+        }
+        _label2 = util::format("Text contains %u lines.\nMax line length are %u characters.", (unsigned) _text.size(), (unsigned) len);
+        _label->copy_label(_label2.c_str());
+    }
+};
+bool print_text(std::string title, const std::string& text, Fl_Window* parent) {
+    auto lines = util::split_string(text, "\n");
+    _DlgPrintText dlg(title, parent, lines);
+    return dlg.run();
+}
+bool print_text(std::string title, const StringVector& text, Fl_Window* parent) {
+    _DlgPrintText dlg(title, parent, text);
+    return dlg.run();
+}
 class _DlgSelect : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Button*                  _close;
@@ -2736,7 +3137,7 @@ public:
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _close  = new Fl_Return_Button(0, 0, 0, 0, "&Select");
         _filter = new Fl_Input(0, 0, 0, 0);
-        _grid   = new GridGroup();
+        _grid   = new GridGroup(0, 0, w(), h());
         _list   = new ScrollBrowser(0, 0, 0, 0);
         _grid->add(_filter,   1,  1, -1,  4);
         _grid->add(_list,     1,  6, -1, -6);
@@ -2791,8 +3192,9 @@ public:
         activate_button();
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
-        resizable(this);
+        resizable(_grid);
         util::center_window(this, parent);
+        _grid->do_layout();
     }
     void activate_button() {
         if (_list->value() == 0) {
@@ -2855,10 +3257,6 @@ public:
         }
         return Fl_Double_Window::handle(event);
     }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
     int run() {
         show();
         while (visible() != 0) {
@@ -2878,162 +3276,14 @@ public:
         return 0;
     }
 };
-const char* PASSWORD_CANCEL = "&Cancel";
-const char* PASSWORD_OK     = "&Ok";
-class _DlgPassword : public Fl_Double_Window {
-public:
-    enum class TYPE {
-                                ASK_PASSWORD,
-                                ASK_PASSWORD_AND_KEYFILE,
-                                CONFIRM_PASSWORD,
-                                CONFIRM_PASSWORD_AND_KEYFILE,
-    };
-private:
-    Fl_Button*                  _browse;
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _close;
-    Fl_Input*                   _file;
-    Fl_Input*                   _password1;
-    Fl_Input*                   _password2;
-    GridGroup*                  _grid;
-    _DlgPassword::TYPE          _mode;
-    bool                        _ret;
-public:
-    _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
-    Fl_Double_Window(0, 0, 0, 0) {
-        end();
-        _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
-        _cancel    = new Fl_Button(0, 0, 0, 0, PASSWORD_CANCEL);
-        _close     = new Fl_Return_Button(0, 0, 0, 0, PASSWORD_OK);
-        _file      = new Fl_Output(0, 0, 0, 0, "Key file");
-        _grid      = new GridGroup();
-        _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
-        _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
-        _mode      = mode;
-        _ret       = false;
-        _grid->add(_password1,  1,   3,  -1,  4);
-        _grid->add(_password2,  1,  10,  -1,  4);
-        _grid->add(_file,       1,  17,  -1,  4);
-        _grid->add(_browse,   -51,  -5,  16,  4);
-        _grid->add(_cancel,   -34,  -5,  16,  4);
-        _grid->add(_close,    -17,  -5,  16,  4);
-        add(_grid);
-        _browse->callback(_DlgPassword::Callback, this);
-        _cancel->callback(_DlgPassword::Callback, this);
-        _close->callback(_DlgPassword::Callback, this);
-        _close->deactivate();
-        _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _file->textfont(flw::PREF_FIXED_FONT);
-        _file->textsize(flw::PREF_FONTSIZE);
-        _file->tooltip("Select optional key file");
-        _password1->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _password1->callback(_DlgPassword::Callback, this);
-        _password1->textfont(flw::PREF_FIXED_FONT);
-        _password1->textsize(flw::PREF_FONTSIZE);
-        _password1->when(FL_WHEN_CHANGED);
-        _password2->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _password2->callback(_DlgPassword::Callback, this);
-        _password2->textfont(flw::PREF_FIXED_FONT);
-        _password2->textsize(flw::PREF_FONTSIZE);
-        _password2->when(FL_WHEN_CHANGED);
-        auto W = flw::PREF_FONTSIZE * 35;
-        auto H = flw::PREF_FONTSIZE * 13.5;
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
-            _password2->hide();
-            _browse->hide();
-            _file->hide();
-            H = flw::PREF_FONTSIZE * 6.5;
-        }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
-            _browse->hide();
-            _file->hide();
-            H = flw::PREF_FONTSIZE * 10;
-        }
-        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-            _password2->hide();
-            _grid->resize(_file, 1, 10, -1, 4);
-            H = flw::PREF_FONTSIZE * 10;
-        }
-        resizable(this);
-        util::labelfont(this);
-        callback(_DlgPassword::Callback, this);
-        label(title);
-        size(W, H);
-        size_range(W, H);
-        set_modal();
-        util::center_window(this, parent);
-    }
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgPassword*>(o);
-        if (w == self) {
-            ;
-        }
-        else if (w == self->_password1) {
-            self->check();
-        }
-        else if (w == self->_password2) {
-            self->check();
-        }
-        else if (w == self->_browse) {
-            auto filename = fl_file_chooser("Select Key File", nullptr, nullptr, 0);
-            if (filename) {
-                self->_file->value(filename);
-            }
-            else {
-                self->_file->value("");
-            }
-        }
-        else if (w == self->_cancel) {
-            self->_ret = false;
-            self->hide();
-        }
-        else if (w == self->_close) {
-            self->_ret = true;
-            self->hide();
-        }
-    }
-    void check() {
-        auto p1 = _password1->value();
-        auto p2 = _password2->value();
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD ||
-            _mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-            if (strlen(p1)) {
-                _close->activate();
-            }
-            else {
-                _close->deactivate();
-            }
-        }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD ||
-                 _mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-            if (strlen(p1) && strcmp(p1, p2) == 0) {
-                _close->activate();
-            }
-            else {
-                _close->deactivate();
-            }
-        }
-    }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
-    bool run(std::string& password, std::string& file) {
-        show();
-        while (visible() != 0) {
-            Fl::wait();
-            Fl::flush();
-        }
-        if (_ret) {
-            file = _file->value();
-            password = _password1->value();
-        }
-        _dlg_zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
-        _dlg_zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
-        _dlg_zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
-        return _ret;
-    }
-};
+int select(std::string title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
+    return dlg.run();
+}
+int select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
+    return dlg.run();
+}
 class _DlgText : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Button*                  _close;
@@ -3050,7 +3300,7 @@ public:
         _buffer = new Fl_Text_Buffer();
         _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
         _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Update");
-        _grid   = new GridGroup();
+        _grid   = new GridGroup(0, 0, w(), h());
         _save   = new Fl_Button(0, 0, 0, 0, "&Save");
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
         _edit   = edit;
@@ -3085,8 +3335,9 @@ public:
         copy_label(title);
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
-        resizable(this);
+        resizable(_grid);
         util::center_window(this, parent);
+        _grid->do_layout();
     }
     ~_DlgText() {
        _text->buffer(nullptr);
@@ -3110,10 +3361,6 @@ public:
             self->hide();
         }
     }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
     char* run() {
         show();
         while (visible() != 0) {
@@ -3123,6 +3370,20 @@ public:
         return _res;
     }
 };
+void text(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
+    _DlgText dlg(title.c_str(), text.c_str(), false, parent, W, H);
+    dlg.run();
+}
+bool text_edit(std::string title, std::string& text, Fl_Window* parent, int W, int H) {
+    auto dlg = _DlgText(title.c_str(), text.c_str(), true, parent, W, H);
+    auto res = dlg.run();
+    if (res == nullptr) {
+        return false;
+    }
+    text = res;
+    free(res);
+    return true;
+}
 class _DlgTheme : public Fl_Double_Window {
     Fl_Box*                     _fixed_label;
     Fl_Box*                     _font_label;
@@ -3134,14 +3395,14 @@ class _DlgTheme : public Fl_Double_Window {
     int                         _theme_row;
 public:
     _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) :
-    Fl_Double_Window(0, 0, 0, 0, "Set Theme") {
+    Fl_Double_Window(0, 0, 10, 10, "Set Theme") {
         end();
         _close       = new Fl_Return_Button(0, 0, 0, 0, "&Close");
-        _fixedfont   = new Fl_Button(0, 0, 0, 0, "F&ixed Font");
+        _fixedfont   = new Fl_Button(0, 0, 0, 0, "&Mono font");
         _fixed_label = new Fl_Box(0, 0, 0, 0);
-        _font        = new Fl_Button(0, 0, 0, 0, "&Font");
+        _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
-        _grid        = new GridGroup();
+        _grid        = new GridGroup(0, 0, w(), h());
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
         _grid->add(_theme,         1,   1,  -1, -16);
@@ -3178,7 +3439,7 @@ public:
                 break;
             }
         }
-        resizable(this);
+        resizable(_grid);
         callback(Callback, this);
         set_modal();
         update_pref();
@@ -3202,7 +3463,7 @@ public:
             }
         }
         else if (w == self->_font) {
-            FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Font");
+            FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Regular Font");
             if (fd.run(Fl::first_window()) == true) {
                 flw::PREF_FONT     = fd.font();
                 flw::PREF_FONTSIZE = fd.fontsize();
@@ -3260,10 +3521,6 @@ public:
             self->hide();
         }
     }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
     void run() {
         show();
         while (visible()) {
@@ -3282,6 +3539,7 @@ public:
         _theme->textsize(flw::PREF_FONTSIZE);
         size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 28);
         size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
+        _grid->resize(0, 0, w(), h());
         theme::_scrollbar();
         for (int f = 0; f < theme::THEME_NIL; f++) {
             if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
@@ -3292,74 +3550,13 @@ public:
         Fl::redraw();
     }
 };
-void html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
-    _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
-    dlg.run();
-}
-void list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgList dlg(title.c_str(), list, "", parent, fixed_font, W, H);
-    dlg.run();
-}
-void list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    auto list2 = util::split( list, "\n");
-    _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
-    dlg.run();
-}
-void list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgList dlg(title.c_str(), flw::StringVector(), file, parent, fixed_font, W, H);
-    dlg.run();
-}
-void panic(std::string message) {
-    fl_alert("panic! I have to quit\n%s", message.c_str());
-    exit(1);
-}
-bool password1(std::string title, std::string& password, Fl_Window* parent) {
-    std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD);
-    return dlg.run(password, file);
-}
-bool password2(std::string title, std::string& password, Fl_Window* parent) {
-    std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD);
-    return dlg.run(password, file);
-}
-bool password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE);
-    return dlg.run(password, file);
-}
-bool password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
-    return dlg.run(password, file);
-}
-int select(std::string title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
-    return dlg.run();
-}
-int select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
-    return dlg.run();
-}
-void text(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
-    _DlgText dlg(title.c_str(), text.c_str(), false, parent, W, H);
-    dlg.run();
-}
-bool text_edit(std::string title, std::string& text, Fl_Window* parent, int W, int H) {
-    auto dlg = _DlgText(title.c_str(), text.c_str(), true, parent, W, H);
-    auto res = dlg.run();
-    if (res == nullptr) {
-        return false;
-    }
-    text = res;
-    free(res);
-    return true;
-}
 void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
     auto dlg = _DlgTheme(enable_font, enable_fixedfont, parent);
     dlg.run();
 }
 AbortDialog::AbortDialog(double min, double max) :
 Fl_Double_Window(0, 0, 0, 0, "Working...") {
-    _button   = new Fl_Button(0, 0, 0, 0, "Press To Abort");
+    _button   = new Fl_Button(0, 0, 0, 0, "Press to abort");
     _grid     = new GridGroup();
     _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
     _abort    = false;
@@ -3470,13 +3667,13 @@ public:
         fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
     }
 };
-FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label) :
+FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
-    _create(font, "", fontsize, label);
+    _create(font, "", fontsize, label, limit_to_default);
 }
-FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label) :
+FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label, bool limit_to_default) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
-    _create(0, font, fontsize, label);
+    _create(0, font, fontsize, label, limit_to_default);
 }
 void FontDialog::_activate() {
     if (_fonts->value() == 0 || _sizes->value() == 0 || (_fonts->active() == 0 && _sizes->active() == 0)) {
@@ -3523,7 +3720,7 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
         Fl::redraw();
     }
 }
-void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label) {
+void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label, bool limit_to_default) {
     end();
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
     _fonts    = new ScrollBrowser(12);
@@ -3557,8 +3754,13 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
     theme::load_fonts();
+    auto count = 0;
     for (auto name : flw::PREF_FONTNAMES) {
+        if (limit_to_default == true && count == 12) {
+            break;
+        }
         _fonts->add(name);
+        count++;
     }
     for (auto f = 6; f <= 72; f++) {
         char buf[50];
@@ -3764,150 +3966,6 @@ const char* const           PREF_THEMES2[]           = {
                                 "tan_plastic",
                                 nullptr,
 };
-struct Stat {
-    int64_t                         size;
-    int64_t                         mtime;
-    int                             mode;
-     Stat()
-        { size = mtime = 0; mode = 0; }
-     explicit Stat(std::string filename) {
-        size  = 0;
-        mtime = 0;
-        mode  = 0;
-    #ifdef _WIN32
-        wchar_t wbuffer[1025];
-        struct __stat64 st;
-        while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-            filename.pop_back();
-        }
-        fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-        if (_wstat64(wbuffer, &st) == 0) {
-            size  = st.st_size;
-            mtime = st.st_mtime;
-            if (S_ISDIR(st.st_mode)) {
-                mode = 1;
-            }
-            else if (S_ISREG(st.st_mode)) {
-                mode = 2;
-            }
-            else {
-                mode = 3;
-            }
-        }
-    #else
-        struct stat st;
-        if (stat(filename.c_str(), &st) == 0) {
-            size  = st.st_size;
-            mtime = st.st_mtime;
-            if (S_ISDIR(st.st_mode)) {
-                mode = 1;
-            }
-            else if (S_ISREG(st.st_mode)) {
-                mode = 2;
-            }
-            else {
-                mode = 3;
-            }
-        }
-    #endif
-    }
-};
-Buf::Buf() {
-    p = nullptr;
-    s = 0;
-}
-Buf::Buf(size_t S) {
-    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        s = S;
-    }
-}
-Buf::Buf(char* P, size_t S) {
-    p = P;
-    s = S;
-}
-Buf::Buf(const char* P, size_t S) {
-    if (P == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(S + 1, 1));
-        s = 0;
-        if (p == nullptr) {
-            return;
-        }
-        memcpy(p, P, S);
-        s = S;
-    }
-}
-Buf::Buf(const Buf& b) {
-    if (b.p == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-        if (p == nullptr) {
-            return;
-        }
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-}
-Buf::Buf(Buf&& b) {
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-}
-Buf& Buf::operator=(const Buf& b) {
-    if (this == &b) {
-    }
-    if (b.p == nullptr) {
-        free(p);
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        free(p);
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-        if (p == nullptr) {
-            return *this;
-        }
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-    return *this;
-}
-Buf& Buf::operator=(Buf&& b) {
-    free(p);
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-    return *this;
-}
-Buf& Buf::operator+=(const Buf& b) {
-    if (b.p == nullptr) {
-    }
-    else if (p == nullptr) {
-        *this = b;
-    }
-    else {
-        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
-        if (t == nullptr) {
-            return *this;
-        }
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
-    }
-    return *this;
-}
 bool Buf::operator==(const Buf& other) const {
     return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
 }
@@ -3988,12 +4046,31 @@ double util::clock() {
     return (double) (ts.tv_sec) + (ts.tv_nsec / 1000000000.0);
 #endif
 }
+Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        if (w->label() != nullptr && label == w->label()) {
+            return w;
+        }
+    }
+    for (int f = 0; f < group->children(); f++) {
+        auto w = group->child(f);
+        auto g = w->as_group();
+        if (g != nullptr) {
+            w = util::find_widget(g, label);
+            if (w != nullptr) {
+                return w;
+            }
+        }
+    }
+    return nullptr;
+}
 std::string util::fix_menu_string(std::string in) {
     std::string res = in;
-    util::replace(res, "\\", "\\\\");
-    util::replace(res, "_", "\\_");
-    util::replace(res, "/", "\\/");
-    util::replace(res, "&", "&&");
+    util::replace_string(res, "\\", "\\\\");
+    util::replace_string(res, "_", "\\_");
+    util::replace_string(res, "/", "\\/");
+    util::replace_string(res, "&", "&&");
     return res;
 }
 std::string util::format(const char* format, ...) {
@@ -4047,6 +4124,15 @@ std::string util::format_int(int64_t num, char del) {
     std::reverse(r.begin(), r.end());
     return r;
 }
+bool util::is_whitespace_or_empty(const char* str) {
+    while (*str != 0) {
+        if (*str != 9 && *str != 32) {
+            return false;
+        }
+        str++;
+    }
+    return true;
+}
 void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
     assert(widget);
     widget->labelfont(fn);
@@ -4057,32 +4143,6 @@ void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
             util::labelfont(group->child(f), fn, fs);
         }
     }
-}
-Buf util::load_file(std::string filename, bool alert) {
-    auto stat = flw::Stat(filename);
-    if (stat.mode != 2) {
-        if (alert == true) {
-            fl_alert("error: file %s is missing or not an file", filename.c_str());
-        }
-        return Buf();
-    }
-    auto file = fl_fopen(filename.c_str(), "rb");
-    if (file == nullptr) {
-        if (alert == true) {
-            fl_alert("error: can't open %s", filename.c_str());
-        }
-        return Buf();
-    }
-    auto buf  = Buf(stat.size);
-    auto read = fread(buf.p, 1, (size_t) stat.size, file);
-    fclose(file);
-    if (read != (size_t) stat.size) {
-        if (alert == true) {
-            fl_alert("error: failed to read %s", filename.c_str());
-        }
-        return Buf();
-    }
-    return buf;
 }
 int32_t util::milliseconds() {
 #if defined(_WIN32)
@@ -4165,32 +4225,21 @@ std::string util::remove_browser_format(const char* text) {
     }
     return res;
 }
-std::string& util::replace(std::string& string, std::string find, std::string replace) {
-    if (find == "") return string;
-    size_t start = 0;
-    while ((start = string.find(find, start)) != std::string::npos) {
-        string.replace(start, find.length(), replace);
-        start += replace.length();
+std::string& util::replace_string(std::string& string, std::string find, std::string replace) {
+    if (find == "") {
+        return string;
     }
-    return string;
-}
-bool util::save_file(std::string filename, const void* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-            return false;
+    try {
+        size_t start = 0;
+        while ((start = string.find(find, start)) != std::string::npos) {
+            string.replace(start, find.length(), replace);
+            start += replace.length();
         }
     }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
+    catch(...) {
+        string = "";
     }
-    return true;
+    return string;
 }
 void util::sleep(int milli) {
 #ifdef _WIN32
@@ -4199,7 +4248,7 @@ void util::sleep(int milli) {
     usleep(milli * 1000);
 #endif
 }
-flw::StringVector util::split(const std::string& string, std::string split) {
+flw::StringVector util::split_string(const std::string& string, std::string split) {
     auto res = StringVector();
     try {
         if (split != "") {
@@ -4220,24 +4269,18 @@ flw::StringVector util::split(const std::string& string, std::string split) {
     }
     return res;
 }
-Fl_Widget* util::widget(Fl_Group* group, std::string label) {
-    for (int f = 0; f < group->children(); f++) {
-        auto w = group->child(f);
-        if (w->label() != nullptr && label == w->label()) {
-            return w;
-        }
+void* util::zero_memory(char* mem, size_t size) {
+    if (mem == nullptr || size == 0) return mem;
+#ifdef _WIN32
+    RtlSecureZeroMemory(mem, size);
+#else
+    auto p = reinterpret_cast<volatile unsigned char*>(mem);
+    while (size--) {
+        *p = 0;
+        p++;
     }
-    for (int f = 0; f < group->children(); f++) {
-        auto w = group->child(f);
-        auto g = w->as_group();
-        if (g != nullptr) {
-            w = util::widget(g, label);
-            if (w != nullptr) {
-                return w;
-            }
-        }
-    }
-    return nullptr;
+#endif
+    return mem;
 }
 Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
 Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
@@ -4308,17 +4351,40 @@ static void _blue_colors() {
     Fl::set_color(0,   228, 228, 228);
     Fl::set_color(7,    79,  86,  94);
     Fl::set_color(8,   108, 113, 125);
-    Fl::set_color(15,  122, 143, 165);
+    Fl::set_color(15,  241, 196,  126);
     Fl::set_color(56,    0,   0,   0);
     Fl::background(48, 56, 65);
+    unsigned char r = 0;
+    unsigned char g = 0;
+    unsigned char b = 0;
+    for (int f = 32; f < 49; f++) {
+        Fl::set_color(f, r, g, b);
+        if (f == 32) {
+            r = 0;
+            g = 9;
+            b = 18;
+        }
+        else {
+            r += 2 + (f < 44);
+            g += 2 + (f < 44);
+            b += 2 + (f < 44);
+        }
+    }
 }
 static void _dark_colors() {
     Fl::set_color(0,   200, 200, 200);
     Fl::set_color(7,    64,  64,  64);
     Fl::set_color(8,   100, 100, 100);
-    Fl::set_color(15,  114, 147, 114);
+    Fl::set_color(15,  177, 227, 177);
     Fl::set_color(56,    0,   0,   0);
+    Fl::set_color(49, 43, 43, 43);
     Fl::background(43, 43, 43);
+    unsigned char c = 0;
+    for (int f = 32; f < 49; f++) {
+        Fl::set_color(f, c, c, c);
+        c += 2;
+        if (f > 40) c++;
+    }
 }
 static void _make_default_colors_darker() {
     Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
@@ -4333,13 +4399,6 @@ static void _make_default_colors_darker() {
     Fl::set_color(FL_DARK_CYAN, fl_darker(Fl::get_color(FL_DARK_CYAN)));
     Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
     Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
-}
-static void _tan_colors() {
-    Fl::set_color(0,     0,   0,   0);
-    Fl::set_color(7,   255, 255, 255);
-    Fl::set_color(8,    85,  85,  85);
-    Fl::set_color(15,  188, 114,  50);
-    Fl::background(206, 202, 187);
 }
 static void _restore_colors() {
     if (_SAVED_COLOR == true) {
@@ -4359,6 +4418,13 @@ static void _save_colors() {
         }
         _SAVED_COLOR = true;
     }
+}
+static void _tan_colors() {
+    Fl::set_color(0,     0,   0,   0);
+    Fl::set_color(7,   255, 255, 255);
+    Fl::set_color(8,    85,  85,  85);
+    Fl::set_color(15,  188, 114,  50);
+    Fl::background(206, 202, 187);
 }
 void _load_default() {
     theme::_save_colors();
@@ -4622,7 +4688,7 @@ void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resourc
 void theme::load_theme_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
-    pref.get("fontname", buffer, "", 4000);
+    pref.get("regular_name", buffer, "", 4000);
     if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
         auto font = theme::load_font(buffer);
         if (font != -1) {
@@ -4630,11 +4696,11 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
             flw::PREF_FONTNAME = buffer;
         }
     }
-    pref.get("fontsize", val, flw::PREF_FONTSIZE);
+    pref.get("regular_size", val, flw::PREF_FONTSIZE);
     if (val >= 6 && val <= 72) {
         flw::PREF_FONTSIZE = val;
     }
-    pref.get("fixedfontname", buffer, "", 1000);
+    pref.get("mono_name", buffer, "", 1000);
     if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
         auto font = theme::load_font(buffer);
         if (font != -1) {
@@ -4642,7 +4708,7 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
             flw::PREF_FIXED_FONTNAME = buffer;
         }
     }
-    pref.get("fixedfontsize", val, flw::PREF_FIXED_FONTSIZE);
+    pref.get("mono_size", val, flw::PREF_FIXED_FONTSIZE);
     if (val >= 6 && val <= 72) {
         flw::PREF_FIXED_FONTSIZE = val;
     }
@@ -4699,10 +4765,10 @@ bool theme::parse(int argc, const char** argv) {
 }
 void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
-    pref.set("fontname", flw::PREF_FONTNAME.c_str());
-    pref.set("fontsize", flw::PREF_FONTSIZE);
-    pref.set("fixedfontname", flw::PREF_FIXED_FONTNAME.c_str());
-    pref.set("fixedfontsize", flw::PREF_FIXED_FONTSIZE);
+    pref.set("regular_name", flw::PREF_FONTNAME.c_str());
+    pref.set("regular_size", flw::PREF_FONTSIZE);
+    pref.set("mono_name", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
 }
 void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
     assert(window);
@@ -4712,6 +4778,395 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
     pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
+}
+Buf::Buf() {
+    p = nullptr;
+    s = 0;
+}
+Buf::Buf(size_t S) {
+    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
+    s = 0;
+    if (p != nullptr) {
+        s = S;
+    }
+}
+Buf::Buf(const char* P, size_t S, bool grab) {
+    if (grab == true) {
+        p = const_cast<char*>(P);
+        s = S;
+    }
+    else if (P == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = static_cast<char*>(calloc(S + 1, 1));
+        s = 0;
+        if (p == nullptr) {
+            return;
+        }
+        memcpy(p, P, S);
+        s = S;
+    }
+}
+Buf::Buf(const Buf& b) {
+    if (b.p == nullptr) {
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        p = static_cast<char*>(calloc(b.s + 1, 1));
+        s = 0;
+        if (p == nullptr) {
+            return;
+        }
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+}
+Buf::Buf(Buf&& b) {
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+}
+Buf& Buf::operator=(const Buf& b) {
+    if (this == &b) {
+    }
+    if (b.p == nullptr) {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        free(p);
+        p = static_cast<char*>(calloc(b.s + 1, 1));
+        s = 0;
+        if (p == nullptr) {
+            return *this;
+        }
+        memcpy(p, b.p, b.s);
+        s = b.s;
+    }
+    return *this;
+}
+Buf& Buf::operator=(Buf&& b) {
+    free(p);
+    p = b.p;
+    s = b.s;
+    b.p = nullptr;
+    return *this;
+}
+Buf& Buf::operator+=(const Buf& b) {
+    if (b.p == nullptr) {
+    }
+    else if (p == nullptr) {
+        *this = b;
+    }
+    else {
+        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
+        if (t == nullptr) {
+            return *this;
+        }
+        memcpy(t, p, s);
+        memcpy(t + s, b.p, b.s);
+        free(p);
+        p = t;
+        s += b.s;
+    }
+    return *this;
+}
+File::File(std::string filename) {
+    size  = 0;
+    mtime = 0;
+    type  = TYPE::NA;
+#ifdef _WIN32
+    wchar_t wbuffer[1025];
+    struct __stat64 st;
+    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
+        filename.pop_back();
+    }
+    fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
+    if (_wstat64(wbuffer, &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+        if (S_ISDIR(st.st_mode)) {
+            type = TYPE::DIR;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            type = TYPE::FILE;
+        }
+        else {
+            type = TYPE::OTHER;
+        }
+    }
+#else
+    struct stat st;
+    if (stat(filename.c_str(), &st) == 0) {
+        size  = st.st_size;
+        mtime = st.st_mtime;
+        if (S_ISDIR(st.st_mode)) {
+            type = TYPE::DIR;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            type = TYPE::FILE;
+        }
+        else {
+            type = TYPE::OTHER;
+        }
+    }
+#endif
+}
+Buf File::Load(std::string filename, bool alert) {
+    auto file = File(filename);
+    if (file.type != TYPE::FILE) {
+        if (alert == true) {
+            fl_alert("error: file %s is missing or not an file", filename.c_str());
+        }
+        return Buf();
+    }
+    auto handle = fl_fopen(filename.c_str(), "rb");
+    if (handle == nullptr) {
+        if (alert == true) {
+            fl_alert("error: can't open %s", filename.c_str());
+        }
+        return Buf();
+    }
+    auto buf  = Buf(file.size);
+    auto read = fread(buf.p, 1, (size_t) file.size, handle);
+    fclose(handle);
+    if (read != (size_t) file.size) {
+        if (alert == true) {
+            fl_alert("error: failed to read %s", filename.c_str());
+        }
+        return Buf();
+    }
+    return buf;
+}
+bool File::Save(std::string filename, const char* data, size_t size, bool alert) {
+    auto file = fl_fopen(filename.c_str(), "wb");
+    if (file != nullptr) {
+        auto wrote = fwrite(data, 1, size, file);
+        fclose(file);
+        if (wrote != size) {
+            if (alert == true) {
+                fl_alert("error: saving data to %s failed", filename.c_str());
+            }
+            return false;
+        }
+    }
+    else if (alert == true) {
+        fl_alert("error: failed to open %s", filename.c_str());
+        return false;
+    }
+    return true;
+}
+PrintText::PrintText(std::string filename,
+    Fl_Paged_Device::Page_Format page_format,
+    Fl_Paged_Device::Page_Layout page_layout,
+    Fl_Font font,
+    Fl_Fontsize fontsize,
+    Fl_Align align,
+    bool wrap,
+    bool border,
+    int line_num) {
+    _align       = FL_ALIGN_INSIDE | FL_ALIGN_TOP;
+    _align      |= (align == FL_ALIGN_CENTER || align == FL_ALIGN_RIGHT) ? align : FL_ALIGN_LEFT;
+    _border      = border;
+    _file        = nullptr;
+    _filename    = filename;
+    _font        = font;
+    _fontsize    = fontsize;
+    _line_num    = (align == FL_ALIGN_LEFT) ? line_num : 0;
+    _page_format = page_format;
+    _page_layout = page_layout;
+    _printer     = nullptr;
+    _wrap        = wrap;
+}
+PrintText::~PrintText() {
+    stop();
+}
+void PrintText::check_for_new_page() {
+    if (_py + _lh > _ph || _page_count == 0) {
+        if (_page_count > 0) {
+            fl_pop_clip();
+            if (_printer->end_page() != 0) {
+                throw "error: couldn't end current page";
+            }
+        }
+        if (_printer->begin_page() != 0) {
+            throw "error: couldn't create new page!";
+        }
+        if (_printer->printable_rect(&_pw, &_ph) != 0) {
+            throw "error: couldn't retrieve page size!";
+        }
+        fl_font(_font, _fontsize);
+        fl_color(FL_BLACK);
+        fl_line_style(FL_SOLID, 1);
+        fl_push_clip(0, 0, _pw, _ph);
+        if (_border == false) {
+            _px = 0;
+            _py = 0;
+        }
+        else {
+            fl_rect(0, 0, _pw, _ph);
+            measure_lw_lh("M");
+            _px  = _lw;
+            _py  = _lh;
+            _pw -= _lw * 2;
+            _ph -= _lh * 2;
+        }
+        _page_count++;
+    }
+}
+void PrintText::debug() const {
+    FLW_PRINT(_filename)
+    FLW_PRINT(_font)
+    FLW_PRINT(_fontsize)
+    FLW_PRINT(_align)
+    FLW_PRINT(_page_format)
+    FLW_PRINT(_page_layout)
+    FLW_PRINT(_border)
+    FLW_PRINT(_wrap)
+}
+void PrintText::measure_lw_lh(const std::string& text) {
+    _lw = _lh = 0;
+    fl_measure(text.c_str(), _lw, _lh, 0);
+}
+std::string PrintText::print(const char* text, unsigned replace_tab_with_space) {
+    return print(util::split_string(text, "\n"), replace_tab_with_space);
+}
+std::string PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
+    return print(util::split_string(text.c_str(), "\n"), replace_tab_with_space);
+}
+std::string PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
+    std::string res;
+    std::string tab;
+    while (replace_tab_with_space > 0 && replace_tab_with_space <= 16) {
+        tab += " ";
+        replace_tab_with_space--;
+    }
+    try {
+        auto wc = WaitCursor();
+        res = start();
+        if (res == "") {
+            for (auto& line : lines) {
+                if (tab != "") {
+                    auto l = line;
+                    util::replace_string(l, "\t", "    ");
+                    print_line(l == "" ? " " : l);
+                }
+                else {
+                    print_line(line == "" ? " " : line);
+                }
+            }
+            res = stop();
+        }
+    }
+    catch (const char* ex) {
+        res = ex;
+    }
+    catch (...) {
+        res = "error: unknown exception!";
+    }
+    return res;
+}
+void PrintText::print_line(const std::string& line) {
+    _line_count++;
+    check_for_new_page();
+    if (_line_num > 0) {
+        auto num = util::format("%*d: ", _line_num, _line_count);
+        measure_lw_lh(num);
+        fl_draw(num.c_str(), _px, _py, _pw, _lh, _align, nullptr, 0);
+        _nw = _lw;
+    }
+    measure_lw_lh(line);
+    if (_wrap == true && _lw > _pw - _nw) {
+        print_wrapped_line(line);
+    }
+    else {
+        fl_draw(line.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+        _py += _lh;
+    }
+}
+void PrintText::print_wrapped_line(const std::string& line) {
+    auto p1 = line.c_str();
+    auto s1 = std::string();
+    auto s2 = std::string();
+    while (*p1 != 0) {
+        auto cl = fl_wcwidth(p1);
+        if (cl > 1) {
+            for (auto f = 0; f < cl && *p1 != 0; f++) {
+                s1 += *p1;
+                p1++;
+            }
+        }
+        else {
+            s1 += *p1;
+            p1++;
+        }
+        auto c = s1.back();
+        if (c == ' ' || c == '\t' || c == ',' || c == ';' || c == '.') {
+            s2 = s1;
+        }
+        measure_lw_lh(s1);
+        if (_lw >= _pw - _nw) {
+            check_for_new_page();
+            if (s2 != "") {
+                fl_draw(s2.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+                s1 = (s2.length() < s1.length()) ? s1.substr(s2.length()) : "";
+                s2 = "";
+            }
+            else {
+                std::string s;
+                if (s1.length() > 1) {
+                    s  = s1.substr(s1.length() - 1);
+                    s1 = s1.substr(0, s1.length() - 1);
+                }
+                fl_draw(s1.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+                s1 = s;
+            }
+            _py += _lh;
+        }
+    }
+    if (s1 != "") {
+        check_for_new_page();
+        fl_draw(s1.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
+        _py += _lh;
+    }
+}
+std::string PrintText::start() {
+    if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
+        return "error: could not open file!";
+    }
+    _lh         = 0;
+    _line_count = 0;
+    _lw         = 0;
+    _nw         = 0;
+    _page_count = 0;
+    _ph         = 0;
+    _pw         = 0;
+    _px         = 0;
+    _py         = 0;
+    _printer    = new Fl_PostScript_File_Device();
+    _printer->begin_job(_file, 0, _page_format, _page_layout);
+    return "";
+}
+std::string PrintText::stop() {
+    std::string res = "";
+    if (_printer != nullptr) {
+        if (_page_count > 0) {
+            fl_pop_clip();
+            if (_printer->end_page() != 0) {
+                res = "error: could not end page!";
+            }
+        }
+        _printer->end_job();
+        delete _printer;
+        fclose(_file);
+        _file    = nullptr;
+        _printer = nullptr;
+    }
+    return res;
 }
 }
 #include <stdarg.h>
@@ -4966,7 +5421,7 @@ void GridGroup::remove(Fl_Widget* widget) {
 }
 void GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
-    if (children() == 0 || W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
         return;
     }
     int size = (_size > 0) ? _size : flw::PREF_FONTSIZE / 2;
@@ -7628,7 +8083,7 @@ bool Plot::Load(Plot* plot, std::string filename) {
     plot->clear();
     plot->redraw();
     auto wc  = WaitCursor();
-    auto buf = util::load_file(filename);
+    auto buf = File::Load(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
@@ -7785,7 +8240,7 @@ bool Plot::Save(const Plot* plot, std::string filename) {
                 }
             }
         auto js = jsb.encode();
-        return util::save_file(filename, js.c_str(), js.length());
+        return File::Save(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -8076,7 +8531,7 @@ int flw::SplitGroup::handle(int event) {
 }
 void flw::SplitGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
-    if (children() == 0 || W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
         return;
     }
     auto currx = X;
@@ -9984,7 +10439,7 @@ public:
     void draw() override {
         fl_draw_box(_BOXTYPE, x(), y(), w(), h(), (value() != 0) ? _TabsGroupButton::_BOXSELCOLOR : _TabsGroupButton::_BOXCOLOR);
         fl_font(_TabsGroupButton::_FONT, _TabsGroupButton::_FONTSIZE);
-        fl_color((value() != 0) ? FL_BACKGROUND2_COLOR : FL_FOREGROUND_COLOR);
+        fl_color((value() != 0) ? fl_contrast(FL_FOREGROUND_COLOR, _TabsGroupButton::_BOXSELCOLOR) : FL_FOREGROUND_COLOR);
         fl_draw(label(), x() + 3, y(), w() - 6, h(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
     }
 };
@@ -10454,7 +10909,7 @@ void ToolGroup::remove(Fl_Widget* widget) {
 }
 void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
     Fl_Widget::resize(X, Y, W, H);
-    if (children() == 0 || W == 0 || H == 0) {
+    if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
         return;
     }
     auto leftover = (_direction == DIRECTION::HORIZONTAL) ? W : H;
