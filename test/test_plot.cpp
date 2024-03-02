@@ -310,7 +310,7 @@ public:
         Fl_Double_Window::resize(X, Y, W, H);
         menu->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
         plot->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
-//         plot->resize(50, 50, W - 100, H - 100);
+//        plot->resize(50, 50, W - 100, H - 100);
     }
 
     void run_menu(std::string s) {

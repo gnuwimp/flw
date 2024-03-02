@@ -87,9 +87,11 @@ private:
     void                        _draw_ylabels();
     void                        _draw_ylabels2();
 
-    static void                 _CallbackDebug(Fl_Widget*, void* plot_object);
-    static void                 _CallbackSave(Fl_Widget*, void* plot_object);
-    static void                 _CallbackToggle(Fl_Widget*, void* plot_object);
+    static void                 _CallbackDebug(Fl_Widget*, void* widget);
+    static void                 _CallbackPrint(Fl_Widget*, void* widget);
+    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
+    static void                 _CallbackSave(Fl_Widget*, void* widget);
+    static void                 _CallbackToggle(Fl_Widget*, void* widget);
 
     struct {
         bool                    horizontal;

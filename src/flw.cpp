@@ -434,6 +434,48 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
 }
 
 //------------------------------------------------------------------------------
+std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to) {
+    bool                      cont = true;
+    FILE*                     file = nullptr;
+    Fl_PostScript_File_Device printer;
+    int                       ph;
+    int                       pw;
+    std::string               res;
+    
+    if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
+        return "error: could not open file!";
+    }
+
+    printer.begin_job(file, 0, format, layout);
+   
+    while (cont == true) {
+        if (printer.begin_page() != 0) {
+            res = "error: couldn't create new page!";
+            goto ERR;
+        }
+
+        if (printer.printable_rect(&pw, &ph) != 0) {
+            res = "error: couldn't retrieve page size!";
+            goto ERR;
+        }
+
+        fl_push_clip(0, 0, pw, ph);
+        cont = cb(widget, pw, ph, from, to);
+        fl_pop_clip();
+        
+        if (printer.end_page() != 0) {
+            res = "error: couldn't end page!";
+            goto ERR;
+        }
+    }
+    
+ERR:
+    fclose(file);
+    printer.end_job();
+    return res;
+}
+
+//------------------------------------------------------------------------------
 std::string util::remove_browser_format(const char* text) {
     auto res = std::string((text != nullptr) ? text : "");
     auto f   = res.find_last_of("@");
@@ -1534,18 +1576,6 @@ void PrintText::check_for_new_page() {
 
         _page_count++;
     }
-}
-
-//------------------------------------------------------------------------------
-void PrintText::debug() const {
-    FLW_PRINT(_filename)
-    FLW_PRINT(_font)
-    FLW_PRINT(_fontsize)
-    FLW_PRINT(_align)
-    FLW_PRINT(_page_format)
-    FLW_PRINT(_page_layout)
-    FLW_PRINT(_border)
-    FLW_PRINT(_wrap)
 }
 
 //------------------------------------------------------------------------------

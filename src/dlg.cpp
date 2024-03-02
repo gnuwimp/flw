@@ -47,6 +47,43 @@ void _scrollbar();
 namespace dlg {
 
 //------------------------------------------------------------------------------
+static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
+    format->add("A0 format");
+    format->add("A1 format");
+    format->add("A2 format");
+    format->add("A3 format");
+    format->add("A4 format");
+    format->add("A5 format");
+    format->add("A6 format");
+    format->add("A7 format");
+    format->add("A8 format");
+    format->add("A9 format");
+    format->add("B0 format");
+    format->add("B1 format");
+    format->add("B2 format");
+    format->add("B3 format");
+    format->add("B4 format");
+    format->add("B5 format");
+    format->add("B6 format");
+    format->add("B7 format");
+    format->add("B8 format");
+    format->add("B9 format");
+    format->add("Executive format");
+    format->add("Folio format");
+    format->add("Ledger format");
+    format->add("Legal format");
+    format->add("Letter format");
+    format->add("Tabloid format");
+    format->tooltip("Select paper format.");
+    format->value(4);
+
+    layout->add("Portrait");
+    layout->add("Landscape");
+    layout->tooltip("Select paper layout.");
+    layout->value(0);
+}
+
+//------------------------------------------------------------------------------
 void center_message_dialog() {
     int X, Y, W, H;
     Fl::screen_xywh(X, Y, W, H);
@@ -77,7 +114,7 @@ class _DlgHtml  : public Fl_Double_Window {
     GridGroup*                  _grid;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
@@ -106,7 +143,7 @@ public:
         _grid->do_layout();
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
 
@@ -115,7 +152,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void run() {
         show();
 
@@ -150,7 +187,7 @@ class _DlgList : public Fl_Double_Window {
     ScrollBrowser*              _list;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
@@ -195,7 +232,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgList*>(o);
 
@@ -204,7 +241,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void run() {
         show();
 
@@ -270,7 +307,7 @@ private:
     bool                        _ret;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
     Fl_Double_Window(0, 0, 10, 10) {
         end();
@@ -343,7 +380,7 @@ public:
         _grid->do_layout();
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPassword*>(o);
 
@@ -376,7 +413,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void check() {
         auto p1 = _password1->value();
         auto p2 = _password2->value();
@@ -403,7 +440,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     bool run(std::string& password, std::string& file) {
         show();
 
@@ -452,6 +489,155 @@ bool password4(std::string title, std::string& password, std::string& file, Fl_W
 }
 
 /***
+ *           _____  _       _____      _       _   
+ *          |  __ \| |     |  __ \    (_)     | |  
+ *          | |  | | | __ _| |__) | __ _ _ __ | |_ 
+ *          | |  | | |/ _` |  ___/ '__| | '_ \| __|
+ *          | |__| | | (_| | |   | |  | | | | | |_ 
+ *          |_____/|_|\__, |_|   |_|  |_|_| |_|\__|
+ *      ______         __/ |                       
+ *     |______|       |___/                        
+ */
+
+//------------------------------------------------------------------------------
+class _DlgPrint : public Fl_Double_Window {
+    Fl_Button*                  _close;
+    Fl_Button*                  _file;
+    Fl_Button*                  _print;
+    Fl_Choice*                  _format;
+    Fl_Choice*                  _layout;
+    Fl_Hor_Slider*              _from;
+    Fl_Hor_Slider*              _to;
+    Fl_Widget*                  _widget;
+    GridGroup*                  _grid;
+    PrintCallback               _cb;
+
+public:
+    //--------------------------------------------------------------------------
+    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, Fl_Widget* widget, int from, int to) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18) {
+        end();
+
+        _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+        _file   = new Fl_Button(0, 0, 0, 0, "output.ps");
+        _format = new Fl_Choice(0, 0, 0, 0);
+        _from   = new Fl_Hor_Slider(0, 0, 0, 0);
+        _grid   = new GridGroup(0, 0, w(), h());
+        _layout = new Fl_Choice(0, 0, 0, 0);
+        _print  = new Fl_Button(0, 0, 0, 0, "&Print");
+        _to     = new Fl_Hor_Slider(0, 0, 0, 0);
+        _cb     = cb;
+        _widget = widget;
+        
+        _grid->add(_from,     1,  3, -1,  4);
+        _grid->add(_to,       1, 10, -1,  4);
+        _grid->add(_format,   1, 15, -1,  4);
+        _grid->add(_layout,   1, 20, -1,  4);
+        _grid->add(_file,     1, 25, -1,  4);
+        _grid->add(_print,  -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+
+        util::labelfont(this);
+        _close->callback(_DlgPrint::Callback, this);
+        _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _file->callback(_DlgPrint::Callback, this);
+        _file->tooltip("Select output PostScript file.");
+        _from->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _from->callback(_DlgPrint::Callback, this);
+        _from->range(from, to);
+        _from->value(from);
+        _from->tooltip("Start page number.");
+        _print->callback(_DlgPrint::Callback, this);
+        _to->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _to->callback(_DlgPrint::Callback, this);
+        _to->range(from, to);
+        _to->value(from);
+        _to->tooltip("End page number.");
+        
+        if (from < 1 || from >= to) {
+            _from->deactivate();
+            _from->range(0, 1);
+            _from->value(0);
+            _to->deactivate();
+            _to->range(0, 1);
+            _to->value(0);
+        }
+        
+        dlg::_init_printer_formats(_format, _layout);
+        _DlgPrint::Callback(_from, this);
+        _DlgPrint::Callback(_to, this);
+        callback(_DlgPrint::Callback, this);
+        copy_label(title.c_str());
+        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18);
+        set_modal();
+        resizable(_grid);
+        util::center_window(this, parent);
+        _grid->do_layout();
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgPrint*>(o);
+
+        if (w == self) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->hide();
+        }
+        else if (w == self->_file) {
+            auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
+            
+            if (filename != nullptr) {
+                self->_file->copy_label(filename);
+            }
+        }
+        else if (w == self->_from || w == self->_to) {
+            auto l = util::format("%s page number: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
+            w->copy_label(l.c_str());
+            self->redraw();
+        }
+        else if (w == self->_print) {
+            self->print();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    void print() {
+        auto from   = static_cast<int>(_from->value());
+        auto to     = static_cast<int>(_to->value());
+        auto format = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
+        auto layout = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
+        auto file   = _file->label();
+        auto err    = util::print(file, format, layout, _cb, _widget, from, to);
+        
+        if (err != "") {
+            fl_alert("Printing failed!\n%s", err.c_str());
+            return;
+        }
+
+        hide();
+    }
+
+    //--------------------------------------------------------------------------
+    void run() {
+        show();
+
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+    }
+};
+
+//------------------------------------------------------------------------------
+void print(std::string title, PrintCallback cb, Fl_Widget* widget, int from, int to, Fl_Window* parent) {
+    _DlgPrint dlg(title, parent, cb, widget, from, to);
+    dlg.run();
+}
+
+/***
  *           _____  _       _____      _       _ _______        _   
  *          |  __ \| |     |  __ \    (_)     | |__   __|      | |  
  *          | |  | | | __ _| |__) | __ _ _ __ | |_ | | _____  _| |_ 
@@ -484,7 +670,7 @@ class _DlgPrintText : public Fl_Double_Window {
     std::string                 _label2;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgPrintText(std::string title, Fl_Window* parent, const StringVector& text) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35),
     _text(text) {
@@ -531,56 +717,27 @@ public:
         _close->callback(_DlgPrintText::Callback, this);
         _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _file->callback(_DlgPrintText::Callback, this);
-        _file->tooltip("Select output postscript file.");
+        _file->tooltip("Select output PostScript file.");
         _fonts->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fonts->callback(_DlgPrintText::Callback, this);
         _fonts->tooltip("Select font to use.");
-        _format->add("A0 format");
-        _format->add("A1 format");
-        _format->add("A2 format");
-        _format->add("A3 format");
-        _format->add("A4 format");
-        _format->add("A5 format");
-        _format->add("A6 format");
-        _format->add("A7 format");
-        _format->add("A8 format");
-        _format->add("A9 format");
-        _format->add("B0 format");
-        _format->add("B1 format");
-        _format->add("B2 format");
-        _format->add("B3 format");
-        _format->add("B4 format");
-        _format->add("B5 format");
-        _format->add("B6 format");
-        _format->add("B7 format");
-        _format->add("B8 format");
-        _format->add("B9 format");
-        _format->add("Executive format");
-        _format->add("Folio format");
-        _format->add("Ledger format");
-        _format->add("Legal format");
-        _format->add("Letter format");
-        _format->add("Tabloid format");
-        _format->tooltip("Select paper format.");
-        _format->value(4);
         _label->align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _label->box(FL_BORDER_BOX);
         _label->box(FL_THIN_DOWN_BOX);
-        _layout->add("Portrait");
-        _layout->add("Landscape");
-        _layout->tooltip("Select paper layout.");
-        _layout->value(0);
         _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _line->callback(_DlgPrintText::Callback, this);
-        _line->scrollvalue(0, 0, 0, 6);
+        _line->range(0, 6);
+        _line->value(0);
         _line->tooltip("Set minimum line number width.\nSet to 0 to disable.");
         _print->callback(_DlgPrintText::Callback, this);
         _tab->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _tab->callback(_DlgPrintText::Callback, this);
-        _tab->scrollvalue(0, 0, 0, 16);
+        _tab->range(0, 16);
+        _tab->value(0);
         _tab->tooltip("Replace tabs with spaces.\nSet to 0 to disable.");
         _wrap->tooltip("Wrap long lines or they will be clipped.");
 
+        dlg::_init_printer_formats(_format, _layout);
         _DlgPrintText::Callback(_line, this);
         _DlgPrintText::Callback(_tab, this);
         callback(_DlgPrintText::Callback, this);
@@ -593,7 +750,7 @@ public:
         set_label();
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrintText*>(o);
 
@@ -604,7 +761,7 @@ public:
             self->hide();
         }
         else if (w == self->_file) {
-            auto filename = fl_file_chooser("Save To Postscript File", "Postscript Files (*.ps)\tAll Files (*)", "");
+            auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
             
             if (filename != nullptr) {
                 self->_file->copy_label(filename);
@@ -636,27 +793,18 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void print() {
         auto border  = _border->value();
         auto wrap    = _wrap->value();
-        auto line    = _line->value();
-        auto tab     = _tab->value();
-        auto format  = _format->value();
+        auto line    = static_cast<int>(_line->value());
+        auto tab     = static_cast<int>(_tab->value());
+        auto format  = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
         auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
         auto file    = _file->label();
-        auto printer = PrintText(file, 
-            static_cast<Fl_Paged_Device::Page_Format>(format), 
-            static_cast<Fl_Paged_Device::Page_Layout>(layout), 
-            _font, 
-            _fontsize, 
-            align, 
-            wrap, 
-            border, 
-            line);
-            
-        auto err = printer.print(_text, tab);
+        auto printer = PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);            
+        auto err     = printer.print(_text, tab);
         
         if (err == "") {
             auto s = _label2;
@@ -674,7 +822,7 @@ public:
         redraw();
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     bool run() {
         show();
 
@@ -686,7 +834,7 @@ public:
         return _ret;
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void set_label() {
         auto len = 0;
 
@@ -737,7 +885,7 @@ class _DlgSelect : public Fl_Double_Window {
     const StringVector&         _strings;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
     Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
     _strings(strings) {
@@ -815,7 +963,7 @@ public:
         _grid->do_layout();
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void activate_button() {
         if (_list->value() == 0) {
             _close->deactivate();
@@ -825,7 +973,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelect*>(o);
 
@@ -850,7 +998,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void filter(const char* filter) {
         _list->clear();
 
@@ -866,7 +1014,7 @@ public:
         _list->value(1);
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // Tab key changes focus between list and input
     //
     int handle(int event) override {
@@ -893,7 +1041,7 @@ public:
         return Fl_Double_Window::handle(event);
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     int run() {
         show();
 
@@ -955,7 +1103,7 @@ class _DlgText : public Fl_Double_Window {
     char*                       _res;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
         end();
@@ -1007,13 +1155,13 @@ public:
         _grid->do_layout();
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     ~_DlgText() {
        _text->buffer(nullptr);
         delete _buffer;
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgText*>(o);
 
@@ -1036,7 +1184,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     char* run() {
         show();
 
@@ -1092,7 +1240,7 @@ class _DlgTheme : public Fl_Double_Window {
     int                         _theme_row;
 
 public:
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) :
     Fl_Double_Window(0, 0, 10, 10, "Set Theme") {
         end();
@@ -1153,7 +1301,7 @@ public:
         util::center_window(this, parent);
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgTheme*>(o);
 
@@ -1240,7 +1388,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void run() {
         show();
 
@@ -1250,7 +1398,7 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void update_pref() {
         Fl_Tooltip::font(flw::PREF_FONT);
         Fl_Tooltip::size(flw::PREF_FONTSIZE);
@@ -1434,7 +1582,7 @@ public:
     int font;
     int size;
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
         font = FL_HELVETICA;
         size = 14;
@@ -1444,7 +1592,7 @@ public:
         color(FL_BACKGROUND2_COLOR);
     }
 
-    //------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     void draw() override {
         draw_box();
         fl_font((Fl_Font) font, size);

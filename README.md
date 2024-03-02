@@ -31,6 +31,7 @@ Widgets:
 Dialogs:
 * AbortDialog - Show a message dialog and let user abort current work.
 * FontDialog - Select a font.
+* WorkDialog - Display some message and progress bar while doing some time consuming work.
 * dlg::date - Show a date selection dialog.
 * dlg::html - Show text in a html view.
 * dlg::list* - Show a list of strings.

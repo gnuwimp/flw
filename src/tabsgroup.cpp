@@ -420,7 +420,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
 
         for (auto widget : _buttons) { // Calc total width of buttons
             auto b = static_cast<_TabsGroupButton*>(widget);
-            b->_tw = 0;
+            b->_tw = th = 0;
             fl_measure(b->label(), b->_tw, th);
 
             b->_tw += _TabsGroupButton::_BORDER;

@@ -45,6 +45,7 @@ bool                            password1(std::string title, std::string& passwo
 bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
 bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
 bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+void                            print(std::string title, PrintCallback cb, Fl_Widget* widget, int from = 1, int to = 1, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
 int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);

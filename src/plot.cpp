@@ -5,6 +5,7 @@
 #include "flw.h"
 #include "waitcursor.h"
 #include "json.h"
+#include "dlg.h"
 
 // MKALGAM_ON
 
@@ -26,6 +27,7 @@ namespace flw {
  *     |_|
  */
 
+static const char* const        _PLOT_PRINT       = "Print to PostScript...";
 static const char* const        _PLOT_SHOW_LABELS = "Show line labels";
 static const char* const        _PLOT_SHOW_HLINES = "Show horizontal lines";
 static const char* const        _PLOT_SHOW_VLINES = "Show vertical lines";
@@ -412,6 +414,7 @@ Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) 
     _menu->add(_PLOT_SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_PLOT_SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_PLOT_PRINT, 0, Plot::_CallbackPrint, this);
     _menu->add(_PLOT_SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
     _menu->add("Debug", 0, Plot::_CallbackDebug, this);
@@ -491,20 +494,36 @@ void Plot::_calc_min_max() {
 }
 
 //------------------------------------------------------------------------------
-void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<const Plot*>(plot_object);
+void Plot::_CallbackDebug(Fl_Widget*, void* widget) {
+    auto self = static_cast<const Plot*>(widget);
     self->debug();
 }
 
 //------------------------------------------------------------------------------
-void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
+void Plot::_CallbackPrint(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
+    dlg::print("Print Plot", Plot::_CallbackPrinter, self, 1, 1, self->top_window());
+}
+
+//------------------------------------------------------------------------------
+bool Plot::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
+    auto r = Fl_Rect(widget);
+    
+    widget->resize(0, 0, pw, ph);
+    widget->draw();        
+    widget->resize(r.x(), r.y(), r.w(), r.h());
+    return false;
+}
+
+//------------------------------------------------------------------------------
+void Plot::_CallbackSave(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
     flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
 }
 
 //------------------------------------------------------------------------------
-void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
+void Plot::_CallbackToggle(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
 
     self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
     self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
@@ -1286,6 +1305,7 @@ void Plot::update_pref() {
     _menu->textsize(flw::PREF_FONTSIZE);
     _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    _cw = _ch = 0;
     fl_measure("X", _cw, _ch, 0);
 }
 
