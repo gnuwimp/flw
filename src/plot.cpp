@@ -503,6 +503,7 @@ void Plot::_CallbackDebug(Fl_Widget*, void* widget) {
 void Plot::_CallbackPrint(Fl_Widget*, void* widget) {
     auto self = static_cast<Plot*>(widget);
     dlg::print("Print Plot", Plot::_CallbackPrinter, self, 1, 1, self->top_window());
+    self->redraw();
 }
 
 //------------------------------------------------------------------------------
@@ -662,8 +663,8 @@ void Plot::draw() {
 //     auto t = util::milliseconds();
 #endif
 
+    fl_rectf(x(), y(), w(), h(), FL_BACKGROUND2_COLOR);
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    Fl_Group::draw();
 
     if (_area->w < 50 || _area->h < 50 || _x->min >= _x->max || _x->pixel * _x->tick < 1.0 || _y->min >= _y->max || _y->pixel * _y->tick < 1.0) {
         return;

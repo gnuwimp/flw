@@ -11,6 +11,7 @@ namespace flw {
 #define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
 static const int                _CHART_MAX_VLINES      = 100;
 static const int                _CHART_MAX_LINE_WIDTH  = 100;
+static const char* const        _CHART_PRINT           = "Print to PostScript...";
 static const char* const        _CHART_SHOW_LABELS     = "Show line labels";
 static const char* const        _CHART_SHOW_HLINES     = "Show horizontal lines";
 static const char* const        _CHART_SHOW_VLINES     = "Show vertical lines";
@@ -485,8 +486,9 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _scroll->callback(Chart::_CallbackScrollbar, this);
     _menu->add(_CHART_SHOW_LABELS, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_CHART_SHOW_HLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_CHART_RESET_SELECT, 0, Chart::_CallbackReset, this);
+    _menu->add(_CHART_SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_CHART_RESET_SELECT, 0, Chart::_CallbackReset, this, FL_MENU_DIVIDER);
+    _menu->add(_CHART_PRINT, 0, Chart::_CallbackPrint, this);
     _menu->add(_CHART_SAVE_PNG, 0, Chart::_CallbackSavePng, this);
 #ifdef DEBUG
     _menu->add("Debug", 0, Chart::_CallbackDebug, this);
@@ -688,12 +690,19 @@ void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
     auto self = static_cast<const Chart*>(chart_object);
     self->debug();
 }
-void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+void Chart::_CallbackPrint(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
+    self->_printing = true;
+    dlg::print("Print Chart", Chart::_CallbackPrinter, self, 1, 1, self->top_window());
+    self->_printing = false;
     self->redraw();
+}
+bool Chart::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
+    auto r = Fl_Rect(widget);
+    widget->resize(0, 0, pw, ph);
+    widget->draw();
+    widget->resize(r.x(), r.y(), r.w(), r.h());
+    return false;
 }
 void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
     auto self = static_cast<Chart*>(chart_object);
@@ -714,6 +723,13 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
     self->_date_start = self->_scroll->value();
     self->init(false);
 }
+void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+    self->redraw();
+}
 void Chart::clear() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
     _block_dates.clear();
@@ -727,6 +743,7 @@ void Chart::clear() {
     _date_start   = 0;
     _old_height   = -1;
     _old_width    = -1;
+    _printing     = false;
     _tooltip      = "";
     _top_space    = 0;
     _ver_pos[0]   = -1;
@@ -863,10 +880,15 @@ void Chart::debug() const {
 void Chart::draw() {
 #ifdef DEBUG
 #endif
+    if (_printing == true) {
+        fl_rectf(x(), y(), w(), h(), FL_BACKGROUND2_COLOR);
+    }
+    else {
+        Fl_Group::draw();
+    }
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    Fl_Group::draw();
     _cw = fl_width("X");
-    if (w() < 100 || h() < 100) {
+    if (w() < 50 || h() < 50) {
         return;
     }
     fl_push_clip(x(), y(), w(), h() - _scroll->h());
@@ -2605,6 +2627,40 @@ void _load_plastic_tan();
 void _scrollbar();
 }
 namespace dlg {
+static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
+    format->add("A0 format");
+    format->add("A1 format");
+    format->add("A2 format");
+    format->add("A3 format");
+    format->add("A4 format");
+    format->add("A5 format");
+    format->add("A6 format");
+    format->add("A7 format");
+    format->add("A8 format");
+    format->add("A9 format");
+    format->add("B0 format");
+    format->add("B1 format");
+    format->add("B2 format");
+    format->add("B3 format");
+    format->add("B4 format");
+    format->add("B5 format");
+    format->add("B6 format");
+    format->add("B7 format");
+    format->add("B8 format");
+    format->add("B9 format");
+    format->add("Executive format");
+    format->add("Folio format");
+    format->add("Ledger format");
+    format->add("Legal format");
+    format->add("Letter format");
+    format->add("Tabloid format");
+    format->tooltip("Select paper format.");
+    format->value(4);
+    layout->add("Portrait");
+    layout->add("Landscape");
+    layout->tooltip("Select paper layout.");
+    layout->value(0);
+}
 void center_message_dialog() {
     int X, Y, W, H;
     Fl::screen_xywh(X, Y, W, H);
@@ -2900,6 +2956,122 @@ bool password4(std::string title, std::string& password, std::string& file, Fl_W
     _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
     return dlg.run(password, file);
 }
+class _DlgPrint : public Fl_Double_Window {
+    Fl_Button*                  _close;
+    Fl_Button*                  _file;
+    Fl_Button*                  _print;
+    Fl_Choice*                  _format;
+    Fl_Choice*                  _layout;
+    Fl_Hor_Slider*              _from;
+    Fl_Hor_Slider*              _to;
+    Fl_Widget*                  _widget;
+    GridGroup*                  _grid;
+    PrintCallback               _cb;
+public:
+    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, Fl_Widget* widget, int from, int to) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18) {
+        end();
+        _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+        _file   = new Fl_Button(0, 0, 0, 0, "output.ps");
+        _format = new Fl_Choice(0, 0, 0, 0);
+        _from   = new Fl_Hor_Slider(0, 0, 0, 0);
+        _grid   = new GridGroup(0, 0, w(), h());
+        _layout = new Fl_Choice(0, 0, 0, 0);
+        _print  = new Fl_Button(0, 0, 0, 0, "&Print");
+        _to     = new Fl_Hor_Slider(0, 0, 0, 0);
+        _cb     = cb;
+        _widget = widget;
+        _grid->add(_from,     1,   3,  -1,   4);
+        _grid->add(_to,       1,  10,  -1,   4);
+        _grid->add(_format,   1,  15,  -1,   4);
+        _grid->add(_layout,   1,  20,  -1,   4);
+        _grid->add(_file,     1,  25,  -1,   4);
+        _grid->add(_print,  -34,  -5,  16,   4);
+        _grid->add(_close,  -17,  -5,  16,   4);
+        add(_grid);
+        util::labelfont(this);
+        _close->callback(_DlgPrint::Callback, this);
+        _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        _file->callback(_DlgPrint::Callback, this);
+        _file->tooltip("Select output PostScript file.");
+        _from->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _from->callback(_DlgPrint::Callback, this);
+        _from->range(from, to);
+        _from->value(from);
+        _from->tooltip("Start page number.");
+        _print->callback(_DlgPrint::Callback, this);
+        _to->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+        _to->callback(_DlgPrint::Callback, this);
+        _to->range(from, to);
+        _to->value(from);
+        _to->tooltip("End page number.");
+        if (from < 1 || from >= to) {
+            _from->deactivate();
+            _from->range(0, 1);
+            _from->value(0);
+            _to->deactivate();
+            _to->range(0, 1);
+            _to->value(0);
+        }
+        dlg::_init_printer_formats(_format, _layout);
+        _DlgPrint::Callback(_from, this);
+        _DlgPrint::Callback(_to, this);
+        callback(_DlgPrint::Callback, this);
+        copy_label(title.c_str());
+        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18);
+        set_modal();
+        resizable(_grid);
+        util::center_window(this, parent);
+        _grid->do_layout();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgPrint*>(o);
+        if (w == self) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->hide();
+        }
+        else if (w == self->_file) {
+            auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
+            if (filename != nullptr) {
+                self->_file->copy_label(filename);
+            }
+        }
+        else if (w == self->_from || w == self->_to) {
+            auto l = util::format("%s page number: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
+            w->copy_label(l.c_str());
+            self->redraw();
+        }
+        else if (w == self->_print) {
+            self->print();
+        }
+    }
+    void print() {
+        auto from   = static_cast<int>(_from->value());
+        auto to     = static_cast<int>(_to->value());
+        auto format = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
+        auto layout = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
+        auto file   = _file->label();
+        auto err    = util::print(file, format, layout, _cb, _widget, from, to);
+        if (err != "") {
+            fl_alert("Printing failed!\n%s", err.c_str());
+            return;
+        }
+        hide();
+    }
+    void run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+    }
+};
+void print(std::string title, PrintCallback cb, Fl_Widget* widget, int from, int to, Fl_Window* parent) {
+    _DlgPrint dlg(title, parent, cb, widget, from, to);
+    dlg.run();
+}
 class _DlgPrintText : public Fl_Double_Window {
     Fl_Box*                     _label;
     Fl_Button*                  _close;
@@ -2940,18 +3112,18 @@ public:
         _ret      = false;
         _font     = FL_COURIER;
         _fontsize = 14;
-        _grid->add(_border,   1,  1, -1,  4);
-        _grid->add(_wrap,     1,  6, -1,  4);
-        _grid->add(_line,     1, 13, -1,  4);
-        _grid->add(_tab,      1, 20, -1,  4);
-        _grid->add(_format,   1, 25, -1,  4);
-        _grid->add(_layout,   1, 30, -1,  4);
-        _grid->add(_align,    1, 35, -1,  4);
-        _grid->add(_fonts,    1, 40, -1,  4);
-        _grid->add(_file,     1, 45, -1,  4);
-        _grid->add(_label,    1, 50, -1,  13);
-        _grid->add(_print,  -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_border,   1,   1,  -1,   4);
+        _grid->add(_wrap,     1,   6,  -1,   4);
+        _grid->add(_line,     1,  13,  -1,   4);
+        _grid->add(_tab,      1,  20,  -1,   4);
+        _grid->add(_format,   1,  25,  -1,   4);
+        _grid->add(_layout,   1,  30,  -1,   4);
+        _grid->add(_align,    1,  35,  -1,   4);
+        _grid->add(_fonts,    1,  40,  -1,   4);
+        _grid->add(_file,     1,  45,  -1,   4);
+        _grid->add(_label,    1,  50,  -1,   13);
+        _grid->add(_print,  -34,  -5,  16,   4);
+        _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
         util::labelfont(this);
         _align->add("Left align");
@@ -2963,55 +3135,26 @@ public:
         _close->callback(_DlgPrintText::Callback, this);
         _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _file->callback(_DlgPrintText::Callback, this);
-        _file->tooltip("Select output postscript file.");
+        _file->tooltip("Select output PostScript file.");
         _fonts->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fonts->callback(_DlgPrintText::Callback, this);
         _fonts->tooltip("Select font to use.");
-        _format->add("A0 format");
-        _format->add("A1 format");
-        _format->add("A2 format");
-        _format->add("A3 format");
-        _format->add("A4 format");
-        _format->add("A5 format");
-        _format->add("A6 format");
-        _format->add("A7 format");
-        _format->add("A8 format");
-        _format->add("A9 format");
-        _format->add("B0 format");
-        _format->add("B1 format");
-        _format->add("B2 format");
-        _format->add("B3 format");
-        _format->add("B4 format");
-        _format->add("B5 format");
-        _format->add("B6 format");
-        _format->add("B7 format");
-        _format->add("B8 format");
-        _format->add("B9 format");
-        _format->add("Executive format");
-        _format->add("Folio format");
-        _format->add("Ledger format");
-        _format->add("Legal format");
-        _format->add("Letter format");
-        _format->add("Tabloid format");
-        _format->tooltip("Select paper format.");
-        _format->value(4);
         _label->align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _label->box(FL_BORDER_BOX);
         _label->box(FL_THIN_DOWN_BOX);
-        _layout->add("Portrait");
-        _layout->add("Landscape");
-        _layout->tooltip("Select paper layout.");
-        _layout->value(0);
         _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _line->callback(_DlgPrintText::Callback, this);
-        _line->scrollvalue(0, 0, 0, 6);
+        _line->range(0, 6);
+        _line->value(0);
         _line->tooltip("Set minimum line number width.\nSet to 0 to disable.");
         _print->callback(_DlgPrintText::Callback, this);
         _tab->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _tab->callback(_DlgPrintText::Callback, this);
-        _tab->scrollvalue(0, 0, 0, 16);
+        _tab->range(0, 16);
+        _tab->value(0);
         _tab->tooltip("Replace tabs with spaces.\nSet to 0 to disable.");
         _wrap->tooltip("Wrap long lines or they will be clipped.");
+        dlg::_init_printer_formats(_format, _layout);
         _DlgPrintText::Callback(_line, this);
         _DlgPrintText::Callback(_tab, this);
         callback(_DlgPrintText::Callback, this);
@@ -3032,7 +3175,7 @@ public:
             self->hide();
         }
         else if (w == self->_file) {
-            auto filename = fl_file_chooser("Save To Postscript File", "Postscript Files (*.ps)\tAll Files (*)", "");
+            auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
             if (filename != nullptr) {
                 self->_file->copy_label(filename);
             }
@@ -3063,22 +3206,14 @@ public:
     void print() {
         auto border  = _border->value();
         auto wrap    = _wrap->value();
-        auto line    = _line->value();
-        auto tab     = _tab->value();
-        auto format  = _format->value();
+        auto line    = static_cast<int>(_line->value());
+        auto tab     = static_cast<int>(_tab->value());
+        auto format  = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
         auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
         auto file    = _file->label();
-        auto printer = PrintText(file,
-            static_cast<Fl_Paged_Device::Page_Format>(format),
-            static_cast<Fl_Paged_Device::Page_Layout>(layout),
-            _font,
-            _fontsize,
-            align,
-            wrap,
-            border,
-            line);
-        auto err = printer.print(_text, tab);
+        auto printer = PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
+        auto err     = printer.print(_text, tab);
         if (err == "") {
             auto s = _label2;
             s += util::format("\n%d page%s was printed.", printer.page_count(), printer.page_count() > 1 ? "s" : "");
@@ -4197,6 +4332,39 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
 }
+std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to) {
+    bool                      cont = true;
+    FILE*                     file = nullptr;
+    Fl_PostScript_File_Device printer;
+    int                       ph;
+    int                       pw;
+    std::string               res;
+    if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
+        return "error: could not open file!";
+    }
+    printer.begin_job(file, 0, format, layout);
+    while (cont == true) {
+        if (printer.begin_page() != 0) {
+            res = "error: couldn't create new page!";
+            goto ERR;
+        }
+        if (printer.printable_rect(&pw, &ph) != 0) {
+            res = "error: couldn't retrieve page size!";
+            goto ERR;
+        }
+        fl_push_clip(0, 0, pw, ph);
+        cont = cb(widget, pw, ph, from, to);
+        fl_pop_clip();
+        if (printer.end_page() != 0) {
+            res = "error: couldn't end page!";
+            goto ERR;
+        }
+    }
+ERR:
+    printer.end_job();
+    fclose(file);
+    return res;
+}
 std::string util::remove_browser_format(const char* text) {
     auto res = std::string((text != nullptr) ? text : "");
     auto f   = res.find_last_of("@");
@@ -5017,16 +5185,6 @@ void PrintText::check_for_new_page() {
         }
         _page_count++;
     }
-}
-void PrintText::debug() const {
-    FLW_PRINT(_filename)
-    FLW_PRINT(_font)
-    FLW_PRINT(_fontsize)
-    FLW_PRINT(_align)
-    FLW_PRINT(_page_format)
-    FLW_PRINT(_page_layout)
-    FLW_PRINT(_border)
-    FLW_PRINT(_wrap)
 }
 void PrintText::measure_lw_lh(const std::string& text) {
     _lw = _lh = 0;
@@ -7287,6 +7445,7 @@ void LogDisplay::value(const char* text) {
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
+static const char* const        _PLOT_PRINT       = "Print to PostScript...";
 static const char* const        _PLOT_SHOW_LABELS = "Show line labels";
 static const char* const        _PLOT_SHOW_HLINES = "Show horizontal lines";
 static const char* const        _PLOT_SHOW_VLINES = "Show vertical lines";
@@ -7546,6 +7705,7 @@ Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) 
     _menu->add(_PLOT_SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_PLOT_SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_PLOT_PRINT, 0, Plot::_CallbackPrint, this);
     _menu->add(_PLOT_SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
     _menu->add("Debug", 0, Plot::_CallbackDebug, this);
@@ -7606,16 +7766,28 @@ void Plot::_calc_min_max() {
     _y->min2 = _y->min;
     _y->max2 = _y->max;
 }
-void Plot::_CallbackDebug(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<const Plot*>(plot_object);
+void Plot::_CallbackDebug(Fl_Widget*, void* widget) {
+    auto self = static_cast<const Plot*>(widget);
     self->debug();
 }
-void Plot::_CallbackSave(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
+void Plot::_CallbackPrint(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
+    dlg::print("Print Plot", Plot::_CallbackPrinter, self, 1, 1, self->top_window());
+    self->redraw();
+}
+bool Plot::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
+    auto r = Fl_Rect(widget);
+    widget->resize(0, 0, pw, ph);
+    widget->draw();
+    widget->resize(r.x(), r.y(), r.w(), r.h());
+    return false;
+}
+void Plot::_CallbackSave(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
     flw::util::png_save("", self->window(), self->x(),  self->y(),  self->w(),  self->h());
 }
-void Plot::_CallbackToggle(Fl_Widget*, void* plot_object) {
-    auto self = static_cast<Plot*>(plot_object);
+void Plot::_CallbackToggle(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
     self->_view.labels     = flw::menu::item_value(self->_menu, _PLOT_SHOW_LABELS);
     self->_view.horizontal = flw::menu::item_value(self->_menu, _PLOT_SHOW_HLINES);
     self->_view.vertical   = flw::menu::item_value(self->_menu, _PLOT_SHOW_VLINES);
@@ -7718,8 +7890,8 @@ void Plot::debug() const {
 void Plot::draw() {
 #ifdef DEBUG
 #endif
+    fl_rectf(x(), y(), w(), h(), FL_BACKGROUND2_COLOR);
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    Fl_Group::draw();
     if (_area->w < 50 || _area->h < 50 || _x->min >= _x->max || _x->pixel * _x->tick < 1.0 || _y->min >= _y->max || _y->pixel * _y->tick < 1.0) {
         return;
     }
@@ -8252,6 +8424,7 @@ void Plot::update_pref() {
     _menu->textsize(flw::PREF_FONTSIZE);
     _ct = flw::PREF_FIXED_FONTSIZE * 0.3;
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    _cw = _ch = 0;
     fl_measure("X", _cw, _ch, 0);
 }
 }
@@ -8647,15 +8820,19 @@ public:
 class _TableDisplayCellDialog : public Fl_Double_Window {
     Fl_Int_Input*                   _row;
     Fl_Int_Input*                   _col;
+    GridGroup*                      _grid;
     bool                            _ret;
 public:
-    _TableDisplayCellDialog(int row, int col) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+    _TableDisplayCellDialog(int row, int col) :
+    Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
         end();
-        _row = new Fl_Int_Input(0, 0, 0, 0, "Row:");
-        _col = new Fl_Int_Input(0, 0, 0, 0, "Column:");
-        _ret = false;
-        add(_row);
-        add(_col);
+        _col  = new Fl_Int_Input(0, 0, 0, 0, "Column:");
+        _grid = new GridGroup(0, 0, w(), h());
+        _row  = new Fl_Int_Input(0, 0, 0, 0, "Row:");
+        _ret  = false;
+        _grid->add(_row,   1,  3,  -1,   4);
+        _grid->add(_col,   1, 10,  -1,   4);
+        add(_grid);
         _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
         _row->callback(_TableDisplayCellDialog::Callback, this);
         _row->labelsize(flw::PREF_FONTSIZE);
@@ -8675,7 +8852,7 @@ public:
         _col->value(b);
         callback(_TableDisplayCellDialog::Callback, this);
         set_modal();
-        resizable(this);
+        resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
     }
     static void Callback(Fl_Widget* w, void* o) {
@@ -8695,12 +8872,6 @@ public:
     int col() const {
         return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
     }
-    void resize(int X, int Y, int W, int H) {
-        int fs = flw::PREF_FONTSIZE / 2;
-        Fl_Double_Window::resize(X, Y, W, H);
-        _row->resize(fs,  fs * 3,   W - fs * 2,  fs * 4);
-        _col->resize(fs,  fs * 10,  W - fs * 2,  fs * 4);
-    }
     int row() const {
         return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
     }
@@ -8715,42 +8886,46 @@ public:
     }
 };
 class _TableDisplayFindDialog : public Fl_Double_Window {
-    Fl_Input*                   _text;
+    Fl_Input*                   _find;
     Fl_Button*                  _next;
     Fl_Button*                  _prev;
     Fl_Button*                  _close;
+    GridGroup*                  _grid;
     TableDisplay*               _table;
     bool                        _repeat;
 public:
-    explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Find Text In Table Cells") {
+    explicit _TableDisplayFindDialog(TableDisplay* table) :
+    Fl_Double_Window(0, 0, 10, 10, "Find Text In Table Cells") {
         end();
         _close  = new Fl_Button(0, 0, 0, 0, "&Close");
-        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Find");
-        _prev   = new Fl_Button(0, 0, 0, 0, "Find &prev");
-        _text   = new Fl_Input(0, 0, 0, 0, "Find:");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Next");
+        _prev   = new Fl_Button(0, 0, 0, 0, "&Previous");
+        _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
-        add(_text);
-        add(_prev);
-        add(_next);
-        add(_close);
+        _grid->add(_find,     8,  1,  -1,   4);
+        _grid->add(_prev,   -51, -5,  16,   4);
+        _grid->add(_next,   -34, -5,  16,   4);
+        _grid->add(_close,  -17, -5,  16,   4);
+        add(_grid);
         _close->callback(_TableDisplayFindDialog::Callback, this);
         _close->labelsize(flw::PREF_FONTSIZE);
         _next->callback(_TableDisplayFindDialog::Callback, this);
         _next->labelsize(flw::PREF_FONTSIZE);
         _prev->callback(_TableDisplayFindDialog::Callback, this);
         _prev->labelsize(flw::PREF_FONTSIZE);
-        _text->align(FL_ALIGN_LEFT);
-        _text->callback(_TableDisplayFindDialog::Callback, this);
-        _text->labelsize(flw::PREF_FONTSIZE);
-        _text->textfont(flw::PREF_FIXED_FONT);
-        _text->textsize(flw::PREF_FONTSIZE);
-        _text->value(_table->_find.c_str());
-        _text->when(FL_WHEN_ENTER_KEY_ALWAYS);
+        _find->align(FL_ALIGN_LEFT);
+        _find->callback(_TableDisplayFindDialog::Callback, this);
+        _find->labelsize(flw::PREF_FONTSIZE);
+        _find->textfont(flw::PREF_FIXED_FONT);
+        _find->textsize(flw::PREF_FONTSIZE);
+        _find->value(_table->_find.c_str());
+        _find->when(FL_WHEN_ENTER_KEY_ALWAYS);
         callback(_TableDisplayFindDialog::Callback, this);
         set_modal();
-        resizable(this);
-        resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 5.5);
+        resizable(_grid);
+        resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 6);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto dlg = static_cast<_TableDisplayFindDialog*>(o);
@@ -8758,7 +8933,7 @@ public:
             dlg->hide();
         }
         else if (w == dlg->_close) {
-            dlg->_table->_find = dlg->_text->value();
+            dlg->_table->_find = dlg->_find->value();
             dlg->hide();
         }
         else if (w == dlg->_next) {
@@ -8767,12 +8942,12 @@ public:
         else if (w == dlg->_prev) {
             dlg->find(false);
         }
-        else if (w == dlg->_text) {
+        else if (w == dlg->_find) {
             dlg->find(dlg->_repeat);
         }
     }
     void find(bool next) {
-        auto find = _text->value();
+        auto find = _find->value();
         _repeat = next;
         if (*find == 0) {
             fl_beep(FL_BEEP_ERROR);
@@ -8834,14 +9009,6 @@ public:
                 goto AGAIN;
             }
         }
-    }
-    void resize(int X, int Y, int W, int H) {
-        int fs = flw::PREF_FONTSIZE / 2;
-        Fl_Double_Window::resize(X, Y, W, H);
-        _text->resize  (fs * 10,      fs,          W - fs * 11,  fs * 4);
-        _prev->resize  (W - fs * 51,  H - fs * 5,  fs * 16,      fs * 4);
-        _next->resize  (W - fs * 34,  H - fs * 5,  fs * 16,      fs * 4);
-        _close->resize (W - fs * 17,  H - fs * 5,  fs * 16,      fs * 4);
     }
     void run(Fl_Window* parent) {
         flw::util::center_window(this, parent);
@@ -10727,7 +10894,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
         for (auto widget : _buttons) {
             auto b = static_cast<_TabsGroupButton*>(widget);
-            b->_tw = 0;
+            b->_tw = th = 0;
             fl_measure(b->label(), b->_tw, th);
             b->_tw += _TabsGroupButton::_BORDER;
             w      += b->_tw + space;

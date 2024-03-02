@@ -2,6 +2,7 @@
 // Released under the GNU General Public License v3.0
 
 #include "tabledisplay.h"
+#include "gridgroup.h"
 
 // MKALGAM_ON
 
@@ -61,18 +62,22 @@ public:
 class _TableDisplayCellDialog : public Fl_Double_Window {
     Fl_Int_Input*                   _row;
     Fl_Int_Input*                   _col;
+    GridGroup*                      _grid;
     bool                            _ret;
 
 public:
-    _TableDisplayCellDialog(int row, int col) : Fl_Double_Window(0, 0, 0, 0, "Goto Cell") {
+    _TableDisplayCellDialog(int row, int col) : 
+    Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
         end();
 
-        _row = new Fl_Int_Input(0, 0, 0, 0, "Row:");
-        _col = new Fl_Int_Input(0, 0, 0, 0, "Column:");
-        _ret = false;
+        _col  = new Fl_Int_Input(0, 0, 0, 0, "Column:");
+        _grid = new GridGroup(0, 0, w(), h());
+        _row  = new Fl_Int_Input(0, 0, 0, 0, "Row:");
+        _ret  = false;
 
-        add(_row);
-        add(_col);
+        _grid->add(_row,   1,  3,  -1,   4);
+        _grid->add(_col,   1, 10,  -1,   4);
+        add(_grid);
 
         _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
         _row->callback(_TableDisplayCellDialog::Callback, this);
@@ -95,7 +100,7 @@ public:
 
         callback(_TableDisplayCellDialog::Callback, this);
         set_modal();
-        resizable(this);
+        resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
     }
 
@@ -119,15 +124,6 @@ public:
     //--------------------------------------------------------------------------
     int col() const {
         return (*_col->value() >= '0' && *_col->value() <= '9') ? atoi(_col->value()) : 0;
-    }
-
-    //--------------------------------------------------------------------------
-    void resize(int X, int Y, int W, int H) {
-        int fs = flw::PREF_FONTSIZE / 2;
-        
-        Fl_Double_Window::resize(X, Y, W, H);
-        _row->resize(fs,  fs * 3,   W - fs * 2,  fs * 4);
-        _col->resize(fs,  fs * 10,  W - fs * 2,  fs * 4);
     }
 
     //--------------------------------------------------------------------------
@@ -162,28 +158,32 @@ public:
 
 //------------------------------------------------------------------------------
 class _TableDisplayFindDialog : public Fl_Double_Window {
-    Fl_Input*                   _text;
+    Fl_Input*                   _find;
     Fl_Button*                  _next;
     Fl_Button*                  _prev;
     Fl_Button*                  _close;
+    GridGroup*                  _grid;
     TableDisplay*               _table;
     bool                        _repeat;
 
 public:
-    explicit _TableDisplayFindDialog(TableDisplay* table) : Fl_Double_Window(0, 0, 0, 0, "Find Text In Table Cells") {
+    explicit _TableDisplayFindDialog(TableDisplay* table) : 
+    Fl_Double_Window(0, 0, 10, 10, "Find Text In Table Cells") {
         end();
 
         _close  = new Fl_Button(0, 0, 0, 0, "&Close");
-        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Find");
-        _prev   = new Fl_Button(0, 0, 0, 0, "Find &prev");
-        _text   = new Fl_Input(0, 0, 0, 0, "Find:");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Next");
+        _prev   = new Fl_Button(0, 0, 0, 0, "&Previous");
+        _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
 
-        add(_text);
-        add(_prev);
-        add(_next);
-        add(_close);
+        _grid->add(_find,     8,  1,  -1,   4);
+        _grid->add(_prev,   -51, -5,  16,   4);
+        _grid->add(_next,   -34, -5,  16,   4);
+        _grid->add(_close,  -17, -5,  16,   4);
+        add(_grid);
 
         _close->callback(_TableDisplayFindDialog::Callback, this);
         _close->labelsize(flw::PREF_FONTSIZE);
@@ -191,18 +191,18 @@ public:
         _next->labelsize(flw::PREF_FONTSIZE);
         _prev->callback(_TableDisplayFindDialog::Callback, this);
         _prev->labelsize(flw::PREF_FONTSIZE);
-        _text->align(FL_ALIGN_LEFT);
-        _text->callback(_TableDisplayFindDialog::Callback, this);
-        _text->labelsize(flw::PREF_FONTSIZE);
-        _text->textfont(flw::PREF_FIXED_FONT);
-        _text->textsize(flw::PREF_FONTSIZE);
-        _text->value(_table->_find.c_str());
-        _text->when(FL_WHEN_ENTER_KEY_ALWAYS);
+        _find->align(FL_ALIGN_LEFT);
+        _find->callback(_TableDisplayFindDialog::Callback, this);
+        _find->labelsize(flw::PREF_FONTSIZE);
+        _find->textfont(flw::PREF_FIXED_FONT);
+        _find->textsize(flw::PREF_FONTSIZE);
+        _find->value(_table->_find.c_str());
+        _find->when(FL_WHEN_ENTER_KEY_ALWAYS);
 
         callback(_TableDisplayFindDialog::Callback, this);
         set_modal();
-        resizable(this);
-        resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 5.5);
+        resizable(_grid);
+        resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 6);
     }
 
     //--------------------------------------------------------------------------
@@ -213,7 +213,7 @@ public:
             dlg->hide();
         }
         else if (w == dlg->_close) {
-            dlg->_table->_find = dlg->_text->value();
+            dlg->_table->_find = dlg->_find->value();
             dlg->hide();
         }
         else if (w == dlg->_next) {
@@ -222,14 +222,14 @@ public:
         else if (w == dlg->_prev) {
             dlg->find(false);
         }
-        else if (w == dlg->_text) {
+        else if (w == dlg->_find) {
             dlg->find(dlg->_repeat);
         }
     }
 
     //--------------------------------------------------------------------------
     void find(bool next) {
-        auto find = _text->value();
+        auto find = _find->value();
 
         _repeat = next;
 
@@ -302,18 +302,6 @@ public:
                 goto AGAIN;
             }
         }
-    }
-
-    //--------------------------------------------------------------------------
-    void resize(int X, int Y, int W, int H) {
-        int fs = flw::PREF_FONTSIZE / 2;
-
-        Fl_Double_Window::resize(X, Y, W, H);
-
-        _text->resize  (fs * 10,      fs,          W - fs * 11,  fs * 4);
-        _prev->resize  (W - fs * 51,  H - fs * 5,  fs * 16,      fs * 4);
-        _next->resize  (W - fs * 34,  H - fs * 5,  fs * 16,      fs * 4);
-        _close->resize (W - fs * 17,  H - fs * 5,  fs * 16,      fs * 4);
     }
 
     //--------------------------------------------------------------------------

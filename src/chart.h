@@ -135,6 +135,8 @@ private:
     ChartArea*                  _inside_area(int X, int Y);
 
     static void                 _CallbackDebug(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackPrint(Fl_Widget*, void* widget);
+    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
     static void                 _CallbackReset(Fl_Widget* widget, void* chart_object);
     static void                 _CallbackSavePng(Fl_Widget* widget, void* chart_object);
     static void                 _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
@@ -160,6 +162,7 @@ private:
     Fl_Menu_Button*             _menu;
     int                         _old_height;
     int                         _old_width;
+    bool                        _printing;
     Fl_Scrollbar*               _scroll;
     int                         _tick_width;
     int                         _ticks;

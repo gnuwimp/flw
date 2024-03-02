@@ -529,13 +529,13 @@ public:
         _cb     = cb;
         _widget = widget;
         
-        _grid->add(_from,     1,  3, -1,  4);
-        _grid->add(_to,       1, 10, -1,  4);
-        _grid->add(_format,   1, 15, -1,  4);
-        _grid->add(_layout,   1, 20, -1,  4);
-        _grid->add(_file,     1, 25, -1,  4);
-        _grid->add(_print,  -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_from,     1,   3,  -1,   4);
+        _grid->add(_to,       1,  10,  -1,   4);
+        _grid->add(_format,   1,  15,  -1,   4);
+        _grid->add(_layout,   1,  20,  -1,   4);
+        _grid->add(_file,     1,  25,  -1,   4);
+        _grid->add(_print,  -34,  -5,  16,   4);
+        _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
 
         util::labelfont(this);
@@ -693,18 +693,18 @@ public:
         _font     = FL_COURIER;
         _fontsize = 14;
         
-        _grid->add(_border,   1,  1, -1,  4);
-        _grid->add(_wrap,     1,  6, -1,  4);
-        _grid->add(_line,     1, 13, -1,  4);
-        _grid->add(_tab,      1, 20, -1,  4);
-        _grid->add(_format,   1, 25, -1,  4);
-        _grid->add(_layout,   1, 30, -1,  4);
-        _grid->add(_align,    1, 35, -1,  4);
-        _grid->add(_fonts,    1, 40, -1,  4);
-        _grid->add(_file,     1, 45, -1,  4);
-        _grid->add(_label,    1, 50, -1,  13);
-        _grid->add(_print,  -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_border,   1,   1,  -1,   4);
+        _grid->add(_wrap,     1,   6,  -1,   4);
+        _grid->add(_line,     1,  13,  -1,   4);
+        _grid->add(_tab,      1,  20,  -1,   4);
+        _grid->add(_format,   1,  25,  -1,   4);
+        _grid->add(_layout,   1,  30,  -1,   4);
+        _grid->add(_align,    1,  35,  -1,   4);
+        _grid->add(_fonts,    1,  40,  -1,   4);
+        _grid->add(_file,     1,  45,  -1,   4);
+        _grid->add(_label,    1,  50,  -1,   13);
+        _grid->add(_print,  -34,  -5,  16,   4);
+        _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
 
         util::labelfont(this);

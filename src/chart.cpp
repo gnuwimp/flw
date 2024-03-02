@@ -4,6 +4,7 @@
 #include "chart.h"
 #include "flw.h"
 #include "json.h"
+#include "dlg.h"
 #include "waitcursor.h"
 
 // MKALGAM_ON
@@ -32,6 +33,7 @@ namespace flw {
 
 static const int                _CHART_MAX_VLINES      = 100;
 static const int                _CHART_MAX_LINE_WIDTH  = 100;
+static const char* const        _CHART_PRINT           = "Print to PostScript...";
 static const char* const        _CHART_SHOW_LABELS     = "Show line labels";
 static const char* const        _CHART_SHOW_HLINES     = "Show horizontal lines";
 static const char* const        _CHART_SHOW_VLINES     = "Show vertical lines";
@@ -687,8 +689,9 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _scroll->callback(Chart::_CallbackScrollbar, this);
     _menu->add(_CHART_SHOW_LABELS, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_CHART_SHOW_HLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_CHART_RESET_SELECT, 0, Chart::_CallbackReset, this);
+    _menu->add(_CHART_SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_CHART_RESET_SELECT, 0, Chart::_CallbackReset, this, FL_MENU_DIVIDER);
+    _menu->add(_CHART_PRINT, 0, Chart::_CallbackPrint, this);
     _menu->add(_CHART_SAVE_PNG, 0, Chart::_CallbackSavePng, this);
 #ifdef DEBUG
     _menu->add("Debug", 0, Chart::_CallbackDebug, this);
@@ -945,13 +948,22 @@ void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
-
-    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+void Chart::_CallbackPrint(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
+    self->_printing = true;
+    dlg::print("Print Chart", Chart::_CallbackPrinter, self, 1, 1, self->top_window());
+    self->_printing = false;
     self->redraw();
+}
+
+//------------------------------------------------------------------------------
+bool Chart::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
+    auto r = Fl_Rect(widget);
+    
+    widget->resize(0, 0, pw, ph);
+    widget->draw();        
+    widget->resize(r.x(), r.y(), r.w(), r.h());
+    return false;
 }
 
 //------------------------------------------------------------------------------
@@ -983,6 +995,16 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
 }
 
 //------------------------------------------------------------------------------
+void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
+    auto self = static_cast<Chart*>(chart_object);
+
+    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
+    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
+    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
+    self->redraw();
+}
+
+//------------------------------------------------------------------------------
 void Chart::clear() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
 
@@ -999,6 +1021,7 @@ void Chart::clear() {
     _date_start   = 0;
     _old_height   = -1;
     _old_width    = -1;
+    _printing     = false;
     _tooltip      = "";
     _top_space    = 0;
     _ver_pos[0]   = -1;
@@ -1175,11 +1198,17 @@ void Chart::draw() {
     // auto t = flw::util::time_milli();
 #endif
 
+    if (_printing == true) {
+        fl_rectf(x(), y(), w(), h(), FL_BACKGROUND2_COLOR);
+    }
+    else {
+        Fl_Group::draw();
+    }
+    
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    Fl_Group::draw();
     _cw = fl_width("X");
 
-    if (w() < 100 || h() < 100) {
+    if (w() < 50 || h() < 50) {
         return;
     }
 

@@ -470,8 +470,8 @@ std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format fo
     }
     
 ERR:
-    fclose(file);
     printer.end_job();
+    fclose(file);
     return res;
 }
 

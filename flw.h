@@ -51,6 +51,7 @@ extern const char* const        PREF_THEMES[];          // Name of themes
 
 typedef std::vector<std::string> StringVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
+typedef bool (*PrintCallback)(Fl_Widget* widget, int pw, int ph, int from, int to);
 
 //------------------------------------------------------------------------------
 namespace debug {
@@ -83,6 +84,7 @@ namespace util {
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
     int32_t                     milliseconds();
     void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to);
     std::string                 remove_browser_format(const char* text);
     std::string&                replace_string(std::string& string, std::string find, std::string replace);
     void                        sleep(int milli);
@@ -231,7 +233,7 @@ struct File {
  */
 
 //------------------------------------------------------------------------------
-// Line numbers are onlu used with FL_ALIGN_LEFT.
+// Line numbers are only used with FL_ALIGN_LEFT.
 //
 class PrintText {
 public:
@@ -246,7 +248,6 @@ public:
                                     int line_num = 0);
                                 ~PrintText();
 
-    void                        debug() const;    
     Fl_Fontsize                 fontsize() const
                                     { return _fontsize; }
     int                         page_count() const
@@ -566,6 +567,8 @@ private:
     ChartArea*                  _inside_area(int X, int Y);
 
     static void                 _CallbackDebug(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackPrint(Fl_Widget*, void* widget);
+    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
     static void                 _CallbackReset(Fl_Widget* widget, void* chart_object);
     static void                 _CallbackSavePng(Fl_Widget* widget, void* chart_object);
     static void                 _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
@@ -591,6 +594,7 @@ private:
     Fl_Menu_Button*             _menu;
     int                         _old_height;
     int                         _old_width;
+    bool                        _printing;
     Fl_Scrollbar*               _scroll;
     int                         _tick_width;
     int                         _ticks;
@@ -853,6 +857,7 @@ bool                            password1(std::string title, std::string& passwo
 bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
 bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
 bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+void                            print(std::string title, PrintCallback cb, Fl_Widget* widget, int from = 1, int to = 1, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
 int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -1519,9 +1524,11 @@ private:
     void                        _draw_ylabels();
     void                        _draw_ylabels2();
 
-    static void                 _CallbackDebug(Fl_Widget*, void* plot_object);
-    static void                 _CallbackSave(Fl_Widget*, void* plot_object);
-    static void                 _CallbackToggle(Fl_Widget*, void* plot_object);
+    static void                 _CallbackDebug(Fl_Widget*, void* widget);
+    static void                 _CallbackPrint(Fl_Widget*, void* widget);
+    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
+    static void                 _CallbackSave(Fl_Widget*, void* widget);
+    static void                 _CallbackToggle(Fl_Widget*, void* widget);
 
     struct {
         bool                    horizontal;
