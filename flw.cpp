@@ -474,6 +474,7 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
         "Press ctrl + scroll wheel to change tick size.\n"
         "Press left button to show Y value.\n"
         "Press ctrl + left button to show actual price data.\n"
+        "\n"
         "Press 1 - 9 to select which line to use.\n"
         "Press shift + 1 - 9 to toggle line visibility.\n"
         "Click in target area first."
@@ -686,8 +687,8 @@ void Chart::_calc_yscale() {
         area.right.calc(area.h);
     }
 }
-void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<const Chart*>(chart_object);
+void Chart::_CallbackDebug(Fl_Widget*, void* widget) {
+    auto self = static_cast<const Chart*>(widget);
     self->debug();
 }
 void Chart::_CallbackPrint(Fl_Widget*, void* widget) {
@@ -697,15 +698,16 @@ void Chart::_CallbackPrint(Fl_Widget*, void* widget) {
     self->_printing = false;
     self->redraw();
 }
-bool Chart::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
-    auto r = Fl_Rect(widget);
+bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
+    auto widget = static_cast<Fl_Widget*>(data);
+    auto r      = Fl_Rect(widget);
     widget->resize(0, 0, pw, ph);
     widget->draw();
     widget->resize(r.x(), r.y(), r.w(), r.h());
     return false;
 }
-void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackReset(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
     for (auto& area : self->_areas) {
         area.selected = 0;
         for (auto& line : area.lines) {
@@ -714,17 +716,17 @@ void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
     }
     self->redraw();
 }
-void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackSavePng(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
     util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
 }
-void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init(false);
 }
-void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackToggle(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
     self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
     self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
     self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
@@ -777,8 +779,9 @@ void Chart::_create_tooltip(bool ctrl) {
     while (start <= stop && start < (int) _dates.size()) {
         if (X >= X1 && X <= X1 + _tick_width - 1) {
             const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(format);
+            const auto&       line       = _area->lines[_area->selected];
             _tooltip = fancy_date;
-            if (ctrl == false || _area->lines[_area->selected].points.size() == 0) {
+            if (ctrl == false || line.points.size() == 0 || line.visible == false) {
                 const double ydiff = (double) ((y() + _area->y2()) - Y);
                 std::string  left;
                 std::string  right;
@@ -800,7 +803,6 @@ void Chart::_create_tooltip(bool ctrl) {
                 }
             }
             else {
-                const auto&  line  = _area->lines[_area->selected];
                 const size_t index = _chart_bsearch(line.points, _dates[start]);
                 if (index != (size_t) -1) {
                     const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
@@ -1032,7 +1034,7 @@ void Chart::_draw_line_labels(const ChartArea& area) {
             for (const auto& line : area.lines) {
                 auto label = line.label;
                 if (label != "") {
-                    if (area.selected == count) {
+                    if (area.selected == count && line.visible == true) {
                         label = "@-> " + label;
                     }
                     fl_color((line.visible == false) ? FL_GRAY : line.color);
@@ -1329,29 +1331,24 @@ int Chart::handle(int event) {
             return 1;
         }
     }
-    else if (event == FL_KEYDOWN) {
+    else if (event == FL_KEYDOWN && _area != nullptr) {
         auto key = Fl::event_key();
         if (key >= '0' && key <= '9') {
-            if (_area == nullptr) {
-                fl_beep(FL_BEEP_ERROR);
+            auto selected = (size_t) (key - '0');
+            if (selected == 0) {
+                selected = 10;
             }
-            else {
-                auto selected = key - '0';
-                if (selected == 0) {
-                    selected = 10;
-                }
-                selected--;
-                if ((size_t) selected >= _area->count) {
-                    selected = 0;
-                }
+            selected--;
+            if (selected < _area->count) {
                 if (Fl::event_shift() != 0) {
                     _area->lines[selected].visible = !_area->lines[selected].visible;
                 }
-                else {
+                if (_area->lines[selected].visible == true) {
                     _area->selected = selected;
                 }
                 redraw();
             }
+            return 1;
         }
     }
     return Fl_Group::handle(event);
@@ -2666,6 +2663,16 @@ void center_message_dialog() {
     Fl::screen_xywh(X, Y, W, H);
     fl_message_position(W / 2, H / 2, 1);
 }
+bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
+    auto dlg = dlg::FontDialog(font, fontsize, "Select Font", limit_to_default);
+    if (dlg.run() == false) {
+        return false;
+    }
+    font     = dlg.font();
+    fontsize = dlg.fontsize();
+    fontname = dlg.fontname();
+    return true;
+}
 void panic(std::string message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
@@ -2727,8 +2734,8 @@ public:
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
         _grid  = new GridGroup(0, 0, w(), h());
         _list  = new ScrollBrowser();
-        _grid->add(_list,    1,  1, -1, -6);
-        _grid->add(_close, -17, -5, 16,  4);
+        _grid->add(_list,     1,   1,  -1,  -6);
+        _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
         _close->callback(_DlgList::Callback, this);
         _close->labelfont(flw::PREF_FONT);
@@ -2964,11 +2971,11 @@ class _DlgPrint : public Fl_Double_Window {
     Fl_Choice*                  _layout;
     Fl_Hor_Slider*              _from;
     Fl_Hor_Slider*              _to;
-    Fl_Widget*                  _widget;
     GridGroup*                  _grid;
     PrintCallback               _cb;
+    void*                       _data;
 public:
-    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, Fl_Widget* widget, int from, int to) :
+    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, void* data, int from, int to) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18) {
         end();
         _close  = new Fl_Button(0, 0, 0, 0, "&Close");
@@ -2980,7 +2987,7 @@ public:
         _print  = new Fl_Button(0, 0, 0, 0, "&Print");
         _to     = new Fl_Hor_Slider(0, 0, 0, 0);
         _cb     = cb;
-        _widget = widget;
+        _data   = data;
         _grid->add(_from,     1,   3,  -1,   4);
         _grid->add(_to,       1,  10,  -1,   4);
         _grid->add(_format,   1,  15,  -1,   4);
@@ -2996,22 +3003,30 @@ public:
         _file->tooltip("Select output PostScript file.");
         _from->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _from->callback(_DlgPrint::Callback, this);
+        _from->color(FL_BACKGROUND2_COLOR);
         _from->range(from, to);
+        _from->precision(0);
         _from->value(from);
         _from->tooltip("Start page number.");
         _print->callback(_DlgPrint::Callback, this);
         _to->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _to->callback(_DlgPrint::Callback, this);
+        _to->color(FL_BACKGROUND2_COLOR);
         _to->range(from, to);
-        _to->value(from);
+        _to->precision(0);
+        _to->value(to);
         _to->tooltip("End page number.");
-        if (from < 1 || from >= to) {
+        if (from < 1 || from > to) {
             _from->deactivate();
             _from->range(0, 1);
             _from->value(0);
             _to->deactivate();
             _to->range(0, 1);
             _to->value(0);
+        }
+        else if (from == to) {
+            _from->deactivate();
+            _to->deactivate();
         }
         dlg::_init_printer_formats(_format, _layout);
         _DlgPrint::Callback(_from, this);
@@ -3039,7 +3054,7 @@ public:
             }
         }
         else if (w == self->_from || w == self->_to) {
-            auto l = util::format("%s page number: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
+            auto l = util::format("%s page: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
             w->copy_label(l.c_str());
             self->redraw();
         }
@@ -3053,7 +3068,7 @@ public:
         auto format = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
         auto layout = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto file   = _file->label();
-        auto err    = util::print(file, format, layout, _cb, _widget, from, to);
+        auto err    = (from == 0) ? util::print(file, format, layout, _cb, _data) : util::print(file, format, layout, _cb, _data, from, to);
         if (err != "") {
             fl_alert("Printing failed!\n%s", err.c_str());
             return;
@@ -3068,8 +3083,8 @@ public:
         }
     }
 };
-void print(std::string title, PrintCallback cb, Fl_Widget* widget, int from, int to, Fl_Window* parent) {
-    _DlgPrint dlg(title, parent, cb, widget, from, to);
+void print(std::string title, PrintCallback cb, void* data, int from, int to, Fl_Window* parent) {
+    _DlgPrint dlg(title, parent, cb, data, from, to);
     dlg.run();
 }
 class _DlgPrintText : public Fl_Double_Window {
@@ -3144,13 +3159,17 @@ public:
         _label->box(FL_THIN_DOWN_BOX);
         _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _line->callback(_DlgPrintText::Callback, this);
+        _line->color(FL_BACKGROUND2_COLOR);
         _line->range(0, 6);
+        _line->precision(0);
         _line->value(0);
         _line->tooltip("Set minimum line number width.\nSet to 0 to disable.");
         _print->callback(_DlgPrintText::Callback, this);
         _tab->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _tab->callback(_DlgPrintText::Callback, this);
+        _tab->color(FL_BACKGROUND2_COLOR);
         _tab->range(0, 16);
+        _tab->precision(0);
         _tab->value(0);
         _tab->tooltip("Replace tabs with spaces.\nSet to 0 to disable.");
         _wrap->tooltip("Wrap long lines or they will be clipped.");
@@ -3190,7 +3209,7 @@ public:
             }
         }
         else if (w == self->_line) {
-            auto l = util::format("Line number = %d", (int) self->_line->value());
+            auto l = util::format("Line number: %d", (int) self->_line->value());
             self->_line->copy_label(l.c_str());
             self->redraw();
         }
@@ -3198,7 +3217,7 @@ public:
             self->print();
         }
         else if (w == self->_tab) {
-            auto l = util::format("Tab replacement = %d", (int) self->_tab->value());
+            auto l = util::format("Tab replacement: %d", (int) self->_tab->value());
             self->_tab->copy_label(l.c_str());
             self->redraw();
         }
@@ -3689,7 +3708,7 @@ void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
     auto dlg = _DlgTheme(enable_font, enable_fixedfont, parent);
     dlg.run();
 }
-AbortDialog::AbortDialog(double min, double max) :
+AbortDialog::AbortDialog(std::string label, double min, double max) :
 Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press to abort");
     _grid     = new GridGroup();
@@ -3713,6 +3732,9 @@ Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button->labelfont(flw::PREF_FONT);
     _button->labelsize(flw::PREF_FONTSIZE);
     _progress->color(FL_SELECTION_COLOR);
+    if (label != "") {
+        copy_label(label.c_str());
+    }
     resizable(this);
     size(W, H);
     size_range(W, H);
@@ -4101,8 +4123,44 @@ const char* const           PREF_THEMES2[]           = {
                                 "tan_plastic",
                                 nullptr,
 };
-bool Buf::operator==(const Buf& other) const {
-    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
+static std::string _print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+    bool                      cont = true;
+    FILE*                     file = nullptr;
+    Fl_PostScript_File_Device printer;
+    int                       ph;
+    int                       pw;
+    std::string               res;
+    if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
+        return "error: could not open file!";
+    }
+    printer.begin_job(file, 0, format, layout);
+    while (cont == true) {
+        if (printer.begin_page() != 0) {
+            res = "error: couldn't create new page!";
+            goto ERR;
+        }
+        if (printer.printable_rect(&pw, &ph) != 0) {
+            res = "error: couldn't retrieve page size!";
+            goto ERR;
+        }
+        fl_push_clip(0, 0, pw, ph);
+        cont = cb(data, pw, ph, from);
+        fl_pop_clip();
+        if (printer.end_page() != 0) {
+            res = "error: couldn't end page!";
+            goto ERR;
+        }
+        if (from > 0) {
+            from++;
+            if (from > to) {
+                cont = false;
+            }
+        }
+    }
+ERR:
+    printer.end_job();
+    fclose(file);
+    return res;
 }
 void debug::print(Fl_Widget* widget) {
     std::string indent;
@@ -4269,7 +4327,6 @@ bool util::is_whitespace_or_empty(const char* str) {
     return true;
 }
 void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
-    assert(widget);
     widget->labelfont(fn);
     widget->labelsize(fs);
     auto group = widget->as_group();
@@ -4332,38 +4389,14 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
 }
-std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to) {
-    bool                      cont = true;
-    FILE*                     file = nullptr;
-    Fl_PostScript_File_Device printer;
-    int                       ph;
-    int                       pw;
-    std::string               res;
-    if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
-        return "error: could not open file!";
+std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
+    return flw::_print(ps_filename, format, layout, cb, data, 0, 0);
+}
+std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+    if (from < 1 || from > to) {
+        return "error: invalid from/to range";
     }
-    printer.begin_job(file, 0, format, layout);
-    while (cont == true) {
-        if (printer.begin_page() != 0) {
-            res = "error: couldn't create new page!";
-            goto ERR;
-        }
-        if (printer.printable_rect(&pw, &ph) != 0) {
-            res = "error: couldn't retrieve page size!";
-            goto ERR;
-        }
-        fl_push_clip(0, 0, pw, ph);
-        cont = cb(widget, pw, ph, from, to);
-        fl_pop_clip();
-        if (printer.end_page() != 0) {
-            res = "error: couldn't end page!";
-            goto ERR;
-        }
-    }
-ERR:
-    printer.end_job();
-    fclose(file);
-    return res;
+    return flw::_print(ps_filename, format, layout, cb, data, from, to);
 }
 std::string util::remove_browser_format(const char* text) {
     auto res = std::string((text != nullptr) ? text : "");
@@ -5042,6 +5075,9 @@ Buf& Buf::operator+=(const Buf& b) {
         s += b.s;
     }
     return *this;
+}
+bool Buf::operator==(const Buf& other) const {
+    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
 }
 File::File(std::string filename) {
     size  = 0;
@@ -7445,11 +7481,12 @@ void LogDisplay::value(const char* text) {
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
-static const char* const        _PLOT_PRINT       = "Print to PostScript...";
-static const char* const        _PLOT_SHOW_LABELS = "Show line labels";
-static const char* const        _PLOT_SHOW_HLINES = "Show horizontal lines";
-static const char* const        _PLOT_SHOW_VLINES = "Show vertical lines";
-static const char* const        _PLOT_SAVE_FILE   = "Save to png file...";
+static const char* const        _PLOT_PRINT        = "Print to PostScript...";
+static const char* const        _PLOT_RESET_SELECT = "Reset line selection and visibility";
+static const char* const        _PLOT_SAVE_FILE    = "Save to png file...";
+static const char* const        _PLOT_SHOW_HLINES  = "Show horizontal lines";
+static const char* const        _PLOT_SHOW_LABELS  = "Show line labels";
+static const char* const        _PLOT_SHOW_VLINES  = "Show vertical lines";
 static int _plot_count_decimals(double number) {
     number = fabs(number);
     int    res     = 0;
@@ -7704,7 +7741,8 @@ Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) 
     add(_menu);
     _menu->add(_PLOT_SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_PLOT_SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_PLOT_RESET_SELECT, 0, Plot::_CallbackReset, this, FL_MENU_DIVIDER | FL_MENU_DIVIDER);
     _menu->add(_PLOT_PRINT, 0, Plot::_CallbackPrint, this);
     _menu->add(_PLOT_SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
@@ -7775,12 +7813,21 @@ void Plot::_CallbackPrint(Fl_Widget*, void* widget) {
     dlg::print("Print Plot", Plot::_CallbackPrinter, self, 1, 1, self->top_window());
     self->redraw();
 }
-bool Plot::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
-    auto r = Fl_Rect(widget);
+bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
+    auto widget = static_cast<Fl_Widget*>(data);
+    auto r      = Fl_Rect(widget);
     widget->resize(0, 0, pw, ph);
     widget->draw();
     widget->resize(r.x(), r.y(), r.w(), r.h());
     return false;
+}
+void Plot::_CallbackReset(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
+    for (size_t f = 0; f < Plot::MAX_LINES; f++) {
+        self->_lines[f]->visible = true;
+    }
+    self->_selected_line = 0;
+    self->redraw();
 }
 void Plot::_CallbackSave(Fl_Widget*, void* widget) {
     auto self = static_cast<Plot*>(widget);
@@ -7822,23 +7869,25 @@ void Plot::_create_tooltip(bool ctrl) {
     if (X >= _area->x && X < _area->x2() && Y >= _area->y && Y < _area->y2()) {
         auto fr = (_x->fr > _y->fr) ? _x->fr : _y->fr;
         if (_selected_line < _size) {
-            const auto&  line   = *_lines[_selected_line];
-            const auto&  points = line.points;
-            const bool   radius = _plot_has_radius(line.type);
-            const int    rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
-            const double xv1    = ((double) (X - _area->x - rad) / _x->pixel) + _x->min;
-            const double xv2    = ((double) (X - _area->x + rad) / _x->pixel) + _x->min;
-            const double yv1    = ((double) (_area->y2() - Y - rad) / _y->pixel) + _y->min;
-            const double yv2    = ((double) (_area->y2() - Y + rad) / _y->pixel) + _y->min;
-            for (size_t i = 0; i < points.size(); i++) {
-                const auto& point = points[i];
-                if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
-                    std::string xl  = _plot_format_double(point.x, fr, ' ');
-                    std::string yl  = _plot_format_double(point.y, fr, ' ');
-                    size_t      len = (xl.length() > yl.length()) ? xl.length() : yl.length();
-                    _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
-                    _selected_point = i;
-                    break;
+            const auto& line = *_lines[_selected_line];
+            if (line.visible == true) {
+                const auto&  points = line.points;
+                const bool   radius = _plot_has_radius(line.type);
+                const int    rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
+                const double xv1    = ((double) (X - _area->x - rad) / _x->pixel) + _x->min;
+                const double xv2    = ((double) (X - _area->x + rad) / _x->pixel) + _x->min;
+                const double yv1    = ((double) (_area->y2() - Y - rad) / _y->pixel) + _y->min;
+                const double yv2    = ((double) (_area->y2() - Y + rad) / _y->pixel) + _y->min;
+                for (size_t i = 0; i < points.size(); i++) {
+                    const auto& point = points[i];
+                    if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
+                        std::string xl  = _plot_format_double(point.x, fr, ' ');
+                        std::string yl  = _plot_format_double(point.y, fr, ' ');
+                        size_t      len = (xl.length() > yl.length()) ? xl.length() : yl.length();
+                        _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
+                        _selected_point = i;
+                        break;
+                    }
                 }
             }
         }
@@ -7953,7 +8002,7 @@ void Plot::_draw_line_labels() {
                 auto& line = *_lines[f];
                 if (line.label != "") {
                     auto label = line.label;
-                    if (f == _selected_line) {
+                    if (f == _selected_line && line.visible == true) {
                         label = "@-> " + label;
                     }
                     fl_color((line.visible == false) ? FL_GRAY : _lines[f]->color);
@@ -8224,21 +8273,21 @@ int Plot::handle(int event) {
     else if (event == FL_KEYDOWN) {
         auto key = Fl::event_key();
         if (key >= '0' && key <= '9') {
-            auto line = key - '0';
+            auto line = (size_t) (key - '0');
             if (line == 0) {
                 line = 10;
             }
             line--;
-            if ((size_t) line >= _size) {
-                line = 0;
+            if (line < _size) {
+                if (Fl::event_shift() != 0) {
+                    _lines[line]->visible = !_lines[line]->visible;
+                }
+                if (_lines[line]->visible == true) {
+                    _selected_line = line;
+                }
+                redraw();
             }
-            if (Fl::event_shift() != 0) {
-                _lines[line]->visible = !_lines[line]->visible;
-            }
-            else {
-                _selected_line = line;
-            }
-            redraw();
+            return 1;
         }
     }
     return Fl_Group::handle(event);

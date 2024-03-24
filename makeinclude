@@ -56,12 +56,12 @@ ifeq ($(OS), macOS)
 else
 	CXX = g++
 	CC  = gcc
+	CXXFLAGS += -fdiagnostics-plain-output
 endif
 
 CXXFLAGS += -std=c++17
 CXXFLAGS += -W
 CXXFLAGS += -Wall
-CXXFLAGS += -fdiagnostics-plain-output
 
 $(info >>>>>> flags from makeinclude)
 $(info OS            = $(OS))

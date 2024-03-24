@@ -89,7 +89,8 @@ private:
 
     static void                 _CallbackDebug(Fl_Widget*, void* widget);
     static void                 _CallbackPrint(Fl_Widget*, void* widget);
-    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
+    static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
+    static void                 _CallbackReset(Fl_Widget*, void* widget);
     static void                 _CallbackSave(Fl_Widget*, void* widget);
     static void                 _CallbackToggle(Fl_Widget*, void* widget);
 

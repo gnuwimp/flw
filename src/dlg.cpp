@@ -91,6 +91,21 @@ void center_message_dialog() {
 }
 
 //------------------------------------------------------------------------------
+bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
+    auto dlg = dlg::FontDialog(font, fontsize, "Select Font", limit_to_default);
+ 
+    if (dlg.run() == false) {
+        return false;
+    }
+
+    font     = dlg.font();
+    fontsize = dlg.fontsize();
+    fontname = dlg.fontname();
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
 void panic(std::string message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
@@ -196,8 +211,8 @@ public:
         _grid  = new GridGroup(0, 0, w(), h());
         _list  = new ScrollBrowser();
 
-        _grid->add(_list,    1,  1, -1, -6);
-        _grid->add(_close, -17, -5, 16,  4);
+        _grid->add(_list,     1,   1,  -1,  -6);
+        _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
 
         _close->callback(_DlgList::Callback, this);
@@ -508,13 +523,13 @@ class _DlgPrint : public Fl_Double_Window {
     Fl_Choice*                  _layout;
     Fl_Hor_Slider*              _from;
     Fl_Hor_Slider*              _to;
-    Fl_Widget*                  _widget;
     GridGroup*                  _grid;
     PrintCallback               _cb;
+    void*                       _data;
 
 public:
     //--------------------------------------------------------------------------
-    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, Fl_Widget* widget, int from, int to) :
+    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, void* data, int from, int to) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18) {
         end();
 
@@ -527,7 +542,7 @@ public:
         _print  = new Fl_Button(0, 0, 0, 0, "&Print");
         _to     = new Fl_Hor_Slider(0, 0, 0, 0);
         _cb     = cb;
-        _widget = widget;
+        _data   = data;
         
         _grid->add(_from,     1,   3,  -1,   4);
         _grid->add(_to,       1,  10,  -1,   4);
@@ -545,23 +560,31 @@ public:
         _file->tooltip("Select output PostScript file.");
         _from->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _from->callback(_DlgPrint::Callback, this);
+        _from->color(FL_BACKGROUND2_COLOR);
         _from->range(from, to);
+        _from->precision(0);
         _from->value(from);
         _from->tooltip("Start page number.");
         _print->callback(_DlgPrint::Callback, this);
         _to->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _to->callback(_DlgPrint::Callback, this);
+        _to->color(FL_BACKGROUND2_COLOR);
         _to->range(from, to);
-        _to->value(from);
+        _to->precision(0);
+        _to->value(to);
         _to->tooltip("End page number.");
         
-        if (from < 1 || from >= to) {
+        if (from < 1 || from > to) {
             _from->deactivate();
             _from->range(0, 1);
             _from->value(0);
             _to->deactivate();
             _to->range(0, 1);
             _to->value(0);
+        }
+        else if (from == to) {
+            _from->deactivate();
+            _to->deactivate();
         }
         
         dlg::_init_printer_formats(_format, _layout);
@@ -594,7 +617,7 @@ public:
             }
         }
         else if (w == self->_from || w == self->_to) {
-            auto l = util::format("%s page number: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
+            auto l = util::format("%s page: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
             w->copy_label(l.c_str());
             self->redraw();
         }
@@ -610,7 +633,7 @@ public:
         auto format = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
         auto layout = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto file   = _file->label();
-        auto err    = util::print(file, format, layout, _cb, _widget, from, to);
+        auto err    = (from == 0) ? util::print(file, format, layout, _cb, _data) : util::print(file, format, layout, _cb, _data, from, to);
         
         if (err != "") {
             fl_alert("Printing failed!\n%s", err.c_str());
@@ -632,8 +655,8 @@ public:
 };
 
 //------------------------------------------------------------------------------
-void print(std::string title, PrintCallback cb, Fl_Widget* widget, int from, int to, Fl_Window* parent) {
-    _DlgPrint dlg(title, parent, cb, widget, from, to);
+void print(std::string title, PrintCallback cb, void* data, int from, int to, Fl_Window* parent) {
+    _DlgPrint dlg(title, parent, cb, data, from, to);
     dlg.run();
 }
 
@@ -726,13 +749,17 @@ public:
         _label->box(FL_THIN_DOWN_BOX);
         _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _line->callback(_DlgPrintText::Callback, this);
+        _line->color(FL_BACKGROUND2_COLOR);
         _line->range(0, 6);
+        _line->precision(0);
         _line->value(0);
         _line->tooltip("Set minimum line number width.\nSet to 0 to disable.");
         _print->callback(_DlgPrintText::Callback, this);
         _tab->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _tab->callback(_DlgPrintText::Callback, this);
+        _tab->color(FL_BACKGROUND2_COLOR);
         _tab->range(0, 16);
+        _tab->precision(0);
         _tab->value(0);
         _tab->tooltip("Replace tabs with spaces.\nSet to 0 to disable.");
         _wrap->tooltip("Wrap long lines or they will be clipped.");
@@ -779,7 +806,7 @@ public:
             }
         }
         else if (w == self->_line) {
-            auto l = util::format("Line number = %d", (int) self->_line->value());
+            auto l = util::format("Line number: %d", (int) self->_line->value());
             self->_line->copy_label(l.c_str());
             self->redraw();
         }
@@ -787,7 +814,7 @@ public:
             self->print();
         }
         else if (w == self->_tab) {
-            auto l = util::format("Tab replacement = %d", (int) self->_tab->value());
+            auto l = util::format("Tab replacement: %d", (int) self->_tab->value());
             self->_tab->copy_label(l.c_str());
             self->redraw();
         }
@@ -1445,7 +1472,7 @@ void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
 //------------------------------------------------------------------------------
 // To disable progress set min and max to 0.0
 //
-AbortDialog::AbortDialog(double min, double max) :
+AbortDialog::AbortDialog(std::string label, double min, double max) :
 Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button   = new Fl_Button(0, 0, 0, 0, "Press to abort");
     _grid     = new GridGroup();
@@ -1473,7 +1500,11 @@ Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button->labelfont(flw::PREF_FONT);
     _button->labelsize(flw::PREF_FONTSIZE);
     _progress->color(FL_SELECTION_COLOR);
-
+    
+    if (label != "") {
+        copy_label(label.c_str());
+    }
+    
     resizable(this);
     size(W, H);
     size_range(W, H);

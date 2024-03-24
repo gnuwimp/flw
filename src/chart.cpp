@@ -674,6 +674,7 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
         "Press ctrl + scroll wheel to change tick size.\n"
         "Press left button to show Y value.\n"
         "Press ctrl + left button to show actual price data.\n"
+        "\n"
         "Press 1 - 9 to select which line to use.\n"
         "Press shift + 1 - 9 to toggle line visibility.\n"
         "Click in target area first."
@@ -942,8 +943,8 @@ void Chart::_calc_yscale() {
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackDebug(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<const Chart*>(chart_object);
+void Chart::_CallbackDebug(Fl_Widget*, void* widget) {
+    auto self = static_cast<const Chart*>(widget);
     self->debug();
 }
 
@@ -957,8 +958,9 @@ void Chart::_CallbackPrint(Fl_Widget*, void* widget) {
 }
 
 //------------------------------------------------------------------------------
-bool Chart::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
-    auto r = Fl_Rect(widget);
+bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
+    auto widget = static_cast<Fl_Widget*>(data);
+    auto r      = Fl_Rect(widget);
     
     widget->resize(0, 0, pw, ph);
     widget->draw();        
@@ -967,8 +969,8 @@ bool Chart::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackReset(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
 
     for (auto& area : self->_areas) {
         area.selected = 0;
@@ -982,21 +984,21 @@ void Chart::_CallbackReset(Fl_Widget*, void* chart_object) {
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackSavePng(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackSavePng(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
     util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackScrollbar(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init(false);
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackToggle(Fl_Widget*, void* chart_object) {
-    auto self = static_cast<Chart*>(chart_object);
+void Chart::_CallbackToggle(Fl_Widget*, void* widget) {
+    auto self = static_cast<Chart*>(widget);
 
     self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
     self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
@@ -1067,10 +1069,11 @@ void Chart::_create_tooltip(bool ctrl) {
     while (start <= stop && start < (int) _dates.size()) {
         if (X >= X1 && X <= X1 + _tick_width - 1) { // Is mouse x pos inside current tick?
             const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(format);
+            const auto&       line       = _area->lines[_area->selected];
 
             _tooltip = fancy_date;
 
-            if (ctrl == false || _area->lines[_area->selected].points.size() == 0) { // Convert mouse pos to scale value
+            if (ctrl == false || line.points.size() == 0 || line.visible == false) { // Convert mouse pos to scale value
                 const double ydiff = (double) ((y() + _area->y2()) - Y);
                 std::string  left;
                 std::string  right;
@@ -1096,7 +1099,6 @@ void Chart::_create_tooltip(bool ctrl) {
                 }
             }
             else { // Use actual price data
-                const auto&  line  = _area->lines[_area->selected];
                 const size_t index = _chart_bsearch(line.points, _dates[start]);
 
                 if (index != (size_t) -1) {
@@ -1389,7 +1391,7 @@ void Chart::_draw_line_labels(const ChartArea& area) {
                 auto label = line.label;
 
                 if (label != "") {
-                    if (area.selected == count) {
+                    if (area.selected == count && line.visible == true) {
                         label = "@-> " + label;
                     }
 
@@ -1737,35 +1739,31 @@ int Chart::handle(int event) {
             return 1;
         }
     }
-    else if (event == FL_KEYDOWN) {
+    else if (event == FL_KEYDOWN && _area != nullptr) {
         auto key = Fl::event_key();
 
         if (key >= '0' && key <= '9') {
-            if (_area == nullptr) {
-                fl_beep(FL_BEEP_ERROR);
+            auto selected = (size_t) (key - '0');
+
+            if (selected == 0) {
+                selected = 10;
             }
-            else {
-                auto selected = key - '0';
 
-                if (selected == 0) {
-                    selected = 10;
-                }
+            selected--;
 
-                selected--;
-
-                if ((size_t) selected >= _area->count) {
-                    selected = 0;
-                }
-
+            if (selected < _area->count) {
                 if (Fl::event_shift() != 0) {
                     _area->lines[selected].visible = !_area->lines[selected].visible;
                 }
-                else {
+                
+                if (_area->lines[selected].visible == true) {
                     _area->selected = selected;
                 }
-
+                
                 redraw();
             }
+            
+            return 1;
         }
     }
 

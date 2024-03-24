@@ -24,6 +24,7 @@ void callback_timer(void *data);
 #define MENU_AUTORUN    "Autorun"
 #define MENU_BAR        "Bar (Plot::VECTOR)"
 #define MENU_DAYS       "Custom Y (Plot::VECTOR)"
+#define MENU_EMPTY      "Empty"
 #define MENU_LARGE      "Large (Plot::LINE)"
 #define MENU_LINE       "Lines (Plot::LINE_WITH_SQUARE)"
 #define MENU_MLINE      "1'000 (Plot::LINE)"
@@ -274,6 +275,7 @@ public:
         menu->add("&Data/" MENU_BAR, 0, Callback, this);
         menu->add("&Data/" MENU_MONTHS, 0, Callback, this);
         menu->add("&Data/" MENU_DAYS, 0, Callback, this);
+        menu->add("&Data/" MENU_EMPTY, 0, Callback, this);
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
 
@@ -357,6 +359,10 @@ public:
             plot->custom_ylabels_for_points0(create_days2());
             plot->labels(MENU_DAYS, "Sum");
             plot->label_colors(color::CRIMSON, color::TEAL);
+            plot->layout();
+        }
+        else if (s == MENU_EMPTY) {
+            plot->clear();
             plot->layout();
         }
         else if (s == MENU_LARGE) {

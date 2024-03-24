@@ -27,11 +27,12 @@ namespace flw {
  *     |_|
  */
 
-static const char* const        _PLOT_PRINT       = "Print to PostScript...";
-static const char* const        _PLOT_SHOW_LABELS = "Show line labels";
-static const char* const        _PLOT_SHOW_HLINES = "Show horizontal lines";
-static const char* const        _PLOT_SHOW_VLINES = "Show vertical lines";
-static const char* const        _PLOT_SAVE_FILE   = "Save to png file...";
+static const char* const        _PLOT_PRINT        = "Print to PostScript...";
+static const char* const        _PLOT_RESET_SELECT = "Reset line selection and visibility";
+static const char* const        _PLOT_SAVE_FILE    = "Save to png file...";
+static const char* const        _PLOT_SHOW_HLINES  = "Show horizontal lines";
+static const char* const        _PLOT_SHOW_LABELS  = "Show line labels";
+static const char* const        _PLOT_SHOW_VLINES  = "Show vertical lines";
 
 //------------------------------------------------------------------------------
 static int _plot_count_decimals(double number) {
@@ -128,17 +129,6 @@ static bool _plot_has_pairs(Plot::TYPE type) {
 static bool _plot_has_radius(Plot::TYPE type) {
     return type == Plot::CIRCLE || type == Plot::FILLED_CIRCLE || type == Plot::SQUARE;
 }
-
-//------------------------------------------------------------------------------
-//static void _plot_print(const PointVector& points) {
-//    auto c = 1;
-//
-//    for (auto& p : points) {
-//        fprintf(stderr, "%3d| X=%16.6f   Y=%16.6f\n", c++, p.x, p.y);
-//    }
-//
-//    fflush(stderr);
-//}
 
 //------------------------------------------------------------------------------
 static Plot::TYPE _plot_string_to_type(std::string name) {
@@ -413,7 +403,8 @@ Plot::Plot(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) 
 
     _menu->add(_PLOT_SHOW_LABELS, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
     _menu->add(_PLOT_SHOW_HLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_PLOT_SHOW_VLINES, 0, Plot::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_PLOT_RESET_SELECT, 0, Plot::_CallbackReset, this, FL_MENU_DIVIDER | FL_MENU_DIVIDER);
     _menu->add(_PLOT_PRINT, 0, Plot::_CallbackPrint, this);
     _menu->add(_PLOT_SAVE_FILE, 0, Plot::_CallbackSave, this);
 #ifdef DEBUG
@@ -507,13 +498,26 @@ void Plot::_CallbackPrint(Fl_Widget*, void* widget) {
 }
 
 //------------------------------------------------------------------------------
-bool Plot::_CallbackPrinter(Fl_Widget* widget, int pw, int ph, int, int) {
-    auto r = Fl_Rect(widget);
+bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
+    auto widget = static_cast<Fl_Widget*>(data);
+    auto r      = Fl_Rect(widget);
     
     widget->resize(0, 0, pw, ph);
     widget->draw();        
     widget->resize(r.x(), r.y(), r.w(), r.h());
     return false;
+}
+
+//------------------------------------------------------------------------------
+void Plot::_CallbackReset(Fl_Widget*, void* widget) {
+    auto self = static_cast<Plot*>(widget);
+
+    for (size_t f = 0; f < Plot::MAX_LINES; f++) {
+        self->_lines[f]->visible = true;
+    }
+
+    self->_selected_line = 0;
+    self->redraw();
 }
 
 //------------------------------------------------------------------------------
@@ -537,7 +541,6 @@ void Plot::_CallbackToggle(Fl_Widget*, void* widget) {
 void Plot::clear() {
     delete _x;
     delete _y;
-
 
     _calc           = false;
     _ch             = 0;
@@ -575,26 +578,29 @@ void Plot::_create_tooltip(bool ctrl) {
         auto fr = (_x->fr > _y->fr) ? _x->fr : _y->fr;
 
         if (_selected_line < _size) {
-            const auto&  line   = *_lines[_selected_line];
-            const auto&  points = line.points;
-            const bool   radius = _plot_has_radius(line.type);
-            const int    rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
-            const double xv1    = ((double) (X - _area->x - rad) / _x->pixel) + _x->min;
-            const double xv2    = ((double) (X - _area->x + rad) / _x->pixel) + _x->min;
-            const double yv1    = ((double) (_area->y2() - Y - rad) / _y->pixel) + _y->min;
-            const double yv2    = ((double) (_area->y2() - Y + rad) / _y->pixel) + _y->min;
+            const auto& line = *_lines[_selected_line];
+            
+            if (line.visible == true) {
+                const auto&  points = line.points;
+                const bool   radius = _plot_has_radius(line.type);
+                const int    rad    = (ctrl == true) ? (radius == true) ? line.width : line.width * 2 : (radius == true) ? line.width / 2 : line.width;
+                const double xv1    = ((double) (X - _area->x - rad) / _x->pixel) + _x->min;
+                const double xv2    = ((double) (X - _area->x + rad) / _x->pixel) + _x->min;
+                const double yv1    = ((double) (_area->y2() - Y - rad) / _y->pixel) + _y->min;
+                const double yv2    = ((double) (_area->y2() - Y + rad) / _y->pixel) + _y->min;
 
-            for (size_t i = 0; i < points.size(); i++) {
-                const auto& point = points[i];
+                for (size_t i = 0; i < points.size(); i++) {
+                    const auto& point = points[i];
 
-                if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
-                    std::string xl  = _plot_format_double(point.x, fr, ' ');
-                    std::string yl  = _plot_format_double(point.y, fr, ' ');
-                    size_t      len = (xl.length() > yl.length()) ? xl.length() : yl.length();
+                    if (point.x >= xv1 && point.x <= xv2 && point.y >= yv1 && point.y <= yv2) {
+                        std::string xl  = _plot_format_double(point.x, fr, ' ');
+                        std::string yl  = _plot_format_double(point.y, fr, ' ');
+                        size_t      len = (xl.length() > yl.length()) ? xl.length() : yl.length();
 
-                    _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
-                    _selected_point = i;
-                    break;
+                        _tooltip = flw::util::format("Line %d, Point %d\nX = %*s\nY = %*s", (int) _selected_line + 1, (int) i + 1, len, xl.c_str(), len, yl.c_str());
+                        _selected_point = i;
+                        break;
+                    }
                 }
             }
         }
@@ -651,8 +657,7 @@ void Plot::debug() const {
         fprintf(stderr, "\t\tvisible = %s\n", _lines[f]->visible ? "YES" : "NO");
         fprintf(stderr, "\t\twidth   = %d px\n", (int) _lines[f]->width);
     }
-    // _plot_print(_lines[0]->points);
-    // _plot_print(_lines[1].points);
+
     fflush(stderr);
 #endif
 }
@@ -746,7 +751,7 @@ void Plot::_draw_line_labels() {
                 if (line.label != "") {
                     auto label = line.label;
 
-                    if (f == _selected_line) {
+                    if (f == _selected_line && line.visible == true) {
                         label = "@-> " + label;
                     }
 
@@ -1070,7 +1075,7 @@ int Plot::handle(int event) {
         auto key = Fl::event_key();
 
         if (key >= '0' && key <= '9') {
-            auto line = key - '0';
+            auto line = (size_t) (key - '0');
 
             if (line == 0) {
                 line = 10;
@@ -1078,18 +1083,19 @@ int Plot::handle(int event) {
 
             line--;
 
-            if ((size_t) line >= _size) {
-                line = 0;
+            if (line < _size) {
+                if (Fl::event_shift() != 0) {
+                    _lines[line]->visible = !_lines[line]->visible;
+                }
+                
+                if (_lines[line]->visible == true) {
+                    _selected_line = line;
+                }
+                
+                redraw();
             }
-
-            if (Fl::event_shift() != 0) {
-                _lines[line]->visible = !_lines[line]->visible;
-            }
-            else {
-                _selected_line = line;
-            }
-
-            redraw();
+            
+            return 1;
         }
     }
 

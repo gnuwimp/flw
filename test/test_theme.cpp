@@ -50,7 +50,7 @@ public:
             Fl::get_color(32 + f, r, g, b);
             snprintf(t, 30, "%d: r=%u, g=%u, b=%u", 32 + f, r, g, b);
             fl_rectf(x() + 1, Y, w() - 2, (int) H, 32 + f);
-            fl_color(FL_DARK_YELLOW);
+            fl_color(FL_RED);
             if (labels) fl_draw(t, x(), Y, w(), H, FL_ALIGN_CENTER);
             Y += H;
         }
@@ -442,7 +442,7 @@ public:
 
         Fl::get_color(*c, r, g, b);
 
-        if (fl_color_chooser("Select", r, g, b, 1)) {
+        if (fl_color_chooser("Select Color", r, g, b, 1)) {
             sprintf(buf, "r=%d, g=%d, b=%d", r, g, b);
             *c = fl_rgb_color(r, g, b);
             button->copy_label(buf);

@@ -87,8 +87,53 @@ const char* const           PREF_THEMES2[]           = {
 };
 
 //------------------------------------------------------------------------------
-bool Buf::operator==(const Buf& other) const {
-    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
+static std::string _print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+    bool                      cont = true;
+    FILE*                     file = nullptr;
+    Fl_PostScript_File_Device printer;
+    int                       ph;
+    int                       pw;
+    std::string               res;
+
+    if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
+        return "error: could not open file!";
+    }
+
+    printer.begin_job(file, 0, format, layout);
+
+    while (cont == true) {
+        if (printer.begin_page() != 0) {
+            res = "error: couldn't create new page!";
+            goto ERR;
+        }
+
+        if (printer.printable_rect(&pw, &ph) != 0) {
+            res = "error: couldn't retrieve page size!";
+            goto ERR;
+        }
+
+        fl_push_clip(0, 0, pw, ph);
+        cont = cb(data, pw, ph, from);
+        fl_pop_clip();
+
+        if (printer.end_page() != 0) {
+            res = "error: couldn't end page!";
+            goto ERR;
+        }
+
+        if (from > 0) {
+            from++;
+
+            if (from > to) {
+                cont = false;
+            }
+        }
+    }
+
+ERR:
+    printer.end_job();
+    fclose(file);
+    return res;
 }
 
 /***
@@ -348,8 +393,6 @@ bool util::is_whitespace_or_empty(const char* str) {
 // If widget is an group widget set also the font for child widgets (recursive)
 //
 void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
-    assert(widget);
-
     widget->labelfont(fn);
     widget->labelsize(fs);
 
@@ -434,45 +477,21 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
 }
 
 //------------------------------------------------------------------------------
-std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to) {
-    bool                      cont = true;
-    FILE*                     file = nullptr;
-    Fl_PostScript_File_Device printer;
-    int                       ph;
-    int                       pw;
-    std::string               res;
-    
-    if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
-        return "error: could not open file!";
+// Callback must return false to abort printing.
+//
+std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
+    return flw::_print(ps_filename, format, layout, cb, data, 0, 0);
+}
+
+//------------------------------------------------------------------------------
+// All pages between from and to will be printed but if callback returns false it will be stopped.
+//
+std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+    if (from < 1 || from > to) {
+        return "error: invalid from/to range";
     }
 
-    printer.begin_job(file, 0, format, layout);
-   
-    while (cont == true) {
-        if (printer.begin_page() != 0) {
-            res = "error: couldn't create new page!";
-            goto ERR;
-        }
-
-        if (printer.printable_rect(&pw, &ph) != 0) {
-            res = "error: couldn't retrieve page size!";
-            goto ERR;
-        }
-
-        fl_push_clip(0, 0, pw, ph);
-        cont = cb(widget, pw, ph, from, to);
-        fl_pop_clip();
-        
-        if (printer.end_page() != 0) {
-            res = "error: couldn't end page!";
-            goto ERR;
-        }
-    }
-    
-ERR:
-    printer.end_job();
-    fclose(file);
-    return res;
+    return flw::_print(ps_filename, format, layout, cb, data, from, to);
 }
 
 //------------------------------------------------------------------------------
@@ -518,7 +537,7 @@ std::string& util::replace_string(std::string& string, std::string find, std::st
     if (find == "") {
         return string;
     }
-    
+
     try {
         size_t start = 0;
 
@@ -1372,6 +1391,11 @@ Buf& Buf::operator+=(const Buf& b) {
     return *this;
 }
 
+//------------------------------------------------------------------------------
+bool Buf::operator==(const Buf& other) const {
+    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
+}
+
 /***
  *      ______ _ _
  *     |  ____(_) |
@@ -1507,14 +1531,14 @@ bool File::Save(std::string filename, const char* data, size_t size, bool alert)
  */
 
 //------------------------------------------------------------------------------
-PrintText::PrintText(std::string filename, 
-    Fl_Paged_Device::Page_Format page_format, 
-    Fl_Paged_Device::Page_Layout page_layout, 
-    Fl_Font font, 
-    Fl_Fontsize fontsize, 
-    Fl_Align align, 
-    bool wrap, 
-    bool border, 
+PrintText::PrintText(std::string filename,
+    Fl_Paged_Device::Page_Format page_format,
+    Fl_Paged_Device::Page_Layout page_layout,
+    Fl_Font font,
+    Fl_Fontsize fontsize,
+    Fl_Align align,
+    bool wrap,
+    bool border,
     int line_num) {
 
     _align       = FL_ALIGN_INSIDE | FL_ALIGN_TOP;
@@ -1567,7 +1591,7 @@ void PrintText::check_for_new_page() {
         else {
             fl_rect(0, 0, _pw, _ph);
             measure_lw_lh("M");
-            
+
             _px  = _lw;
             _py  = _lh;
             _pw -= _lw * 2;
@@ -1603,7 +1627,7 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
         tab += " ";
         replace_tab_with_space--;
     }
-    
+
     try {
         auto wc = WaitCursor();
 
@@ -1748,7 +1772,7 @@ std::string PrintText::stop() {
     if (_printer != nullptr) {
         if (_page_count > 0) {
             fl_pop_clip();
-            
+
             if (_printer->end_page() != 0) {
                 res = "error: could not end page!";
             }

@@ -51,7 +51,7 @@ extern const char* const        PREF_THEMES[];          // Name of themes
 
 typedef std::vector<std::string> StringVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
-typedef bool (*PrintCallback)(Fl_Widget* widget, int pw, int ph, int from, int to);
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
 
 //------------------------------------------------------------------------------
 namespace debug {
@@ -84,7 +84,8 @@ namespace util {
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
     int32_t                     milliseconds();
     void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
-    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
     std::string                 remove_browser_format(const char* text);
     std::string&                replace_string(std::string& string, std::string find, std::string replace);
     void                        sleep(int milli);

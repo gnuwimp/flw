@@ -56,8 +56,6 @@ private:
     Fl_Button*                  _b7;
     Fl_Widget*                  _canvas;
     ToolGroup*                  _buttons;
-    int                         _h;
-    int                         _w;
 };
 
 namespace dlg {

@@ -18,7 +18,7 @@ using namespace flw;
 //------------------------------------------------------------------------------
 void test_abort() {
     {
-        auto dialog = dlg::AbortDialog();
+        auto dialog = dlg::AbortDialog("dlg::AbortDialog");
 
         dialog.show("This will never stop until you press the button\nHello World");
 
@@ -27,7 +27,7 @@ void test_abort() {
     }
 
     {
-        auto dialog = dlg::AbortDialog(-100.0, 100.0);
+        auto dialog = dlg::AbortDialog("", -100.0, 100.0);
         auto count  = -100.0;
 
         dialog.show("This will take some time");
@@ -44,7 +44,7 @@ void test_abort() {
 void test_date() {
     Date date;
 
-    if (dlg::date("Select Date", date, nullptr)) {
+    if (dlg::date("dlg::date", date, nullptr)) {
         printf("dlg::date=%s\n", date.format().c_str());
     }
     else {
@@ -57,9 +57,9 @@ void test_date() {
 //------------------------------------------------------------------------------
 void test_font() {
 #ifdef _WIN32
-    auto dlg = dlg::FontDialog("Candara", 15, "Test Font");
+    auto dlg = dlg::FontDialog("Candara", 15, "dlg::FontDialog");
 #else
-    auto dlg = dlg::FontDialog("Nimbus Sans", 15, "Test Font");
+    auto dlg = dlg::FontDialog("Nimbus Sans", 15, "dlg::FontDialog");
 #endif
 //            dlg.deactivate_font();
 //            dlg.deactivate_fontsize();
@@ -72,6 +72,20 @@ void test_font() {
     }
     else {
         printf("aborted font dialog=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
+    }
+}
+
+//------------------------------------------------------------------------------
+void test_font2() {
+    Fl_Font     font     = FL_COURIER;
+    Fl_Fontsize fontsize = 16;
+    std::string fontname;
+
+    if (dlg::font(font, fontsize, fontname, false) == true) {
+        printf("selected: font=%d, fontsize=%d, fontname=%s\n", font, fontsize, fontname.c_str());
+    }
+    else {
+        printf("aborted font dialog\n");
     }
 }
 
@@ -128,14 +142,14 @@ void test_font_small() {
 //------------------------------------------------------------------------------
 void test_html() {
     auto html = "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text";
-    dlg::html("HTML Dialog", html);
+    dlg::html("dlg::html", html);
 }
 
 //------------------------------------------------------------------------------
 void test_list() {
-    dlg::list("List Dialog", HAMLET_LIST);
-    dlg::list("List Dialog - Fixed Font", HAMLET_LIST, nullptr, true);
-    dlg::list_file("List View - File", "test/browser.txt", nullptr, true);
+    dlg::list("dlg::list", HAMLET_LIST);
+    dlg::list("dlg::list - Fixed Font", HAMLET_LIST, nullptr, true);
+    dlg::list_file("dlg::list_file - File", "test/browser.txt", nullptr, true);
 }
 
 //------------------------------------------------------------------------------
@@ -147,9 +161,9 @@ void test_print() {
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "Print Long Lines", "Print Hamlet", "Print UTF8", "Print some test texts.\nSome fonts might have issues.");
 
-        if (r == 0) dlg::print_text("test_dlg.cpp - dlg::print_text", LONG_TEXT);
-        else if (r == 1) dlg::print_text("test_dlg.cpp - dlg::print_text", HAMLET_TEXT);
-        else if (r == 2) dlg::print_text("test_dlg.cpp - dlg::print_text", UTF8_TEXT);
+        if (r == 0) dlg::print_text("dlg::print_text", LONG_TEXT);
+        else if (r == 1) dlg::print_text("dlg::print_text", HAMLET_TEXT);
+        else if (r == 2) dlg::print_text("dlg::print_text", UTF8_TEXT);
     #else
         std::string ps = "output.ps";
         auto p = false;
@@ -157,9 +171,9 @@ void test_print() {
         dlg::center_message_dialog();
         r = fl_choice_n("Print to the default %s file.\nIt will be opened with system default program.\nThere are font issues if you use any other than the normal fltk fonts.\nAnd lot of the utf8 characters does not print well.", "Print Long Lines", "Print Hamlet", "Print UTF8", ps.c_str());
 
-        if (r == 0) p = dlg::print_text("test_dlg.cpp - dlg::print_text", LONG_TEXT);
-        else if (r == 1) p = dlg::print_text("test_dlg.cpp - dlg::print_text", HAMLET_TEXT);
-        else if (r == 2) p = dlg::print_text("test_dlg.cpp - dlg::print_text", UTF8_TEXT);
+        if (r == 0) p = dlg::print_text("dlg::print_text", LONG_TEXT);
+        else if (r == 1) p = dlg::print_text("dlg::print_text", HAMLET_TEXT);
+        else if (r == 2) p = dlg::print_text("dlg::print_text", UTF8_TEXT);
 
         if (p == true && r >= 0 && File(ps).size > 0) {
             auto f = system((std::string("open ") + ps).c_str());
@@ -257,14 +271,14 @@ void test_print2() {
     auto r  = 0;
     auto b1 = File::Load("flw.h");
     auto b2 = File::Load("flw.cpp");
-    
+
     while (r >= 0 && b1.p && b2.p) {
     #ifdef _WIN32
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
-        if (r == 0) dlg::print_text("test_dlg.cpp - dlg::print_text", b1.p);
-        else if (r == 1) dlg::print_text("test_dlg.cpp - dlg::print_text", b2.p);
+        if (r == 0) dlg::print_text("dlg::print_text", b1.p);
+        else if (r == 1) dlg::print_text("dlg::print_text", b2.p);
     #else
         std::string ps = "output.ps";
         auto p = false;
@@ -272,8 +286,8 @@ void test_print2() {
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
-        if (r == 0) p = dlg::print_text("test_dlg.cpp - dlg::print_text", b1.p);
-        else if (r == 1) p = dlg::print_text("test_dlg.cpp - dlg::print_text", b2.p);
+        if (r == 0) p = dlg::print_text("dlg::print_text", b1.p);
+        else if (r == 1) p = dlg::print_text("dlg::print_text", b2.p);
 
         if (p == true && r >= 0 && File(ps).size > 0) {
             auto f = system((std::string("open ") + ps).c_str());
@@ -284,22 +298,88 @@ void test_print2() {
 }
 
 //------------------------------------------------------------------------------
+bool test_print3a(void*, int pw, int ph, int page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool test_print3b(void* data, int pw, int ph, int) {
+    auto c = static_cast<int*>(data);
+    char b[100];
+    snprintf(b, 100, "%d", *c);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+    (*c)--;
+    return *c > 0;
+}
+
+//------------------------------------------------------------------------------
+bool test_print3c(void*, int pw, int ph, int page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+bool test_print3d(void*, int pw, int ph, int page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 5);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return page != 6;
+}
+
+//------------------------------------------------------------------------------
+void test_print3() {
+    int b = 33;
+    dlg::print("dlg::print - Pages Between From And To", test_print3a, nullptr, 5, 10);
+    dlg::print("dlg::print - Many Pages", test_print3b, &b);
+    dlg::print("dlg::print - One Page", test_print3c);
+    dlg::print("dlg::print - Stop On Page 6", test_print3d, nullptr, 1, 11);
+}
+
+//------------------------------------------------------------------------------
 void test_pwd() {
     std::string password, file;
     bool ret;
 
-    ret = dlg::password1("test_dlg.cpp - dlg::password1", password);
+    ret = dlg::password1("dlg::password1", password);
     printf("dlg::password1=%d, '%s'\n", ret, password.c_str());
 
-    ret = dlg::password2("test_dlg.cpp - dlg::password2", password);
+    ret = dlg::password2("dlg::password2", password);
     printf("dlg::password2=%d, '%s'\n", ret, password.c_str());
 
-    ret = dlg::password3("test_dlg.cpp - dlg::password3", password, file);
+    ret = dlg::password3("dlg::password3", password, file);
     printf("dlg::password3=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
 
     dlg::PASSWORD_CANCEL = "custom &cancel";
     dlg::PASSWORD_OK = "custom &ok";
-    ret = dlg::password4("test_dlg.cpp - dlg::password4", password, file);
+    ret = dlg::password4("dlg::password4", password, file);
     printf("dlg::password4=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
 
     fflush(stdout);
@@ -322,9 +402,10 @@ void test_select() {
 
 //------------------------------------------------------------------------------
 void test_text() {
-    dlg::text("test_dlg.cpp - dlg::text", HAMLET_TEXT);
+    dlg::text("dlg::text", HAMLET_TEXT);
+
     std::string t = HAMLET_TEXT;
-    printf("dlg::text_edit: %d\n", dlg::text_edit("test_dlg.cpp - dlg::text_edit", t, nullptr, 70, 50));
+    printf("dlg::text_edit: %d\n", dlg::text_edit("dlg::text_edit", t, nullptr, 70, 50));
     if (t != HAMLET_TEXT) printf("text changed!\n%s\n", t.c_str());
     else printf("text NOT changed!\n");
 }
@@ -348,7 +429,7 @@ void test_wait() {
 //------------------------------------------------------------------------------
 void test_work() {
     {
-        auto work  = dlg::WorkDialog("WorkDialog", nullptr, true, true);
+        auto work  = dlg::WorkDialog("dlg::WorkDialog", nullptr, true, true);
         auto start = util::clock();
 
         while (true) {
@@ -363,7 +444,7 @@ void test_work() {
     }
 
     {
-        auto work = dlg::WorkDialog("WorkDialog", nullptr, false, false, 60, 10);
+        auto work = dlg::WorkDialog("dlg::WorkDialog", nullptr, false, false, 60, 10);
         auto stop = util::clock() + 5.0;
 
         while (true) {
@@ -435,6 +516,10 @@ int main(int argc, const char** argv) {
             test_font();
         }
 
+        if (run == "font2") {
+            test_font2();
+        }
+
         if (run == "" || run == "abort") {
             test_abort();
         }
@@ -461,6 +546,10 @@ int main(int argc, const char** argv) {
 
         if (run == "print2")  {
             test_print2();
+        }
+
+        if (run == "print3")  {
+            test_print3();
         }
 
         if (run == "" || run == "select") {

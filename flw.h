@@ -4,15 +4,12 @@
 // -DFLW_USE_PNG
 #ifndef FLW_H
 #define FLW_H
-
-
 #include <string>
 #include <vector>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl_PostScript.H>
-
 #ifdef DEBUG
 #include <iostream>
 #include <iomanip>
@@ -36,32 +33,23 @@
 #define FLW_BLUE
 #define FLW_PRINT(...)
 #endif
-
 namespace flw {
-
-extern int                      PREF_FIXED_FONT;        // Fixed font - FL_COURIER
-extern std::string              PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
-extern int                      PREF_FIXED_FONTSIZE;    // Fixed font size - default 14
-extern Fl_Font                  PREF_FONT;              // Default font - FL_HELVETICA
-extern int                      PREF_FONTSIZE;          // Default font size - 14
-extern std::string              PREF_FONTNAME;          // Default font name - "FL_HELVETICA"
-extern std::vector<char*>       PREF_FONTNAMES;         // List of font names - used internally - load with theme::load_fonts()
-extern std::string              PREF_THEME;             // Name of theme - default "default"
-extern const char* const        PREF_THEMES[];          // Name of themes
-
+extern int                      PREF_FIXED_FONT;
+extern std::string              PREF_FIXED_FONTNAME;
+extern int                      PREF_FIXED_FONTSIZE;
+extern Fl_Font                  PREF_FONT;
+extern int                      PREF_FONTSIZE;
+extern std::string              PREF_FONTNAME;
+extern std::vector<char*>       PREF_FONTNAMES;
+extern std::string              PREF_THEME;
+extern const char* const        PREF_THEMES[];
 typedef std::vector<std::string> StringVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
-typedef bool (*PrintCallback)(Fl_Widget* widget, int pw, int ph, int from, int to);
-
-//------------------------------------------------------------------------------
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
 namespace debug {
     void                        print(Fl_Widget* widget);
     void                        print(Fl_Widget* widget, std::string& indent);
 }
-
-//------------------------------------------------------------------------------
-// Menu item functions
-//
 namespace menu {
     void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
     Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
@@ -69,10 +57,6 @@ namespace menu {
     void                        set_item(Fl_Menu_* menu, const char* text, bool value);
     void                        setonly_item(Fl_Menu_* menu, const char* text);
 }
-
-//------------------------------------------------------------------------------
-// Assorted utility functions
-//
 namespace util {
     void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
     double                      clock();
@@ -84,17 +68,14 @@ namespace util {
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
     int32_t                     milliseconds();
     void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
-    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, Fl_Widget* widget, int from, int to);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
     std::string                 remove_browser_format(const char* text);
     std::string&                replace_string(std::string& string, std::string find, std::string replace);
     void                        sleep(int milli);
     StringVector                split_string(const std::string& string, std::string split);
     void*                       zero_memory(char* mem, size_t size);
 }
-
-//------------------------------------------------------------------------------
-// Load different themes and save/load window preferences
-//
 namespace theme {
     bool                        is_dark();
     bool                        load(std::string name);
@@ -106,10 +87,6 @@ namespace theme {
     bool                        parse(int argc, const char** argv);
     void                        save_theme_pref(Fl_Preferences& pref);
     void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
-
-    //--------------------------------------------------------------------------
-    // Internal usage only
-    //
     enum {
                                 THEME_DEFAULT,
                                 THEME_GLEAM,
@@ -127,10 +104,6 @@ namespace theme {
                                 THEME_NIL,
     };
 }
-
-//------------------------------------------------------------------------------
-// Drawing colors
-//
 namespace color {
     extern Fl_Color             BEIGE;
     extern Fl_Color             CHOCOLATE;
@@ -151,26 +124,9 @@ namespace color {
     extern Fl_Color             TURQUOISE;
     extern Fl_Color             VIOLET;
 }
-
-/***
- *      ____         __ 
- *     |  _ \       / _|
- *     | |_) |_   _| |_ 
- *     |  _ <| | | |  _|
- *     | |_) | |_| | |  
- *     |____/ \__,_|_|  
- *                      
- *                      
- */
-
-//------------------------------------------------------------------------------
-// Buffer container that frees memory automatically.
-// If grab is true then it will take ownership of input buffer and will delete it later.
-//
 struct Buf {
     char*                       p;
     size_t                      s;
-
                                 Buf();
     explicit                    Buf(size_t S);
                                 Buf(const char* P, size_t S, bool grab = false);
@@ -183,22 +139,6 @@ struct Buf {
     virtual                     ~Buf()
                                     { free(p); }
 };
-
-/***
- *      ______ _ _      
- *     |  ____(_) |     
- *     | |__   _| | ___ 
- *     |  __| | | |/ _ \
- *     | |    | | |  __/
- *     |_|    |_|_|\___|
- *                      
- *                      
- */
-
-//------------------------------------------------------------------------------
-// Retrieve basic file info.
-// And some utility functions to read and save to files.
-//
 struct File {
     enum class TYPE {
                                 NA,
@@ -206,48 +146,29 @@ struct File {
                                 FILE,
                                 OTHER,
     };
-    
     int64_t                     size;
     int64_t                     mtime;
     TYPE                        type;
-                                
                                 File()
                                     { size = mtime = 0; type = TYPE::NA; }
                                 File(std::string filename);
-
     static Buf                  Load(std::string filename, bool alert = true);
     static bool                 Save(std::string filename, const char* data, size_t size, bool alert = true);
     static inline bool          Save(std::string filename, const Buf& buf, bool alert = true)
                                     { return File::Save(filename, buf.p, buf.s, alert); }
 };
-
-/***
- *      _____      _       _ _______        _   
- *     |  __ \    (_)     | |__   __|      | |  
- *     | |__) | __ _ _ __ | |_ | | _____  _| |_ 
- *     |  ___/ '__| | '_ \| __|| |/ _ \ \/ / __|
- *     | |   | |  | | | | | |_ | |  __/>  <| |_ 
- *     |_|   |_|  |_|_| |_|\__||_|\___/_/\_\\__|
- *                                              
- *                                              
- */
-
-//------------------------------------------------------------------------------
-// Line numbers are only used with FL_ALIGN_LEFT.
-//
 class PrintText {
 public:
-                                PrintText(std::string filename, 
-                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4, 
-                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT, 
-                                    Fl_Font font = FL_COURIER, 
-                                    Fl_Fontsize fontsize = 14, 
-                                    Fl_Align align = FL_ALIGN_LEFT, 
-                                    bool wrap = true, 
-                                    bool border = false, 
+                                PrintText(std::string filename,
+                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4,
+                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT,
+                                    Fl_Font font = FL_COURIER,
+                                    Fl_Fontsize fontsize = 14,
+                                    Fl_Align align = FL_ALIGN_LEFT,
+                                    bool wrap = true,
+                                    bool border = false,
                                     int line_num = 0);
                                 ~PrintText();
-
     Fl_Fontsize                 fontsize() const
                                     { return _fontsize; }
     int                         page_count() const
@@ -255,7 +176,6 @@ public:
     std::string                 print(const char* text, unsigned replace_tab_with_space = 0);
     std::string                 print(const std::string& text, unsigned replace_tab_with_space = 0);
     std::string                 print(const StringVector& lines, unsigned replace_tab_with_space = 0);
-
 private:
     void                        check_for_new_page();
     void                        measure_lw_lh(const std::string& text);
@@ -263,7 +183,6 @@ private:
     void                        print_wrapped_line(const std::string& line);
     std::string                 start();
     std::string                 stop();
-
     Fl_Align                    _align;
     Fl_Font                     _font;
     Fl_Fontsize                 _fontsize;
@@ -285,31 +204,10 @@ private:
     int                         _py;
     std::string                 _filename;
 };
-
-} // flw
-
-
-
+}
 #include <cstdint>
 #include <string>
-
 namespace flw {
-
-/***
- *      _____        _
- *     |  __ \      | |
- *     | |  | | __ _| |_ ___
- *     | |  | |/ _` | __/ _ \
- *     | |__| | (_| | ||  __/
- *     |_____/ \__,_|\__\___|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-// An date and time class
-// Date range is from 1-1-1 00:00:00 to 9999-12-31 23:59:59
-//
 class Date {
 public:
     enum class COMPARE {
@@ -320,7 +218,6 @@ public:
                                 YYYYMMDDHHMMSS,
                                 LAST = YYYYMMDDHHMMSS,
     };
-
     enum class DAY {
                                 INVALID,
                                 MONDAY,
@@ -332,7 +229,6 @@ public:
                                 SUNDAY,
                                 LAST = SUNDAY,
     };
-
     enum class FORMAT {
                                 ISO,
                                 ISO_LONG,
@@ -346,7 +242,6 @@ public:
                                 YEAR_MONTH_LONG,
                                 LAST = YEAR_MONTH_LONG,
     };
-
     enum class RANGE {
                                 DAY,
                                 WEEKDAY,
@@ -358,11 +253,9 @@ public:
                                 SEC,
                                 LAST = SEC,
     };
-
     static const int            SECS_PER_HOUR;
     static const int            SECS_PER_DAY;
     static const int            SECS_PER_WEEK;
-
     explicit                    Date(bool utc = false);
                                 Date(const Date& other);
                                 Date(Date&&);
@@ -422,11 +315,9 @@ public:
                                     { return _year; }
     Date&                       year(int year);
     int                         yearday() const;
-
     static bool                 Compare(const Date& a, const Date& b);
     static Date                 FromString(const char* string, bool us = false);
     static Date                 FromTime(int64_t seconds, bool utc = false);
-
 private:
     short                       _year;
     char                        _month;
@@ -435,39 +326,18 @@ private:
     char                        _min;
     char                        _sec;
 };
-
-} // flw
-
-
-
+}
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <vector>
-
 namespace flw {
-
-/***
- *      _____      _
- *     |  __ \    (_)
- *     | |__) | __ _  ___ ___
- *     |  ___/ '__| |/ __/ _ \
- *     | |   | |  | | (_|  __/
- *     |_|   |_|  |_|\___\___|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-// Chart data
-//
 struct Price {
     std::string                 date;
     double                      close;
     double                      high;
     double                      low;
     double                      vol;
-
                                 Price();
     explicit                    Price(const std::string& date_value, double value = 0.0);
                                 Price(const std::string& date, double high, double low, double close, double vol = 0.0);
@@ -476,36 +346,14 @@ struct Price {
     bool                        operator==(const Price& price) const { return date == price.date; }
     bool                        operator!=(const Price& price) const { return date != price.date; }
 };
-
 struct ChartArea;
 struct ChartLine;
 struct ChartScale;
-
 typedef std::vector<Price>      PriceVector;
 typedef std::vector<ChartLine>  LineVector;
 typedef std::vector<ChartArea>  AreaVector;
-
-/***
- *       _____ _                _
- *      / ____| |              | |
- *     | |    | |__   __ _ _ __| |_
- *     | |    | '_ \ / _` | '__| __|
- *     | |____| | | | (_| | |  | |_
- *      \_____|_| |_|\__,_|_|   \__|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-// Chart widget that is using dates for the x scale
-// It has an popup menu for a few settings and option to save chart to png image
-// It can also use date + hours/minutes/seconds
-// Use block_dates() to set an date list that removes those dates
-// ChartLine types BAR, VERTICAL and CLAMP_VERTICAL can use line width of -1 which means it will expand to tick width - 1
-//
 class Chart : public Fl_Group {
 public:
-    //--------------------------------------------------------------------------
     enum TYPE {
                                 LINE,
                                 BAR,
@@ -516,14 +364,12 @@ public:
                                 EXPAND_HORIZONTAL,
                                 LAST = EXPAND_HORIZONTAL,
     };
-
     static const int            MIN_TICK  = 3;
     static const int            MAX_TICK  = 100;
     static const size_t         MAX_AREA  = 3;
     static const size_t         MAX_LINE  = 10;
     static constexpr double     MIN_VAL = -999'999'999'999'999.0;
     static constexpr double     MAX_VAL =  999'999'999'999'999.0;
-
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     bool                        add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, Chart::TYPE chart_type = Chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = Chart::MIN_VAL, double clamp_max = Chart::MAX_VAL);
     bool                        area_size(int area1 = 100, int area2 = 0, int area3 = 0);
@@ -546,10 +392,8 @@ public:
     void                        update_pref();
     void                        view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
                                     { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
-
     static bool                 Load(Chart* chart, std::string filename);
     static bool                 Save(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
-
 private:
     void                        _calc_area_height();
     void                        _calc_area_width();
@@ -565,21 +409,18 @@ private:
     void                        _draw_xlabels();
     void                        _draw_ylabels(int X, double Y1, double Y2, const ChartScale& scale, bool left);
     ChartArea*                  _inside_area(int X, int Y);
-
-    static void                 _CallbackDebug(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackDebug(Fl_Widget*, void* widget);
     static void                 _CallbackPrint(Fl_Widget*, void* widget);
-    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
-    static void                 _CallbackReset(Fl_Widget* widget, void* chart_object);
-    static void                 _CallbackSavePng(Fl_Widget* widget, void* chart_object);
-    static void                 _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
-    static void                 _CallbackToggle(Fl_Widget* widget, void* chart_object);
-
+    static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
+    static void                 _CallbackReset(Fl_Widget*, void* widget);
+    static void                 _CallbackSavePng(Fl_Widget*, void* widget);
+    static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
+    static void                 _CallbackToggle(Fl_Widget*, void* widget);
     struct {
         bool                    horizontal;
         bool                    labels;
         bool                    vertical;
     }                           _view;
-
     ChartArea*                  _area;
     AreaVector                  _areas;
     PriceVector                 _block_dates;
@@ -602,27 +443,14 @@ private:
     int                         _top_space;
     int                         _ver_pos[101];
 };
-
 }
-
-
-
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Rect.H>
-
 namespace flw {
-
 struct _GridGroupChild;
-
-//------------------------------------------------------------------------------
-// A simple layout widget that uses a grid for placing widgets.
-// One cell is set to flw::PREF_FONTSIZE / 2.
-// Override by calling size() method (min 4, max 72 pixels).
-//
 class GridGroup : public Fl_Group {
 public:
     static const int            MAX_WIDGETS = 100;
-
     explicit                    GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     virtual                     ~GridGroup();
     void                        add(Fl_Widget* widget, int X, int Y, int W, int H);
@@ -638,35 +466,23 @@ public:
                                     { return _size; }
     void                        size(int size)
                                     { _size = (size >= 4 && size <= 72) ? size : 0; }
-    
 private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
-    
     _GridGroupChild*            _widgets[MAX_WIDGETS];
     int                         _size;
 };
-
-} // flw
-
-
-
+}
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Rect.H>
-
 namespace flw {
-
 struct _ToolGroupChild;
-
-//------------------------------------------------------------------------------
 class ToolGroup : public Fl_Group {
 public:
     enum class DIRECTION {
                                 HORIZONTAL,
                                 VERTICAL,
     };
-
     static const int            MAX_WIDGETS = 50;
-
     explicit                    ToolGroup(DIRECTION direction = DIRECTION::HORIZONTAL, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     virtual                     ~ToolGroup();
     void                        add(Fl_Widget* widget, int SIZE = 0);
@@ -684,39 +500,16 @@ public:
     void                        remove(Fl_Widget* widget);
     void                        resize(int X, int Y, int W, int H) override;
     void                        resize(Fl_Widget* widget, int SIZE = 0);
-
 private:
     DIRECTION                   _direction;
     _ToolGroupChild*            _widgets[MAX_WIDGETS];
     bool                        _expand;
 };
-
 }
-
-
-
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Group.H>
-
 namespace flw {
-
-/***
- *      _____        _        _____ _
- *     |  __ \      | |      / ____| |
- *     | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __
- *     | |  | |/ _` | __/ _ \ |    | '_ \ / _ \ / _ \/ __|/ _ \ '__|
- *     | |__| | (_| | ||  __/ |____| | | | (_) | (_) \__ \  __/ |
- *     |_____/ \__,_|\__\___|\_____|_| |_|\___/ \___/|___/\___|_|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-// An date chooser widget
-// User can navigate with mouse or arrow keys within a month
-// Or use buttons to jump 1 month/1 year/10 years
-//
 class DateChooser : public GridGroup {
 public:
     explicit                    DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -725,12 +518,9 @@ public:
     Date                        get() const;
     int                         handle(int event) override;
     void                        set(const Date& date);
-
-
 private:
     static void                 _Callback(Fl_Widget* w, void* o);
     void                        _set_label();
-
     Fl_Box*                     _month_label;
     Fl_Button*                  _b1;
     Fl_Button*                  _b2;
@@ -741,55 +531,20 @@ private:
     Fl_Button*                  _b7;
     Fl_Widget*                  _canvas;
     ToolGroup*                  _buttons;
-    int                         _h;
-    int                         _w;
 };
-
 namespace dlg {
-
-/***
- *       __                  _   _
- *      / _|                | | (_)
- *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
- *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
- *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
- *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
- *
- *
- */
-
 bool                            date(const std::string& title, Date& date, Fl_Window* parent);
-
-} // dlg
-} // flw
-
-
-
+}
+}
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Menu_Button.H>
-
 namespace flw {
-
-
-/***
- *       _____                _ _ ____                                  
- *      / ____|              | | |  _ \                                 
- *     | (___   ___ _ __ ___ | | | |_) |_ __ _____      _____  ___ _ __ 
- *      \___ \ / __| '__/ _ \| | |  _ <| '__/ _ \ \ /\ / / __|/ _ \ '__|
- *      ____) | (__| | | (_) | | | |_) | | | (_) \ V  V /\__ \  __/ |   
- *     |_____/ \___|_|  \___/|_|_|____/|_|  \___/ \_/\_/ |___/\___|_|   
- *                                                                      
- *                                                                      
- */
-
-//------------------------------------------------------------------------------
 class ScrollBrowser : public Fl_Hold_Browser {
 public:
                                 ScrollBrowser(const ScrollBrowser&) = delete;
                                 ScrollBrowser(ScrollBrowser&&) = delete;
     ScrollBrowser&              operator=(const ScrollBrowser&) = delete;
     ScrollBrowser&              operator=(ScrollBrowser&&) = delete;
-
     explicit                    ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     bool                        enable_menu() const
                                     { return _flag_menu; }
@@ -809,45 +564,26 @@ public:
     void                        update_pref()
                                     { update_pref(flw::PREF_FONT, flw::PREF_FONTSIZE); }
     void                        update_pref(Fl_Font text_font, Fl_Fontsize text_size);
-
     static void                 Callback(Fl_Widget*, void*);
-
 private:
     Fl_Menu_Button*             _menu;
     bool                        _flag_menu;
     bool                        _flag_move;
     int                         _scroll;
 };
-
-} // flw
-
-
-
+}
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Hor_Fill_Slider.H>
 #include <FL/Fl_Toggle_Button.H>
-
 namespace flw {
 namespace dlg {
-
-/***
- *       __                  _   _
- *      / _|                | | (_)
- *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
- *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
- *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
- *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
- *
- *
- */
-
 extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
-
 void                            center_message_dialog();
+bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
 void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -857,7 +593,7 @@ bool                            password1(std::string title, std::string& passwo
 bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
 bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
 bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-void                            print(std::string title, PrintCallback cb, Fl_Widget* widget, int from = 1, int to = 1, Fl_Window* parent = nullptr);
+void                            print(std::string title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
 int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -865,29 +601,14 @@ int                             select(std::string title, const StringVector& li
 void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
-
-/***
- *               _                _   _____  _       _
- *         /\   | |              | | |  __ \(_)     | |
- *        /  \  | |__   ___  _ __| |_| |  | |_  __ _| | ___   __ _
- *       / /\ \ | '_ \ / _ \| '__| __| |  | | |/ _` | |/ _ \ / _` |
- *      / ____ \| |_) | (_) | |  | |_| |__| | | (_| | | (_) | (_| |
- *     /_/    \_\_.__/ \___/|_|   \__|_____/|_|\__,_|_|\___/ \__, |
- *                                                            __/ |
- *                                                           |___/
- */
-
-//------------------------------------------------------------------------------
 class AbortDialog : public Fl_Double_Window {
     using Fl_Double_Window::show;
-
 public:
                                 AbortDialog(const AbortDialog&) = delete;
                                 AbortDialog(AbortDialog&&) = delete;
     AbortDialog&                operator=(const AbortDialog&) = delete;
     AbortDialog&                operator=(AbortDialog&&) = delete;
-
-    explicit                    AbortDialog(double min = 0.0, double max = 0.0);
+    explicit                    AbortDialog(std::string label = "", double min = 0.0, double max = 0.0);
     bool                        check(int milliseconds = 200);
     bool                        check(double value, double min, double max, int milliseconds = 200);
     bool                        aborted()
@@ -897,10 +618,7 @@ public:
                                     { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     void                        show(const std::string& label, Fl_Window* parent = nullptr);
     void                        value(double value);
-
-
     static void                 Callback(Fl_Widget* w, void* o);
-
 private:
     Fl_Button*                  _button;
     Fl_Hor_Fill_Slider*         _progress;
@@ -908,31 +626,12 @@ private:
     bool                        _abort;
     int64_t                     _last;
 };
-
-/***
- *      ______          _   _____  _       _
- *     |  ____|        | | |  __ \(_)     | |
- *     | |__ ___  _ __ | |_| |  | |_  __ _| | ___   __ _
- *     |  __/ _ \| '_ \| __| |  | | |/ _` | |/ _ \ / _` |
- *     | | | (_) | | | | |_| |__| | | (_| | | (_) | (_| |
- *     |_|  \___/|_| |_|\__|_____/|_|\__,_|_|\___/ \__, |
- *                                                  __/ |
- *                                                 |___/
- */
-
-//------------------------------------------------------------------------------
-// Dialog for selecting font and font size
-// FontDialog::LoadFonts() will be called automatically (or do it manually)
-// It is only needed once
-// Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied)
-//
 class FontDialog : public Fl_Double_Window {
 public:
                                 FontDialog(const FontDialog&) = delete;
                                 FontDialog(FontDialog&&) = delete;
     FontDialog&                 operator=(const FontDialog&) = delete;
     FontDialog&                 operator=(FontDialog&&) = delete;
-
                                 FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default = false);
                                 FontDialog(std::string font, Fl_Fontsize fontsize, std::string label, bool limit_to_default = false);
     void                        activate_font()
@@ -950,14 +649,11 @@ public:
     void                        resize(int X, int Y, int W, int H) override
                                     { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     bool                        run(Fl_Window* parent = nullptr);
-
     static void                 Callback(Fl_Widget* w, void* o);
-
 private:
     void                        _activate();
     void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label, bool limit_to_default);
     void                        _select_name(std::string font_name);
-
     Fl_Box*                     _label;
     Fl_Button*                  _cancel;
     Fl_Button*                  _select;
@@ -969,19 +665,6 @@ private:
     int                         _fontsize;
     std::string                 _fontname;
 };
-
-/***
- *     __          __        _    _____  _       _
- *     \ \        / /       | |  |  __ \(_)     | |
- *      \ \  /\  / /__  _ __| | _| |  | |_  __ _| | ___   __ _
- *       \ \/  \/ / _ \| '__| |/ / |  | | |/ _` | |/ _ \ / _` |
- *        \  /\  / (_) | |  |   <| |__| | | (_| | | (_) | (_| |
- *         \/  \/ \___/|_|  |_|\_\_____/|_|\__,_|_|\___/ \__, |
- *                                                        __/ |
- *                                                       |___/
- */
-
-//------------------------------------------------------------------------------
 class WorkDialog : public Fl_Double_Window {
 public:
                                 WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
@@ -989,9 +672,7 @@ public:
                                     { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
     bool                        run(double update_time, const StringVector& messages);
     bool                        run(double update_time, const std::string& message);
-
     static void                 Callback(Fl_Widget* w, void* o);
-
 private:
     Fl_Button*                  _cancel;
     Fl_Hold_Browser*            _label;
@@ -1001,41 +682,19 @@ private:
     double                      _last;
     std::string                 _message;
 };
-
-} // dlg
-} // flw
-
-
-
+}
+}
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Menu_Button.H>
-
 namespace flw {
-
-/***
- *      _____                   _   __  __                  
- *     |_   _|                 | | |  \/  |                 
- *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
- *       | | | '_ \| '_ \| | | | __| |\/| |/ _ \ '_ \| | | |
- *      _| |_| | | | |_) | |_| | |_| |  | |  __/ | | | |_| |
- *     |_____|_| |_| .__/ \__,_|\__|_|  |_|\___|_| |_|\__,_|
- *                 | |                                      
- *                 |_|                                      
- */
-
 class _InputMenu;
-
-//------------------------------------------------------------------------------
-// First string in the vector for InputMenu::values() is the latest pushed in.
-//
 class InputMenu : public Fl_Group {
 public:
                                 InputMenu(const InputMenu&) = delete;
                                 InputMenu(InputMenu&&) = delete;
     InputMenu&                  operator=(const InputMenu&) = delete;
     InputMenu&                  operator=(InputMenu&&) = delete;
-
     explicit                    InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        clear();
     bool                        enable_menu() const
@@ -1053,43 +712,27 @@ public:
     const char*                 value() const;
     void                        value(const char* string);
     void                        values(const StringVector& list, bool copy_first_to_input = true);
-
     static void                 Callback(Fl_Widget*, void*);
-
 private:
     void                        _add(bool insert, const std::string& string, int max_list_len);
     void                        _add(bool insert, const StringVector& list);
-
     _InputMenu*                 _input;
     Fl_Menu_Button*             _menu;
 };
-
-} // flw
-
-
-
+}
 #include <assert.h>
 #include <string.h>
 #include <map>
 #include <string>
 #include <vector>
-
 namespace flw {
-
 class JS;
-
 typedef std::map<std::string, JS*> JSObject;
 typedef std::vector<JS*> JSArray;
-
-//------------------------------------------------------------------------------
-// JSON object.
-//
 class JS {
     friend class JSB;
-
 public:
     static const size_t         MAX_DEPTH = 32;
-
     enum TYPE {
                                 OBJECT,
                                 ARRAY,
@@ -1098,12 +741,10 @@ public:
                                 BOOL,
                                 NIL,
     };
-
                                 JS(const JS&) = delete;
                                 JS(JS&&) = delete;
     JS&                         operator=(const JS&) = delete;
     JS&                         operator=(JS&&) = delete;
-
                                 JS()
                                     { JS::COUNT++; _type = NIL; _name = strdup(""); _vb = false; _parent = nullptr; _enc_flag = 0; _pos = 0; }
                                 ~JS()
@@ -1171,13 +812,11 @@ public:
                                     { assert(_type == STRING); return (_type == STRING) ? _vs : ""; }
     std::string                 vs_u() const
                                     { assert(_type == STRING); return (_type == STRING) ? JS::Unescape(_vs) : ""; }
-
     static inline ssize_t       Count()
                                     { return JS::COUNT; }
     static size_t               CountUtf8(const char* p);
     static std::string          Escape(const char* string);
     static std::string          Unescape(const char* string);
-
 private:
     explicit                    JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
                                     { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
@@ -1189,7 +828,6 @@ private:
     std::string                 _encode(bool ignore_name, int skip) const;
     const JS*                   _get_object(const char* name, bool escape) const;
     bool                        _set_object(const char* name, JS* js, bool ignore_duplicates);
-
     static void                 _Encode(const JS* js, std::string& j, std::string& t, bool comma, int skip);
     static void                 _EncodeInline(const JS* js, std::string& j, bool comma, int skip);
     static inline JS*           _MakeArray(const char* name, JS* parent, unsigned pos)
@@ -1204,16 +842,13 @@ private:
                                     { auto r = new JS(name, parent, pos); r->_type = OBJECT; r->_vo = new JSObject(); return r; }
     static inline JS*           _MakeString(const char* name, const char* vs, JS* parent, unsigned pos)
                                     { auto r = new JS(name, parent, pos); r->_type = STRING; r->_vs = strdup(vs); return r; }
-
     static constexpr const char* TYPE_NAMES[7] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", };
     static ssize_t              COUNT;
-
     char                        _type;
     char                        _enc_flag;
     unsigned                    _pos;
     JS*                         _parent;
     char*                       _name;
-
     union {
         JSArray*                _va;
         JSObject*               _vo;
@@ -1222,11 +857,6 @@ private:
         char*                   _vs;
     };
 };
-
-//------------------------------------------------------------------------------
-// Create JSON structure.
-// It will throw exception (std::string) for any error.
-//
 class JSB {
 public:
                                 JSB()
@@ -1242,7 +872,6 @@ public:
     JSB&                        end();
     const JS*                   root() const
                                     { return _root; }
-
     static inline JS*           MakeArray(const char* name = "", bool escape = true)
                                     { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); return r; }
     static inline JS*           MakeArrayInline(const char* name = "", bool escape = true)
@@ -1261,23 +890,14 @@ public:
                                     { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs).c_str() : vs); return r; }
     static inline JS*           MakeString(std::string vs, const char* name = "", bool escape = true)
                                     { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs.c_str()).c_str() : vs.c_str()); return r; }
-
 private:
     JS*                         _current;
     JS*                         _root;
     std::string                 _name;
 };
-
-} // flw
-
-
-
+}
 #include <FL/Fl_Box.H>
-
 namespace flw {
-    //------------------------------------------------------------------------------
-    // A 7 segment number label widget
-    //
     class LcdNumber : public Fl_Box {
     public:
         explicit                        LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -1317,10 +937,8 @@ namespace flw {
         const char*                     value() const
                                             { return _value; }
         void                            value(const char* value);
-
     private:
         void                            _draw_seg(uchar a, int x, int y, int w, int h);
-
         Fl_Align                        _align;
         Fl_Color                        _seg_color;
         char                            _value[100];
@@ -1332,30 +950,9 @@ namespace flw {
         int                             _unit_w;
     };
 }
-
-
-
 #include <FL/Fl_Text_Display.H>
 #include <string>
-
 namespace flw {
-
-//------------------------------------------------------------------------------
-// A static text display widget with line based text coloring
-// LogDisplay will manage text and style buffers
-// Search text with ctrl + 'f', F3, shift + F3
-//
-// Implement line_cb() method which will be called for every line
-// If you are doing more then one color call per line,
-//   you can disable changing colors that has already been set
-//   by calling lock_color(true)
-//
-// If json string is used then line_cb() doesn't have to be overidden
-// But it is less flexible
-// Edit json string in the widget with ctrl + 'e'
-//
-// BG colors only work in fltk 1.4
-//
 class LogDisplay : public Fl_Text_Display {
 public:
     enum COLOR {
@@ -1393,7 +990,6 @@ public:
                                 BG_BOLD_CYAN        = '`',
                                 LAST                = '`',
     };
-    
     explicit                    LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                 ~LogDisplay();
     void                        edit_styles();
@@ -1405,7 +1001,6 @@ public:
     void                        style(std::string json = "");
     void                        update_pref();
     void                        value(const char* text);
-
 protected:
     virtual void                line_cb(size_t row, const std::string& line)
                                     { (void) row; (void) line; }
@@ -1417,22 +1012,18 @@ protected:
     void                        style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count = 0);
     void                        style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count = 0);
     void                        style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count = 0);
-
 private:
     const char*                 _check_text(const char* text);
     char                        _style_char(size_t pos) const
                                     { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; }
-
     struct Tmp {
         char*                   buf;
         size_t                  len;
         size_t                  pos;
         size_t                  size;
-
                                 Tmp();
                                 ~Tmp();
     };
-
     Fl_Text_Buffer*             _buffer;
     std::string                 _find;
     bool                        _lock_colors;
@@ -1440,41 +1031,27 @@ private:
     Fl_Text_Buffer*             _style;
     Tmp*                        _tmp;
 };
-
 }
-
-
-
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
-
 namespace flw {
-
-//----------------------------------------------------------------------
 struct Point {
     double                      x;
     double                      y;
-
     explicit                    Point(double x = 0.0, double y = 0.0) {
                                     this->x = x;
                                     this->y = y;
                                 }
 };
-
 typedef std::vector<Point>      PointVector;
-
 struct PlotArea;
 struct PlotLine;
 struct PlotScale;
-
-//------------------------------------------------------------------------------
-//
 class Plot : public Fl_Group {
 public:
     static constexpr double     MAX        =  999'999'999'999'999.0;
     static constexpr double     MIN        = -999'999'999'999'999.0;
     static const size_t         MAX_LINES  = 10;
-
     enum TYPE {
                                 LINE,
                                 LINE_DASH,
@@ -1485,7 +1062,6 @@ public:
                                 FILLED_CIRCLE,
                                 SQUARE,
     };
-
     explicit                    Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     virtual                     ~Plot();
     bool                        add_line(const PointVector& points, TYPE type, unsigned width = 1, std::string label = "", Fl_Color color = FL_FOREGROUND_COLOR);
@@ -1507,10 +1083,8 @@ public:
                                     { return x() + w(); }
     int                         y2() const
                                     { return y() + h(); }
-
     static bool                 Load(Plot* plot, std::string filename);
     static bool                 Save(const Plot* plot, std::string filename);
-
 private:
     void                        _calc_min_max();
     void                        _create_tooltip(bool ctrl);
@@ -1523,19 +1097,17 @@ private:
     void                        _draw_xlabels2();
     void                        _draw_ylabels();
     void                        _draw_ylabels2();
-
     static void                 _CallbackDebug(Fl_Widget*, void* widget);
     static void                 _CallbackPrint(Fl_Widget*, void* widget);
-    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
+    static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
+    static void                 _CallbackReset(Fl_Widget*, void* widget);
     static void                 _CallbackSave(Fl_Widget*, void* widget);
     static void                 _CallbackToggle(Fl_Widget*, void* widget);
-
     struct {
         bool                    horizontal;
         bool                    labels;
         bool                    vertical;
     }                           _view;
-
     Fl_Menu_Button*             _menu;
     PlotArea*                   _area;
     PlotLine*                   _lines[Plot::MAX_LINES];
@@ -1551,18 +1123,11 @@ private:
     size_t                      _selected_point;
     size_t                      _size;
     std::string                 _tooltip;
-
 };
-
 }
-
-
-
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
-
 namespace flw {
-    //------------------------------------------------------------------------------
     class RecentMenu {
     public:
                                         RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label = "&File/Open recent", std::string clear_label = "/Clear");
@@ -1579,12 +1144,10 @@ namespace flw {
                                             { return _menu; }
         void                            load_pref(Fl_Preferences& pref, std::string base_name = "files");
         void                            save_pref(Fl_Preferences& pref, std::string base_name = "files");
-
     private:
         void                            _add(std::string file, bool append);
         size_t                          _add_string(StringVector& in, size_t max_size, std::string string);
         size_t                          _insert_string(StringVector& in, size_t max_size, std::string string);
-
         std::string                     _base;
         Fl_Callback*                    _callback;
         std::string                     _clear;
@@ -1594,31 +1157,20 @@ namespace flw {
         void*                           _user;
     };
 }
-
-
-
 #include <FL/Fl.H>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Rect.H>
-
 namespace flw {
-    //------------------------------------------------------------------------------
-    // A split view widget for two child widgets
-    // That can be resized by dragging the border between the widgets
-    // By default it places widgets in LAYOUT::VERTICAL direction (child widgets get full height)
-    //
     class SplitGroup : public Fl_Group {
     public:
         enum class CHILD {
                                 FIRST,
                                 SECOND,
         };
-
         enum class DIRECTION {
                                 HORIZONTAL,
                                 VERTICAL,
         };
-
         explicit                SplitGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         void                    add(Fl_Widget* widget, SplitGroup::CHILD child);
         Fl_Widget*              child(SplitGroup::CHILD child)
@@ -1644,7 +1196,6 @@ namespace flw {
         void                    toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size = -1);
         void                    toggle(SplitGroup::CHILD child, int second_size = -1)
                                     { toggle(child, _direction, second_size); }
-
     private:
         DIRECTION               _direction;
         Fl_Widget*              _widgets[2];
@@ -1653,39 +1204,18 @@ namespace flw {
         int                     _split_pos;
     };
 }
-
-
-
 #include <map>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scrollbar.H>
-
 namespace flw {
-
-/***
- *      _______    _     _      _____  _           _             
- *     |__   __|  | |   | |    |  __ \(_)         | |            
- *        | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _ 
- *        | |/ _` | '_ \| |/ _ \ |  | | / __| '_ \| |/ _` | | | |
- *        | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| |
- *        |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |
- *                                          | |             __/ |
- *                                          |_|            |___/ 
- */
-
-//------------------------------------------------------------------------------
-// A table display widget
-//
 class TableDisplay : public Fl_Group {
     friend class _TableDisplayFindDialog;
-
 public:
     enum class SELECT {
                                 NO,
                                 CELL,
                                 ROW,
     };
-
     enum class EVENT {
                                 UNDEFINED,
                                 CHANGED,
@@ -1696,7 +1226,6 @@ public:
                                 ROW_CTRL,
                                 SIZE,
     };
-
     explicit                    TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        active_cell(int row = -1, int col = -1, bool show = false);
     virtual Fl_Align            cell_align(int row, int col)
@@ -1748,7 +1277,6 @@ public:
                                     { _select = select; }
     void                        show_cell(int row, int col);
     virtual void                size(int rows, int cols);
-
 protected:
     enum class _TABLEDISPLAY_MOVE {
                                 DOWN,
@@ -1766,7 +1294,6 @@ protected:
                                 SCROLL_UP,
                                 UP,
     };
-
     int                         _cell_height(int Y = -1);
     int                         _cell_width(int col, int X = -1);
     virtual void                _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false);
@@ -1781,10 +1308,8 @@ protected:
     void                        _update_scrollbars();
     void                        _set_event(int row, int col, TableDisplay::EVENT event)
                                     { _event_row = row; _event_col = col; _event = event; }
-
     static void                 _CallbackHor(Fl_Widget* w, void* v);
     static void                 _CallbackVer(Fl_Widget* w, void* v);
-
     TableDisplay::EVENT         _event;
     TableDisplay::SELECT        _select;
     Fl_Scrollbar*               _hor;
@@ -1812,29 +1337,10 @@ protected:
     int                         _start_col;
     int                         _start_row;
 };
-
-} // flw
-
-
-
+}
 namespace flw {
-
-/***
- *      _______    _     _      ______    _ _ _             
- *     |__   __|  | |   | |    |  ____|  | (_) |            
- *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __ 
- *        | |/ _` | '_ \| |/ _ \  __| / _` | | __/ _ \| '__|
- *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |   
- *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|   
- *                                                          
- *                                                          
- */
-//------------------------------------------------------------------------------
-// A table editing widget
-//
 class TableEditor : public TableDisplay {
     using TableDisplay::cell_value;
-
 public:
     enum class FORMAT {
                                 DEFAULT,
@@ -1856,7 +1362,6 @@ public:
                                 SECRET_DEF,
                                 SECRET_DOT,
     };
-
     enum class REND {
                                 TEXT,
                                 INTEGER,
@@ -1873,12 +1378,10 @@ public:
                                 DLG_DATE,
                                 DLG_LIST,
     };
-
     static const char*          SELECT_DATE;
     static const char*          SELECT_DIR;
     static const char*          SELECT_FILE;
     static const char*          SELECT_LIST;
-    
     explicit                    TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        send_changed_event_always(bool value)
                                     { _send_changed_event_always = value; }
@@ -1894,9 +1397,7 @@ public:
                                     { (void) row; (void) col; (void) value; return false; }
     void                        clear() override;
     virtual int                 handle(int event) override;
-
     static const char*          FormatSlider(double val, double min, double max, double step);
-
 private:
     bool                        _send_changed_event_always;
     void                        _delete_current_cell();
@@ -1909,27 +1410,16 @@ private:
     int                         _ev_keyboard_down2();
     int                         _ev_mouse_click2();
     int                         _ev_paste();
-
     Fl_Widget*                  _edit2;
     Fl_Widget*                  _edit3;
 };
-
-} // flw
-
-
-
+}
 #include <string>
 #include <map>
-
 namespace flw {
     typedef std::map<std::string, std::string> StringMap;
-
-    //------------------------------------------------------------------------------
-    // A Table editing widget with built in data storage
-    //
     class Grid : public TableEditor {
         friend class                    _TableChoice;
-
     public:
                                         Grid(int rows, int cols, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
         virtual                         ~Grid();
@@ -1953,14 +1443,12 @@ namespace flw {
         int                             cell_width(int col) override;
         void                            cell_width(int col, int width) override;
         void                            size(int rows, int cols) override;
-
     private:
         int                             _get_int(StringMap& map, int row, int col, int def = 0);
         const char*                     _get_key(int row, int col);
         const char*                     _get_string(StringMap& map, int row, int col, const char* def = "");
         void                            _set_int(StringMap& map, int row, int col, int value);
         void                            _set_string(StringMap& map, int row, int col, const char* value);
-
         char*                           _buffer;
         StringMap                       _cell_align;
         StringMap                       _cell_choice;
@@ -1975,26 +1463,9 @@ namespace flw {
         char                            _key[100];
     };
 }
-
-
-
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Rect.H>
-
 namespace flw {
-
-//------------------------------------------------------------------------------
-// Group widget that uses tabs for labels.
-// You can move between tabs using alt (or command key on macOS) + left/right.
-// Move tabs around by using alt + up/down.
-// Use shortcut keys (alt/command + 0-9).
-//
-// By default tabs are on the NORTH side and tabs size is font size * 10.
-// Change width of tabs for the WEST/EAST side with pos().
-// If tabs are on the NORTH/SOUTH side you can change the width by using the mouse.
-//
-// Do a resize after adding widgets by calling do_layout() or resize().
-//
 class TabsGroup : public Fl_Group {
 public:
     enum class TABS {
@@ -2003,7 +1474,6 @@ public:
                                 WEST,
                                 EAST,
     };
-
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget, bool force_append = false);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
@@ -2036,17 +1506,14 @@ public:
     void                        value(int num);
     void                        value(Fl_Widget* widget)
                                     { value(find(widget)); }
-
     static void                 BoxColor(Fl_Color boxcolor = FL_DARK1);
     static void                 BoxSelectionColor(Fl_Color boxcolor = FL_SELECTION_COLOR);
     static void                 BoxType(Fl_Boxtype boxtype = FL_FLAT_BOX);
     static void                 Callback(Fl_Widget* sender, void* object);
     static const char*          Help();
-
 private:
     Fl_Widget*                  _button();
     void                        _hide_tab_buttons(bool hide);
-
     TABS                        _tabs;
     WidgetVector                _buttons;
     WidgetVector                _widgets;
@@ -2059,27 +1526,17 @@ private:
     int                         _pos;
     int                         _w;
 };
-
-} // flw
-
-
-
+}
 namespace flw {
-    //------------------------------------------------------------------------------
-    // Show an wait mouse pointer until object is deleted
-    //
     class WaitCursor {
         static WaitCursor*              WAITCURSOR;
-
     public:
                                         WaitCursor(const WaitCursor&) = delete;
                                         WaitCursor(WaitCursor&&) = delete;
                                         WaitCursor& operator=(const WaitCursor&) = delete;
                                         WaitCursor& operator=(WaitCursor&&) = delete;
-
                                         WaitCursor();
                                         ~WaitCursor();
     };
 }
-
 #endif

@@ -134,13 +134,13 @@ private:
     void                        _draw_ylabels(int X, double Y1, double Y2, const ChartScale& scale, bool left);
     ChartArea*                  _inside_area(int X, int Y);
 
-    static void                 _CallbackDebug(Fl_Widget* widget, void* chart_object);
+    static void                 _CallbackDebug(Fl_Widget*, void* widget);
     static void                 _CallbackPrint(Fl_Widget*, void* widget);
-    static bool                 _CallbackPrinter(Fl_Widget* widget, int pw, int ph, int from, int to);
-    static void                 _CallbackReset(Fl_Widget* widget, void* chart_object);
-    static void                 _CallbackSavePng(Fl_Widget* widget, void* chart_object);
-    static void                 _CallbackScrollbar(Fl_Widget* widget, void* chart_object);
-    static void                 _CallbackToggle(Fl_Widget* widget, void* chart_object);
+    static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
+    static void                 _CallbackReset(Fl_Widget*, void* widget);
+    static void                 _CallbackSavePng(Fl_Widget*, void* widget);
+    static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
+    static void                 _CallbackToggle(Fl_Widget*, void* widget);
 
     struct {
         bool                    horizontal;

@@ -36,6 +36,7 @@ extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
 
 void                            center_message_dialog();
+bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
 void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -45,7 +46,7 @@ bool                            password1(std::string title, std::string& passwo
 bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
 bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
 bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-void                            print(std::string title, PrintCallback cb, Fl_Widget* widget, int from = 1, int to = 1, Fl_Window* parent = nullptr);
+void                            print(std::string title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
 int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -75,7 +76,7 @@ public:
     AbortDialog&                operator=(const AbortDialog&) = delete;
     AbortDialog&                operator=(AbortDialog&&) = delete;
 
-    explicit                    AbortDialog(double min = 0.0, double max = 0.0);
+    explicit                    AbortDialog(std::string label = "", double min = 0.0, double max = 0.0);
     bool                        check(int milliseconds = 200);
     bool                        check(double value, double min, double max, int milliseconds = 200);
     bool                        aborted()
@@ -109,10 +110,10 @@ private:
  */
 
 //------------------------------------------------------------------------------
-// Dialog for selecting font and font size
-// FontDialog::LoadFonts() will be called automatically (or do it manually)
-// It is only needed once
-// Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied)
+// Dialog for selecting font and font size.
+// FontDialog::LoadFonts() will be called automatically (or do it manually).
+// It is only needed once.
+// Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied).
 //
 class FontDialog : public Fl_Double_Window {
 public:
