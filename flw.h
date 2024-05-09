@@ -13,10 +13,10 @@
 #ifdef DEBUG
 #include <iostream>
 #include <iomanip>
-#define FLW_LINE                        { printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_RED                         { printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_GREEN                       { printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_BLUE                        { printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_LINE                        { ::printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_RED                         { ::printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_GREEN                       { ::printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_BLUE                        { ::printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
 #define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
 #define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << std::endl; fflush(stdout); }
 #define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << std::endl; fflush(stdout); }
@@ -44,11 +44,12 @@ extern std::vector<char*>       PREF_FONTNAMES;
 extern std::string              PREF_THEME;
 extern const char* const        PREF_THEMES[];
 typedef std::vector<std::string> StringVector;
+typedef std::vector<void*>       VoidVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
 typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
 namespace debug {
-    void                        print(Fl_Widget* widget);
-    void                        print(Fl_Widget* widget, std::string& indent);
+    void                        print(const Fl_Widget* widget);
+    void                        print(const Fl_Widget* widget, std::string& indent);
 }
 namespace menu {
     void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
@@ -445,21 +446,18 @@ private:
 };
 }
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Rect.H>
 namespace flw {
-struct _GridGroupChild;
 class GridGroup : public Fl_Group {
 public:
-    static const int            MAX_WIDGETS = 100;
     explicit                    GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    virtual                     ~GridGroup();
+                                ~GridGroup();
     void                        add(Fl_Widget* widget, int X, int Y, int W, int H);
     void                        adjust(Fl_Widget* widget, int L = 0, int R = 0, int T = 0, int B = 0);
     void                        clear();
     void                        do_layout()
-                                    { resize(x(), y(), w(), h()); redraw(); }
+                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
     int                         handle(int event) override;
-    void                        remove(Fl_Widget* widget);
+    Fl_Widget*                  remove(Fl_Widget* widget);
     void                        resize(int X, int Y, int W, int H) override;
     void                        resize(Fl_Widget* widget, int X, int Y, int W, int H);
     int                         size() const
@@ -468,23 +466,20 @@ public:
                                     { _size = (size >= 4 && size <= 72) ? size : 0; }
 private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
-    _GridGroupChild*            _widgets[MAX_WIDGETS];
+    VoidVector                  _widgets;
     int                         _size;
 };
 }
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Rect.H>
 namespace flw {
-struct _ToolGroupChild;
 class ToolGroup : public Fl_Group {
 public:
     enum class DIRECTION {
                                 HORIZONTAL,
                                 VERTICAL,
     };
-    static const int            MAX_WIDGETS = 50;
     explicit                    ToolGroup(DIRECTION direction = DIRECTION::HORIZONTAL, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    virtual                     ~ToolGroup();
+                                ~ToolGroup();
     void                        add(Fl_Widget* widget, int SIZE = 0);
     void                        clear();
     DIRECTION                   direction() const
@@ -492,17 +487,17 @@ public:
     void                        direction(DIRECTION direction)
                                     { _direction = direction; }
     void                        do_layout()
-                                    { resize(x(), y(), w(), h()); redraw(); }
+                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
     bool                        expand_last() const
                                     { return _expand; }
     void                        expand_last(bool value)
                                     { _expand = value; }
-    void                        remove(Fl_Widget* widget);
+    Fl_Widget*                  remove(Fl_Widget* widget);
     void                        resize(int X, int Y, int W, int H) override;
     void                        resize(Fl_Widget* widget, int SIZE = 0);
 private:
     DIRECTION                   _direction;
-    _ToolGroupChild*            _widgets[MAX_WIDGETS];
+    VoidVector                  _widgets;
     bool                        _expand;
 };
 }
@@ -1159,7 +1154,6 @@ namespace flw {
 }
 #include <FL/Fl.H>
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Rect.H>
 namespace flw {
     class SplitGroup : public Fl_Group {
     public:
@@ -1463,11 +1457,12 @@ namespace flw {
         char                            _key[100];
     };
 }
-#include <FL/Fl_Group.H>
-#include <FL/Fl_Rect.H>
+#include <FL/Fl_Pack.H>
+#include <FL/Fl_Scroll.H>
 namespace flw {
 class TabsGroup : public Fl_Group {
 public:
+    static const int            DEFAULT_SPACE = 2;
     enum class TABS {
                                 NORTH,
                                 SOUTH,
@@ -1475,55 +1470,61 @@ public:
                                 EAST,
     };
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        add(const std::string& label, Fl_Widget* widget, bool force_append = false);
+    void                        add(std::string label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; do_layout(); }
     Fl_Widget*                  child(int num) const;
     int                         children() const
                                     { return (int) _widgets.size(); }
+    void                        clear();
+    void                        clear_layout()
+                                    { _check = Fl_Rect(); }
+    void                        debug() const;
     void                        do_layout()
-                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
-    int                         find(Fl_Widget* widget) const;
+                                    { clear_layout(); TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
+    void                        draw() override;
+    int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
-    void                        hide_tabs()
-                                    { _hide_tab_buttons(true); }
+    void                        hide_tabs();
+    void                        insert(std::string label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
+    bool                        is_tabs_visible() const
+                                    { return _scroll->visible(); }
     void                        label(std::string label, Fl_Widget* widget);
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
-                                    { return remove(find(widget)); }
+                                    { return TabsGroup::remove(find(widget)); }
     void                        resize(int X, int Y, int W, int H) override;
-    void                        show_tabs()
-                                    { _hide_tab_buttons(false); }
+    void                        show_tabs();
+    void                        sort(bool ascending = true, bool casecompare = false);
     void                        swap(int from, int to);
     TABS                        tabs()
                                     { return _tabs; }
-    void                        tabs(TABS value)
-                                    { _tabs = value; }
-    bool                        tabs_visible() const
-                                    { return _hide == false; }
-    void                        update_pref(int pos = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
+    void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE);
+    void                        update_pref(int pos = 14, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
                                     { value(find(widget)); }
-    static void                 BoxColor(Fl_Color boxcolor = FL_DARK1);
-    static void                 BoxSelectionColor(Fl_Color boxcolor = FL_SELECTION_COLOR);
-    static void                 BoxType(Fl_Boxtype boxtype = FL_FLAT_BOX);
     static void                 Callback(Fl_Widget* sender, void* object);
     static const char*          Help();
 private:
-    Fl_Widget*                  _button();
-    void                        _hide_tab_buttons(bool hide);
+    Fl_Widget*                  _active_button();
+    void                        _resize_east_west(int X, int Y, int W, int H);
+    void                        _resize_north_south(int X, int Y, int W, int H);
+    void                        _resize_widgets();
+    Fl_Pack*                    _pack;
+    Fl_Rect                     _area;
+    Fl_Rect                     _check;
+    Fl_Scroll*                  _scroll;
     TABS                        _tabs;
-    WidgetVector                _buttons;
     WidgetVector                _widgets;
     bool                        _drag;
-    bool                        _hide;
     int                         _active;
     int                         _e;
     int                         _n;
-    int                         _s;
     int                         _pos;
+    int                         _s;
+    int                         _space;
     int                         _w;
 };
 }

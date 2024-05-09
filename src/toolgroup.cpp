@@ -7,7 +7,6 @@
 // MKALGAM_ON
 
 namespace flw {
-
 /***
  *        _______          _  _____                        _____ _     _ _     _ 
  *       |__   __|        | |/ ____|                      / ____| |   (_) |   | |
@@ -20,33 +19,32 @@ namespace flw {
  */
 
 //------------------------------------------------------------------------------
-// Private struct to store layout data and widgets.
-//
 struct _ToolGroupChild {
-    Fl_Widget* widget;
-    short      size;
+    Fl_Widget*                  widget;
+    short                       size;
 
-    //------------------------------------------------------------------------------
-    _ToolGroupChild() {
-        set();
+    //--------------------------------------------------------------------------
+    _ToolGroupChild(Fl_Widget* WIDGET, int SIZE) {
+        set(WIDGET, SIZE);
     }
 
-    //------------------------------------------------------------------------------
-    void set(Fl_Widget* WIDGET = nullptr, int SIZE = 0) {
+    //--------------------------------------------------------------------------
+    void set(Fl_Widget* WIDGET, int SIZE) {
         widget = WIDGET;
         size   = SIZE;
     }
 };
 
+
 /***
- *      _______          _ _
- *     |__   __|        | | |
- *        | | ___   ___ | | |__   __ _ _ __
- *        | |/ _ \ / _ \| | '_ \ / _` | '__|
- *        | | (_) | (_) | | |_) | (_| | |
- *        |_|\___/ \___/|_|_.__/ \__,_|_|
- *
- *
+ *      _______          _  _____                       
+ *     |__   __|        | |/ ____|                      
+ *        | | ___   ___ | | |  __ _ __ ___  _   _ _ __  
+ *        | |/ _ \ / _ \| | | |_ | '__/ _ \| | | | '_ \ 
+ *        | | (_) | (_) | | |__| | | | (_) | |_| | |_) |
+ *        |_|\___/ \___/|_|\_____|_|  \___/ \__,_| .__/ 
+ *                                               | |    
+ *                                               |_|    
  */
 
 //------------------------------------------------------------------------------
@@ -57,48 +55,45 @@ ToolGroup::ToolGroup(DIRECTION direction, int X, int Y, int W, int H, const char
 
     _direction = direction;
     _expand    = false;
-
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        _widgets[f] = new _ToolGroupChild();
-    }
 }
 
 //------------------------------------------------------------------------------
 ToolGroup::~ToolGroup() {
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        delete _widgets[f];
+    for (auto v : _widgets) {
+        delete static_cast<_ToolGroupChild*>(v);
     }
 }
 
 //------------------------------------------------------------------------------
 void ToolGroup::add(Fl_Widget* widget, int SIZE) {
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        if (_widgets[f]->widget == nullptr) {
-            Fl_Group::add(widget);
-            _widgets[f]->set(widget, SIZE);
-            return;
-        }
-    }
+    _widgets.push_back(new _ToolGroupChild(widget, SIZE));
+    Fl_Group::add(widget);
 }
 
 //------------------------------------------------------------------------------
 void ToolGroup::clear() {
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        _widgets[f]->set();
-    }
-
+    _widgets.clear();
     Fl_Group::clear();
 }
 
 //------------------------------------------------------------------------------
-void ToolGroup::remove(Fl_Widget* widget) {
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        if (_widgets[f]->widget == widget) {
+Fl_Widget* ToolGroup::remove(Fl_Widget* widget) {
+    for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
+        auto child = static_cast<_ToolGroupChild*>(*it);
+        
+        if (child->widget == widget) {
             Fl_Group::remove(widget);
-            _widgets[f]->set();
-            return;
+            _widgets.erase(it);
+            delete child;
+            return widget;
         }
     }
+
+    #ifdef DEBUG
+        fprintf(stderr, "error: ToolGroup::remove can't find widget\n");
+    #endif
+    
+    return nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -111,23 +106,21 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
 
     auto leftover = (_direction == DIRECTION::HORIZONTAL) ? W : H;
     auto count    = 0;
-    auto last     = 0;
+    auto last     = static_cast<Fl_Widget*>(nullptr);
     auto avg      = 0;
     auto xpos     = X;
     auto ypos     = Y;
+    
+    for (auto v : _widgets) {
+        auto child = static_cast<_ToolGroupChild*>(v);
 
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        auto c = *_widgets[f];
+        last = child->widget;
 
-        if (c.widget != nullptr) {
-            last = f;
-
-            if (c.size > 0) {
-                leftover -= (c.size * flw::PREF_FONTSIZE);
-            }
-            else {
-                count++;
-            }
+        if (child->size > 0) {
+            leftover -= (child->size * flw::PREF_FONTSIZE);
+        }
+        else {
+            count++;
         }
     }
 
@@ -135,33 +128,33 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
         avg = leftover / count;
     }
 
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        auto c = *_widgets[f];
-
-        if (c.widget != nullptr) {
+    for (auto v : _widgets) {
+        auto child = static_cast<_ToolGroupChild*>(v);
+        
+        if (child->widget != nullptr) {
             if (_direction == DIRECTION::HORIZONTAL) {
-                if (_expand == true && f == last) {
-                    c.widget->resize(xpos, Y, X + W - xpos, H);
+                if (_expand == true && child->widget == last) {
+                    child->widget->resize(xpos, Y, X + W - xpos, H);
                 }
-                else if (c.size > 0) {
-                    c.widget->resize(xpos, Y, c.size * flw::PREF_FONTSIZE, H);
-                    xpos += flw::PREF_FONTSIZE * c.size;
+                else if (child->size > 0) {
+                    child->widget->resize(xpos, Y, child->size * flw::PREF_FONTSIZE, H);
+                    xpos += flw::PREF_FONTSIZE * child->size;
                 }
                 else {
-                    c.widget->resize(xpos, Y, avg, H);
+                    child->widget->resize(xpos, Y, avg, H);
                     xpos += avg;
                 }
             }
             else {
-                if (_expand == true && f == last) {
-                    c.widget->resize(X, ypos, W, Y + H - ypos);
+                if (_expand == true && child->widget == last) {
+                    child->widget->resize(X, ypos, W, Y + H - ypos);
                 }
-                else if (c.size > 0) {
-                    c.widget->resize(X, ypos, W, c.size * flw::PREF_FONTSIZE);
-                    ypos += flw::PREF_FONTSIZE * c.size;
+                else if (child->size > 0) {
+                    child->widget->resize(X, ypos, W, child->size * flw::PREF_FONTSIZE);
+                    ypos += flw::PREF_FONTSIZE * child->size;
                 }
                 else {
-                    c.widget->resize(X, ypos, W, avg);
+                    child->widget->resize(X, ypos, W, avg);
                     ypos += avg;
                 }
             }
@@ -171,9 +164,10 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
 
 //------------------------------------------------------------------------------
 void ToolGroup::resize(Fl_Widget* widget, int SIZE) {
-    for (int f = 0; f < ToolGroup::MAX_WIDGETS; f++) {
-        if (_widgets[f]->widget == widget) {
-            _widgets[f]->set(widget, SIZE);
+    for (auto v : _widgets) {
+        auto child = static_cast<_ToolGroupChild*>(v);
+        if (child->widget == widget) {
+            child->set(widget, SIZE);
             return;
         }
     }

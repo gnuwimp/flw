@@ -53,6 +53,9 @@ FLTKI_LDFLAGS = $(shell /usr/local/bin/fltk-config --ldflags --use-images)
 ifeq ($(OS), macOS)
 	CXX = clang++
 	CC  = clang
+else ifeq ($(OS), Windows)
+	FLTK_LDFLAGS += -lwinspool
+	FLTKI_LDFLAGS += -lwinspool
 else
 	CXX = g++
 	CC  = gcc

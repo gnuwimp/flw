@@ -16,10 +16,10 @@
 #ifdef DEBUG
 #include <iostream>
 #include <iomanip>
-#define FLW_LINE                        { printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_RED                         { printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_GREEN                       { printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_BLUE                        { printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_LINE                        { ::printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_RED                         { ::printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_GREEN                       { ::printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_BLUE                        { ::printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
 #define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
 #define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << std::endl; fflush(stdout); }
 #define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << std::endl; fflush(stdout); }
@@ -50,13 +50,14 @@ extern std::string              PREF_THEME;             // Name of theme - defau
 extern const char* const        PREF_THEMES[];          // Name of themes
 
 typedef std::vector<std::string> StringVector;
+typedef std::vector<void*>       VoidVector;
 typedef std::vector<Fl_Widget*>  WidgetVector;
 typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
 
 //------------------------------------------------------------------------------
 namespace debug {
-    void                        print(Fl_Widget* widget);
-    void                        print(Fl_Widget* widget, std::string& indent);
+    void                        print(const Fl_Widget* widget);
+    void                        print(const Fl_Widget* widget, std::string& indent);
 }
 
 //------------------------------------------------------------------------------

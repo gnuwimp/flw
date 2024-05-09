@@ -5,18 +5,32 @@
 
 #ifndef FLW_AMALGAM
     #include "tabsgroup.h"
+    #include "dlg.h"
 #endif
 
+#include <assert.h>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Text_Editor.H>
 
 using namespace flw;
 
 int BORDER = 0;
 
-class Test : public Fl_Double_Window {
+/***
+ *      _______        _  __ 
+ *     |__   __|      | |/_ |
+ *        | | ___  ___| |_| |
+ *        | |/ _ \/ __| __| |
+ *        | |  __/\__ \ |_| |
+ *        |_|\___||___/\__|_|
+ *                           
+ *                           
+ */
+
+class Test1 : public Fl_Double_Window {
 public:
-    Test(int W, int H) : Fl_Double_Window(W, H, "test_tabsgroup.cpp") {
+    Test1(int W, int H) : Fl_Double_Window(W, H, "Test1 :: test_tabsgroup.cpp") {
         end();
         
         TEST = this;
@@ -24,149 +38,405 @@ public:
 //        tabs = new TabsGroup(50, 50, W - 100, H - 100);
         tabs = new TabsGroup(0, 0, W, H);
 
-        auto n = new Fl_Button(0, 0, 0, 0, "TABS::NORTH");
-        auto s = new Fl_Button(0, 0, 0, 0, "TABS::SOUTH");
-        auto w = new Fl_Button(0, 0, 0, 0, "TABS::WEST");
-        auto e = new Fl_Button(0, 0, 0, 0, "TABS::EAST");
-
+        n  = new Fl_Button(0, 0, 0, 0, "TABS::NORTH");
+        s  = new Fl_Button(0, 0, 0, 0, "TABS::SOUTH");
+        w  = new Fl_Button(0, 0, 0, 0, "TABS::WEST");
+        e  = new Fl_Button(0, 0, 0, 0, "TABS::EAST");
         b1 = new Fl_Button(0, 0, 0, 0, "Delete Me");
         b2 = new Fl_Button(0, 0, 0, 0, "Hide/Show");
         b3 = new Fl_Button(0, 0, 0, 0, "Delete Border");
         b4 = new Fl_Button(0, 0, 0, 0, "Set Border");
+        b5 = new Fl_Button(0, 0, 0, 0, "Debug");
+        b6 = new Fl_Button(0, 0, 0, 0, "Change Tab Label");
 
-        n->callback(CallbackNorth, this);
-        s->callback(CallbackSouth, this);
-        e->callback(CallbackEast, this);
-        w->callback(CallbackWest, this);
+        n->callback(Callback, this);
+        s->callback(Callback, this);
+        e->callback(Callback, this);
+        w->callback(Callback, this);
+        b1->callback(Callback, this);
+        b2->callback(Callback, this);
+        b3->callback(Callback, this);
+        b4->callback(Callback, this);
+        b5->callback(Callback, this);
+        b6->callback(Callback, this);
 
         add(tabs);
         
-        bool force_append = false;
-        tabs->add("Delete", b1, force_append);
-        tabs->add("Hide/Show", b2, force_append);
-        tabs->add("Delete", b3, force_append);
-        tabs->add("Border", b4, force_append);
-        tabs->add("NORTH", n, force_append);
-        tabs->add("SOUTH", s, force_append);
-        tabs->add("WEST", w, force_append);
-        tabs->add("EAST", e, force_append);
-        tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()), force_append);
-        tabs->child(8)->callback(CallbackStart, this);
+        tabs->add("Delete", b1);
+        tabs->add("Hide/Show", b2);
+        tabs->add("Delete", b3);
+        tabs->add("Border", b4);
+        tabs->add("Debug", b5);
+        tabs->add("Label", b6);
+        tabs->add("NORTH", n);
+        tabs->add("SOUTH", s);
+        tabs->add("WEST", w);
+        tabs->add("EAST", e);
+        tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
         tabs->box(FL_BORDER_BOX);
         
-//        tabs->color(FL_YELLOW);
-
-//        tabs->value(7);
-//        TabsGroup::BoxType(FL_UP_BOX);
-//        TabsGroup::BoxType(FL_ENGRAVED_BOX);
-//        TabsGroup::BoxType(FL_DIAMOND_UP_BOX);
-//        TabsGroup::BoxType(FL_OSHADOW_BOX);
-//        TabsGroup::BoxType(FL_ROUND_DOWN_BOX);
-//        TabsGroup::BoxType(FL_THIN_UP_BOX);
-//        TabsGroup::BoxType(FL_BORDER_BOX);
-//        TabsGroup::BoxColor(FL_YELLOW);
-//        TabsGroup::BoxSelectionColor(FL_GREEN);
-
-        b1->callback(CallbackWidget1, this);
-        b2->callback(CallbackWidget2, this);
-        b3->callback(CallbackWidget3, this);
-        b4->callback(CallbackWidget4, this);
         resizable(tabs);
         size_range(64, 48);
-
-        if (force_append) {
-            tabs->do_layout();
-        }
+        Callback(w, nullptr);
         
-        CallbackWest(nullptr, nullptr);
-//        tabs->pos(flw::PREF_FONTSIZE * 20);
-
+//        tabs->color(FL_YELLOW);
+//        tabs->value(7);
 //        tabs->update_pref(23);
-//        tabs->update_pref(3);
 //        tabs->do_layout();
     }
 
-    static void CallbackEast(Fl_Widget*, void*) {
-        TEST->tabs->tabs(TabsGroup::TABS::EAST);
-        TEST->tabs->do_layout();
-    }
-
-    static void CallbackNorth(Fl_Widget*, void*) {
-        TEST->tabs->tabs(TabsGroup::TABS::NORTH);
-        TEST->tabs->do_layout();
-    }
-
-    static void CallbackSouth(Fl_Widget*, void*) {
-        TEST->tabs->tabs(TabsGroup::TABS::SOUTH);
-        TEST->tabs->do_layout();
-    }
-
-    static void CallbackStart(Fl_Widget* widget, void*) {
-        TEST->tabs->label("Label Changed", widget);
-        TEST->tabs->do_layout();
-    }
-
-    static void CallbackWest(Fl_Widget*, void*) {
-        TEST->tabs->tabs(TabsGroup::TABS::WEST);
-        TEST->tabs->do_layout();
-    }
-
-    static void CallbackWidget1(Fl_Widget*, void*) {
-        auto w = TEST->tabs->remove(TEST->b1);
-        TEST->tabs->do_layout();
-        delete w;
-    }
-
-    static void CallbackWidget2(Fl_Widget*, void*) {
-        if (TEST->tabs->tabs_visible() == false) {
-            TEST->tabs->show_tabs();
+    static void Callback(Fl_Widget* w, void*) {
+        if (w == TEST->e) {
+            TEST->tabs->tabs(TabsGroup::TABS::EAST, 8);
+            TEST->tabs->do_layout();
         }
-        else {
-            TEST->tabs->hide_tabs();
+        else if (w == TEST->n) {
+            TEST->tabs->tabs(TabsGroup::TABS::NORTH);
+            TEST->tabs->do_layout();
         }
-    }
+        else if (w == TEST->s) {
+            TEST->tabs->tabs(TabsGroup::TABS::SOUTH, 8);
+            TEST->tabs->do_layout();
+        }
+        else if (w == TEST->w) {
+            TEST->tabs->tabs(TabsGroup::TABS::WEST);
+            TEST->tabs->do_layout();
+        }
+        else if (w == TEST->b1) {
+            auto w = TEST->tabs->remove(TEST->b1);
+            TEST->tabs->do_layout();
+            delete w;
+        }
+        else if (w == TEST->b2) {
+            if (TEST->tabs->is_tabs_visible() == false) TEST->tabs->show_tabs();
+            else TEST->tabs->hide_tabs();
+        }
+        else if (w == TEST->b3) {
+            auto w = TEST->tabs->remove(TEST->b4);
+            TEST->tabs->do_layout();
+            delete w;
+        }
+        else if (w == TEST->b4) {
+            BORDER++;
 
-    static void CallbackWidget3(Fl_Widget*, void*) {
-        auto w = TEST->tabs->remove(TEST->b4);
-        TEST->tabs->do_layout();
-        delete w;
-    }
-
-    static void CallbackWidget4(Fl_Widget*, void*) {
-        BORDER++;
-
-        if (BORDER == 1) {
-            TEST->tabs->border(4, 20, 4, 20);
-            TabsGroup::BoxType(FL_UP_BOX);
+            if (BORDER == 1) {
+                TEST->tabs->border(4, 20, 4, 20);
+            }
+            else if (BORDER == 2) {
+                TEST->tabs->border(0, 0, 20, 20);
+            }
+            else if (BORDER == 3) {
+                TEST->tabs->border(20, 20);
+            }
+            else {
+                TEST->tabs->border();
+                BORDER = 0;
+            }
         }
-        else if (BORDER == 2) {
-            TEST->tabs->border(0, 0, 20, 20);
-            TabsGroup::BoxType(FL_DOWN_BOX);
+        else if (w == TEST->b5) {
+            TEST->tabs->debug();
         }
-        else if (BORDER == 3) {
-            TEST->tabs->border(20, 20);
-            TabsGroup::BoxType(FL_ENGRAVED_BOX);
-        }
-        else {
-            TEST->tabs->border();
-            TabsGroup::BoxType();
-            BORDER = 0;
+        else if (w == TEST->b6) {
+            TEST->tabs->label("This Is A New Label", TEST->b6);
+            TEST->tabs->do_layout();
         }
     }
-
-    TabsGroup* tabs;
-    Fl_Button* b1, *b2, *b3, *b4;
-    static Test* TEST;
+    
+    TabsGroup*      tabs;
+    Fl_Button*      e;
+    Fl_Button*      n;
+    Fl_Button*      s;
+    Fl_Button*      w;
+    Fl_Button*      b1;
+    Fl_Button*      b2;
+    Fl_Button*      b3;
+    Fl_Button*      b4;
+    Fl_Button*      b5;
+    Fl_Button*      b6;
+    static Test1*   TEST;
 };
 
-Test* Test::TEST = nullptr;
+Test1* Test1::TEST = nullptr;
+
+/***
+ *      _______        _   ___  
+ *     |__   __|      | | |__ \ 
+ *        | | ___  ___| |_   ) |
+ *        | |/ _ \/ __| __| / / 
+ *        | |  __/\__ \ |_ / /_ 
+ *        |_|\___||___/\__|____|
+ *                              
+ *                              
+ */
+
+class Editor : public Fl_Text_Editor {
+public:
+    Fl_Text_Buffer* b;
+
+    Editor(const char* t) : Fl_Text_Editor(0, 0, 0, 0) {
+        b = new Fl_Text_Buffer();
+        buffer(b);
+        b->text(t);
+    }
+    
+    ~Editor() {
+        buffer(nullptr);
+        delete b;
+    }
+};
+
+class Test2 : public Fl_Double_Window {
+public:
+    Test2(int W, int H) : Fl_Double_Window(W, H, "Test2 :: test_tabsgroup.cpp") {
+        end();
+        
+        TEST = this;
+        tabs = new TabsGroup(0, 0, W, H);
+        b1   = new Fl_Button(0, 0, 0, 0, "14");
+        b2   = new Fl_Button(0, 0, 0, 0, "Insert first");
+        b11  = new Fl_Button(0, 0, 0, 0, "Insert before");
+        b3   = new Fl_Button(0, 0, 0, 0, "Add last");
+        b12  = new Fl_Button(0, 0, 0, 0, "Add after");
+        b4   = new Fl_Button(0, 0, 0, 0, "Delete all");
+        b10  = new Fl_Button(0, 0, 0, 0, "Delete curr");
+        b13  = new Fl_Button(0, 0, 0, 0, "Asc");
+        b14  = new Fl_Button(0, 0, 0, 0, "Desc");
+        b5   = new Fl_Button(0, 0, 0, 0, "N");
+        b6   = new Fl_Button(0, 0, 0, 0, "S");
+        b7   = new Fl_Button(0, 0, 0, 0, "W");
+        b8   = new Fl_Button(0, 0, 0, 0, "E");
+        b9   = new Fl_Button(0, 0, 0, 0, "Debug");
+        b15  = new Fl_Button(0, 0, 0, 0, "Theme");
+        b16  = new Fl_Button(0, 0, 0, 0, "Hide");
+
+        add(b1);
+        add(b2);
+        add(b11);
+        add(b3);
+        add(b12);
+        add(b4);
+        add(b10);
+        add(b13);
+        add(b14);
+        add(b5);
+        add(b6);
+        add(b7);
+        add(b8);
+        add(b9);
+        add(b15);
+        add(b16);
+        add(tabs);
+        
+        b1->callback(Test2::Callback, this);
+        b2->callback(Test2::Callback, this);
+        b3->callback(Test2::Callback, this);
+        b4->callback(Test2::Callback, this);
+        b5->callback(Test2::Callback, this);
+        b6->callback(Test2::Callback, this);
+        b7->callback(Test2::Callback, this);
+        b8->callback(Test2::Callback, this);
+        b9->callback(Test2::Callback, this);
+        b10->callback(Test2::Callback, this);
+        b11->callback(Test2::Callback, this);
+        b12->callback(Test2::Callback, this);
+        b13->callback(Test2::Callback, this);
+        b14->callback(Test2::Callback, this);
+        b15->callback(Test2::Callback, this);
+        b16->callback(Test2::Callback, this);
+        tabs->tabs(TabsGroup::TABS::WEST);
+       
+        resizable(tabs);
+        size_range(64, 48);
+        flw::util::labelfont(this);
+        Test2::Callback(b1, this);
+    }
+
+    static void Callback(Fl_Widget* w, void*) {
+        if (w == TEST->b1) {
+            TEST->create(14, "add last", true);
+        }
+        else if (w == TEST->b2) {
+            TEST->create(1, "insert first");
+        }
+        else if (w == TEST->b11) {
+            TEST->create(1, "insert before");
+        }
+        else if (w == TEST->b3) {
+            TEST->create(1, "add last");
+        }
+        else if (w == TEST->b12) {
+            TEST->create(1, "add after");
+        }
+        else if (w == TEST->b4) {
+            TEST->tabs->clear();
+        }
+        else if (w == TEST->b10) {
+            delete TEST->tabs->remove(TEST->tabs->value());
+        }
+        else if (w == TEST->b13) {
+            TEST->tabs->sort(true, false);
+        }
+        else if (w == TEST->b14) {
+            TEST->tabs->sort(false, false);
+        }
+        else if (w == TEST->b5) {
+            TEST->tabs->tabs(TabsGroup::TABS::NORTH);
+        }
+        else if (w == TEST->b6) {
+            TEST->tabs->tabs(TabsGroup::TABS::SOUTH);
+        }
+        else if (w == TEST->b7) {
+            TEST->tabs->tabs(TabsGroup::TABS::WEST);
+        }
+        else if (w == TEST->b8) {
+            TEST->tabs->tabs(TabsGroup::TABS::EAST);
+        }
+        else if (w == TEST->b9) {
+//            flw::debug::print(TEST);
+            TEST->tabs->debug();
+            Fl::redraw();
+        }
+        else if (w == TEST->b15) {
+            flw::dlg::theme(true);
+            flw::util::labelfont(TEST);
+            TEST->tabs->update_pref();
+            TEST->size(TEST->w(), TEST->h());
+        }
+        else if (w == TEST->b16) {
+            if (TEST->tabs->is_tabs_visible()) {
+                TEST->tabs->hide_tabs();
+                TEST->b16->label("Show");
+            }
+            else {
+                TEST->tabs->show_tabs();
+                TEST->b16->label("Hide");
+            }
+        }
+        
+        TEST->tabs->take_focus();
+    }
+    
+    void create(int num, std::string what, bool clear = false) {
+        if (clear == true) {
+            tabs->clear();
+        }
+
+        auto count = tabs->children();
+        srand(time(nullptr));
+        
+        for (int f = 1; f <= num; f++) {
+            char l[100];
+            snprintf(l, 100, "Widget %02d", ++count);
+//            auto b = new Fl_Button(0, 0, 0, 0);
+//            b->copy_label(l);
+            auto t = new Editor(l);
+            
+            auto r = rand() % 4;
+            
+            if (r == 0) {
+                snprintf(l, 100, "Button %02d", count);
+            }
+            else if (r == 1) {
+                snprintf(l, 100, "button %02d", count);
+            }
+            else if (r == 2) {
+                snprintf(l, 100, "Wider button %02d", count);
+            }
+            else if (r == 3) {
+                snprintf(l, 100, "wider button %02d", count);
+            }
+            
+            if (what == "add last") {
+                tabs->add(l, t);
+            }
+            else if (what == "add after") {
+                tabs->add(l, t, TEST->tabs->value());
+            }
+            else if (what == "insert first") {
+                tabs->insert(l, t);
+            }
+            else if (what == "insert before") {
+                tabs->insert(l, t, TEST->tabs->value());
+            }
+            else {
+                assert(false);
+            }
+        }
+    }
+
+    void resize(int X, int Y, int W, int H) override {
+        auto fs = flw::PREF_FONTSIZE;
+        
+        Fl_Double_Window::resize(X, Y, W, H);
+        tabs->resize(0, fs * 2, W, H - fs * 2);
+        b1->resize(0, 0, 3 * fs, fs * 2);
+        b2->resize(fs * 3, 0, 7 * fs, fs * 2);
+        b11->resize(fs * 10, 0, 7 * fs, fs * 2);
+        b3->resize(fs * 17, 0, 7 * fs, fs * 2);
+        b12->resize(fs * 24, 0, 7 * fs, fs * 2);
+        b4->resize(fs * 31, 0, 7 * fs, fs * 2);
+        b10->resize(fs * 38, 0, 7 * fs, fs * 2);
+        b13->resize(fs * 45, 0, 3 * fs, fs * 2);
+        b14->resize(fs * 48, 0, 3 * fs, fs * 2);
+        b5->resize(fs * 51, 0, 3 * fs, fs * 2);
+        b6->resize(fs * 54, 0, 3 * fs, fs * 2);
+        b7->resize(fs * 57, 0, 3 * fs, fs * 2);
+        b8->resize(fs * 60, 0, 3 * fs, fs * 2);
+        b9->resize(fs * 63, 0, 4 * fs, fs * 2);
+        b15->resize(fs * 67, 0, 4 * fs, fs * 2);
+        b16->resize(fs * 71, 0, 4 * fs, fs * 2);
+    }
+
+    TabsGroup*      tabs;
+    Fl_Button*      b1;
+    Fl_Button*      b2;
+    Fl_Button*      b3;
+    Fl_Button*      b4;
+    Fl_Button*      b5;
+    Fl_Button*      b6;
+    Fl_Button*      b7;
+    Fl_Button*      b8;
+    Fl_Button*      b9;
+    Fl_Button*      b10;
+    Fl_Button*      b11;
+    Fl_Button*      b12;
+    Fl_Button*      b13;
+    Fl_Button*      b14;
+    Fl_Button*      b15;
+    Fl_Button*      b16;
+    static Test2*   TEST;
+};
+
+Test2* Test2::TEST = nullptr;
+
+/***
+ *                      _       
+ *                     (_)      
+ *      _ __ ___   __ _ _ _ __  
+ *     | '_ ` _ \ / _` | | '_ \ 
+ *     | | | | | | (_| | | | | |
+ *     |_| |_| |_|\__,_|_|_| |_|
+ *                              
+ *                              
+ */
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
     }
+    
+//    flw::PREF_FONTSIZE = 10;
+    
+    {
+        Test1 test1(800, 600);
+        test1.show();
 
-    Test win(800, 600);
-    win.show();
-    return Fl::run();
+        Test2 test2(1100, 600);
+        test2.show();
+
+        Fl::run();
+    }
+
+    puts("DONE");
+    return 0;
 }

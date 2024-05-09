@@ -148,28 +148,31 @@ ERR:
  */
 
 //------------------------------------------------------------------------------
-void debug::print(Fl_Widget* widget) {
+void debug::print(const Fl_Widget* widget) {
     std::string indent;
     debug::print(widget, indent);
 }
 
 //------------------------------------------------------------------------------
-void debug::print(Fl_Widget* widget, std::string& indent) {
+void debug::print(const Fl_Widget* widget, std::string& indent) {
     if (widget == nullptr) {
-        puts("debug::print() null widget");
+        puts("flw::debug::print() => null widget");
     }
     else {
-        printf("%sx=%4d, y=%4d, w=%4d, h=%4d \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->label() ? widget->label() : "NO_LABEL");
+        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, %c, \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->visible() ? 'V' : 'H', widget->label() ? widget->label() : "NULL");
         auto group = widget->as_group();
 
-        if (group) {
+        if (group != nullptr) {
             indent += "\t";
+            
             for (int f = 0; f < group->children(); f++) {
                 debug::print(group->child(f), indent);
             }
+            
             indent.pop_back();
         }
     }
+    
     fflush(stdout);
 }
 

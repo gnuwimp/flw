@@ -8,8 +8,8 @@
 
 // MKALGAM_ON
 
-#include <FL/Fl_Group.H>
-#include <FL/Fl_Rect.H>
+#include <FL/Fl_Pack.H>
+#include <FL/Fl_Scroll.H>
 
 namespace flw {
 
@@ -23,10 +23,12 @@ namespace flw {
 // Change width of tabs for the WEST/EAST side with pos().
 // If tabs are on the NORTH/SOUTH side you can change the width by using the mouse.
 //
-// Do a resize after adding widgets by calling do_layout() or resize().
+// Do a resize after adding widgets by calling do_layout().
 //
 class TabsGroup : public Fl_Group {
 public:
+    static const int            DEFAULT_SPACE = 2;
+
     enum class TABS {
                                 NORTH,
                                 SOUTH,
@@ -35,58 +37,64 @@ public:
     };
 
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        add(const std::string& label, Fl_Widget* widget, bool force_append = false);
+    void                        add(std::string label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; do_layout(); }
     Fl_Widget*                  child(int num) const;
     int                         children() const
                                     { return (int) _widgets.size(); }
+    void                        clear();
+    void                        clear_layout()
+                                    { _check = Fl_Rect(); }
+    void                        debug() const;
     void                        do_layout()
-                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
-    int                         find(Fl_Widget* widget) const;
+                                    { clear_layout(); TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
+    void                        draw() override;
+    int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
-    void                        hide_tabs()
-                                    { _hide_tab_buttons(true); }
+    void                        hide_tabs();
+    void                        insert(std::string label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
+    bool                        is_tabs_visible() const
+                                    { return _scroll->visible(); }
     void                        label(std::string label, Fl_Widget* widget);
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
-                                    { return remove(find(widget)); }
+                                    { return TabsGroup::remove(find(widget)); }
     void                        resize(int X, int Y, int W, int H) override;
-    void                        show_tabs()
-                                    { _hide_tab_buttons(false); }
+    void                        show_tabs();
+    void                        sort(bool ascending = true, bool casecompare = false);
     void                        swap(int from, int to);
     TABS                        tabs()
                                     { return _tabs; }
-    void                        tabs(TABS value)
-                                    { _tabs = value; }
-    bool                        tabs_visible() const
-                                    { return _hide == false; }
-    void                        update_pref(int pos = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
+    void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE);
+    void                        update_pref(int pos = 14, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
                                     { value(find(widget)); }
 
-    static void                 BoxColor(Fl_Color boxcolor = FL_DARK1);
-    static void                 BoxSelectionColor(Fl_Color boxcolor = FL_SELECTION_COLOR);
-    static void                 BoxType(Fl_Boxtype boxtype = FL_FLAT_BOX);
     static void                 Callback(Fl_Widget* sender, void* object);
     static const char*          Help();
 
 private:
-    Fl_Widget*                  _button();
-    void                        _hide_tab_buttons(bool hide);
+    Fl_Widget*                  _active_button();
+    void                        _resize_east_west(int X, int Y, int W, int H);
+    void                        _resize_north_south(int X, int Y, int W, int H);
+    void                        _resize_widgets();
 
+    Fl_Pack*                    _pack;
+    Fl_Rect                     _area;
+    Fl_Rect                     _check;
+    Fl_Scroll*                  _scroll;
     TABS                        _tabs;
-    WidgetVector                _buttons;
     WidgetVector                _widgets;
     bool                        _drag;
-    bool                        _hide;
     int                         _active;
     int                         _e;
     int                         _n;
-    int                         _s;
     int                         _pos;
+    int                         _s;
+    int                         _space;
     int                         _w;
 };
 
