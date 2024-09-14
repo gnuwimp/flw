@@ -34,12 +34,6 @@ namespace flw {
  */
 
 //----------------------------------------------------------------------
-double _tableeditor_to_double(std::string string, double def) {
-    try { return std::stod(string.c_str(), 0); }
-    catch (...) { return def; }
-}
-
-//----------------------------------------------------------------------
 int _tableeditor_to_doubles(std::string string, double numbers[], size_t size) {
     auto end = (char*) nullptr;
     auto in  = string.c_str();
@@ -274,7 +268,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             }
         }
         else if (rend == TableEditor::REND::NUMBER || rend == TableEditor::REND::VALUE_SLIDER) {
-            auto num = _tableeditor_to_double(val, 0.0);
+            auto num = util::to_double(val, 0.0);
 
             if (rend == TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
@@ -547,7 +541,7 @@ void TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == TableEditor::REND::NUMBER) {
-        auto num = _tableeditor_to_double(val, 0.0);
+        auto num = util::to_double(val, 0.0);
 
         if (strcmp(key, "+") == 0) {
             num += 0.1;
@@ -756,7 +750,7 @@ void TableEditor::_edit_stop(bool save) {
                     val2 = buffer;
                 }
                 else if (rend == TableEditor::REND::NUMBER) {
-                    auto num = _tableeditor_to_double(val2, 0.0);
+                    auto num = util::to_double(val2, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
@@ -1018,7 +1012,7 @@ int TableEditor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    auto num = _tableeditor_to_double(text, 0.0);
+                    auto num = util::to_double(text, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
                     break;

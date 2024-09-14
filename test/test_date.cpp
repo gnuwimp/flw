@@ -12,7 +12,7 @@
 
 using namespace flw;
 
-#define FLW_ASSERT(X,Y) assert((Y) == (X));
+//#define FLW_ASSERT(X,Y) assert((Y) == (X));
 
 void error() {
     fprintf(stderr, "error()\n"); fflush(stderr);
@@ -21,31 +21,32 @@ void error() {
 
     { // Failure
         date1 = Date::FromString("20030229", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT(1, date1.is_invalid())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20o30229", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20030 29", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20030232", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20031313", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20040229 0102O3", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20040229 310203", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20040229 210260", false);
-        FLW_ASSERT("00010101", date1.format())
+        FLW_ASSERT("00000000", date1.format().c_str())
 
         date1 = Date::FromString("20040229 210259", false);
-        FLW_ASSERT("20040229", date1.format())
+        FLW_ASSERT("20040229", date1.format().c_str())
 
         date1.set(2000, 1, 32);
         date1.set(2000, 1, 0);
@@ -53,7 +54,7 @@ void error() {
         date1.set(2000, 13, 2);
         date1.set(0, 13, 2);
         date1.set(10000, 13, 2);
-        FLW_ASSERT("20040229", date1.format())
+        FLW_ASSERT("20040229", date1.format().c_str())
 
         date1.year(2000);
         date1.year(0);
@@ -73,7 +74,7 @@ void error() {
 
         FLW_ASSERT(2000, date1.year())
         FLW_ASSERT(2, date1.month())
-        FLW_ASSERT(29, date1.day())
+            FLW_ASSERT(29, date1.day())
         FLW_ASSERT(6, date1.hour())
         FLW_ASSERT(33, date1.minute())
         FLW_ASSERT(45, date1.second())
@@ -87,71 +88,71 @@ void basic() {
 
     { // ISO format
         date = Date::FromString("20040229", false);
-        FLW_ASSERT("20040229", date.format())
+        FLW_ASSERT("20040229", date.format().c_str())
 
         date = Date::FromString("1801-12-31", false);
-        FLW_ASSERT("18011231", date.format())
+        FLW_ASSERT("18011231", date.format().c_str())
 
         date = Date::FromString("20120330", false);
-        FLW_ASSERT("20120330", date.format())
+        FLW_ASSERT("20120330", date.format().c_str())
     }
 
     { // Test for parse bug
         date = Date::FromString("20121015", false);
-        FLW_ASSERT("20121015", date.format())
+        FLW_ASSERT("20121015", date.format().c_str())
     }
 
     { // ISO format + time
         date = Date::FromString("20040229 010203", false);
-        FLW_ASSERT("20040229 010203", date.format(Date::FORMAT::ISO_TIME))
+        FLW_ASSERT("20040229 010203", date.format(Date::FORMAT::ISO_TIME).c_str())
 
         date = Date::FromString("1801-12-31 23:59:59", false);
-        FLW_ASSERT("1801-12-31 23:59:59", date.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("1801-12-31 23:59:59", date.format(Date::FORMAT::ISO_TIME_LONG).c_str())
 
         date = Date::FromString("2111-12-18 12:13:14", false);
-        FLW_ASSERT("2111-12-18 12:13:14", date.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("2111-12-18 12:13:14", date.format(Date::FORMAT::ISO_TIME_LONG).c_str())
     }
 
     { // World format
         date = Date::FromString("1/2/2020", false);
-        FLW_ASSERT("20200201", date.format())
+        FLW_ASSERT("20200201", date.format().c_str())
 
         date = Date::FromString("2/12/2020", false);
-        FLW_ASSERT("20201202", date.format())
+        FLW_ASSERT("20201202", date.format().c_str())
 
         date = Date::FromString("24/3/2020", false);
-        FLW_ASSERT("20200324", date.format())
+        FLW_ASSERT("20200324", date.format().c_str())
 
         date = Date::FromString("25/12/2020", false);
-        FLW_ASSERT("20201225", date.format())
+        FLW_ASSERT("20201225", date.format().c_str())
     }
 
     { // US format
         date = Date::FromString("1/2/2020", true);
-        FLW_ASSERT("20200102", date.format())
+        FLW_ASSERT("20200102", date.format().c_str())
 
         date = Date::FromString("2/12/2020", true);
-        FLW_ASSERT("20200212", date.format())
+        FLW_ASSERT("20200212", date.format().c_str())
 
         date = Date::FromString("12/3/2020", true);
-        FLW_ASSERT("20201203", date.format())
+        FLW_ASSERT("20201203", date.format().c_str())
 
         date = Date::FromString("11/13/2020", true);
-        FLW_ASSERT("20201113", date.format())
+        FLW_ASSERT("20201113", date.format().c_str())
     }
 
     { // Format
         date = Date::FromString("24/12/1999 111213", false);
-        FLW_ASSERT("19991224", date.format(Date::FORMAT::ISO))
-        FLW_ASSERT("1999-12-24", date.format(Date::FORMAT::ISO_LONG))
-        FLW_ASSERT("19991224 111213", date.format(Date::FORMAT::ISO_TIME))
-        FLW_ASSERT("1999-12-24 11:12:13", date.format(Date::FORMAT::ISO_TIME_LONG))
-        FLW_ASSERT("12/24/1999", date.format(Date::FORMAT::US))
-        FLW_ASSERT("24/12/1999", date.format(Date::FORMAT::WORLD))
-        FLW_ASSERT("1999 Dec 24", date.format(Date::FORMAT::NAME))
-        FLW_ASSERT("1999 December 24", date.format(Date::FORMAT::NAME_LONG))
-        FLW_ASSERT("1999 Dec", date.format(Date::FORMAT::YEAR_MONTH))
-        FLW_ASSERT("1999 December", date.format(Date::FORMAT::YEAR_MONTH_LONG))
+        FLW_ASSERT("19991224", date.format(Date::FORMAT::ISO).c_str())
+        FLW_ASSERT("1999-12-24", date.format(Date::FORMAT::ISO_LONG).c_str())
+        FLW_ASSERT("19991224 111213", date.format(Date::FORMAT::ISO_TIME).c_str())
+        FLW_ASSERT("1999-12-24 11:12:13", date.format(Date::FORMAT::ISO_TIME_LONG).c_str())
+        FLW_ASSERT("12/24/1999", date.format(Date::FORMAT::US).c_str())
+        FLW_ASSERT("24/12/1999", date.format(Date::FORMAT::WORLD).c_str())
+        FLW_ASSERT("1999 Dec 24", date.format(Date::FORMAT::NAME).c_str())
+        FLW_ASSERT("1999 December 24", date.format(Date::FORMAT::NAME_LONG).c_str())
+        FLW_ASSERT("1999 Dec", date.format(Date::FORMAT::YEAR_MONTH).c_str())
+        FLW_ASSERT("1999 December", date.format(Date::FORMAT::YEAR_MONTH_LONG).c_str())
     }
 }
 
@@ -225,16 +226,16 @@ void set() {
         FLW_ASSERT(false, date2.add_months(-3000 * 12))
 
         date2.add_days(-7);
-        FLW_ASSERT("2000-02-22", date2.format(Date::FORMAT::ISO_LONG))
+        FLW_ASSERT("2000-02-22", date2.format(Date::FORMAT::ISO_LONG).c_str())
 
         date2.add_days(14);
-        FLW_ASSERT("2000-03-07", date2.format(Date::FORMAT::ISO_LONG))
+        FLW_ASSERT("2000-03-07", date2.format(Date::FORMAT::ISO_LONG).c_str())
 
         FLW_ASSERT(true, date2.add_months(-1))
-        FLW_ASSERT("2000-02-07", date2.format(Date::FORMAT::ISO_LONG))
+        FLW_ASSERT("2000-02-07", date2.format(Date::FORMAT::ISO_LONG).c_str())
 
         FLW_ASSERT(true, date2.add_months(12))
-        FLW_ASSERT("2001-02-07", date2.format(Date::FORMAT::ISO_LONG))
+        FLW_ASSERT("2001-02-07", date2.format(Date::FORMAT::ISO_LONG).c_str())
 
         date1.set(1999, 12, 24);
         date1.weekday(Date::DAY::SUNDAY);
@@ -248,33 +249,33 @@ void set() {
         FLW_ASSERT(20, date1.day())
 
         FLW_ASSERT(true, date1.add_seconds(4.5 * Date::SECS_PER_DAY))
-        FLW_ASSERT("1999-12-24 12:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("1999-12-24 12:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
 
         FLW_ASSERT(true, date1.add_seconds(-Date::SECS_PER_HOUR))
-        FLW_ASSERT("1999-12-24 11:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("1999-12-24 11:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
 
         date1 = Date::FromString("20201016 180000", false);
-        FLW_ASSERT("2020-10-16 18:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("2020-10-16 18:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(true, date1.add_seconds(Date::SECS_PER_HOUR))
-        FLW_ASSERT("2020-10-16 19:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("2020-10-16 19:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
 
         date1 = Date::FromString("9999-12-31 23:00:00", false);
-        FLW_ASSERT("9999-12-31 23:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("9999-12-31 23:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(true, date1.add_seconds(1800))
-        FLW_ASSERT("9999-12-31 23:30:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("9999-12-31 23:30:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(true, date1.add_seconds(1799))
-        FLW_ASSERT("9999-12-31 23:59:59", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("9999-12-31 23:59:59", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(false, date1.add_seconds(1))
-        FLW_ASSERT("9999-12-31 23:59:59", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("9999-12-31 23:59:59", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
 
         date1 = Date::FromString("0001-01-01 01:00:00", false);
-        FLW_ASSERT("0001-01-01 01:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("0001-01-01 01:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(true, date1.add_seconds(-1800))
-        FLW_ASSERT("0001-01-01 00:30:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("0001-01-01 00:30:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(true, date1.add_seconds(-1800))
-        FLW_ASSERT("0001-01-01 00:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("0001-01-01 00:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
         FLW_ASSERT(false, date1.add_seconds(-1))
-        FLW_ASSERT("0001-01-01 00:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG))
+        FLW_ASSERT("0001-01-01 00:00:00", date1.format(Date::FORMAT::ISO_TIME_LONG).c_str())
     }
 
     { // Diff
@@ -297,19 +298,19 @@ void set() {
     { // Weeks
         date1.set(2004, 2, 29);
         FLW_ASSERT(9, date1.week())
-        FLW_ASSERT(Date::DAY::SUNDAY, date1.weekday())
+        FLW_ASSERT((int) Date::DAY::SUNDAY, (int) date1.weekday())
 
         date1.set(2015, 12, 21);
         FLW_ASSERT(52, date1.week())
-        FLW_ASSERT(Date::DAY::MONDAY, date1.weekday())
+        FLW_ASSERT((int) Date::DAY::MONDAY, (int) date1.weekday())
 
         date1.set(2015, 12, 28);
         FLW_ASSERT(53, date1.week())
-        FLW_ASSERT(Date::DAY::MONDAY, date1.weekday())
+        FLW_ASSERT((int) Date::DAY::MONDAY, (int) date1.weekday())
 
         date1.set(2016, 1, 5);
         FLW_ASSERT(1, date1.week())
-        FLW_ASSERT(Date::DAY::TUESDAY, date1.weekday())
+        FLW_ASSERT((int) Date::DAY::TUESDAY, (int) date1.weekday())
     }
 
     {

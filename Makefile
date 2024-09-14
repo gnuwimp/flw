@@ -140,7 +140,7 @@ obj/waitcursor.o: src/waitcursor.cpp src/waitcursor.h
 
 #-------------------------------------------------------------------------------
 
-obj/test_chart.o: test/test_chart.cpp $(OBJ)
+obj/test_chart.o: test/test_chart.cpp src/chart.h $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_chart.exe: obj/test_chart.o $(OBJ)
@@ -154,6 +154,9 @@ obj/test_date.o: test/test_date.cpp $(OBJ)
 
 test_date.exe: obj/test_date.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
+
+run_date: test_date.exe
+	./test_date.exe $(arg)
 
 obj/test_datechooser.o: test/test_datechooser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@

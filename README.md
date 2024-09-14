@@ -32,12 +32,15 @@ Dialogs:
 * AbortDialog - Show a message dialog and let user abort current work.
 * FontDialog - Select a font.
 * WorkDialog - Display a message and progress bar while doing some time consuming work.
+* dlg::check - Show a dialog with dynamic list of Fl_Check_Button widgets.
+* dlg::choice - Show a string selection dialog with Fl_Choice.
 * dlg::date - Show a date selection dialog.
 * dlg::html - Show text in a html view.
 * dlg::list* - Show a list of strings.
 * dlg::password* - Ask user for password and optional password confirmation.
 * dlg::print_text* - Print plain text to postscript.
 * dlg::select* - Let user select a string from a list and also to filter shown strings.
+* dlg::slider - Show a number input dialog that uses a Fl_Hor_Value_Slider widget.
 * dlg::text - Show text in an editor widget.
 * dlg::theme - Let user select a theme.
 
@@ -63,6 +66,9 @@ Password dialog (flw::dlg::password4())<br>
 
 Print text dialog (flw::dlg::print_text())<br>
 <img src="images/print_text_dialog.png"/>
+
+Checkbox dialog (flw::dlg::check())<br>
+<img src="images/check_dialog.png"/>
 
 Plot widget (flw::Plot)<br>
 <img src="images/plot.png"/>

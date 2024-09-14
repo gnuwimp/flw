@@ -56,6 +56,7 @@ public:
     void                        insert(std::string label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
     bool                        is_tabs_visible() const
                                     { return _scroll->visible(); }
+    std::string                 label(Fl_Widget* widget);
     void                        label(std::string label, Fl_Widget* widget);
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
@@ -64,7 +65,7 @@ public:
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
     void                        swap(int from, int to);
-    TABS                        tabs()
+    TABS                        tabs() const
                                     { return _tabs; }
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE);
     void                        update_pref(int pos = 14, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);

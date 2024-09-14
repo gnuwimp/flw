@@ -6,6 +6,7 @@
 #define FLW_H
 #include <string>
 #include <vector>
+#include <cmath>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
@@ -26,12 +27,18 @@
 #define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
 #define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
 #define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
+#define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
+#define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
 #else
 #define FLW_LINE
 #define FLW_RED
 #define FLW_GREEN
 #define FLW_BLUE
 #define FLW_PRINT(...)
+#define FLW_ASSERT(X,Y)
+#define FLW_TRUE(X)
+#define FLW_ASSERTD(X,Y,Z)
 #endif
 namespace flw {
 extern int                      PREF_FIXED_FONT;
@@ -50,10 +57,15 @@ typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
 namespace debug {
     void                        print(const Fl_Widget* widget);
     void                        print(const Fl_Widget* widget, std::string& indent);
+    bool                        test(bool val, int line, const char* func);
+    bool                        test(const char* ref, const char* val, int line, const char* func);
+    bool                        test(int64_t ref, int64_t val, int line, const char* func);
+    bool                        test(double ref, double val, double diff, int line, const char* func);
 }
 namespace menu {
     void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
     Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
+    Fl_Menu_Item*               get_item(Fl_Menu_* menu, void* v);
     bool                        item_value(Fl_Menu_* menu, const char* text);
     void                        set_item(Fl_Menu_* menu, const char* text, bool value);
     void                        setonly_item(Fl_Menu_* menu, const char* text);
@@ -68,13 +80,17 @@ namespace util {
     bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
     int32_t                     milliseconds();
-    void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
     std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
     std::string                 remove_browser_format(const char* text);
     std::string&                replace_string(std::string& string, std::string find, std::string replace);
     void                        sleep(int milli);
     StringVector                split_string(const std::string& string, std::string split);
+    double                      to_double(std::string s, double def = INFINITY);
+    long long                   to_long(std::string s, long long def = 0);
+    static inline std::string   to_string(const char* text)
+                                    { return text != nullptr ? text : ""; }
     void*                       zero_memory(char* mem, size_t size);
 }
 namespace theme {
@@ -243,20 +259,9 @@ public:
                                 YEAR_MONTH_LONG,
                                 LAST = YEAR_MONTH_LONG,
     };
-    enum class RANGE {
-                                DAY,
-                                WEEKDAY,
-                                FRIDAY,
-                                SUNDAY,
-                                MONTH,
-                                HOUR,
-                                MIN,
-                                SEC,
-                                LAST = SEC,
-    };
-    static const int            SECS_PER_HOUR;
-    static const int            SECS_PER_DAY;
-    static const int            SECS_PER_WEEK;
+    static const int            SECS_PER_HOUR  = 3600;
+    static const int            SECS_PER_DAY   = 3600 * 24;
+    static const int            SECS_PER_WEEK  = 3600 * 24 * 7;
     explicit                    Date(bool utc = false);
                                 Date(const Date& other);
                                 Date(Date&&);
@@ -290,6 +295,8 @@ public:
     int                         hour() const
                                     { return _hour; }
     Date&                       hour(int hour);
+    bool                        is_invalid() const
+                                    { return _year == 0 || _month == 0 || _day == 0; }
     bool                        is_leapyear() const;
     int                         minute() const
                                     { return _min; }
@@ -319,6 +326,7 @@ public:
     static bool                 Compare(const Date& a, const Date& b);
     static Date                 FromString(const char* string, bool us = false);
     static Date                 FromTime(int64_t seconds, bool utc = false);
+    static Date                 InvalidDate();
 private:
     short                       _year;
     char                        _month;
@@ -330,79 +338,317 @@ private:
 }
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Rect.H>
 #include <FL/Fl_Scrollbar.H>
+#include <cmath>
+#include <optional>
 #include <vector>
 namespace flw {
-struct Price {
+class  ChartArea;
+struct ChartData;
+class  ChartLine;
+typedef std::vector<ChartData>  ChartDataVector;
+typedef std::vector<ChartLine>  ChartLineVector;
+typedef std::vector<ChartArea>  ChartAreaVector;
+struct ChartData {
+    enum class RANGE {
+                                DAY,
+                                WEEKDAY,
+                                FRIDAY,
+                                SUNDAY,
+                                MONTH,
+                                HOUR,
+                                MIN,
+                                SEC,
+                                LAST = SEC,
+    };
+    enum class FORMULAS {
+                                ATR,
+                                DAY_TO_MONTH,
+                                DAY_TO_WEEK,
+                                EXP_MOVING_AVERAGE,
+                                FIXED,
+                                MODIFY,
+                                MOMENTUM,
+                                MOVING_AVERAGE,
+                                RSI,
+                                STD_DEV,
+                                STOCHASTICS,
+                                LAST = STOCHASTICS,
+    };
+    enum class MODIFY {
+                                ADDITION,
+                                SUBTRACTION,
+                                MULTIPLICATION,
+                                DIVISION,
+                                LAST = DIVISION,
+    };
     std::string                 date;
     double                      close;
     double                      high;
     double                      low;
-    double                      vol;
-                                Price();
-    explicit                    Price(const std::string& date_value, double value = 0.0);
-                                Price(const std::string& date, double high, double low, double close, double vol = 0.0);
-    bool                        operator<(const Price& price) const { return date < price.date; }
-    bool                        operator<=(const Price& price) const { return date <= price.date; }
-    bool                        operator==(const Price& price) const { return date == price.date; }
-    bool                        operator!=(const Price& price) const { return date != price.date; }
+    explicit                    ChartData();
+    explicit                    ChartData(std::string date_value, double value = 0.0);
+    explicit                    ChartData(std::string date, double high, double low, double close);
+    void                        debug() const;
+    bool                        operator<(const ChartData& other) const { return date < other.date; }
+    bool                        operator<=(const ChartData& other) const { return date <= other.date; }
+    bool                        operator==(const ChartData& other) const { return date == other.date; }
+    bool                        operator!=(const ChartData& other) const { return date != other.date; }
+    static ChartDataVector      ATR(const ChartDataVector& in, size_t days);
+    static size_t               BinarySearch(const ChartDataVector& in, const ChartData& key);
+    static ChartDataVector      DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block = ChartDataVector());
+    static ChartDataVector      DayToMonth(const ChartDataVector& in, bool sum = false);
+    static ChartDataVector      DayToWeek(const ChartDataVector& in, Date::DAY weekday, bool sum = false);
+    static void                 Debug(const ChartDataVector& in);
+    static ChartDataVector      ExponentialMovingAverage(const ChartDataVector& in, size_t days);
+    static ChartDataVector      Fixed(const ChartDataVector& in, double value);
+    static ChartDataVector      LoadCSV(std::string filename, std::string sep = ",");
+    static ChartDataVector      Modify(const ChartDataVector& in, ChartData::MODIFY modify, double value);
+    static ChartDataVector      Momentum(const ChartDataVector& in, size_t days);
+    static ChartDataVector      MovingAverage(const ChartDataVector& in, size_t days);
+    static ChartDataVector      RSI(const ChartDataVector& in, size_t days);
+    static bool                 SaveCSV(const ChartDataVector& in, std::string filename, std::string sep = ",");
+    static ChartDataVector      StdDev(const ChartDataVector& in, size_t days);
+    static ChartDataVector      Stochastics(const ChartDataVector& in, size_t days);
 };
-struct ChartArea;
-struct ChartLine;
-struct ChartScale;
-typedef std::vector<Price>      PriceVector;
-typedef std::vector<ChartLine>  LineVector;
-typedef std::vector<ChartArea>  AreaVector;
-class Chart : public Fl_Group {
+class ChartLine {
 public:
-    enum TYPE {
+    static const int            MAX_WIDTH = 25;
+    enum class TYPE {
                                 LINE,
+                                LINE_DOT,
                                 BAR,
-                                VERTICAL,
-                                CLAMP_VERTICAL,
+                                BAR_CLAMP,
+                                BAR_HLC,
                                 HORIZONTAL,
                                 EXPAND_VERTICAL,
                                 EXPAND_HORIZONTAL,
                                 LAST = EXPAND_HORIZONTAL,
     };
-    static const int            MIN_TICK  = 3;
-    static const int            MAX_TICK  = 100;
-    static const size_t         MAX_AREA  = 3;
-    static const size_t         MAX_LINE  = 10;
-    static constexpr double     MIN_VAL = -999'999'999'999'999.0;
-    static constexpr double     MAX_VAL =  999'999'999'999'999.0;
+    explicit                    ChartLine()
+                                    { clear(); }
+    explicit                    ChartLine(const ChartDataVector& data, std::string label = "", TYPE type = ChartLine::TYPE::LINE);
+    Fl_Align                    align() const
+                                    { return _align; }
+    std::optional<double>       clamp_max() const;
+    std::optional<double>       clamp_min() const;
+    void                        clear();
+    Fl_Color                    color() const
+                                    { return _color; }
+    const ChartDataVector&      data_vector() const
+                                    { return _data; }
+    void                        debug(int num, bool prices = false) const;
+    bool                        is_visible() const
+                                    { return _visible; }
+    std::string                 label() const
+                                    { return _label; }
+    const Fl_Rect&              label_rect() const
+                                    { return _rect; }
+    ChartLine&                  set_align(Fl_Align val)
+                                    { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; }
+    ChartLine&                  set_clamp(double min = INFINITY, double max = INFINITY);
+    ChartLine&                  set_color(Fl_Color val)
+                                    { _color = val; return *this; }
+    ChartLine&                  set_data(const ChartDataVector& data);
+    ChartLine&                  set_label(std::string val)
+                                    { _label = val; return *this; }
+    ChartLine&                  set_label_rect(int x, int y, int w, int h)
+                                    { _rect = Fl_Rect(x, y, w, h); return *this; }
+    ChartLine&                  set_type(TYPE val)
+                                    { _type = val; return *this; }
+    ChartLine&                  set_type_from_string(std::string val);
+    ChartLine&                  set_visible(bool val)
+                                    { _visible = val; return *this; }
+    ChartLine&                  set_width(unsigned width)
+                                    { if (width <= ChartLine::MAX_WIDTH) _width = width; return *this; }
+    size_t                      size() const
+                                    { return _data.size(); }
+    TYPE                        type() const
+                                    { return _type; }
+    bool                        type_has_hlc() const
+                                    { return _type == TYPE::BAR || _type == TYPE::BAR_CLAMP || _type == ChartLine::TYPE::BAR_HLC; }
+    std::string                 type_to_string() const;
+    unsigned                    width() const
+                                    { return _width; }
+private:
+    ChartDataVector             _data;
+    Fl_Align                    _align;
+    Fl_Color                    _color;
+    Fl_Rect                     _rect;
+    TYPE                        _type;
+    bool                        _visible;
+    double                      _clamp_max;
+    double                      _clamp_min;
+    double                      _max;
+    double                      _min;
+    std::string                 _label;
+    unsigned                    _width;
+};
+class ChartScale {
+public:
+                                ChartScale();
+    void                        calc(int height);
+    void                        clear();
+    void                        debug(const char* name) const;
+    double                      diff() const
+                                    { return _max - _min; }
+    void                        fix_height();
+    std::optional<double>       max() const;
+    std::optional<double>       min() const;
+    double                      pixel() const
+                                    { return _pixel; }
+    void                        set_max(double val)
+                                    { _max = val; }
+    void                        set_min(double val)
+                                    { _min = val; }
+    double                      tick() const
+                                    { return _tick; }
+private:
+    double                      _max;
+    double                      _min;
+    double                      _pixel;
+    double                      _tick;
+};
+class ChartArea {
+public:
+    static const size_t         MAX_LINES = 10;
+    enum class NUM {
+                                ONE,
+                                TWO,
+                                THREE,
+                                FOUR,
+                                FIVE,
+                                LAST = FIVE,
+    };
+    enum class LABELTYPE {
+                                OFF,
+                                ON,
+                                VISIBLE,
+                                LAST = VISIBLE,
+    };
+    explicit                    ChartArea(ChartArea::NUM num)
+                                    { _num = num; clear(); }
+    bool                        add_line(const ChartLine& chart_line);
+    void                        clear();
+    void                        debug() const;
+    void                        delete_line(size_t index);
+    int                         h() const
+                                    { return _h; }
+    StringVector                label_array(ChartArea::LABELTYPE labeltype) const;
+    ChartScale&                 left_scale()
+                                    { return _left; }
+    ChartLine*                  line(size_t index)
+                                    { return (index < _lines.size()) ? &_lines[index] : nullptr; }
+    const ChartLineVector&      lines() const
+                                    { return _lines; }
+    NUM                         num() const
+                                    { return _num; }
+    int                         percent() const
+                                    { return _percent; }
+    ChartScale&                 right_scale()
+                                    { return _right; }
+    size_t                      selected() const
+                                    { return _selected; }
+    ChartLine*                  selected_line();
+    void                        set_h(int h)
+                                    { _h = h; }
+    void                        set_percent(int val)
+                                    { _percent = val; }
+    void                        set_selected(size_t val)
+                                    { _selected = val; }
+    void                        set_visible(size_t line, bool val);
+    void                        set_w(int w)
+                                    { _w = w; }
+    void                        set_x(int x)
+                                    { _x = x; }
+    void                        set_y(int y)
+                                    { _y = y; }
+    size_t                      size() const
+                                    { return _lines.size(); }
+    int                         w() const
+                                    { return _w; }
+    int                         x() const
+                                    { return _x; }
+    int                         x2() const
+                                    { return _x + _w; }
+    int                         y() const
+                                    { return _y; }
+    int                         y2() const
+                                    { return _y + _h; }
+private:
+    NUM                         _num;
+    ChartLineVector             _lines;
+    ChartScale                  _left;
+    ChartScale                  _right;
+    int                         _h;
+    int                         _w;
+    int                         _x;
+    int                         _y;
+    int                         _percent;
+    size_t                      _selected;
+};
+class Chart : public Fl_Group {
+public:
+    static const int            MIN_AREA_SIZE =   10;
+    static const int            MIN_MARGIN    =    3;
+    static const int            DEF_MARGIN    =    6;
+    static const int            MAX_MARGIN    =   20;
+    static const int            MIN_TICK      =    3;
+    static const int            MAX_TICK      = ChartLine::MAX_WIDTH * 2;
+    static const int            VERSION       =    3;
+    static const size_t         MAX_VLINES    = 1400;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    bool                        add_line(size_t area_0_to_2, const PriceVector& points, std::string line_label, Chart::TYPE chart_type = Chart::TYPE::LINE, Fl_Align line_align = FL_ALIGN_LEFT, Fl_Color line_color = FL_BLUE, int line_width = 1, double clamp_min = Chart::MIN_VAL, double clamp_max = Chart::MAX_VAL);
-    bool                        area_size(int area1 = 100, int area2 = 0, int area3 = 0);
-    void                        block_dates(const PriceVector& block_dates)
+    bool                        add_line(ChartArea::NUM area, const ChartLine& chart_line);
+    void                        block_dates(const ChartDataVector& block_dates)
                                     { _block_dates = block_dates; }
     void                        clear();
+    bool                        create_line(ChartData::FORMULAS formula, bool support = false);
     Date::FORMAT                date_format() const
                                     { return _date_format; }
-    bool                        date_range(Date::RANGE range = Date::RANGE::DAY);
     void                        debug() const;
+    void                        do_layout()
+                                    { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); }
     void                        draw() override;
     int                         handle(int event) override;
-    bool                        has_time() const;
     void                        init(bool calc_dates);
-    void                        layout()
-                                    { _old_width = _old_height = -1; resize(x(), y(), w(), h()); }
-    bool                        margin(int left_1_to_20 = 6, int right_1_to_20 = 1);
+    bool                        load_cvs();
+    bool                        load_json();
+    bool                        load_json(std::string filename);
+    void                        print_to_postscript();
     void                        resize(int X, int Y, int W, int H) override;
-    bool                        tick_width(int tick_width_from_3_to_100 = Chart::MIN_TICK);
+    bool                        save_cvs();
+    bool                        save_json();
+    bool                        save_json(std::string filename, double max_diff_high_low = 0.001) const;
+    bool                        save_png();
+    bool                        set_area_size(int area1 = 100, int area2 = 0, int area3 = 0, int area4 = 0, int area5 = 0);
+    void                        set_date_range(ChartData::RANGE range = ChartData::RANGE::DAY);
+    void                        set_label(std::string label)
+                                    { _label = label; }
+    bool                        set_margin(int def);
+    bool                        set_tick_width(int width = Chart::MIN_TICK);
+    void                        setup_add_line();
+    void                        setup_area();
+    void                        setup_date_range();
+    void                        setup_delete_lines();
+    void                        setup_label();
+    void                        setup_line();
+    void                        setup_move_lines();
+    void                        setup_show_or_hide_lines();
+    void                        setup_ywidth();
     void                        update_pref();
     void                        view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
                                     { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
-    static bool                 Load(Chart* chart, std::string filename);
-    static bool                 Save(const Chart* chart, std::string filename, double max_diff_high_low = 0.001);
 private:
     void                        _calc_area_height();
     void                        _calc_area_width();
     void                        _calc_dates();
     void                        _calc_ymin_ymax();
     void                        _calc_yscale();
+    void                        _calc_ywidth();
     void                        _create_tooltip(bool ctrl);
-    void                        _draw_area(const ChartArea& area);
+    void                        _draw_area(ChartArea& area);
+    void                        _draw_label();
     void                        _draw_line(const ChartLine& line, const ChartScale& scale, int X, int Y, int W, int H);
     void                        _draw_line_labels(const ChartArea& area);
     void                        _draw_tooltip();
@@ -410,11 +656,11 @@ private:
     void                        _draw_xlabels();
     void                        _draw_ylabels(int X, double Y1, double Y2, const ChartScale& scale, bool left);
     ChartArea*                  _inside_area(int X, int Y);
-    static void                 _CallbackDebug(Fl_Widget*, void* widget);
-    static void                 _CallbackPrint(Fl_Widget*, void* widget);
+    bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::NUM destination = ChartArea::NUM::ONE);
+    void                        _show_menu();
+    static void                 _CallbackDebugChart(Fl_Widget*, void* widget);
+    static void                 _CallbackDebugLine(Fl_Widget*, void* widget);
     static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
-    static void                 _CallbackReset(Fl_Widget*, void* widget);
-    static void                 _CallbackSavePng(Fl_Widget*, void* widget);
     static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
     static void                 _CallbackToggle(Fl_Widget*, void* widget);
     struct {
@@ -423,26 +669,27 @@ private:
         bool                    vertical;
     }                           _view;
     ChartArea*                  _area;
-    AreaVector                  _areas;
-    PriceVector                 _block_dates;
+    ChartAreaVector             _areas;
+    ChartData::RANGE            _date_range;
+    ChartDataVector             _block_dates;
+    ChartDataVector             _dates;
+    Date::FORMAT                _date_format;
+    Fl_Menu_Button*             _menu;
+    Fl_Rect                     _old;
+    Fl_Scrollbar*               _scroll;
+    bool                        _printing;
     int                         _bottom_space;
     int                         _cw;
-    Date::FORMAT                _date_format;
-    Date::RANGE                 _date_range;
     int                         _date_start;
-    PriceVector                 _dates;
+    int                         _margin;
     int                         _margin_left;
     int                         _margin_right;
-    Fl_Menu_Button*             _menu;
-    int                         _old_height;
-    int                         _old_width;
-    bool                        _printing;
-    Fl_Scrollbar*               _scroll;
     int                         _tick_width;
     int                         _ticks;
-    std::string                 _tooltip;
     int                         _top_space;
-    int                         _ver_pos[101];
+    int                         _ver_pos[MAX_VLINES];
+    std::string                 _label;
+    std::string                 _tooltip;
 };
 }
 #include <FL/Fl_Group.H>
@@ -578,6 +825,8 @@ namespace dlg {
 extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
 void                            center_message_dialog();
+StringVector                    check(std::string title, const StringVector& list, Fl_Window* parent = nullptr);
+int                             choice(std::string title, const StringVector& list, int selected = 0, Fl_Window* parent = nullptr);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
 void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
@@ -593,6 +842,7 @@ bool                            print_text(std::string title, const std::string&
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
 int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+bool                            slider(std::string title, double min, double max, double& value, double step = 1.0, Fl_Window* parent = nullptr);
 void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
@@ -1489,6 +1739,7 @@ public:
     void                        insert(std::string label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
     bool                        is_tabs_visible() const
                                     { return _scroll->visible(); }
+    std::string                 label(Fl_Widget* widget);
     void                        label(std::string label, Fl_Widget* widget);
     Fl_Widget*                  remove(int num);
     Fl_Widget*                  remove(Fl_Widget* widget)
@@ -1497,7 +1748,7 @@ public:
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
     void                        swap(int from, int to);
-    TABS                        tabs()
+    TABS                        tabs() const
                                     { return _tabs; }
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE);
     void                        update_pref(int pos = 14, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);

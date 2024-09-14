@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <assert.h>
-#include <math.h>
 #include <stdarg.h>
 #include <time.h>
 #include <FL/Fl_Window.H>
@@ -176,6 +175,53 @@ void debug::print(const Fl_Widget* widget, std::string& indent) {
     fflush(stdout);
 }
 
+//------------------------------------------------------------------------------
+bool debug::test(bool val, int line, const char* func) {
+    if (val == false) {
+        fprintf(stderr, "error: test failed at line %d in %s\n", line, func);
+        fflush(stderr);
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool debug::test(const char* ref, const char* val, int line, const char* func) {
+    if (ref == nullptr && val == nullptr) {
+        return true;
+    }
+    else if (ref == nullptr || val == nullptr || strcmp(ref, val) != 0) {
+        fprintf(stderr, "error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
+        fflush(stderr);
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
+    if (ref != val) {
+        fprintf(stderr, "error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
+        fflush(stderr);
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool debug::test(double ref, double val, double diff, int line, const char* func) {
+    if (fabs(ref - val) > diff) {
+        fprintf(stderr, "error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
+        fflush(stderr);
+        return false;
+    }
+
+    return true;
+}
+
 /***
  *
  *
@@ -190,9 +236,16 @@ void debug::print(const Fl_Widget* widget, std::string& indent) {
 namespace menu {
 
 //----------------------------------------------------------------------
-static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
-    assert(menu && text);
-    auto item = menu->find_item(text);
+static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
+    const Fl_Menu_Item* item;
+    
+    if (v == nullptr) {
+        assert(menu && text);
+        item = menu->find_item(text);
+    }
+    else {
+        item = menu->find_item_with_user_data(v);
+    }
 #ifdef DEBUG
     if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
 #endif
@@ -212,6 +265,11 @@ void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
 //----------------------------------------------------------------------
 Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, const char* text) {
     return _item(menu, text);
+}
+
+//----------------------------------------------------------------------
+Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, void* v) {
+    return _item(menu, nullptr, v);
 }
 
 //----------------------------------------------------------------------
@@ -433,7 +491,9 @@ int32_t util::milliseconds() {
 // Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images)
 // If filename is empty you will be asked for the name
 //
-void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+    auto res = false;
+    
 #ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
 
@@ -454,6 +514,7 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
             auto ret = fl_write_png(filename, image, W, H);
 
             if (ret == 0) {
+                res = true;
             }
             else if (ret == -1) {
                 fl_alert("%s", "error: missing libraries");
@@ -477,6 +538,8 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     (void) H;
     fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
+
+    return res;
 }
 
 //------------------------------------------------------------------------------
@@ -594,6 +657,26 @@ flw::StringVector util::split_string(const std::string& string, std::string spli
     }
 
     return res;
+}
+
+//------------------------------------------------------------------------------
+double util::to_double(std::string num, double def) {
+    try {
+        return std::stod(num);
+    }
+    catch(...) {
+        return def;
+    }
+}
+
+//------------------------------------------------------------------------------
+long long util::to_long(std::string num, long long def) {
+    try {
+        return std::stoll(num);
+    }
+    catch(...) {
+        return def;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -1232,6 +1315,8 @@ bool theme::parse(int argc, const char** argv) {
     }
 
     flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+    Fl_Tooltip::font(flw::PREF_FONT);
+    Fl_Tooltip::size(flw::PREF_FONTSIZE);
     return res;
 }
 

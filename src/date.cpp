@@ -28,10 +28,6 @@ static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "
 static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
 static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
 
-const int Date::SECS_PER_HOUR = 3600;
-const int Date::SECS_PER_DAY  = 3600 * 24;
-const int Date::SECS_PER_WEEK = 3600 * 24 * 7;
-
 //------------------------------------------------------------------------------
 static int _date_days(int year, int month) {
     if (year < 1 || year > 9999 || month < 1 || month > 12) {
@@ -131,7 +127,7 @@ static Date _date_parse(const char* string, bool us) {
         val[7] = string[7] - '0';
     }
     else {
-        return Date(1, 1, 1);
+        return Date::InvalidDate();
     }
 
     val[0] = string[Y] - '0';
@@ -164,7 +160,7 @@ static Date _date_parse(const char* string, bool us) {
             ;
         }
         else if (val[f] < 0 || val[f] > 9) {
-            return Date(1, 1, 1);
+            return Date::InvalidDate();
         }
     }
 
@@ -175,7 +171,7 @@ static Date _date_parse(const char* string, bool us) {
     min   = val[10] * 10 + val[11];
     sec   = val[12] * 10 + val[13];
 
-    if (iso == false && us) { // Swap world and us numbers
+    if (iso == false && us == true) { // Swap world and US numbers.
         int tmp = month;
         month   = day;
         day     = tmp;
@@ -274,7 +270,7 @@ Date::Date(Date&& other) {
 
 //------------------------------------------------------------------------------
 Date::Date(int year, int month, int day, int hour, int min, int sec) {
-    _year = _month = _day = 1;
+    _year = _month = _day = 0;
     _hour = _min = _sec = 0;
     set(year, month, day, hour, min, sec);
 }
@@ -515,6 +511,11 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
 }
 
 //------------------------------------------------------------------------------
+bool Date::Compare(const Date& a, const Date& b) {
+    return a.compare(b) < 0;
+}
+
+//------------------------------------------------------------------------------
 Date& Date::day(int day) {
     if (day > 0 && day <= _date_days(_year, _month)) {
         _day = day;
@@ -615,7 +616,7 @@ std::string Date::format(Date::FORMAT format) const {
     else if (format == Date::FORMAT::ISO_TIME_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
     }
-    else {
+    else { // Date::FORMAT::ISO
         n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);
     }
 
@@ -627,12 +628,48 @@ std::string Date::format(Date::FORMAT format) const {
 }
 
 //------------------------------------------------------------------------------
+// Create date object by parsing a string buffer
+// Valid formats for dates are:
+// "19991224"
+// "19991224"
+// "1999-12-24"
+// "24/12/1999" "world formar"
+// "12/24/1999" "us format"
+// And optional time after date with one space between them:
+// "000000"
+// "00:00:00"
+// Invalid date returns a Date set to (0, 0, 0)
+//
+Date Date::FromString(const char* buffer, bool us) {
+    if (buffer == nullptr) {
+        return Date::InvalidDate();
+    }
+    else {
+         return _date_parse(buffer, us);
+    }
+}
+
+//------------------------------------------------------------------------------
+Date Date::FromTime(int64_t seconds, bool utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
+    return Date(y, m, d, ho, mi, se);
+}
+
+//------------------------------------------------------------------------------
 Date& Date::hour(int hour) {
     if (hour >= 0 && hour <= 23) {
         _hour = hour;
     }
 
     return *this;
+}
+
+//------------------------------------------------------------------------------
+Date Date::InvalidDate() {
+    Date date;
+    date._year = date._month = date._day = date._hour = date._min = date._sec = 0;
+    return date;
 }
 
 //------------------------------------------------------------------------------
@@ -842,51 +879,6 @@ int Date::yearday() const {
     }
 
     return res + _day;
-}
-
-/***
- *      _____        _           _____ _        _   _
- *     |  __ \      | |         / ____| |      | | (_)
- *     | |  | | __ _| |_ ___   | (___ | |_ __ _| |_ _  ___
- *     | |  | |/ _` | __/ _ \   \___ \| __/ _` | __| |/ __|
- *     | |__| | (_| | ||  __/   ____) | || (_| | |_| | (__
- *     |_____/ \__,_|\__\___|  |_____/ \__\__,_|\__|_|\___|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-bool Date::Compare(const Date& a, const Date& b) {
-    return a.compare(b) < 0;
-}
-
-//------------------------------------------------------------------------------
-// Create date object by parsing a string buffer
-// Valid formats for dates are:
-// "19991224"
-// "19991224"
-// "1999-12-24"
-// "24/12/1999" "world formar"
-// "12/24/1999" "us format"
-// And optional time after date with one space between them:
-// "000000"
-// "00:00:00"
-// Invalid date returns a Date set to (1, 1, 1)
-//
-Date Date::FromString(const char* buffer, bool us) {
-    if (buffer == nullptr) {
-        return Date(1, 1, 1);
-    }
-    else {
-         return _date_parse(buffer, us);
-    }
-}
-
-//------------------------------------------------------------------------------
-Date Date::FromTime(int64_t seconds, bool utc) {
-    int y, m, d, ho, mi, se;
-    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
-    return Date(y, m, d, ho, mi, se);
 }
 
 } // flw

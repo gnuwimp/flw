@@ -1,37 +1,42 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
+#include <FL/fl_show_colormap.H>
 #include <algorithm>
-#include <math.h>
 namespace flw {
-#define FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); chart->clear(); return false; }
-static const int                _CHART_MAX_VLINES      = 100;
-static const int                _CHART_MAX_LINE_WIDTH  = 100;
-static const char* const        _CHART_PRINT           = "Print to PostScript...";
-static const char* const        _CHART_SHOW_LABELS     = "Show line labels";
-static const char* const        _CHART_SHOW_HLINES     = "Show horizontal lines";
-static const char* const        _CHART_SHOW_VLINES     = "Show vertical lines";
-static const char* const        _CHART_RESET_SELECT    = "Reset line selection and visibility";
-static const char* const        _CHART_SAVE_PNG        = "Save png to file...";
-static size_t _chart_bsearch(const PriceVector& prices, const Price& key) {
-    auto it = std::lower_bound(prices.begin(), prices.end(), key);
-    if (it == prices.end() || *it != key) {
-        return (size_t) -1;
-    }
-    else {
-        return std::distance(prices.begin(), it);
-    }
-}
+#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); clear(); return false; }
+#define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
+static const char* const        _CHART_ADD_CSV          = "Add line from CSV file...";
+static const char* const        _CHART_ADD_LINE         = "Create line...";
+static const char* const        _CHART_DEBUG_CHART      = "Debug chart";
+static const char* const        _CHART_DEBUG_LINE       = "Debug line";
+static const char* const        _CHART_LOAD_JSON        = "Load from JSON...";
+static const char* const        _CHART_PRINT            = "Print to PostScript file...";
+static const char* const        _CHART_SAVE_CSV         = "Save to CSV...";
+static const char* const        _CHART_SAVE_JSON        = "Save to JSON...";
+static const char* const        _CHART_SAVE_PNG         = "Save to png file...";
+static const char* const        _CHART_SETUP_AREA       = "Number of areas...";
+static const char* const        _CHART_SETUP_DELETE     = "Delete lines...";
+static const char* const        _CHART_SETUP_LABEL      = "Label...";
+static const char* const        _CHART_SETUP_LINE       = "Properties...";
+static const char* const        _CHART_SETUP_MOVE       = "Move lines...";
+static const char* const        _CHART_SETUP_RANGE      = "Date range...";
+static const char* const        _CHART_SETUP_SHOW       = "Show or hide lines...";
+static const char* const        _CHART_SETUP_WIDTH      = "Y label width...";
+static const char* const        _CHART_SHOW_HLINES      = "Show horizontal lines";
+static const char* const        _CHART_SHOW_LABELS      = "Show line labels";
+static const char* const        _CHART_SHOW_VLINES      = "Show vertical lines";
 static int _chart_count_decimals(double number) {
     number = fabs(number);
     int    res     = 0;
-    int    len     = 0;
     char*  end     = 0;
-    double inumber = (int64_t) number;
+    double inumber = static_cast<int64_t>(number);
     double fnumber = number - inumber;
     char   buffer[100];
     if (number > 999999999999999) {
@@ -61,7 +66,7 @@ static int _chart_count_decimals(double number) {
     else {
         snprintf(buffer, 100, "%.9f", fnumber);
     }
-    len = strlen(buffer);
+    size_t len = strlen(buffer);
     end = buffer + len - 1;
     while (*end == '0') {
         *end = 0;
@@ -70,79 +75,6 @@ static int _chart_count_decimals(double number) {
     res = strlen(buffer) - 2;
     return res;
 }
-static PriceVector _chart_create_date_serie(const char* start_date, const char* stop_date, Date::RANGE range, const PriceVector& block, bool long_format) {
-    int         month   = -1;
-    Date        current = Date::FromString(start_date);
-    Date        stop    = Date::FromString(stop_date);
-    PriceVector res;
-    if (range == Date::RANGE::HOUR && current.year() < 1970) {
-        return res;
-    }
-    if (range == Date::RANGE::FRIDAY) {
-        while (current.weekday() != Date::DAY::FRIDAY)
-            current.add_days(1);
-    }
-    else if (range == Date::RANGE::SUNDAY) {
-        while (current.weekday() != Date::DAY::SUNDAY) {
-            current.add_days(1);
-        }
-    }
-    while (current <= stop) {
-        Date date(1, 1, 1);
-        if (range == Date::RANGE::DAY) {
-            date = Date(current);
-            current.add_days(1);
-        }
-        else if (range == Date::RANGE::WEEKDAY) {
-            Date::DAY weekday = current.weekday();
-            if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
-                date = Date(current);
-            }
-            current.add_days(1);
-        }
-        else if (range == Date::RANGE::FRIDAY || range == Date::RANGE::SUNDAY) {
-            date = Date(current);
-            current.add_days(7);
-        }
-        else if (range == Date::RANGE::MONTH) {
-            if (current.month() != month) {
-                current.day(current.month_days());
-                date = Date(current);
-                month = current.month();
-            }
-            current.add_months(1);
-        }
-        else if (range == Date::RANGE::HOUR) {
-            date = Date(current);
-            current.add_seconds(3600);
-        }
-        else if (range == Date::RANGE::MIN) {
-            date = Date(current);
-            current.add_seconds(60);
-        }
-        else if (range == Date::RANGE::SEC) {
-            date = Date(current);
-            current.add_seconds(1);
-        }
-        if (date.year() > 1) {
-            Price price;
-            if (range == Date::RANGE::HOUR || range == Date::RANGE::MIN || range == Date::RANGE::SEC) {
-                price.date = date.format((long_format == false) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO_TIME_LONG);
-            }
-            else {
-                price.date = date.format((long_format == false) ? Date::FORMAT::ISO : Date::FORMAT::ISO_LONG);
-            }
-            if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
-                res.push_back(price);
-            }
-        }
-    }
-    return res;
-}
-static std::string _chart_format_date(const Price& price, Date::FORMAT format) {
-    auto date = Date::FromString(price.date.c_str());
-    return date.format(format);
-}
 static std::string _chart_format_double(double num, int decimals, char del) {
     char res[100];
     *res = 0;
@@ -150,12 +82,12 @@ static std::string _chart_format_double(double num, int decimals, char del) {
         decimals = _chart_count_decimals(num);
     }
     if (decimals == 0) {
-        return util::format_int((int64_t) num, del);
+        return util::format_int(static_cast<int64_t>(num), del);
     }
     if (fabs(num) < 9223372036854775807.0) {
         char fr_str[100];
-        auto int_num    = (int64_t) fabs(num);
-        auto double_num = (double) (fabs(num) - int_num);
+        auto int_num    = static_cast<int64_t>(fabs(num));
+        auto double_num = static_cast<double>(fabs(num) - int_num);
         auto int_str    = util::format_int(int_num, del);
         auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
         if (len > 0 && len < 100) {
@@ -169,299 +101,916 @@ static std::string _chart_format_double(double num, int decimals, char del) {
     }
     return res;
 }
-static bool _chart_has_high_low(Chart::TYPE chart_type) {
-    return chart_type == Chart::BAR || chart_type == Chart::VERTICAL || chart_type == Chart::CLAMP_VERTICAL;
+bool ChartArea::add_line(const ChartLine& chart_line) {
+    if (_lines.size() >= ChartArea::MAX_LINES) {
+        return false;
+    }
+    _lines.push_back(chart_line);
+    return true;
 }
-static bool _chart_has_resizable_width(Chart::TYPE chart_type) {
-    return chart_type == Chart::BAR || chart_type == Chart::VERTICAL || chart_type == Chart::CLAMP_VERTICAL;
+void ChartArea::clear() {
+    _h        = 0;
+    _percent  = 0;
+    _selected = 0;
+    _w        = 0;
+    _x        = 0;
+    _y        = 0;
+    _left.clear();
+    _right.clear();
+    _lines.clear();
 }
-static bool _chart_has_time(Date::RANGE date_range) {
-    return date_range == Date::RANGE::HOUR || date_range == Date::RANGE::MIN || date_range == Date::RANGE::SEC;
+void ChartArea::debug() const {
+#ifdef DEBUG
+    auto c = 0;
+    for (const auto& l : _lines) {
+        if (l.size() > 0) {
+            c++;
+        }
+    }
+    if (c > 0 || _num == NUM::ONE) {
+        fprintf(stderr, "\t----------------------\n");
+        fprintf(stderr, "\tChartArea: %d\n", static_cast<int>(_num));
+        fprintf(stderr, "\t\tlines:    %4d\n", c);
+        fprintf(stderr, "\t\tx:        %4d\n", _x);
+        fprintf(stderr, "\t\ty:        %4d\n", _y);
+        fprintf(stderr, "\t\tw:        %4d\n", _w);
+        fprintf(stderr, "\t\th:        %4d\n", _h);
+        fprintf(stderr, "\t\tpercent:  %4d\n", _percent);
+        fprintf(stderr, "\t\tselected: %4d\n", static_cast<int>(_selected));
+        _left.debug("left");
+        _right.debug("right");
+        c = 0;
+        for (const auto& l : _lines) {
+            if (l.size() > 0) {
+                l.debug(c++);
+            }
+        }
+    }
+#endif
 }
-static Chart::TYPE _chart_string_to_type(const std::string& name) {
-    if (name == "LINE") return Chart::LINE;
-    else if (name == "BAR") return Chart::BAR;
-    else if (name == "VERTICAL") return Chart::VERTICAL;
-    else if (name == "CLAMP_VERTICAL") return Chart::CLAMP_VERTICAL;
-    else if (name == "HORIZONTAL") return Chart::HORIZONTAL;
-    else if (name == "EXPAND_VERTICAL") return Chart::EXPAND_VERTICAL;
-    else if (name == "EXPAND_HORIZONTAL") return Chart::EXPAND_HORIZONTAL;
-    else return Chart::LINE;
+void ChartArea::delete_line(size_t index) {
+    size_t count = 0;
+    for (auto it = _lines.begin(); it != _lines.end(); ++it) {
+        if (index == count) {
+            _lines.erase(it);
+            if (_lines.size() == 0) {
+                _selected = 0;
+            }
+            else if (_selected >= _lines.size()) {
+                _selected = _lines.size() - 1;
+            }
+            break;
+        }
+        count++;
+    }
 }
-static std::string _chart_type_to_string(Chart::TYPE type) {
-    assert(type >= 0 && type <= 6);
-    static const char* NAMES[] = { "LINE", "BAR", "VERTICAL", "CLAMP_VERTICAL", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL", "", "", };
-    return NAMES[type];
+StringVector ChartArea::label_array(ChartArea::LABELTYPE labeltype) const {
+    auto res = StringVector();
+    for (const auto& l : _lines) {
+        std::string s;
+        if (labeltype == LABELTYPE::OFF) {
+            s = "0";
+        }
+        else if (labeltype == LABELTYPE::ON) {
+            s = "1";
+        }
+        else if (labeltype == LABELTYPE::VISIBLE) {
+            s = (l.is_visible() == true) ? "1" : "0";
+        }
+        s += l.label();
+        res.push_back(s);
+    }
+    return res;
 }
-struct ChartLine {
-    Fl_Align                    align;
-    Chart::TYPE                 type;
-    Fl_Color                    color;
-    bool                        visible;
-    int                         width;
-    double                      clamp_max;
-    double                      clamp_min;
-    std::string                 label;
-    double                      max;
-    double                      min;
-    PriceVector                 points;
-                                ChartLine();
-                                ~ChartLine()
-                                    { clear(); }
-    void                        clear();
-    void                        debug(int num) const;
-    bool                        set(const PriceVector& points, std::string label, Chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max);
-};
-ChartLine::ChartLine() {
+ChartLine* ChartArea::selected_line() {
+    if (_selected >= _lines.size()) {
+        return nullptr;
+    }
+    return &_lines[_selected];
+}
+void ChartArea::set_visible(size_t line, bool val) {
+    if (line >= _lines.size()) {
+        return;
+    }
+    _lines[line].set_visible(val);
+}
+ChartData::ChartData() {
+    high = low = close = 0.0;
+}
+ChartData::ChartData(std::string DATE, double value) {
+    Date valid_date = Date::FromString(DATE.c_str());
+    if (std::isfinite(value) == true && valid_date.is_invalid() == false) {
+        date = valid_date.format(Date::FORMAT::ISO_TIME);
+        high = low = close = value;
+    }
+    else {
+        high = low = close = 0.0;
+    }
+}
+ChartData::ChartData(std::string DATE, double HIGH, double LOW, double CLOSE) {
+    high = low = close = 0.0;
+    Date valid_date = Date::FromString(DATE.c_str());
+    if (std::isfinite(HIGH) == true &&
+        std::isfinite(LOW) == true &&
+        std::isfinite(CLOSE) == true &&
+        valid_date.is_invalid() == false) {
+        if (LOW > HIGH) {
+            auto tmp = LOW;
+            LOW = HIGH;
+            HIGH = tmp;
+        }
+        if (CLOSE > HIGH) {
+            auto tmp = HIGH;
+            HIGH = CLOSE;
+            CLOSE = tmp;
+        }
+        if (CLOSE < LOW) {
+            auto tmp = LOW;
+            LOW = CLOSE;
+            CLOSE = tmp;
+        }
+        date  = valid_date.format(Date::FORMAT::ISO_TIME);
+        high  = HIGH;
+        low   = LOW;
+        close = CLOSE;
+    }
+}
+ChartDataVector ChartData::ATR(const ChartDataVector& in, std::size_t days) {
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        double tot        = 0.0;
+        double prev_close = 0.0;
+        double prev_range = 0.0;
+        size_t f          = 0;
+        days--;
+        for (const auto& data : in) {
+            if (f == 0) {
+                tot += data.high - data.low;
+            }
+            else {
+                double t1 = data.high - data.low;
+                double t2 = fabs(data.high - prev_close);
+                double t3 = fabs(data.low - prev_close);
+                double ra = 0.0;
+                if (t1 > t2 && t1 > t3) {
+                    ra = t1;
+                }
+                else if (t2 > t1 && t2 > t3) {
+                    ra = t2;
+                }
+                else {
+                    ra = t3;
+                }
+                tot += ra;
+                if (f == days) {
+                    prev_range = tot / (days + 1);
+                    res.push_back(ChartData(data.date, prev_range));
+                }
+                else if (f > days) {
+                    prev_range = ((prev_range * days) + ra) / (days + 1);
+                    res.push_back(ChartData(data.date, prev_range));
+                }
+            }
+            prev_close = data.close;
+            f++;
+        }
+    }
+    return res;
+}
+size_t ChartData::BinarySearch(const ChartDataVector& in, const ChartData& key) {
+    auto it = std::lower_bound(in.begin(), in.end(), key);
+    if (it == in.end() || *it != key) {
+        return (size_t) -1;
+    }
+    else {
+        return std::distance(in.begin(), it);
+    }
+}
+ChartDataVector ChartData::DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block) {
+    int             month   = -1;
+    Date            current = Date::FromString(start_date.c_str());
+    Date            stop    = Date::FromString(stop_date.c_str());
+    ChartDataVector res;
+    if (range == ChartData::RANGE::FRIDAY) {
+        while (current.weekday() != Date::DAY::FRIDAY)
+            current.add_days(1);
+    }
+    else if (range == ChartData::RANGE::SUNDAY) {
+        while (current.weekday() != Date::DAY::SUNDAY) {
+            current.add_days(1);
+        }
+    }
+    while (current <= stop) {
+        Date date(1, 1, 1);
+        if (range == ChartData::RANGE::DAY) {
+            date = Date(current);
+            current.add_days(1);
+        }
+        else if (range == ChartData::RANGE::WEEKDAY) {
+            Date::DAY weekday = current.weekday();
+            if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
+                date = Date(current);
+            }
+            current.add_days(1);
+        }
+        else if (range == ChartData::RANGE::FRIDAY || range == ChartData::RANGE::SUNDAY) {
+            date = Date(current);
+            current.add_days(7);
+        }
+        else if (range == ChartData::RANGE::MONTH) {
+            if (current.month() != month) {
+                current.day(current.month_days());
+                date = Date(current);
+                month = current.month();
+            }
+            current.add_months(1);
+        }
+        else if (range == ChartData::RANGE::HOUR) {
+            date = Date(current);
+            current.add_seconds(3600);
+        }
+        else if (range == ChartData::RANGE::MIN) {
+            date = Date(current);
+            current.add_seconds(60);
+        }
+        else if (range == ChartData::RANGE::SEC) {
+            date = Date(current);
+            current.add_seconds(1);
+        }
+        if (date.year() > 1) {
+            ChartData price(date.format(Date::FORMAT::ISO_TIME_LONG));
+            if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
+                res.push_back(price);
+            }
+        }
+    }
+    return res;
+}
+ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
+    size_t          f = 0;
+    ChartDataVector res;
+    ChartData       current;
+    Date            stop;
+    Date            pdate;
+    for (const auto& data : in) {
+        if (f == 0) {
+            current = data;
+            stop = Date::FromString(current.date.c_str());
+            stop.day_last();
+        }
+        else {
+            pdate = Date::FromString(data.date.c_str());
+            if (stop < pdate) {
+                current.date = stop.format(Date::FORMAT::ISO_TIME);
+                res.push_back(current);
+                current = data;
+                stop = Date::FromString(current.date.c_str());
+                stop.day_last();
+            }
+            else if (sum == true) {
+                current.high  += data.high;
+                current.low   += data.low;
+                current.close += data.close;
+            }
+            else {
+                if (data.high > current.high) {
+                    current.high = data.high;
+                }
+                if (data.low < current.low) {
+                    current.low = data.low;
+                }
+                current.close  = data.close;
+            }
+        }
+        if (f + 1 == in.size()) {
+            auto s = stop.format(Date::FORMAT::ISO_TIME);
+            stop.day_last();
+            current.date = s;
+            res.push_back(current);
+        }
+        f++;
+    }
+    return res;
+}
+ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, Date::DAY weekday, bool sum) {
+    size_t          f = 0;
+    ChartDataVector res;
+    ChartData       current;
+    Date            stop;
+    Date            pdate;
+    for (const auto& data : in) {
+        if (f == 0) {
+            stop = Date::FromString(data.date.c_str());
+            if (weekday > stop.weekday()) {
+                stop.weekday(weekday);
+            }
+            else if (weekday < stop.weekday()) {
+                stop.weekday(weekday);
+                stop.add_days(7);
+            }
+            current = data;
+        }
+        else {
+            pdate = Date::FromString(data.date.c_str());
+            if (stop < pdate) {
+                current.date = stop.format(Date::FORMAT::ISO_TIME);
+                res.push_back(current);
+                current = data;
+            }
+            else if (sum == true) {
+                current.high  += data.high;
+                current.low   += data.low;
+                current.close += data.close;
+            }
+            else {
+                if (data.high > current.high) {
+                    current.high = data.high;
+                }
+                if (data.low < current.low) {
+                    current.low = data.low;
+                }
+                current.close  = data.close;
+            }
+            while (stop < pdate) {
+                stop.add_days(7);
+            }
+            current.date = stop.format(Date::FORMAT::ISO_TIME);
+        }
+        if (f + 1 == in.size()) {
+            current.date = stop.format(Date::FORMAT::ISO_TIME);
+            res.push_back(current);
+        }
+        f++;
+    }
+    return res;
+}
+void ChartData::debug() const {
+#ifdef DEBUG
+    printf("%s, %15f, %15f, %15f\n", date.c_str(), high, low, close);
+#endif
+}
+void ChartData::Debug(const ChartDataVector& in) {
+#ifdef DEBUG
+    printf("\nChartDataVector(%u)\n", (unsigned) in.size());
+    for (const auto& data : in) {
+        data.debug();
+    }
+    fflush(stdout);
+#else
+    (void) in;
+#endif
+}
+ChartDataVector ChartData::ExponentialMovingAverage(const ChartDataVector& in, size_t days) {
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        double sma   = 0.0;
+        double prev  = 0.0;
+        double multi = 2.0 / static_cast<double>(days + 1.0);
+        size_t f     = 0;
+        for (const auto& data : in) {
+            if (f < (days - 1)) {
+                sma += data.close;
+            }
+            else if (f == (days - 1)) {
+                sma += data.close;
+                prev = sma / days;
+                res.push_back(ChartData(data.date, prev));
+            }
+            else {
+                prev = ((data.close - prev) * multi) + prev;
+                res.push_back(ChartData(data.date, prev));
+            }
+            f++;
+        }
+    }
+    return res;
+}
+ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
+    ChartDataVector res;
+    for (const auto& data : in) {
+        res.push_back(ChartData(data.date, value));
+    }
+    return res;
+}
+ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
+    Buf buf = File::Load(filename);
+    if (buf.s < 10) {
+        return ChartDataVector();
+    }
+    std::string     str   = buf.p;
+    StringVector    lines = util::split_string(str, "\n");
+    ChartDataVector res;
+    for (const auto& l : lines) {
+        StringVector line = util::split_string(l, sep);
+        ChartData    data;
+        if (line.size() == 2) {
+            data = ChartData(line[0], util::to_double(line[1]));
+        }
+        else if (line.size() > 3) {
+            data = ChartData(line[0], util::to_double(line[1]), util::to_double(line[2]), util::to_double(line[3]));
+        }
+        if (data.date != "") {
+            res.push_back(data);
+        }
+    }
+    return res;
+}
+ChartDataVector ChartData::Modify(const ChartDataVector& in, ChartData::MODIFY modify, double value) {
+    ChartDataVector res;
+    for (const auto& data : in) {
+        switch (modify) {
+            case MODIFY::SUBTRACTION:
+                res.push_back(ChartData(data.date, data.high - value, data.low - value, data.close - value));
+                break;
+            case MODIFY::MULTIPLICATION:
+                res.push_back(ChartData(data.date, data.high * value, data.low * value, data.close * value));
+                break;
+            case MODIFY::DIVISION:
+                res.push_back(ChartData(data.date, data.high / value, data.low / value, data.close / value));
+                break;
+            default:
+                res.push_back(ChartData(data.date, data.high + value, data.low + value, data.close + value));
+                break;
+        }
+    }
+    return res;
+}
+ChartDataVector ChartData::Momentum(const ChartDataVector& in, size_t days) {
+    size_t          start = days - 1;
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        for (auto f = start; f < in.size(); f++) {
+            const auto& data1 = in[f];
+            const auto& data2 = in[f - start];
+            res.push_back(ChartData(data1.date, data1.close - data2.close));
+        }
+    }
+    return res;
+}
+ChartDataVector ChartData::MovingAverage(const ChartDataVector& in, size_t days) {
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        size_t count = 0;
+        double sum   = 0.0;
+        auto   tmp   = new double[in.size() + 1];
+        for (const auto& data : in) {
+            count++;
+            if (count < days) {
+                tmp[count - 1] = data.close;
+                sum += data.close;
+            }
+            else if (count == days) {
+                tmp[count - 1] = data.close;
+                sum += data.close;
+                res.push_back(ChartData(data.date, sum / days));
+            }
+            else {
+                tmp[count - 1] = data.close;
+                sum -= tmp[count - (days + 1)];
+                sum += data.close;
+                res.push_back(ChartData(data.date, sum / days));
+            }
+        }
+        delete []tmp;
+    }
+    return res;
+}
+ChartDataVector ChartData::RSI(const ChartDataVector& in, size_t days) {
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        double avg_gain = 0.0;
+        double avg_loss = 0.0;
+        for (size_t f = 1; f < in.size(); f++) {
+            double      diff = 0.0;
+            const auto& data = in[f];
+            const auto& prev = in[f - 1];
+            diff = data.close - prev.close;
+            if (f <= days) {
+                if (diff > 0) {
+                    avg_gain += diff;
+                }
+                else {
+                    avg_loss += fabs(diff);
+                }
+            }
+            if (f == days) {
+                avg_gain = avg_gain / days;
+                avg_loss = avg_loss / days;
+                res.push_back(ChartData(data.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
+            }
+            else if (f > days) {
+                avg_gain = ((avg_gain * (days - 1)) + ((diff > 0) ? fabs(diff) : 0)) / days;
+                avg_loss = ((avg_loss * (days - 1)) + ((diff < 0) ? fabs(diff) : 0)) / days;
+                res.push_back(ChartData(data.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
+            }
+        }
+    }
+    return res;
+}
+bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::string sep) {
+    std::string csv;
+    csv.reserve(in.size() * 40 + 256);
+    for (const auto& data : in) {
+        char buffer[256];
+        snprintf(buffer, 256, "%s%s%f%s%f%s%f\n", data.date.c_str(), sep.c_str(), data.high, sep.c_str(), data.low, sep.c_str(), data.close);
+        csv += buffer;
+    }
+    return File::Save(filename, csv.c_str(), csv.size());
+}
+ChartDataVector ChartData::StdDev(const ChartDataVector& in, size_t days) {
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        size_t    count = 0;
+        double    sum   = 0.0;
+        ChartData data2;
+        for (const auto& data : in) {
+            count++;
+            sum += data.close;
+            if (count >= days) {
+                double mean = sum / days;
+                double dev  = 0.0;
+                for (size_t j = count - days; j < count; j++) {
+                    data2 = in[j];
+                    auto tmp = data2.close - mean;
+                    tmp *= tmp;
+                    dev  += tmp;
+                }
+                dev /= days;
+                dev = sqrt(dev);
+                data2 = in[count - days];
+                sum -= data2.close;
+                data2 = in[count - 1];
+                res.push_back(ChartData(data2.date, dev));
+            }
+        }
+    }
+    return res;
+}
+ChartDataVector ChartData::Stochastics(const ChartDataVector& in, size_t days) {
+    double          high = 0.0;
+    double          low  = 0.0;
+    ChartDataVector res;
+    if (days > 1 && days < in.size()) {
+        for (size_t f = 0; f < in.size(); f++) {
+            const auto& data = in[f];
+            if ((f + 1) >= days) {
+                high = data.high;
+                low  = data.low;
+                for (size_t j = (f + 1) - days; j < (f + 1) - 1; j++) {
+                    const auto& data2 = in[j];
+                    if (data2.high > high) {
+                        high = data2.high;
+                    }
+                    if (data2.low < low) {
+                        low = data2.low;
+                    }
+                }
+                double diff1 = data.close - low;
+                double diff2 = high - low;
+                if (diff2 > 0.0001) {
+                    double kval  = 100 * (diff1 / diff2);
+                    res.push_back(ChartData(data.date, kval));
+                }
+            }
+        }
+    }
+    return res;
+}
+ChartLine::ChartLine(const ChartDataVector& data, std::string label, ChartLine::TYPE type) {
     clear();
+    set_data(data);
+    set_label(label);
+    set_type(type);
+}
+std::optional<double> ChartLine::clamp_max() const {
+    if (std::isfinite(_clamp_max) == true) {
+        return _clamp_max;
+    }
+    return std::nullopt;
+}
+std::optional<double> ChartLine::clamp_min() const {
+    if (std::isfinite(_clamp_min) == true) {
+        return _clamp_min;
+    }
+    return std::nullopt;
 }
 void ChartLine::clear() {
-    points.clear();
-    align     = FL_ALIGN_CENTER;
-    type      = Chart::LINE;
-    clamp_max = Chart::MAX_VAL;
-    clamp_min = Chart::MIN_VAL;
-    color     = FL_FOREGROUND_COLOR;
-    label     = "";
-    max       = Chart::MIN_VAL;
-    min       = Chart::MAX_VAL;
-    visible   = true;
-    width     = 1;
+    _data.clear();
+    _align     = FL_ALIGN_LEFT;
+    _clamp_max = INFINITY;
+    _clamp_min = INFINITY;
+    _color     = FL_FOREGROUND_COLOR;
+    _label     = "";
+    _max       = INFINITY;
+    _min       = INFINITY;
+    _type      = TYPE::LINE;
+    _visible   = true;
+    _width     = 1;
 }
-void ChartLine::debug(int num) const {
+void ChartLine::debug(int num, bool prices) const {
 #ifdef DEBUG
     fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tChartLine: %d\n", num);
-    fprintf(stderr, "\t\t\talign:      %25s\n", (align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
-    fprintf(stderr, "\t\t\ttype:       %25d\n", (int) type);
-    fprintf(stderr, "\t\t\tclamp_max:  %25.4f\n", clamp_max);
-    fprintf(stderr, "\t\t\tclamp_min:  %25.4f\n", clamp_min);
-    fprintf(stderr, "\t\t\tlabel: %30s\n", label.c_str());
-    fprintf(stderr, "\t\t\tprices:     %25d\n", (int) points.size());
-    fprintf(stderr, "\t\t\tvisible:    %25d\n", visible);
-    fprintf(stderr, "\t\t\twidth:      %25d\n", width);
-    if (points.size() > 1) {
-        fprintf(stderr, "\t\t\tfirst:      %25s\n", points.front().date.c_str());
-        fprintf(stderr, "\t\t\tfirst:      %25f\n", points.front().close);
-        fprintf(stderr, "\t\t\tlast:       %25s\n", points.back().date.c_str());
-        fprintf(stderr, "\t\t\tlast:       %25f\n", points.back().close);
+    fprintf(stderr, "\t\tChartLine: %d (%p)\n", num, this);
+    fprintf(stderr, "\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
+    fprintf(stderr, "\t\t\ttype:  %31s\n", type_to_string().c_str());
+    fprintf(stderr, "\t\t\tclamp_max:  %25.4f\n", _clamp_max);
+    fprintf(stderr, "\t\t\tclamp_min:  %25.4f\n", _clamp_min);
+    fprintf(stderr, "\t\t\tlabel: %30s\n", _label.c_str());
+    fprintf(stderr, "\t\t\tlabel_rect:    %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
+    fprintf(stderr, "\t\t\tprices:     %25d\n", (int) size());
+    fprintf(stderr, "\t\t\tvisible:    %25d\n", _visible);
+    fprintf(stderr, "\t\t\twidth:      %25u\n", _width);
+    if (size() > 1) {
+        fprintf(stderr, "\t\t\tfirst:      %25s\n", _data.front().date.c_str());
+        fprintf(stderr, "\t\t\tfirst:      %25f\n", _data.front().close);
+        fprintf(stderr, "\t\t\tlast:       %25s\n", _data.back().date.c_str());
+        fprintf(stderr, "\t\t\tlast:       %25f\n", _data.back().close);
+    }
+    if (prices == true) {
+        ChartData::Debug(_data);
     }
 #else
     (void) num;
+    (void) prices;
 #endif
 }
-bool ChartLine::set(const PriceVector& points, std::string label, Chart::TYPE type, Fl_Align align, Fl_Color color, int width, double clamp_min, double clamp_max) {
-    if (width == 0 || width > _CHART_MAX_LINE_WIDTH || (int) type < 0 || (int) type > (int) Chart::LAST) {
-        return false;
+ChartLine& ChartLine::set_clamp(double min, double max) {
+    int c = std::isfinite(min) + std::isfinite(max);
+    if (c < 2) {
+        _clamp_min = min;
+        _clamp_max = max;
     }
-    if (width < 0 && _chart_has_resizable_width(type) == false) {
-        return false;
+    else if (c == 2 && min < max) {
+        _clamp_min = min;
+        _clamp_max = max;
     }
-    if (align != FL_ALIGN_LEFT && align != FL_ALIGN_RIGHT) {
-        return false;
+    else {
+        _clamp_min = INFINITY;
+        _clamp_max = INFINITY;
     }
-    clear();
-    this->points    = points;
-    this->label     = label;
-    this->type      = type;
-    this->align     = align;
-    this->color     = color;
-    this->width     = width;
-    this->clamp_min = clamp_min;
-    this->clamp_max = clamp_max;
-    for (const auto& price : this->points) {
-        if (price.high > max) {
-            max = price.high;
-        }
-        if (price.low < min) {
-            min = price.low;
-        }
-    }
-    return true;
+    return *this;
 }
-struct ChartScale {
-    double                      max;
-    double                      min;
-    double                      pixel;
-    double                      tick;
-                                ChartScale();
-    void                        calc(int height);
-    void                        clear();
-    void                        debug(const char* name) const;
-    double                      diff() const
-                                    { return max - min; }
-    void                        fix_height();
+ChartLine& ChartLine::set_data(const ChartDataVector& in) {
+    _max  = INFINITY;
+    _min  = INFINITY;
+    _data = in;
+    for (const auto& data : _data) {
+        if (std::isfinite(_min) == false || data.low < _min)  {
+            _min = data.low;
+        }
+        if (std::isfinite(_max) == false || data.high > _max) {
+            _max = data.high;
+        }
+    }
+    return *this;
+}
+ChartLine&  ChartLine::set_type_from_string(std::string val) {
+    if (val == "LINE_DOT")               _type = TYPE::LINE_DOT;
+    else if (val == "BAR")               _type = TYPE::BAR;
+    else if (val == "BAR_CLAMP")         _type = TYPE::BAR_CLAMP;
+    else if (val == "BAR_HLC")           _type = TYPE::BAR_HLC;
+    else if (val == "HORIZONTAL")        _type = TYPE::HORIZONTAL;
+    else if (val == "EXPAND_VERTICAL")   _type = TYPE::EXPAND_VERTICAL;
+    else if (val == "EXPAND_HORIZONTAL") _type = TYPE::EXPAND_HORIZONTAL;
+    else                                 _type = TYPE::LINE;
+    return *this;
+}
+std::string ChartLine::type_to_string() const {
+    static const char* NAMES[] = { "LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL", "", "", };
+    return NAMES[static_cast<unsigned>(_type)];
+}
+class ChartLineSetup : public Fl_Double_Window {
+public:
+    ChartLine&                  _line;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Button*                  _color;
+    Fl_Choice*                  _align;
+    Fl_Choice*                  _type;
+    Fl_Input*                   _max;
+    Fl_Input*                   _min;
+    Fl_Hor_Slider*              _width;
+    Fl_Input*                   _label;
+    GridGroup*                  _grid;
+    bool                        _ret;
+public:
+    ChartLineSetup(Fl_Window* parent, ChartLine& line) :
+    Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
+    _line(line) {
+        end();
+        _line   = line;
+        _ret    = false;
+        _align  = new Fl_Choice(0, 0, 0, 0, "Align");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _color  = new Fl_Button(0, 0, 0, 0, "Color");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _label  = new Fl_Input(0, 0, 0, 0, "Label");
+        _max    = new Fl_Input(0, 0, 0, 0, "Max clamp");
+        _min    = new Fl_Input(0, 0, 0, 0, "Min clamp");
+        _type   = new Fl_Choice(0, 0, 0, 0, "Type");
+        _width  = new Fl_Hor_Slider(0, 0, 0, 0);
+        _grid->add(_label,     12,   1,  -1,  4);
+        _grid->add(_type,      12,   6,  -1,  4);
+        _grid->add(_align,     12,  11,  -1,  4);
+        _grid->add(_color,     12,  16,  -1,  4);
+        _grid->add(_width,     12,  21,  -1,  4);
+        _grid->add(_min,       12,  26,  -1,  4);
+        _grid->add(_max,       12,  31,  -1,  4);
+        _grid->add(_cancel,   -34,  -5,  16,  4);
+        _grid->add(_close,    -17,  -5,  16,  4);
+        add(_grid);
+        _align->add("Left");
+        _align->add("Right");
+        _align->textfont(flw::PREF_FIXED_FONT);
+        _align->textsize(flw::PREF_FONTSIZE);
+        _cancel->callback(ChartLineSetup::Callback, this);
+        _close->callback(ChartLineSetup::Callback, this);
+        _color->align(FL_ALIGN_LEFT);
+        _color->callback(ChartLineSetup::Callback, this);
+        _label->textfont(flw::PREF_FIXED_FONT);
+        _label->textsize(flw::PREF_FONTSIZE);
+        _max->textfont(flw::PREF_FIXED_FONT);
+        _max->textsize(flw::PREF_FONTSIZE);
+        _max->tooltip("Set static maximum y value.\nUse inf for dynamic y values.\nThese values affects all lines in current area/scale.");
+        _min->textfont(flw::PREF_FIXED_FONT);
+        _min->textsize(flw::PREF_FONTSIZE);
+        _min->tooltip("Set static minimum y value.\nUse inf for dynamic y values.\nThese values affects all lines in current area/scale.");
+        _type->add("Line");
+        _type->add("Dotted Line");
+        _type->add("Bar");
+        _type->add("Bar clamp");
+        _type->add("Bar hlc");
+        _type->add("Horizontal");
+        _type->add("Expand Horizontal");
+        _type->textfont(flw::PREF_FIXED_FONT);
+        _type->textsize(flw::PREF_FONTSIZE);
+        _width->align(FL_ALIGN_LEFT);
+        _width->callback(ChartLineSetup::Callback, this);
+        _width->precision(0);
+        _width->range(0, ChartLine::MAX_WIDTH);
+        _width->value(_line.width());
+        _width->tooltip("Max line width.\nIf tick width is smaller,\nthen tick width is prioritized.\n0 width is dynamic width.");
+        resizable(_grid);
+        util::labelfont(this);
+        callback(ChartLineSetup::Callback, this);
+        size(30 * flw::PREF_FONTSIZE, 21 * flw::PREF_FONTSIZE);
+        size_range(30 * flw::PREF_FONTSIZE, 21 * flw::PREF_FONTSIZE);
+        set_modal();
+        util::center_window(this, parent);
+        _grid->do_layout();
+        ChartLineSetup::Callback(_width, this);
+        set();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<ChartLineSetup*>(o);
+        if (w == self) {
+            self->hide();
+        }
+        else if (w == self->_color) {
+            self->_color->color(fl_show_colormap(self->_line.color()));
+        }
+        else if (w == self->_width) {
+            auto l = util::format("Width %u", static_cast<unsigned>(static_cast<Fl_Hor_Slider*>(w)->value()));
+            w->copy_label(l.c_str());
+            self->redraw();
+        }
+        else if (w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->get();
+            self->hide();
+        }
+    }
+    void get() {
+        _line.set_label(_label->value());
+        _line.set_width(_width->value());
+        _line.set_color(_color->color());
+        _line.set_clamp(util::to_double(_min->value()), util::to_double(_max->value()));
+        if (_type->value() == 0)      _line.set_type(ChartLine::TYPE::LINE);
+        else if (_type->value() == 1) _line.set_type(ChartLine::TYPE::LINE_DOT);
+        else if (_type->value() == 2) _line.set_type(ChartLine::TYPE::BAR);
+        else if (_type->value() == 3) _line.set_type(ChartLine::TYPE::BAR_CLAMP);
+        else if (_type->value() == 4) _line.set_type(ChartLine::TYPE::BAR_HLC);
+        else if (_type->value() == 5) _line.set_type(ChartLine::TYPE::HORIZONTAL);
+        else if (_type->value() == 6) _line.set_type(ChartLine::TYPE::EXPAND_HORIZONTAL);
+        if (_align->value() == 0) _line.set_align(FL_ALIGN_LEFT);
+        else                      _line.set_align(FL_ALIGN_RIGHT);
+    }
+    bool run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _ret;
+    }
+    void set() {
+        auto min = _line.clamp_min();
+        auto max = _line.clamp_max();
+        _label->value(_line.label().c_str());
+        _color->color(_line.color());
+        _min->value(min.has_value() == true ? min.value() : INFINITY);
+        _max->value(max.has_value() == true ? max.value() : INFINITY);
+        ChartLineSetup::Callback(_width, this);
+        if (_line.type() == ChartLine::TYPE::LINE)                   _type->value(0);
+        else if (_line.type() == ChartLine::TYPE::LINE_DOT)          _type->value(1);
+        else if (_line.type() == ChartLine::TYPE::BAR)               _type->value(2);
+        else if (_line.type() == ChartLine::TYPE::BAR_CLAMP)         _type->value(3);
+        else if (_line.type() == ChartLine::TYPE::BAR_HLC)           _type->value(4);
+        else if (_line.type() == ChartLine::TYPE::HORIZONTAL)        _type->value(5);
+        else if (_line.type() == ChartLine::TYPE::EXPAND_HORIZONTAL) _type->value(6);
+        if (_line.align() == FL_ALIGN_LEFT) _align->value(0);
+        else                                _align->value(1);
+    }
 };
 ChartScale::ChartScale() {
     clear();
 }
 void ChartScale::calc(int height) {
     auto range = diff();
-    tick  = 0.0;
-    pixel = 0.0;
-    if (min < max && range > 0.000000001) {
+    _tick  = 0.0;
+    _pixel = 0.0;
+    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && range > 0.000000001) {
         double test_inc = 0.0;
         double test_min = 0.0;
         double test_max = 0.0;
         int    ticker   = 0;
-        test_inc = pow((double) 10, (double) ceil(log10(range / 10.0)));
-        test_max = ((int) (max / test_inc)) * test_inc;
-        if (test_max < max) {
+        test_inc = pow(10.0, ceil(log10(range / 10.0)));
+        test_max = static_cast<int>(_max / test_inc) * test_inc;
+        if (test_max < _max) {
             test_max += test_inc;
         }
         test_min = test_max;
         do {
             ++ticker;
             test_min -= test_inc;
-        } while (test_min > min);
+        } while (test_min > _min);
         if (ticker < 10) {
             test_inc = (ticker < 5) ? test_inc / 10.0 : test_inc / 2.0;
-            while ((test_min + test_inc) <= min) {
+            while ((test_min + test_inc) <= _min) {
                 test_min += test_inc;
             }
-            while ((test_max - test_inc) >= max) {
+            while ((test_max - test_inc) >= _max) {
                 test_max -= test_inc;
             }
         }
-        min   = test_min;
-        max   = test_max;
-        tick  = test_inc;
-        if (tick > 0.000000001) {
-            pixel = height / diff();
+        _min   = test_min;
+        _max   = test_max;
+        _tick  = test_inc;
+        if (_tick > 0.000000001) {
+            _pixel = height / diff();
         }
     }
 }
 void ChartScale::clear() {
-    min   = Chart::MAX_VAL;
-    max   = Chart::MIN_VAL;
-    tick  = 0.0;
-    pixel = 0.0;
+    _min   = INFINITY;
+    _max   = INFINITY;
+    _tick  = 0.0;
+    _pixel = 0.0;
 }
 void ChartScale::debug(const char* name) const {
 #ifdef DEBUG
     fprintf(stderr, "\t\t---------------------------------------------\n");
     fprintf(stderr, "\t\tChartScale: %s\n", name);
-    fprintf(stderr, "\t\t\tmin:   %30.6f\n", min);
-    fprintf(stderr, "\t\t\tmax:   %30.6f\n", max);
+    fprintf(stderr, "\t\t\tmin:   %30.6f\n", _min);
+    fprintf(stderr, "\t\t\tmax:   %30.6f\n", _max);
     fprintf(stderr, "\t\t\tDiff:  %30.6f\n", diff());
-    fprintf(stderr, "\t\t\ttick:  %30.6f\n", tick);
-    fprintf(stderr, "\t\t\tpixel: %30.6f\n", pixel);
+    fprintf(stderr, "\t\t\ttick:  %30.6f\n", _tick);
+    fprintf(stderr, "\t\t\tpixel: %30.6f\n", _pixel);
 #else
     (void) name;
 #endif
 }
 void ChartScale::fix_height() {
-    if (fabs(max - min) < 0.000001) {
-        if (min >= 0.0) {
-            min *= 0.9;
+    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < 0.000001) {
+        if (_min >= 0.0) {
+            _min *= 0.9;
         }
         else {
-            min *= 1.1;
+            _min *= 1.1;
         }
-        if (max >= 0.0) {
-            max *= 1.1;
+        if (_max >= 0.0) {
+            _max *= 1.1;
         }
         else {
-            max *= 0.9;
+            _max *= 0.9;
         }
     }
 }
-struct ChartArea {
-    size_t                      count;
-    double                      h;
-    ChartScale                  left;
-    LineVector                  lines;
-    int                         percent;
-    ChartScale                  right;
-    size_t                      selected;
-    double                      w;
-    double                      x;
-    double                      y;
-                                ChartArea();
-    void                        clear(bool clear_data);
-    void                        debug(int num) const;
-    int                         x2() const
-                                    { return (int) (x + w); }
-    int                         y2() const
-                                    { return (int) (y + h); }
-};
-ChartArea::ChartArea() {
-    for (size_t f = 0; f < Chart::MAX_LINE; f++) {
-        lines.push_back(ChartLine());
+std::optional<double> ChartScale::max() const {
+    if (std::isfinite(_max) == true) {
+        return _max;
     }
-    clear(false);
+    return std::nullopt;
 }
-void ChartArea::clear(bool clear_data) {
-    count    = 0;
-    x        = 0.0;
-    y        = 0.0;
-    w        = 0.0;
-    h        = 0.0;
-    selected = 0;
-    left.clear();
-    right.clear();
-    if (clear_data == true) {
-        percent = 0;
-        for (size_t f = 0; f < Chart::MAX_LINE; f++) {
-            lines[f] = ChartLine();
-        }
+std::optional<double> ChartScale::min() const {
+    if (std::isfinite(_min) == true) {
+        return _min;
     }
-}
-void ChartArea::debug(int num) const {
-#ifdef DEBUG
-    auto c = 0;
-    for (const auto& line : lines) {
-        if (line.points.size() > 0) {
-            c++;
-        }
-    }
-    if (c > 0 || num == 0) {
-        fprintf(stderr, "\t----------------------\n");
-        fprintf(stderr, "\tChartArea: %d\n", num);
-        fprintf(stderr, "\t\tlines:    %4d\n", c);
-        fprintf(stderr, "\t\tx:        %4.0f\n", x);
-        fprintf(stderr, "\t\ty:        %4.0f\n", y);
-        fprintf(stderr, "\t\tw:        %4.0f\n", w);
-        fprintf(stderr, "\t\th:        %4.0f\n", h);
-        fprintf(stderr, "\t\tpercent:  %4d\n", percent);
-        fprintf(stderr, "\t\tselected: %4d\n", (int) selected);
-        left.debug("left");
-        right.debug("right");
-        c = 0;
-        for (const auto& line : lines) {
-            if (line.points.size() > 0) {
-                line.debug(c++);
-            }
-        }
-    }
-#else
-    (void) num;
-#endif
-}
-Price::Price() {
-    high  = 0.0;
-    low   = 0.0;
-    close = 0.0;
-    vol   = 0.0;
-}
-Price::Price(const std::string& date, double value) {
-    this->date = date;
-    high       = value;
-    low        = value;
-    close      = value;
-    vol        = value;
-}
-Price::Price(const std::string& date, double high, double low, double close, double vol) {
-    this->date  = date;
-    this->high  = high;
-    this->low   = low;
-    this->close = close;
-    this->vol   = vol;
-#ifdef DEBUG
-    if (close > high || close < low || high < low) {
-        fprintf(stderr, "error: values out of order in Price(%s, %15.5f  >=  %15.5f  <=  %15.5f)\n", date.c_str(), high, low, close);
-    }
-#endif
+    return std::nullopt;
 }
 Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
@@ -470,14 +1019,11 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     labelcolor(FL_FOREGROUND_COLOR);
     box(FL_BORDER_BOX);
     tooltip(
-        "Press right button for menu.\n"
-        "Press ctrl + scroll wheel to change tick size.\n"
+        "Press ctrl + scroll wheel to change tick width.\n"
         "Press left button to show Y value.\n"
-        "Press ctrl + left button to show actual price data.\n"
-        "\n"
-        "Press 1 - 9 to select which line to use.\n"
-        "Press shift + 1 - 9 to toggle line visibility.\n"
-        "Click in target area first."
+        "Press ctrl + left button to show value for selected line.\n"
+        "Press middle button on label to select that line.\n"
+        "Press right button for menu.\n"
     );
     _menu   = new Fl_Menu_Button(0, 0, 0, 0);
     _scroll = new Fl_Scrollbar(0, 0, 0, 0);
@@ -485,83 +1031,76 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     add(_scroll);
     _scroll->type(FL_HORIZONTAL);
     _scroll->callback(Chart::_CallbackScrollbar, this);
-    _menu->add(_CHART_SHOW_LABELS, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_HLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_VLINES, 0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_RESET_SELECT, 0, Chart::_CallbackReset, this, FL_MENU_DIVIDER);
-    _menu->add(_CHART_PRINT, 0, Chart::_CallbackPrint, this);
-    _menu->add(_CHART_SAVE_PNG, 0, Chart::_CallbackSavePng, this);
+    _menu->add(_CHART_SHOW_LABELS,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_HLINES,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_VLINES,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_CHART_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
+    _menu->add(_CHART_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
+    _menu->add(_CHART_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()));
+    _menu->add(_CHART_SETUP_WIDTH,      0, _FLW_CHART_CB(setup_ywidth()), FL_MENU_DIVIDER);
+    _menu->add(_CHART_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()));
+    _menu->add(_CHART_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
+    _menu->add(_CHART_SETUP_SHOW,       0, _FLW_CHART_CB(setup_show_or_hide_lines()));
+    _menu->add(_CHART_ADD_CSV,          0, _FLW_CHART_CB(load_cvs()), FL_MENU_DIVIDER);
+    _menu->add(_CHART_SETUP_LINE,       0, _FLW_CHART_CB(setup_line()));
+    _menu->add(_CHART_ADD_LINE,         0, _FLW_CHART_CB(setup_add_line()));
+    _menu->add(_CHART_SAVE_CSV,         0, _FLW_CHART_CB(save_cvs()), FL_MENU_DIVIDER);
+    _menu->add(_CHART_SAVE_JSON,        0, _FLW_CHART_CB(save_json()));
+    _menu->add(_CHART_LOAD_JSON,        0, _FLW_CHART_CB(load_json()), FL_MENU_DIVIDER);
+    _menu->add(_CHART_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
+    _menu->add(_CHART_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #ifdef DEBUG
-    _menu->add("Debug", 0, Chart::_CallbackDebug, this);
+    _menu->add(_CHART_DEBUG_CHART,      0, Chart::_CallbackDebugChart, this);
+    _menu->add(_CHART_DEBUG_LINE,       0, Chart::_CallbackDebugLine, this);
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
-    _areas.push_back(ChartArea());
-    _areas.push_back(ChartArea());
-    _areas.push_back(ChartArea());
+    _areas.push_back(ChartArea(ChartArea::NUM::ONE));
+    _areas.push_back(ChartArea(ChartArea::NUM::TWO));
+    _areas.push_back(ChartArea(ChartArea::NUM::THREE));
+    _areas.push_back(ChartArea(ChartArea::NUM::FOUR));
+    _areas.push_back(ChartArea(ChartArea::NUM::FIVE));
     clear();
     update_pref();
     view_options();
 }
-bool Chart::add_line(size_t area, const PriceVector& points, std::string line_label, Chart::TYPE chart_type, Fl_Align line_align, Fl_Color line_color, int line_width, double clamp_min, double clamp_max) {
-    _area = nullptr;
+bool Chart::add_line(ChartArea::NUM area, const ChartLine& chart_line) {
     redraw();
-    if (area >= Chart::MAX_AREA || _areas[area].count >= Chart::MAX_LINE) {
-        return false;
-    }
-    if (chart_type < Chart::LINE || chart_type > Chart::LAST) {
-        return false;
-    }
-    if (_areas[area].lines[_areas[area].count].set(points, line_label, chart_type, line_align, line_color, line_width, clamp_min, clamp_max) == false) {
-        _areas[area].lines[_areas[area].count] = ChartLine();
-        return false;
-    }
-    _areas[area].count++;
-    return true;
-}
-bool Chart::area_size(int area1, int area2, int area3) {
-    _area = nullptr;
-    if (area1 < 0 || area1 > 100 || area2 < 0 || area2 > 100 || area3 < 0 || area3 > 100 || area1 + area2 + area3 != 100) {
-        return false;
-    }
-    _areas[0].percent = area1;
-    _areas[1].percent = area2;
-    _areas[2].percent = area3;
-    return true;
+    return _areas[static_cast<size_t>(area)].add_line(chart_line);
 }
 void Chart::_calc_area_height() {
-    int last   = 0;
-    int addh   = 0;
-    int height = 0;
-    _top_space    = flw::PREF_FIXED_FONTSIZE;
+    auto last   = 0;
+    auto addh   = 0;
+    auto height = 0;
+    _top_space    = (_label == "") ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FIXED_FONTSIZE * 3;
     _bottom_space = flw::PREF_FIXED_FONTSIZE * 3 + Fl::scrollbar_size();
     height        = h() - (_bottom_space + _top_space);
-    for (size_t f = 1; f < Chart::MAX_AREA; f++) {
+    for (size_t f = 1; f <= static_cast<size_t>(ChartArea::NUM::LAST); f++) {
         const auto& area = _areas[f];
-        if (area.percent >= 10) {
+        if (area.percent() >= Chart::MIN_AREA_SIZE) {
             height -= PREF_FIXED_FONTSIZE;
         }
     }
-    _areas[0].y = _top_space;
-    _areas[0].h = (int) ((_areas[0].percent / 100.0) * height);
-    for (size_t f = 1; f < Chart::MAX_AREA; f++) {
-        const auto& prev = _areas[f - 1];
-        auto&       area = _areas[f];
-        if (area.percent > 10) {
-            area.y  = prev.y + prev.h + flw::PREF_FIXED_FONTSIZE;
-            area.h  = (int) ((_areas[1].percent / 100.0) * height);
-            addh   += (int) (prev.h);
-            last    = f;
+    _areas[0].set_y(_top_space);
+    _areas[0].set_h(static_cast<int>((_areas[0].percent() / 100.0) * height));
+    for (size_t f = 1; f <= static_cast<size_t>(ChartArea::NUM::LAST); f++) {
+        auto& prev = _areas[f - 1];
+        auto& area = _areas[f];
+        if (area.percent() >= Chart::MIN_AREA_SIZE) {
+            area.set_y(prev.y() + prev.h() + flw::PREF_FIXED_FONTSIZE);
+            area.set_h(static_cast<int>((_areas[f].percent() / 100.0) * height));
+            addh += static_cast<int>(prev.h());
+            last  = f;
         }
     }
     if (last > 0) {
-        _areas[last].h = (int) (height - addh);
+        _areas[last].set_h(static_cast<int>(height - addh));
     }
 }
 void Chart::_calc_area_width() {
     const double width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
-    _ticks     = (int) (width / _tick_width);
+    _ticks     = static_cast<int>(width / _tick_width);
     _top_space = flw::PREF_FIXED_FONTSIZE;
-    if ((int) _dates.size() > _ticks) {
+    if (static_cast<int>(_dates.size()) > _ticks) {
         const double slider_size = _ticks / (_dates.size() + 1.0);
         _scroll->activate();
         _scroll->slider_size((slider_size > 0.05) ? slider_size : 0.05);
@@ -579,38 +1118,21 @@ void Chart::_calc_area_width() {
         _date_start = 0;
     }
     for (auto& area : _areas) {
-        area.x = _margin_left * flw::PREF_FIXED_FONTSIZE;
-        area.w = width;
+        area.set_x(_margin_left * flw::PREF_FIXED_FONTSIZE);
+        area.set_w(width);
     }
 }
 void Chart::_calc_dates() {
-    auto min       = std::string();
-    auto max       = std::string();
-    auto long_date = false;
+    std::string min;
+    std::string max;
     for (const auto& area : _areas) {
-        for (const auto& line : area.lines) {
-            if (line.points.size() > 0) {
-                const auto& first = line.points.front();
-                const auto& last  = line.points.back();
-                if (min.length() == 0) {
-                    if (first.date.length() == 15) {
-                        min = "99991231 232359";
-                        max = "01010101 000000";
-                    }
-                    else if (first.date.length() == 19) {
-                        min = "9999-12-31 23:23:59";
-                        max = "0101-01-01 00:00:00";
-                        long_date = true;
-                    }
-                    else if (first.date.length() == 10) {
-                        min = "9999-12-31";
-                        max = "0101-01-01";
-                        long_date = true;
-                    }
-                    else {
-                        min = "99991231";
-                        max = "01010101";
-                    }
+        for (const auto& line : area.lines()) {
+            if (line.size() > 0 && line.is_visible() == true) {
+                auto& first = line.data_vector().front();
+                auto& last  = line.data_vector().back();
+                if (min == "") {
+                    min = "99991231 232359";
+                    max = "01010101 000000";
                 }
                 if (first.date < min) {
                     min = first.date;
@@ -623,53 +1145,67 @@ void Chart::_calc_dates() {
     }
     _dates.clear();
     if (min != "") {
-        _dates = _chart_create_date_serie(min.c_str(), max.c_str(), _date_range, _block_dates, long_date);
+        _dates = ChartData::DateSerie(min, max, _date_range, _block_dates);
         redraw();
     }
 }
 void Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
-        area.left.clear();
-        area.right.clear();
-        for (const auto& line : area.lines) {
-            if (line.points.size() > 0) {
-                const int stop    = _date_start + _ticks;
-                int       current = _date_start;
+        area.left_scale().clear();
+        area.right_scale().clear();
+        for (const auto& line : area.lines()) {
+            if (line.size() > 0 && line.is_visible() == true) {
+                auto      min_clamp = line.clamp_min();
+                auto      max_clamp = line.clamp_max();
+                const int stop      = _date_start + _ticks;
+                int       current   = _date_start;
+                double    minimum   = INFINITY;
+                double    maximum   = INFINITY;
                 double    max;
                 double    min;
-                while (current <= stop && current < (int) _dates.size()) {
-                    const Price& date  = _dates[current];
-                    const size_t index = _chart_bsearch(line.points, date);
-                    if (index != (size_t) -1) {
-                        const Price& price = line.points[index];
-                        if (_chart_has_high_low(line.type) == true) {
-                            min = price.low;
-                            max = price.high;
+                if (min_clamp.has_value() == true && (std::isfinite(minimum) == false || min_clamp.value() < minimum)) {
+                    minimum = min_clamp.value();
+                }
+                if (max_clamp.has_value() == true && (std::isfinite(maximum) == false || max_clamp.value() > maximum)) {
+                    maximum = max_clamp.value();
+                }
+                while (current <= stop && current < static_cast<int>(_dates.size())) {
+                    const ChartData& date  = _dates[current];
+                    const size_t     index = ChartData::BinarySearch(line.data_vector(), date);
+                    if (index != static_cast<size_t>(-1)) {
+                        const ChartData& data = line.data_vector()[index];
+                        if (line.type_has_hlc() == true) {
+                            min = data.low;
+                            max = data.high;
                         }
                         else {
-                            min = price.close;
-                            max = price.close;
+                            min = data.close;
+                            max = data.close;
                         }
-                        if ((int64_t) line.clamp_min > Chart::MIN_VAL) {
-                            min = line.clamp_min;
+                        if (std::isfinite(minimum) == true) {
+                            min = minimum;
                         }
-                        if ((int64_t) line.clamp_max < Chart::MAX_VAL) {
-                            max = line.clamp_max;
+                        if (std::isfinite(maximum) == true) {
+                            max = maximum;
                         }
-                        if (line.align == FL_ALIGN_LEFT) {
-                            if (min < area.left.min) {
-                                area.left.min = min;
+                        if (line.align() == FL_ALIGN_LEFT) {
+                            auto scale_min = area.left_scale().min();
+                            auto scale_max = area.left_scale().max();
+                            if (scale_min.has_value() == false || min < scale_min.value()) {
+                                area.left_scale().set_min(min);
                             }
-                            if (max > area.left.max) {
-                                area.left.max = max;
+                            if (scale_max.has_value() == false || max > scale_max.value()) {
+                                area.left_scale().set_max(max);
                             }
                         }
                         else {
-                            if (min < area.right.min) {
-                                area.right.min = min;
+                            auto scale_min = area.right_scale().min();
+                            auto scale_max = area.right_scale().max();
+                            if (scale_min.has_value() == false || min < scale_min.value()) {
+                                area.right_scale().set_min(min);
                             }
-                            if (max > area.right.max) {
-                                area.right.max = max;
+                            if (scale_max.has_value() == false || max > scale_max.value()) {
+                                area.right_scale().set_max(max);
                             }
                         }
                     }
@@ -677,26 +1213,63 @@ void Chart::_calc_ymin_ymax() {
                 }
             }
         }
-        area.left.fix_height();
-        area.right.fix_height();
+        area.left_scale().fix_height();
+        area.right_scale().fix_height();
     }
 }
 void Chart::_calc_yscale() {
     for (auto& area : _areas) {
-        area.left.calc(area.h);
-        area.right.calc(area.h);
+        area.left_scale().calc(area.h());
+        area.right_scale().calc(area.h());
     }
 }
-void Chart::_CallbackDebug(Fl_Widget*, void* widget) {
+void Chart::_calc_ywidth() {
+    auto l = false;
+    auto r = false;
+    for (const auto& area : _areas) {
+        for (const auto& line : area.lines()) {
+            if (line.size() == 0) {
+            }
+            else if (line.align() == FL_ALIGN_LEFT) {
+                l = true;
+            }
+            else {
+                r = true;
+            }
+        }
+    }
+    if (l == true) {
+        _margin_left = _margin;
+    }
+    else {
+        _margin_left = Chart::MIN_MARGIN;
+    }
+    if (r == true) {
+        _margin_right = _margin;
+    }
+    else {
+        _margin_right = Chart::MIN_MARGIN;
+    }
+}
+void Chart::_CallbackDebugChart(Fl_Widget*, void* widget) {
+#ifdef DEBUG
     auto self = static_cast<const Chart*>(widget);
     self->debug();
+#else
+    (void) widget;
+#endif
 }
-void Chart::_CallbackPrint(Fl_Widget*, void* widget) {
-    auto self = static_cast<Chart*>(widget);
-    self->_printing = true;
-    dlg::print("Print Chart", Chart::_CallbackPrinter, self, 1, 1, self->top_window());
-    self->_printing = false;
-    self->redraw();
+void Chart::_CallbackDebugLine(Fl_Widget*, void* widget) {
+#ifdef DEBUG
+    auto self = static_cast<const Chart*>(widget);
+    if (self->_area == nullptr || self->_area->selected_line() == nullptr) {
+        return;
+    }
+    const auto* line = self->_area->selected_line();
+    line->debug(-1, true);
+#else
+    (void) widget;
+#endif
 }
 bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
     auto widget = static_cast<Fl_Widget*>(data);
@@ -705,20 +1278,6 @@ bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
     widget->draw();
     widget->resize(r.x(), r.y(), r.w(), r.h());
     return false;
-}
-void Chart::_CallbackReset(Fl_Widget*, void* widget) {
-    auto self = static_cast<Chart*>(widget);
-    for (auto& area : self->_areas) {
-        area.selected = 0;
-        for (auto& line : area.lines) {
-            line.visible = true;
-        }
-    }
-    self->redraw();
-}
-void Chart::_CallbackSavePng(Fl_Widget*, void* widget) {
-    auto self = static_cast<Chart*>(widget);
-    util::png_save("", self->window(), self->x() + 1,  self->y() + 1,  self->w() - 2,  self->h() - self->_scroll->h() - 1);
 }
 void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
     auto self = static_cast<Chart*>(widget);
@@ -736,82 +1295,236 @@ void Chart::clear() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
     _block_dates.clear();
     _dates.clear();
-    _areas[0].clear(true);
-    _areas[1].clear(true);
-    _areas[2].clear(true);
+    for (auto& area : _areas) {
+        area.clear();
+    }
     _area         = nullptr;
     _bottom_space = 0;
     _cw           = 0;
     _date_start   = 0;
-    _old_height   = -1;
-    _old_width    = -1;
+    _label        = "";
+    _old          = Fl_Rect();
     _printing     = false;
     _tooltip      = "";
     _top_space    = 0;
     _ver_pos[0]   = -1;
-    area_size();
-    margin();
-    date_range();
-    tick_width();
+    set_area_size();
+    set_margin(Chart::DEF_MARGIN);
+    set_date_range();
+    set_tick_width();
     init(false);
 }
+bool Chart::create_line(ChartData::FORMULAS formula, bool support) {
+    if (_area == nullptr || _area->selected_line() == nullptr || _area->size() >= ChartArea::MAX_LINES) {
+        return false;
+    }
+    auto line0  = _area->selected_line();
+    auto line1  = ChartLine();
+    auto line2  = ChartLine();
+    auto line3  = ChartLine();
+    auto vec1   = ChartDataVector();
+    auto vec2   = ChartDataVector();
+    auto vec3   = ChartDataVector();
+    auto label1 = std::string();
+    auto label2 = std::string();
+    auto label3 = std::string();
+    auto type1  = ChartLine::TYPE::LINE;
+    auto type2  = ChartLine::TYPE::LINE;
+    auto type3  = ChartLine::TYPE::LINE;
+    if (formula == ChartData::FORMULAS::ATR) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::ATR(line0->data_vector(), days);
+        label1 = util::format("ATR %d Days", days);
+    }
+    else if (formula == ChartData::FORMULAS::DAY_TO_WEEK) {
+        auto answer = fl_choice("Would you like to use highest/lowest and last close value per week?\nOr sum values per week?", nullptr, "High/Low", "Sum");
+        vec1   = ChartData::DayToWeek(line0->data_vector(), Date::DAY::SUNDAY, answer == 2);
+        label1 = "Weekly (Sunday)";
+        type1  = line0->type();
+    }
+    else if (formula == ChartData::FORMULAS::DAY_TO_MONTH) {
+        auto answer = fl_choice("Would you like to use highest/lowest and last close value per month?\nOr sum values per month?", nullptr, "High/Low", "Sum");
+        vec1   = ChartData::DayToMonth(line0->data_vector(), answer == 2);
+        label1 = "Monthly";
+        type1  = line0->type();
+    }
+    else if (formula == ChartData::FORMULAS::EXP_MOVING_AVERAGE) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::ExponentialMovingAverage(line0->data_vector(), days);
+        label1 = util::format("Exponential Moving Average %d Days", days);
+    }
+    else if (formula == ChartData::FORMULAS::FIXED) {
+        auto value = util::to_double(fl_input_str(16, "Enter value", "0"));
+        if (std::isinf(value) == true) {
+            return false;
+        }
+        vec1   = ChartData::Fixed(line0->data_vector(), value);
+        label1 = util::format("Horizontal %f", value);
+        type1  = ChartLine::TYPE::EXPAND_HORIZONTAL;
+    }
+    else if (formula == ChartData::FORMULAS::MODIFY) {
+        auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
+        auto mod  = dlg::choice("Select Modification", list, 0, top_window());
+        if (mod < 0 || mod > static_cast<int>(ChartData::MODIFY::LAST)) {
+            return false;
+        }
+        auto modify = static_cast<ChartData::MODIFY>(mod);
+        auto value  = util::to_double(fl_input_str(16, "Enter value", "0"));
+        if (std::isinf(value) == true) {
+            return false;
+        }
+        else if (modify == ChartData::MODIFY::DIVISION && fabs(value) < 0.0001) {
+            fl_alert("To small value for division!");
+            return false;
+        }
+        vec1   = ChartData::Modify(line0->data_vector(), modify, value);
+        label1 = util::format("Modified %s", line0->label().c_str());
+        type1  = line0->type();
+    }
+    else if (formula == ChartData::FORMULAS::MOMENTUM) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::Momentum(line0->data_vector(), days);
+        label1 = util::format("Momentum %d Days", days);
+        if (support == true) {
+            vec2   = ChartData::Fixed(line0->data_vector(), 0.0);
+            label2 = "Momentum Zero";
+            type2  = ChartLine::TYPE::EXPAND_HORIZONTAL;
+        }
+    }
+    else if (formula == ChartData::FORMULAS::MOVING_AVERAGE) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::MovingAverage(line0->data_vector(), days);
+        label1 = util::format("Moving Average %d Days", days);
+    }
+    else if (formula == ChartData::FORMULAS::RSI) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::RSI(line0->data_vector(), days);
+        label1 = util::format("RSI %d Days", days);
+        if (support == true) {
+            vec2   = ChartData::Fixed(line0->data_vector(), 30.0);
+            label2 = "RSI 30";
+            type2  = ChartLine::TYPE::EXPAND_HORIZONTAL;
+            vec3   = ChartData::Fixed(line0->data_vector(), 70.0);
+            label3 = "RSI 70";
+            type3  = ChartLine::TYPE::EXPAND_HORIZONTAL;
+        }
+    }
+    else if (formula == ChartData::FORMULAS::STD_DEV) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::StdDev(line0->data_vector(), days);
+        label1 = util::format("Std. dev. %d Days", days);
+    }
+    else if (formula == ChartData::FORMULAS::STOCHASTICS) {
+        auto days = util::to_long(fl_input_str(2, "Enter number of days (2 - 99)", "14"));
+        if (days < 2 || days > 99) {
+            return false;
+        }
+        vec1   = ChartData::Stochastics(line0->data_vector(), days);
+        label1 = util::format("Stochastics %d Days", days);
+        if (support == true) {
+            vec2   = ChartData::Fixed(line0->data_vector(), 20.0);
+            label2 = "Stochastics 20";
+            type2  = ChartLine::TYPE::EXPAND_HORIZONTAL;
+            vec3   = ChartData::Fixed(line0->data_vector(), 80.0);
+            label3 = "Stochastics 80";
+            type3  = ChartLine::TYPE::EXPAND_HORIZONTAL;
+        }
+    }
+    if (vec1.size() == 0) {
+        fl_alert("To few datapoints!");
+        return false;
+    }
+    line1.set_data(vec1).set_label(label1).set_type(type1).set_align(line0->align()).set_color(FL_BLUE);
+    ChartLineSetup(top_window(), line1).run();
+    add_line(_area->num(), line1);
+    if (vec2.size() > 0) {
+        line2.set_data(vec2).set_label(label2).set_type(type2).set_align(line1.align()).set_color(FL_BLACK);
+        add_line(_area->num(), line2);
+    }
+    if (vec3.size() > 0) {
+        line3.set_data(vec3).set_label(label3).set_type(type3).set_align(line1.align()).set_color(FL_BLACK);
+        add_line(_area->num(), line3);
+    }
+    init(true);
+    return true;
+}
 void Chart::_create_tooltip(bool ctrl) {
-    const int X   = Fl::event_x();
-    const int Y   = Fl::event_y();
-    auto      old = _tooltip;
+    int         X   = Fl::event_x();
+    int         Y   = Fl::event_y();
+    std::string old = _tooltip;
     _tooltip = "";
     if (_area == nullptr) {
         Fl::redraw();
         return;
     }
-    const auto format    = (_date_format == flw::Date::FORMAT::ISO) ? flw::Date::FORMAT::NAME_LONG : flw::Date::FORMAT::ISO_TIME_LONG;
-    const int  stop      = _date_start + _ticks;
-    int        start     = _date_start;
-    int        X1        = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
-    int        left_dec  = 0;
-    int        right_dec = 0;
-    if (_area->left.tick < 10.0 ) {
-        left_dec = _chart_count_decimals(_area->left.tick) + 1;
+    const Date::FORMAT format    = (_date_format == Date::FORMAT::ISO) ? Date::FORMAT::NAME_LONG : Date::FORMAT::ISO_TIME_LONG;
+    const int          stop      = _date_start + _ticks;
+    int                start     = _date_start;
+    int                X1        = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+    int                left_dec  = 0;
+    int                right_dec = 0;
+    if (_area->left_scale().tick() < 10.0 ) {
+        left_dec = flw::_chart_count_decimals(_area->left_scale().tick()) + 1;
     }
-    if (_area->right.tick < 10.0 ) {
-        right_dec = _chart_count_decimals(_area->right.tick) + 1;
+    if (_area->right_scale().tick() < 10.0 ) {
+        right_dec = flw::_chart_count_decimals(_area->right_scale().tick()) + 1;
     }
-    while (start <= stop && start < (int) _dates.size()) {
+    while (start <= stop && start < static_cast<int>(_dates.size())) {
         if (X >= X1 && X <= X1 + _tick_width - 1) {
             const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(format);
-            const auto&       line       = _area->lines[_area->selected];
-            _tooltip = fancy_date;
-            if (ctrl == false || line.points.size() == 0 || line.visible == false) {
-                const double ydiff = (double) ((y() + _area->y2()) - Y);
+            const ChartLine*  line       = _area->selected_line();
+            _tooltip = fancy_date + "\n \n \n ";
+            if (ctrl == false || line == nullptr || line->size() == 0 || line->is_visible() == false) {
+                const double ydiff = static_cast<double>((y() + _area->y2()) - Y);
+                auto         l_min = _area->left_scale().min();
+                auto         r_min = _area->right_scale().min();
                 std::string  left;
                 std::string  right;
-                if (_area->left.max > _area->left.min) {
-                    left = _chart_format_double(_area->left.min + (ydiff / _area->left.pixel), left_dec, '\'');
+                if (_area->left_scale().diff() > 0.0) {
+                    left = flw::_chart_format_double(l_min.value() + (ydiff / _area->left_scale().pixel()), left_dec, '\'');
                 }
-                if (_area->right.max > _area->right.min) {
-                    right = _chart_format_double(_area->right.min + (ydiff / _area->right.pixel), right_dec, '\'');
+                if (_area->right_scale().diff() > 0.0) {
+                    right = flw::_chart_format_double(r_min.value() + (ydiff / _area->right_scale().pixel()), right_dec, '\'');
                 }
                 const size_t len = (left.length() > right.length()) ? left.length() : right.length();
                 if (left != "" && right != "") {
-                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s", fancy_date.c_str(), (int) len, left.c_str(), (int) len, right.c_str());
+                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n \n ", fancy_date.c_str(), static_cast<int>(len), left.c_str(), static_cast<int>(len), right.c_str());
                 }
                 else if (left != "") {
-                    _tooltip = util::format("%s\nleft: %*s", fancy_date.c_str(), (int) len, left.c_str());
+                    _tooltip = util::format("%s\nleft: %*s\n \n ", fancy_date.c_str(), static_cast<int>(len), left.c_str());
                 }
                 else if (right != "") {
-                    _tooltip = util::format("%s\nright: %*s", fancy_date.c_str(), (int) len, right.c_str());
+                    _tooltip = util::format("%s\nright: %*s\n \n ", fancy_date.c_str(), static_cast<int>(len), right.c_str());
                 }
             }
             else {
-                const size_t index = _chart_bsearch(line.points, _dates[start]);
+                const size_t index = ChartData::BinarySearch(line->data_vector(), _dates[start]);
                 if (index != (size_t) -1) {
-                    const auto dec   = (line.align == FL_ALIGN_RIGHT) ? right_dec : left_dec;
-                    const auto price = line.points[index];
-                    auto       high  = _chart_format_double(price.high, dec, '\'');
-                    auto       low   = _chart_format_double(price.low, dec, '\'');
-                    auto       close = _chart_format_double(price.close, dec, '\'');
-                    const auto len   = (low.length() > high.length()) ? low.length() : high.length();
-                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), (int) len, high.c_str(), (int) len, close.c_str(), (int) len, low.c_str());
+                    const int         dec   = (line->align() == FL_ALIGN_RIGHT) ? right_dec : left_dec;
+                    const ChartData&  data  = line->data_vector()[index];
+                    const std::string high  = flw::_chart_format_double(data.high, dec, '\'');
+                    const std::string low   = flw::_chart_format_double(data.low, dec, '\'');
+                    const std::string close = flw::_chart_format_double(data.close, dec, '\'');
+                    const int         len   = static_cast<int>((low.length() > high.length()) ? low.length() : high.length());
+                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), len, high.c_str(), len, close.c_str(), len, low.c_str());
                 }
             }
             break;
@@ -823,27 +1536,19 @@ void Chart::_create_tooltip(bool ctrl) {
         redraw();
     }
 }
-bool Chart::date_range(Date::RANGE range) {
-    if ((int) range < 0 || (int) range > (int) Date::RANGE::LAST) {
-        return false;
-    }
-    _date_range  = range;
-    _date_format = (_date_range == Date::RANGE::HOUR || _date_range == Date::RANGE::MIN || _date_range == Date::RANGE::SEC) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO;
-    return true;
-}
 void Chart::debug() const {
 #ifdef DEBUG
-    Price first, last, start, end;
+    ChartData first, last, start, end;
     if (_dates.size()) {
         first = _dates.front();
     }
     if (_dates.size() > 1) {
         last = _dates.back();
     }
-    if ((int) _dates.size() > _date_start) {
+    if (static_cast<int>(_dates.size()) > _date_start) {
         start = _dates[_date_start];
     }
-    if (_ticks >= 0 && (int) _dates.size() > (_date_start + _ticks)) {
+    if (_ticks >= 0 && static_cast<int>(_dates.size()) > (_date_start + _ticks)) {
         end = _dates[_date_start + _ticks];
     }
     fprintf(stderr, "\n");
@@ -858,8 +1563,9 @@ void Chart::debug() const {
     fprintf(stderr, "\tdate_start:      %19d\n", _date_start);
     fprintf(stderr, "\tdates:           %19d\n", (int) _dates.size());
     fprintf(stderr, "\th:               %19d\n", h());
-    fprintf(stderr, "\tmargin_left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
-    fprintf(stderr, "\tmargin_right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
+    fprintf(stderr, "\tmargin:          %19d\n", _margin);
+    fprintf(stderr, "\tpixels left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
+    fprintf(stderr, "\tpixels right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
     fprintf(stderr, "\ttick_width:      %19d\n", _tick_width);
     fprintf(stderr, "\tticks:           %19d\n", _ticks);
     fprintf(stderr, "\ttop_space:       %19d\n", _top_space);
@@ -873,9 +1579,9 @@ void Chart::debug() const {
     fprintf(stderr, "\tlast date:       %19s\n", last.date.c_str());
     fprintf(stderr, "\tfirst visible:   %19s\n", start.date.c_str());
     fprintf(stderr, "\tlast visible:    %19s\n", end.date.c_str());
-    _areas[0].debug(0);
-    _areas[1].debug(1);
-    _areas[2].debug(2);
+    for (const auto& area : _areas) {
+        area.debug();
+    }
     fflush(stderr);
 #endif
 }
@@ -894,9 +1600,10 @@ void Chart::draw() {
         return;
     }
     fl_push_clip(x(), y(), w(), h() - _scroll->h());
+    _draw_label();
     _draw_xlabels();
-    for (const auto& area : _areas) {
-        if (area.percent >= 10) {
+    for (auto& area : _areas) {
+        if (area.percent() >= Chart::MIN_AREA_SIZE) {
             _draw_area(area);
         }
     }
@@ -906,74 +1613,99 @@ void Chart::draw() {
 #ifdef DEBUG
 #endif
 }
-void Chart::_draw_area(const ChartArea& area) {
+void Chart::_draw_area(ChartArea& area) {
     _draw_ver_lines(area);
-    _draw_ylabels(_margin_left * flw::PREF_FIXED_FONTSIZE, area.y + area.h, area.y, area.left, true);
-    _draw_ylabels(w() - _margin_right * flw::PREF_FIXED_FONTSIZE, area.y + area.h, area.y, area.right, false);
+    _draw_ylabels(_margin_left * flw::PREF_FIXED_FONTSIZE, area.y2(), area.y(), area.left_scale(), true);
+    _draw_ylabels(w() - _margin_right * flw::PREF_FIXED_FONTSIZE, area.y2(), area.y(), area.right_scale(), false);
     fl_push_matrix();
-    fl_push_clip(x() + area.x, y() + area.y - 1, area.w + 1, area.h + 2);
-    for (const auto& line : area.lines) {
-        _draw_line(line, (line.align == FL_ALIGN_LEFT) ? area.left : area.right, area.x, area.y, area.w, area.h);
+    fl_push_clip(x() + area.x(), y() + area.y() - 1, area.w() + 1, area.h() + 2);
+    for (const auto& line : area.lines()) {
+        _draw_line(line, (line.align() == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale(), area.x(), area.y(), area.w(), area.h());
     }
     _draw_line_labels(area);
-    fl_rect(x() + area.x, y() + area.y - 1, area.w + 1, area.h + 2, labelcolor());
+    fl_rect(x() + area.x(), y() + area.y() - 1, area.w() + 1, area.h() + 2, labelcolor());
     fl_pop_clip();
     fl_pop_matrix();
 }
+void Chart::_draw_label() {
+    if (_label == "") {
+        return;
+    }
+    fl_color(FL_FOREGROUND_COLOR);
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
+    fl_draw(_label.c_str(), x(), y() + flw::PREF_FIXED_FONTSIZE, w(), _top_space, FL_ALIGN_CENTER);
+}
 void Chart::_draw_line(const ChartLine& line, const ChartScale& scale, int X, const int Y, const int W, const int H) {
-    if (line.points.size() > 0 && line.visible == true) {
-        const int y2      = y() + Y + H;
-        int       lastX   = -1;
-        int       lastY   = -1;
-        int       current = _date_start;
-        const int stop    = _date_start + _ticks + 1;
-        int       width   = line.width;
-        if (line.width < 0) {
+    if (line.size() > 0 && line.is_visible() == true && scale.diff() > 0.0) {
+        const double y2      = y() + Y + H;
+        double       lastX   = -10;
+        double       lastY   = -10;
+        int          current = _date_start;
+        const int    stop    = _date_start + _ticks + 1;
+        int          width   = static_cast<int>(line.width());
+        auto         style   = FL_SOLID;
+        if (width == 0) {
             width  = _tick_width - 1;
-            width -= (int) (_tick_width / 10);
+            width -= static_cast<int>(_tick_width / 10.0);
         }
-        const int lw2 = width / 2;
-        const int lw4 = lw2 / 2;
+        if (width >= _tick_width) {
+            width = _tick_width - 1;
+        }
+        const int lw2 = static_cast<int>(width / 2.0);
+        const int lw4 = static_cast<int>(lw2 / 2.0);
         fl_push_clip(x() + X, y() + Y, W + 1, H + 1);
-        fl_color(line.color);
-        if (line.type == Chart::BAR) {
-            fl_line_style(FL_SOLID, lw2);
+        fl_color(line.color());
+        if (line.type() == ChartLine::TYPE::LINE_DOT) {
+            style = FL_DOT;
+        }
+        if (line.type() == ChartLine::TYPE::BAR_HLC && line.width() == 0) {
+            fl_line_style(style, lw2);
+        }
+        else if (line.type() == ChartLine::TYPE::HORIZONTAL && line.width() == 0) {
+            fl_line_style(style, width > 6 ? 6 : width);
+        }
+        else if ((line.type() == ChartLine::TYPE::LINE || line.type() == ChartLine::TYPE::LINE_DOT) && line.width() == 0) {
+            fl_line_style(style, width > 10 ? 10 : width);
         }
         else {
-            fl_line_style(FL_SOLID, width);
+            fl_line_style(style, width);
         }
         while (current <= stop && current < (int) _dates.size()) {
-            const auto& date  = _dates[current];
-            const auto  index = _chart_bsearch(line.points, date);
+            const ChartData& date  = _dates[current];
+            const size_t     index = ChartData::BinarySearch(line.data_vector(), date);
             if (index != (size_t) -1) {
-                const auto& pr = line.points[index];
-                const auto  yh = (int) ((pr.high - scale.min) * scale.pixel);
-                const auto  yl = (int) ((pr.low - scale.min) * scale.pixel);
-                const auto  yc = (int) ((pr.close - scale.min) * scale.pixel);
-                if (line.type == Chart::LINE) {
-                    if (lastX > -1 && lastY > -1) {
-                        fl_line(lastX + lw2, y2 - lastY, x() + X + lw2, y2 - yc);
+                const ChartData& pr  = line.data_vector()[index];
+                const double     yh  = (pr.high - scale.min().value()) * scale.pixel();
+                const double     yl  = (pr.low - scale.min().value()) * scale.pixel();
+                const double     yc  = (pr.close - scale.min().value()) * scale.pixel();
+                const int        y2h = static_cast<int>(y2 - yh);
+                const int        y2l = static_cast<int>(y2 - yl);
+                const int        y2c = static_cast<int>(y2 - yc);
+                if (line.type() == ChartLine::TYPE::LINE || line.type() == ChartLine::TYPE::LINE_DOT) {
+                    if (lastX > -10 && lastY > -10) {
+                        fl_line(lastX + lw2, static_cast<int>(y2 - lastY), x() + X + lw2, y2c);
                     }
                 }
-                else if (line.type == Chart::BAR) {
-                    fl_line(x() + X + lw4, y2 - yl, x() + X + lw4, y2 - yh);
-                    fl_line(x() + X, y2 - yc, x() + X + _tick_width - 1, y2 - yc);
+                else if (line.type() == ChartLine::TYPE::BAR_HLC) {
+                    fl_line(x() + X + lw4, y2l, x() + X + lw4, y2h);
+                    fl_line(x() + X, y2c, x() + X + _tick_width - 1, y2c);
                 }
-                else if (line.type == Chart::HORIZONTAL) {
-                    fl_line(x() + X, y2 - yc, x() + X + _tick_width, y2 - yc);
+                else if (line.type() == ChartLine::TYPE::HORIZONTAL) {
+                    fl_line(x() + X, y2c, x() + X + _tick_width, y2c);
                 }
-                else if (line.type == Chart::VERTICAL) {
+                else if (line.type() == ChartLine::TYPE::BAR) {
                     auto h = yh - yl;
-                    fl_rectf(x() + X, y2 - yh, width, (h < 1) ? 1 : h);
+                    fl_rectf(x() + X, y2h, width, (h < 1) ? 1 : h);
                 }
-                else if (line.type == Chart::CLAMP_VERTICAL) {
-                    fl_rectf(x() + X, y2 - yh, width, yh);
+                else if (line.type() == ChartLine::TYPE::BAR_CLAMP) {
+                    fl_rectf(x() + X, y2h, width, yh);
                 }
-                else if (line.type == Chart::EXPAND_VERTICAL) {
+                else if (line.type() == ChartLine::TYPE::EXPAND_VERTICAL) {
                     fl_line(x() + X, y2, x() + X, y() + Y);
                 }
-                else if (line.type == Chart::EXPAND_HORIZONTAL) {
-                    fl_line(x() + _margin_left * flw::PREF_FIXED_FONTSIZE, y2 - yc, x() + Fl_Widget::w() - _margin_right * flw::PREF_FIXED_FONTSIZE, y2 - yc);
+                else if (line.type() == ChartLine::TYPE::EXPAND_HORIZONTAL) {
+                    fl_line(x() + _margin_left * flw::PREF_FIXED_FONTSIZE, y2c, x() + Fl_Widget::w() - _margin_right * flw::PREF_FIXED_FONTSIZE, y2c);
+                    break;
                 }
                 lastX = x() + X;
                 lastY = yc;
@@ -989,26 +1721,26 @@ void Chart::_draw_line_labels(const ChartArea& area) {
     if (_view.labels == true) {
         int       left_h  = 0;
         int       left_w  = 0;
-        const int left_x  = x() + area.x + 6;
-        int       left_y  = y() + area.y + 6;
+        const int left_x  = x() + area.x() + 6;
+        int       left_y  = y() + area.y() + 6;
         int       right_h = 0;
         int       right_w = 0;
-        const int right_x = x() + area.x + area.w;
+        const int right_x = x() + area.x2();
         int       right_y = left_y;
-        for (const auto& line : area.lines) {
-            if (line.label == "") {
-                continue;
-            }
-            if (line.align == FL_ALIGN_RIGHT) {
-                right_h++;
-                if ((int) line.label.length() * _cw > right_w) {
-                    right_w = line.label.length() * _cw;
+        for (const auto& line : area.lines()) {
+            if (line.size() > 0) {
+                int len = static_cast<int>(line.label().length());
+                if (line.align() == FL_ALIGN_RIGHT) {
+                    right_h++;
+                    if (len * _cw > right_w) {
+                        right_w = len * _cw;
+                    }
                 }
-            }
-            else {
-                left_h++;
-                if ((int) line.label.length() * _cw > left_w) {
-                    left_w = line.label.length() * _cw;
+                else {
+                    left_h++;
+                    if (len * _cw > left_w) {
+                        left_w = len * _cw;
+                    }
                 }
             }
         }
@@ -1030,92 +1762,94 @@ void Chart::_draw_line_labels(const ChartArea& area) {
         }
         fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
         if (left_w > 0 || right_w > 0) {
-            size_t count   = 0;
-            for (const auto& line : area.lines) {
-                auto label = line.label;
-                if (label != "") {
-                    if (area.selected == count && line.visible == true) {
+            size_t count = 0;
+            for (auto& line : area.lines()) {
+                if (line.size() > 0) {
+                    auto label = line.label();
+                    if (area.selected() == count++) {
                         label = "@-> " + label;
                     }
-                    fl_color((line.visible == false) ? FL_GRAY : line.color);
-                    if (line.align == FL_ALIGN_RIGHT) {
+                    fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
+                    if (line.align() == FL_ALIGN_RIGHT) {
                         fl_draw(label.c_str(), right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
+                        const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE);
                         right_y += flw::PREF_FIXED_FONTSIZE;
                     }
                     else {
                         fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
+                        const_cast<ChartLine*>(&line)->set_label_rect(left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE);
                         left_y += flw::PREF_FIXED_FONTSIZE;
                     }
                 }
-                count++;
             }
         }
     }
 }
 void Chart::_draw_tooltip() {
-    if (_tooltip != "" && _area != nullptr) {
-        auto       X = Fl::event_x();
-        auto       Y = Fl::event_y();
-        const auto W = 14;
-        const auto H = 5;
-        if (X > _area->x2() - flw::PREF_FIXED_FONTSIZE * (W + 5)) {
-            X -= flw::PREF_FIXED_FONTSIZE * (W + 4);
-        }
-        else {
-            X += flw::PREF_FIXED_FONTSIZE * 2;
-        }
-        if (Y > y() + h() - flw::PREF_FIXED_FONTSIZE * (H + 7)) {
-            Y -= flw::PREF_FIXED_FONTSIZE * (H + 2);
-        }
-        else {
-            Y += flw::PREF_FIXED_FONTSIZE * 2;
-        }
-        fl_color(FL_BACKGROUND2_COLOR);
-        fl_rectf(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
-        fl_color(FL_FOREGROUND_COLOR);
-        fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
-        fl_line(Fl::event_x(), y() + _area->y, Fl::event_x(), y() + _area->y + _area->h);
-        fl_line(x() + _area->x, Fl::event_y(), x() + _area->x + _area->w, Fl::event_y());
-        fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-        fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+    if (_tooltip == "" || _area == nullptr) {
+        return;
     }
+    int       X = Fl::event_x();
+    int       Y = Fl::event_y();
+    const int W = 14;
+    const int H = 5;
+    if (X > _area->x2() - flw::PREF_FIXED_FONTSIZE * (W + 5)) {
+        X -= flw::PREF_FIXED_FONTSIZE * (W + 4);
+    }
+    else {
+        X += flw::PREF_FIXED_FONTSIZE * 2;
+    }
+    if (Y > y() + h() - flw::PREF_FIXED_FONTSIZE * (H + 7)) {
+        Y -= flw::PREF_FIXED_FONTSIZE * (H + 2);
+    }
+    else {
+        Y += flw::PREF_FIXED_FONTSIZE * 2;
+    }
+    fl_color(FL_BACKGROUND2_COLOR);
+    fl_rectf(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
+    fl_color(FL_FOREGROUND_COLOR);
+    fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
+    fl_line(Fl::event_x(), y() + _area->y(), Fl::event_x(), y() + _area->y() + _area->h());
+    fl_line(x() + _area->x(), Fl::event_y(), x() + _area->x() + _area->w(), Fl::event_y());
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 }
 void Chart::_draw_ver_lines(const ChartArea& area) {
     if (_view.vertical == true) {
         fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-        for (auto i = 0; i < _CHART_MAX_VLINES; i++) {
+        for (size_t i = 0; i < Chart::MAX_VLINES; i++) {
             if (_ver_pos[i] < 0) {
                 break;
             }
             else {
-                fl_line(_ver_pos[i], y() + (int) area.y, _ver_pos[i], y() + (int) (area.y + area.h - 1));
+                fl_line(_ver_pos[i], y() + area.y(), _ver_pos[i], y() + area.y2() - 1);
             }
         }
     }
 }
 void Chart::_draw_xlabels() {
-    const int  stop  = _date_start + _ticks;
-    const int  cw2   = _cw * 2;
-    const int  cw4   = _cw * 4;
-    const int  fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
-    const int  Y     = y() + (h() - _bottom_space);
-    int        start = _date_start;
-    int        index = 0;
-    int        last  = -1;
-    int        X1    = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
-    int        X2    = 0;
+    const int  stop    = _date_start + _ticks;
+    const int  cw2     = _cw * 2;
+    const int  cw4     = _cw * 4;
+    const int  fs05    = flw::PREF_FIXED_FONTSIZE * 0.5;
+    const int  Y       = y() + (h() - _bottom_space);
+    int        start   = _date_start;
+    int        count_v = 0;
+    int        last    = -1;
+    int        X1      = x() + _margin_left * flw::PREF_FIXED_FONTSIZE;
+    int        X2      = 0;
     char       buffer1[100];
     char       buffer2[100];
     _ver_pos[0] = -1;
     while (start <= stop && start < (int) _dates.size()) {
-        const auto& price = _dates[start];
-        const auto  date  = Date::FromString(price.date.c_str());
-        auto        addv  = false;
+        const ChartData& data = _dates[start];
+        const Date       date = Date::FromString(data.date.c_str());
+        bool             addv = false;
         fl_color(labelcolor());
         fl_line(X1, Y, X1, Y + fs05);
         *buffer1 = 0;
         *buffer2 = 0;
-        if (_date_range == Date::RANGE::HOUR) {
+        if (_date_range == ChartData::RANGE::HOUR) {
             if (date.day() != last) {
                 addv = true;
                 last = date.day();
@@ -1130,7 +1864,7 @@ void Chart::_draw_xlabels() {
                 snprintf(buffer2, 100, "%02d", date.hour());
             }
         }
-        else if (_date_range == flw::Date::RANGE::MIN) {
+        else if (_date_range == flw::ChartData::RANGE::MIN) {
             if (date.hour() != last) {
                 addv = true;
                 last = date.hour();
@@ -1145,7 +1879,7 @@ void Chart::_draw_xlabels() {
                 snprintf(buffer2, 100, "%02d", date.minute());
             }
         }
-        else if (_date_range == Date::RANGE::SEC) {
+        else if (_date_range == ChartData::RANGE::SEC) {
             if (date.minute() != last) {
                 addv = true;
                 last = date.minute();
@@ -1160,7 +1894,7 @@ void Chart::_draw_xlabels() {
                 snprintf(buffer2, 100, "%02d", date.second());
             }
         }
-        else if (_date_range == Date::RANGE::DAY || _date_range == Date::RANGE::WEEKDAY) {
+        else if (_date_range == ChartData::RANGE::DAY || _date_range == ChartData::RANGE::WEEKDAY) {
             if (date.month() != last) {
                 addv = true;
                 last = date.month();
@@ -1175,7 +1909,7 @@ void Chart::_draw_xlabels() {
                 snprintf(buffer2, 100, "%02d", date.day());
             }
         }
-        else if (_date_range == Date::RANGE::FRIDAY || _date_range == Date::RANGE::SUNDAY) {
+        else if (_date_range == ChartData::RANGE::FRIDAY || _date_range == ChartData::RANGE::SUNDAY) {
             if (date.month() != last) {
                 addv = true;
                 last = date.month();
@@ -1189,7 +1923,7 @@ void Chart::_draw_xlabels() {
             else
                 snprintf(buffer2, 100, "%02d", date.week());
         }
-        else if (_date_range == Date::RANGE::MONTH) {
+        else if (_date_range == ChartData::RANGE::MONTH) {
             if (date.month() != last) {
                 addv = true;
                 last = date.month();
@@ -1202,8 +1936,8 @@ void Chart::_draw_xlabels() {
             }
         }
         if (*buffer1 != 0) {
-            auto len  = (double) strlen(buffer1);
-            auto half = (double) ((len / 2.0) * _cw);
+            auto len  = static_cast<double>(strlen(buffer1));
+            auto half = static_cast<double>((len / 2.0) * _cw);
             fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
             fl_draw(buffer1, X1 - half, Y + flw::PREF_FIXED_FONTSIZE + 6, half + half, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
             fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
@@ -1213,74 +1947,95 @@ void Chart::_draw_xlabels() {
             fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE - 2);
             fl_draw(buffer2, X1 - cw2, Y + fs05, cw4, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
         }
-        if (addv == true && index < _CHART_MAX_VLINES) {
-            _ver_pos[index++] = X1;
+        if (addv == true && count_v < static_cast<int>(Chart::MAX_VLINES - 1)) {
+            _ver_pos[count_v++] = X1;
         }
         X1    += _tick_width;
         start += 1;
     }
-    _ver_pos[index] = -1;
+    _ver_pos[count_v] = -1;
 }
 void Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ChartScale& scale, const bool left) {
-    const double yinc  = (scale.pixel * scale.tick);
-    const int    fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
-    const int    fr    = _chart_count_decimals(scale.tick);
-    int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
-    double       ylast = Chart::MAX_VAL;
-    double       yval  = scale.min;
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    if (scale.min >= scale.max || scale.pixel * scale.tick < 1.0) {
+    if (scale.diff() < 0.0 || scale.pixel() * scale.tick() < 1.0) {
         return;
     }
-    while ((int) (Y1 + 0.5) >= (int) Y2) {
-        if (ylast > Y1) {
-            auto y1     = y() + (int) Y1;
-            auto x1     = x() + X;
-            auto string = _chart_format_double(yval, fr, '\'');
+    const double yinc  = (scale.pixel() * scale.tick());
+    const double fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
+    const double fr    = flw::_chart_count_decimals(scale.tick());
+    int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
+    double       ylast = INFINITY;
+    double       yval  = scale.min().value();
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    while (static_cast<int>(Y1 + 0.5) >= static_cast<int>(Y2)) {
+        if (std::isfinite(ylast) == false || ylast > Y1) {
+            double  y1  = y() + Y1;
+            double  x1  = x() + X;
+            auto string = flw::_chart_format_double(yval, fr, '\'');
             if (left == true) {
                 fl_color(labelcolor());
-                fl_line(x1 - fs05, y1, x1, y1);
-                fl_draw(string.c_str(), x(), y1 - fs05, _margin_left * flw::PREF_FIXED_FONTSIZE - flw::PREF_FIXED_FONTSIZE, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
-                if (_view.horizontal == true && (int) Y1 >= (int) (Y2 + fs05)) {
+                fl_line(static_cast<int>(x1 - fs05), static_cast<int>(y1), static_cast<int>(x1), static_cast<int>(y1));
+                fl_draw(string.c_str(), x(), static_cast<int>(y1 - fs05), _margin_left * flw::PREF_FIXED_FONTSIZE - flw::PREF_FIXED_FONTSIZE, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+                if (_view.horizontal == true && static_cast<int>(Y1) >= static_cast<int>(Y2 + fs05)) {
                     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-                    fl_line(x1 + 1, y1, x1 + width - 1, y1);
+                    fl_line(static_cast<int>(x1 + 1.0), static_cast<int>(y1), static_cast<int>(x1 + width - 1.0), static_cast<int>(y1));
                 }
             }
             else {
                 fl_color(labelcolor());
-                fl_line(x1, y1, x1 + fs05, y1);
-                fl_draw(string.c_str(), x1 + flw::PREF_FIXED_FONTSIZE, y1 - fs05, _margin_right * flw::PREF_FIXED_FONTSIZE - (flw::PREF_FIXED_FONTSIZE * 2), flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
-                if (_view.horizontal == true && (int) Y1 >= (int) (Y2 + fs05)) {
+                fl_line(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x1 + fs05), static_cast<int>(y1));
+                fl_draw(string.c_str(), static_cast<int>(x1 + flw::PREF_FIXED_FONTSIZE), static_cast<int>(y1 - fs05), _margin_right * flw::PREF_FIXED_FONTSIZE - (flw::PREF_FIXED_FONTSIZE * 2), flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                if (_view.horizontal == true && static_cast<int>(Y1) >= static_cast<int>(Y2 + fs05)) {
                     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-                    fl_line(x1 - width + 1, y1, x1 - 1, y1);
+                    fl_line(static_cast<int>(x1 - width + 1.0), static_cast<int>(y1), static_cast<int>(x1 - 1.0), static_cast<int>(y1));
                 }
             }
             ylast = Y1 - (flw::PREF_FIXED_FONTSIZE + fs05);
         }
         Y1   -= yinc;
-        yval += scale.tick;
+        yval += scale.tick();
     }
 }
 int Chart::handle(int event) {
+    static bool LEFT = false;
     if (event == FL_PUSH) {
-        if (Fl::event_button1() != 0) {
-            _area = _inside_area(Fl::event_x(), Fl::event_y());
+        auto x = Fl::event_x();
+        auto y = Fl::event_y();
+        auto b = Fl::event_button();
+        if (b == FL_LEFT_MOUSE) {
+            LEFT = true;
+            _area = _inside_area(x, y);
             _create_tooltip(Fl::event_ctrl());
             if (_tooltip != "") {
                 return 1;
             }
         }
-        else if (Fl::event_button3() != 0) {
-            menu::set_item(_menu, _CHART_SHOW_LABELS, _view.labels);
-            menu::set_item(_menu, _CHART_SHOW_HLINES, _view.horizontal);
-            menu::set_item(_menu, _CHART_SHOW_VLINES, _view.vertical);
-            _menu->popup();
+        else if (b == FL_MIDDLE_MOUSE) {
+            LEFT = false;
+            _area = _inside_area(x, y);
+            if (_area != nullptr) {
+                auto c = 0;
+                for (const auto& line : _area->lines()) {
+                    auto& r = line.label_rect();
+                    if (x > r.x() && x < r.r() && y > r.y() && y < r.b()) {
+                        _area->set_selected(c);
+                        redraw();
+                        break;
+                    }
+                    c++;
+                }
+            }
+            return 1;
+        }
+        else if (b == FL_RIGHT_MOUSE) {
+            LEFT  = false;
+            _area = _inside_area(x, y);
+            _show_menu();
             return 1;
         }
     }
-    else if (event == FL_DRAG) {
+    else if (event == FL_DRAG && LEFT == true) {
         _area = _inside_area(Fl::event_x(), Fl::event_y());
-        _create_tooltip(Fl::event_ctrl());
+        _create_tooltip(Fl::event_ctrl() != 0);
         if (_tooltip != "") {
             return 1;
         }
@@ -1294,8 +2049,8 @@ int Chart::handle(int event) {
     else if (event == FL_MOUSEWHEEL) {
         const double size = _dates.size() - _ticks;
         const double pos  = _scroll->value();
-        const double dy   = (Fl::event_dy() * 10);
-        const double dx   = (Fl::event_dx() * 10);
+        const double dy   = (Fl::event_dy() * 10.0);
+        const double dx   = (Fl::event_dx() * 10.0);
         const double dd   = fabs(dx) > fabs(dy) ? dx : dy;
         const double adj  = _ticks / dd;
         if (fabs(dd) < 1.0) {
@@ -1304,7 +2059,7 @@ int Chart::handle(int event) {
         else if (Fl::event_ctrl() > 0) {
             const int width = (adj > 0.0) ? _tick_width + 1 : _tick_width - 1;
             if (width >= Chart::MIN_TICK && width <= Chart::MAX_TICK) {
-                tick_width(width);
+                set_tick_width(width);
                 init(false);
             }
             return 1;
@@ -1331,37 +2086,17 @@ int Chart::handle(int event) {
             return 1;
         }
     }
-    else if (event == FL_KEYDOWN && _area != nullptr) {
-        auto key = Fl::event_key();
-        if (key >= '0' && key <= '9') {
-            auto selected = (size_t) (key - '0');
-            if (selected == 0) {
-                selected = 10;
-            }
-            selected--;
-            if (selected < _area->count) {
-                if (Fl::event_shift() != 0) {
-                    _area->lines[selected].visible = !_area->lines[selected].visible;
-                }
-                if (_area->lines[selected].visible == true) {
-                    _area->selected = selected;
-                }
-                redraw();
-            }
-            return 1;
-        }
-    }
     return Fl_Group::handle(event);
-}
-bool Chart::has_time() const {
-    return _chart_has_time(_date_range);
 }
 void Chart::init(bool calc_dates) {
 #ifdef DEBUG
 #endif
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     if (calc_dates == true) {
+        WaitCursor wc;
         _calc_dates();
     }
+    _calc_ywidth();
     _calc_area_height();
     _calc_area_width();
     _calc_ymin_ymax();
@@ -1372,19 +2107,45 @@ void Chart::init(bool calc_dates) {
 }
 flw::ChartArea* Chart::_inside_area(int X, int Y) {
     for (auto& area : _areas) {
-        if (area.percent >= 10 &&
-            X >= x() + (int) area.x &&
-            Y >= y() + (int) area.y &&
-            X <= x() + (int) (area.x + area.w) &&
-            Y <= y() + (int) (area.y + area.h + 1)) {
+        if (area.percent() >= 10 &&
+            X >= x() + area.x() &&
+            Y >= y() + area.y() &&
+            X <= x() + area.x2() &&
+            Y <= y() + area.y2() + 1) {
             return &area;
         }
     }
     return nullptr;
 }
-bool Chart::Load(Chart* chart, std::string filename) {
-    chart->clear();
-    chart->redraw();
+bool Chart::load_cvs() {
+    if (_area == nullptr || _area->size() >= ChartArea::MAX_LINES) {
+        return false;
+    }
+    auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+        return false;
+    }
+    auto vec = ChartData::LoadCSV(filename);
+    if (vec.size() == 0) {
+        fl_alert("To few datapoints!");
+        return false;
+    }
+    auto line = ChartLine(vec, filename);
+    ChartLineSetup(top_window(), line).run();
+    add_line(_area->num(), line);
+    init(true);
+    return true;
+}
+bool Chart::load_json() {
+    auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
+    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+        return false;
+    }
+    return load_json(filename);
+}
+bool Chart::load_json(std::string filename) {
+    clear();
+    redraw();
     auto wc  = WaitCursor();
     auto buf = File::Load(filename);
     if (buf.p == nullptr) {
@@ -1397,158 +2158,211 @@ bool Chart::Load(Chart* chart, std::string filename) {
         fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
         return false;
     }
-    if (js.is_object() == false) FLW_CHART_ERROR(&js);
+    if (js.is_object() == false) _FLW_CHART_ERROR(&js);
     for (const auto j : js.vo_to_va()) {
         if (j->name() == "descr" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "type" && j2->is_string() == true) {
-                    if (j2->vs() != "flw::chart") FLW_CHART_ERROR(j2)
+                    if (j2->vs() != "flw::chart") _FLW_CHART_ERROR(j2)
                 }
                 else if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != 2) FLW_CHART_ERROR(j2)
+                    if (j2->vn_i() != Chart::VERSION) _FLW_CHART_ERROR(j2)
                 }
-                else FLW_CHART_ERROR(j2)
+                else if (j2->name() == "label" && j2->is_string() == true) {
+                    set_label(j2->vs_u());
+                }
+                else _FLW_CHART_ERROR(j2)
             }
         }
-        else if (j->name() == "descr_area" && j->is_object() == true) {
-            long long int area[11] = { 0 };
+        else if (j->name() == "area" && j->is_object() == true) {
+            long long int area[13] = { 0 };
             for (const auto j2 : j->vo_to_va()) {
-                if (j2->name() == "area0" && j2->is_number() == true)             area[0] = j2->vn_i();
-                else if (j2->name() == "area1" && j2->is_number() == true)        area[1] = j2->vn_i();
-                else if (j2->name() == "area2" && j2->is_number() == true)        area[2] = j2->vn_i();
-                else if (j2->name() == "date_range" && j2->is_number() == true)   area[3] = j2->vn_i();
-                else if (j2->name() == "horizontal" && j2->is_bool() == true)     area[4] = j2->vb();
-                else if (j2->name() == "labels" && j2->is_bool() == true)         area[5] = j2->vb();
-                else if (j2->name() == "margin_left" && j2->is_number() == true)  area[6] = j2->vn_i();
-                else if (j2->name() == "margin_right" && j2->is_number() == true) area[7] = j2->vn_i();
-                else if (j2->name() == "tick_width" && j2->is_number() == true)   area[8] = j2->vn_i();
-                else if (j2->name() == "vertical" && j2->is_bool() == true)       area[9] = j2->vb();
-                else FLW_CHART_ERROR(j2)
+                if (j2->name() == "area1" && j2->is_number() == true)             area[0]  = j2->vn_i();
+                else if (j2->name() == "area2" && j2->is_number() == true)        area[1]  = j2->vn_i();
+                else if (j2->name() == "area3" && j2->is_number() == true)        area[2]  = j2->vn_i();
+                else if (j2->name() == "area4" && j2->is_number() == true)        area[3]  = j2->vn_i();
+                else if (j2->name() == "area5" && j2->is_number() == true)        area[4]  = j2->vn_i();
+                else if (j2->name() == "date_range" && j2->is_number() == true)   area[5]  = j2->vn_i();
+                else if (j2->name() == "horizontal" && j2->is_bool() == true)     area[6]  = j2->vb();
+                else if (j2->name() == "labels" && j2->is_bool() == true)         area[7]  = j2->vb();
+                else if (j2->name() == "margin" && j2->is_number() == true)       area[8]  = j2->vn_i();
+                else if (j2->name() == "tick_width" && j2->is_number() == true)   area[10] = j2->vn_i();
+                else if (j2->name() == "vertical" && j2->is_bool() == true)       area[11] = j2->vb();
+                else _FLW_CHART_ERROR(j2)
             }
-            area[10] += chart->area_size(area[0], area[1], area[2]) == false;
-            area[10] += chart->tick_width(area[8]) == false;
-            area[10] += chart->date_range((Date::RANGE) area[3]) == false;
-            area[10] += chart->margin(area[6], area[7]) == false;
-            if (area[10] != 0) FLW_CHART_ERROR(j)
-            chart->view_options(area[5], area[4], area[9]);
+            area[12] += set_area_size(area[0], area[1], area[2], area[3], area[4]) == false;
+            area[12] += set_tick_width(area[10]) == false;
+            if (area[5] >= 0 && area[5] <= static_cast<int>(ChartData::RANGE::SEC)) set_date_range(static_cast<ChartData::RANGE>(area[5]));
+            else area[12]++;
+            set_margin(area[8]);
+            if (area[12] != 0) _FLW_CHART_ERROR(j)
+            view_options(area[7], area[6], area[11]);
         }
         else if (j->name() == "lines" && j->is_array() == true) {
             for (const auto j2 : *j->va()) {
-                int         line[5]  = { 0 };
-                double      clamp[2] = { 0.0 };
-                std::string label;
-                PriceVector prices;
+                int             line[5]  = { 0, 0, 0, 0, 1 };
+                double          clamp[2] = { INFINITY, INFINITY };
+                std::string     label;
+                std::string     type;
+                ChartDataVector vec;
                 if ( j2->is_object() == true) {
-                    for (auto l : j2->vo_to_va()) {
-                        if (l->name() == "align" && l->is_number() == true)           line[0]  = l->vn_i();
-                        else if (l->name() == "area" && l->is_number() == true)       line[1]  = l->vn_i();
+                    for (const auto l : j2->vo_to_va()) {
+                        if (l->name() == "area" && l->is_number() == true) {
+                            line[1] = l->vn_i();
+                            if (line[1] < 0 || line[1] > static_cast<int>(ChartArea::NUM::LAST)) _FLW_CHART_ERROR(l)
+                        }
+                        else if (l->name() == "align" && l->is_number() == true)      line[0]  = l->vn_i();
                         else if (l->name() == "clamp_max" && l->is_number() == true)  clamp[0] = l->vn();
                         else if (l->name() == "clamp_min" && l->is_number() == true)  clamp[1] = l->vn();
                         else if (l->name() == "color" && l->is_number() == true)      line[2]  = l->vn_i();
                         else if (l->name() == "label" && l->is_string() == true)      label    = l->vs_u();
-                        else if (l->name() == "type" && l->is_string() == true)       line[3]  = _chart_string_to_type(l->vs());
-                        else if (l->name() == "width" && l->is_number() == true)      line[4]  = l->vn_i();
+                        else if (l->name() == "type" && l->is_string() == true)       type     = l->vs();
+                        else if (l->name() == "visible" && l->is_bool() == true)      line[4]  = l->vb();
+                        else if (l->name() == "width" && l->is_number() == true)      line[3]  = l->vn_i();
                         else if (l->name() == "yx" && l->is_array() == true) {
                             for (auto p : *l->va()) {
-                                if (p->is_array() == false) FLW_CHART_ERROR(p)
-                                else if (p->size() == 2 && (*p)[0]->is_string() == true && (*p)[1]->is_number() == true) prices.push_back(Price((*p)[0]->vs(), (*p)[1]->vn()));
-                                else if (p->size() == 4 && (*p)[0]->is_string() == true && (*p)[1]->is_number() == true && (*p)[2]->is_number() == true && (*p)[3]->is_number() == true) prices.push_back(Price((*p)[0]->vs(), (*p)[1]->vn(), (*p)[2]->vn(), (*p)[3]->vn()));
-                                else FLW_CHART_ERROR(p)
+                                if (p->is_array() == false) _FLW_CHART_ERROR(p)
+                                else if (p->size() == 2 && (*p)[0]->is_string() == true && (*p)[1]->is_number() == true) vec.push_back(ChartData((*p)[0]->vs(), (*p)[1]->vn()));
+                                else if (p->size() == 4 && (*p)[0]->is_string() == true && (*p)[1]->is_number() == true && (*p)[2]->is_number() == true && (*p)[3]->is_number() == true) vec.push_back(ChartData((*p)[0]->vs(), (*p)[1]->vn(), (*p)[2]->vn(), (*p)[3]->vn()));
+                                else _FLW_CHART_ERROR(p)
                             }
                         }
-                        else FLW_CHART_ERROR(l)
+                        else _FLW_CHART_ERROR(l)
                     }
                 }
-                if (chart->add_line(line[1], prices, label, (Chart::TYPE) line[3], line[0], line[2], line[4], clamp[1], clamp[0]) == false) FLW_CHART_ERROR(j2)
+                auto l = ChartLine(vec, label);
+                auto a = static_cast<ChartArea::NUM>(line[1]);
+                l.set_align(line[0]).set_color(line[2]).set_label(label).set_width(line[3]).set_clamp(clamp[1], clamp[0]).set_type_from_string(type).set_visible(line[4]);
+                add_line(a, l);
             }
         }
         else if (j->name() == "lines_block" && j->is_array() == true) {
-            PriceVector dates;
+            ChartDataVector dates;
             for (const auto d : *j->va()) {
-                if (d->is_string() == true) dates.push_back(Price(d->vs()));
-                else FLW_CHART_ERROR(d)
+                if (d->is_string() == true) dates.push_back(ChartData(d->vs()));
+                else _FLW_CHART_ERROR(d)
             }
-            chart->block_dates(dates);
+            block_dates(dates);
         }
-        else FLW_CHART_ERROR(j)
+        else _FLW_CHART_ERROR(j)
     }
-    chart->init(true);
+    init(true);
     return true;
 }
-bool Chart::margin(int left, int right) {
-    if (left < 1 || left > 20 || right < 1 || right > 20) {
+bool Chart::_move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::NUM destination) {
+    if (area == nullptr || index >= area->size()) {
         return false;
     }
-    _margin_left  = left;
-    _margin_right = right;
-    redraw();
+    ChartLine* line1 = area->line(index);
+    if (line1 == nullptr) {
+        return false;
+    }
+    if (move == true) {
+        if (destination == area->num()) {
+            return false;
+        }
+        auto  line2 = *line1;
+        auto& dest  = _areas[static_cast<size_t>(destination)];
+        if (dest.add_line(line2) == false) {
+            fl_alert("Target area has reached maximum number of lines!");
+            return false;
+        }
+    }
+    _area->delete_line(index);
     return true;
 }
-void Chart::resize(int X, int Y, int W, int H) {
-    if (_old_width != W || _old_height != H) {
-        Fl_Widget::resize(X, Y, W, H);
-        _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
-        _old_width = W;
-        _old_height = H;
-        init(false);
-    }
+void Chart::print_to_postscript() {
+    _printing = true;
+    dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1, top_window());
+    _printing = false;
+    redraw();
 }
-bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_low) {
+void Chart::resize(int X, int Y, int W, int H) {
+    if (_old.w() == W && _old.h() == H) {
+        return;
+    }
+    Fl_Widget::resize(X, Y, W, H);
+    _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
+    _old = Fl_Rect(this);
+    init(false);
+}
+bool Chart::save_cvs() {
+    if (_area == nullptr || _area->selected_line() == nullptr) {
+        return false;
+    }
+    auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+        return false;
+    }
+    const auto* line = _area->selected_line();
+    return ChartData::SaveCSV(line->data_vector(), filename);
+}
+bool Chart::save_json() {
+    auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
+    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+        return false;
+    }
+    return save_json(filename);
+}
+bool Chart::save_json(std::string filename, double max_diff_high_low) const {
     auto wc  = WaitCursor();
     auto jsb = JSB();
     try {
         jsb << JSB::MakeObject();
             jsb << JSB::MakeObject("descr");
                 jsb << JSB::MakeString("flw::chart", "type");
-                jsb << JSB::MakeNumber(2, "version");
+                jsb << JSB::MakeNumber(Chart::VERSION, "version");
+                jsb << JSB::MakeString(_label.c_str(), "label");
             jsb.end();
-            jsb << JSB::MakeObject("descr_area");
-                jsb << JSB::MakeNumber(chart->_areas[0].percent, "area0");
-                jsb << JSB::MakeNumber(chart->_areas[1].percent, "area1");
-                jsb << JSB::MakeNumber(chart->_areas[2].percent, "area2");
-                jsb << JSB::MakeNumber(chart->_tick_width, "tick_width");
-                jsb << JSB::MakeNumber((double) chart->_date_range, "date_range");
-                jsb << JSB::MakeNumber(chart->_margin_left, "margin_left");
-                jsb << JSB::MakeNumber(chart->_margin_right, "margin_right");
-                jsb << JSB::MakeBool(chart->_view.labels, "labels");
-                jsb << JSB::MakeBool(chart->_view.horizontal, "horizontal");
-                jsb << JSB::MakeBool(chart->_view.vertical, "vertical");
+            jsb << JSB::MakeObject("area");
+                jsb << JSB::MakeNumber(_areas[0].percent(), "area1");
+                jsb << JSB::MakeNumber(_areas[1].percent(), "area2");
+                jsb << JSB::MakeNumber(_areas[2].percent(), "area3");
+                jsb << JSB::MakeNumber(_areas[3].percent(), "area4");
+                jsb << JSB::MakeNumber(_areas[4].percent(), "area5");
+                jsb << JSB::MakeNumber(_tick_width, "tick_width");
+                jsb << JSB::MakeNumber((double) _date_range, "date_range");
+                jsb << JSB::MakeNumber(_margin, "margin");
+                jsb << JSB::MakeBool(_view.labels, "labels");
+                jsb << JSB::MakeBool(_view.horizontal, "horizontal");
+                jsb << JSB::MakeBool(_view.vertical, "vertical");
             jsb.end();
             jsb << JSB::MakeArray("lines");
-                for (const auto& area : chart->_areas) {
-                    auto ac = 0;
-                    for (const auto& line : area.lines) {
-                        if (line.points.size() > 0) {
+                for (const auto& area : _areas) {
+                    for (const auto& line : area.lines()) {
+                        if (line.size() > 0) {
+                            auto min_clamp = line.clamp_min();
+                            auto max_clamp = line.clamp_max();
                             jsb << JSB::MakeObject();
-                                jsb << JSB::MakeNumber(ac, "area");
-                                jsb << JSB::MakeString(line.label, "label");
-                                jsb << JSB::MakeString(_chart_type_to_string(line.type), "type");
-                                jsb << JSB::MakeNumber(line.align, "align");
-                                jsb << JSB::MakeNumber(line.color, "color");
-                                jsb << JSB::MakeNumber(line.width, "width");
-                                jsb << JSB::MakeNumber(line.clamp_min, "clamp_min");
-                                jsb << JSB::MakeNumber(line.clamp_max, "clamp_max");
+                                jsb << JSB::MakeNumber(static_cast<int>(area.num()), "area");
+                                jsb << JSB::MakeString(line.label(), "label");
+                                jsb << JSB::MakeString(line.type_to_string(), "type");
+                                jsb << JSB::MakeNumber(line.align(), "align");
+                                jsb << JSB::MakeNumber(line.color(), "color");
+                                jsb << JSB::MakeNumber(line.width(), "width");
+                                jsb << JSB::MakeBool(line.is_visible(), "visible");
+                                if (min_clamp.has_value() == true) jsb << JSB::MakeNumber(min_clamp.value(), "clamp_min");
+                                if (max_clamp.has_value() == true) jsb << JSB::MakeNumber(max_clamp.value(), "clamp_max");
                                 jsb << JSB::MakeArray("yx");
-                                for (const auto& price : line.points) {
+                                for (const auto& data : line.data_vector()) {
                                     jsb << JSB::MakeArrayInline();
-                                        jsb << JSB::MakeString(_chart_format_date(price, (chart->has_time() == true) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO));
-                                        if (fabs(price.close - price.low) > max_diff_high_low || fabs(price.close - price.high) > max_diff_high_low) {
-                                            jsb << JSB::MakeNumber(price.high);
-                                            jsb << JSB::MakeNumber(price.low);
+                                        jsb << JSB::MakeString(data.date);
+                                        if (fabs(data.close - data.low) > max_diff_high_low || fabs(data.close - data.high) > max_diff_high_low) {
+                                            jsb << JSB::MakeNumber(data.high);
+                                            jsb << JSB::MakeNumber(data.low);
                                         }
-                                        jsb << JSB::MakeNumber(price.close);
+                                        jsb << JSB::MakeNumber(data.close);
                                         jsb.end();
                                 }
                                 jsb.end();
                             jsb.end();
                         }
                     }
-                    ac++;
                 }
             jsb.end();
             jsb << JSB::MakeArray("lines_block");
-                for (const auto& price : chart->_block_dates) {
-                    jsb << JSB::MakeString(price.date);
+                for (const auto& data : _block_dates) {
+                    jsb << JSB::MakeString(data.date);
                 }
             jsb.end();
         auto js = jsb.encode();
@@ -1559,13 +2373,262 @@ bool Chart::Save(const Chart* chart, std::string filename, double max_diff_high_
         return false;
     }
 }
-bool Chart::tick_width(int tick_width) {
-    if (tick_width < 3 || tick_width > 100) {
+bool Chart::save_png() {
+    return util::png_save("", top_window(), x() + 1,  y() + 1,  w() - 2,  h() - _scroll->h() - 1);
+}
+bool Chart::set_area_size(int area1, int area2, int area3, int area4, int area5) {
+    _area = nullptr;
+    if (area1 < 0 || area1 > 100 ||
+        area2 < 0 || area2 > 100 ||
+        area3 < 0 || area3 > 100 ||
+        area4 < 0 || area4 > 100 ||
+        area5 < 0 || area5 > 100 ||
+        area1 + area2 + area3 + area4 + area5 != 100) {
         return false;
     }
-    _tick_width = tick_width;
+    _areas[0].set_percent(area1);
+    _areas[1].set_percent(area2);
+    _areas[2].set_percent(area3);
+    _areas[3].set_percent(area4);
+    _areas[4].set_percent(area5);
+    return true;
+}
+void Chart::set_date_range(ChartData::RANGE range) {
+    _date_range  = range;
+    _date_format = (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) ? Date::FORMAT::ISO_TIME : Date::FORMAT::ISO;
+}
+bool Chart::set_margin(int def) {
+    if (def < Chart::MIN_MARGIN || def > Chart::MAX_MARGIN) {
+        return false;
+    }
+    _margin = def;
+    return true;
+}
+bool Chart::set_tick_width(int width) {
+    if (width < Chart::MIN_TICK || width > Chart::MAX_TICK) {
+        return false;
+    }
+    _tick_width = width;
     redraw();
     return true;
+}
+void Chart::setup_add_line() {
+    auto list = StringVector() = {
+        "Moving average",
+        "Exponential moving average",
+        "Momentum",
+        "Momentum + support line",
+        "Standard deviation",
+        "Stochastics",
+        "Stochastics + support lines",
+        "Relative Strength Index (RSI)",
+        "Relative Strength Index (RSI) + support lines",
+        "Average True Range (ATR)",
+        "Day to week",
+        "Day to month",
+        "Modify",
+        "Horizontal fixed line"
+    };
+    switch (dlg::choice("Select Formula", list, 0, top_window())) {
+    case 0:
+        create_line(ChartData::FORMULAS::MOVING_AVERAGE);
+        break;
+    case 1:
+        create_line(ChartData::FORMULAS::EXP_MOVING_AVERAGE);
+        break;
+    case 2:
+        create_line(ChartData::FORMULAS::MOMENTUM);
+        break;
+    case 3:
+        create_line(ChartData::FORMULAS::MOMENTUM, true);
+        break;
+    case 4:
+        create_line(ChartData::FORMULAS::STD_DEV);
+        break;
+    case 5:
+        create_line(ChartData::FORMULAS::STOCHASTICS);
+        break;
+    case 6:
+        create_line(ChartData::FORMULAS::STOCHASTICS, true);
+        break;
+    case 7:
+        create_line(ChartData::FORMULAS::RSI);
+        break;
+    case 8:
+        create_line(ChartData::FORMULAS::RSI, true);
+        break;
+    case 9:
+        create_line(ChartData::FORMULAS::ATR);
+        break;
+    case 10:
+        create_line(ChartData::FORMULAS::DAY_TO_WEEK);
+        break;
+    case 11:
+        create_line(ChartData::FORMULAS::DAY_TO_MONTH);
+        break;
+    case 12:
+        create_line(ChartData::FORMULAS::MODIFY);
+        break;
+    case 13:
+        create_line(ChartData::FORMULAS::FIXED);
+        break;
+    default:
+        break;
+    }
+}
+void Chart::setup_area() {
+    auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
+    switch (dlg::choice("Select Number Of Chart Areas", list, 0, top_window())) {
+    case 0:
+        set_area_size(100);
+        break;
+    case 1:
+        set_area_size(50, 50);
+        break;
+    case 2:
+        set_area_size(60, 40);
+        break;
+    case 3:
+        set_area_size(34, 33, 33);
+        break;
+    case 4:
+        set_area_size(50, 25, 25);
+        break;
+    case 5:
+        set_area_size(25, 25, 25, 25);
+        break;
+    case 6:
+        set_area_size(40, 20, 20, 20);
+        break;
+    case 7:
+        set_area_size(20, 20, 20, 20, 20);
+        break;
+    default:
+        break;
+    }
+    init(false);
+}
+void Chart::setup_date_range() {
+    auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
+    auto sel  = dlg::choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
+    if (sel == -1) {
+        return;
+    }
+    _date_range = static_cast<ChartData::RANGE>(sel);
+    init(true);
+}
+void Chart::setup_delete_lines() {
+    if (_area == nullptr || _area->size() == 0) {
+        return;
+    }
+    auto list_labels = dlg::check("Delete Lines", _area->label_array(ChartArea::LABELTYPE::OFF), top_window());
+    if (list_labels.size() == 0) {
+        return;
+    }
+    for (size_t f = 0, e = 0; f < list_labels.size(); f++, e++) {
+        if (list_labels[f][0] == '1') {
+            if (_move_or_delete_line(_area, e, false) == true) {
+                e--;
+            }
+        }
+    }
+    init(true);
+}
+void Chart::setup_label() {
+    auto l = fl_input(40, "Enter label", _label.c_str());
+    if (l != nullptr) {
+        _label = l;
+        init(false);
+    }
+}
+void Chart::setup_line() {
+    if (_area == nullptr || _area->selected_line() == nullptr) {
+        return;
+    }
+    auto line = const_cast<ChartLine*>(_area->selected_line());
+    auto ok   = ChartLineSetup(top_window(), *line).run();
+    if (ok == false) {
+        return;
+    }
+    init(false);
+}
+void Chart::setup_move_lines() {
+    if (_area == nullptr || _area->size() == 0) {
+        return;
+    }
+    auto list_labels = dlg::check("Move Lines", _area->label_array(ChartArea::LABELTYPE::OFF), top_window());
+    if (list_labels.size() == 0) {
+        return;
+    }
+    auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
+    auto area       = dlg::choice("Select Area", list_areas, 0, top_window());
+    if (area < 0 || area > static_cast<int>(ChartArea::NUM::LAST)) {
+        return;
+    }
+    for (size_t f = 0, e = 0; f < list_labels.size(); f++, e++) {
+        if (list_labels[f][0] == '1') {
+            if (_move_or_delete_line(_area, e, true, static_cast<ChartArea::NUM>(area)) == true) {
+                e--;
+            }
+        }
+    }
+    init(true);
+}
+void Chart::setup_show_or_hide_lines() {
+    if (_area == nullptr || _area->size() == 0) {
+        return;
+    }
+    auto list = _area->label_array(ChartArea::LABELTYPE::VISIBLE);
+    list = dlg::check("Show Or Hide Lines", list, top_window());
+    if (list.size() == 0) {
+        return;
+    }
+    for (size_t f = 0; f < list.size(); f++) {
+        _area->set_visible(f, list[f][0] == '1');
+    }
+    init(true);
+}
+void Chart::setup_ywidth() {
+    auto width = static_cast<double>(_margin);
+    if (dlg::slider("Set Y Label Width", Chart::MIN_MARGIN, Chart::MAX_MARGIN, width, 1, top_window()) == false) {
+        return;
+    }
+    set_margin(width);
+    init(false);
+}
+void Chart::_show_menu() {
+    menu::set_item(_menu, _CHART_SHOW_LABELS, _view.labels);
+    menu::set_item(_menu, _CHART_SHOW_HLINES, _view.horizontal);
+    menu::set_item(_menu, _CHART_SHOW_VLINES, _view.vertical);
+    if (_area != nullptr) {
+        menu::enable_item(_menu, _CHART_SETUP_DELETE, true);
+        menu::enable_item(_menu, _CHART_SETUP_MOVE, true);
+        menu::enable_item(_menu, _CHART_SETUP_SHOW, true);
+    }
+    else {
+        menu::enable_item(_menu, _CHART_SETUP_DELETE, false);
+        menu::enable_item(_menu, _CHART_SETUP_MOVE, false);
+        menu::enable_item(_menu, _CHART_SETUP_SHOW, false);
+    }
+    if (_area != nullptr && _area->selected_line() != nullptr && _area->selected_line()->size() > 0) {
+        menu::enable_item(_menu, _CHART_SETUP_LINE, true);
+        menu::enable_item(_menu, _CHART_ADD_LINE, true);
+        menu::enable_item(_menu, _CHART_ADD_CSV, true);
+        menu::enable_item(_menu, _CHART_SAVE_CSV, true);
+#ifdef DEBUG
+        menu::enable_item(_menu, _CHART_DEBUG_LINE, true);
+#endif
+    }
+    else {
+        menu::enable_item(_menu, _CHART_SETUP_LINE, false);
+        menu::enable_item(_menu, _CHART_ADD_LINE, false);
+        menu::enable_item(_menu, _CHART_ADD_CSV, false);
+        menu::enable_item(_menu, _CHART_SAVE_CSV, false);
+#ifdef DEBUG
+        menu::enable_item(_menu, _CHART_DEBUG_LINE, false);
+#endif
+    }
+    _menu->popup();
 }
 void Chart::update_pref() {
     _menu->textfont(flw::PREF_FONT);
@@ -1581,9 +2644,6 @@ static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesd
 static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""};
 static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
 static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
-const int Date::SECS_PER_HOUR = 3600;
-const int Date::SECS_PER_DAY  = 3600 * 24;
-const int Date::SECS_PER_WEEK = 3600 * 24 * 7;
 static int _date_days(int year, int month) {
     if (year < 1 || year > 9999 || month < 1 || month > 12) {
         return 0;
@@ -1671,7 +2731,7 @@ static Date _date_parse(const char* string, bool us) {
         val[7] = string[7] - '0';
     }
     else {
-        return Date(1, 1, 1);
+        return Date::InvalidDate();
     }
     val[0] = string[Y] - '0';
     val[1] = string[Y + 1] - '0';
@@ -1698,7 +2758,7 @@ static Date _date_parse(const char* string, bool us) {
             ;
         }
         else if (val[f] < 0 || val[f] > 9) {
-            return Date(1, 1, 1);
+            return Date::InvalidDate();
         }
     }
     year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
@@ -1707,7 +2767,7 @@ static Date _date_parse(const char* string, bool us) {
     hour  = val[8] * 10 + val[9];
     min   = val[10] * 10 + val[11];
     sec   = val[12] * 10 + val[13];
-    if (iso == false && us) {
+    if (iso == false && us == true) {
         int tmp = month;
         month   = day;
         day     = tmp;
@@ -1774,7 +2834,7 @@ Date::Date(Date&& other) {
     set(other);
 }
 Date::Date(int year, int month, int day, int hour, int min, int sec) {
-    _year = _month = _day = 1;
+    _year = _month = _day = 0;
     _hour = _min = _sec = 0;
     set(year, month, day, hour, min, sec);
 }
@@ -1959,6 +3019,9 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
     }
     return 0;
 }
+bool Date::Compare(const Date& a, const Date& b) {
+    return a.compare(b) < 0;
+}
 Date& Date::day(int day) {
     if (day > 0 && day <= _date_days(_year, _month)) {
         _day = day;
@@ -2049,11 +3112,29 @@ std::string Date::format(Date::FORMAT format) const {
     }
     return tmp;
 }
+Date Date::FromString(const char* buffer, bool us) {
+    if (buffer == nullptr) {
+        return Date::InvalidDate();
+    }
+    else {
+         return _date_parse(buffer, us);
+    }
+}
+Date Date::FromTime(int64_t seconds, bool utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
+    return Date(y, m, d, ho, mi, se);
+}
 Date& Date::hour(int hour) {
     if (hour >= 0 && hour <= 23) {
         _hour = hour;
     }
     return *this;
+}
+Date Date::InvalidDate() {
+    Date date;
+    date._year = date._month = date._day = date._hour = date._min = date._sec = 0;
+    return date;
 }
 bool Date::is_leapyear() const {
     return _date_is_leapyear(_year);
@@ -2209,22 +3290,6 @@ int Date::yearday() const {
         }
     }
     return res + _day;
-}
-bool Date::Compare(const Date& a, const Date& b) {
-    return a.compare(b) < 0;
-}
-Date Date::FromString(const char* buffer, bool us) {
-    if (buffer == nullptr) {
-        return Date(1, 1, 1);
-    }
-    else {
-         return _date_parse(buffer, us);
-    }
-}
-Date Date::FromTime(int64_t seconds, bool utc) {
-    int y, m, d, ho, mi, se;
-    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
-    return Date(y, m, d, ho, mi, se);
 }
 }
 #include <FL/Fl_Double_Window.H>
@@ -2600,8 +3665,10 @@ bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
 #include <FL/Fl_Hor_Slider.H>
+#include <FL/Fl_Hor_Value_Slider.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Scroll.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Editor.H>
 #include <FL/Fl_Tooltip.H>
@@ -2676,6 +3743,169 @@ bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limi
 void panic(std::string message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
+}
+class _DlgCheck : public Fl_Double_Window {
+    Fl_Button*                  _all;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Button*                  _invert;
+    Fl_Button*                  _none;
+    Fl_Scroll*                  _scroll;
+    GridGroup*                  _grid;
+    const StringVector&         _labels;
+    WidgetVector                _checkbuttons;
+    bool                        _ret;
+public:
+    _DlgCheck(const char* title, Fl_Window* parent, const StringVector& strings) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 20),
+    _labels(strings) {
+        end();
+        _ret    = false;
+        _all    = new Fl_Button(0, 0, 0, 0, "All on");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _invert = new Fl_Button(0, 0, 0, 0, "Invert");
+        _none   = new Fl_Button(0, 0, 0, 0, "All off");
+        _scroll = new Fl_Scroll(0, 0, 0, 0);
+        _grid->add(_scroll,   1,  1, -1, -7);
+        _grid->add(_invert, -67, -5, 10,  4);
+        _grid->add(_none,   -56, -5, 10,  4);
+        _grid->add(_all,    -45, -5, 10,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+        for (auto& l : _labels) {
+            auto b = new Fl_Check_Button(0, 0, 0, 0, l.c_str() + 1);
+            b->value(*l.c_str() == '1');
+            _checkbuttons.push_back(b);
+            _scroll->add(b);
+        }
+        _all->callback(_DlgCheck::Callback, this);
+        _cancel->callback(_DlgCheck::Callback, this);
+        _close->callback(_DlgCheck::Callback, this);
+        _invert->callback(_DlgCheck::Callback, this);
+        _none->callback(_DlgCheck::Callback, this);
+        _scroll->box(FL_BORDER_BOX);
+        util::labelfont(this);
+        callback(_DlgCheck::Callback, this);
+        copy_label(title);
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 12);
+        util::center_window(this, parent);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgCheck*>(o);
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->hide();
+        }
+        else if (w == self->_all) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(1);
+            }
+        }
+        else if (w == self->_none) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(0);
+            }
+        }
+        else if (w == self->_invert) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(static_cast<Fl_Check_Button*>(b)->value() ? 0 : 1);
+            }
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _grid->resize(0, 0, W, H);
+        auto y = _scroll->y() + 4;
+        for (auto b : _checkbuttons) {
+            b->resize(_scroll->x() + 4, y, _scroll->w() - Fl::scrollbar_size() - 8, flw::PREF_FONTSIZE * 2);
+            y += flw::PREF_FONTSIZE * 2;
+        }
+    }
+    StringVector run() {
+        StringVector res;
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        if (_ret == true) {
+            for (auto b : _checkbuttons) {
+                res.push_back(std::string((static_cast<Fl_Check_Button*>(b)->value() == 0) ? "0" : "1") + b->label());
+            }
+        }
+        return res;
+    }
+};
+StringVector check(std::string title, const StringVector& list, Fl_Window* parent) {
+    _DlgCheck dlg(title.c_str(), parent, list);
+    return dlg.run();
+}
+class _DlgChoice : public Fl_Double_Window {
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Choice*                  _choice;
+    GridGroup*                  _grid;
+    int                         _ret;
+public:
+    _DlgChoice(const char* title, Fl_Window* parent, const StringVector& strings, int selected) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6) {
+        end();
+        _ret    = -1;
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _choice = new Fl_Choice(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _grid->add(_choice,   1,  1, -1,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+        for (const auto& string : strings) {
+            _choice->add(string.c_str());
+        }
+        _cancel->callback(_DlgChoice::Callback, this);
+        _choice->textfont(flw::PREF_FONT);
+        _choice->textsize(flw::PREF_FONTSIZE);
+        _choice->value(selected);
+        _close->callback(_DlgChoice::Callback, this);
+        util::labelfont(this);
+        callback(_DlgChoice::Callback, this);
+        copy_label(title);
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6);
+        util::center_window(this, parent);
+        _grid->do_layout();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgChoice*>(o);
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = self->_choice->value();
+            self->hide();
+        }
+    }
+    int run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _ret;
+    }
+};
+int choice(std::string title, const StringVector& list, int selected, Fl_Window* parent) {
+    _DlgChoice dlg(title.c_str(), parent, list, selected);
+    return dlg.run();
 }
 class _DlgHtml  : public Fl_Double_Window {
     Fl_Help_View*               _html;
@@ -3438,6 +4668,70 @@ int select(std::string title, const StringVector& list, const std::string& selec
     _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
     return dlg.run();
 }
+class _DlgSlider : public Fl_Double_Window {
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Hor_Value_Slider*        _slider;
+    GridGroup*                  _grid;
+    bool                        _ret;
+    double&                     _value;
+public:
+    _DlgSlider(const char* title, Fl_Window* parent, double min, double max, double& value, double step) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6),
+    _value(value) {
+        end();
+        _ret    = false;
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _slider = new Fl_Hor_Value_Slider(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _grid->add(_slider,   1,  1, -1,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+        _cancel->callback(_DlgSlider::Callback, this);
+        _slider->align(FL_ALIGN_LEFT    );
+        _slider->callback(_DlgSlider::Callback, this);
+        _slider->range(min, max);
+        _slider->value(value);
+        _slider->step(step);
+        _slider->textfont(flw::PREF_FONT);
+        _slider->textsize(flw::PREF_FONTSIZE);
+        _close->callback(_DlgSlider::Callback, this);
+        util::labelfont(this);
+        callback(_DlgSlider::Callback, this);
+        copy_label(title);
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6);
+        util::center_window(this, parent);
+        _grid->do_layout();
+        _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgSlider*>(o);
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->_value = self->_slider->value();
+            self->hide();
+        }
+    }
+    int run() {
+        show();
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _ret;
+    }
+};
+bool slider(std::string title, double min, double max, double& value, double step, Fl_Window* parent) {
+    _DlgSlider dlg(title.c_str(), parent, min, max, value, step);
+    return dlg.run();
+}
 class _DlgText : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Button*                  _close;
@@ -4063,7 +5357,6 @@ bool WorkDialog::run(double update_time, const std::string& message) {
 #include <algorithm>
 #include <cstdint>
 #include <assert.h>
-#include <math.h>
 #include <stdarg.h>
 #include <time.h>
 #include <FL/Fl_Window.H>
@@ -4183,10 +5476,51 @@ void debug::print(const Fl_Widget* widget, std::string& indent) {
     }
     fflush(stdout);
 }
+bool debug::test(bool val, int line, const char* func) {
+    if (val == false) {
+        fprintf(stderr, "error: test failed at line %d in %s\n", line, func);
+        fflush(stderr);
+        return false;
+    }
+    return true;
+}
+bool debug::test(const char* ref, const char* val, int line, const char* func) {
+    if (ref == nullptr && val == nullptr) {
+        return true;
+    }
+    else if (ref == nullptr || val == nullptr || strcmp(ref, val) != 0) {
+        fprintf(stderr, "error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
+        fflush(stderr);
+        return false;
+    }
+    return true;
+}
+bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
+    if (ref != val) {
+        fprintf(stderr, "error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
+        fflush(stderr);
+        return false;
+    }
+    return true;
+}
+bool debug::test(double ref, double val, double diff, int line, const char* func) {
+    if (fabs(ref - val) > diff) {
+        fprintf(stderr, "error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
+        fflush(stderr);
+        return false;
+    }
+    return true;
+}
 namespace menu {
-static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text) {
-    assert(menu && text);
-    auto item = menu->find_item(text);
+static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
+    const Fl_Menu_Item* item;
+    if (v == nullptr) {
+        assert(menu && text);
+        item = menu->find_item(text);
+    }
+    else {
+        item = menu->find_item_with_user_data(v);
+    }
 #ifdef DEBUG
     if (item == nullptr) fprintf(stderr, "error: cant find menu item <%s>\n", text);
 #endif
@@ -4201,6 +5535,9 @@ void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
 }
 Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, const char* text) {
     return _item(menu, text);
+}
+Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, void* v) {
+    return _item(menu, nullptr, v);
 }
 bool menu::item_value(Fl_Menu_* menu, const char* text) {
     auto item = _item(menu, text);
@@ -4351,7 +5688,8 @@ int32_t util::milliseconds() {
     return (t.tv_sec * 1000000 + t.tv_nsec / 1000) / 1000;
 #endif
 }
-void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+    auto res = false;
 #ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
     if (filename != nullptr) {
@@ -4366,6 +5704,7 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
         if (image != nullptr) {
             auto ret = fl_write_png(filename, image, W, H);
             if (ret == 0) {
+                res = true;
             }
             else if (ret == -1) {
                 fl_alert("%s", "error: missing libraries");
@@ -4388,6 +5727,7 @@ void util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     (void) H;
     fl_alert("error: flw not compiled with FLW_USE_PNG flag");
 #endif
+    return res;
 }
 std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
     return flw::_print(ps_filename, format, layout, cb, data, 0, 0);
@@ -4469,6 +5809,22 @@ flw::StringVector util::split_string(const std::string& string, std::string spli
         res.clear();
     }
     return res;
+}
+double util::to_double(std::string num, double def) {
+    try {
+        return std::stod(num);
+    }
+    catch(...) {
+        return def;
+    }
+}
+long long util::to_long(std::string num, long long def) {
+    try {
+        return std::stoll(num);
+    }
+    catch(...) {
+        return def;
+    }
 }
 void* util::zero_memory(char* mem, size_t size) {
     if (mem == nullptr || size == 0) return mem;
@@ -4962,6 +6318,8 @@ bool theme::parse(int argc, const char** argv) {
         }
     }
     flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+    Fl_Tooltip::font(flw::PREF_FONT);
+    Fl_Tooltip::size(flw::PREF_FONTSIZE);
     return res;
 }
 void theme::save_theme_pref(Fl_Preferences& pref) {
@@ -7469,11 +8827,10 @@ void LogDisplay::value(const char* text) {
 }
 }
 #include <assert.h>
-#include <math.h>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
-static const char* const        _PLOT_PRINT        = "Print to PostScript...";
+static const char* const        _PLOT_PRINT        = "Print to PostScript file...";
 static const char* const        _PLOT_RESET_SELECT = "Reset line selection and visibility";
 static const char* const        _PLOT_SAVE_FILE    = "Save to png file...";
 static const char* const        _PLOT_SHOW_HLINES  = "Show horizontal lines";
@@ -9754,10 +11111,6 @@ void TableDisplay::_update_scrollbars() {
 #include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
 namespace flw {
-double _tableeditor_to_double(std::string string, double def) {
-    try { return std::stod(string.c_str(), 0); }
-    catch (...) { return def; }
-}
 int _tableeditor_to_doubles(std::string string, double numbers[], size_t size) {
     auto end = (char*) nullptr;
     auto in  = string.c_str();
@@ -9933,7 +11286,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             }
         }
         else if (rend == TableEditor::REND::NUMBER || rend == TableEditor::REND::VALUE_SLIDER) {
-            auto num = _tableeditor_to_double(val, 0.0);
+            auto num = util::to_double(val, 0.0);
             if (rend == TableEditor::REND::VALUE_SLIDER) {
                 double nums[1];
                 if (_tableeditor_to_doubles(val, nums, 1) == 1) {
@@ -10164,7 +11517,7 @@ void TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == TableEditor::REND::NUMBER) {
-        auto num = _tableeditor_to_double(val, 0.0);
+        auto num = util::to_double(val, 0.0);
         if (strcmp(key, "+") == 0) {
             num += 0.1;
         }
@@ -10341,7 +11694,7 @@ void TableEditor::_edit_stop(bool save) {
                     val2 = buffer;
                 }
                 else if (rend == TableEditor::REND::NUMBER) {
-                    auto num = _tableeditor_to_double(val2, 0.0);
+                    auto num = util::to_double(val2, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
@@ -10567,7 +11920,7 @@ int TableEditor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    auto num = _tableeditor_to_double(text, 0.0);
+                    auto num = util::to_double(text, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
                     break;
@@ -10753,7 +12106,7 @@ void TabsGroup::draw() {
 int TabsGroup::find(const Fl_Widget* widget) const {
     auto num = 0;
     for (const auto W : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(W);
+        const auto b = static_cast<_TabsGroupButton*>(W);
         if (b->widget == widget) {
             return num;
         }
@@ -10898,11 +12251,19 @@ void TabsGroup::insert(std::string label, Fl_Widget* widget, const Fl_Widget* be
     TabsGroup::Callback(button, this);
     do_layout();
 }
+std::string TabsGroup::label(Fl_Widget* widget) {
+    auto num = find(widget);
+    if (num == -1) {
+        return "";
+    }
+    return _widgets[num]->label();
+}
 void TabsGroup::label(std::string label, Fl_Widget* widget) {
     auto num = find(widget);
-    if (num != -1) {
-        _widgets[num]->copy_label(label.c_str());
+    if (num == -1) {
+        return;
     }
+    _widgets[num]->copy_label(label.c_str());
 }
 Fl_Widget* TabsGroup::remove(int num) {
     if (num < 0 || num >= (int) _widgets.size()) {

@@ -41,6 +41,29 @@ void test_abort() {
 }
 
 //------------------------------------------------------------------------------
+void test_check() {
+    StringVector v = { "1Whether", "0tis nobler", "1in the", "0mind to suffer", "1The slings", 
+                       "0and arrows", "1of outrageous", "0fortune", "1Or to", "0take arms", 
+                       "1against", "0a sea", "1of troubles", "0And by", "1opposing", "0end them?", 
+                       "1To die", "0to sleep", "1No more", "0and by a", "1sleep to say", "0we end" };
+    size_t       c = 0;
+    
+    for (auto s : dlg::check("dlg::check", v)) {
+        printf("%2u = %s => %s\n", (unsigned) c, s.c_str(), v[c].c_str());
+        c++;
+    }
+    fflush(stdout);
+}
+
+//------------------------------------------------------------------------------
+void test_choice() {
+    StringVector v = {"Hello", "World", "How", "Are", "You?"};
+
+    printf("line %d was selected\n", dlg::choice("dlg::choice", v, 1));
+    fflush(stdout);
+}
+
+//------------------------------------------------------------------------------
 void test_date() {
     Date date;
 
@@ -401,6 +424,26 @@ void test_select() {
 }
 
 //------------------------------------------------------------------------------
+void test_slider() {
+    auto v = 12345.0;
+    auto r = dlg::slider("dlg::slider", 1, 20'000, v, 0.1);
+    printf("ok=%d\nv=%f\n", r, v);
+    fflush(stdout);
+
+    v = 66;
+    r = dlg::slider("dlg::slider", 6, 666, v);
+    printf("ok=%d\nv=%f\n", r, v);
+
+    v = 10'000'000;
+    r = dlg::slider("dlg::slider", 0, 1'000'000'000, v, 1'000'000);
+    printf("ok=%d\nv=%f\n", r, v);
+
+    v = 10'000'000;
+    r = dlg::slider("dlg::slider", 10'000'000, 10'000'001, v, 0.01);
+    printf("ok=%d\nv=%f\n", r, v);
+}
+
+//------------------------------------------------------------------------------
 void test_text() {
     dlg::text("dlg::text", HAMLET_TEXT);
 
@@ -472,6 +515,8 @@ int main(int argc, const char** argv) {
 
     puts("run individual tests with");
     puts("    abort");
+    puts("    check");
+    puts("    choice");
     puts("    date");
     puts("    font");
     puts("    html");
@@ -481,6 +526,7 @@ int main(int argc, const char** argv) {
     puts("    print2");
     puts("    pwd");
     puts("    select");
+    puts("    slider");
     puts("    text");
     puts("    theme");
     puts("    wait");
@@ -524,6 +570,14 @@ int main(int argc, const char** argv) {
             test_abort();
         }
 
+        if (run == "" || run == "check") {
+            test_check();
+        }
+
+        if (run == "" || run == "choice") {
+            test_choice();
+        }
+
         if (run == "" || run == "date") {
             test_date();
         }
@@ -554,6 +608,10 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "select") {
             test_select();
+        }
+
+        if (run == "" || run == "slider")  {
+            test_slider();
         }
 
         if (run == "" || run == "pwd")  {

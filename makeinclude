@@ -41,8 +41,8 @@ else ifeq ($(build), profile2)
 	CFLAGS   = -O2
 	LDFLAGS  = $(STATIC) $(FLTO) -fprofile-use=obj
 else
-	CXXFLAGS = -DDEBUG $(OSFLAGS)
-	CFLAGS   = -DDEBUG
+	CXXFLAGS = -O -DDEBUG $(OSFLAGS)
+	CFLAGS   = -O -DDEBUG
 	LDFLAGS  =
 endif
 

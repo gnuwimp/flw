@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <cmath>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
@@ -29,12 +30,18 @@
 #define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
 #define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
 #define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
+#define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
+#define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
 #else
 #define FLW_LINE
 #define FLW_RED
 #define FLW_GREEN
 #define FLW_BLUE
 #define FLW_PRINT(...)
+#define FLW_ASSERT(X,Y)
+#define FLW_TRUE(X)
+#define FLW_ASSERTD(X,Y,Z)
 #endif
 
 namespace flw {
@@ -58,6 +65,10 @@ typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
 namespace debug {
     void                        print(const Fl_Widget* widget);
     void                        print(const Fl_Widget* widget, std::string& indent);
+    bool                        test(bool val, int line, const char* func);
+    bool                        test(const char* ref, const char* val, int line, const char* func);
+    bool                        test(int64_t ref, int64_t val, int line, const char* func);
+    bool                        test(double ref, double val, double diff, int line, const char* func);
 }
 
 //------------------------------------------------------------------------------
@@ -66,6 +77,7 @@ namespace debug {
 namespace menu {
     void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
     Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
+    Fl_Menu_Item*               get_item(Fl_Menu_* menu, void* v);
     bool                        item_value(Fl_Menu_* menu, const char* text);
     void                        set_item(Fl_Menu_* menu, const char* text, bool value);
     void                        setonly_item(Fl_Menu_* menu, const char* text);
@@ -84,13 +96,17 @@ namespace util {
     bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
     int32_t                     milliseconds();
-    void                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
     std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
     std::string                 remove_browser_format(const char* text);
     std::string&                replace_string(std::string& string, std::string find, std::string replace);
     void                        sleep(int milli);
     StringVector                split_string(const std::string& string, std::string split);
+    double                      to_double(std::string s, double def = INFINITY);
+    long long                   to_long(std::string s, long long def = 0);
+    static inline std::string   to_string(const char* text)
+                                    { return text != nullptr ? text : ""; }
     void*                       zero_memory(char* mem, size_t size);
 }
 

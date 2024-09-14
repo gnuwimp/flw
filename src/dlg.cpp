@@ -16,8 +16,10 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Help_View.H>
 #include <FL/Fl_Hor_Slider.H>
+#include <FL/Fl_Hor_Value_Slider.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Scroll.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Editor.H>
 #include <FL/Fl_Tooltip.H>
@@ -109,6 +111,233 @@ bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limi
 void panic(std::string message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
+}
+
+/***
+ *           _____  _        _____ _               _    
+ *          |  __ \| |      / ____| |             | |   
+ *          | |  | | | __ _| |    | |__   ___  ___| | __
+ *          | |  | | |/ _` | |    | '_ \ / _ \/ __| |/ /
+ *          | |__| | | (_| | |____| | | |  __/ (__|   < 
+ *          |_____/|_|\__, |\_____|_| |_|\___|\___|_|\_\
+ *      ______         __/ |                            
+ *     |______|       |___/                             
+ */
+
+//------------------------------------------------------------------------------
+class _DlgCheck : public Fl_Double_Window {
+    Fl_Button*                  _all;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Button*                  _invert;
+    Fl_Button*                  _none;
+    Fl_Scroll*                  _scroll;
+    GridGroup*                  _grid;
+    const StringVector&         _labels;
+    WidgetVector                _checkbuttons;
+    bool                        _ret;
+
+public:
+    //--------------------------------------------------------------------------
+    _DlgCheck(const char* title, Fl_Window* parent, const StringVector& strings) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 20),
+    _labels(strings) {
+        end();
+
+        _ret    = false;
+        _all    = new Fl_Button(0, 0, 0, 0, "All on");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _invert = new Fl_Button(0, 0, 0, 0, "Invert");
+        _none   = new Fl_Button(0, 0, 0, 0, "All off");
+        _scroll = new Fl_Scroll(0, 0, 0, 0);
+
+        _grid->add(_scroll,   1,  1, -1, -7);
+        _grid->add(_invert, -67, -5, 10,  4);
+        _grid->add(_none,   -56, -5, 10,  4);
+        _grid->add(_all,    -45, -5, 10,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+
+        for (auto& l : _labels) {
+            auto b = new Fl_Check_Button(0, 0, 0, 0, l.c_str() + 1);
+            b->value(*l.c_str() == '1');
+            _checkbuttons.push_back(b);
+            _scroll->add(b);
+        }
+
+        _all->callback(_DlgCheck::Callback, this);
+        _cancel->callback(_DlgCheck::Callback, this);
+        _close->callback(_DlgCheck::Callback, this);
+        _invert->callback(_DlgCheck::Callback, this);
+        _none->callback(_DlgCheck::Callback, this);
+        _scroll->box(FL_BORDER_BOX);
+
+        util::labelfont(this);
+        callback(_DlgCheck::Callback, this);
+        copy_label(title);
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 12);
+        util::center_window(this, parent);
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgCheck*>(o);
+
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->hide();
+        }
+        else if (w == self->_all) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(1);
+            }
+        }
+        else if (w == self->_none) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(0);
+            }
+        }
+        else if (w == self->_invert) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(static_cast<Fl_Check_Button*>(b)->value() ? 0 : 1);
+            }
+        }
+    }
+
+    //------------------------------------------------------------------------------
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _grid->resize(0, 0, W, H);
+        
+        auto y = _scroll->y() + 4;
+        
+        for (auto b : _checkbuttons) {
+            b->resize(_scroll->x() + 4, y, _scroll->w() - Fl::scrollbar_size() - 8, flw::PREF_FONTSIZE * 2);
+            y += flw::PREF_FONTSIZE * 2;
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    StringVector run() {
+        StringVector res;
+
+        show();
+
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        
+        if (_ret == true) {
+            for (auto b : _checkbuttons) {
+                res.push_back(std::string((static_cast<Fl_Check_Button*>(b)->value() == 0) ? "0" : "1") + b->label());
+            }
+        }
+
+        return res;
+    }
+};
+
+//------------------------------------------------------------------------------
+StringVector check(std::string title, const StringVector& list, Fl_Window* parent) {
+    _DlgCheck dlg(title.c_str(), parent, list);
+    return dlg.run();
+}
+
+/***
+ *           _____  _        _____ _           _          
+ *          |  __ \| |      / ____| |         (_)         
+ *          | |  | | | __ _| |    | |__   ___  _  ___ ___ 
+ *          | |  | | |/ _` | |    | '_ \ / _ \| |/ __/ _ \
+ *          | |__| | | (_| | |____| | | | (_) | | (_|  __/
+ *          |_____/|_|\__, |\_____|_| |_|\___/|_|\___\___|
+ *      ______         __/ |                              
+ *     |______|       |___/                               
+ */
+
+//------------------------------------------------------------------------------
+class _DlgChoice : public Fl_Double_Window {
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Choice*                  _choice;
+    GridGroup*                  _grid;
+    int                         _ret;
+
+public:
+    //--------------------------------------------------------------------------
+    _DlgChoice(const char* title, Fl_Window* parent, const StringVector& strings, int selected) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6) {
+        end();
+
+        _ret    = -1;
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _choice = new Fl_Choice(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+
+        _grid->add(_choice,   1,  1, -1,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+
+        for (const auto& string : strings) {
+            _choice->add(string.c_str());
+        }
+
+        _cancel->callback(_DlgChoice::Callback, this);
+        _choice->textfont(flw::PREF_FONT);
+        _choice->textsize(flw::PREF_FONTSIZE);
+        _choice->value(selected);
+        _close->callback(_DlgChoice::Callback, this);
+
+        util::labelfont(this);
+        callback(_DlgChoice::Callback, this);
+        copy_label(title);
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6);
+        util::center_window(this, parent);
+        _grid->do_layout();
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgChoice*>(o);
+
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = self->_choice->value();
+            self->hide();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    int run() {
+        show();
+
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        
+        return _ret;
+    }
+};
+
+//------------------------------------------------------------------------------
+int choice(std::string title, const StringVector& list, int selected, Fl_Window* parent) {
+    _DlgChoice dlg(title.c_str(), parent, list, selected);
+    return dlg.run();
 }
 
 /***
@@ -1104,6 +1333,98 @@ int select(std::string title, const StringVector& list, int selected_row, Fl_Win
 //------------------------------------------------------------------------------
 int select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
     _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
+    return dlg.run();
+}
+
+/***
+ *           _____  _        _____ _ _     _           
+ *          |  __ \| |      / ____| (_)   | |          
+ *          | |  | | | __ _| (___ | |_  __| | ___ _ __ 
+ *          | |  | | |/ _` |\___ \| | |/ _` |/ _ \ '__|
+ *          | |__| | | (_| |____) | | | (_| |  __/ |   
+ *          |_____/|_|\__, |_____/|_|_|\__,_|\___|_|   
+ *      ______         __/ |                           
+ *     |______|       |___/                            
+ */
+
+//------------------------------------------------------------------------------
+class _DlgSlider : public Fl_Double_Window {
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Hor_Value_Slider*        _slider;
+    GridGroup*                  _grid;
+    bool                        _ret;
+    double&                     _value;
+
+public:
+    //--------------------------------------------------------------------------
+    _DlgSlider(const char* title, Fl_Window* parent, double min, double max, double& value, double step) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6),
+    _value(value) {
+        end();
+
+        _ret    = false;
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _slider = new Fl_Hor_Value_Slider(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+
+        _grid->add(_slider,   1,  1, -1,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+
+        _cancel->callback(_DlgSlider::Callback, this);
+        _slider->align(FL_ALIGN_LEFT    );
+        _slider->callback(_DlgSlider::Callback, this);
+        _slider->range(min, max);
+        _slider->value(value);
+        _slider->step(step);
+        _slider->textfont(flw::PREF_FONT);
+        _slider->textsize(flw::PREF_FONTSIZE);
+        _close->callback(_DlgSlider::Callback, this);
+
+        util::labelfont(this);
+        callback(_DlgSlider::Callback, this);
+        copy_label(title);
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6);
+        util::center_window(this, parent);
+        _grid->do_layout();
+        _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgSlider*>(o);
+
+        if (w == self || w == self->_cancel) {
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->_value = self->_slider->value();
+            self->hide();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    int run() {
+        show();
+
+        while (visible() != 0) {
+            Fl::wait();
+            Fl::flush();
+        }
+        
+        return _ret;
+    }
+};
+
+//------------------------------------------------------------------------------
+bool slider(std::string title, double min, double max, double& value, double step, Fl_Window* parent) {
+    _DlgSlider dlg(title.c_str(), parent, min, max, value, step);
     return dlg.run();
 }
 

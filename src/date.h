@@ -23,8 +23,9 @@ namespace flw {
  */
 
 //------------------------------------------------------------------------------
-// An date and time class
-// Date range is from 1-1-1 00:00:00 to 9999-12-31 23:59:59
+// An date and time class.
+// Date range is from 1-1-1 00:00:00 to 9999-12-31 23:59:59.
+// Date with year set to 0 is invalid.
 //
 class Date {
 public:
@@ -63,21 +64,9 @@ public:
                                 LAST = YEAR_MONTH_LONG,
     };
 
-    enum class RANGE {
-                                DAY,
-                                WEEKDAY,
-                                FRIDAY,
-                                SUNDAY,
-                                MONTH,
-                                HOUR,
-                                MIN,
-                                SEC,
-                                LAST = SEC,
-    };
-
-    static const int            SECS_PER_HOUR;
-    static const int            SECS_PER_DAY;
-    static const int            SECS_PER_WEEK;
+    static const int            SECS_PER_HOUR  = 3600;
+    static const int            SECS_PER_DAY   = 3600 * 24;
+    static const int            SECS_PER_WEEK  = 3600 * 24 * 7;
 
     explicit                    Date(bool utc = false);
                                 Date(const Date& other);
@@ -112,6 +101,8 @@ public:
     int                         hour() const
                                     { return _hour; }
     Date&                       hour(int hour);
+    bool                        is_invalid() const
+                                    { return _year == 0 || _month == 0 || _day == 0; }
     bool                        is_leapyear() const;
     int                         minute() const
                                     { return _min; }
@@ -142,6 +133,7 @@ public:
     static bool                 Compare(const Date& a, const Date& b);
     static Date                 FromString(const char* string, bool us = false);
     static Date                 FromTime(int64_t seconds, bool utc = false);
+    static Date                 InvalidDate();
 
 private:
     short                       _year;

@@ -192,7 +192,7 @@ int TabsGroup::find(const Fl_Widget* widget) const {
     auto num = 0;
 
     for (const auto W : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(W);
+        const auto b = static_cast<_TabsGroupButton*>(W);
 
         if (b->widget == widget) {
             return num;
@@ -368,12 +368,25 @@ void TabsGroup::insert(std::string label, Fl_Widget* widget, const Fl_Widget* be
 }
 
 //------------------------------------------------------------------------------
+std::string TabsGroup::label(Fl_Widget* widget) {
+    auto num = find(widget);
+
+    if (num == -1) {
+        return "";
+    }
+    
+    return _widgets[num]->label();
+}
+
+//------------------------------------------------------------------------------
 void TabsGroup::label(std::string label, Fl_Widget* widget) {
     auto num = find(widget);
 
-    if (num != -1) {
-        _widgets[num]->copy_label(label.c_str());
+    if (num == -1) {
+        return;
     }
+    
+    _widgets[num]->copy_label(label.c_str());
 }
 
 //------------------------------------------------------------------------------

@@ -10,7 +10,6 @@
 // MKALGAM_ON
 
 #include <assert.h>
-#include <math.h>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 
@@ -27,7 +26,7 @@ namespace flw {
  *     |_|
  */
 
-static const char* const        _PLOT_PRINT        = "Print to PostScript...";
+static const char* const        _PLOT_PRINT        = "Print to PostScript file...";
 static const char* const        _PLOT_RESET_SELECT = "Reset line selection and visibility";
 static const char* const        _PLOT_SAVE_FILE    = "Save to png file...";
 static const char* const        _PLOT_SHOW_HLINES  = "Show horizontal lines";
