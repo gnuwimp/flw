@@ -44,6 +44,8 @@ static const char* const        _CHART_SAVE_CSV         = "Save to CSV...";
 static const char* const        _CHART_SAVE_JSON        = "Save to JSON...";
 static const char* const        _CHART_SAVE_PNG         = "Save to png file...";
 static const char* const        _CHART_SETUP_AREA       = "Number of areas...";
+static const char* const        _CHART_SETUP_MAX_CLAMP  = "Set max clamp...";
+static const char* const        _CHART_SETUP_MIN_CLAMP  = "Set min clamp...";
 static const char* const        _CHART_SETUP_DELETE     = "Delete lines...";
 static const char* const        _CHART_SETUP_LABEL      = "Label...";
 static const char* const        _CHART_SETUP_LINE       = "Properties...";
@@ -158,17 +160,38 @@ bool ChartArea::add_line(const ChartLine& chart_line) {
     }
 
     _lines.push_back(chart_line);
+    Fl::redraw();
     return true;
 }
 
 //------------------------------------------------------------------------------
+std::optional<double> ChartArea::clamp_max() const {
+    if (std::isfinite(_clamp_max) == true) {
+        return _clamp_max;
+    }
+
+    return std::nullopt;
+}
+
+//------------------------------------------------------------------------------
+std::optional<double> ChartArea::clamp_min() const {
+    if (std::isfinite(_clamp_min) == true) {
+        return _clamp_min;
+    }
+
+    return std::nullopt;
+}
+
+//------------------------------------------------------------------------------
 void ChartArea::clear() {
-    _h        = 0;
-    _percent  = 0;
-    _selected = 0;
-    _w        = 0;
-    _x        = 0;
-    _y        = 0;
+    _clamp_max = INFINITY;
+    _clamp_min = INFINITY;
+    _h         = 0;
+    _percent   = 0;
+    _selected  = 0;
+    _w         = 0;
+    _x         = 0;
+    _y         = 0;
 
     _left.clear();
     _right.clear();
@@ -189,13 +212,15 @@ void ChartArea::debug() const {
     if (c > 0 || _num == NUM::ONE) {
         fprintf(stderr, "\t----------------------\n");
         fprintf(stderr, "\tChartArea: %d\n", static_cast<int>(_num));
-        fprintf(stderr, "\t\tlines:    %4d\n", c);
-        fprintf(stderr, "\t\tx:        %4d\n", _x);
-        fprintf(stderr, "\t\ty:        %4d\n", _y);
-        fprintf(stderr, "\t\tw:        %4d\n", _w);
-        fprintf(stderr, "\t\th:        %4d\n", _h);
-        fprintf(stderr, "\t\tpercent:  %4d\n", _percent);
-        fprintf(stderr, "\t\tselected: %4d\n", static_cast<int>(_selected));
+        fprintf(stderr, "\t\tlines:      %4d\n", c);
+        fprintf(stderr, "\t\tx:          %4d\n", _x);
+        fprintf(stderr, "\t\ty:          %4d\n", _y);
+        fprintf(stderr, "\t\tw:          %4d\n", _w);
+        fprintf(stderr, "\t\th:          %4d\n", _h);
+        fprintf(stderr, "\t\tclamp_max:  %4.4f\n", _clamp_max);
+        fprintf(stderr, "\t\tclamp_min:  %4.4f\n", _clamp_min);
+        fprintf(stderr, "\t\tpercent:    %4d\n", _percent);
+        fprintf(stderr, "\t\tselected:   %4d\n", static_cast<int>(_selected));
 
         _left.debug("left");
         _right.debug("right");
@@ -921,30 +946,10 @@ ChartLine::ChartLine(const ChartDataVector& data, std::string label, ChartLine::
 }
 
 //------------------------------------------------------------------------------
-std::optional<double> ChartLine::clamp_max() const {
-    if (std::isfinite(_clamp_max) == true) {
-        return _clamp_max;
-    }
-
-    return std::nullopt;
-}
-
-//------------------------------------------------------------------------------
-std::optional<double> ChartLine::clamp_min() const {
-    if (std::isfinite(_clamp_min) == true) {
-        return _clamp_min;
-    }
-
-    return std::nullopt;
-}
-
-//------------------------------------------------------------------------------
 void ChartLine::clear() {
     _data.clear();
 
     _align     = FL_ALIGN_LEFT;
-    _clamp_max = INFINITY;
-    _clamp_min = INFINITY;
     _color     = FL_FOREGROUND_COLOR;
     _label     = "";
     _max       = INFINITY;
@@ -961,8 +966,6 @@ void ChartLine::debug(int num, bool prices) const {
     fprintf(stderr, "\t\tChartLine: %d (%p)\n", num, this);
     fprintf(stderr, "\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
     fprintf(stderr, "\t\t\ttype:  %31s\n", type_to_string().c_str());
-    fprintf(stderr, "\t\t\tclamp_max:  %25.4f\n", _clamp_max);
-    fprintf(stderr, "\t\t\tclamp_min:  %25.4f\n", _clamp_min);
     fprintf(stderr, "\t\t\tlabel: %30s\n", _label.c_str());
     fprintf(stderr, "\t\t\tlabel_rect:    %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
     fprintf(stderr, "\t\t\tprices:     %25d\n", (int) size());
@@ -983,26 +986,6 @@ void ChartLine::debug(int num, bool prices) const {
     (void) num;
     (void) prices;
 #endif
-}
-
-//------------------------------------------------------------------------------
-ChartLine& ChartLine::set_clamp(double min, double max) {
-    int c = std::isfinite(min) + std::isfinite(max);
-
-    if (c < 2) {
-        _clamp_min = min;
-        _clamp_max = max;
-    }
-    else if (c == 2 && min < max) {
-        _clamp_min = min;
-        _clamp_max = max;
-    }
-    else { // min > max.
-        _clamp_min = INFINITY;
-        _clamp_max = INFINITY;
-    }
-
-    return *this;
 }
 
 //----------------------------------------------------------------------
@@ -1064,8 +1047,6 @@ public:
     Fl_Button*                  _color;
     Fl_Choice*                  _align;
     Fl_Choice*                  _type;
-    Fl_Input*                   _max;
-    Fl_Input*                   _min;
     Fl_Hor_Slider*              _width;
     Fl_Input*                   _label;
     GridGroup*                  _grid;
@@ -1086,8 +1067,6 @@ public:
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
-        _max    = new Fl_Input(0, 0, 0, 0, "Max clamp");
-        _min    = new Fl_Input(0, 0, 0, 0, "Min clamp");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
 
@@ -1096,8 +1075,6 @@ public:
         _grid->add(_align,     12,  11,  -1,  4);
         _grid->add(_color,     12,  16,  -1,  4);
         _grid->add(_width,     12,  21,  -1,  4);
-        _grid->add(_min,       12,  26,  -1,  4);
-        _grid->add(_max,       12,  31,  -1,  4);
         _grid->add(_cancel,   -34,  -5,  16,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
@@ -1112,12 +1089,6 @@ public:
         _color->callback(ChartLineSetup::Callback, this);
         _label->textfont(flw::PREF_FIXED_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
-        _max->textfont(flw::PREF_FIXED_FONT);
-        _max->textsize(flw::PREF_FONTSIZE);
-        _max->tooltip("Set static maximum y value.\nUse inf for dynamic y values.\nThese values affects all lines in current area/scale.");
-        _min->textfont(flw::PREF_FIXED_FONT);
-        _min->textsize(flw::PREF_FONTSIZE);
-        _min->tooltip("Set static minimum y value.\nUse inf for dynamic y values.\nThese values affects all lines in current area/scale.");
         _type->add("Line");
         _type->add("Dotted Line");
         _type->add("Bar");
@@ -1137,8 +1108,8 @@ public:
         resizable(_grid);
         util::labelfont(this);
         callback(ChartLineSetup::Callback, this);
-        size(30 * flw::PREF_FONTSIZE, 21 * flw::PREF_FONTSIZE);
-        size_range(30 * flw::PREF_FONTSIZE, 21 * flw::PREF_FONTSIZE);
+        size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
+        size_range(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
@@ -1176,7 +1147,6 @@ public:
         _line.set_label(_label->value());
         _line.set_width(_width->value());
         _line.set_color(_color->color());
-        _line.set_clamp(util::to_double(_min->value()), util::to_double(_max->value()));
 
         if (_type->value() == 0)      _line.set_type(ChartLine::TYPE::LINE);
         else if (_type->value() == 1) _line.set_type(ChartLine::TYPE::LINE_DOT);
@@ -1204,13 +1174,8 @@ public:
 
     //--------------------------------------------------------------------------
     void set() {
-        auto min = _line.clamp_min();
-        auto max = _line.clamp_max();
-
         _label->value(_line.label().c_str());
         _color->color(_line.color());
-        _min->value(min.has_value() == true ? min.value() : INFINITY);
-        _max->value(max.has_value() == true ? max.value() : INFINITY);
         ChartLineSetup::Callback(_width, this);
 
         if (_line.type() == ChartLine::TYPE::LINE)                   _type->value(0);
@@ -1394,6 +1359,8 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _menu->add(_CHART_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
     _menu->add(_CHART_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()));
     _menu->add(_CHART_SETUP_WIDTH,      0, _FLW_CHART_CB(setup_ywidth()), FL_MENU_DIVIDER);
+    _menu->add(_CHART_SETUP_MIN_CLAMP,  0, _FLW_CHART_CB(setup_clamp(true)));
+    _menu->add(_CHART_SETUP_MAX_CLAMP,  0, _FLW_CHART_CB(setup_clamp(false)));
     _menu->add(_CHART_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()));
     _menu->add(_CHART_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
     _menu->add(_CHART_SETUP_SHOW,       0, _FLW_CHART_CB(setup_show_or_hide_lines()));
@@ -1417,15 +1384,11 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _areas.push_back(ChartArea(ChartArea::NUM::FOUR));
     _areas.push_back(ChartArea(ChartArea::NUM::FIVE));
 
+    _disable_menu = false;
+
     clear();
     update_pref();
     view_options();
-}
-
-//------------------------------------------------------------------------------
-bool Chart::add_line(ChartArea::NUM area, const ChartLine& chart_line) {
-    redraw();
-    return _areas[static_cast<size_t>(area)].add_line(chart_line);
 }
 
 //------------------------------------------------------------------------------
@@ -1541,13 +1504,14 @@ void Chart::_calc_dates() {
 //
 void Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
+        auto min_clamp = area.clamp_min();
+        auto max_clamp = area.clamp_max();
+        
         area.left_scale().clear();
         area.right_scale().clear();
 
         for (const auto& line : area.lines()) {
             if (line.size() > 0 && line.is_visible() == true) {
-                auto      min_clamp = line.clamp_min();
-                auto      max_clamp = line.clamp_max();
                 const int stop      = _date_start + _ticks;
                 int       current   = _date_start;
                 double    minimum   = INFINITY;
@@ -1918,16 +1882,16 @@ bool Chart::create_line(ChartData::FORMULAS formula, bool support) {
 
     line1.set_data(vec1).set_label(label1).set_type(type1).set_align(line0->align()).set_color(FL_BLUE);
     ChartLineSetup(top_window(), line1).run();
-    add_line(_area->num(), line1);
+    _area->add_line(line1);
 
     if (vec2.size() > 0) {
         line2.set_data(vec2).set_label(label2).set_type(type2).set_align(line1.align()).set_color(FL_BLACK);
-        add_line(_area->num(), line2);
+        _area->add_line(line2);
     }
 
     if (vec3.size() > 0) {
         line3.set_data(vec3).set_label(label3).set_type(type3).set_align(line1.align()).set_color(FL_BLACK);
-        add_line(_area->num(), line3);
+        _area->add_line(line3);
     }
 
     init(true);
@@ -2759,7 +2723,7 @@ bool Chart::load_cvs() {
 
     auto line = ChartLine(vec, filename);
     ChartLineSetup(top_window(), line).run();
-    add_line(_area->num(), line);
+    _area->add_line(line);
     init(true);
 
     return true;
@@ -2790,7 +2754,7 @@ bool Chart::load_json(std::string filename) {
     }
 
     auto js  = JS();
-    auto err = js.decode(buf.p, buf.s);
+    auto err = js.decode(buf.p, buf.s, true);
 
     if (err != "") {
         fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
@@ -2800,51 +2764,59 @@ bool Chart::load_json(std::string filename) {
     if (js.is_object() == false) _FLW_CHART_ERROR(&js);
 
     for (const auto j : js.vo_to_va()) {
-        if (j->name() == "descr" && j->is_object() == true) {
+        if (j->name() == "flw::chart" && j->is_object() == true) {
+            long long int chart[7] = { 0 };
+
             for (const auto j2 : j->vo_to_va()) {
-                if (j2->name() == "type" && j2->is_string() == true) {
-                    if (j2->vs() != "flw::chart") _FLW_CHART_ERROR(j2)
-                }
-                else if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != Chart::VERSION) _FLW_CHART_ERROR(j2)
+                if (j2->name() == "version" && j2->is_number() == true) {
+                    if (j2->vn_i() != Chart::VERSION) { fl_alert("error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), Chart::VERSION); clear(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_label(j2->vs_u());
                 }
+                else if (j2->name() == "date_range" && j2->is_number() == true) chart[1] = j2->vn_i();
+                else if (j2->name() == "horizontal" && j2->is_bool() == true)   chart[2] = j2->vb();
+                else if (j2->name() == "labels" && j2->is_bool() == true)       chart[3] = j2->vb();
+                else if (j2->name() == "margin" && j2->is_number() == true)     chart[4] = j2->vn_i();
+                else if (j2->name() == "tick_width" && j2->is_number() == true) chart[5] = j2->vn_i();
+                else if (j2->name() == "vertical" && j2->is_bool() == true)     chart[6] = j2->vb();
                 else _FLW_CHART_ERROR(j2)
             }
+            if (chart[1] >= 0 && chart[1] <= static_cast<int>(ChartData::RANGE::SEC)) set_date_range(static_cast<ChartData::RANGE>(chart[1]));
+            else chart[0]++;
+            view_options(chart[3], chart[2], chart[6]);
+            chart[0] += set_margin(chart[4]) == false;
+            chart[0] += set_tick_width(chart[5]) == false;
+            if (chart[0] != 0) _FLW_CHART_ERROR(j)
         }
-        else if (j->name() == "area" && j->is_object() == true) {
-            long long int area[13] = { 0 };
-
+        else if (j->name() == "flw::chart_areas" && j->is_object() == true) {
+            long long int area[6] = { 0 };
+            
             for (const auto j2 : j->vo_to_va()) {
-                if (j2->name() == "area1" && j2->is_number() == true)             area[0]  = j2->vn_i();
-                else if (j2->name() == "area2" && j2->is_number() == true)        area[1]  = j2->vn_i();
-                else if (j2->name() == "area3" && j2->is_number() == true)        area[2]  = j2->vn_i();
-                else if (j2->name() == "area4" && j2->is_number() == true)        area[3]  = j2->vn_i();
-                else if (j2->name() == "area5" && j2->is_number() == true)        area[4]  = j2->vn_i();
-                else if (j2->name() == "date_range" && j2->is_number() == true)   area[5]  = j2->vn_i();
-                else if (j2->name() == "horizontal" && j2->is_bool() == true)     area[6]  = j2->vb();
-                else if (j2->name() == "labels" && j2->is_bool() == true)         area[7]  = j2->vb();
-                else if (j2->name() == "margin" && j2->is_number() == true)       area[8]  = j2->vn_i();
-                else if (j2->name() == "tick_width" && j2->is_number() == true)   area[10] = j2->vn_i();
-                else if (j2->name() == "vertical" && j2->is_bool() == true)       area[11] = j2->vb();
+                if (j2->name() == "area0" && j2->is_number() == true)             area[1]   = j2->vn_i();
+                else if (j2->name() == "area1" && j2->is_number() == true)        area[2]   = j2->vn_i();
+                else if (j2->name() == "area2" && j2->is_number() == true)        area[3]   = j2->vn_i();
+                else if (j2->name() == "area3" && j2->is_number() == true)        area[4]   = j2->vn_i();
+                else if (j2->name() == "area4" && j2->is_number() == true)        area[5]   = j2->vn_i();
+                else if (j2->name() == "min0" && j2->is_number() == true)         _areas[0].set_min_clamp(j2->vn());
+                else if (j2->name() == "max0" && j2->is_number() == true)         _areas[0].set_max_clamp(j2->vn());
+                else if (j2->name() == "min1" && j2->is_number() == true)         _areas[1].set_min_clamp(j2->vn());
+                else if (j2->name() == "max1" && j2->is_number() == true)         _areas[1].set_max_clamp(j2->vn());
+                else if (j2->name() == "min2" && j2->is_number() == true)         _areas[2].set_min_clamp(j2->vn());
+                else if (j2->name() == "max2" && j2->is_number() == true)         _areas[2].set_max_clamp(j2->vn());
+                else if (j2->name() == "min3" && j2->is_number() == true)         _areas[3].set_min_clamp(j2->vn());
+                else if (j2->name() == "max3" && j2->is_number() == true)         _areas[3].set_max_clamp(j2->vn());
+                else if (j2->name() == "min4" && j2->is_number() == true)         _areas[4].set_min_clamp(j2->vn());
+                else if (j2->name() == "max4" && j2->is_number() == true)         _areas[4].set_max_clamp(j2->vn());
                 else _FLW_CHART_ERROR(j2)
             }
 
-            area[12] += set_area_size(area[0], area[1], area[2], area[3], area[4]) == false;
-            area[12] += set_tick_width(area[10]) == false;
-            if (area[5] >= 0 && area[5] <= static_cast<int>(ChartData::RANGE::SEC)) set_date_range(static_cast<ChartData::RANGE>(area[5]));
-            else area[12]++;
-            set_margin(area[8]);
-
-            if (area[12] != 0) _FLW_CHART_ERROR(j)
-            view_options(area[7], area[6], area[11]);
+            area[0] += set_area_size(area[1], area[2], area[3], area[4], area[5]) == false;
+            if (area[0] != 0) _FLW_CHART_ERROR(j)
         }
-        else if (j->name() == "lines" && j->is_array() == true) {
+        else if (j->name() == "flw::chart_lines" && j->is_array() == true) {
             for (const auto j2 : *j->va()) {
                 int             line[5]  = { 0, 0, 0, 0, 1 };
-                double          clamp[2] = { INFINITY, INFINITY };
                 std::string     label;
                 std::string     type;
                 ChartDataVector vec;
@@ -2856,8 +2828,6 @@ bool Chart::load_json(std::string filename) {
                             if (line[1] < 0 || line[1] > static_cast<int>(ChartArea::NUM::LAST)) _FLW_CHART_ERROR(l)
                         }
                         else if (l->name() == "align" && l->is_number() == true)      line[0]  = l->vn_i();
-                        else if (l->name() == "clamp_max" && l->is_number() == true)  clamp[0] = l->vn();
-                        else if (l->name() == "clamp_min" && l->is_number() == true)  clamp[1] = l->vn();
                         else if (l->name() == "color" && l->is_number() == true)      line[2]  = l->vn_i();
                         else if (l->name() == "label" && l->is_string() == true)      label    = l->vs_u();
                         else if (l->name() == "type" && l->is_string() == true)       type     = l->vs();
@@ -2877,11 +2847,11 @@ bool Chart::load_json(std::string filename) {
 
                 auto l = ChartLine(vec, label);
                 auto a = static_cast<ChartArea::NUM>(line[1]);
-                l.set_align(line[0]).set_color(line[2]).set_label(label).set_width(line[3]).set_clamp(clamp[1], clamp[0]).set_type_from_string(type).set_visible(line[4]);
-                add_line(a, l);
+                l.set_align(line[0]).set_color(line[2]).set_label(label).set_width(line[3]).set_type_from_string(type).set_visible(line[4]);
+                area(a).add_line(l);
             }
         }
-        else if (j->name() == "lines_block" && j->is_array() == true) {
+        else if (j->name() == "flw::chart_block" && j->is_array() == true) {
             ChartDataVector dates;
 
             for (const auto d : *j->va()) {
@@ -2982,17 +2952,9 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
 
     try {
         jsb << JSB::MakeObject();
-            jsb << JSB::MakeObject("descr");
-                jsb << JSB::MakeString("flw::chart", "type");
+            jsb << JSB::MakeObject("flw::chart");
                 jsb << JSB::MakeNumber(Chart::VERSION, "version");
                 jsb << JSB::MakeString(_label.c_str(), "label");
-            jsb.end();
-            jsb << JSB::MakeObject("area");
-                jsb << JSB::MakeNumber(_areas[0].percent(), "area1");
-                jsb << JSB::MakeNumber(_areas[1].percent(), "area2");
-                jsb << JSB::MakeNumber(_areas[2].percent(), "area3");
-                jsb << JSB::MakeNumber(_areas[3].percent(), "area4");
-                jsb << JSB::MakeNumber(_areas[4].percent(), "area5");
                 jsb << JSB::MakeNumber(_tick_width, "tick_width");
                 jsb << JSB::MakeNumber((double) _date_range, "date_range");
                 jsb << JSB::MakeNumber(_margin, "margin");
@@ -3000,12 +2962,24 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 jsb << JSB::MakeBool(_view.horizontal, "horizontal");
                 jsb << JSB::MakeBool(_view.vertical, "vertical");
             jsb.end();
-            jsb << JSB::MakeArray("lines");
+            jsb << JSB::MakeObject("flw::chart_areas");
+            for (size_t f = 0; f <= static_cast<int>(ChartArea::NUM::LAST); f++) {
+                auto  perc_str = util::format("area%u", static_cast<unsigned>(f));
+                auto  min_str  = util::format("min%u", static_cast<unsigned>(f));
+                auto  max_str  = util::format("max%u", static_cast<unsigned>(f));
+                auto& area     = _areas[f];
+                auto  min      = area.clamp_min();
+                auto  max      = area.clamp_max();
+                
+                jsb << JSB::MakeNumber(_areas[f].percent(), perc_str.c_str());
+                if (min.has_value() == true) jsb << JSB::MakeNumber(min.value(), min_str.c_str());
+                if (max.has_value() == true) jsb << JSB::MakeNumber(max.value(), max_str.c_str());
+            }
+            jsb.end();
+            jsb << JSB::MakeArray("flw::chart_lines");
                 for (const auto& area : _areas) {
                     for (const auto& line : area.lines()) {
                         if (line.size() > 0) {
-                            auto min_clamp = line.clamp_min();
-                            auto max_clamp = line.clamp_max();
                             jsb << JSB::MakeObject();
                                 jsb << JSB::MakeNumber(static_cast<int>(area.num()), "area");
                                 jsb << JSB::MakeString(line.label(), "label");
@@ -3014,8 +2988,6 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                                 jsb << JSB::MakeNumber(line.color(), "color");
                                 jsb << JSB::MakeNumber(line.width(), "width");
                                 jsb << JSB::MakeBool(line.is_visible(), "visible");
-                                if (min_clamp.has_value() == true) jsb << JSB::MakeNumber(min_clamp.value(), "clamp_min");
-                                if (max_clamp.has_value() == true) jsb << JSB::MakeNumber(max_clamp.value(), "clamp_max");
                                 jsb << JSB::MakeArray("yx");
                                 for (const auto& data : line.data_vector()) {
                                     jsb << JSB::MakeArrayInline();
@@ -3033,7 +3005,7 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                     }
                 }
             jsb.end();
-            jsb << JSB::MakeArray("lines_block");
+            jsb << JSB::MakeArray("flw::chart_block");
                 for (const auto& data : _block_dates) {
                     jsb << JSB::MakeString(data.date);
                 }
@@ -3054,27 +3026,28 @@ bool Chart::save_png() {
 }
 
 //------------------------------------------------------------------------------
+// Minimum area size is 0 if it is hidden or 10 - 100.
 // All sizes (in percent) added together must be 100.
-// Minimum area size in 10.
 //
 bool Chart::set_area_size(int area1, int area2, int area3, int area4, int area5) {
     _area = nullptr;
 
-    if (area1 < 0 || area1 > 100 ||
-        area2 < 0 || area2 > 100 ||
-        area3 < 0 || area3 > 100 ||
-        area4 < 0 || area4 > 100 ||
-        area5 < 0 || area5 > 100 ||
-        area1 + area2 + area3 + area4 + area5 != 100) {
-        return false;
+    if ((area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
+        (area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
+        (area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
+        (area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
+        (area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
+        area1 + area2 + area3 + area4 + area5 == 100) {
+    
+        _areas[0].set_percent(area1);
+        _areas[1].set_percent(area2);
+        _areas[2].set_percent(area3);
+        _areas[3].set_percent(area4);
+        _areas[4].set_percent(area5);
+        return true;
     }
 
-    _areas[0].set_percent(area1);
-    _areas[1].set_percent(area2);
-    _areas[2].set_percent(area3);
-    _areas[3].set_percent(area4);
-    _areas[4].set_percent(area5);
-    return true;
+    return false;
 }
 
 //------------------------------------------------------------------------------
@@ -3208,6 +3181,34 @@ void Chart::setup_area() {
 }
 
 //------------------------------------------------------------------------------
+void Chart::setup_clamp(bool min) {
+    if (_area == nullptr) {
+        return;
+    }
+    
+    auto num    = static_cast<int>(_area->num()) + 1;
+    auto clamp  = (min == true) ? _area->clamp_min() : _area->clamp_max();
+    auto input  = (clamp.has_value() == true) ? util::format("%f", clamp.value()) : "inf";
+    auto info   = (min == true) ? util::format("Enter min clamp value or inf to disable for area %d", num) : util::format("Enter max clamp value or inf to disable for area %d", num);
+    auto output = fl_input_str(16, "%s", input.c_str(), info.c_str());
+
+    if (output == "") {
+        return;
+    }
+    
+    auto value = util::to_double(output);
+    
+    if (min == true) {
+        _area->set_min_clamp(value);
+    }
+    else {
+        _area->set_max_clamp(value);
+    }
+
+    init(false);
+}
+
+//------------------------------------------------------------------------------
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
     auto sel  = dlg::choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
@@ -3333,40 +3334,46 @@ void Chart::setup_ywidth() {
 
 //------------------------------------------------------------------------------
 void Chart::_show_menu() {
-    menu::set_item(_menu, _CHART_SHOW_LABELS, _view.labels);
+    if (_disable_menu == true) {
+        return;
+    }
+    
+    menu::enable_item(_menu, _CHART_ADD_CSV, false);
+    menu::enable_item(_menu, _CHART_ADD_LINE, false);
+    menu::enable_item(_menu, _CHART_SAVE_CSV, false);
+    menu::enable_item(_menu, _CHART_SETUP_DELETE, false);
+    menu::enable_item(_menu, _CHART_SETUP_LINE, false);
+    menu::enable_item(_menu, _CHART_SETUP_MAX_CLAMP, false);
+    menu::enable_item(_menu, _CHART_SETUP_MIN_CLAMP, false);
+    menu::enable_item(_menu, _CHART_SETUP_MOVE, false);
+    menu::enable_item(_menu, _CHART_SETUP_SHOW, false);
+#ifdef DEBUG
+    menu::enable_item(_menu, _CHART_DEBUG_LINE, false);
+#endif
+
     menu::set_item(_menu, _CHART_SHOW_HLINES, _view.horizontal);
+    menu::set_item(_menu, _CHART_SHOW_LABELS, _view.labels);
     menu::set_item(_menu, _CHART_SHOW_VLINES, _view.vertical);
 
     if (_area != nullptr) {
-        menu::enable_item(_menu, _CHART_SETUP_DELETE, true);
-        menu::enable_item(_menu, _CHART_SETUP_MOVE, true);
-        menu::enable_item(_menu, _CHART_SETUP_SHOW, true);
-    }
-    else {
-        menu::enable_item(_menu, _CHART_SETUP_DELETE, false);
-        menu::enable_item(_menu, _CHART_SETUP_MOVE, false);
-        menu::enable_item(_menu, _CHART_SETUP_SHOW, false);
-    }
-
-    if (_area != nullptr && _area->selected_line() != nullptr && _area->selected_line()->size() > 0) {
-        menu::enable_item(_menu, _CHART_SETUP_LINE, true);
-        menu::enable_item(_menu, _CHART_ADD_LINE, true);
         menu::enable_item(_menu, _CHART_ADD_CSV, true);
-        menu::enable_item(_menu, _CHART_SAVE_CSV, true);
+        menu::enable_item(_menu, _CHART_SETUP_MAX_CLAMP, true);
+        menu::enable_item(_menu, _CHART_SETUP_MIN_CLAMP, true);
 
-#ifdef DEBUG
-        menu::enable_item(_menu, _CHART_DEBUG_LINE, true);
-#endif
-    }
-    else {
-        menu::enable_item(_menu, _CHART_SETUP_LINE, false);
-        menu::enable_item(_menu, _CHART_ADD_LINE, false);
-        menu::enable_item(_menu, _CHART_ADD_CSV, false);
-        menu::enable_item(_menu, _CHART_SAVE_CSV, false);
+        if (_area->size() > 0) {
+            menu::enable_item(_menu, _CHART_SETUP_DELETE, true);
+            menu::enable_item(_menu, _CHART_SETUP_MOVE, true);
+            menu::enable_item(_menu, _CHART_SETUP_SHOW, true);
+        }
 
+        if (_area->selected_line() != nullptr && _area->selected_line()->size() > 0) {
+            menu::enable_item(_menu, _CHART_SETUP_LINE, true);
+            menu::enable_item(_menu, _CHART_ADD_LINE, true);
+            menu::enable_item(_menu, _CHART_SAVE_CSV, true);
 #ifdef DEBUG
-        menu::enable_item(_menu, _CHART_DEBUG_LINE, false);
+            menu::enable_item(_menu, _CHART_DEBUG_LINE, true);
 #endif
+        }
     }
 
     _menu->popup();

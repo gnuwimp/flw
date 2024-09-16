@@ -431,8 +431,6 @@ public:
     explicit                    ChartLine(const ChartDataVector& data, std::string label = "", TYPE type = ChartLine::TYPE::LINE);
     Fl_Align                    align() const
                                     { return _align; }
-    std::optional<double>       clamp_max() const;
-    std::optional<double>       clamp_min() const;
     void                        clear();
     Fl_Color                    color() const
                                     { return _color; }
@@ -447,7 +445,6 @@ public:
                                     { return _rect; }
     ChartLine&                  set_align(Fl_Align val)
                                     { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; }
-    ChartLine&                  set_clamp(double min = INFINITY, double max = INFINITY);
     ChartLine&                  set_color(Fl_Color val)
                                     { _color = val; return *this; }
     ChartLine&                  set_data(const ChartDataVector& data);
@@ -478,8 +475,6 @@ private:
     Fl_Rect                     _rect;
     TYPE                        _type;
     bool                        _visible;
-    double                      _clamp_max;
-    double                      _clamp_min;
     double                      _max;
     double                      _min;
     std::string                 _label;
@@ -530,6 +525,8 @@ public:
     explicit                    ChartArea(ChartArea::NUM num)
                                     { _num = num; clear(); }
     bool                        add_line(const ChartLine& chart_line);
+    std::optional<double>       clamp_max() const;
+    std::optional<double>       clamp_min() const;
     void                        clear();
     void                        debug() const;
     void                        delete_line(size_t index);
@@ -551,6 +548,10 @@ public:
     size_t                      selected() const
                                     { return _selected; }
     ChartLine*                  selected_line();
+    void                        set_max_clamp(double value = INFINITY)
+                                    { _clamp_max = value; }
+    void                        set_min_clamp(double value = INFINITY)
+                                    { _clamp_min = value; }
     void                        set_h(int h)
                                     { _h = h; }
     void                        set_percent(int val)
@@ -581,6 +582,8 @@ private:
     ChartLineVector             _lines;
     ChartScale                  _left;
     ChartScale                  _right;
+    double                      _clamp_max;
+    double                      _clamp_min;
     int                         _h;
     int                         _w;
     int                         _x;
@@ -596,17 +599,20 @@ public:
     static const int            MAX_MARGIN    =   20;
     static const int            MIN_TICK      =    3;
     static const int            MAX_TICK      = ChartLine::MAX_WIDTH * 2;
-    static const int            VERSION       =    3;
+    static const int            VERSION       =    4;
     static const size_t         MAX_VLINES    = 1400;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    bool                        add_line(ChartArea::NUM area, const ChartLine& chart_line);
     void                        block_dates(const ChartDataVector& block_dates)
                                     { _block_dates = block_dates; }
+    ChartArea&                  area(ChartArea::NUM num)
+                                    { return _areas[static_cast<size_t>(num)]; }
     void                        clear();
     bool                        create_line(ChartData::FORMULAS formula, bool support = false);
     Date::FORMAT                date_format() const
                                     { return _date_format; }
     void                        debug() const;
+    void                        disable_menu(bool value = true)
+                                    { _disable_menu = value; }
     void                        do_layout()
                                     { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); }
     void                        draw() override;
@@ -629,6 +635,7 @@ public:
     bool                        set_tick_width(int width = Chart::MIN_TICK);
     void                        setup_add_line();
     void                        setup_area();
+    void                        setup_clamp(bool min = true);
     void                        setup_date_range();
     void                        setup_delete_lines();
     void                        setup_label();
@@ -677,6 +684,7 @@ private:
     Fl_Menu_Button*             _menu;
     Fl_Rect                     _old;
     Fl_Scrollbar*               _scroll;
+    bool                        _disable_menu;
     bool                        _printing;
     int                         _bottom_space;
     int                         _cw;

@@ -144,6 +144,7 @@ public:
         auto self = static_cast<Test*>(v);
         TEST = DATA_NONE;
         self->mb->deactivate();
+        self->chart->disable_menu();
         Fl::add_timeout(0.5, callback_timer, v);
     }
 
@@ -208,6 +209,7 @@ void callback_timer(void* data) {
     if (TEST == DATA_LAST) {
         Fl::remove_timeout(callback_timer, data);
         self->mb->activate();
+        self->chart->disable_menu(false);
         TEST = DATA_LEFT_ALL;
     }
     else {
@@ -228,7 +230,7 @@ void create_chart(Test* self) {
     else if (TEST == DATA_LEFT_STEP)          test8(self->chart);
     else if (TEST == DATA_RIGHT_10)           test9(self->chart);
     else if (TEST == DATA_LEFT_WEEKDAY)       test1(self->chart, "", "Weekdays (BAR)", 100.0, 2.0, ChartData::RANGE::WEEKDAY, ChartLine::TYPE::BAR, FL_ALIGN_LEFT, 11, 6);
-    else if (TEST == DATA_LEFT_FRIDAY)        test1(self->chart, "", "Fridays (BAR_CLAMP)", 100.0, 1.0, ChartData::RANGE::FRIDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 5, 3, -50.0, 200.0);
+    else if (TEST == DATA_LEFT_FRIDAY)        test1(self->chart, "Min and max clamp has been set", "Fridays (BAR_CLAMP)", 100.0, 1.0, ChartData::RANGE::FRIDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 5, 3, -50.0, 200.0);
     else if (TEST == DATA_LEFT_SUNDAY)        test1(self->chart, "", "Sundays (BAR_CLAMP)", 100.0, 2.0, ChartData::RANGE::SUNDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 5, 3);
     else if (TEST == DATA_LEFT_MONTH)         test1(self->chart, "", "Month", 100.0, 2.0, ChartData::RANGE::MONTH, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 10, 3);
     else if (TEST == DATA_LEFT_SMALL_VALUE)   test1(self->chart, "", "Very Small Values (LINE)", 100.0, 3.0, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 5, 4, INFINITY, INFINITY, 10000000.0);
@@ -338,8 +340,8 @@ void test1(Chart* chart, const char* main_label, const char* label, const double
     auto vec1  = create_serie1("20010101", "20191231", start, change, range, divide);
     auto line1 = ChartLine(vec1, label, type);
 
-    line1.set_align(align).set_color(color::ROYALBLUE).set_width(width).set_clamp(min, max);
-    chart->add_line(ChartArea::NUM::ONE, line1);
+    line1.set_align(align).set_color(color::ROYALBLUE).set_width(width);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
 
     if (start > 100000000.0) {
         chart->set_margin(10);
@@ -354,6 +356,8 @@ void test1(Chart* chart, const char* main_label, const char* label, const double
         chart->set_margin(Chart::DEF_MARGIN);
     }
 
+    chart->area(ChartArea::NUM::ONE).set_min_clamp(min);
+    chart->area(ChartArea::NUM::ONE).set_max_clamp(max);
     chart->set_date_range(range);
     chart->set_tick_width(tick);
     chart->set_label(main_label);
@@ -376,9 +380,9 @@ void test2(Chart* chart) {
     line2.set_align(FL_ALIGN_RIGHT).set_color(color::CRIMSON).set_width(2);
     line3.set_color(FL_GREEN).set_width(3);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
-    chart->add_line(ChartArea::NUM::ONE, line2);
-    chart->add_line(ChartArea::NUM::ONE, line3);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line2);
+    chart->area(ChartArea::NUM::ONE).add_line(line3);
     chart->set_margin(Chart::DEF_MARGIN);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(10);
@@ -430,7 +434,7 @@ void test3(Chart* chart, const char* label, const ChartData::RANGE range, const 
     auto line1 = ChartLine(vec2, label, ChartLine::TYPE::BAR_HLC);
     line1.set_color(color::ROYALBLUE).set_width(6);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
     chart->set_date_range(range);
     chart->set_margin(Chart::DEF_MARGIN);
     chart->block_dates(vec3);
@@ -450,9 +454,9 @@ void test4(Chart* chart) {
     line2.set_label("18100101 - 20291231").set_type(ChartLine::TYPE::LINE).set_color(FL_GREEN).set_width(1);
     line3.set_label("18200101 - 19991231").set_type(ChartLine::TYPE::LINE).set_color(color::CRIMSON).set_width(1);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
-    chart->add_line(ChartArea::NUM::ONE, line2);
-    chart->add_line(ChartArea::NUM::ONE, line3);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line2);
+    chart->area(ChartArea::NUM::ONE).add_line(line3);
     chart->set_margin(Chart::DEF_MARGIN);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(3);
@@ -472,7 +476,7 @@ void test5(Chart* chart, const char* main_label, const int count) {
 
     line1.set_color(color::ROYALBLUE).set_width(3);
     line2.set_color(color::CRIMSON).set_width(3);
-    line3.set_color(color::OLIVE).set_width(3).set_clamp(0.0);
+    line3.set_color(color::OLIVE).set_width(3);
     line4.set_color(color::VIOLET).set_width(3);
 
     if (count == 2) {
@@ -480,33 +484,37 @@ void test5(Chart* chart, const char* main_label, const int count) {
         line3.set_width(0);
 
         chart->set_area_size(70, 30, 0);
-        chart->add_line(ChartArea::NUM::ONE, line1);
-        chart->add_line(ChartArea::NUM::ONE, line2);
-        chart->add_line(ChartArea::NUM::TWO, line3);
-        chart->add_line(ChartArea::NUM::TWO, line4);
+        chart->area(ChartArea::NUM::ONE).add_line(line1);
+        chart->area(ChartArea::NUM::ONE).add_line(line2);
+        chart->area(ChartArea::NUM::TWO).add_line(line3);
+        chart->area(ChartArea::NUM::TWO).add_line(line4);
+        chart->area(ChartArea::NUM::TWO).set_min_clamp(0);
     }
     else if (count == 3) {
         chart->set_area_size(40, 40, 20);
-        chart->add_line(ChartArea::NUM::ONE, line1);
-        chart->add_line(ChartArea::NUM::TWO, line2);
-        chart->add_line(ChartArea::NUM::THREE, line3);
-        chart->add_line(ChartArea::NUM::THREE, line4);
+        chart->area(ChartArea::NUM::ONE).add_line(line1);
+        chart->area(ChartArea::NUM::TWO).add_line(line2);
+        chart->area(ChartArea::NUM::THREE).add_line(line3);
+        chart->area(ChartArea::NUM::THREE).add_line(line4);
+        chart->area(ChartArea::NUM::THREE).set_min_clamp(0);
     }
     else if (count == 4) {
         chart->set_area_size(30, 30, 20, 20);
-        chart->add_line(ChartArea::NUM::ONE, line1);
-        chart->add_line(ChartArea::NUM::TWO, line2);
-        chart->add_line(ChartArea::NUM::THREE, line3);        
-        chart->add_line(ChartArea::NUM::FOUR, line4);
+        chart->area(ChartArea::NUM::ONE).add_line(line1);
+        chart->area(ChartArea::NUM::TWO).add_line(line2);
+        chart->area(ChartArea::NUM::THREE).add_line(line3);        
+        chart->area(ChartArea::NUM::FOUR).add_line(line4);
+        chart->area(ChartArea::NUM::FOUR).set_min_clamp(0);
     }
     else if (count == 5) {
         line4.set_align(FL_ALIGN_RIGHT);
         chart->set_area_size(20, 20, 20, 20, 20);
-        chart->add_line(ChartArea::NUM::ONE, line1);
-        chart->add_line(ChartArea::NUM::TWO, line2);
-        chart->add_line(ChartArea::NUM::THREE, line3);        
-        chart->add_line(ChartArea::NUM::FOUR, line1);
-        chart->add_line(ChartArea::NUM::FIVE, line4);
+        chart->area(ChartArea::NUM::ONE).add_line(line1);
+        chart->area(ChartArea::NUM::TWO).add_line(line2);
+        chart->area(ChartArea::NUM::THREE).add_line(line3);        
+        chart->area(ChartArea::NUM::FOUR).add_line(line1);
+        chart->area(ChartArea::NUM::FIVE).add_line(line4);
+        chart->area(ChartArea::NUM::FIVE).set_min_clamp(0);
     }
 
     chart->set_margin(7);
@@ -533,7 +541,7 @@ void test6(Chart* chart, const ChartData::RANGE range) {
 
     line1.set_type(ChartLine::TYPE::BAR_HLC).set_color(color::ROYALBLUE).set_width(4);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
     chart->set_margin(Chart::DEF_MARGIN);
     chart->set_date_range(range);
     chart->set_tick_width(8);
@@ -562,7 +570,7 @@ void test7(Chart* chart) {
     auto line1 = ChartLine(vec1, "Right Small (LINE_DOT)", ChartLine::TYPE::LINE_DOT);
     line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(2);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
     chart->set_margin(Chart::DEF_MARGIN);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(6);
@@ -594,7 +602,7 @@ void test8(Chart* chart) {
 
     auto line1 = ChartLine(vec1, "Step (LINE)", ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(4);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
     chart->set_margin(Chart::DEF_MARGIN);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(25);
@@ -613,7 +621,7 @@ void test9(Chart* chart) {
     auto vec8   = create_serie2("20010101", "20021231", 8.0);
     auto vec9   = create_serie2("20010101", "20021231", 9.0);
     auto vec10  = create_serie2("20010101", "20021231", 10.0);
-    auto line1  = ChartLine(vec1, "One (Clamp)");
+    auto line1  = ChartLine(vec1, "One");
     auto line2  = ChartLine(vec2, "Two");
     auto line3  = ChartLine(vec3, "Three");
     auto line4  = ChartLine(vec4, "Four");
@@ -624,7 +632,7 @@ void test9(Chart* chart) {
     auto line9  = ChartLine(vec9, "Nine");
     auto line10 = ChartLine(vec10, "Ten");
 
-    line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(4).set_clamp(-1, 12);
+    line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(4);
     line2.set_align(FL_ALIGN_RIGHT).set_color(color::CRIMSON).set_width(4);
     line3.set_align(FL_ALIGN_RIGHT).set_color(color::GOLD).set_width(4);
     line4.set_align(FL_ALIGN_RIGHT).set_color(color::TURQUOISE).set_width(4);
@@ -635,16 +643,18 @@ void test9(Chart* chart) {
     line9.set_align(FL_ALIGN_RIGHT).set_color(color::PINK).set_width(4);
     line10.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
 
-    chart->add_line(ChartArea::NUM::ONE, line1);
-    chart->add_line(ChartArea::NUM::ONE, line2);
-    chart->add_line(ChartArea::NUM::ONE, line3);
-    chart->add_line(ChartArea::NUM::ONE, line4);
-    chart->add_line(ChartArea::NUM::ONE, line5);
-    chart->add_line(ChartArea::NUM::ONE, line6);
-    chart->add_line(ChartArea::NUM::ONE, line7);
-    chart->add_line(ChartArea::NUM::ONE, line8);
-    chart->add_line(ChartArea::NUM::ONE, line9);
-    chart->add_line(ChartArea::NUM::ONE, line10);
+    chart->area(ChartArea::NUM::ONE).add_line(line1);
+    chart->area(ChartArea::NUM::ONE).add_line(line2);
+    chart->area(ChartArea::NUM::ONE).add_line(line3);
+    chart->area(ChartArea::NUM::ONE).add_line(line4);
+    chart->area(ChartArea::NUM::ONE).add_line(line5);
+    chart->area(ChartArea::NUM::ONE).add_line(line6);
+    chart->area(ChartArea::NUM::ONE).add_line(line7);
+    chart->area(ChartArea::NUM::ONE).add_line(line8);
+    chart->area(ChartArea::NUM::ONE).add_line(line9);
+    chart->area(ChartArea::NUM::ONE).add_line(line10);
+    chart->area(ChartArea::NUM::ONE).set_min_clamp(-1);
+    chart->area(ChartArea::NUM::ONE).set_max_clamp(12);
     chart->set_margin(5);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(30);
