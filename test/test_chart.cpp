@@ -7,6 +7,7 @@
     #include "chart.h"
 #endif
 
+#include <assert.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
@@ -120,7 +121,6 @@ public:
         mb->textsize(flw::PREF_FONTSIZE);
 
         menu::set_item(mb, "&Test/srand(time)", true);
-        menu::set_item(mb, "&Test/All Days (LINE)", true);
         mb->textsize(flw::PREF_FONTSIZE);
         util::labelfont(this);
 
@@ -631,6 +631,7 @@ void test9(Chart* chart) {
     auto line8  = ChartLine(vec8, "Eight");
     auto line9  = ChartLine(vec9, "Nine");
     auto line10 = ChartLine(vec10, "Ten");
+    auto line11 = ChartLine(ChartLine(ChartDataVector(), "Empty"));
 
     line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(4);
     line2.set_align(FL_ALIGN_RIGHT).set_color(color::CRIMSON).set_width(4);
@@ -642,6 +643,7 @@ void test9(Chart* chart) {
     line8.set_align(FL_ALIGN_RIGHT).set_color(color::CHOCOLATE).set_width(4);
     line9.set_align(FL_ALIGN_RIGHT).set_color(color::PINK).set_width(4);
     line10.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
+    line11.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
 
     chart->area(ChartArea::NUM::ONE).add_line(line1);
     chart->area(ChartArea::NUM::ONE).add_line(line2);
@@ -652,7 +654,9 @@ void test9(Chart* chart) {
     chart->area(ChartArea::NUM::ONE).add_line(line7);
     chart->area(ChartArea::NUM::ONE).add_line(line8);
     chart->area(ChartArea::NUM::ONE).add_line(line9);
-    chart->area(ChartArea::NUM::ONE).add_line(line10);
+    assert(chart->area(ChartArea::NUM::ONE).add_line(line10) == true);
+    assert(chart->area(ChartArea::NUM::ONE).add_line(line10) == false);
+    chart->area(ChartArea::NUM::ONE).add_line(line11);
     chart->area(ChartArea::NUM::ONE).set_min_clamp(-1);
     chart->area(ChartArea::NUM::ONE).set_max_clamp(12);
     chart->set_margin(5);

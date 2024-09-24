@@ -171,8 +171,8 @@ public:
     ChartLine&                  set_type_from_string(std::string val);
     ChartLine&                  set_visible(bool val)
                                     { _visible = val; return *this; }
-    ChartLine&                  set_width(unsigned width)
-                                    { if (width <= ChartLine::MAX_WIDTH) _width = width; return *this; }
+    ChartLine&                  set_width(unsigned val)
+                                    { if (val <= ChartLine::MAX_WIDTH) _width = val; return *this; }
     size_t                      size() const
                                     { return _data.size(); }
     TYPE                        type() const
@@ -296,10 +296,10 @@ public:
     size_t                      selected() const
                                     { return _selected; }
     ChartLine*                  selected_line();
-    void                        set_max_clamp(double value = INFINITY)
-                                    { _clamp_max = value; }
-    void                        set_min_clamp(double value = INFINITY)
-                                    { _clamp_min = value; }
+    void                        set_max_clamp(double val = INFINITY)
+                                    { _clamp_max = val; }
+    void                        set_min_clamp(double val = INFINITY)
+                                    { _clamp_min = val; }
     void                        set_h(int h)
                                     { _h = h; }
     void                        set_percent(int val)
@@ -378,6 +378,7 @@ public:
     Date::FORMAT                date_format() const
                                     { return _date_format; }
     void                        debug() const;
+    void                        debug_line() const;
     void                        disable_menu(bool value = true)
                                     { _disable_menu = value; }
     void                        do_layout()
@@ -409,6 +410,7 @@ public:
     void                        setup_line();
     void                        setup_move_lines();
     void                        setup_show_or_hide_lines();
+    void                        setup_view_options();
     void                        setup_ywidth();
     void                        update_pref();
     void                        view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
@@ -434,11 +436,8 @@ private:
     bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::NUM destination = ChartArea::NUM::ONE);
     void                        _show_menu();
 
-    static void                 _CallbackDebugChart(Fl_Widget*, void* widget);
-    static void                 _CallbackDebugLine(Fl_Widget*, void* widget);
     static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
     static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
-    static void                 _CallbackToggle(Fl_Widget*, void* widget);
 
     struct {
         bool                    horizontal;             // Horizontal support lines.

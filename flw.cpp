@@ -12,28 +12,28 @@
 namespace flw {
 #define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); clear(); return false; }
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
-static const char* const        _CHART_ADD_CSV          = "Add line from CSV file...";
-static const char* const        _CHART_ADD_LINE         = "Create line...";
-static const char* const        _CHART_DEBUG_CHART      = "Debug chart";
-static const char* const        _CHART_DEBUG_LINE       = "Debug line";
-static const char* const        _CHART_LOAD_JSON        = "Load from JSON...";
-static const char* const        _CHART_PRINT            = "Print to PostScript file...";
-static const char* const        _CHART_SAVE_CSV         = "Save to CSV...";
-static const char* const        _CHART_SAVE_JSON        = "Save to JSON...";
-static const char* const        _CHART_SAVE_PNG         = "Save to png file...";
-static const char* const        _CHART_SETUP_AREA       = "Number of areas...";
-static const char* const        _CHART_SETUP_MAX_CLAMP  = "Set max clamp...";
-static const char* const        _CHART_SETUP_MIN_CLAMP  = "Set min clamp...";
-static const char* const        _CHART_SETUP_DELETE     = "Delete lines...";
-static const char* const        _CHART_SETUP_LABEL      = "Label...";
-static const char* const        _CHART_SETUP_LINE       = "Properties...";
-static const char* const        _CHART_SETUP_MOVE       = "Move lines...";
-static const char* const        _CHART_SETUP_RANGE      = "Date range...";
-static const char* const        _CHART_SETUP_SHOW       = "Show or hide lines...";
-static const char* const        _CHART_SETUP_WIDTH      = "Y label width...";
-static const char* const        _CHART_SHOW_HLINES      = "Show horizontal lines";
-static const char* const        _CHART_SHOW_LABELS      = "Show line labels";
-static const char* const        _CHART_SHOW_VLINES      = "Show vertical lines";
+static const char* const _CHART_ADD_CSV         = "Add line from CSV file...";
+static const char* const _CHART_ADD_LINE        = "Create line...";
+static const char* const _CHART_DEBUG           = "Debug chart";
+static const char* const _CHART_DEBUG_LINE      = "Debug line";
+static const char* const _CHART_LOAD_JSON       = "Load chart from JSON...";
+static const char* const _CHART_PRINT           = "Print to PostScript file...";
+static const char* const _CHART_SAVE_CSV        = "Save line to CSV...";
+static const char* const _CHART_SAVE_JSON       = "Save chart to JSON...";
+static const char* const _CHART_SAVE_PNG        = "Save to png file...";
+static const char* const _CHART_SETUP_AREA      = "Number of areas...";
+static const char* const _CHART_SETUP_MAX_CLAMP = "Set max clamp...";
+static const char* const _CHART_SETUP_MIN_CLAMP = "Set min clamp...";
+static const char* const _CHART_SETUP_DELETE    = "Delete lines...";
+static const char* const _CHART_SETUP_LABEL     = "Label...";
+static const char* const _CHART_SETUP_LINE      = "Properties...";
+static const char* const _CHART_SETUP_MOVE      = "Move lines...";
+static const char* const _CHART_SETUP_RANGE     = "Date range...";
+static const char* const _CHART_SETUP_SHOW      = "Show or hide lines...";
+static const char* const _CHART_SETUP_WIDTH     = "Y label width...";
+static const char* const _CHART_SHOW_HLINES     = "Show horizontal lines";
+static const char* const _CHART_SHOW_LABELS     = "Show line labels";
+static const char* const _CHART_SHOW_VLINES     = "Show vertical lines";
 static int _chart_count_decimals(double number) {
     number = fabs(number);
     int    res     = 0;
@@ -138,32 +138,25 @@ void ChartArea::clear() {
 }
 void ChartArea::debug() const {
 #ifdef DEBUG
-    auto c = 0;
-    for (const auto& l : _lines) {
-        if (l.size() > 0) {
-            c++;
-        }
-    }
-    if (c > 0 || _num == NUM::ONE) {
-        fprintf(stderr, "\t----------------------\n");
-        fprintf(stderr, "\tChartArea: %d\n", static_cast<int>(_num));
-        fprintf(stderr, "\t\tlines:      %4d\n", c);
-        fprintf(stderr, "\t\tx:          %4d\n", _x);
-        fprintf(stderr, "\t\ty:          %4d\n", _y);
-        fprintf(stderr, "\t\tw:          %4d\n", _w);
-        fprintf(stderr, "\t\th:          %4d\n", _h);
-        fprintf(stderr, "\t\tclamp_max:  %4.4f\n", _clamp_max);
-        fprintf(stderr, "\t\tclamp_min:  %4.4f\n", _clamp_min);
-        fprintf(stderr, "\t\tpercent:    %4d\n", _percent);
-        fprintf(stderr, "\t\tselected:   %4d\n", static_cast<int>(_selected));
+    if (_lines.size() > 0 || _num == NUM::ONE) {
+        printf("\t----------------------\n");
+        printf("\tChartArea: %d\n", static_cast<int>(_num));
+        printf("\t\tlines:      %4d\n", static_cast<int>(_lines.size()));
+        printf("\t\tx:          %4d\n", _x);
+        printf("\t\ty:          %4d\n", _y);
+        printf("\t\tw:          %4d\n", _w);
+        printf("\t\th:          %4d\n", _h);
+        printf("\t\tclamp_max:  %4.4f\n", _clamp_max);
+        printf("\t\tclamp_min:  %4.4f\n", _clamp_min);
+        printf("\t\tpercent:    %4d\n", _percent);
+        printf("\t\tselected:   %4d\n", static_cast<int>(_selected));
         _left.debug("left");
         _right.debug("right");
-        c = 0;
+        auto c = 0;
         for (const auto& l : _lines) {
-            if (l.size() > 0) {
-                l.debug(c++);
-            }
+            l.debug(c++);
         }
+        fflush(stdout);
     }
 #endif
 }
@@ -708,30 +701,32 @@ void ChartLine::clear() {
     _label     = "";
     _max       = INFINITY;
     _min       = INFINITY;
+    _rect      = Fl_Rect();
     _type      = TYPE::LINE;
     _visible   = true;
     _width     = 1;
 }
 void ChartLine::debug(int num, bool prices) const {
 #ifdef DEBUG
-    fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tChartLine: %d (%p)\n", num, this);
-    fprintf(stderr, "\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
-    fprintf(stderr, "\t\t\ttype:  %31s\n", type_to_string().c_str());
-    fprintf(stderr, "\t\t\tlabel: %30s\n", _label.c_str());
-    fprintf(stderr, "\t\t\tlabel_rect:    %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
-    fprintf(stderr, "\t\t\tprices:     %25d\n", (int) size());
-    fprintf(stderr, "\t\t\tvisible:    %25d\n", _visible);
-    fprintf(stderr, "\t\t\twidth:      %25u\n", _width);
+    printf("\t\t---------------------------------------------\n");
+    printf("\t\tChartLine: %d (%p)\n", num, this);
+    printf("\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
+    printf("\t\t\ttype:  %31s\n", type_to_string().c_str());
+    printf("\t\t\tlabel: %30s\n", _label.c_str());
+    printf("\t\t\trect:          %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
+    printf("\t\t\tprices:     %25d\n", (int) size());
+    printf("\t\t\tvisible:    %25d\n", _visible);
+    printf("\t\t\twidth:      %25u\n", _width);
     if (size() > 1) {
-        fprintf(stderr, "\t\t\tfirst:      %25s\n", _data.front().date.c_str());
-        fprintf(stderr, "\t\t\tfirst:      %25f\n", _data.front().close);
-        fprintf(stderr, "\t\t\tlast:       %25s\n", _data.back().date.c_str());
-        fprintf(stderr, "\t\t\tlast:       %25f\n", _data.back().close);
+        printf("\t\t\tfirst:      %25s\n", _data.front().date.c_str());
+        printf("\t\t\tfirst:      %25f\n", _data.front().close);
+        printf("\t\t\tlast:       %25s\n", _data.back().date.c_str());
+        printf("\t\t\tlast:       %25f\n", _data.back().close);
     }
     if (prices == true) {
         ChartData::Debug(_data);
     }
+    fflush(stdout);
 #else
     (void) num;
     (void) prices;
@@ -943,13 +938,14 @@ void ChartScale::clear() {
 }
 void ChartScale::debug(const char* name) const {
 #ifdef DEBUG
-    fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tChartScale: %s\n", name);
-    fprintf(stderr, "\t\t\tmin:   %30.6f\n", _min);
-    fprintf(stderr, "\t\t\tmax:   %30.6f\n", _max);
-    fprintf(stderr, "\t\t\tDiff:  %30.6f\n", diff());
-    fprintf(stderr, "\t\t\ttick:  %30.6f\n", _tick);
-    fprintf(stderr, "\t\t\tpixel: %30.6f\n", _pixel);
+    printf("\t\t---------------------------------------------\n");
+    printf("\t\tChartScale: %s\n", name);
+    printf("\t\t\tmin:   %30.6f\n", _min);
+    printf("\t\t\tmax:   %30.6f\n", _max);
+    printf("\t\t\tDiff:  %30.6f\n", diff());
+    printf("\t\t\ttick:  %30.6f\n", _tick);
+    printf("\t\t\tpixel: %30.6f\n", _pixel);
+    fflush(stdout);
 #else
     (void) name;
 #endif
@@ -1001,9 +997,9 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     add(_scroll);
     _scroll->type(FL_HORIZONTAL);
     _scroll->callback(Chart::_CallbackScrollbar, this);
-    _menu->add(_CHART_SHOW_LABELS,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_HLINES,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_VLINES,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_CHART_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
     _menu->add(_CHART_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
     _menu->add(_CHART_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
     _menu->add(_CHART_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()));
@@ -1022,8 +1018,8 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _menu->add(_CHART_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
     _menu->add(_CHART_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #ifdef DEBUG
-    _menu->add(_CHART_DEBUG_CHART,      0, Chart::_CallbackDebugChart, this);
-    _menu->add(_CHART_DEBUG_LINE,       0, Chart::_CallbackDebugLine, this);
+    _menu->add(_CHART_DEBUG,            0, _FLW_CHART_CB(debug()));
+    _menu->add(_CHART_DEBUG_LINE,       0, _FLW_CHART_CB(debug_line()));
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
     _areas.push_back(ChartArea(ChartArea::NUM::ONE));
@@ -1220,26 +1216,6 @@ void Chart::_calc_ywidth() {
         _margin_right = Chart::MIN_MARGIN;
     }
 }
-void Chart::_CallbackDebugChart(Fl_Widget*, void* widget) {
-#ifdef DEBUG
-    auto self = static_cast<const Chart*>(widget);
-    self->debug();
-#else
-    (void) widget;
-#endif
-}
-void Chart::_CallbackDebugLine(Fl_Widget*, void* widget) {
-#ifdef DEBUG
-    auto self = static_cast<const Chart*>(widget);
-    if (self->_area == nullptr || self->_area->selected_line() == nullptr) {
-        return;
-    }
-    const auto* line = self->_area->selected_line();
-    line->debug(-1, true);
-#else
-    (void) widget;
-#endif
-}
 bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
     auto widget = static_cast<Fl_Widget*>(data);
     auto r      = Fl_Rect(widget);
@@ -1252,13 +1228,6 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
     auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init(false);
-}
-void Chart::_CallbackToggle(Fl_Widget*, void* widget) {
-    auto self = static_cast<Chart*>(widget);
-    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
-    self->redraw();
 }
 void Chart::clear() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
@@ -1520,38 +1489,47 @@ void Chart::debug() const {
     if (_ticks >= 0 && static_cast<int>(_dates.size()) > (_date_start + _ticks)) {
         end = _dates[_date_start + _ticks];
     }
-    fprintf(stderr, "\n");
-    fprintf(stderr, "--------------------------------------------\n");
-    fprintf(stderr, "Chart:\n");
-    fprintf(stderr, "\tblock_dates:     %19d\n", (int) _block_dates.size());
-    fprintf(stderr, "\tbottom_space:    %19d\n", _bottom_space);
-    fprintf(stderr, "\tcw:              %19d\n", _cw);
-    fprintf(stderr, "\tdate_end:        %19d\n", _date_start + _ticks);
-    fprintf(stderr, "\tdate_format:     %19d\n", (int) _date_format);
-    fprintf(stderr, "\tdate_range:      %19d\n", (int) _date_range);
-    fprintf(stderr, "\tdate_start:      %19d\n", _date_start);
-    fprintf(stderr, "\tdates:           %19d\n", (int) _dates.size());
-    fprintf(stderr, "\th:               %19d\n", h());
-    fprintf(stderr, "\tmargin:          %19d\n", _margin);
-    fprintf(stderr, "\tpixels left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
-    fprintf(stderr, "\tpixels right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
-    fprintf(stderr, "\ttick_width:      %19d\n", _tick_width);
-    fprintf(stderr, "\tticks:           %19d\n", _ticks);
-    fprintf(stderr, "\ttop_space:       %19d\n", _top_space);
-    fprintf(stderr, "\tw:               %19d\n", w());
-    fprintf(stderr, "\tx:               %19d\n", x());
-    fprintf(stderr, "\ty:               %19d\n", y());
-    fprintf(stderr, "\tview_labels:     %19d\n", _view.labels);
-    fprintf(stderr, "\tview_horizontal: %19d\n", _view.horizontal);
-    fprintf(stderr, "\tview_vertical:   %19d\n", _view.vertical);
-    fprintf(stderr, "\tfirst date:      %19s\n", first.date.c_str());
-    fprintf(stderr, "\tlast date:       %19s\n", last.date.c_str());
-    fprintf(stderr, "\tfirst visible:   %19s\n", start.date.c_str());
-    fprintf(stderr, "\tlast visible:    %19s\n", end.date.c_str());
+    printf("\n");
+    printf("--------------------------------------------\n");
+    printf("Chart:\n");
+    printf("\tblock_dates:     %19d\n", (int) _block_dates.size());
+    printf("\tbottom_space:    %19d\n", _bottom_space);
+    printf("\tcw:              %19d\n", _cw);
+    printf("\tdate_end:        %19d\n", _date_start + _ticks);
+    printf("\tdate_format:     %19d\n", (int) _date_format);
+    printf("\tdate_range:      %19d\n", (int) _date_range);
+    printf("\tdate_start:      %19d\n", _date_start);
+    printf("\tdates:           %19d\n", (int) _dates.size());
+    printf("\th:               %19d\n", h());
+    printf("\tmargin:          %19d\n", _margin);
+    printf("\tpixels left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
+    printf("\tpixels right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
+    printf("\ttick_width:      %19d\n", _tick_width);
+    printf("\tticks:           %19d\n", _ticks);
+    printf("\ttop_space:       %19d\n", _top_space);
+    printf("\tw:               %19d\n", w());
+    printf("\tx:               %19d\n", x());
+    printf("\ty:               %19d\n", y());
+    printf("\tview_labels:     %19d\n", _view.labels);
+    printf("\tview_horizontal: %19d\n", _view.horizontal);
+    printf("\tview_vertical:   %19d\n", _view.vertical);
+    printf("\tfirst date:      %19s\n", first.date.c_str());
+    printf("\tlast date:       %19s\n", last.date.c_str());
+    printf("\tfirst visible:   %19s\n", start.date.c_str());
+    printf("\tlast visible:    %19s\n", end.date.c_str());
     for (const auto& area : _areas) {
         area.debug();
     }
-    fflush(stderr);
+    fflush(stdout);
+#endif
+}
+void Chart::debug_line() const {
+#ifdef DEBUG
+    if (_area == nullptr || _area->selected_line() == nullptr) {
+        return;
+    }
+    const auto* line = _area->selected_line();
+    line->debug(-1, true);
 #endif
 }
 void Chart::draw() {
@@ -1601,8 +1579,8 @@ void Chart::_draw_label() {
         return;
     }
     fl_color(FL_FOREGROUND_COLOR);
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
-    fl_draw(_label.c_str(), x(), y() + flw::PREF_FIXED_FONTSIZE, w(), _top_space, FL_ALIGN_CENTER);
+    fl_font(flw::PREF_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
+    fl_draw(_label.c_str(), x(), y() + flw::PREF_FIXED_FONTSIZE, w(), _top_space, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 }
 void Chart::_draw_line(const ChartLine& line, const ChartScale& scale, int X, const int Y, const int W, const int H) {
     if (line.size() > 0 && line.is_visible() == true && scale.diff() > 0.0) {
@@ -1687,69 +1665,70 @@ void Chart::_draw_line(const ChartLine& line, const ChartScale& scale, int X, co
     }
 }
 void Chart::_draw_line_labels(const ChartArea& area) {
-    if (_view.labels == true) {
-        int       left_h  = 0;
-        int       left_w  = 0;
-        const int left_x  = x() + area.x() + 6;
-        int       left_y  = y() + area.y() + 6;
-        int       right_h = 0;
-        int       right_w = 0;
-        const int right_x = x() + area.x2();
-        int       right_y = left_y;
-        for (const auto& line : area.lines()) {
-            if (line.size() > 0) {
-                int len = static_cast<int>(line.label().length());
-                if (line.align() == FL_ALIGN_RIGHT) {
-                    right_h++;
-                    if (len * _cw > right_w) {
-                        right_w = len * _cw;
-                    }
-                }
-                else {
-                    left_h++;
-                    if (len * _cw > left_w) {
-                        left_w = len * _cw;
-                    }
-                }
+    static const std::string SYMBOL = "@-> ";
+    if (_view.labels == false) {
+        return;
+    }
+    int       left_h  = 0;
+    int       left_w  = 0;
+    const int left_x  = x() + area.x() + 6;
+    int       left_y  = y() + area.y() + 6;
+    int       right_h = 0;
+    int       right_w = 0;
+    int       right_x = x() + area.x2() - 6;
+    int       right_y = left_y;
+    size_t    c       = 0;
+    fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
+    for (const auto& line : area.lines()) {
+        int  ws    = 0;
+        int  hs    = 0;
+        auto label = SYMBOL + line.label();
+        fl_measure(label.c_str(), ws, hs);
+        if (line.align() == FL_ALIGN_LEFT) {
+            left_h++;
+            if (ws > left_w) {
+                left_w = ws;
             }
         }
-        left_h  *= flw::PREF_FIXED_FONTSIZE;
-        right_h *= flw::PREF_FIXED_FONTSIZE;
-        if (left_w > 0) {
-            left_w += _cw * 2 + 4;
-            fl_color(FL_BACKGROUND2_COLOR);
-            fl_rectf(left_x, left_y, left_w + 8, left_h + 8);
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_rect(left_x, left_y, left_w + 8, left_h + 8);
+        else {
+            right_h++;
+            if (ws > right_w) {
+                right_w = ws;
+            }
         }
-        if (right_w > 0) {
-            right_w += _cw * 2 + 4;
-            fl_color(FL_BACKGROUND2_COLOR);
-            fl_rectf(right_x - right_w - 14, left_y, right_w + 6, right_h + 8);
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_rect(right_x - right_w - 14, left_y, right_w + 6, right_h + 8);
-        }
-        fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-        if (left_w > 0 || right_w > 0) {
-            size_t count = 0;
-            for (auto& line : area.lines()) {
-                if (line.size() > 0) {
-                    auto label = line.label();
-                    if (area.selected() == count++) {
-                        label = "@-> " + label;
-                    }
-                    fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
-                    if (line.align() == FL_ALIGN_RIGHT) {
-                        fl_draw(label.c_str(), right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
-                        const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE);
-                        right_y += flw::PREF_FIXED_FONTSIZE;
-                    }
-                    else {
-                        fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
-                        const_cast<ChartLine*>(&line)->set_label_rect(left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE);
-                        left_y += flw::PREF_FIXED_FONTSIZE;
-                    }
-                }
+    }
+    left_h  *= flw::PREF_FONTSIZE;
+    left_h  += 8;
+    right_h *= flw::PREF_FONTSIZE;
+    right_h += 8;
+    if (left_w > 0) {
+        left_w += flw::PREF_FONTSIZE;
+        fl_color(FL_BACKGROUND2_COLOR);
+        fl_rectf(left_x, left_y, left_w, left_h);
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_rect(left_x, left_y, left_w, left_h);
+    }
+    if (right_w > 0) {
+        right_w += flw::PREF_FONTSIZE;
+        fl_color(FL_BACKGROUND2_COLOR);
+        fl_rectf(right_x - right_w, left_y, right_w, right_h);
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_rect(right_x - right_w, left_y, right_w, right_h);
+    }
+    if (left_w > 0 || right_w > 0) {
+        c = 0;
+        for (auto& line : area.lines()) {
+            auto label = (area.selected() == c++) ? SYMBOL + line.label() : line.label();
+            fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
+            if (line.align() == FL_ALIGN_LEFT) {
+                fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w - 8, flw::PREF_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+                const_cast<ChartLine*>(&line)->set_label_rect(left_x, left_y + 4, left_w, flw::PREF_FONTSIZE);
+                left_y += flw::PREF_FONTSIZE;
+            }
+            else {
+                fl_draw(label.c_str(), right_x - right_w + 4, right_y + 4, right_w - 8, flw::PREF_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+                const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w, right_y + 4, right_w, flw::PREF_FONTSIZE);
+                right_y += flw::PREF_FONTSIZE;
             }
         }
     }
@@ -1982,7 +1961,7 @@ int Chart::handle(int event) {
             LEFT = false;
             _area = _inside_area(x, y);
             if (_area != nullptr) {
-                auto c = 0;
+                size_t c = 0;
                 for (const auto& line : _area->lines()) {
                     auto& r = line.label_rect();
                     if (x > r.x() && x < r.r() && y > r.y() && y < r.b()) {
@@ -2584,6 +2563,12 @@ void Chart::setup_show_or_hide_lines() {
         _area->set_visible(f, list[f][0] == '1');
     }
     init(true);
+}
+void Chart::setup_view_options() {
+    _view.labels     = menu::item_value(_menu, _CHART_SHOW_LABELS);
+    _view.vertical   = menu::item_value(_menu, _CHART_SHOW_VLINES);
+    _view.horizontal = menu::item_value(_menu, _CHART_SHOW_HLINES);
+    redraw();
 }
 void Chart::setup_ywidth() {
     auto width = static_cast<double>(_margin);
@@ -7186,8 +7171,8 @@ void InputMenu::values(const StringVector& list, bool copy_first_to_input) {
 #include <cmath>
 #include <errno.h>
 namespace flw {
-#define JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
-#define JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
+#define _FLW_JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
+#define _FLW_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
 static void _json_debug(const JS* js, std::string t) {
     if (js->is_array() == true) {
@@ -7309,7 +7294,7 @@ static bool _json_parse_number(const char* json, size_t len, size_t& pos, double
     else {
         nVal = strtoll((n1 + n2).c_str(), nullptr, 0);
     }
-    res   = (errno == 0);
+    res = (errno == 0);
     pos--;
     return res;
 }
@@ -7418,21 +7403,21 @@ bool JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigne
     return res;
 }
 void JS::_clear(bool name) {
-    if (_type == ARRAY) {
+    if (_type == JS::ARRAY) {
         for (auto js : *_va) {
             delete js;
         }
         delete _va;
         _va = nullptr;
     }
-    else if (_type == OBJECT) {
+    else if (_type == JS::OBJECT) {
         for (auto js : *_vo) {
             delete js.second;
         }
         delete _vo;
         _vo = nullptr;
     }
-    else if (_type == STRING) {
+    else if (_type == JS::STRING) {
         free(_vs);
         _vs = nullptr;
     }
@@ -7440,9 +7425,43 @@ void JS::_clear(bool name) {
         free(_name);
         _name   = nullptr;
     }
-    _type   = NIL;
+    _type   = JS::NIL;
     _vb     = false;
     _parent = nullptr;
+}
+size_t JS::CountUtf8(const char* p) {
+    auto count = (size_t) 0;
+    auto f     = (size_t) 0;
+    auto u     = reinterpret_cast<const unsigned char*>(p);
+    auto c     = (unsigned) u[0];
+    while (c != 0) {
+        if (c >= 128) {
+            if (c >= 194 && c <= 223) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+            }
+            else if (c >= 224 && c <= 239) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+            }
+            else if (c >= 240 && c <= 244) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+            }
+            else {
+                return 0;
+            }
+        }
+        count++;
+        c = u[++f];
+    }
+    return count;
 }
 std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
     auto colon   = 0;
@@ -7481,15 +7500,15 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             else if (c == '"') {
                 pos2 = pos1;
                 if (sVal1 == nullptr) posn = pos1;
-                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw JSON_ERROR(start, line);
+                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _FLW_JSON_ERROR(start, line);
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
                 auto add_array = (current->is_array() == true);
-                if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
-                else if (add_object == true && colon != 1) throw JSON_ERROR(start, line);
+                if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
+                else if (add_object == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
                 else if (add_object == true || add_array == true) {
                     pos2 = (sVal2 == nullptr) ? pos2 : posn;
-                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
                     colon = 0;
                     comma = 0;
                 }
@@ -7497,42 +7516,42 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             }
             else if ((c >= '0' && c <= '9') || c == '-') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (_json_parse_number(json, len, pos1, nVal) == false) throw JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
-                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                if (_json_parse_number(json, len, pos1, nVal) == false) throw _FLW_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
                 pos1++;
             }
             else if (c == ',') {
-                if (comma > 0) throw JSON_ERROR(pos1, line);
-                else if (current == &tmp) throw JSON_ERROR(pos1, line);
+                if (comma > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current == &tmp) throw _FLW_JSON_ERROR(pos1, line);
                 comma++;
                 pos1++;
             }
             else if (c == ':') {
-                if (colon > 0) throw JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw JSON_ERROR(pos1, line);
-                else if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
+                if (colon > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
                 colon++;
                 pos1++;
             }
             else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos1, line);
+                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
                     n = JS::_MakeArray("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
                     n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos1, line);
-                    JSON_FREE_STRINGS(sVal1, sVal2)
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
+                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
                 colon = 0;
@@ -7541,30 +7560,30 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                 pos1++;
             }
             else if (c == ']') {
-                if (current->_parent == nullptr) throw JSON_ERROR(pos1, line);
-                else if (current->is_array() == false) throw JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos1, line);
-                else if (count_a < 0) throw JSON_ERROR(pos1, line);
+                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_array() == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (count_a < 0) throw _FLW_JSON_ERROR(pos1, line);
                 current = current->_parent;
                 comma = 0;
                 count_a--;
                 pos1++;
             }
             else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw JSON_ERROR(pos1, line);
+                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
                     n = JS::_MakeObject("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
                     n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw JSON_ERROR(pos1, line);
-                    JSON_FREE_STRINGS(sVal1, sVal2)
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
+                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
                 colon = 0;
@@ -7573,11 +7592,11 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                 pos1++;
             }
             else if (c == '}') {
-                if (current->_parent == nullptr) throw JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw JSON_ERROR(pos1, line);
-                else if (count_o < 0) throw JSON_ERROR(pos1, line);
+                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (count_o < 0) throw _FLW_JSON_ERROR(pos1, line);
                 current = current->_parent;
                 comma = 0;
                 count_o--;
@@ -7586,10 +7605,10 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
                     (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
-                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw JSON_ERROR(start, line);
+                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
@@ -7597,26 +7616,26 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             }
             else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw JSON_ERROR(start, line);
+                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _FLW_JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
             }
             else {
-                throw JSON_ERROR(pos1, line);
+                throw _FLW_JSON_ERROR(pos1, line);
             }
             if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
-                throw JSON_ERROR(pos1, line);
+                throw _FLW_JSON_ERROR(pos1, line);
             }
         }
         if (count_a != 0 || count_o != 0) {
-            throw JSON_ERROR(len, 1);
+            throw _FLW_JSON_ERROR(len, 1);
         }
         else if (tmp.size() != 1) {
-            throw JSON_ERROR(len, 1);
+            throw _FLW_JSON_ERROR(len, 1);
         }
         else if (tmp[0]->_type == JS::ARRAY) {
             _type = JS::ARRAY;
@@ -7651,11 +7670,11 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             _type = JS::NIL;
         }
         else {
-            throw JSON_ERROR(0, 1);
+            throw _FLW_JSON_ERROR(0, 1);
         }
     }
     catch(const std::string& err) {
-        JSON_FREE_STRINGS(sVal1, sVal2)
+        _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
         _clear(false);
         return err;
     }
@@ -7665,15 +7684,15 @@ void JS::debug() const {
     std::string t;
     _json_debug(this, t);
 }
-std::string JS::encode(int skip) const {
+std::string JS::encode(JS::ENCODE_OPTION option) const {
     std::string t;
     std::string j;
     try {
         if (is_array() == true || is_object() == true) {
-            JS::_Encode(this, j, t, false, skip);
+            JS::_Encode(this, j, t, false, option);
         }
         else {
-            return _encode(true, skip);
+            return _encode(true, option);
         }
     }
     catch (const std::string& e) {
@@ -7681,36 +7700,36 @@ std::string JS::encode(int skip) const {
     }
     return j;
 }
-std::string JS::_encode(bool ignore_name, int skip) const {
+std::string JS::_encode(bool ignore_name, JS::ENCODE_OPTION option) const {
     static const std::string QUOTE = "\"";
     std::string res;
-    std::string arr   = (skip == 0) ? "\": [" : "\":[";
-    std::string obj   = (skip == 0) ? "\": {" : "\":{";
-    std::string name1 = (skip == 0) ? "\": " : "\":";
+    std::string arr   = (option == ENCODE_OPTION::NORMAL) ? "\": [" : "\":[";
+    std::string obj   = (option == ENCODE_OPTION::NORMAL) ? "\": {" : "\":{";
+    std::string name1 = (option == ENCODE_OPTION::NORMAL) ? "\": " : "\":";
     bool object = (_parent != nullptr && _parent->is_object() == true);
-    if (_type == ARRAY) {
+    if (_type == JS::ARRAY) {
         res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
     }
-    else if (_type == OBJECT) {
+    else if (_type == JS::OBJECT) {
         res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
     }
     else {
         res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name1);
-        if (_type == STRING) {
+        if (_type == JS::STRING) {
             res += QUOTE + _vs + QUOTE;
         }
-        else if (_type == NIL) {
+        else if (_type == JS::NIL) {
             res += "null";
         }
-        else if (_type == BOOL && _vb == true) {
+        else if (_type == JS::BOOL && _vb == true) {
             res += "true";
         }
-        else if (_type == BOOL && _vb == false) {
+        else if (_type == JS::BOOL && _vb == false) {
             res += "false";
         }
-        else if (_type == NUMBER) {
+        else if (_type == JS::NUMBER) {
             char b[500];
-            const size_t n  = snprintf(b, 500, "%f", _vn);
+            const size_t n  = (_vn < 100'000) ? snprintf(b, 500, "%.7f", _vn) : snprintf(b, 500, "%f", _vn);
             const char* dot = strstr(b, ".");
             if (n < 1 || n >= 500) {
                 strcpy(b, "0.0");
@@ -7729,6 +7748,76 @@ std::string JS::_encode(bool ignore_name, int skip) const {
             }
             res += b;
         }
+    }
+    return res;
+}
+void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, JS::ENCODE_OPTION option) {
+    std::string c = (comma == true) ? "," : "";
+    std::string n = (option == ENCODE_OPTION::REMOVE_LEADING_AND_NEWLINES) ? "" : "\n";
+    size_t      f = 0;
+    if (js->is_array() == true) {
+        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
+        for (const auto n2 : *js->_va) {
+            if (option == ENCODE_OPTION::NORMAL) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), option);
+            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), option);
+            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
+            f++;
+        }
+        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
+    }
+    else if (js->is_object() == true) {
+        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
+        for (const auto& n2 : *js->_vo) {
+            if (option == ENCODE_OPTION::NORMAL) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), option);
+            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), option);
+            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
+            f++;
+        }
+        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
+    }
+    else {
+        j += t + js->_encode(false, option) + c + n;
+    }
+}
+void JS::_EncodeInline(const JS* js, std::string& j, bool comma, JS::ENCODE_OPTION option) {
+    std::string c = (comma == true) ? "," : "";
+    size_t      f = 0;
+    if (*js == JS::ARRAY) {
+        j += js->_encode(false, option);
+        for (const auto n : *js->_va) {
+            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), option);
+            f++;
+        }
+        j += "]" + c;
+    }
+    else if (*js == JS::OBJECT) {
+        j += js->_encode(false, option);
+        for (const auto& n : *js->_vo) {
+            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), option);
+            f++;
+        }
+        j += "}" + c;
+    }
+    else {
+        j += js->_encode(false, option) + c;
+    }
+}
+std::string JS::Escape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string) + 5);
+    while (*string != 0) {
+        auto c = *string;
+        if (c == 9) res += "\\t";
+        else if (c == 10) res += "\\n";
+        else if (c == 13) res += "\\r";
+        else if (c == 8) res += "\\b";
+        else if (c == 14) res += "\\f";
+        else if (c == 34) res += "\\\"";
+        else if (c == 92) res += "\\\\";
+        else res += c;
+        string++;
     }
     return res;
 }
@@ -7774,114 +7863,10 @@ bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
 }
 const JSArray JS::vo_to_va() const {
     JSArray res;
-    if (_type == OBJECT) {
+    if (_type == JS::OBJECT) {
         for (auto& m : *_vo) {
             res.push_back(m.second);
         }
-    }
-    return res;
-}
-size_t JS::CountUtf8(const char* p) {
-    auto count = (size_t) 0;
-    auto f     = (size_t) 0;
-    auto u     = reinterpret_cast<const unsigned char*>(p);
-    auto c     = (unsigned) u[0];
-    while (c != 0) {
-        if (c >= 128) {
-            if (c >= 194 && c <= 223) {
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-            }
-            else if (c >= 224 && c <= 239) {
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-            }
-            else if (c >= 240 && c <= 244) {
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-            }
-            else {
-                return 0;
-            }
-        }
-        count++;
-        c = u[++f];
-    }
-    return count;
-}
-void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, int skip) {
-    std::string c = (comma == true) ? "," : "";
-    std::string n = (skip > 1) ? "" : "\n";
-    size_t      f = 0;
-    if (js->is_array() == true) {
-        j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
-        for (const auto n2 : *js->_va) {
-            if (skip == 0) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), skip);
-            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), skip);
-            if (skip == 0) t.pop_back();
-            f++;
-        }
-        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
-    }
-    else if (js->is_object() == true) {
-        j += t + js->_encode(j == "", skip) + ((js->_enc_flag == 1) ? "" : n);
-        for (const auto& n2 : *js->_vo) {
-            if (skip == 0) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), skip);
-            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), skip);
-            if (skip == 0) t.pop_back();
-            f++;
-        }
-        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
-    }
-    else {
-        j += t + js->_encode(false, skip) + c + n;
-    }
-}
-void JS::_EncodeInline(const JS* js, std::string& j, bool comma, int skip) {
-    std::string c = (comma == true) ? "," : "";
-    size_t      f = 0;
-    if (*js == ARRAY) {
-        j += js->_encode(false, skip);
-        for (const auto n : *js->_va) {
-            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), skip);
-            f++;
-        }
-        j += "]" + c;
-    }
-    else if (*js == OBJECT) {
-        j += js->_encode(false, skip);
-        for (const auto& n : *js->_vo) {
-            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), skip);
-            f++;
-        }
-        j += "}" + c;
-    }
-    else {
-        j += js->_encode(false, skip) + c;
-    }
-}
-std::string JS::Escape(const char* string) {
-    std::string res;
-    res.reserve(strlen(string) + 5);
-    while (*string != 0) {
-        auto c = *string;
-        if (c == 9) res += "\\t";
-        else if (c == 10) res += "\\n";
-        else if (c == 13) res += "\\r";
-        else if (c == 8) res += "\\b";
-        else if (c == 14) res += "\\f";
-        else if (c == 34) res += "\\\"";
-        else if (c == 92) res += "\\\\";
-        else res += c;
-        string++;
     }
     return res;
 }

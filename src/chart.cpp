@@ -34,28 +34,28 @@ namespace flw {
 #define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); clear(); return false; }
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 
-static const char* const        _CHART_ADD_CSV          = "Add line from CSV file...";
-static const char* const        _CHART_ADD_LINE         = "Create line...";
-static const char* const        _CHART_DEBUG_CHART      = "Debug chart";
-static const char* const        _CHART_DEBUG_LINE       = "Debug line";
-static const char* const        _CHART_LOAD_JSON        = "Load from JSON...";
-static const char* const        _CHART_PRINT            = "Print to PostScript file...";
-static const char* const        _CHART_SAVE_CSV         = "Save to CSV...";
-static const char* const        _CHART_SAVE_JSON        = "Save to JSON...";
-static const char* const        _CHART_SAVE_PNG         = "Save to png file...";
-static const char* const        _CHART_SETUP_AREA       = "Number of areas...";
-static const char* const        _CHART_SETUP_MAX_CLAMP  = "Set max clamp...";
-static const char* const        _CHART_SETUP_MIN_CLAMP  = "Set min clamp...";
-static const char* const        _CHART_SETUP_DELETE     = "Delete lines...";
-static const char* const        _CHART_SETUP_LABEL      = "Label...";
-static const char* const        _CHART_SETUP_LINE       = "Properties...";
-static const char* const        _CHART_SETUP_MOVE       = "Move lines...";
-static const char* const        _CHART_SETUP_RANGE      = "Date range...";
-static const char* const        _CHART_SETUP_SHOW       = "Show or hide lines...";
-static const char* const        _CHART_SETUP_WIDTH      = "Y label width...";
-static const char* const        _CHART_SHOW_HLINES      = "Show horizontal lines";
-static const char* const        _CHART_SHOW_LABELS      = "Show line labels";
-static const char* const        _CHART_SHOW_VLINES      = "Show vertical lines";
+static const char* const _CHART_ADD_CSV         = "Add line from CSV file...";
+static const char* const _CHART_ADD_LINE        = "Create line...";
+static const char* const _CHART_DEBUG           = "Debug chart";
+static const char* const _CHART_DEBUG_LINE      = "Debug line";
+static const char* const _CHART_LOAD_JSON       = "Load chart from JSON...";
+static const char* const _CHART_PRINT           = "Print to PostScript file...";
+static const char* const _CHART_SAVE_CSV        = "Save line to CSV...";
+static const char* const _CHART_SAVE_JSON       = "Save chart to JSON...";
+static const char* const _CHART_SAVE_PNG        = "Save to png file...";
+static const char* const _CHART_SETUP_AREA      = "Number of areas...";
+static const char* const _CHART_SETUP_MAX_CLAMP = "Set max clamp...";
+static const char* const _CHART_SETUP_MIN_CLAMP = "Set min clamp...";
+static const char* const _CHART_SETUP_DELETE    = "Delete lines...";
+static const char* const _CHART_SETUP_LABEL     = "Label...";
+static const char* const _CHART_SETUP_LINE      = "Properties...";
+static const char* const _CHART_SETUP_MOVE      = "Move lines...";
+static const char* const _CHART_SETUP_RANGE     = "Date range...";
+static const char* const _CHART_SETUP_SHOW      = "Show or hide lines...";
+static const char* const _CHART_SETUP_WIDTH     = "Y label width...";
+static const char* const _CHART_SHOW_HLINES     = "Show horizontal lines";
+static const char* const _CHART_SHOW_LABELS     = "Show line labels";
+static const char* const _CHART_SHOW_VLINES     = "Show vertical lines";
 
 //------------------------------------------------------------------------------
 static int _chart_count_decimals(double number) {
@@ -201,36 +201,27 @@ void ChartArea::clear() {
 //------------------------------------------------------------------------------
 void ChartArea::debug() const {
 #ifdef DEBUG
-    auto c = 0;
-
-    for (const auto& l : _lines) {
-        if (l.size() > 0) {
-            c++;
-        }
-    }
-
-    if (c > 0 || _num == NUM::ONE) {
-        fprintf(stderr, "\t----------------------\n");
-        fprintf(stderr, "\tChartArea: %d\n", static_cast<int>(_num));
-        fprintf(stderr, "\t\tlines:      %4d\n", c);
-        fprintf(stderr, "\t\tx:          %4d\n", _x);
-        fprintf(stderr, "\t\ty:          %4d\n", _y);
-        fprintf(stderr, "\t\tw:          %4d\n", _w);
-        fprintf(stderr, "\t\th:          %4d\n", _h);
-        fprintf(stderr, "\t\tclamp_max:  %4.4f\n", _clamp_max);
-        fprintf(stderr, "\t\tclamp_min:  %4.4f\n", _clamp_min);
-        fprintf(stderr, "\t\tpercent:    %4d\n", _percent);
-        fprintf(stderr, "\t\tselected:   %4d\n", static_cast<int>(_selected));
+    if (_lines.size() > 0 || _num == NUM::ONE) {
+        printf("\t----------------------\n");
+        printf("\tChartArea: %d\n", static_cast<int>(_num));
+        printf("\t\tlines:      %4d\n", static_cast<int>(_lines.size()));
+        printf("\t\tx:          %4d\n", _x);
+        printf("\t\ty:          %4d\n", _y);
+        printf("\t\tw:          %4d\n", _w);
+        printf("\t\th:          %4d\n", _h);
+        printf("\t\tclamp_max:  %4.4f\n", _clamp_max);
+        printf("\t\tclamp_min:  %4.4f\n", _clamp_min);
+        printf("\t\tpercent:    %4d\n", _percent);
+        printf("\t\tselected:   %4d\n", static_cast<int>(_selected));
 
         _left.debug("left");
         _right.debug("right");
-        c = 0;
+        auto c = 0;
 
         for (const auto& l : _lines) {
-            if (l.size() > 0) {
-                l.debug(c++);
-            }
+            l.debug(c++);
         }
+        fflush(stdout);
     }
 #endif
 }
@@ -954,6 +945,7 @@ void ChartLine::clear() {
     _label     = "";
     _max       = INFINITY;
     _min       = INFINITY;
+    _rect      = Fl_Rect();
     _type      = TYPE::LINE;
     _visible   = true;
     _width     = 1;
@@ -962,26 +954,28 @@ void ChartLine::clear() {
 //------------------------------------------------------------------------------
 void ChartLine::debug(int num, bool prices) const {
 #ifdef DEBUG
-    fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tChartLine: %d (%p)\n", num, this);
-    fprintf(stderr, "\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
-    fprintf(stderr, "\t\t\ttype:  %31s\n", type_to_string().c_str());
-    fprintf(stderr, "\t\t\tlabel: %30s\n", _label.c_str());
-    fprintf(stderr, "\t\t\tlabel_rect:    %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
-    fprintf(stderr, "\t\t\tprices:     %25d\n", (int) size());
-    fprintf(stderr, "\t\t\tvisible:    %25d\n", _visible);
-    fprintf(stderr, "\t\t\twidth:      %25u\n", _width);
+    printf("\t\t---------------------------------------------\n");
+    printf("\t\tChartLine: %d (%p)\n", num, this);
+    printf("\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
+    printf("\t\t\ttype:  %31s\n", type_to_string().c_str());
+    printf("\t\t\tlabel: %30s\n", _label.c_str());
+    printf("\t\t\trect:          %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
+    printf("\t\t\tprices:     %25d\n", (int) size());
+    printf("\t\t\tvisible:    %25d\n", _visible);
+    printf("\t\t\twidth:      %25u\n", _width);
 
     if (size() > 1) {
-        fprintf(stderr, "\t\t\tfirst:      %25s\n", _data.front().date.c_str());
-        fprintf(stderr, "\t\t\tfirst:      %25f\n", _data.front().close);
-        fprintf(stderr, "\t\t\tlast:       %25s\n", _data.back().date.c_str());
-        fprintf(stderr, "\t\t\tlast:       %25f\n", _data.back().close);
+        printf("\t\t\tfirst:      %25s\n", _data.front().date.c_str());
+        printf("\t\t\tfirst:      %25f\n", _data.front().close);
+        printf("\t\t\tlast:       %25s\n", _data.back().date.c_str());
+        printf("\t\t\tlast:       %25f\n", _data.back().close);
     }
 
     if (prices == true) {
         ChartData::Debug(_data);
     }
+
+    fflush(stdout);
 #else
     (void) num;
     (void) prices;
@@ -1268,13 +1262,14 @@ void ChartScale::clear() {
 //------------------------------------------------------------------------------
 void ChartScale::debug(const char* name) const {
 #ifdef DEBUG
-    fprintf(stderr, "\t\t---------------------------------------------\n");
-    fprintf(stderr, "\t\tChartScale: %s\n", name);
-    fprintf(stderr, "\t\t\tmin:   %30.6f\n", _min);
-    fprintf(stderr, "\t\t\tmax:   %30.6f\n", _max);
-    fprintf(stderr, "\t\t\tDiff:  %30.6f\n", diff());
-    fprintf(stderr, "\t\t\ttick:  %30.6f\n", _tick);
-    fprintf(stderr, "\t\t\tpixel: %30.6f\n", _pixel);
+    printf("\t\t---------------------------------------------\n");
+    printf("\t\tChartScale: %s\n", name);
+    printf("\t\t\tmin:   %30.6f\n", _min);
+    printf("\t\t\tmax:   %30.6f\n", _max);
+    printf("\t\t\tDiff:  %30.6f\n", diff());
+    printf("\t\t\ttick:  %30.6f\n", _tick);
+    printf("\t\t\tpixel: %30.6f\n", _pixel);
+    fflush(stdout);
 #else
     (void) name;
 #endif
@@ -1352,9 +1347,9 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _scroll->type(FL_HORIZONTAL);
     _scroll->callback(Chart::_CallbackScrollbar, this);
 
-    _menu->add(_CHART_SHOW_LABELS,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_HLINES,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE);
-    _menu->add(_CHART_SHOW_VLINES,      0, Chart::_CallbackToggle, this, FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(_CHART_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(_CHART_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
     _menu->add(_CHART_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
     _menu->add(_CHART_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
     _menu->add(_CHART_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()));
@@ -1373,8 +1368,8 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _menu->add(_CHART_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
     _menu->add(_CHART_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #ifdef DEBUG
-    _menu->add(_CHART_DEBUG_CHART,      0, Chart::_CallbackDebugChart, this);
-    _menu->add(_CHART_DEBUG_LINE,       0, Chart::_CallbackDebugLine, this);
+    _menu->add(_CHART_DEBUG,            0, _FLW_CHART_CB(debug()));
+    _menu->add(_CHART_DEBUG_LINE,       0, _FLW_CHART_CB(debug_line()));
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
 
@@ -1506,7 +1501,7 @@ void Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
         auto min_clamp = area.clamp_min();
         auto max_clamp = area.clamp_max();
-        
+
         area.left_scale().clear();
         area.right_scale().clear();
 
@@ -1629,32 +1624,6 @@ void Chart::_calc_ywidth() {
 }
 
 //------------------------------------------------------------------------------
-void Chart::_CallbackDebugChart(Fl_Widget*, void* widget) {
-#ifdef DEBUG
-    auto self = static_cast<const Chart*>(widget);
-    self->debug();
-#else
-    (void) widget;
-#endif
-}
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackDebugLine(Fl_Widget*, void* widget) {
-#ifdef DEBUG
-    auto self = static_cast<const Chart*>(widget);
-
-    if (self->_area == nullptr || self->_area->selected_line() == nullptr) {
-        return;
-    }
-
-    const auto* line = self->_area->selected_line();
-    line->debug(-1, true);
-#else
-    (void) widget;
-#endif
-}
-
-//------------------------------------------------------------------------------
 bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
     auto widget = static_cast<Fl_Widget*>(data);
     auto r      = Fl_Rect(widget);
@@ -1670,15 +1639,6 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
     auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init(false);
-}
-
-//------------------------------------------------------------------------------
-void Chart::_CallbackToggle(Fl_Widget*, void* widget) {
-    auto self = static_cast<Chart*>(widget);
-    self->_view.labels     = menu::item_value(self->_menu, _CHART_SHOW_LABELS);
-    self->_view.vertical   = menu::item_value(self->_menu, _CHART_SHOW_VLINES);
-    self->_view.horizontal = menu::item_value(self->_menu, _CHART_SHOW_HLINES);
-    self->redraw();
 }
 
 //------------------------------------------------------------------------------
@@ -2011,40 +1971,52 @@ void Chart::debug() const {
         end = _dates[_date_start + _ticks];
     }
 
-    fprintf(stderr, "\n");
-    fprintf(stderr, "--------------------------------------------\n");
-    fprintf(stderr, "Chart:\n");
-    fprintf(stderr, "\tblock_dates:     %19d\n", (int) _block_dates.size());
-    fprintf(stderr, "\tbottom_space:    %19d\n", _bottom_space);
-    fprintf(stderr, "\tcw:              %19d\n", _cw);
-    fprintf(stderr, "\tdate_end:        %19d\n", _date_start + _ticks);
-    fprintf(stderr, "\tdate_format:     %19d\n", (int) _date_format);
-    fprintf(stderr, "\tdate_range:      %19d\n", (int) _date_range);
-    fprintf(stderr, "\tdate_start:      %19d\n", _date_start);
-    fprintf(stderr, "\tdates:           %19d\n", (int) _dates.size());
-    fprintf(stderr, "\th:               %19d\n", h());
-    fprintf(stderr, "\tmargin:          %19d\n", _margin);
-    fprintf(stderr, "\tpixels left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
-    fprintf(stderr, "\tpixels right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
-    fprintf(stderr, "\ttick_width:      %19d\n", _tick_width);
-    fprintf(stderr, "\tticks:           %19d\n", _ticks);
-    fprintf(stderr, "\ttop_space:       %19d\n", _top_space);
-    fprintf(stderr, "\tw:               %19d\n", w());
-    fprintf(stderr, "\tx:               %19d\n", x());
-    fprintf(stderr, "\ty:               %19d\n", y());
-    fprintf(stderr, "\tview_labels:     %19d\n", _view.labels);
-    fprintf(stderr, "\tview_horizontal: %19d\n", _view.horizontal);
-    fprintf(stderr, "\tview_vertical:   %19d\n", _view.vertical);
-    fprintf(stderr, "\tfirst date:      %19s\n", first.date.c_str());
-    fprintf(stderr, "\tlast date:       %19s\n", last.date.c_str());
-    fprintf(stderr, "\tfirst visible:   %19s\n", start.date.c_str());
-    fprintf(stderr, "\tlast visible:    %19s\n", end.date.c_str());
+    printf("\n");
+    printf("--------------------------------------------\n");
+    printf("Chart:\n");
+    printf("\tblock_dates:     %19d\n", (int) _block_dates.size());
+    printf("\tbottom_space:    %19d\n", _bottom_space);
+    printf("\tcw:              %19d\n", _cw);
+    printf("\tdate_end:        %19d\n", _date_start + _ticks);
+    printf("\tdate_format:     %19d\n", (int) _date_format);
+    printf("\tdate_range:      %19d\n", (int) _date_range);
+    printf("\tdate_start:      %19d\n", _date_start);
+    printf("\tdates:           %19d\n", (int) _dates.size());
+    printf("\th:               %19d\n", h());
+    printf("\tmargin:          %19d\n", _margin);
+    printf("\tpixels left:     %19d\n", _margin_left * flw::PREF_FIXED_FONTSIZE);
+    printf("\tpixels right:    %19d\n", _margin_right * flw::PREF_FIXED_FONTSIZE);
+    printf("\ttick_width:      %19d\n", _tick_width);
+    printf("\tticks:           %19d\n", _ticks);
+    printf("\ttop_space:       %19d\n", _top_space);
+    printf("\tw:               %19d\n", w());
+    printf("\tx:               %19d\n", x());
+    printf("\ty:               %19d\n", y());
+    printf("\tview_labels:     %19d\n", _view.labels);
+    printf("\tview_horizontal: %19d\n", _view.horizontal);
+    printf("\tview_vertical:   %19d\n", _view.vertical);
+    printf("\tfirst date:      %19s\n", first.date.c_str());
+    printf("\tlast date:       %19s\n", last.date.c_str());
+    printf("\tfirst visible:   %19s\n", start.date.c_str());
+    printf("\tlast visible:    %19s\n", end.date.c_str());
 
     for (const auto& area : _areas) {
         area.debug();
     }
 
-    fflush(stderr);
+    fflush(stdout);
+#endif
+}
+
+//------------------------------------------------------------------------------
+void Chart::debug_line() const {
+#ifdef DEBUG
+    if (_area == nullptr || _area->selected_line() == nullptr) {
+        return;
+    }
+
+    const auto* line = _area->selected_line();
+    line->debug(-1, true);
 #endif
 }
 
@@ -2083,7 +2055,7 @@ void Chart::draw() {
     fl_line_style(0);
 
 #ifdef DEBUG
-//     fprintf(stderr, "draw: %3d mS\n", util::milliseconds() - t);
+//     printf("Chart::draw: %3d mS\n", util::milliseconds() - t);
 //     fflush(stdout);
 #endif
 }
@@ -2113,8 +2085,8 @@ void Chart::_draw_label() {
     }
 
     fl_color(FL_FOREGROUND_COLOR);
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
-    fl_draw(_label.c_str(), x(), y() + flw::PREF_FIXED_FONTSIZE, w(), _top_space, FL_ALIGN_CENTER);
+    fl_font(flw::PREF_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
+    fl_draw(_label.c_str(), x(), y() + flw::PREF_FIXED_FONTSIZE, w(), _top_space, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 }
 
 //------------------------------------------------------------------------------
@@ -2215,84 +2187,87 @@ void Chart::_draw_line(const ChartLine& line, const ChartScale& scale, int X, co
 
 //------------------------------------------------------------------------------
 void Chart::_draw_line_labels(const ChartArea& area) {
-    if (_view.labels == true) {
-        int       left_h  = 0;
-        int       left_w  = 0;
-        const int left_x  = x() + area.x() + 6;
-        int       left_y  = y() + area.y() + 6;
-        int       right_h = 0;
-        int       right_w = 0;
-        const int right_x = x() + area.x2();
-        int       right_y = left_y;
+    static const std::string SYMBOL = "@-> ";
 
-        for (const auto& line : area.lines()) { // Calc width and height of labels.
-            if (line.size() > 0) {
-                int len = static_cast<int>(line.label().length());
+    if (_view.labels == false) {
+        return;
+    }
 
-                if (line.align() == FL_ALIGN_RIGHT) {
-                    right_h++;
+    int       left_h  = 0;
+    int       left_w  = 0;
+    const int left_x  = x() + area.x() + 6;
+    int       left_y  = y() + area.y() + 6;
+    int       right_h = 0;
+    int       right_w = 0;
+    int       right_x = x() + area.x2() - 6;
+    int       right_y = left_y;
+    size_t    c       = 0;
+    
+    fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
 
-                    if (len * _cw > right_w) {
-                        right_w = len * _cw;
-                    }
-                }
-                else {
-                    left_h++;
+    for (const auto& line : area.lines()) { // Calc max width of line labels.
+        int  ws    = 0;
+        int  hs    = 0;
+        auto label = SYMBOL + line.label();
 
-                    if (len * _cw > left_w) {
-                        left_w = len * _cw;
-                    }
-                }
+        fl_measure(label.c_str(), ws, hs);
+
+        if (line.align() == FL_ALIGN_LEFT) {
+            left_h++;
+
+            if (ws > left_w) {
+                left_w = ws;
             }
         }
+        else {
+            right_h++;
 
-        left_h  *= flw::PREF_FIXED_FONTSIZE;
-        right_h *= flw::PREF_FIXED_FONTSIZE;
-
-        if (left_w > 0) { // Draw left box.
-            left_w += _cw * 2 + 4;
-            fl_color(FL_BACKGROUND2_COLOR);
-            fl_rectf(left_x, left_y, left_w + 8, left_h + 8);
-
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_rect(left_x, left_y, left_w + 8, left_h + 8);
+            if (ws > right_w) {
+                right_w = ws;
+            }
         }
+    }
 
-        if (right_w > 0) { // Draw right box.
-            right_w += _cw * 2 + 4;
-            fl_color(FL_BACKGROUND2_COLOR);
-            fl_rectf(right_x - right_w - 14, left_y, right_w + 6, right_h + 8);
+    left_h  *= flw::PREF_FONTSIZE;
+    left_h  += 8;
+    right_h *= flw::PREF_FONTSIZE;
+    right_h += 8;
 
-            fl_color(FL_FOREGROUND_COLOR);
-            fl_rect(right_x - right_w - 14, left_y, right_w + 6, right_h + 8);
-        }
+    if (left_w > 0) { // Draw left box.
+        left_w += flw::PREF_FONTSIZE;
+        fl_color(FL_BACKGROUND2_COLOR);
+        fl_rectf(left_x, left_y, left_w, left_h);
 
-        fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_rect(left_x, left_y, left_w, left_h);
+    }
 
-        if (left_w > 0 || right_w > 0) { // Draw labels.
-            size_t count = 0;
+    if (right_w > 0) { // Draw right box.
+        right_w += flw::PREF_FONTSIZE;
+        fl_color(FL_BACKGROUND2_COLOR);
+        fl_rectf(right_x - right_w, left_y, right_w, right_h);
 
-            for (auto& line : area.lines()) {
-                if (line.size() > 0) {
-                    auto label = line.label();
+        fl_color(FL_FOREGROUND_COLOR);
+        fl_rect(right_x - right_w, left_y, right_w, right_h);
+    }
 
-                    if (area.selected() == count++) {
-                        label = "@-> " + label;
-                    }
+    if (left_w > 0 || right_w > 0) { // Draw labels.
+        c = 0;
+        
+        for (auto& line : area.lines()) {
+            auto label = (area.selected() == c++) ? SYMBOL + line.label() : line.label();
 
-                    fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
+            fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
 
-                    if (line.align() == FL_ALIGN_RIGHT) {
-                        fl_draw(label.c_str(), right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
-                        const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w - 10, right_y + 4, right_w + 8, flw::PREF_FIXED_FONTSIZE);
-                        right_y += flw::PREF_FIXED_FONTSIZE;
-                    }
-                    else {
-                        fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT);
-                        const_cast<ChartLine*>(&line)->set_label_rect(left_x + 4, left_y + 4, left_w + 8, flw::PREF_FIXED_FONTSIZE);
-                        left_y += flw::PREF_FIXED_FONTSIZE;
-                    }
-                }
+            if (line.align() == FL_ALIGN_LEFT) {
+                fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w - 8, flw::PREF_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+                const_cast<ChartLine*>(&line)->set_label_rect(left_x, left_y + 4, left_w, flw::PREF_FONTSIZE);
+                left_y += flw::PREF_FONTSIZE;
+            }
+            else {
+                fl_draw(label.c_str(), right_x - right_w + 4, right_y + 4, right_w - 8, flw::PREF_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+                const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w, right_y + 4, right_w, flw::PREF_FONTSIZE);
+                right_y += flw::PREF_FONTSIZE;
             }
         }
     }
@@ -2554,7 +2529,7 @@ void Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ChartSc
 
 //------------------------------------------------------------------------------
 int Chart::handle(int event) {
-    static bool LEFT = false;
+    static bool LEFT = false; // Disable dragging with middle mouse button.
 
     if (event == FL_PUSH) {
         auto x = Fl::event_x();
@@ -2575,7 +2550,7 @@ int Chart::handle(int event) {
             _area = _inside_area(x, y);
 
             if (_area != nullptr) {
-                auto c = 0;
+                size_t c = 0;
 
                 for (const auto& line : _area->lines()) {
                     auto& r = line.label_rect();
@@ -2681,7 +2656,7 @@ void Chart::init(bool calc_dates) {
     redraw();
 
 #ifdef DEBUG
-//     fprintf(stderr, "%s: %3d mS\n", (calc_dates == true) ? "INIT" : "init", (int) (util::milliseconds() - t));
+//     printf("%s: %3d mS\n", (calc_dates == true) ? "INIT" : "init", (int) (util::milliseconds() - t));
 //     fflush(stdout);
 #endif
 }
@@ -2791,7 +2766,7 @@ bool Chart::load_json(std::string filename) {
         }
         else if (j->name() == "flw::chart_areas" && j->is_object() == true) {
             long long int area[6] = { 0 };
-            
+
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "area0" && j2->is_number() == true)             area[1]   = j2->vn_i();
                 else if (j2->name() == "area1" && j2->is_number() == true)        area[2]   = j2->vn_i();
@@ -2970,7 +2945,7 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 auto& area     = _areas[f];
                 auto  min      = area.clamp_min();
                 auto  max      = area.clamp_max();
-                
+
                 jsb << JSB::MakeNumber(_areas[f].percent(), perc_str.c_str());
                 if (min.has_value() == true) jsb << JSB::MakeNumber(min.value(), min_str.c_str());
                 if (max.has_value() == true) jsb << JSB::MakeNumber(max.value(), max_str.c_str());
@@ -3038,7 +3013,7 @@ bool Chart::set_area_size(int area1, int area2, int area3, int area4, int area5)
         (area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
         (area1 == 0 || (area1 >= 10 && area1 <= 100)) &&
         area1 + area2 + area3 + area4 + area5 == 100) {
-    
+
         _areas[0].set_percent(area1);
         _areas[1].set_percent(area2);
         _areas[2].set_percent(area3);
@@ -3185,7 +3160,7 @@ void Chart::setup_clamp(bool min) {
     if (_area == nullptr) {
         return;
     }
-    
+
     auto num    = static_cast<int>(_area->num()) + 1;
     auto clamp  = (min == true) ? _area->clamp_min() : _area->clamp_max();
     auto input  = (clamp.has_value() == true) ? util::format("%f", clamp.value()) : "inf";
@@ -3195,9 +3170,9 @@ void Chart::setup_clamp(bool min) {
     if (output == "") {
         return;
     }
-    
+
     auto value = util::to_double(output);
-    
+
     if (min == true) {
         _area->set_min_clamp(value);
     }
@@ -3321,6 +3296,15 @@ void Chart::setup_show_or_hide_lines() {
 }
 
 //------------------------------------------------------------------------------
+void Chart::setup_view_options() {
+    _view.labels     = menu::item_value(_menu, _CHART_SHOW_LABELS);
+    _view.vertical   = menu::item_value(_menu, _CHART_SHOW_VLINES);
+    _view.horizontal = menu::item_value(_menu, _CHART_SHOW_HLINES);
+    
+    redraw();
+}
+
+//------------------------------------------------------------------------------
 void Chart::setup_ywidth() {
     auto width = static_cast<double>(_margin);
 
@@ -3337,7 +3321,7 @@ void Chart::_show_menu() {
     if (_disable_menu == true) {
         return;
     }
-    
+
     menu::enable_item(_menu, _CHART_ADD_CSV, false);
     menu::enable_item(_menu, _CHART_ADD_LINE, false);
     menu::enable_item(_menu, _CHART_SAVE_CSV, false);
