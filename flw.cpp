@@ -1036,7 +1036,7 @@ void Chart::_calc_area_height() {
     auto last   = 0;
     auto addh   = 0;
     auto height = 0;
-    _top_space    = (_label == "") ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FIXED_FONTSIZE * 3;
+    _top_space    = (_label == "") ? flw::PREF_FONTSIZE : flw::PREF_FONTSIZE * 3;
     _bottom_space = flw::PREF_FIXED_FONTSIZE * 3 + Fl::scrollbar_size();
     height        = h() - (_bottom_space + _top_space);
     for (size_t f = 1; f <= static_cast<size_t>(ChartArea::NUM::LAST); f++) {
@@ -1063,8 +1063,7 @@ void Chart::_calc_area_height() {
 }
 void Chart::_calc_area_width() {
     const double width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
-    _ticks     = static_cast<int>(width / _tick_width);
-    _top_space = flw::PREF_FIXED_FONTSIZE;
+    _ticks = static_cast<int>(width / _tick_width);
     if (static_cast<int>(_dates.size()) > _ticks) {
         const double slider_size = _ticks / (_dates.size() + 1.0);
         _scroll->activate();
@@ -1444,7 +1443,7 @@ void Chart::_create_tooltip(bool ctrl) {
                 }
                 const size_t len = (left.length() > right.length()) ? left.length() : right.length();
                 if (left != "" && right != "") {
-                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n \n ", fancy_date.c_str(), static_cast<int>(len), left.c_str(), static_cast<int>(len), right.c_str());
+                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n ", fancy_date.c_str(), static_cast<int>(len), left.c_str(), static_cast<int>(len), right.c_str());
                 }
                 else if (left != "") {
                     _tooltip = util::format("%s\nleft: %*s\n \n ", fancy_date.c_str(), static_cast<int>(len), left.c_str());
@@ -1579,8 +1578,8 @@ void Chart::_draw_label() {
         return;
     }
     fl_color(FL_FOREGROUND_COLOR);
-    fl_font(flw::PREF_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
-    fl_draw(_label.c_str(), x(), y() + flw::PREF_FIXED_FONTSIZE, w(), _top_space, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+    fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE * 1.5);
+    fl_draw(_label.c_str(), x(), y(), w(), _top_space, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 }
 void Chart::_draw_line(const ChartLine& line, const ChartScale& scale, int X, const int Y, const int W, const int H) {
     if (line.size() > 0 && line.is_visible() == true && scale.diff() > 0.0) {
@@ -1737,10 +1736,10 @@ void Chart::_draw_tooltip() {
     if (_tooltip == "" || _area == nullptr) {
         return;
     }
-    int       X = Fl::event_x();
-    int       Y = Fl::event_y();
-    const int W = 14;
-    const int H = 5;
+    int X = Fl::event_x();
+    int Y = Fl::event_y();
+    int W = 14;
+    int H = 5;
     if (X > _area->x2() - flw::PREF_FIXED_FONTSIZE * (W + 5)) {
         X -= flw::PREF_FIXED_FONTSIZE * (W + 4);
     }
@@ -1753,14 +1752,15 @@ void Chart::_draw_tooltip() {
     else {
         Y += flw::PREF_FIXED_FONTSIZE * 2;
     }
+    W += 2;
     fl_color(FL_BACKGROUND2_COLOR);
-    fl_rectf(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
+    fl_rectf(X, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H);
     fl_color(FL_FOREGROUND_COLOR);
-    fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * (W + 2), flw::PREF_FIXED_FONTSIZE * H);
+    fl_rect(X, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H);
     fl_line(Fl::event_x(), y() + _area->y(), Fl::event_x(), y() + _area->y() + _area->h());
     fl_line(x() + _area->x(), Fl::event_y(), x() + _area->x() + _area->w(), Fl::event_y());
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    fl_draw(_tooltip.c_str(), X + flw::PREF_FIXED_FONTSIZE, Y, flw::PREF_FIXED_FONTSIZE * W, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+    fl_draw(_tooltip.c_str(), X + 4, Y, flw::PREF_FIXED_FONTSIZE * W - 8, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
 }
 void Chart::_draw_ver_lines(const ChartArea& area) {
     if (_view.vertical == true) {

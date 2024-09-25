@@ -1,10 +1,11 @@
 # flw (fast light widgets)
 
 flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
-The flw library has been tested on Windows 10 + msys2, Linux Mint 21.3 & Xubuntu 22.04 (intel).
+The flw library has been tested on Windows 10 using msys2 compiler tools and Xubuntu 24.04.
 Earlier versions have been compiled successfully on a Raspberry Pi 4.
 It might work on macOS with some tweaks.
-They are compiled with C++17 flag and all widgets are in the namespace flw.
+The source are using C++17 features and all widgets are in the namespace flw.
+FLTK must be compiled with --enable-use_std flag.
 The source will NOT compile with Microsoft Visual Studio.
 The API is not stable and may change from time to time.
 

@@ -5,6 +5,7 @@
 
 #ifndef FLW_AMALGAM
     #include "chart.h"
+    #include "dlg.h"
 #endif
 
 #include <assert.h>
@@ -87,7 +88,8 @@ public:
         mb->add("&Test/save", 0, CallbackSave, this);
         mb->add("&Test/Load", 0, CallbackLoad, this, FL_MENU_DIVIDER);
         mb->add("&Test/srand(time)", 0, CallbackTest, this, FL_MENU_RADIO);
-        mb->add("&Test/srand(666)", 0, CallbackTest, this, FL_MENU_RADIO | FL_MENU_DIVIDER);
+        mb->add("&Test/srand(666)", 0, CallbackTest, this, FL_MENU_RADIO);
+        mb->add("&Test/Theme...", 0, CallbackTheme, this, FL_MENU_DIVIDER);
         mb->add("&Test/All Days (LINE)", 0, CallbackTest, this);
         mb->add("&Test/Step (LINE)", 0, CallbackTest, this);
         mb->add("&Test/10 Colors (LINE)", 0, CallbackTest, this, FL_MENU_DIVIDER);
@@ -197,6 +199,19 @@ public:
         else                                                                                       TEST = DATA_NONE;
 
         create_chart(self);
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTheme(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        dlg::theme(true, true);
+        self->mb->labelfont(flw::PREF_FONT);
+        self->mb->labelsize(flw::PREF_FONTSIZE);
+        self->mb->textfont(flw::PREF_FONT);
+        self->mb->textsize(flw::PREF_FONTSIZE);
+        self->chart->do_layout();
+        self->resize(self->x(), self->y(), self->w(), self->h());
+        Fl::redraw();
     }
 };
 
