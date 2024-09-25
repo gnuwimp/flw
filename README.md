@@ -9,7 +9,7 @@ FLTK must be compiled with --enable-use_std flag.
 The source will NOT compile with Microsoft Visual Studio.
 The API is not stable and may change from time to time.
 
-Use then amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
+Use the amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
 The source files in the src/ directory are intended for development of flw.
 
 Most widgets are released under the [GNU General Public License v3.0](LICENSE).
