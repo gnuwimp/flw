@@ -359,14 +359,16 @@ private:
 //
 class Chart : public Fl_Group {
 public:
-    static const int            MIN_AREA_SIZE =   10;
-    static const int            MIN_MARGIN    =    3;
-    static const int            DEF_MARGIN    =    6;
-    static const int            MAX_MARGIN    =   20;
-    static const int            MIN_TICK      =    3;
-    static const int            MAX_TICK      = ChartLine::MAX_WIDTH * 2;
-    static const int            VERSION       =    4;
-    static const size_t         MAX_VLINES    = 1400;
+    static int                  LABEL_TICK_SIZE; // Default 4 pixels.
+
+    static const int            MIN_AREA_SIZE   =   10;
+    static const int            MIN_MARGIN      =    3;
+    static const int            DEF_MARGIN      =    6;
+    static const int            MAX_MARGIN      =   20;
+    static const int            MIN_TICK        =    3;
+    static const int            MAX_TICK        = ChartLine::MAX_WIDTH * 2;
+    static const int            VERSION         =    4;
+    static const size_t         MAX_VLINES      = 1400;
 
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        block_dates(const ChartDataVector& block_dates)
@@ -457,7 +459,6 @@ private:
     bool                        _disable_menu;
     bool                        _printing;              // Used when printing.
     int                         _bottom_space;
-    int                         _cw;                    // Character width in pixels.
     int                         _date_start;            // Index in _dates vector for first date to display, changed by the scrollbar.
     int                         _margin;                // The number of characters if y values should be displayed.
     int                         _margin_left;           // Number of characters for the y values.

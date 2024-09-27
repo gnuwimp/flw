@@ -57,6 +57,8 @@ static const char* const _CHART_SHOW_HLINES     = "Show horizontal lines";
 static const char* const _CHART_SHOW_LABELS     = "Show line labels";
 static const char* const _CHART_SHOW_VLINES     = "Show vertical lines";
 
+int Chart::LABEL_TICK_SIZE = 4;
+
 //------------------------------------------------------------------------------
 static int _chart_count_decimals(double number) {
     number = fabs(number);
@@ -1075,13 +1077,13 @@ public:
 
         _align->add("Left");
         _align->add("Right");
-        _align->textfont(flw::PREF_FIXED_FONT);
+        _align->textfont(flw::PREF_FONT);
         _align->textsize(flw::PREF_FONTSIZE);
         _cancel->callback(ChartLineSetup::Callback, this);
         _close->callback(ChartLineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
         _color->callback(ChartLineSetup::Callback, this);
-        _label->textfont(flw::PREF_FIXED_FONT);
+        _label->textfont(flw::PREF_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
         _type->add("Line");
         _type->add("Dotted Line");
@@ -1090,7 +1092,7 @@ public:
         _type->add("Bar hlc");
         _type->add("Horizontal");
         _type->add("Expand Horizontal");
-        _type->textfont(flw::PREF_FIXED_FONT);
+        _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
         _width->callback(ChartLineSetup::Callback, this);
@@ -1392,7 +1394,7 @@ void Chart::_calc_area_height() {
     auto addh   = 0;
     auto height = 0;
 
-    _top_space    = (_label == "") ? flw::PREF_FONTSIZE : flw::PREF_FONTSIZE * 3;
+    _top_space    = (_label == "") ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FIXED_FONTSIZE * 3;
     _bottom_space = flw::PREF_FIXED_FONTSIZE * 3 + Fl::scrollbar_size();
     height        = h() - (_bottom_space + _top_space);
 
@@ -1653,7 +1655,6 @@ void Chart::clear() {
 
     _area         = nullptr;
     _bottom_space = 0;
-    _cw           = 0;
     _date_start   = 0;
     _label        = "";
     _old          = Fl_Rect();
@@ -1975,7 +1976,6 @@ void Chart::debug() const {
     printf("Chart:\n");
     printf("\tblock_dates:     %19d\n", (int) _block_dates.size());
     printf("\tbottom_space:    %19d\n", _bottom_space);
-    printf("\tcw:              %19d\n", _cw);
     printf("\tdate_end:        %19d\n", _date_start + _ticks);
     printf("\tdate_format:     %19d\n", (int) _date_format);
     printf("\tdate_range:      %19d\n", (int) _date_range);
@@ -2032,9 +2032,6 @@ void Chart::draw() {
         Fl_Group::draw();
     }
 
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-    _cw = fl_width("X");
-
     if (w() < 50 || h() < 50) {
         return;
     }
@@ -2084,7 +2081,7 @@ void Chart::_draw_label() {
     }
 
     fl_color(FL_FOREGROUND_COLOR);
-    fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE * 1.5);
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE * 1.5);
     fl_draw(_label.c_str(), x(), y(), w(), _top_space, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 }
 
@@ -2192,6 +2189,8 @@ void Chart::_draw_line_labels(const ChartArea& area) {
         return;
     }
 
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+
     int       left_h  = 0;
     int       left_w  = 0;
     const int left_x  = x() + area.x() + 6;
@@ -2202,8 +2201,6 @@ void Chart::_draw_line_labels(const ChartArea& area) {
     int       right_y = left_y;
     size_t    c       = 0;
     
-    fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-
     for (const auto& line : area.lines()) { // Calc max width of line labels.
         int  ws    = 0;
         int  hs    = 0;
@@ -2227,13 +2224,13 @@ void Chart::_draw_line_labels(const ChartArea& area) {
         }
     }
 
-    left_h  *= flw::PREF_FONTSIZE;
+    left_h  *= flw::PREF_FIXED_FONTSIZE;
     left_h  += 8;
-    right_h *= flw::PREF_FONTSIZE;
+    right_h *= flw::PREF_FIXED_FONTSIZE;
     right_h += 8;
 
     if (left_w > 0) { // Draw left box.
-        left_w += flw::PREF_FONTSIZE;
+        left_w += flw::PREF_FIXED_FONTSIZE;
         fl_color(FL_BACKGROUND2_COLOR);
         fl_rectf(left_x, left_y, left_w, left_h);
 
@@ -2242,7 +2239,7 @@ void Chart::_draw_line_labels(const ChartArea& area) {
     }
 
     if (right_w > 0) { // Draw right box.
-        right_w += flw::PREF_FONTSIZE;
+        right_w += flw::PREF_FIXED_FONTSIZE;
         fl_color(FL_BACKGROUND2_COLOR);
         fl_rectf(right_x - right_w, left_y, right_w, right_h);
 
@@ -2259,14 +2256,14 @@ void Chart::_draw_line_labels(const ChartArea& area) {
             fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
 
             if (line.align() == FL_ALIGN_LEFT) {
-                fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w - 8, flw::PREF_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
-                const_cast<ChartLine*>(&line)->set_label_rect(left_x, left_y + 4, left_w, flw::PREF_FONTSIZE);
-                left_y += flw::PREF_FONTSIZE;
+                fl_draw(label.c_str(), left_x + 4, left_y + 4, left_w - 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+                const_cast<ChartLine*>(&line)->set_label_rect(left_x, left_y + 4, left_w, flw::PREF_FIXED_FONTSIZE);
+                left_y += flw::PREF_FIXED_FONTSIZE;
             }
             else {
-                fl_draw(label.c_str(), right_x - right_w + 4, right_y + 4, right_w - 8, flw::PREF_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
-                const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w, right_y + 4, right_w, flw::PREF_FONTSIZE);
-                right_y += flw::PREF_FONTSIZE;
+                fl_draw(label.c_str(), right_x - right_w + 4, right_y + 4, right_w - 8, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_CLIP);
+                const_cast<ChartLine*>(&line)->set_label_rect(right_x - right_w, right_y + 4, right_w, flw::PREF_FIXED_FONTSIZE);
+                right_y += flw::PREF_FIXED_FONTSIZE;
             }
         }
     }
@@ -2277,6 +2274,8 @@ void Chart::_draw_tooltip() {
     if (_tooltip == "" || _area == nullptr) {
         return;
     }
+
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
 
     int X = Fl::event_x();
     int Y = Fl::event_y();
@@ -2308,7 +2307,6 @@ void Chart::_draw_tooltip() {
     fl_line(Fl::event_x(), y() + _area->y(), Fl::event_x(), y() + _area->y() + _area->h());
     fl_line(x() + _area->x(), Fl::event_y(), x() + _area->x() + _area->w(), Fl::event_y());
 
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     fl_draw(_tooltip.c_str(), X + 4, Y, flw::PREF_FIXED_FONTSIZE * W - 8, flw::PREF_FIXED_FONTSIZE * H, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
 }
 
@@ -2333,10 +2331,14 @@ void Chart::_draw_ver_lines(const ChartArea& area) {
 // And also save x pos for vertical lines.
 //
 void Chart::_draw_xlabels() {
+    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+    fl_color(labelcolor());
+
+    const int  cw      = fl_width("X");
+    const int  cw2     = cw * 2;
+    const int  cw2_2   = cw2 + 2;
+    const int  cw4     = cw * 4;
     const int  stop    = _date_start + _ticks;
-    const int  cw2     = _cw * 2;
-    const int  cw4     = _cw * 4;
-    const int  fs05    = flw::PREF_FIXED_FONTSIZE * 0.5;
     const int  Y       = y() + (h() - _bottom_space);
     int        start   = _date_start;
     int        count_v = 0;
@@ -2353,26 +2355,25 @@ void Chart::_draw_xlabels() {
         const Date       date = Date::FromString(data.date.c_str());
         bool             addv = false;
 
-        fl_color(labelcolor());
-        fl_line(X1, Y, X1, Y + fs05);
+        fl_line(X1, Y, X1, Y + Chart::LABEL_TICK_SIZE);
 
         *buffer1 = 0;
         *buffer2 = 0;
 
-        if (_date_range == ChartData::RANGE::HOUR) {
-            if (date.day() != last) {
+        if (_date_range == ChartData::RANGE::SEC) {
+            if (date.minute() != last) {
                 addv = true;
-                last = date.day();
+                last = date.minute();
 
                 if (X1 >= X2) {
-                    snprintf(buffer1, 100, "%04d-%02d-%02d", date.year(), date.month(), date.day());
+                    snprintf(buffer1, 100, "%04d-%02d-%02d/%02d:%02d", date.year(), date.month(), date.day(), date.hour(), date.minute());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
+                    *buffer1 = 1;
                 }
             }
             else {
-                snprintf(buffer2, 100, "%02d", date.hour());
+                snprintf(buffer2, 100, "%02d", date.second());
             }
         }
         else if (_date_range == flw::ChartData::RANGE::MIN) {
@@ -2384,27 +2385,27 @@ void Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d-%02d/%02d", date.year(), date.month(), date.day(), date.hour());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
+                    *buffer1 = 1;
                 }
             }
             else {
                 snprintf(buffer2, 100, "%02d", date.minute());
             }
         }
-        else if (_date_range == ChartData::RANGE::SEC) {
-            if (date.minute() != last) {
+        else if (_date_range == ChartData::RANGE::HOUR) {
+            if (date.day() != last) {
                 addv = true;
-                last = date.minute();
+                last = date.day();
 
                 if (X1 >= X2) {
-                    snprintf(buffer1, 100, "%04d-%02d-%02d/%02d:%02d", date.year(), date.month(), date.day(), date.hour(), date.minute());
+                    snprintf(buffer1, 100, "%04d-%02d-%02d", date.year(), date.month(), date.day());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
+                    *buffer1 = 1;
                 }
             }
             else {
-                snprintf(buffer2, 100, "%02d", date.second());
+                snprintf(buffer2, 100, "%02d", date.hour());
             }
         }
         else if (_date_range == ChartData::RANGE::DAY || _date_range == ChartData::RANGE::WEEKDAY) {
@@ -2416,7 +2417,7 @@ void Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d", date.year(), date.month());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
+                    *buffer1 = 1;
                 }
             }
             else {
@@ -2432,11 +2433,12 @@ void Chart::_draw_xlabels() {
                     snprintf(buffer1, 100, "%04d-%02d/%02d", date.year(), date.month(), date.week());
                 }
                 else {
-                    fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
+                    *buffer1 = 1;
                 }
             }
-            else
+            else {
                 snprintf(buffer2, 100, "%02d", date.week());
+            }
         }
         else if (_date_range == ChartData::RANGE::MONTH) {
             if (date.month() != last) {
@@ -2452,19 +2454,20 @@ void Chart::_draw_xlabels() {
             }
         }
 
-        if (*buffer1 != 0) {
-            auto len  = static_cast<double>(strlen(buffer1));
-            auto half = static_cast<double>((len / 2.0) * _cw);
+        if (*buffer1 == 1) { // To little space for label so draw line only.
+            fl_line(X1, Y, X1, Y + Chart::LABEL_TICK_SIZE * 3);
+        }
+        else if (*buffer1 != 0) {
+            auto len    = static_cast<double>(strlen(buffer1));
+            auto adjust = static_cast<double>((len / 2.0) * cw);
 
-            fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-            fl_draw(buffer1, X1 - half, Y + flw::PREF_FIXED_FONTSIZE + 6, half + half, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-            fl_line(X1, Y, X1, Y + flw::PREF_FIXED_FONTSIZE);
-            X2 = X1 + _cw + half + half;
+            fl_line(X1, Y, X1, Y + Chart::LABEL_TICK_SIZE * 3);
+            fl_draw(buffer1, X1 - adjust, Y + flw::PREF_FIXED_FONTSIZE + 6, adjust * 2, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            X2 = X1 + adjust * 2 + cw;
         }
 
-        if (*buffer2 != 0 && cw2 <= _tick_width) { // Draw second x label
-            fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE - 2);
-            fl_draw(buffer2, X1 - cw2, Y + fs05, cw4, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+        if (*buffer2 != 0 && cw2_2 < _tick_width) { // Draw second x label (week/day/minute/second).
+            fl_draw(buffer2, X1 - cw2, Y + Chart::LABEL_TICK_SIZE, cw4, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
         }
 
         if (addv == true && count_v < static_cast<int>(Chart::MAX_VLINES - 1)) { // Save x pos for vertical lines.
@@ -2484,43 +2487,45 @@ void Chart::_draw_ylabels(const int X, double Y1, const double Y2, const ChartSc
         return;
     }
 
-    const double yinc  = (scale.pixel() * scale.tick());
-    const double fs05  = flw::PREF_FIXED_FONTSIZE * 0.5;
-    const double fr    = flw::_chart_count_decimals(scale.tick());
-    int          width = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
-    double       ylast = INFINITY;
-    double       yval  = scale.min().value();
-
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
+
+    const double yinc    = (scale.pixel() * scale.tick());
+    const double fr      = flw::_chart_count_decimals(scale.tick());
+    const int    half_fs = flw::PREF_FIXED_FONTSIZE / 2;
+    const int    left_w  = (_margin_left * flw::PREF_FIXED_FONTSIZE) - (Chart::LABEL_TICK_SIZE * 2);
+    const int    right_w = (_margin_right * flw::PREF_FIXED_FONTSIZE) - (Chart::LABEL_TICK_SIZE * 2);
+    int          width   = w() - (_margin_left * flw::PREF_FIXED_FONTSIZE + _margin_right * flw::PREF_FIXED_FONTSIZE);
+    double       ylast   = INFINITY;
+    double       yval    = scale.min().value();
 
     while (static_cast<int>(Y1 + 0.5) >= static_cast<int>(Y2)) {
         if (std::isfinite(ylast) == false || ylast > Y1) {
-            double  y1  = y() + Y1;
-            double  x1  = x() + X;
+            auto y1     = static_cast<int>(y() + Y1);
+            auto x1     = static_cast<int>(x() + X);
             auto string = flw::_chart_format_double(yval, fr, '\'');
 
             if (left == true) {
                 fl_color(labelcolor());
-                fl_line(static_cast<int>(x1 - fs05), static_cast<int>(y1), static_cast<int>(x1), static_cast<int>(y1));
-                fl_draw(string.c_str(), x(), static_cast<int>(y1 - fs05), _margin_left * flw::PREF_FIXED_FONTSIZE - flw::PREF_FIXED_FONTSIZE, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+                fl_line(x1 - Chart::LABEL_TICK_SIZE, y1, x1, y1);
+                fl_draw(string.c_str(), x(), y1 - half_fs, left_w, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
 
-                if (_view.horizontal == true && static_cast<int>(Y1) >= static_cast<int>(Y2 + fs05)) {
+                if (_view.horizontal == true) {
                     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-                    fl_line(static_cast<int>(x1 + 1.0), static_cast<int>(y1), static_cast<int>(x1 + width - 1.0), static_cast<int>(y1));
+                    fl_line(x1 + 1, y1, x1 + width - 1, y1);
                 }
             }
             else {
                 fl_color(labelcolor());
-                fl_line(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x1 + fs05), static_cast<int>(y1));
-                fl_draw(string.c_str(), static_cast<int>(x1 + flw::PREF_FIXED_FONTSIZE), static_cast<int>(y1 - fs05), _margin_right * flw::PREF_FIXED_FONTSIZE - (flw::PREF_FIXED_FONTSIZE * 2), flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                fl_line(x1, y1, x1 + Chart::LABEL_TICK_SIZE, y1);
+                fl_draw(string.c_str(), x1 + Chart::LABEL_TICK_SIZE * 2, y1 - half_fs, right_w, flw::PREF_FIXED_FONTSIZE, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
 
-                if (_view.horizontal == true && static_cast<int>(Y1) >= static_cast<int>(Y2 + fs05)) {
+                if (_view.horizontal == true) {
                     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
-                    fl_line(static_cast<int>(x1 - width + 1.0), static_cast<int>(y1), static_cast<int>(x1 - 1.0), static_cast<int>(y1));
+                    fl_line(x1 - width + 1, y1, x1 - 1, y1);
                 }
             }
 
-            ylast = Y1 - (flw::PREF_FIXED_FONTSIZE + fs05);
+            ylast = Y1 - (flw::PREF_FIXED_FONTSIZE + Chart::LABEL_TICK_SIZE);
         }
 
         Y1   -= yinc;
@@ -2642,8 +2647,6 @@ void Chart::init(bool calc_dates) {
 #ifdef DEBUG
 //     auto t = util::milliseconds();
 #endif
-    fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
-
     if (calc_dates == true) {
         WaitCursor wc;
         _calc_dates();
