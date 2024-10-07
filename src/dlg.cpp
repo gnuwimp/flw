@@ -1678,6 +1678,8 @@ public:
                 flw::PREF_FONT     = fd.font();
                 flw::PREF_FONTSIZE = fd.fontsize();
                 flw::PREF_FONTNAME = fd.fontname();
+                Fl_Tooltip::font(flw::PREF_FONT);
+                Fl_Tooltip::size(flw::PREF_FONTSIZE);
 
                 if (self->_fixedfont->active() == 0) {
                     flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;

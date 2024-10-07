@@ -95,6 +95,7 @@ namespace util {
     std::string                 format_int(int64_t num, char del = ' ');
     bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
+    int64_t                     microseconds();
     int32_t                     milliseconds();
     bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);

@@ -467,7 +467,28 @@ void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
 }
 
 //------------------------------------------------------------------------------
-// Return time stamp
+// Return time stamp.
+//
+int64_t util::microseconds() {
+#if defined(_WIN32)
+    LARGE_INTEGER StartingTime;
+    LARGE_INTEGER Frequency;
+
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
+
+    StartingTime.QuadPart *= 1000000;
+    StartingTime.QuadPart /= Frequency.QuadPart;
+    return StartingTime.QuadPart;
+#else
+    timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (t.tv_sec * 1000000 + t.tv_nsec / 1000);
+#endif
+}
+
+//------------------------------------------------------------------------------
+// Return time stamp.
 //
 int32_t util::milliseconds() {
 #if defined(_WIN32)

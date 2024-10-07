@@ -604,6 +604,12 @@ std::string Date::format(Date::FORMAT format) const {
     else if (format == Date::FORMAT::NAME_LONG) {
         n = snprintf(tmp, 100, "%04d %s %d", _year, month_name(), _day);
     }
+    else if (format == Date::FORMAT::NAME_TIME) {
+        n = snprintf(tmp, 100, "%04d %s %d - %02d%02d%02d", _year, month_name_short(), _day, _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::NAME_TIME_LONG) {
+        n = snprintf(tmp, 100, "%04d %s %d - %02d:%02d:%02d", _year, month_name(), _day, _hour, _min, _sec);
+    }
     else if (format == Date::FORMAT::YEAR_MONTH) {
         n = snprintf(tmp, 100, "%04d %s", _year, month_name_short());
     }
@@ -615,6 +621,12 @@ std::string Date::format(Date::FORMAT format) const {
     }
     else if (format == Date::FORMAT::ISO_TIME_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::TIME_LONG) {
+        n = snprintf(tmp, 100, "%02d:%02d:%02d", _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::TIME) {
+        n = snprintf(tmp, 100, "%02d%02d%02d", _hour, _min, _sec);
     }
     else { // Date::FORMAT::ISO
         n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);

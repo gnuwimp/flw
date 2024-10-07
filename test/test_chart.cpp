@@ -6,6 +6,7 @@
 #ifndef FLW_AMALGAM
     #include "chart.h"
     #include "dlg.h"
+    #include "json.h"
 #endif
 
 #include <assert.h>
@@ -18,260 +19,46 @@
 
 using namespace flw;
 
-class Test;
+#define TEST_RANGE_DAY          "All days (Range::DAY)"
+#define TEST_RANGE_WEEKDAY      "Weekdays (RANGE::WEEKDAY)"
+#define TEST_RANGE_FRIDAY       "Fridays (RANGE::FRIDAY)"
+#define TEST_RANGE_SUNDAY       "Sundays (RANGE::SUNDAY)"
+#define TEST_RANGE_MONTH        "Months (RANGE::MONTH)"
+#define TEST_RANGE_HOUR         "Hour (Range::HOUR)"
+#define TEST_RANGE_MIN          "Minutes (Range::MIN)"
+#define TEST_RANGE_SEC          "Seconds (Range::SEC)"
 
-enum {
-    DATA_NONE,
-    DATA_LEFT_ALL,
-    DATA_LEFT_STEP,
-    DATA_RIGHT_10,
-    DATA_LEFT_WEEKDAY,
-    DATA_LEFT_FRIDAY,
-    DATA_LEFT_SUNDAY,
-    DATA_LEFT_MONTH,
-    DATA_LEFT_SMALL_VALUE,
-    DATA_LEFT_SMALL_VALUE2,
-    DATA_LEFT_SMALL_VALUE3,
-    DATA_LEFT_LARGE_VALUE,
-    DATA_LEFT_LARGE_VALUE2,
-    DATA_LEFT_LARGE_DATASET,
-    DATA_RIGHT_ALL,
-    DATA_RIGHT_SMALL_VALUE,
-    DATA_LEFT_RIGHT_ALL,
-    DATA_REF_ALL,
-    DATA_REF_ALL_BLOCK,
-    DATA_REF_FRIDAY,
-    DATA_REF_SUNDAY,
-    DATA_REF_MONTH,
-    DATA_AREA2,
-    DATA_AREA3,
-    DATA_AREA4,
-    DATA_AREA5,
-    DATA_HOUR,
-    DATA_MIN,
-    DATA_SEC,
-    DATA_LAST,
-};
+#define TEST_SMALL_VALUE1       "Small values 1"
+#define TEST_SMALL_VALUE2       "Small values 2"
+#define TEST_SMALL_VALUE3       "Small values 3"
 
-int TEST = DATA_LEFT_ALL;
-int RAND = 0;
+#define TEST_LARGE_VALUE1       "Large values 1"
+#define TEST_LARGE_VALUE2       "Large values 2"
+#define TEST_LARGE_VALUE3       "Large dataset"
 
-void callback_timer(void* data);
-void create_chart(Test* self);
-void test1(Chart* chart, const char* main_label, const char* label, double start, double change, ChartData::RANGE range, ChartLine::TYPE type, Fl_Align align, int tick, int width, double min = INFINITY, double max = INFINITY, double divide = 0.0);
-void test2(Chart* chart);
-void test3(Chart* chart, const char* label, const ChartData::RANGE range, bool block = false);
-void test4(Chart* chart);
-void test5(Chart* chart, const char* main_label, int count);
-void test6(Chart* chart, ChartData::RANGE range);
-void test7(Chart* chart);
-void test8(Chart* chart);
-void test9(Chart* chart);
+#define TEST_RIGHT_10           "Right 10 lines"
+#define TEST_RIGHT_NEG          "Right negative values"
+#define TEST_RIGHT_SMALL        "Right small"
+#define TEST_RIGHT_STEP         "Right + block"
+#define TEST_RIGHT_LEFT         "Right and left"
 
-//------------------------------------------------------------------------------
-class Test : public Fl_Double_Window {
-public:
-    Fl_Menu_Bar* mb;
-    Chart*       chart;
+#define TEST_REF_ALL            "Ref all"
+#define TEST_REF_ALL_BLOCK      "Ref all + block"
+#define TEST_REF_FRIDAY         "Ref friday"
+#define TEST_REF_SUNDAY         "Ref sunday"
+#define TEST_REF_MONTH          "Ref month"
 
-    //--------------------------------------------------------------------------
-    Test(int W, int H) : Fl_Double_Window(W, H, "test_chart.cpp") {
-        end();
+#define TEST_AREA2              "2 chart areas"
+#define TEST_AREA3              "3 chart areas"
+#define TEST_AREA4              "4 chart areas"
+#define TEST_AREA5              "5 chart areas"
 
-        mb    = new Fl_Menu_Bar(0, 0, 0, 0);
-        chart = new Chart();
+#define TEST_EMPTY              "Empty"
+#define TEST_FIRST              TEST_RANGE_DAY
+#define TEST_LAST               TEST_EMPTY
 
-        add(mb);
-        add(chart);
-
-        mb->add("&Test/Autorun", 0, CallbackAuto, this, FL_MENU_DIVIDER);
-        mb->add("&Test/save", 0, CallbackSave, this);
-        mb->add("&Test/Load", 0, CallbackLoad, this, FL_MENU_DIVIDER);
-        mb->add("&Test/srand(time)", 0, CallbackTest, this, FL_MENU_RADIO);
-        mb->add("&Test/srand(666)", 0, CallbackTest, this, FL_MENU_RADIO);
-        mb->add("&Test/Theme...", 0, CallbackTheme, this, FL_MENU_DIVIDER);
-        mb->add("&Test/All Days (LINE)", 0, CallbackTest, this);
-        mb->add("&Test/Step (LINE)", 0, CallbackTest, this);
-        mb->add("&Test/10 Colors (LINE)", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/Weekdays (BAR)", 0, CallbackTest, this);
-        mb->add("&Test/Fridays (BAR_CLAMP)", 0, CallbackTest, this);
-        mb->add("&Test/Sundays (BAR_CLAMP)", 0, CallbackTest, this);
-        mb->add("&Test/Month", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/Very Small Values (LINE)", 0, CallbackTest, this);
-        mb->add("&Test/Small Values With Expandable Width (BAR)", 0, CallbackTest, this);
-        mb->add("&Test/Small Values (HORIZONTAL)", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/Large Values (BAR_HLC)", 0, CallbackTest, this);
-        mb->add("&Test/Large Values With Expandable Width (BAR_HLC)", 0, CallbackTest, this);
-        mb->add("&Test/3 Lines With Large Dataset", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/Right Negative Values (BAR)", 0, CallbackTest, this);
-        mb->add("&Test/Right Small (LINE_DOT)", 0, CallbackTest, this);
-        mb->add("&Test/Left And Right All Days", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/Ref All (BAR_HLC)", 0, CallbackTest, this);
-        mb->add("&Test/Ref All (BAR_HLC) + Block", 0, CallbackTest, this);
-        mb->add("&Test/Ref Friday (BAR_HLC)", 0, CallbackTest, this);
-        mb->add("&Test/Ref Sunday (BAR_HLC)", 0, CallbackTest, this);
-        mb->add("&Test/Ref Month (BAR_HLC)", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/2 Chart Areas", 0, CallbackTest, this);
-        mb->add("&Test/3 Chart Areas", 0, CallbackTest, this);
-        mb->add("&Test/4 Chart Areas", 0, CallbackTest, this);
-        mb->add("&Test/5 Chart Areas", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/Hour", 0, CallbackTest, this);
-        mb->add("&Test/Minutes", 0, CallbackTest, this);
-        mb->add("&Test/Seconds", 0, CallbackTest, this, FL_MENU_DIVIDER);
-        mb->add("&Test/None", 0, CallbackTest, this);
-        mb->textfont(flw::PREF_FONT);
-        mb->textsize(flw::PREF_FONTSIZE);
-
-        menu::set_item(mb, "&Test/srand(time)", true);
-        mb->textsize(flw::PREF_FONTSIZE);
-        util::labelfont(this);
-
-        resize(0, 0, W, H);
-        create_chart(this);
-        resizable(this);
-        size_range(64, 48);
-        show();
-    }
-
-    //--------------------------------------------------------------------------
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        mb->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
-        chart->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
-//         chart->resize(100, 100, W - 200, H - 200);
-    }
-
-    //--------------------------------------------------------------------------
-    static void CallbackAuto(Fl_Widget*, void* v) {
-        auto self = static_cast<Test*>(v);
-        TEST = DATA_NONE;
-        self->mb->deactivate();
-        self->chart->disable_menu();
-        Fl::add_timeout(0.5, callback_timer, v);
-    }
-
-    //--------------------------------------------------------------------------
-    static void CallbackLoad(Fl_Widget*, void* v) {
-        auto self = static_cast<Test*>(v);
-        self->chart->load_json("chart.json");
-    }
-
-    //--------------------------------------------------------------------------
-    static void CallbackSave(Fl_Widget*, void* v) {
-        auto self = static_cast<Test*>(v);
-        self->chart->save_json("chart.json");
-    }
-
-    //--------------------------------------------------------------------------
-    static void CallbackTest(Fl_Widget*, void* v) {
-        auto self = static_cast<Test*>(v);
-
-        if (strcmp(self->mb->text(), "srand(time)") == 0)                                          RAND = 0;
-        else if (strcmp(self->mb->text(), "srand(666)") == 0)                                      RAND = 666;
-        else if (strcmp(self->mb->text(), "All Days (LINE)") == 0)                                 TEST = DATA_LEFT_ALL;
-        else if (strcmp(self->mb->text(), "Step (LINE)") == 0)                                     TEST = DATA_LEFT_STEP;
-        else if (strcmp(self->mb->text(), "10 Colors (LINE)") == 0)                                TEST = DATA_RIGHT_10;
-        else if (strcmp(self->mb->text(), "Weekdays (BAR)") == 0)                                  TEST = DATA_LEFT_WEEKDAY;
-        else if (strcmp(self->mb->text(), "Fridays (BAR_CLAMP)") == 0)                             TEST = DATA_LEFT_FRIDAY;
-        else if (strcmp(self->mb->text(), "Sundays (BAR_CLAMP)") == 0)                             TEST = DATA_LEFT_SUNDAY;
-        else if (strcmp(self->mb->text(), "Month") == 0)                                           TEST = DATA_LEFT_MONTH;
-        else if (strcmp(self->mb->text(), "Very Small Values (LINE)") == 0)                        TEST = DATA_LEFT_SMALL_VALUE;
-        else if (strcmp(self->mb->text(), "Small Values With Expandable Width (BAR)") == 0)        TEST = DATA_LEFT_SMALL_VALUE2;
-        else if (strcmp(self->mb->text(), "Small Values (HORIZONTAL)") == 0)                       TEST = DATA_LEFT_SMALL_VALUE3;
-        else if (strcmp(self->mb->text(), "Large Values (BAR_HLC)") == 0)                          TEST = DATA_LEFT_LARGE_VALUE;
-        else if (strcmp(self->mb->text(), "Large Values With Expandable Width (BAR_HLC)") == 0)    TEST = DATA_LEFT_LARGE_VALUE2;
-        else if (strcmp(self->mb->text(), "3 Lines With Large Dataset") == 0)                      TEST = DATA_LEFT_LARGE_DATASET;
-        else if (strcmp(self->mb->text(), "Right Negative Values (BAR)") == 0)                     TEST = DATA_RIGHT_ALL;
-        else if (strcmp(self->mb->text(), "Right Small (LINE_DOT)") == 0)                          TEST = DATA_RIGHT_SMALL_VALUE;
-        else if (strcmp(self->mb->text(), "Left And Right All Days") == 0)                         TEST = DATA_LEFT_RIGHT_ALL;
-        else if (strcmp(self->mb->text(), "Ref All (BAR_HLC)") == 0)                               TEST = DATA_REF_ALL;
-        else if (strcmp(self->mb->text(), "Ref All (BAR_HLC) + Block") == 0)                       TEST = DATA_REF_ALL_BLOCK;
-        else if (strcmp(self->mb->text(), "Ref Friday (BAR_HLC)") == 0)                            TEST = DATA_REF_FRIDAY;
-        else if (strcmp(self->mb->text(), "Ref Sunday (BAR_HLC)") == 0)                            TEST = DATA_REF_SUNDAY;
-        else if (strcmp(self->mb->text(), "Ref Month (BAR_HLC)") == 0)                             TEST = DATA_REF_MONTH;
-        else if (strcmp(self->mb->text(), "2 Chart Areas") == 0)                                   TEST = DATA_AREA2;
-        else if (strcmp(self->mb->text(), "3 Chart Areas") == 0)                                   TEST = DATA_AREA3;
-        else if (strcmp(self->mb->text(), "4 Chart Areas") == 0)                                   TEST = DATA_AREA4;
-        else if (strcmp(self->mb->text(), "5 Chart Areas") == 0)                                   TEST = DATA_AREA5;
-        else if (strcmp(self->mb->text(), "Hour") == 0)                                            TEST = DATA_HOUR;
-        else if (strcmp(self->mb->text(), "Minutes") == 0)                                         TEST = DATA_MIN;
-        else if (strcmp(self->mb->text(), "Seconds") == 0)                                         TEST = DATA_SEC;
-        else                                                                                       TEST = DATA_NONE;
-
-        create_chart(self);
-    }
-
-    //--------------------------------------------------------------------------
-    static void CallbackTheme(Fl_Widget*, void* v) {
-        auto self = static_cast<Test*>(v);
-        dlg::theme(true, true);
-        self->mb->labelfont(flw::PREF_FONT);
-        self->mb->labelsize(flw::PREF_FONTSIZE);
-        self->mb->textfont(flw::PREF_FONT);
-        self->mb->textsize(flw::PREF_FONTSIZE);
-        self->chart->do_layout();
-        self->resize(self->x(), self->y(), self->w(), self->h());
-        Fl::redraw();
-    }
-};
-
-//------------------------------------------------------------------------------
-void callback_timer(void* data) {
-    auto self = static_cast<Test*>(data);
-
-    TEST++;
-
-    if (TEST == DATA_LAST) {
-        Fl::remove_timeout(callback_timer, data);
-        self->mb->activate();
-        self->chart->disable_menu(false);
-        TEST = DATA_LEFT_ALL;
-    }
-    else {
-        Fl::repeat_timeout(2.0, callback_timer, data);
-    }
-
-    create_chart(self);
-}
-
-//------------------------------------------------------------------------------
-void create_chart(Test* self) {
-    if (RAND == 0) srand(time(nullptr));
-    else           srand(RAND);
-
-    self->chart->clear();
-
-    if (TEST == DATA_LEFT_ALL)                test1(self->chart, "First Test", "All Days (LINE)", 100.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 3, 2);
-    else if (TEST == DATA_LEFT_STEP)          test8(self->chart);
-    else if (TEST == DATA_RIGHT_10)           test9(self->chart);
-    else if (TEST == DATA_LEFT_WEEKDAY)       test1(self->chart, "", "Weekdays (BAR)", 100.0, 2.0, ChartData::RANGE::WEEKDAY, ChartLine::TYPE::BAR, FL_ALIGN_LEFT, 11, 6);
-    else if (TEST == DATA_LEFT_FRIDAY)        test1(self->chart, "Min and max clamp has been set", "Fridays (BAR_CLAMP)", 100.0, 1.0, ChartData::RANGE::FRIDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 5, 3, -50.0, 200.0);
-    else if (TEST == DATA_LEFT_SUNDAY)        test1(self->chart, "", "Sundays (BAR_CLAMP)", 100.0, 2.0, ChartData::RANGE::SUNDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 5, 3);
-    else if (TEST == DATA_LEFT_MONTH)         test1(self->chart, "", "Month", 100.0, 2.0, ChartData::RANGE::MONTH, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 10, 3);
-    else if (TEST == DATA_LEFT_SMALL_VALUE)   test1(self->chart, "", "Very Small Values (LINE)", 100.0, 3.0, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 5, 4, INFINITY, INFINITY, 10000000.0);
-    else if (TEST == DATA_LEFT_SMALL_VALUE2)  test1(self->chart, "", "Small Values (Expandable BAR)", 0.1, 1.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR, FL_ALIGN_LEFT, 5, 0);
-    else if (TEST == DATA_LEFT_LARGE_VALUE)   test1(self->chart, "", "Large Values (BAR_HLC)", 1000000000.0, 3.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 10, 6);
-    else if (TEST == DATA_LEFT_LARGE_VALUE2)  test1(self->chart, "", "Large Values (BAR_HLC)", 1000000000.0, 3.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 10, 0);
-    else if (TEST == DATA_LEFT_SMALL_VALUE3)  test1(self->chart, "", "Small Values (HORIZONTAL))", 0.1, 1.0, ChartData::RANGE::DAY, ChartLine::TYPE::HORIZONTAL, FL_ALIGN_LEFT, 15, 2);
-    else if (TEST == DATA_LEFT_LARGE_DATASET) test4(self->chart);
-    else if (TEST == DATA_RIGHT_ALL)          test1(self->chart, "", "Right Negative Values (BAR)", -50000.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR, FL_ALIGN_RIGHT, 3, 1);
-    else if (TEST == DATA_RIGHT_SMALL_VALUE)  test7(self->chart);
-    else if (TEST == DATA_LEFT_RIGHT_ALL)     test2(self->chart);
-    else if (TEST == DATA_REF_ALL)            test3(self->chart, "Ref Data All", ChartData::RANGE::DAY);
-    else if (TEST == DATA_REF_ALL_BLOCK)      test3(self->chart, "Ref Data All + Block", ChartData::RANGE::DAY, true);
-    else if (TEST == DATA_REF_FRIDAY)         test3(self->chart, "Ref Data Friday", ChartData::RANGE::FRIDAY);
-    else if (TEST == DATA_REF_SUNDAY)         test3(self->chart, "Ref Data Sunday", ChartData::RANGE::SUNDAY);
-    else if (TEST == DATA_REF_MONTH)          test3(self->chart, "Ref Data Month", ChartData::RANGE::MONTH);
-    else if (TEST == DATA_AREA2)              test5(self->chart, "Two Chart Areas", 2);
-    else if (TEST == DATA_AREA3)              test5(self->chart, "Three Chart Areas", 3);
-    else if (TEST == DATA_AREA4)              test5(self->chart, "Four Chart Areas", 4);
-    else if (TEST == DATA_AREA5)              test5(self->chart, "Five Chart Areas", 5);
-    else if (TEST == DATA_HOUR)               test6(self->chart, ChartData::RANGE::HOUR);
-    else if (TEST == DATA_MIN)                test6(self->chart, ChartData::RANGE::MIN);
-    else if (TEST == DATA_SEC)                test6(self->chart, ChartData::RANGE::SEC);
-
-    self->chart->take_focus();
-}
+std::string TEST = TEST_FIRST;
+int         RAND = 0;
 
 //------------------------------------------------------------------------------
 ChartDataVector create_serie1(const char* start, const char* stop, double value, double change, const ChartData::RANGE range, double divide = 0.0) {
@@ -335,15 +122,16 @@ ChartDataVector create_serie1(const char* start, const char* stop, double value,
 }
 
 //------------------------------------------------------------------------------
-ChartDataVector create_serie2(const char* start, const char* stop, double d = 1.0) {
+ChartDataVector create_serie2(const char* start, const char* stop, double num = 1.0, double add = 0.0) {
     auto res   = ChartDataVector();
     auto f     = 1.0;
     auto date1 = Date::FromString(start);
     auto date2 = Date::FromString(stop);
 
     while (date1 <= date2) {
-        res.push_back(ChartData(date1.format(Date::FORMAT::ISO_TIME), sinl(f) + d));
-        f += d;
+        res.push_back(ChartData(date1.format(Date::FORMAT::ISO_TIME), sinl(f) + num));
+        f += num;
+        num += add;
         date1.add_days(1);
     }
 
@@ -351,31 +139,17 @@ ChartDataVector create_serie2(const char* start, const char* stop, double d = 1.
 }
 
 //------------------------------------------------------------------------------
-void test1(Chart* chart, const char* main_label, const char* label, const double start, const double change, const ChartData::RANGE range, const ChartLine::TYPE type, Fl_Align align, const int tick, const int width, const double min, const double max, const double divide) {
+void test1(Chart* chart, std::string main_label, std::string label, const double start, const double change, const ChartData::RANGE range, const ChartLine::TYPE type, Fl_Align align, const int tick, const int width, double min = INFINITY, double max = INFINITY, double divide = 0.0) {
     auto vec1  = create_serie1("20010101", "20191231", start, change, range, divide);
     auto line1 = ChartLine(vec1, label, type);
 
     line1.set_align(align).set_color(color::ROYALBLUE).set_width(width);
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-
-    if (start > 100000000.0) {
-        chart->set_margin(10);
-    }
-    else if (start > 1000000.0) {
-        chart->set_margin(8);
-    }
-    else if (divide > 100.0) {
-        chart->set_margin(10);
-    }
-    else {
-        chart->set_margin(Chart::DEF_MARGIN);
-    }
-
-    chart->area(ChartArea::NUM::ONE).set_min_clamp(min);
-    chart->area(ChartArea::NUM::ONE).set_max_clamp(max);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->area(ChartArea::AREA::ONE).set_min_clamp(min);
+    chart->area(ChartArea::AREA::ONE).set_max_clamp(max);
     chart->set_date_range(range);
     chart->set_tick_width(tick);
-    chart->set_label(main_label);
+    chart->set_main_label(main_label);
     chart->init(true);
 }
 
@@ -386,26 +160,26 @@ void test2(Chart* chart) {
     auto vec3  = ChartData::Fixed(vec1, 0);
     vec1 = ChartData::Modify(vec1, ChartData::MODIFY::ADDITION, 1000);
     vec2 = ChartData::Modify(vec2, ChartData::MODIFY::ADDITION, 2000);
-    auto line1 = ChartLine(vec1, "Line Chart");
-    auto line2 = ChartLine(vec2, "Bar Chart", ChartLine::TYPE::BAR_HLC);
-    auto line3 = ChartLine(vec3, "ZERO", ChartLine::TYPE::EXPAND_HORIZONTAL);
+    auto line1 = ChartLine(vec1, "ChartLine::TYPE::LINE");
+    auto line2 = ChartLine(vec2, "ChartLine::TYPE::BAR_HLC", ChartLine::TYPE::BAR_HLC);
+    auto line3 = ChartLine(vec3, "ChartLine::TYPE::EXPAND_HORIZONTAL_FIRST", ChartLine::TYPE::EXPAND_HORIZONTAL_FIRST);
 
-    
+
     line1.set_color(color::ROYALBLUE).set_width(2);
     line2.set_align(FL_ALIGN_RIGHT).set_color(color::CRIMSON).set_width(2);
-    line3.set_color(FL_GREEN).set_width(3);
+    line3.set_color(FL_DARK_GREEN).set_width(3);
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-    chart->area(ChartArea::NUM::ONE).add_line(line2);
-    chart->area(ChartArea::NUM::ONE).add_line(line3);
-    chart->set_margin(Chart::DEF_MARGIN);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->area(ChartArea::AREA::ONE).add_line(line2);
+    chart->area(ChartArea::AREA::ONE).add_line(line3);
     chart->set_date_range(ChartData::RANGE::DAY);
+    chart->set_hor_lines(false);
     chart->set_tick_width(10);
     chart->init(true);
 }
 
 //------------------------------------------------------------------------------
-void test3(Chart* chart, const char* label, const ChartData::RANGE range, const bool block) {
+void test3(Chart* chart, std::string label, const ChartData::RANGE range, bool block = false) {
     auto vec1 = ChartDataVector();
     auto vec2 = ChartDataVector();
     auto vec3 = ChartDataVector();
@@ -427,6 +201,7 @@ void test3(Chart* chart, const char* label, const ChartData::RANGE range, const 
         vec3.push_back(ChartData("20140105"));
         vec3.push_back(ChartData("20140111"));
         vec3.push_back(ChartData("20140319"));
+        chart->set_main_label("Dates 01/05, 01/11, 03/19 has been blocked");
     }
 
     if (range == ChartData::RANGE::FRIDAY) {
@@ -443,16 +218,15 @@ void test3(Chart* chart, const char* label, const ChartData::RANGE range, const 
     }
     else {
         vec2 = vec1;
-        chart->set_tick_width(6);
+        chart->set_tick_width(8);
     }
 
-    auto line1 = ChartLine(vec2, label, ChartLine::TYPE::BAR_HLC);
-    line1.set_color(color::ROYALBLUE).set_width(6);
+    auto line1 = ChartLine(vec2, label, ChartLine::TYPE::HORIZONTAL);
+    line1.set_color(color::ROYALBLUE).set_width(8);
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(range);
-    chart->set_margin(Chart::DEF_MARGIN);
-    chart->block_dates(vec3);
+    chart->set_block_dates(vec3);
     chart->init(true);
 }
 
@@ -469,25 +243,24 @@ void test4(Chart* chart) {
     line2.set_label("18100101 - 20291231").set_type(ChartLine::TYPE::LINE).set_color(FL_GREEN).set_width(1);
     line3.set_label("18200101 - 19991231").set_type(ChartLine::TYPE::LINE).set_color(color::CRIMSON).set_width(1);
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-    chart->area(ChartArea::NUM::ONE).add_line(line2);
-    chart->area(ChartArea::NUM::ONE).add_line(line3);
-    chart->set_margin(Chart::DEF_MARGIN);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->area(ChartArea::AREA::ONE).add_line(line2);
+    chart->area(ChartArea::AREA::ONE).add_line(line3);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(3);
     chart->init(true);
 }
 
 //------------------------------------------------------------------------------
-void test5(Chart* chart, const char* main_label, const int count) {
+void test5(Chart* chart, std::string main_label, const int count) {
     auto vec1  = create_serie1("20010101", "20091231", 1000.0, 2.0, ChartData::RANGE::DAY);
     auto vec2  = create_serie1("20010201", "20091130", 1500000.0, 2.0, ChartData::RANGE::DAY);
     auto vec3  = create_serie1("20010101", "20091231", 3000000, 5.0, ChartData::RANGE::DAY);
     auto vec4  = ChartData::MovingAverage(vec3, 20);
-    auto line1 = ChartLine(vec1, "Bar HLC Chart", ChartLine::TYPE::BAR_HLC);
-    auto line2 = ChartLine(vec2, "Line Chart");
-    auto line3 = ChartLine(vec3, "Volume", ChartLine::TYPE::BAR_CLAMP);
-    auto line4 = ChartLine(vec4, "AVG");
+    auto line1 = ChartLine(vec1, "ChartLine::TYPE::BAR_HLC", ChartLine::TYPE::BAR_HLC);
+    auto line2 = ChartLine(vec2, "ChartLine::TYPE::LINE");
+    auto line3 = ChartLine(vec3, "ChartLine::TYPE::BAR_CLAMP", ChartLine::TYPE::BAR_CLAMP);
+    auto line4 = ChartLine(vec4, "Moving Average");
 
     line1.set_color(color::ROYALBLUE).set_width(3);
     line2.set_color(color::CRIMSON).set_width(3);
@@ -498,44 +271,44 @@ void test5(Chart* chart, const char* main_label, const int count) {
         line2.set_align(FL_ALIGN_RIGHT);
         line3.set_width(0);
 
-        chart->set_area_size(70, 30, 0);
-        chart->area(ChartArea::NUM::ONE).add_line(line1);
-        chart->area(ChartArea::NUM::ONE).add_line(line2);
-        chart->area(ChartArea::NUM::TWO).add_line(line3);
-        chart->area(ChartArea::NUM::TWO).add_line(line4);
-        chart->area(ChartArea::NUM::TWO).set_min_clamp(0);
+        chart->set_area_size(70, 30, 0, 0, 0);
+        chart->area(ChartArea::AREA::ONE).add_line(line1);
+        chart->area(ChartArea::AREA::ONE).add_line(line2);
+        chart->area(ChartArea::AREA::TWO).add_line(line3);
+        chart->area(ChartArea::AREA::TWO).add_line(line4);
+        chart->area(ChartArea::AREA::TWO).set_min_clamp(0);
     }
     else if (count == 3) {
         chart->set_area_size(40, 40, 20);
-        chart->area(ChartArea::NUM::ONE).add_line(line1);
-        chart->area(ChartArea::NUM::TWO).add_line(line2);
-        chart->area(ChartArea::NUM::THREE).add_line(line3);
-        chart->area(ChartArea::NUM::THREE).add_line(line4);
-        chart->area(ChartArea::NUM::THREE).set_min_clamp(0);
+        chart->area(ChartArea::AREA::ONE).add_line(line1);
+        chart->area(ChartArea::AREA::TWO).add_line(line2);
+        chart->area(ChartArea::AREA::THREE).add_line(line3);
+        chart->area(ChartArea::AREA::THREE).add_line(line4);
+        chart->area(ChartArea::AREA::THREE).set_min_clamp(0);
     }
     else if (count == 4) {
         chart->set_area_size(30, 30, 20, 20);
-        chart->area(ChartArea::NUM::ONE).add_line(line1);
-        chart->area(ChartArea::NUM::TWO).add_line(line2);
-        chart->area(ChartArea::NUM::THREE).add_line(line3);        
-        chart->area(ChartArea::NUM::FOUR).add_line(line4);
-        chart->area(ChartArea::NUM::FOUR).set_min_clamp(0);
+        chart->area(ChartArea::AREA::ONE).add_line(line1);
+        chart->area(ChartArea::AREA::TWO).add_line(line2);
+        chart->area(ChartArea::AREA::THREE).add_line(line3);
+        chart->area(ChartArea::AREA::FOUR).add_line(line4);
+        chart->area(ChartArea::AREA::FOUR).set_min_clamp(0);
     }
     else if (count == 5) {
         line4.set_align(FL_ALIGN_RIGHT);
         chart->set_area_size(20, 20, 20, 20, 20);
-        chart->area(ChartArea::NUM::ONE).add_line(line1);
-        chart->area(ChartArea::NUM::TWO).add_line(line2);
-        chart->area(ChartArea::NUM::THREE).add_line(line3);        
-        chart->area(ChartArea::NUM::FOUR).add_line(line1);
-        chart->area(ChartArea::NUM::FIVE).add_line(line4);
-        chart->area(ChartArea::NUM::FIVE).set_min_clamp(0);
+        chart->area(ChartArea::AREA::ONE).add_line(line1);
+        chart->area(ChartArea::AREA::TWO).add_line(line2);
+        chart->area(ChartArea::AREA::THREE).add_line(line3);
+        chart->area(ChartArea::AREA::FOUR).add_line(line1);
+        chart->area(ChartArea::AREA::FIVE).add_line(line4);
+        chart->area(ChartArea::AREA::FIVE).set_min_clamp(0);
     }
 
-    chart->set_margin(7);
+    chart->set_hor_lines(false);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(4);
-    chart->set_label(main_label);
+    chart->set_main_label(main_label);
     chart->init(true);
 }
 
@@ -545,21 +318,20 @@ void test6(Chart* chart, const ChartData::RANGE range) {
     auto line1 = ChartLine(vec1);
 
     if (range == ChartData::RANGE::HOUR) {
-        line1.set_label("Hours");
+        line1.set_label("ChartData::RANGE::HOUR");
     }
     else if (range == ChartData::RANGE::MIN) {
-        line1.set_label("Minutes");
+        line1.set_label("ChartData::RANGE::MIN");
     }
     else if (range == ChartData::RANGE::SEC) {
-        line1.set_label("Seconds");
+        line1.set_label("ChartData::RANGE::SEC");
     }
 
-    line1.set_type(ChartLine::TYPE::BAR_HLC).set_color(color::ROYALBLUE).set_width(4);
+    line1.set_type(ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(4);
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-    chart->set_margin(Chart::DEF_MARGIN);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(range);
-    chart->set_tick_width(8);
+    chart->set_tick_width(25);
     chart->init(true);
 }
 
@@ -582,11 +354,10 @@ void test7(Chart* chart) {
         }
     }
 
-    auto line1 = ChartLine(vec1, "Right Small (LINE_DOT)", ChartLine::TYPE::LINE_DOT);
+    auto line1 = ChartLine(vec1, "ChartLine::TYPE::LINE_DOT)", ChartLine::TYPE::LINE_DOT);
     line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(2);
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-    chart->set_margin(Chart::DEF_MARGIN);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(6);
     chart->init(true);
@@ -615,12 +386,20 @@ void test8(Chart* chart) {
         even++;
     }
 
-    auto line1 = ChartLine(vec1, "Step (LINE)", ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(4);
+    auto line1 = ChartLine(vec1, "ChartLine::TYPE::LINE + blocked dates", ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(4).set_align(FL_ALIGN_RIGHT);
+    auto vec2  = ChartDataVector();
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-    chart->set_margin(Chart::DEF_MARGIN);
+    vec2.push_back(ChartData("20010128"));
+    vec2.push_back(ChartData("20010129"));
+    vec2.push_back(ChartData("20010201"));
+    vec2.push_back(ChartData("20010202"));
+    vec2.push_back(ChartData("20010205"));
+    vec2.push_back(ChartData("20010206"));
+
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(25);
+    chart->set_block_dates(vec2);
     chart->init(true);
 }
 
@@ -636,14 +415,14 @@ void test9(Chart* chart) {
     auto vec8   = create_serie2("20010101", "20021231", 8.0);
     auto vec9   = create_serie2("20010101", "20021231", 9.0);
     auto vec10  = create_serie2("20010101", "20021231", 10.0);
-    auto line1  = ChartLine(vec1, "One");
+    auto line1  = ChartLine(vec1, "One", ChartLine::TYPE::LINE_DOT);
     auto line2  = ChartLine(vec2, "Two");
     auto line3  = ChartLine(vec3, "Three");
-    auto line4  = ChartLine(vec4, "Four");
+    auto line4  = ChartLine(vec4, "Four", ChartLine::TYPE::LINE_DOT);
     auto line5  = ChartLine(vec5, "Five");
     auto line6  = ChartLine(vec6, "Six");
     auto line7  = ChartLine(vec7, "Seven");
-    auto line8  = ChartLine(vec8, "Eight");
+    auto line8  = ChartLine(vec8, "Eight", ChartLine::TYPE::LINE_DOT);
     auto line9  = ChartLine(vec9, "Nine");
     auto line10 = ChartLine(vec10, "Ten");
     auto line11 = ChartLine(ChartLine(ChartDataVector(), "Empty"));
@@ -660,25 +439,339 @@ void test9(Chart* chart) {
     line10.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
     line11.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
 
-    chart->area(ChartArea::NUM::ONE).add_line(line1);
-    chart->area(ChartArea::NUM::ONE).add_line(line2);
-    chart->area(ChartArea::NUM::ONE).add_line(line3);
-    chart->area(ChartArea::NUM::ONE).add_line(line4);
-    chart->area(ChartArea::NUM::ONE).add_line(line5);
-    chart->area(ChartArea::NUM::ONE).add_line(line6);
-    chart->area(ChartArea::NUM::ONE).add_line(line7);
-    chart->area(ChartArea::NUM::ONE).add_line(line8);
-    chart->area(ChartArea::NUM::ONE).add_line(line9);
-    assert(chart->area(ChartArea::NUM::ONE).add_line(line10) == true);
-    assert(chart->area(ChartArea::NUM::ONE).add_line(line10) == false);
-    chart->area(ChartArea::NUM::ONE).add_line(line11);
-    chart->area(ChartArea::NUM::ONE).set_min_clamp(-1);
-    chart->area(ChartArea::NUM::ONE).set_max_clamp(12);
-    chart->set_margin(5);
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->area(ChartArea::AREA::ONE).add_line(line2);
+    chart->area(ChartArea::AREA::ONE).add_line(line3);
+    chart->area(ChartArea::AREA::ONE).add_line(line4);
+    chart->area(ChartArea::AREA::ONE).add_line(line5);
+    chart->area(ChartArea::AREA::ONE).add_line(line6);
+    chart->area(ChartArea::AREA::ONE).add_line(line7);
+    chart->area(ChartArea::AREA::ONE).add_line(line8);
+    chart->area(ChartArea::AREA::ONE).add_line(line9);
+    assert(chart->area(ChartArea::AREA::ONE).add_line(line10) == true);
+    assert(chart->area(ChartArea::AREA::ONE).add_line(line10) == false);
+    chart->area(ChartArea::AREA::ONE).add_line(line11);
+    chart->area(ChartArea::AREA::ONE).set_min_clamp(-1);
+    chart->area(ChartArea::AREA::ONE).set_max_clamp(12);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(30);
     chart->init(true);
 }
+
+//------------------------------------------------------------------------------
+void test10(Chart* chart) {
+    auto vec1   = create_serie2("20010101", "20041231", 1'000'000'000, 0.01);
+    auto line1  = ChartLine(vec1, "ChartLine::TYPE::LINE_DOT", ChartLine::TYPE::LINE_DOT);
+
+    line1.set_align(FL_ALIGN_RIGHT).set_color(FL_BLUE).set_width(4);
+
+    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->set_tick_width(10);
+    chart->init(true);
+}
+
+/***
+ *      _______        _   
+ *     |__   __|      | |  
+ *        | | ___  ___| |_ 
+ *        | |/ _ \/ __| __|
+ *        | |  __/\__ \ |_ 
+ *        |_|\___||___/\__|
+ *                         
+ *                         
+ */
+
+//------------------------------------------------------------------------------
+class Test : public Fl_Double_Window {
+public:
+    Fl_Menu_Bar* menu;
+    Chart*       chart;
+
+    //--------------------------------------------------------------------------
+    Test(int W, int H) : Fl_Double_Window(W, H, "test_chart.cpp") {
+        end();
+
+        menu  = new Fl_Menu_Bar(0, 0, 0, 0);
+        chart = new Chart();
+
+        add(menu);
+        add(chart);
+
+        menu->add("&Test/Autorun",                0, Test::CallbackAuto, this, FL_MENU_DIVIDER);
+        menu->add("&Test/save",                   0, Test::CallbackSave, this);
+        menu->add("&Test/Load",                   0, Test::CallbackLoad, this, FL_MENU_DIVIDER);
+        
+        menu->add("&Test/" TEST_RANGE_DAY,        0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_WEEKDAY,    0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_FRIDAY,     0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_SUNDAY,     0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_MONTH,      0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_HOUR,       0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_MIN,        0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE_SEC,        0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_SMALL_VALUE1,     0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_SMALL_VALUE2,     0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_SMALL_VALUE3,     0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_LARGE_VALUE1,     0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_LARGE_VALUE2,     0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_LARGE_VALUE3,     0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_RIGHT_10,         0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RIGHT_NEG,        0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RIGHT_SMALL,      0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RIGHT_STEP,       0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RIGHT_LEFT,       0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_REF_ALL,          0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_REF_ALL_BLOCK,    0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_REF_FRIDAY,       0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_REF_SUNDAY,       0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_REF_MONTH,        0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_AREA2,            0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_AREA3,            0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_AREA4,            0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_AREA5,            0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_EMPTY,            0, Test::CallbackTest, this);
+
+        menu->add("&Settings/srand(time)",        0, Test::CallbackRandTime, this, FL_MENU_RADIO);
+        menu->add("&Settings/srand(666)",         0, Test::CallbackRand666, this, FL_MENU_RADIO | FL_MENU_DIVIDER);
+        menu->add("&Settings/Theme...",           0, Test::CallbackTheme, this, FL_MENU_DIVIDER);
+        menu->add("&Settings/Font 10",            0, Test::Callback10, this);
+        menu->add("&Settings/Font 14",            0, Test::Callback14, this);
+        menu->add("&Settings/Font 24",            0, Test::Callback24, this, FL_MENU_DIVIDER);
+        menu->add("&Settings/Alt Font 0.6",       0, Test::CallbackA06, this);
+        menu->add("&Settings/Alt Font 0.8",       0, Test::CallbackA08, this);
+        menu->add("&Settings/Alt Font 1.0",       0, Test::CallbackA10, this);
+        
+        menu->textfont(flw::PREF_FONT);
+        menu->textsize(flw::PREF_FONTSIZE);
+        menu::set_item(menu, "&Settings/srand(time)", true);
+//        menu::set_item(menu, "&Settings/srand(666)", true); RAND = 666; TEST = TEST_RIGHT_10;
+        menu->textsize(flw::PREF_FONTSIZE);
+        util::labelfont(this);
+
+        resize(0, 0, W, H);
+        create_chart();
+        resizable(this);
+        size_range(64, 48);
+        show();
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback10(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 10;
+        flw::PREF_FIXED_FONTSIZE = 10;
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback14(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 14;
+        flw::PREF_FIXED_FONTSIZE = 14;
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback24(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 24;
+        flw::PREF_FIXED_FONTSIZE = 24;
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackA06(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        self->chart->set_alt_size(0.6);
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackA08(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        self->chart->set_alt_size(0.8);
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackA10(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        self->chart->set_alt_size(1.0);
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackAuto(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        TEST = "";
+        self->menu->deactivate();
+        self->chart->disable_menu();
+        Fl::add_timeout(0.5, Test::CallbackTimer, v);
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackLoad(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        self->chart->load_json("chart.json");
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackRand666(Fl_Widget*, void* v) {
+        RAND = 666;
+        static_cast<Test*>(v)->create_chart();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackRandTime(Fl_Widget*, void* v) {
+        RAND = 0;
+        static_cast<Test*>(v)->create_chart();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackSave(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        self->chart->save_json("chart.json");
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTest(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        TEST = self->menu->text();
+        self->create_chart();
+    }
+
+    //------------------------------------------------------------------------------
+    static void CallbackTimer(void* data) {
+        auto self = static_cast<Test*>(data);
+
+        if (TEST == TEST_LAST) {
+            Fl::remove_timeout(CallbackTimer, data);
+            self->menu->activate();
+            self->chart->enable_menu();
+            TEST = TEST_FIRST;
+        }
+        else {
+            if (TEST == "")                         TEST = TEST_RANGE_DAY;
+            else if (TEST == TEST_RANGE_DAY)        TEST = TEST_RANGE_WEEKDAY;
+            else if (TEST == TEST_RANGE_WEEKDAY)    TEST = TEST_RANGE_FRIDAY;
+            else if (TEST == TEST_RANGE_FRIDAY)     TEST = TEST_RANGE_SUNDAY;
+            else if (TEST == TEST_RANGE_SUNDAY)     TEST = TEST_RANGE_MONTH;
+            else if (TEST == TEST_RANGE_MONTH)      TEST = TEST_RANGE_HOUR;
+            else if (TEST == TEST_RANGE_HOUR)       TEST = TEST_RANGE_MIN;
+            else if (TEST == TEST_RANGE_MIN)        TEST = TEST_RANGE_SEC;
+            else if (TEST == TEST_RANGE_SEC)        TEST = TEST_SMALL_VALUE1;
+
+            else if (TEST == TEST_SMALL_VALUE1)     TEST = TEST_SMALL_VALUE2;
+            else if (TEST == TEST_SMALL_VALUE2)     TEST = TEST_SMALL_VALUE3;
+            else if (TEST == TEST_SMALL_VALUE3)     TEST = TEST_LARGE_VALUE1;
+
+            else if (TEST == TEST_LARGE_VALUE1)     TEST = TEST_LARGE_VALUE2;
+            else if (TEST == TEST_LARGE_VALUE2)     TEST = TEST_LARGE_VALUE3;
+            else if (TEST == TEST_LARGE_VALUE3)     TEST = TEST_RIGHT_10;
+
+            else if (TEST == TEST_RIGHT_10)         TEST = TEST_RIGHT_NEG;
+            else if (TEST == TEST_RIGHT_NEG)        TEST = TEST_RIGHT_SMALL;
+            else if (TEST == TEST_RIGHT_SMALL)      TEST = TEST_RIGHT_STEP;
+            else if (TEST == TEST_RIGHT_STEP)       TEST = TEST_RIGHT_LEFT;
+            else if (TEST == TEST_RIGHT_LEFT)       TEST = TEST_REF_ALL;
+            
+            else if (TEST == TEST_REF_ALL)          TEST = TEST_REF_ALL_BLOCK;
+            else if (TEST == TEST_REF_ALL_BLOCK)    TEST = TEST_REF_FRIDAY;
+            else if (TEST == TEST_REF_FRIDAY)       TEST = TEST_REF_SUNDAY;
+            else if (TEST == TEST_REF_SUNDAY)       TEST = TEST_REF_MONTH;
+            else if (TEST == TEST_REF_MONTH)        TEST = TEST_AREA2;
+            
+            else if (TEST == TEST_AREA2)            TEST = TEST_AREA3;
+            else if (TEST == TEST_AREA3)            TEST = TEST_AREA4;
+            else if (TEST == TEST_AREA4)            TEST = TEST_AREA5;
+            else if (TEST == TEST_AREA5)            TEST = TEST_EMPTY;
+
+            Fl::repeat_timeout(2.0, CallbackTimer, data);
+        }
+    
+        self->create_chart();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTheme(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        dlg::theme(true, true);
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    void create_chart() {
+        if (RAND == 0) {
+            srand(time(nullptr));
+        }
+        else {
+            srand(RAND);
+        }
+
+        chart->clear();
+
+
+        if (TEST == TEST_RANGE_DAY)             test1(chart, TEST, "ChartLine::TYPE::LINE", 100.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 3, 2);
+        else if (TEST == TEST_RANGE_WEEKDAY)    test1(chart, TEST, "ChartLine::TYPE::BAR", 100.0, 2.0, ChartData::RANGE::WEEKDAY, ChartLine::TYPE::BAR, FL_ALIGN_LEFT, 25, 6);
+        else if (TEST == TEST_RANGE_FRIDAY)     test1(chart, TEST, "ChartLine::TYPE::BAR_CLAMP", 100.0, 1.0, ChartData::RANGE::FRIDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 25, 6, -50.0, 200.0);
+        else if (TEST == TEST_RANGE_SUNDAY)     test1(chart, TEST, "ChartLine::TYPE::BAR_CLAMP", 100.0, 2.0, ChartData::RANGE::SUNDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 25, 6);
+        else if (TEST == TEST_RANGE_MONTH)      test1(chart, TEST, "ChartLine::TYPE::BAR_HLC", 100.0, 2.0, ChartData::RANGE::MONTH, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 40, 6);
+        else if (TEST == TEST_RANGE_HOUR)       test6(chart, ChartData::RANGE::HOUR);
+        else if (TEST == TEST_RANGE_MIN)        test6(chart, ChartData::RANGE::MIN);
+        else if (TEST == TEST_RANGE_SEC)        test6(chart, ChartData::RANGE::SEC);
+
+        else if (TEST == TEST_SMALL_VALUE1)     test1(chart, TEST, "ChartLine::TYPE::LINE", 100.0, 2.5, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 5, 4, INFINITY, INFINITY, 10000000.0);
+        else if (TEST == TEST_SMALL_VALUE2)     test1(chart, TEST, "ChartLine::TYPE::BAR_HLC", 0.1, 1.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 15, 4);
+        else if (TEST == TEST_SMALL_VALUE3)     test1(chart, TEST, "ChartLine::TYPE::HORIZONTAL", 0.1, 1.0, ChartData::RANGE::DAY, ChartLine::TYPE::HORIZONTAL, FL_ALIGN_LEFT, 15, 2);
+
+        else if (TEST == TEST_LARGE_VALUE1)     test1(chart, TEST, "ChartLine::TYPE::BAR_HLC", 1000000000.0, 3.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 10, 6);
+        else if (TEST == TEST_LARGE_VALUE2)     test10(chart);
+        else if (TEST == TEST_LARGE_VALUE3)     test4(chart);
+
+        else if (TEST == TEST_RIGHT_10)         test9(chart);
+        else if (TEST == TEST_RIGHT_NEG)        test1(chart, TEST, "ChartLine::TYPE::BAR", -50000.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR, FL_ALIGN_RIGHT, 3, 1);
+        else if (TEST == TEST_RIGHT_SMALL)      test7(chart);
+        else if (TEST == TEST_RIGHT_STEP)       test8(chart);
+        else if (TEST == TEST_RIGHT_LEFT)       test2(chart);
+
+        else if (TEST == TEST_REF_ALL)          test3(chart, "Ref All", ChartData::RANGE::DAY);
+        else if (TEST == TEST_REF_ALL_BLOCK)    test3(chart, "Ref All + Block", ChartData::RANGE::DAY, true);
+        else if (TEST == TEST_REF_FRIDAY)       test3(chart, "Ref Friday", ChartData::RANGE::FRIDAY);
+        else if (TEST == TEST_REF_SUNDAY)       test3(chart, "Ref Sunday", ChartData::RANGE::SUNDAY);
+        else if (TEST == TEST_REF_MONTH)        test3(chart, "Ref Month", ChartData::RANGE::MONTH);
+
+        else if (TEST == TEST_AREA2)            test5(chart, "Two Chart Areas", 2);
+        else if (TEST == TEST_AREA3)            test5(chart, "Three Chart Areas", 3);
+        else if (TEST == TEST_AREA4)            test5(chart, "Four Chart Areas", 4);
+        else if (TEST == TEST_AREA5)            test5(chart, "Five Chart Areas", 5);
+        
+        else if (TEST == TEST_EMPTY)            { chart->set_main_label("Empty"); chart->init(true); }
+
+        chart->take_focus();
+        Fl::redraw();
+    }
+
+    //--------------------------------------------------------------------------
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        menu->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
+        chart->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
+//         chart->resize(100, 100, W - 200, H - 200);
+    }
+
+    //--------------------------------------------------------------------------
+    void update_pref() {
+        menu->labelfont(flw::PREF_FONT);
+        menu->labelsize(flw::PREF_FONTSIZE);
+        menu->textfont(flw::PREF_FONT);
+        menu->textsize(flw::PREF_FONTSIZE);
+        chart->update_pref();
+        chart->do_layout();
+        resize(x(), y(), w(), h());
+        Fl::redraw();
+    }
+};
 
 //------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
@@ -687,7 +780,7 @@ int main(int argc, const char** argv) {
     }
 
     {
-        Test win(960, 540);
+        Test win(1200, 800);
         Fl::run();
     }
 

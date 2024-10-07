@@ -79,6 +79,7 @@ namespace util {
     std::string                 format_int(int64_t num, char del = ' ');
     bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
+    int64_t                     microseconds();
     int32_t                     milliseconds();
     bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
@@ -251,10 +252,14 @@ public:
                                 ISO_LONG,
                                 ISO_TIME,
                                 ISO_TIME_LONG,
+                                TIME,
+                                TIME_LONG,
                                 US,
                                 WORLD,
                                 NAME,
                                 NAME_LONG,
+                                NAME_TIME,
+                                NAME_TIME_LONG,
                                 YEAR_MONTH,
                                 YEAR_MONTH_LONG,
                                 LAST = YEAR_MONTH_LONG,
@@ -378,10 +383,10 @@ struct ChartData {
     };
     enum class MODIFY {
                                 ADDITION,
-                                SUBTRACTION,
-                                MULTIPLICATION,
                                 DIVISION,
-                                LAST = DIVISION,
+                                MULTIPLICATION,
+                                SUBTRACTION,
+                                LAST = SUBTRACTION,
     };
     std::string                 date;
     double                      close;
@@ -407,14 +412,16 @@ struct ChartData {
     static ChartDataVector      Modify(const ChartDataVector& in, ChartData::MODIFY modify, double value);
     static ChartDataVector      Momentum(const ChartDataVector& in, size_t days);
     static ChartDataVector      MovingAverage(const ChartDataVector& in, size_t days);
+    static std::string          RangeToString(ChartData::RANGE range);
     static ChartDataVector      RSI(const ChartDataVector& in, size_t days);
     static bool                 SaveCSV(const ChartDataVector& in, std::string filename, std::string sep = ",");
     static ChartDataVector      StdDev(const ChartDataVector& in, size_t days);
     static ChartDataVector      Stochastics(const ChartDataVector& in, size_t days);
+    static ChartData::RANGE     StringToRange(std::string range);
 };
 class ChartLine {
 public:
-    static const int            MAX_WIDTH = 25;
+    static const int            MAX_WIDTH = 14;
     enum class TYPE {
                                 LINE,
                                 LINE_DOT,
@@ -423,8 +430,9 @@ public:
                                 BAR_HLC,
                                 HORIZONTAL,
                                 EXPAND_VERTICAL,
-                                EXPAND_HORIZONTAL,
-                                LAST = EXPAND_HORIZONTAL,
+                                EXPAND_HORIZONTAL_ALL,
+                                EXPAND_HORIZONTAL_FIRST,
+                                LAST = EXPAND_HORIZONTAL_FIRST,
     };
     explicit                    ChartLine()
                                     { clear(); }
@@ -434,9 +442,9 @@ public:
     void                        clear();
     Fl_Color                    color() const
                                     { return _color; }
-    const ChartDataVector&      data_vector() const
+    const ChartDataVector&      data() const
                                     { return _data; }
-    void                        debug(int num, bool prices = false) const;
+    void                        debug(size_t num) const;
     bool                        is_visible() const
                                     { return _visible; }
     std::string                 label() const
@@ -447,7 +455,8 @@ public:
                                     { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; }
     ChartLine&                  set_color(Fl_Color val)
                                     { _color = val; return *this; }
-    ChartLine&                  set_data(const ChartDataVector& data);
+    ChartLine&                  set_data(const ChartDataVector& val)
+                                    { _data = val; return *this; }
     ChartLine&                  set_label(std::string val)
                                     { _label = val; return *this; }
     ChartLine&                  set_label_rect(int x, int y, int w, int h)
@@ -457,8 +466,8 @@ public:
     ChartLine&                  set_type_from_string(std::string val);
     ChartLine&                  set_visible(bool val)
                                     { _visible = val; return *this; }
-    ChartLine&                  set_width(unsigned val)
-                                    { if (val <= ChartLine::MAX_WIDTH) _width = val; return *this; }
+    ChartLine&                  set_width(unsigned val = 1)
+                                    { if (val > 0 && val <= ChartLine::MAX_WIDTH) _width = val; return *this; }
     size_t                      size() const
                                     { return _data.size(); }
     TYPE                        type() const
@@ -475,19 +484,17 @@ private:
     Fl_Rect                     _rect;
     TYPE                        _type;
     bool                        _visible;
-    double                      _max;
-    double                      _min;
     std::string                 _label;
     unsigned                    _width;
 };
 class ChartScale {
 public:
                                 ChartScale();
-    void                        calc(int height);
+    int                         calc_margin();
+    void                        calc_tick(int height);
     void                        clear();
     void                        debug(const char* name) const;
-    double                      diff() const
-                                    { return _max - _min; }
+    double                      diff() const;
     void                        fix_height();
     std::optional<double>       max() const;
     std::optional<double>       min() const;
@@ -508,7 +515,7 @@ private:
 class ChartArea {
 public:
     static const size_t         MAX_LINES = 10;
-    enum class NUM {
+    enum class AREA {
                                 ONE,
                                 TWO,
                                 THREE,
@@ -516,33 +523,26 @@ public:
                                 FIVE,
                                 LAST = FIVE,
     };
-    enum class LABELTYPE {
-                                OFF,
-                                ON,
-                                VISIBLE,
-                                LAST = VISIBLE,
-    };
-    explicit                    ChartArea(ChartArea::NUM num)
-                                    { _num = num; clear(); }
+    explicit                    ChartArea(ChartArea::AREA area)
+                                    { _area = area; clear(); }
     bool                        add_line(const ChartLine& chart_line);
+    AREA                        area() const
+                                    { return _area; }
     std::optional<double>       clamp_max() const;
     std::optional<double>       clamp_min() const;
     void                        clear();
     void                        debug() const;
     void                        delete_line(size_t index);
-    int                         h() const
-                                    { return _h; }
-    StringVector                label_array(ChartArea::LABELTYPE labeltype) const;
     ChartScale&                 left_scale()
                                     { return _left; }
     ChartLine*                  line(size_t index)
                                     { return (index < _lines.size()) ? &_lines[index] : nullptr; }
     const ChartLineVector&      lines() const
                                     { return _lines; }
-    NUM                         num() const
-                                    { return _num; }
     int                         percent() const
                                     { return _percent; }
+    Fl_Rect&                    rect()
+                                    { return _rect; }
     ChartScale&                 right_scale()
                                     { return _right; }
     size_t                      selected() const
@@ -552,92 +552,82 @@ public:
                                     { _clamp_max = val; }
     void                        set_min_clamp(double val = INFINITY)
                                     { _clamp_min = val; }
-    void                        set_h(int h)
-                                    { _h = h; }
     void                        set_percent(int val)
                                     { _percent = val; }
     void                        set_selected(size_t val)
                                     { _selected = val; }
-    void                        set_visible(size_t line, bool val);
-    void                        set_w(int w)
-                                    { _w = w; }
-    void                        set_x(int x)
-                                    { _x = x; }
-    void                        set_y(int y)
-                                    { _y = y; }
     size_t                      size() const
                                     { return _lines.size(); }
-    int                         w() const
-                                    { return _w; }
-    int                         x() const
-                                    { return _x; }
-    int                         x2() const
-                                    { return _x + _w; }
-    int                         y() const
-                                    { return _y; }
-    int                         y2() const
-                                    { return _y + _h; }
 private:
-    NUM                         _num;
+    AREA                        _area;
     ChartLineVector             _lines;
     ChartScale                  _left;
     ChartScale                  _right;
+    Fl_Rect                     _rect;
     double                      _clamp_max;
     double                      _clamp_min;
-    int                         _h;
-    int                         _w;
-    int                         _x;
-    int                         _y;
     int                         _percent;
     size_t                      _selected;
 };
 class Chart : public Fl_Group {
+    static const size_t         MAX_VLINES = 1400;
 public:
-    static int                  LABEL_TICK_SIZE;
-    static const int            MIN_AREA_SIZE   =   10;
-    static const int            MIN_MARGIN      =    3;
-    static const int            DEF_MARGIN      =    6;
-    static const int            MAX_MARGIN      =   20;
-    static const int            MIN_TICK        =    3;
-    static const int            MAX_TICK        = ChartLine::MAX_WIDTH * 2;
-    static const int            VERSION         =    4;
-    static const size_t         MAX_VLINES      = 1400;
+    static const int            VERSION  =    5;
+    static const int            MIN_TICK =    3;
+    static const int            MAX_TICK = ChartLine::MAX_WIDTH * 5;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        block_dates(const ChartDataVector& block_dates)
-                                    { _block_dates = block_dates; }
-    ChartArea&                  area(ChartArea::NUM num)
-                                    { return _areas[static_cast<size_t>(num)]; }
+    double                      alt_size() const
+                                    { return _alt_size; }
+    ChartArea&                  area(ChartArea::AREA area)
+                                    { return _areas[static_cast<size_t>(area)]; }
     void                        clear();
     bool                        create_line(ChartData::FORMULAS formula, bool support = false);
-    Date::FORMAT                date_format() const
-                                    { return _date_format; }
     void                        debug() const;
     void                        debug_line() const;
-    void                        disable_menu(bool value = true)
-                                    { _disable_menu = value; }
+    void                        disable_menu()
+                                    { _disable_menu = true; }
     void                        do_layout()
                                     { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); }
     void                        draw() override;
+    void                        enable_menu()
+                                    { _disable_menu = false; }
     int                         handle(int event) override;
+    bool                        hor_lines() const
+                                    { return _horizontal; }
     void                        init(bool calc_dates);
+    bool                        line_labels() const
+                                    { return _labels; }
     bool                        load_cvs();
     bool                        load_json();
     bool                        load_json(std::string filename);
+    std::string                 main_label() const
+                                    { return _label; }
     void                        print_to_postscript();
     void                        resize(int X, int Y, int W, int H) override;
     bool                        save_cvs();
     bool                        save_json();
     bool                        save_json(std::string filename, double max_diff_high_low = 0.001) const;
     bool                        save_png();
-    bool                        set_area_size(int area1 = 100, int area2 = 0, int area3 = 0, int area4 = 0, int area5 = 0);
-    void                        set_date_range(ChartData::RANGE range = ChartData::RANGE::DAY);
-    void                        set_label(std::string label)
+    void                        set_alt_size(double val = 0.8)
+                                    { if (val >= 0.6 && val <= 1.2) _alt_size = val; }
+    bool                        set_area_size(unsigned area1 = 100, unsigned area2 = 0, unsigned area3 = 0, unsigned area4 = 0, unsigned area5 = 0);
+    void                        set_block_dates(const ChartDataVector& block_dates)
+                                    { _block_dates = block_dates; }
+    void                        set_date_range(ChartData::RANGE range = ChartData::RANGE::DAY)
+                                    { _date_range  = range; }
+    void                        set_hor_lines(bool val = true)
+                                    { _horizontal = val; }
+    void                        set_line_labels(bool val = true)
+                                    { _labels = val; }
+    void                        set_main_label(std::string label = "")
                                     { _label = label; }
-    bool                        set_margin(int def);
-    bool                        set_tick_width(int width = Chart::MIN_TICK);
-    void                        setup_add_line();
+    void                        set_tick_width(int val = Chart::MIN_TICK)
+                                    { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; }
+    void                        set_ver_lines(bool val = true)
+                                    { _vertical = val; }
     void                        setup_area();
     void                        setup_clamp(bool min = true);
+    void                        setup_create_line();
     void                        setup_date_range();
     void                        setup_delete_lines();
     void                        setup_label();
@@ -645,50 +635,54 @@ public:
     void                        setup_move_lines();
     void                        setup_show_or_hide_lines();
     void                        setup_view_options();
-    void                        setup_ywidth();
     void                        update_pref();
-    void                        view_options(bool line_labels = true, bool hor_lines = true, bool ver_lines = true)
-                                    { _view.labels = line_labels; _view.horizontal = hor_lines; _view.vertical = ver_lines; redraw(); }
+    bool                        ver_lines() const
+                                    { return _vertical; }
 private:
+    enum class LABELTYPE {
+                                OFF,
+                                ON,
+                                VISIBLE,
+                                LAST = VISIBLE,
+    };
     void                        _calc_area_height();
     void                        _calc_area_width();
     void                        _calc_dates();
+    void                        _calc_margins();
     void                        _calc_ymin_ymax();
     void                        _calc_yscale();
-    void                        _calc_ywidth();
     void                        _create_tooltip(bool ctrl);
-    void                        _draw_area(ChartArea& area);
     void                        _draw_label();
-    void                        _draw_line(const ChartLine& line, const ChartScale& scale, int X, int Y, int W, int H);
-    void                        _draw_line_labels(const ChartArea& area);
+    void                        _draw_lines(ChartArea& area);
+    void                        _draw_line_labels(ChartArea& area);
     void                        _draw_tooltip();
-    void                        _draw_ver_lines(const ChartArea& area);
+    void                        _draw_ver_lines(ChartArea& area);
     void                        _draw_xlabels();
-    void                        _draw_ylabels(int X, double Y1, double Y2, const ChartScale& scale, bool left);
-    ChartArea*                  _inside_area(int X, int Y);
-    bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::NUM destination = ChartArea::NUM::ONE);
+    void                        _draw_ylabels(ChartArea& area, Fl_Align align);
+    ChartArea*                  _get_active_area(int X, int Y);
+    StringVector                _label_array(const ChartArea& area, Chart::LABELTYPE labeltype) const;
+    bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::AREA destination = ChartArea::AREA::ONE);
     void                        _show_menu();
     static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
     static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
-    struct {
-        bool                    horizontal;
-        bool                    labels;
-        bool                    vertical;
-    }                           _view;
     ChartArea*                  _area;
     ChartAreaVector             _areas;
     ChartData::RANGE            _date_range;
     ChartDataVector             _block_dates;
     ChartDataVector             _dates;
-    Date::FORMAT                _date_format;
     Fl_Menu_Button*             _menu;
     Fl_Rect                     _old;
     Fl_Scrollbar*               _scroll;
     bool                        _disable_menu;
+    bool                        _horizontal;
+    bool                        _labels;
     bool                        _printing;
+    bool                        _vertical;
+    double                      _alt_size;
     int                         _bottom_space;
+    int                         _ch;
+    int                         _cw;
     int                         _date_start;
-    int                         _margin;
     int                         _margin_left;
     int                         _margin_right;
     int                         _tick_width;
@@ -1073,6 +1067,7 @@ public:
                                     { return JS::COUNT; }
     static size_t               CountUtf8(const char* p);
     static std::string          Escape(const char* string);
+    static std::string          FormatNumber(double f, bool E = false);
     static std::string          Unescape(const char* string);
 private:
     explicit                    JS(const char* name, JS* parent = nullptr, unsigned pos = 0)

@@ -131,6 +131,7 @@ public:
                                     { return JS::COUNT; }
     static size_t               CountUtf8(const char* p);
     static std::string          Escape(const char* string);
+    static std::string          FormatNumber(double f, bool E = false);
     static std::string          Unescape(const char* string);
 
 private:

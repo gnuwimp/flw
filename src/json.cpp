@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <cmath>
+#include <cstdint>
 #include <errno.h>
 
 namespace flw {
@@ -690,30 +691,7 @@ std::string JS::_encode(bool ignore_name, JS::ENCODE_OPTION option) const {
             res += "false";
         }
         else if (_type == JS::NUMBER) {
-            char b[500];
-
-            const size_t n  = (_vn < 100'000) ? snprintf(b, 500, "%.7f", _vn) : snprintf(b, 500, "%f", _vn);
-            const char* dot = strstr(b, ".");
-
-            if (n < 1 || n >= 500) {
-                strcpy(b, "0.0");
-            }
-            else if (dot != nullptr) {
-                auto zero = b + strlen(b) - 1;
-
-                while (zero >= dot) { // Remove trailing decimal zeros
-                    if (*zero == '0' || *zero == '.') {
-                        *zero = 0;
-                    }
-                    else {
-                        break;
-                    }
-
-                    zero--;
-                }
-            }
-
-            res += b;
+            res += JS::FormatNumber(_vn);
         }
     }
 
@@ -828,6 +806,49 @@ const JS* JS::find(std::string name, bool rec) const {
     }
 
     return nullptr;
+}
+
+//------------------------------------------------------------------------------
+std::string JS::FormatNumber(double f, bool E) {
+    double ABS = fabs(f);
+    double MIN = ABS - static_cast<int64_t>(ABS);
+    size_t n   = 0;
+    char b[100];
+
+    if (ABS > 999'000'000'000) {
+        n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+    }
+    else {
+        if (MIN < 0.0000001) {
+            n = (E == true) ? snprintf(b, 100, "%.0e", f) : snprintf(b, 100, "%.0f", f);
+        }
+        else if (MIN < 0.001) {
+            n = (E == true) ? snprintf(b, 100, "%.7e", f) : snprintf(b, 100, "%.7f", f);
+        }
+        else {
+            n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+        }
+    }
+
+    if (n < 1 || n >= 100) {
+        return "0";
+    }
+    
+    std::string s = b;
+    
+    if (s.find('.') == std::string::npos) {
+        return s;
+    }
+    
+    while (s.back() == '0') {
+        s.pop_back();
+    }
+
+    if (s.back() == '.') {
+        s.pop_back();
+    }
+    
+    return s;
 }
 
 //------------------------------------------------------------------------------
