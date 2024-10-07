@@ -597,14 +597,14 @@ public:
     void                        init(bool calc_dates);
     bool                        line_labels() const
                                     { return _labels; }
-    bool                        load_cvs();
+    bool                        load_csv();
     bool                        load_json();
     bool                        load_json(std::string filename);
     std::string                 main_label() const
                                     { return _label; }
     void                        print_to_postscript();
     void                        resize(int X, int Y, int W, int H) override;
-    bool                        save_cvs();
+    bool                        save_csv();
     bool                        save_json();
     bool                        save_json(std::string filename, double max_diff_high_low = 0.001) const;
     bool                        save_png();

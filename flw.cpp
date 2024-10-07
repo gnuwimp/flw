@@ -1006,8 +1006,8 @@ Chart::Chart(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l
     _menu->add(_CHART_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()));
     _menu->add(_CHART_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()), FL_MENU_DIVIDER);
     _menu->add(_CHART_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
-    _menu->add(_CHART_ADD_CSV,          0, _FLW_CHART_CB(load_cvs()));
-    _menu->add(_CHART_SAVE_CSV,         0, _FLW_CHART_CB(save_cvs()));
+    _menu->add(_CHART_ADD_CSV,          0, _FLW_CHART_CB(load_csv()));
+    _menu->add(_CHART_SAVE_CSV,         0, _FLW_CHART_CB(save_csv()));
     _menu->add(_CHART_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
     _menu->add(_CHART_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
     _menu->add(_CHART_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
@@ -2119,7 +2119,7 @@ StringVector Chart::_label_array(const ChartArea& area, Chart::LABELTYPE labelty
     }
     return res;
 }
-bool Chart::load_cvs() {
+bool Chart::load_csv() {
     if (_area == nullptr || _area->size() >= ChartArea::MAX_LINES) {
         fl_alert("Max line count reached!");
         return false;
@@ -2288,7 +2288,7 @@ void Chart::resize(int X, int Y, int W, int H) {
     _old = Fl_Rect(this);
     init(false);
 }
-bool Chart::save_cvs() {
+bool Chart::save_csv() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return false;
     }
