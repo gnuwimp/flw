@@ -5,252 +5,144 @@
 
 #ifndef FLW_AMALGAM
     #include "plot.h"
+    #include "dlg.h"
 #endif
 
 #include <FL/Fl.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
+#include <assert.h>
 #include <time.h>
 
 using namespace flw;
 
-static bool        RAND_666 = false;
-static std::string TEST     = "";
+#define TEST_CUSTOM_X   "Custom X (VECTOR && LINE_DASH)"
+#define TEST_CUSTOM_Y   "Custom Y (VECTOR)"
+#define TEST_EMPTY      "Empty"
+#define TEST_LARGE1     "Large numbers"
+#define TEST_LARGE2     "Large numbers, small diff"
+#define TEST_RANGE1     "Lines (LINE_WITH_SQUARE)"
+#define TEST_RANGE2     "Negative && Positive (SQUARE)"
+#define TEST_RANGE3     "10 Lines (LINE)"
+#define TEST_REF1       "Ref (CIRCLE && SQUARE)"
+#define TEST_REF2       "Ref + clamp (CIRCLE && SQUARE)"
+#define TEST_SMALL1     "Very small numbers (CIRCLE)"
+#define TEST_SMALL2     "Small numbers (FILLED_CIRCLE && SQUARE)"
+#define TEST_VECTOR1    "Random pairs (VECTOR)"
+#define TEST_VECTOR2    "Bar (VECTOR)"
+#define TEST_FIRST      TEST_RANGE1
+#define TEST_LAST       TEST_EMPTY
 
-void callback_timer(void *data);
+int         RAND = 0;
+std::string TEST = TEST_RANGE1;
 
-#define MENU_10LINES    "10 Lines (Plot::LINE)"
-#define MENU_AUTORUN    "Autorun"
-#define MENU_BAR        "Bar (Plot::VECTOR)"
-#define MENU_DAYS       "Custom Y (Plot::VECTOR)"
-#define MENU_EMPTY      "Empty"
-#define MENU_LARGE      "Large (Plot::LINE)"
-#define MENU_LINE       "Lines (Plot::LINE_WITH_SQUARE)"
-#define MENU_MLINE      "1'000 (Plot::LINE)"
-#define MENU_MONTHS     "Custom X (Plot::VECTOR && Plot::LINE_DASH)"
-#define MENU_NA         "NA"
-#define MENU_NP         "Negative && Positive (Plot::SQUARE)"
-#define MENU_REF        "Ref (Plot::CIRCLE && Plot::SQUARE)"
-#define MENU_SMALL      "Small (Plot::FILLED_CIRCLE && Plot::SQUARE)"
-#define MENU_SRAND666   "Srand(666)"
-#define MENU_SRANDTIME  "Srand(time)"
-#define MENU_VECTOR     "Random pairs (Plot::VECTOR)"
-#define MENU_VSMALL     "Very Small (Plot::CIRCLE)"
-
-PointVector create_bar(int y) {
-    PointVector res;
-
-    res.push_back(Point(0.0, 0.0));
-    res.push_back(Point(0.0, 0.0));
-
-    for (int f = 1; f <= 10; f++) {
-        // res.push_back(Point(f, -4.0));
-        res.push_back(Point(f, 0.0));
-        res.push_back(Point(f, rand() % y));
-    }
-
-    res.push_back(Point(11.0, 0.0));
-    res.push_back(Point(11.0, 0.0));
-
-    // print(res);
-    return res;
-}
-
-PointVector create_big_line() {
-    PointVector res;
-
-    auto maxy = 1'000;
-
-    for (int f = 1; f <= 1'000; f++) {
-        res.push_back(Point(f, rand() % maxy * 2 - maxy));
-    }
-
-    return res;
-}
-
-PointVector create_days() {
-    PointVector res;
-
-    res.push_back(Point(0.0, 0.0));
-    res.push_back(Point(0.0, 0.0));
-
-    for (int f = 1; f <= 7; f++) {
-        res.push_back(Point(rand() % 100, f));
-        res.push_back(Point(0.0, f));
-    }
-
-    res.push_back(Point(0, 8));
-    res.push_back(Point(0, 8));
-
-    // print(res);
-    return res;
-}
-
-StringVector create_days2() {
+//------------------------------------------------------------------------------
+StringVector create_custom_labels() {
     StringVector res;
 
     res.push_back("");
-    res.push_back("Mon");
-    res.push_back("Tue");
-    res.push_back("Wednesday");
-    res.push_back("Thu");
-    res.push_back("Fri");
-    res.push_back("Sat");
-    res.push_back("Sun");
+    res.push_back("January");
+    res.push_back("February");
+    res.push_back("Mars_");
+    res.push_back("April");
+    res.push_back("May");
+    res.push_back("June");
+    res.push_back("July");
+    res.push_back("August");
+    res.push_back("September");
+    res.push_back("October");
+    res.push_back("November");
+    res.push_back("December");
+    res.push_back("");
+
     return res;
 }
 
-PointVector create_line(int x) {
-    PointVector res;
+//------------------------------------------------------------------------------
+PlotDataVector create_custom_x() {
+    PlotDataVector res;
 
-    auto maxy = 1'000;
-
-    for (int f = x; f <= 30; f += 2) {
-        res.push_back(Point(f, rand() % maxy * 2 - maxy));
-    }
-
-    // print(res);
-    return res;
-}
-
-PointVector create_months() {
-    PointVector res;
-
-    res.push_back(Point(0.0, 0.0));
-    res.push_back(Point(0.0, 0.0));
+    res.push_back(PlotData(0.0, 0.0));
+    res.push_back(PlotData(0.0, 0.0));
 
     for (int f = 1; f <= 12; f++) {
-        res.push_back(Point(f + 0.0, 0.0));
-        res.push_back(Point(f + 0.0, rand() % 100));
+        res.push_back(PlotData(f + 0.0, 0.0));
+        res.push_back(PlotData(f + 0.0, rand() % 100));
     }
 
-    res.push_back(Point(13.0, 0.0));
-    res.push_back(Point(13.0, 0.0));
+    res.push_back(PlotData(13.0, 0.0));
+    res.push_back(PlotData(13.0, 0.0));
 
-    // print(res);
     return res;
 }
 
-StringVector create_months2() {
-    StringVector res;
+//------------------------------------------------------------------------------
+PlotDataVector create_large1(int64_t maxx, int64_t maxy) {
+    PlotDataVector res;
 
-    res.push_back("");
-    res.push_back("Jan");
-    res.push_back("Feb");
-    res.push_back("Mar");
-    res.push_back("Apr");
-    res.push_back("May");
-    res.push_back("Jun");
-    res.push_back("Jul");
-    res.push_back("Aug");
-    res.push_back("Sep");
-    res.push_back("Oct");
-    res.push_back("Nov");
-    res.push_back("Dec");
-    res.push_back("");
-    return res;
-}
-
-PointVector create_neg() {
-    PointVector res;
-
-    auto maxx = 12'500;
-    auto maxy = 25'000;
+    auto x = rand() % maxx + maxx;
 
     for (int f = 0; f < 50; f++) {
-        res.push_back(Point(rand() % maxx * 2 - maxx, rand() % maxy * 2 - maxy));
+#ifdef _WIN32
+        res.push_back(PlotData(f * x, (rand() % maxy) * (rand() % maxx)));
+#else
+        res.push_back(PlotData(f * x, rand() % maxy));
+#endif
     }
 
     return res;
 }
 
-PointVector create_point(double x, double y) {
-    PointVector res;
-    res.push_back(Point(x, y));
+//------------------------------------------------------------------------------
+PlotDataVector create_line(int x, int maxy = 1'000) {
+    PlotDataVector res;
+
+    for (int f = x; f <= 30; f += 2) {
+        res.push_back(PlotData(f, rand() % maxy * 2 - maxy));
+    }
+
     return res;
 }
 
-PointVector create_random_small() {
-    PointVector res;
+//------------------------------------------------------------------------------
+PlotDataVector create_point(double x, double y) {
+    PlotDataVector res;
+    res.push_back(PlotData(x, y));
+
+    return res;
+}
+
+//------------------------------------------------------------------------------
+PlotDataVector create_random_small(int maxy = 2'440) {
+    PlotDataVector res;
 
     auto maxx = 1'250;
-    auto maxy = 2'440;
 
     for (int f = 0; f < 20; f++) {
-        res.push_back(Point(rand() % maxx, rand() % maxy));
+        res.push_back(PlotData(rand() % maxx, (rand() % maxy) + maxy / 2));
     }
 
     return res;
 }
 
-PointVector create_random_large() {
-    PointVector res;
+/***
+ *      _______        _
+ *     |__   __|      | |
+ *        | | ___  ___| |_
+ *        | |/ _ \/ __| __|
+ *        | |  __/\__ \ |_
+ *        |_|\___||___/\__|
+ *
+ *
+ */
 
-    auto maxx =  5'250'100;
-    auto maxy = 222'125'000;
-    auto x    = rand() % maxx + maxx;
-
-    for (int f = 0; f < 50; f++) {
-#ifdef _WIN32
-        res.push_back(Point(f * x, (rand() % maxy) * (rand() % maxx)));
-#else
-        res.push_back(Point(f * x, rand() % maxy));
-#endif
-    }
-
-    // print(res);
-    return res;
-}
-
-PointVector create_random_very_small() {
-    PointVector res;
-
-    auto maxx = 123'250;
-    auto maxy = 222'125'000;
-
-    for (int f = 0; f < 100; f++) {
-#ifdef _WIN32
-        res.push_back(Point((double) (rand() % maxx) / (double) (maxx * maxx), (double) ((rand() * rand()) % maxy) / (double) (maxy * maxy)));
-#else
-        res.push_back(Point((double) (rand() % maxx) / (double) (maxx * maxx), (double) (rand() % maxy) / (double) (maxx * maxx)));
-#endif
-    }
-
-    return res;
-}
-
-PointVector create_ref() {
-    PointVector res;
-
-    for (int f = -10; f <= 10; f++) {
-        res.push_back(Point(f * 10, f * 10));
-    }
-
-    return res;
-}
-
-PointVector create_vector() {
-    PointVector res;
-
-    auto maxx = 100;
-    auto maxy = 100;
-
-    for (int f = 0; f <= 20; f++) {
-        auto p = Point((double) (rand() % maxx), (double) (rand() % maxy));
-        auto x = (rand() % 20) - 10;
-        auto y = (rand() % 20) - 10;
-
-        res.push_back(p);
-        res.push_back(Point(p.x + x, p.y += y));
-    }
-
-    // print(res);
-    return res;
-}
-
+//------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
 public:
+    Fl_Menu_Bar* menu;
+    Plot*        plot;
+
     Test(int W, int H) : Fl_Double_Window(W, H, "test_plot.cpp") {
         menu = new Fl_Menu_Bar(0, 0, 0, 0);
         plot = new Plot(0, 0, W, H);
@@ -258,26 +150,38 @@ public:
         add(menu);
         add(plot);
 
-        menu->add("&Data/" MENU_AUTORUN, 0, Callback, this, FL_MENU_DIVIDER);
-        menu->add("&Data/" MENU_SRAND666, 0, Callback, this);
-        menu->add("&Data/" MENU_SRANDTIME, 0, Callback, this, FL_MENU_DIVIDER);
-        menu->add("&Data/save", 0, CallbackSave, this);
-        menu->add("&Data/Load", 0, CallbackLoad, this, FL_MENU_DIVIDER);
-        menu->add("&Data/" MENU_10LINES, 0, Callback, this);
-        menu->add("&Data/" MENU_REF, 0, Callback, this);
-        menu->add("&Data/" MENU_VSMALL, 0, Callback, this);
-        menu->add("&Data/" MENU_SMALL, 0, Callback, this);
-        menu->add("&Data/" MENU_LARGE, 0, Callback, this);
-        menu->add("&Data/" MENU_NP, 0, Callback, this);
-        menu->add("&Data/" MENU_LINE, 0, Callback, this);
-        menu->add("&Data/" MENU_MLINE, 0, Callback, this);
-        menu->add("&Data/" MENU_VECTOR, 0, Callback, this);
-        menu->add("&Data/" MENU_BAR, 0, Callback, this);
-        menu->add("&Data/" MENU_MONTHS, 0, Callback, this);
-        menu->add("&Data/" MENU_DAYS, 0, Callback, this);
-        menu->add("&Data/" MENU_EMPTY, 0, Callback, this);
+        menu->add("&Test/Autorun",              0, Test::CallbackAuto, this, FL_MENU_DIVIDER);
+        menu->add("&Test/Save",                 0, Test::CallbackSave, this);
+        menu->add("&Test/Load",                 0, Test::CallbackLoad, this, FL_MENU_DIVIDER);
+
+        menu->add("&Test/" TEST_RANGE1,         0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE2,         0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_RANGE3,         0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_REF1,           0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_REF2,           0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_LARGE1,         0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_LARGE2,         0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_SMALL1,         0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_SMALL2,         0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_VECTOR1,        0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_VECTOR2,        0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_CUSTOM_X,       0, Test::CallbackTest, this);
+        menu->add("&Test/" TEST_CUSTOM_Y,       0, Test::CallbackTest, this, FL_MENU_DIVIDER);
+        menu->add("&Test/" TEST_EMPTY,          0, Test::CallbackTest, this);
+
+        menu->add("&Settings/srand(time)",      0, Test::CallbackRandTime, this, FL_MENU_RADIO);
+        menu->add("&Settings/srand(666)",       0, Test::CallbackRand666, this, FL_MENU_RADIO | FL_MENU_DIVIDER);
+        menu->add("&Settings/Theme...",         0, Test::CallbackTheme, this);
+        menu->add("&Settings/Clear labels",     0, Test::CallbackLabels, this, FL_MENU_DIVIDER);
+        menu->add("&Settings/Font 10",          0, Test::Callback10, this);
+        menu->add("&Settings/Font 14",          0, Test::Callback14, this);
+        menu->add("&Settings/Font 24",          0, Test::Callback24, this);
+//        menu->add("&Settings/Debug",            0, Test::CallbackDebug, this);
+
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
+        menu::set_item(menu, "&Settings/srand(time)", true);
+        create_plot();
 
         resizable(this);
         size_range(64, 48);
@@ -285,224 +189,377 @@ public:
         resize(300, 100, W, H);
     }
 
-    static void Callback(Fl_Widget* sender, void* object) {
-        auto self = (Test*) object;
-
-        if (sender == self->menu) {
-            auto s = (self->menu->text() != nullptr) ? std::string(self->menu->text()) : std::string();
-            self->run_menu(s);
-        }
+    //--------------------------------------------------------------------------
+    static void Callback10(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 10;
+        flw::PREF_FIXED_FONTSIZE = 10;
+        self->update_pref();
     }
 
+    //--------------------------------------------------------------------------
+    static void Callback14(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 14;
+        flw::PREF_FIXED_FONTSIZE = 14;
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void Callback24(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 24;
+        flw::PREF_FIXED_FONTSIZE = 24;
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackAuto(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        TEST = "";
+        self->menu->deactivate();
+        self->plot->disable_menu();
+        Fl::add_timeout(0.5, Test::CallbackTimer, v);
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackDebug(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 24;
+        flw::PREF_FIXED_FONTSIZE = 24;
+        self->update_pref();
+        self->size(800, 600);
+        TEST = TEST_LARGE2;
+        self->create_plot();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackRand666(Fl_Widget*, void* v) {
+        RAND = 666;
+        static_cast<Test*>(v)->create_plot();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackLabels(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        self->plot->set_label("");
+        self->plot->xscale().set_label("");
+        self->plot->yscale().set_label("");
+        self->plot->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
     static void CallbackLoad(Fl_Widget*, void* v) {
-        Test* w = (Test*) v;
-        Plot::Load(w->plot, "plot.json");
+        auto self = static_cast<Test*>(v);
+        self->plot->load_json("plot.json");
     }
 
+    //--------------------------------------------------------------------------
+    static void CallbackRandTime(Fl_Widget*, void* v) {
+        RAND = 0;
+        static_cast<Test*>(v)->create_plot();
+    }
+
+    //--------------------------------------------------------------------------
     static void CallbackSave(Fl_Widget*, void* v) {
-        Test* w = (Test*) v;
-        Plot::Save(w->plot, "plot.json");
+        auto self = static_cast<Test*>(v);
+        self->plot->save_json("plot.json");
     }
 
+    //--------------------------------------------------------------------------
+    static void CallbackTest(Fl_Widget*, void* v) {
+        auto self = (Test*) v;
+        TEST = util::to_string(self->menu->text());
+        self->create_plot();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTheme(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        dlg::theme(true, true);
+        self->update_pref();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTimer(void* v) {
+        auto self = static_cast<Test*>(v);
+
+        if (TEST == TEST_LAST) {
+            TEST = TEST_FIRST;
+            self->menu->activate();
+            self->plot->enable_menu();
+            Fl::remove_timeout(Test::CallbackTimer, v);
+        }
+        else {
+            if (TEST == "")                 TEST = TEST_RANGE1;
+            else if (TEST == TEST_RANGE1)   TEST = TEST_RANGE2;
+            else if (TEST == TEST_RANGE2)   TEST = TEST_RANGE3;
+            else if (TEST == TEST_RANGE3)   TEST = TEST_REF1;
+            else if (TEST == TEST_REF1)     TEST = TEST_REF2;
+            else if (TEST == TEST_REF2)     TEST = TEST_LARGE1;
+            else if (TEST == TEST_LARGE1)   TEST = TEST_LARGE2;
+            else if (TEST == TEST_LARGE2)   TEST = TEST_SMALL1;
+            else if (TEST == TEST_SMALL1)   TEST = TEST_SMALL2;
+            else if (TEST == TEST_SMALL2)   TEST = TEST_VECTOR1;
+            else if (TEST == TEST_VECTOR1)  TEST = TEST_VECTOR2;
+            else if (TEST == TEST_VECTOR2)  TEST = TEST_CUSTOM_X;
+            else if (TEST == TEST_CUSTOM_X) TEST = TEST_CUSTOM_Y;
+            else if (TEST == TEST_CUSTOM_Y) TEST = TEST_EMPTY;
+
+            Fl::repeat_timeout(2.0, CallbackTimer, v);
+        }
+
+        self->create_plot();
+    }
+
+    //--------------------------------------------------------------------------
+    void create_plot() {
+        if (RAND == 0) {
+            srand(time(nullptr));
+        }
+        else {
+            srand(RAND);
+        }
+
+        plot->clear();
+
+        if (TEST == TEST_CUSTOM_X) {
+            plot->add_line(PlotLine(create_custom_x(), "TYPE::VECTOR", PlotLine::TYPE::VECTOR, color::TEAL, 21));
+            plot->add_line(PlotLine(create_custom_x(), "TYPE::LINE_DASH", PlotLine::TYPE::LINE_DASH, color::CRIMSON, 3));
+            plot->xscale().set_custom_labels(create_custom_labels());
+            plot->xscale().set_label("Custom _X_ Labels For First Data Serie");
+            plot->xscale().set_color(color::CRIMSON);
+            plot->yscale().set_label("Custom X Labels");
+            plot->yscale().set_color(color::TEAL);
+            plot->set_label("Custom X Labels");
+        }
+        else if (TEST == TEST_CUSTOM_Y) {
+            PlotDataVector vec;
+
+            vec.push_back(PlotData(0.0, 0.0));
+            vec.push_back(PlotData(0.0, 0.0));
+
+            for (int f = 1; f <= 12; f++) {
+                vec.push_back(PlotData(rand() % 100, f));
+                vec.push_back(PlotData(0.0, f));
+            }
+
+            vec.push_back(PlotData(0, 8));
+            vec.push_back(PlotData(0, 8));
+            
+            plot->add_line(PlotLine(vec, "TYPE__VECTOR", PlotLine::TYPE::VECTOR, color::TEAL, 21));
+            plot->yscale().set_custom_labels(create_custom_labels());
+            plot->xscale().set_label("Custom _Y_ Labels");
+            plot->xscale().set_color(color::CRIMSON);
+            plot->yscale().set_label("Custom _Y_ Labels  For First Data Serie");
+            plot->yscale().set_color(color::TEAL);
+            plot->set_label("Custom _Y_ Labels");
+            plot->set_max_y(13);
+        }
+        else if (TEST == TEST_RANGE1) {
+            auto vec1 = create_line(-10);
+            auto vec2 = PlotData::Modify(vec1, PlotData::MODIFY::MULTIPLICATION, PlotData::TARGET::Y, -1.0);
+            
+            plot->add_line(PlotLine(vec1, "TYPE::LINE_WITH_SQUARE", PlotLine::TYPE::LINE_WITH_SQUARE, FL_BLUE, 2));
+            plot->add_line(PlotLine(vec2, "Inverted Line", PlotLine::TYPE::LINE_DOT, FL_RED, 3));
+            plot->xscale().set_label("X Label");
+            plot->xscale().set_color(FL_DARK_GREEN);
+            plot->yscale().set_label("Y Label");
+            plot->yscale().set_color(FL_DARK_GREEN);
+        }
+        else if (TEST == TEST_RANGE2) {
+            PlotDataVector vec;
+
+            auto maxx = 12'500;
+            auto maxy = 25'000;
+
+            for (int f = 0; f < 50; f++) {
+                vec.push_back(PlotData(rand() % maxx * 2 - maxx, rand() % maxy * 2 - maxy));
+            }
+            
+            plot->add_line(PlotLine(vec, "TYPE::SQUARE", PlotLine::TYPE::SQUARE, color::TEAL, 7));
+            plot->xscale().set_label(TEST_RANGE2);
+            plot->xscale().set_color(color::CRIMSON);
+            plot->yscale().set_label(TEST_RANGE2);
+            plot->yscale().set_color(color::TEAL);
+        }
+        else if (TEST == TEST_RANGE3) {
+            plot->set_label(TEST_RANGE3);
+            plot->add_line(PlotLine(create_line(-10, 1000), "1 TYPE::LINE", PlotLine::TYPE::LINE, color::CRIMSON, 3));
+            plot->add_line(PlotLine(create_line(-9, 900), "2 TYPE::LINE", PlotLine::TYPE::LINE, color::OLIVE, 3));
+            plot->add_line(PlotLine(create_line(-8, 800), "3 TYPE::LINE", PlotLine::TYPE::LINE, color::TEAL, 3));
+            plot->add_line(PlotLine(create_line(-7, 700), "4 TYPE::LINE", PlotLine::TYPE::LINE, color::GOLD, 3));
+            plot->add_line(PlotLine(create_line(-6, 600), "5 TYPE::LINE", PlotLine::TYPE::LINE, color::TURQUOISE, 3));
+            plot->add_line(PlotLine(create_line(-5, 500), "6 TYPE::LINE", PlotLine::TYPE::LINE, color::ROYALBLUE, 3));
+            plot->add_line(PlotLine(create_line(-4, 400), "7 TYPE::LINE", PlotLine::TYPE::LINE, color::PINK, 3));
+            plot->add_line(PlotLine(create_line(-3, 300), "8 TYPE::LINE", PlotLine::TYPE::LINE, color::OLIVE, 3));
+            plot->add_line(PlotLine(create_line(-2, 200), "9 TYPE::LINE", PlotLine::TYPE::LINE, color::CHOCOLATE, 3));
+            assert(plot->add_line(PlotLine(create_line(-1, 100), "10 TYPE::LINE", PlotLine::TYPE::LINE, color::FORESTGREEN, 3)) == true);
+            assert(plot->add_line(PlotLine(create_line(-1, 900), "10 TYPE::LINE", PlotLine::TYPE::LINE, color::FORESTGREEN, 3)) == false);
+            plot->xscale().set_label(TEST_RANGE3);
+            plot->xscale().set_color(color::CRIMSON);
+            plot->yscale().set_label(TEST_RANGE3);
+            plot->yscale().set_color(color::TEAL);
+        }
+        else if (TEST == TEST_EMPTY) {
+            plot->xscale().set_label("X Labels");
+            plot->yscale().set_label("Y Labels");
+            plot->set_label("Empty");
+        }
+        else if (TEST == TEST_LARGE1) {
+            plot->add_line(PlotLine(create_large1(27'250'100, 1'422'125'000), "TYPE::LINE", PlotLine::TYPE::LINE, color::TEAL, 2));
+            plot->add_line(PlotLine(create_large1(20'250'100, 2'222'125'000), "TYPE::LINE_DASH", PlotLine::TYPE::LINE_DASH, color::OLIVE, 4));
+            plot->add_line(PlotLine(create_large1(35'250'100, 1'822'125'000), "TYPE::LINE_DOT", PlotLine::TYPE::LINE_DOT, color::CRIMSON, 6));
+            plot->xscale().set_label(TEST_LARGE1);
+            plot->yscale().set_label(TEST_LARGE1);
+        }
+        else if (TEST == TEST_LARGE2) {
+            PlotDataVector vec;
+
+            const double v = 321'000'000'000;
+
+            for (int f = 1; f <= 20; f++) {
+                auto x = 1.0 / static_cast<double>((rand() % 10) + 1);
+                auto y = 1.0 / static_cast<double>((rand() % 10) + 1);
+                vec.push_back(PlotData(v + x, v - y));
+            }
+
+            vec.push_back(PlotData(INFINITY, 0.0));
+            vec.push_back(PlotData(9323372036854775807.0, 0.0));
+            
+            plot->add_line(PlotLine(vec, "TYPE::LINE", PlotLine::TYPE::FILLED_CIRCLE, color::TEAL, 10));
+            plot->xscale().set_label("");
+            plot->xscale().set_color(FL_DARK_GREEN);
+            plot->yscale().set_label(TEST_LARGE2);
+            plot->yscale().set_color(FL_RED);
+            plot->set_min_x(v - 1.5);
+            plot->set_max_x(v + 1.5);
+            plot->set_min_y(v - 1.5);
+            plot->set_max_y(v + 1.5);
+            plot->set_label("Large Values With Clamp Values For X And Y");
+        }
+        else if (TEST == TEST_REF1 || TEST == TEST_REF2) {
+            PlotDataVector vec;
+
+            for (int f = -10; f <= 10; f++) {
+                vec.push_back(PlotData(f * 10, f * 10));
+            }
+
+            plot->add_line(PlotLine(vec, "TYPE::CIRCLE", PlotLine::TYPE::CIRCLE, color::TEAL, 21));
+            plot->add_line(PlotLine(create_point(0.0, 0.0), "TYPE::SQUARE", PlotLine::TYPE::SQUARE, color::CRIMSON, 15));
+            plot->xscale().set_label(TEST_REF1);
+            plot->xscale().set_color(color::CRIMSON);
+            plot->yscale().set_label(TEST_REF1);
+            plot->yscale().set_color(color::TEAL);
+            
+            if (TEST == TEST_REF1) {
+                plot->set_label("Reference Values");
+            }
+            else {
+                plot->set_label("Reference Values With Clamp");
+                plot->set_min_x(-120);
+                plot->set_max_x(120);
+                plot->set_min_y(-120);
+                plot->set_max_y(120);
+            }
+        }
+        else if (TEST == TEST_SMALL1) {
+            PlotDataVector vec;
+
+            auto maxx = 2'00'000;
+            auto maxy = 2'00'000;
+
+            for (int f = 0; f < 10; f++) {
+            #ifdef _WIN32
+                vec.push_back(PlotData((double) (rand() % maxx) / (double) (maxx * maxx), (double) ((rand() * rand()) % maxy) / (double) (maxy * maxy)));
+            #else
+                vec.push_back(PlotData((double) (rand() % maxx) / (double) (maxx * maxx), (double) (rand() % maxy) / (double) (maxx * maxx)));
+            #endif
+            }
+
+            plot->add_line(PlotLine(vec, "TYPE::CIRCLE", PlotLine::TYPE::CIRCLE, color::TEAL, 11));
+            plot->xscale().set_label(TEST_SMALL1);
+            plot->yscale().set_label(TEST_SMALL1);
+        }
+        else if (TEST == TEST_SMALL2) {
+            plot->add_line(PlotLine(create_random_small(), "TYPE::FILLED_CIRCLE", PlotLine::TYPE::FILLED_CIRCLE, FL_BLUE, 21));
+            plot->add_line(PlotLine(create_random_small(1'000), "TYPE::SQUARE", PlotLine::TYPE::SQUARE, FL_RED, 12));
+            plot->xscale().set_label(TEST_SMALL2);
+            plot->yscale().set_label(TEST_SMALL2);
+        }
+        else if (TEST == TEST_VECTOR1) {
+            PlotDataVector vec;
+
+            auto maxx = 100;
+            auto maxy = 100;
+
+            for (int f = 0; f <= 20; f++) {
+                auto p = PlotData((double) (rand() % maxx), (double) (rand() % maxy));
+                auto x = (rand() % 20) - 10;
+                auto y = (rand() % 20) - 10;
+
+                vec.push_back(p);
+                vec.push_back(PlotData(p.x + x, p.y += y));
+            }
+
+            plot->add_line(PlotLine(vec, "TYPE::VECTOR", PlotLine::TYPE::VECTOR, color::TEAL, 2));
+            plot->xscale().set_label(TEST_VECTOR1);
+            plot->yscale().set_label(TEST_VECTOR1);
+        }
+        else if (TEST == TEST_VECTOR2) {
+            PlotDataVector vec;
+
+            vec.push_back(PlotData(0.0, 0.0));
+            vec.push_back(PlotData(0.0, 0.0));
+
+            for (int f = 1; f <= 10; f++) {
+                vec.push_back(PlotData(f, 0.0));
+                vec.push_back(PlotData(f, rand() % 100));
+            }
+
+            vec.push_back(PlotData(11.0, 0.0));
+            vec.push_back(PlotData(11.0, 0.0));
+            
+            plot->add_line(PlotLine(vec, "TYPE::VECTOR", PlotLine::TYPE::VECTOR, color::TEAL, 21));
+            plot->xscale().set_label(TEST_VECTOR2);
+            plot->xscale().set_color(color::CRIMSON);
+            plot->yscale().set_label(TEST_VECTOR2);
+            plot->yscale().set_color(color::TEAL);
+        }
+
+        plot->init_new_data();
+    }
+
+    //--------------------------------------------------------------------------
     int handle(int event) override {
         return Fl_Double_Window::handle(event);
     }
 
+    //--------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         menu->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
         plot->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
-//        plot->resize(50, 50, W - 100, H - 100);
+//        plot->resize(100, 100, W - 150, H - 150);
     }
 
-    void run_menu(std::string s) {
-        if (s == MENU_SRAND666) {
-            RAND_666 = true;
-        }
-        else if (s == MENU_SRANDTIME) {
-            RAND_666 = false;
-        }
-        else if (s == MENU_AUTORUN) {
-            TEST = "";
-            menu->deactivate();
-            Fl::add_timeout(0.5, callback_timer, this);
-        }
-        else if (s == "" || s == MENU_10LINES) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_line(-10), Plot::LINE, 3, "1 Plot::LINE", color::CRIMSON);
-            plot->add_line(create_line(-9), Plot::LINE, 3, "2 Plot::LINE", color::OLIVE);
-            plot->add_line(create_line(-8), Plot::LINE, 3, "3 Plot::LINE", color::TEAL);
-            plot->add_line(create_line(-7), Plot::LINE, 3, "4 Plot::LINE", color::GOLD);
-            plot->add_line(create_line(-6), Plot::LINE, 3, "5 Plot::LINE", color::TURQUOISE);
-            plot->add_line(create_line(-5), Plot::LINE, 3, "6 Plot::LINE", color::ROYALBLUE);
-            plot->add_line(create_line(-4), Plot::LINE, 3, "7 Plot::LINE", color::PINK);
-            plot->add_line(create_line(-3), Plot::LINE, 3, "8 Plot::LINE", color::OLIVE);
-            plot->add_line(create_line(-2), Plot::LINE, 3, "9 Plot::LINE", color::CHOCOLATE);
-            plot->add_line(create_line(-1), Plot::LINE, 3, "10 Plot::LINE", color::FORESTGREEN);
-            plot->labels(MENU_10LINES, MENU_10LINES);
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s == MENU_BAR) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_bar(100), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
-            plot->labels(MENU_BAR, MENU_BAR);
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s=="1" || s == MENU_DAYS) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_days(), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
-            plot->custom_ylabels_for_points0(create_days2());
-            plot->labels(MENU_DAYS, "Sum");
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s == MENU_EMPTY) {
-            plot->clear();
-            plot->layout();
-        }
-        else if (s == MENU_LARGE) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_random_large(), Plot::LINE, 3, "Plot::LINE", color::TEAL);
-            plot->add_line(create_random_large(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::OLIVE);
-            plot->add_line(create_random_large(), Plot::LINE_DOT, 3, "Plot::LINE_DOT", color::CRIMSON);
-            plot->labels(MENU_LARGE, MENU_LARGE);
-            plot->layout();
-        }
-        else if (s == MENU_LINE) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_line(-10), Plot::LINE_WITH_SQUARE, 1, "Plot::LINE_WITH_SQUARE", color::TEAL);
-            plot->labels(MENU_LINE, MENU_LINE);
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s == MENU_MLINE) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_big_line(), Plot::LINE, 1, "Plot::LINE", color::TEAL);
-            plot->labels("", MENU_MLINE);
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s=="1" || s == MENU_MONTHS) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_months(), Plot::VECTOR, 21, "Plot::VECTOR", color::TEAL);
-            plot->add_line(create_months(), Plot::LINE_DASH, 3, "Plot::LINE_DASH", color::CRIMSON);
-            plot->custom_xlabels_for_points0(create_months2());
-            plot->labels(MENU_MONTHS, "Y-Sum");
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s == MENU_NP) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_neg(), Plot::SQUARE, 7, "Plot::SQUARE", color::TEAL);
-            plot->labels(MENU_NP, MENU_NP);
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
-        else if (s == MENU_SMALL) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_random_small(), Plot::FILLED_CIRCLE, 21, "Plot::FILLED_CIRCLE", color::TEAL);
-            plot->add_line(create_random_small(), Plot::SQUARE, 7, "Plot::SQUARE", color::CRIMSON);
-            plot->labels(MENU_SMALL, MENU_SMALL);
-            plot->layout();
-        }
-        else if (s == MENU_VECTOR) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_vector(), Plot::VECTOR, 2, "Plot::VECTOR", color::TEAL);
-            plot->labels(MENU_VECTOR, MENU_VECTOR);
-            plot->layout();
-        }
-        else if (s == MENU_VSMALL) {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_random_very_small(), Plot::CIRCLE, 9, "Plot::CIRCLE", color::TEAL);
-            plot->labels(MENU_VSMALL, MENU_VSMALL);
-            plot->layout();
-        }
-        else {
-            if (RAND_666) srand(666); else srand(time(nullptr));
-            plot->clear();
-            plot->add_line(create_ref(), Plot::CIRCLE, 11, "Plot::CIRCLE", color::TEAL);
-            plot->add_line(create_point(0.0, 0.0), Plot::SQUARE, 7, "Plot::SQUARE", color::CRIMSON);
-            plot->labels(MENU_REF, MENU_REF);
-            plot->label_colors(color::CRIMSON, color::TEAL);
-            plot->layout();
-        }
+    //--------------------------------------------------------------------------
+    void update_pref() {
+        menu->textfont(flw::PREF_FONT);
+        menu->textsize(flw::PREF_FONTSIZE);
+        plot->update_pref();
+        plot->init_new_data();
+        resize(x(), y(), w(), h());
+        Fl::redraw();
     }
-
-    Plot*        plot;
-    Fl_Menu_Bar* menu;
 };
 
-void callback_timer(void *data) {
-    auto test = (Test*) data;
-
-    if (TEST == MENU_DAYS) {
-        TEST = MENU_10LINES;
-        test->menu->activate();
-        Fl::remove_timeout(callback_timer, data);
-    }
-    else {
-        if (TEST == "") {
-            TEST = MENU_10LINES;
-        }
-        else if (TEST == MENU_10LINES) {
-            TEST = MENU_REF;
-        }
-        else if (TEST == MENU_REF) {
-            TEST = MENU_SMALL;
-        }
-        else if (TEST == MENU_VSMALL) {
-            TEST = MENU_LARGE;
-        }
-        else if (TEST == MENU_SMALL) {
-            TEST = MENU_VSMALL;
-        }
-        else if (TEST == MENU_LARGE) {
-            TEST = MENU_NP;
-        }
-        else if (TEST == MENU_NP) {
-            TEST = MENU_LINE;
-        }
-        else if (TEST == MENU_LINE) {
-            TEST = MENU_MLINE;
-        }
-        else if (TEST == MENU_MLINE) {
-            TEST = MENU_VECTOR;
-        }
-        else if (TEST == MENU_VECTOR) {
-            TEST = MENU_BAR;
-        }
-        else if (TEST == MENU_BAR) {
-            TEST = MENU_MONTHS;
-        }
-        else if (TEST == MENU_MONTHS) {
-            TEST = MENU_DAYS;
-        }
-
-        Fl::repeat_timeout(2.0, callback_timer, data);
-    }
-
-    test->run_menu(TEST);
-}
-
+//------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
     }
 
-    Test win(1000, 600);
-    Test::Callback(win.menu, &win);
+    Test win(1200, 800);
     return Fl::run();
 }
