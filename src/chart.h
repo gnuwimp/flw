@@ -43,6 +43,9 @@ typedef std::vector<ChartArea>  ChartAreaVector;
 // Use the constructor so the date will be converted to "YYYYMMMMDD HHMMSS" (Date::FORMAT::ISO_TIME).
 //
 struct ChartData {
+    static constexpr const double MAX_VALUE = 9223372036854775807.0;
+    static constexpr const double MIN_VALUE = 0.0000001;
+
     enum class RANGE {
                                 DAY,
                                 WEEKDAY,
@@ -332,7 +335,7 @@ private:
 //
 class Chart : public Fl_Group {
     static const size_t         MAX_VLINES = 1400;
-    
+
 public:
     static const int            VERSION  =    5;
     static const int            MIN_TICK =    3;
@@ -357,7 +360,10 @@ public:
     int                         handle(int event) override;
     bool                        hor_lines() const
                                     { return _horizontal; }
-    void                        init(bool calc_dates);
+    void                        init()
+                                    { _init(false); }
+    void                        init_new_data()
+                                    { _init(true); }
     bool                        line_labels() const
                                     { return _labels; }
     bool                        load_csv();
@@ -425,6 +431,7 @@ private:
     void                        _draw_xlabels();
     void                        _draw_ylabels(ChartArea& area, Fl_Align align);
     ChartArea*                  _get_active_area(int X, int Y);
+    void                        _init(bool calc_dates);
     StringVector                _label_array(const ChartArea& area, Chart::LABELTYPE labeltype) const;
     bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::AREA destination = ChartArea::AREA::ONE);
     void                        _show_menu();
@@ -445,10 +452,10 @@ private:
     bool                        _labels;                // Line labels.
     bool                        _printing;              // Used when printing.
     bool                        _vertical;              // Vertical support lines.
+    const int                   _CH;                    // Font height.
+    const int                   _CW;                    // Font width.
     double                      _alt_size;              // Alternative size for day labels.
     int                         _bottom_space;          // Bottom space from last area to h() in pixels.
-    int                         _ch;                    // Font height.
-    int                         _cw;                    // Font width.
     int                         _date_start;            // Index in _dates vector for first date to display, changed by the scrollbar.
     int                         _margin_left;           // Width of left y scale in characters.
     int                         _margin_right;          // Width of right y scale in characters.

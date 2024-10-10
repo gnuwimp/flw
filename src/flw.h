@@ -30,6 +30,19 @@
 #define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
 #define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
 #define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#define FLW_PRINTD(...)                 FLW_PRINTD_MACRO(__VA_ARGS__, FLW_PRINTD4, FLW_PRINTD3, FLW_PRINTD2, FLW_PRINTD1)(__VA_ARGS__);
+#define FLW_PRINTD1(A)                  { ::printf("%d %s|  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A)); fflush(stdout); }
+#define FLW_PRINTD2(A,B)                { ::printf("%d %s|  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B)); fflush(stdout); }
+#define FLW_PRINTD3(A,B,C)              { ::printf("%d %s|  %s = %.10f,  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C)); fflush(stdout); }
+#define FLW_PRINTD4(A,B,C,D)            { ::printf("%d %s|  %s = %.10f,  %s = %.10f,  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C), #D, static_cast<double>(D)); fflush(stdout); }
+#define FLW_PRINTD_MACRO(A,B,C,D,N,...) N
+#define FLW_PRINTDS(...)                FLW_PRINTDS_MACRO(__VA_ARGS__, FLW_PRINTDS4, FLW_PRINTDS3, FLW_PRINTDS2, FLW_PRINTDS1)(__VA_ARGS__);
+#define FLW_PRINTDS1(A)                 { ::printf("%d %s|  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS2(A,B)               { ::printf("%d %s|  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS3(A,B,C)             { ::printf("%d %s|  %s = %s,  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS4(A,B,C,D)           { ::printf("%d %s|  %s = %s,  %s = %s,  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str(), #D, flw::util::format_double(static_cast<double>(D), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
+#define FLW_NL                          { ::printf("\n"); fflush(stdout); }
 #define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
 #define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
 #define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
@@ -39,6 +52,9 @@
 #define FLW_GREEN
 #define FLW_BLUE
 #define FLW_PRINT(...)
+#define FLW_PRINTD(...)
+#define FLW_PRINTDS(...)
+#define FLW_NL
 #define FLW_ASSERT(X,Y)
 #define FLW_TRUE(X)
 #define FLW_ASSERTD(X,Y,Z)
@@ -89,9 +105,11 @@ namespace menu {
 namespace util {
     void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
     double                      clock();
+    int                         count_decimals(double number);
     Fl_Widget*                  find_widget(Fl_Group* group, std::string label);
     std::string                 fix_menu_string(std::string in);
     std::string                 format(const char* format, ...);
+    std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
     bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);

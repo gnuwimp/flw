@@ -27,6 +27,19 @@
 #define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
 #define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
 #define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#define FLW_PRINTD(...)                 FLW_PRINTD_MACRO(__VA_ARGS__, FLW_PRINTD4, FLW_PRINTD3, FLW_PRINTD2, FLW_PRINTD1)(__VA_ARGS__);
+#define FLW_PRINTD1(A)                  { ::printf("%d %s|  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A)); fflush(stdout); }
+#define FLW_PRINTD2(A,B)                { ::printf("%d %s|  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B)); fflush(stdout); }
+#define FLW_PRINTD3(A,B,C)              { ::printf("%d %s|  %s = %.10f,  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C)); fflush(stdout); }
+#define FLW_PRINTD4(A,B,C,D)            { ::printf("%d %s|  %s = %.10f,  %s = %.10f,  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C), #D, static_cast<double>(D)); fflush(stdout); }
+#define FLW_PRINTD_MACRO(A,B,C,D,N,...) N
+#define FLW_PRINTDS(...)                FLW_PRINTDS_MACRO(__VA_ARGS__, FLW_PRINTDS4, FLW_PRINTDS3, FLW_PRINTDS2, FLW_PRINTDS1)(__VA_ARGS__);
+#define FLW_PRINTDS1(A)                 { ::printf("%d %s|  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS2(A,B)               { ::printf("%d %s|  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS3(A,B,C)             { ::printf("%d %s|  %s = %s,  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS4(A,B,C,D)           { ::printf("%d %s|  %s = %s,  %s = %s,  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str(), #D, flw::util::format_double(static_cast<double>(D), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
+#define FLW_NL                          { ::printf("\n"); fflush(stdout); }
 #define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
 #define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
 #define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
@@ -36,6 +49,9 @@
 #define FLW_GREEN
 #define FLW_BLUE
 #define FLW_PRINT(...)
+#define FLW_PRINTD(...)
+#define FLW_PRINTDS(...)
+#define FLW_NL
 #define FLW_ASSERT(X,Y)
 #define FLW_TRUE(X)
 #define FLW_ASSERTD(X,Y,Z)
@@ -73,9 +89,11 @@ namespace menu {
 namespace util {
     void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
     double                      clock();
+    int                         count_decimals(double number);
     Fl_Widget*                  find_widget(Fl_Group* group, std::string label);
     std::string                 fix_menu_string(std::string in);
     std::string                 format(const char* format, ...);
+    std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
     bool                        is_whitespace_or_empty(const char* str);
     void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
@@ -356,6 +374,8 @@ typedef std::vector<ChartData>  ChartDataVector;
 typedef std::vector<ChartLine>  ChartLineVector;
 typedef std::vector<ChartArea>  ChartAreaVector;
 struct ChartData {
+    static constexpr const double MAX_VALUE = 9223372036854775807.0;
+    static constexpr const double MIN_VALUE = 0.0000001;
     enum class RANGE {
                                 DAY,
                                 WEEKDAY,
@@ -594,7 +614,10 @@ public:
     int                         handle(int event) override;
     bool                        hor_lines() const
                                     { return _horizontal; }
-    void                        init(bool calc_dates);
+    void                        init()
+                                    { _init(false); }
+    void                        init_new_data()
+                                    { _init(true); }
     bool                        line_labels() const
                                     { return _labels; }
     bool                        load_csv();
@@ -660,6 +683,7 @@ private:
     void                        _draw_xlabels();
     void                        _draw_ylabels(ChartArea& area, Fl_Align align);
     ChartArea*                  _get_active_area(int X, int Y);
+    void                        _init(bool calc_dates);
     StringVector                _label_array(const ChartArea& area, Chart::LABELTYPE labeltype) const;
     bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::AREA destination = ChartArea::AREA::ONE);
     void                        _show_menu();
@@ -678,10 +702,10 @@ private:
     bool                        _labels;
     bool                        _printing;
     bool                        _vertical;
+    const int                   _CH;
+    const int                   _CW;
     double                      _alt_size;
     int                         _bottom_space;
-    int                         _ch;
-    int                         _cw;
     int                         _date_start;
     int                         _margin_left;
     int                         _margin_right;

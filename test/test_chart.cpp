@@ -150,7 +150,7 @@ void test1(Chart* chart, std::string main_label, std::string label, const double
     chart->set_date_range(range);
     chart->set_tick_width(tick);
     chart->set_main_label(main_label);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ void test2(Chart* chart) {
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_hor_lines(false);
     chart->set_tick_width(10);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ void test3(Chart* chart, std::string label, const ChartData::RANGE range, bool b
     chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(range);
     chart->set_block_dates(vec3);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -248,7 +248,7 @@ void test4(Chart* chart) {
     chart->area(ChartArea::AREA::ONE).add_line(line3);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(3);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ void test5(Chart* chart, std::string main_label, const int count) {
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(4);
     chart->set_main_label(main_label);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -332,7 +332,7 @@ void test6(Chart* chart, const ChartData::RANGE range) {
     chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(range);
     chart->set_tick_width(25);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -360,7 +360,7 @@ void test7(Chart* chart) {
     chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(6);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -400,7 +400,7 @@ void test8(Chart* chart) {
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(25);
     chart->set_block_dates(vec2);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
@@ -455,12 +455,12 @@ void test9(Chart* chart) {
     chart->area(ChartArea::AREA::ONE).set_max_clamp(12);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(30);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
 void test10(Chart* chart) {
-    auto vec1   = create_serie2("20010101", "20041231", 1'000'000'000, 0.01);
+    auto vec1   = create_serie2("20010101", "20041231", 321'000'000'000, 0.01);
     auto line1  = ChartLine(vec1, "ChartLine::TYPE::LINE_DOT", ChartLine::TYPE::LINE_DOT);
 
     line1.set_align(FL_ALIGN_RIGHT).set_color(FL_BLUE).set_width(4);
@@ -468,7 +468,7 @@ void test10(Chart* chart) {
     chart->area(ChartArea::AREA::ONE).add_line(line1);
     chart->set_date_range(ChartData::RANGE::DAY);
     chart->set_tick_width(10);
-    chart->init(true);
+    chart->init_new_data();
 }
 
 /***
@@ -540,7 +540,8 @@ public:
         menu->add("&Settings/Font 24",            0, Test::Callback24, this, FL_MENU_DIVIDER);
         menu->add("&Settings/Alt Font 0.6",       0, Test::CallbackA06, this);
         menu->add("&Settings/Alt Font 0.8",       0, Test::CallbackA08, this);
-        menu->add("&Settings/Alt Font 1.0",       0, Test::CallbackA10, this);
+        menu->add("&Settings/Alt Font 1.0",       0, Test::CallbackA10, this, FL_MENU_DIVIDER);
+        menu->add("&Settings/Debug",              0, Test::CallbackDebug, this);
         
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
@@ -608,6 +609,17 @@ public:
         self->menu->deactivate();
         self->chart->disable_menu();
         Fl::add_timeout(0.5, Test::CallbackTimer, v);
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackDebug(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::PREF_FONTSIZE = 24;
+        flw::PREF_FIXED_FONTSIZE = 24;
+        self->update_pref();
+        self->size(800, 592);
+        TEST = TEST_LARGE_VALUE2;
+        self->create_chart();
     }
 
     //--------------------------------------------------------------------------
@@ -746,7 +758,7 @@ public:
         else if (TEST == TEST_AREA4)            test5(chart, "Four Chart Areas", 4);
         else if (TEST == TEST_AREA5)            test5(chart, "Five Chart Areas", 5);
         
-        else if (TEST == TEST_EMPTY)            { chart->set_main_label("Empty"); chart->init(true); }
+        else if (TEST == TEST_EMPTY)            { chart->set_main_label("Empty"); chart->init_new_data(); }
 
         chart->take_focus();
         Fl::redraw();
@@ -762,12 +774,10 @@ public:
 
     //--------------------------------------------------------------------------
     void update_pref() {
-        menu->labelfont(flw::PREF_FONT);
-        menu->labelsize(flw::PREF_FONTSIZE);
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
         chart->update_pref();
-        chart->do_layout();
+        chart->init();
         resize(x(), y(), w(), h());
         Fl::redraw();
     }

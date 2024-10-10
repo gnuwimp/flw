@@ -333,6 +333,60 @@ double util::clock() {
 }
 
 //------------------------------------------------------------------------------
+int util::count_decimals(double num) {
+    num = fabs(num);
+
+    if (num > 9'223'372'036'854'775'807.0) {
+        return 0;
+    }
+
+    int    res     = 0;
+    char*  end     = 0;
+    double inum = static_cast<int64_t>(num);
+    double fnum = num - inum;
+    char   buffer[100];
+
+    if (num > 999'999'999'999'999) {
+        snprintf(buffer, 100, "%.1f", fnum);
+    }
+    else if (num > 9'999'999'999'999) {
+        snprintf(buffer, 100, "%.2f", fnum);
+    }
+    else if (num > 999'999'999'999) {
+        snprintf(buffer, 100, "%.3f", fnum);
+    }
+    else if (num > 99'999'999'999) {
+        snprintf(buffer, 100, "%.4f", fnum);
+    }
+    else if (num > 9'999'999'999) {
+        snprintf(buffer, 100, "%.5f", fnum);
+    }
+    else if (num > 999'999'999) {
+        snprintf(buffer, 100, "%.6f", fnum);
+    }
+    else if (num > 99'999'999) {
+        snprintf(buffer, 100, "%.7f", fnum);
+    }
+    else if (num > 9'999'999) {
+        snprintf(buffer, 100, "%.8f", fnum);
+    }
+    else {
+        snprintf(buffer, 100, "%.9f", fnum);
+    }
+
+    size_t len = strlen(buffer);
+    end = buffer + len - 1;
+
+    while (*end == '0') {
+        *end = 0;
+        end--;
+    }
+
+    res = strlen(buffer) - 2;
+    return res;
+}
+
+//------------------------------------------------------------------------------
 Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
     for (int f = 0; f < group->children(); f++) {
         auto w = group->child(f);
@@ -405,6 +459,45 @@ std::string util::format(const char* format, ...) {
     va_end(args);
     res = buf;
     free(buf);
+    return res;
+}
+
+//------------------------------------------------------------------------------
+std::string util::format_double(double num, int decimals, char del) {
+    if (num > 9'223'372'036'854'775'807.0) {
+        return "err";
+    }
+
+    if (decimals < 0) {
+        decimals = util::count_decimals(num);
+    }
+    
+    if (del < 32) {
+        del = 32;
+    }
+    
+    if (decimals == 0 || decimals > 9) {
+        return util::format_int(static_cast<int64_t>(num), del);
+    }
+
+    char res[100];
+    char fr_str[100];
+    auto int_num    = static_cast<int64_t>(fabs(num));
+    auto double_num = static_cast<double>(fabs(num) - int_num);
+    auto int_str    = util::format_int(int_num, del);
+    auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
+    *res = 0;
+
+    if (len > 0 && len < 100) {
+        if (num < 0.0) {
+            res[0] = '-';
+            res[1] = 0;
+        }
+
+        strncat(res, int_str.c_str(), 99);
+        strncat(res, fr_str + 1, 99);
+    }
+
     return res;
 }
 
