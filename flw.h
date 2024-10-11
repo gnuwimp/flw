@@ -1938,6 +1938,8 @@ public:
     void                        do_layout()
                                     { clear_layout(); TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
     void                        draw() override;
+    void                        enable_resize_check()
+                                    { _check2 = true; }
     int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs();
@@ -1975,6 +1977,7 @@ private:
     TABS                        _tabs;
     WidgetVector                _widgets;
     bool                        _drag;
+    bool                        _check2;
     int                         _active;
     int                         _e;
     int                         _n;

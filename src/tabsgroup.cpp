@@ -70,6 +70,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _s      = 0;
     _w      = 0;
     _e      = 0;
+    _check2 = false;
 
     _pack->end();
     _scroll->box(FL_NO_BOX);
@@ -374,7 +375,7 @@ std::string TabsGroup::label(Fl_Widget* widget) {
     if (num == -1) {
         return "";
     }
-    
+
     return _widgets[num]->label();
 }
 
@@ -385,7 +386,7 @@ void TabsGroup::label(std::string label, Fl_Widget* widget) {
     if (num == -1) {
         return;
     }
-    
+
     _widgets[num]->copy_label(label.c_str());
 }
 
@@ -420,7 +421,10 @@ Fl_Widget* TabsGroup::remove(int num) {
 void TabsGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
-    if ((_check.w() == W && _check.h() == H) || W == 0 || H == 0) {
+    if (W == 0 || H == 0) {
+        return;
+    }
+    else if (_check2 == true && _check.w() == W && _check.h() == H) {
         return;
     }
 
@@ -555,7 +559,7 @@ void TabsGroup::sort(bool ascending, bool casecompare) {
 
     for (int f = 0; f < _pack->children(); f++) {
         pack[f] = _widgets[f];
-        
+
         if (_widgets[f] == butt) {
             _active = f;
         }

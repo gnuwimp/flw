@@ -90,7 +90,7 @@ obj/date.o: src/date.cpp src/date.h
 obj/datechooser.o: src/datechooser.cpp src/datechooser.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/flw.h test/test.h
+obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/grid.o: src/grid.cpp src/grid.h src/tabledisplay.h  src/tableeditor.h src/flw.h
