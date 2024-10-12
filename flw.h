@@ -347,6 +347,7 @@ public:
     Date&                       year(int year);
     int                         yearday() const;
     static bool                 Compare(const Date& a, const Date& b);
+    static std::string          FormatSecToISO(int64_t seconds, bool utc = false);
     static Date                 FromString(const char* string, bool us = false);
     static Date                 FromTime(int64_t seconds, bool utc = false);
     static Date                 InvalidDate();
@@ -1932,14 +1933,10 @@ public:
     int                         children() const
                                     { return (int) _widgets.size(); }
     void                        clear();
-    void                        clear_layout()
-                                    { _check = Fl_Rect(); }
     void                        debug() const;
     void                        do_layout()
-                                    { clear_layout(); TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
     void                        draw() override;
-    void                        enable_resize_check()
-                                    { _check2 = true; }
     int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs();
@@ -1958,7 +1955,7 @@ public:
     TABS                        tabs() const
                                     { return _tabs; }
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE);
-    void                        update_pref(int pos = 14, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
+    void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
@@ -1972,12 +1969,10 @@ private:
     void                        _resize_widgets();
     Fl_Pack*                    _pack;
     Fl_Rect                     _area;
-    Fl_Rect                     _check;
     Fl_Scroll*                  _scroll;
     TABS                        _tabs;
     WidgetVector                _widgets;
     bool                        _drag;
-    bool                        _check2;
     int                         _active;
     int                         _e;
     int                         _n;

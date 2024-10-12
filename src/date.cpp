@@ -640,6 +640,20 @@ std::string Date::format(Date::FORMAT format) const {
 }
 
 //------------------------------------------------------------------------------
+std::string Date::FormatSecToISO(int64_t seconds, bool utc) {
+    const time_t rawtime  = (time_t) seconds;
+    const tm*    timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
+    char         buffer[100];
+
+    if (timeinfo == nullptr) {
+        return "";
+    }
+
+    snprintf(buffer, 100, "%04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    return buffer;
+}
+
+//------------------------------------------------------------------------------
 // Create date object by parsing a string buffer
 // Valid formats for dates are:
 // "19991224"

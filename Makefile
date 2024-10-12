@@ -49,7 +49,6 @@ endif
 all: obj \
 	$(OBJ) \
 	test_chart.exe \
-	test_date.exe \
 	test_datechooser.exe \
 	test_dlg.exe \
 	test_grid.exe \
@@ -148,15 +147,6 @@ test_chart.exe: obj/test_chart.o $(OBJ)
 
 run_chart: test_chart.exe
 	./test_chart.exe $(arg)
-
-obj/test_date.o: test/test_date.cpp $(OBJ)
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
-test_date.exe: obj/test_date.o $(OBJ)
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-run_date: test_date.exe
-	./test_date.exe $(arg)
 
 obj/test_datechooser.o: test/test_datechooser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@

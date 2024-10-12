@@ -3100,6 +3100,16 @@ std::string Date::format(Date::FORMAT format) const {
     }
     return tmp;
 }
+std::string Date::FormatSecToISO(int64_t seconds, bool utc) {
+    const time_t rawtime  = (time_t) seconds;
+    const tm*    timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
+    char         buffer[100];
+    if (timeinfo == nullptr) {
+        return "";
+    }
+    snprintf(buffer, 100, "%04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    return buffer;
+}
 Date Date::FromString(const char* buffer, bool us) {
     if (buffer == nullptr) {
         return Date::InvalidDate();
@@ -12627,7 +12637,6 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _s      = 0;
     _w      = 0;
     _e      = 0;
-    _check2 = false;
     _pack->end();
     _scroll->box(FL_NO_BOX);
     _scroll->add(_pack);
@@ -12906,9 +12915,6 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     if (W == 0 || H == 0) {
         return;
     }
-    else if (_check2 == true && _check.w() == W && _check.h() == H) {
-        return;
-    }
     if (_scroll->visible() == 0) {
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - _n - _s);
     }
@@ -12921,7 +12927,6 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
             _resize_east_west(X, Y, W, H);
         }
     }
-    _check = Fl_Rect(this);
     _resize_widgets();
 }
 void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
@@ -13080,9 +13085,9 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
         w->take_focus();
     }
 }
-void TabsGroup::update_pref(int pos, Fl_Font font, Fl_Fontsize fontsize) {
+void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
-    _pos  = fontsize * pos;
+    _pos  = fontsize * characters;
     for (auto widget : _widgets) {
         widget->labelfont(font);
         widget->labelsize(fontsize);

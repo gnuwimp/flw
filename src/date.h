@@ -135,6 +135,7 @@ public:
     int                         yearday() const;
 
     static bool                 Compare(const Date& a, const Date& b);
+    static std::string          FormatSecToISO(int64_t seconds, bool utc = false);
     static Date                 FromString(const char* string, bool us = false);
     static Date                 FromTime(int64_t seconds, bool utc = false);
     static Date                 InvalidDate();
