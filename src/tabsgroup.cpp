@@ -70,7 +70,6 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _s      = 0;
     _w      = 0;
     _e      = 0;
-    _check2 = false;
 
     _pack->end();
     _scroll->box(FL_NO_BOX);
@@ -424,9 +423,6 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     if (W == 0 || H == 0) {
         return;
     }
-    else if (_check2 == true && _check.w() == W && _check.h() == H) {
-        return;
-    }
 
     if (_scroll->visible() == 0) {
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - _n - _s);
@@ -443,7 +439,6 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
 
     }
 
-    _check = Fl_Rect(this);
     _resize_widgets();
 }
 
@@ -651,9 +646,9 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
 }
 
 //------------------------------------------------------------------------------
-void TabsGroup::update_pref(int pos, Fl_Font font, Fl_Fontsize fontsize) {
+void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
-    _pos  = fontsize * pos;
+    _pos  = fontsize * characters;
 
     for (auto widget : _widgets) {
         widget->labelfont(font);
