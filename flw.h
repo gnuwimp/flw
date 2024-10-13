@@ -4,243 +4,6 @@
 // -DFLW_USE_PNG
 #ifndef FLW_H
 #define FLW_H
-#include <string>
-#include <vector>
-#include <cmath>
-#include <FL/Fl_Group.H>
-#include <FL/Fl_Menu_.H>
-#include <FL/Fl_Preferences.H>
-#include <FL/Fl_PostScript.H>
-#ifdef DEBUG
-#include <iostream>
-#include <iomanip>
-#define FLW_LINE                        { ::printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_RED                         { ::printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_GREEN                       { ::printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_BLUE                        { ::printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
-#define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
-#define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << std::endl; fflush(stdout); }
-#define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << std::endl; fflush(stdout); }
-#define FLW_PRINT3(A,B,C)               { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << std::endl; fflush(stdout); }
-#define FLW_PRINT4(A,B,C,D)             { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << std::endl; fflush(stdout); }
-#define FLW_PRINT5(A,B,C,D,E)           { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << std::endl; fflush(stdout); }
-#define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << std::endl; fflush(stdout); }
-#define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << "\033[0m: " #A "=" << (A) << ", " #B "=" << (B) << ", " #C "=" << (C) << ", " #D "=" << (D) << ", " #E "=" << (E) << ", " #F "=" << (F) << ", " #G "=" << (G) << std::endl; fflush(stdout); }
-#define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
-#define FLW_PRINTD(...)                 FLW_PRINTD_MACRO(__VA_ARGS__, FLW_PRINTD4, FLW_PRINTD3, FLW_PRINTD2, FLW_PRINTD1)(__VA_ARGS__);
-#define FLW_PRINTD1(A)                  { ::printf("%d %s|  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A)); fflush(stdout); }
-#define FLW_PRINTD2(A,B)                { ::printf("%d %s|  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B)); fflush(stdout); }
-#define FLW_PRINTD3(A,B,C)              { ::printf("%d %s|  %s = %.10f,  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C)); fflush(stdout); }
-#define FLW_PRINTD4(A,B,C,D)            { ::printf("%d %s|  %s = %.10f,  %s = %.10f,  %s = %.10f,  %s = %.10f\n", __LINE__, __FILE__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C), #D, static_cast<double>(D)); fflush(stdout); }
-#define FLW_PRINTD_MACRO(A,B,C,D,N,...) N
-#define FLW_PRINTDS(...)                FLW_PRINTDS_MACRO(__VA_ARGS__, FLW_PRINTDS4, FLW_PRINTDS3, FLW_PRINTDS2, FLW_PRINTDS1)(__VA_ARGS__);
-#define FLW_PRINTDS1(A)                 { ::printf("%d %s|  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str()); fflush(stdout); }
-#define FLW_PRINTDS2(A,B)               { ::printf("%d %s|  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str()); fflush(stdout); }
-#define FLW_PRINTDS3(A,B,C)             { ::printf("%d %s|  %s = %s,  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str()); fflush(stdout); }
-#define FLW_PRINTDS4(A,B,C,D)           { ::printf("%d %s|  %s = %s,  %s = %s,  %s = %s,  %s = %s\n", __LINE__, __FILE__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str(), #D, flw::util::format_double(static_cast<double>(D), 0, '\'').c_str()); fflush(stdout); }
-#define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
-#define FLW_NL                          { ::printf("\n"); fflush(stdout); }
-#define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
-#define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
-#define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
-#else
-#define FLW_LINE
-#define FLW_RED
-#define FLW_GREEN
-#define FLW_BLUE
-#define FLW_PRINT(...)
-#define FLW_PRINTD(...)
-#define FLW_PRINTDS(...)
-#define FLW_NL
-#define FLW_ASSERT(X,Y)
-#define FLW_TRUE(X)
-#define FLW_ASSERTD(X,Y,Z)
-#endif
-namespace flw {
-extern int                      PREF_FIXED_FONT;
-extern std::string              PREF_FIXED_FONTNAME;
-extern int                      PREF_FIXED_FONTSIZE;
-extern Fl_Font                  PREF_FONT;
-extern int                      PREF_FONTSIZE;
-extern std::string              PREF_FONTNAME;
-extern std::vector<char*>       PREF_FONTNAMES;
-extern std::string              PREF_THEME;
-extern const char* const        PREF_THEMES[];
-typedef std::vector<std::string> StringVector;
-typedef std::vector<void*>       VoidVector;
-typedef std::vector<Fl_Widget*>  WidgetVector;
-typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
-namespace debug {
-    void                        print(const Fl_Widget* widget);
-    void                        print(const Fl_Widget* widget, std::string& indent);
-    bool                        test(bool val, int line, const char* func);
-    bool                        test(const char* ref, const char* val, int line, const char* func);
-    bool                        test(int64_t ref, int64_t val, int line, const char* func);
-    bool                        test(double ref, double val, double diff, int line, const char* func);
-}
-namespace menu {
-    void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
-    Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
-    Fl_Menu_Item*               get_item(Fl_Menu_* menu, void* v);
-    bool                        item_value(Fl_Menu_* menu, const char* text);
-    void                        set_item(Fl_Menu_* menu, const char* text, bool value);
-    void                        setonly_item(Fl_Menu_* menu, const char* text);
-}
-namespace util {
-    void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
-    double                      clock();
-    int                         count_decimals(double number);
-    Fl_Widget*                  find_widget(Fl_Group* group, std::string label);
-    std::string                 fix_menu_string(std::string in);
-    std::string                 format(const char* format, ...);
-    std::string                 format_double(double num, int decimals = 0, char del = ' ');
-    std::string                 format_int(int64_t num, char del = ' ');
-    bool                        is_whitespace_or_empty(const char* str);
-    void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
-    int64_t                     microseconds();
-    int32_t                     milliseconds();
-    bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
-    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
-    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
-    std::string                 remove_browser_format(const char* text);
-    std::string&                replace_string(std::string& string, std::string find, std::string replace);
-    void                        sleep(int milli);
-    StringVector                split_string(const std::string& string, std::string split);
-    double                      to_double(std::string s, double def = INFINITY);
-    long long                   to_long(std::string s, long long def = 0);
-    static inline std::string   to_string(const char* text)
-                                    { return text != nullptr ? text : ""; }
-    void*                       zero_memory(char* mem, size_t size);
-}
-namespace theme {
-    bool                        is_dark();
-    bool                        load(std::string name);
-    int                         load_font(std::string requested_font);
-    void                        load_fonts(bool iso8859_only = true);
-    void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
-    void                        load_theme_pref(Fl_Preferences& pref);
-    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2 = 1, int defw = 800, int defh = 600, std::string basename = "gui.");
-    bool                        parse(int argc, const char** argv);
-    void                        save_theme_pref(Fl_Preferences& pref);
-    void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
-    enum {
-                                THEME_DEFAULT,
-                                THEME_GLEAM,
-                                THEME_GLEAM_BLUE,
-                                THEME_GLEAM_DARK,
-                                THEME_GLEAM_TAN,
-                                THEME_GTK,
-                                THEME_GTK_BLUE,
-                                THEME_GTK_DARK,
-                                THEME_GTK_TAN,
-                                THEME_OXY,
-                                THEME_OXY_TAN,
-                                THEME_PLASTIC,
-                                THEME_PLASTIC_TAN,
-                                THEME_NIL,
-    };
-}
-namespace color {
-    extern Fl_Color             BEIGE;
-    extern Fl_Color             CHOCOLATE;
-    extern Fl_Color             CRIMSON;
-    extern Fl_Color             DARKOLIVEGREEN;
-    extern Fl_Color             DODGERBLUE;
-    extern Fl_Color             FORESTGREEN;
-    extern Fl_Color             GOLD;
-    extern Fl_Color             GRAY;
-    extern Fl_Color             INDIGO;
-    extern Fl_Color             OLIVE;
-    extern Fl_Color             PINK;
-    extern Fl_Color             ROYALBLUE;
-    extern Fl_Color             SIENNA;
-    extern Fl_Color             SILVER;
-    extern Fl_Color             SLATEGRAY;
-    extern Fl_Color             TEAL;
-    extern Fl_Color             TURQUOISE;
-    extern Fl_Color             VIOLET;
-}
-struct Buf {
-    char*                       p;
-    size_t                      s;
-                                Buf();
-    explicit                    Buf(size_t S);
-                                Buf(const char* P, size_t S, bool grab = false);
-                                Buf(const Buf& b);
-                                Buf(Buf&& b);
-    Buf&                        operator=(const Buf& b);
-    Buf&                        operator=(Buf&& b);
-    Buf&                        operator+=(const Buf& b);
-    bool                        operator==(const Buf& other) const;
-    virtual                     ~Buf()
-                                    { free(p); }
-};
-struct File {
-    enum class TYPE {
-                                NA,
-                                DIR,
-                                FILE,
-                                OTHER,
-    };
-    int64_t                     size;
-    int64_t                     mtime;
-    TYPE                        type;
-                                File()
-                                    { size = mtime = 0; type = TYPE::NA; }
-                                File(std::string filename);
-    static Buf                  Load(std::string filename, bool alert = true);
-    static bool                 Save(std::string filename, const char* data, size_t size, bool alert = true);
-    static inline bool          Save(std::string filename, const Buf& buf, bool alert = true)
-                                    { return File::Save(filename, buf.p, buf.s, alert); }
-};
-class PrintText {
-public:
-                                PrintText(std::string filename,
-                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4,
-                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT,
-                                    Fl_Font font = FL_COURIER,
-                                    Fl_Fontsize fontsize = 14,
-                                    Fl_Align align = FL_ALIGN_LEFT,
-                                    bool wrap = true,
-                                    bool border = false,
-                                    int line_num = 0);
-                                ~PrintText();
-    Fl_Fontsize                 fontsize() const
-                                    { return _fontsize; }
-    int                         page_count() const
-                                    { return _page_count; }
-    std::string                 print(const char* text, unsigned replace_tab_with_space = 0);
-    std::string                 print(const std::string& text, unsigned replace_tab_with_space = 0);
-    std::string                 print(const StringVector& lines, unsigned replace_tab_with_space = 0);
-private:
-    void                        check_for_new_page();
-    void                        measure_lw_lh(const std::string& text);
-    void                        print_line(const std::string& line);
-    void                        print_wrapped_line(const std::string& line);
-    std::string                 start();
-    std::string                 stop();
-    Fl_Align                    _align;
-    Fl_Font                     _font;
-    Fl_Fontsize                 _fontsize;
-    Fl_PostScript_File_Device*  _printer;
-    Fl_Paged_Device::Page_Format _page_format;
-    Fl_Paged_Device::Page_Layout _page_layout;
-    FILE*                       _file;
-    bool                        _border;
-    bool                        _wrap;
-    int                         _lh;
-    int                         _line_count;
-    int                         _line_num;
-    int                         _lw;
-    int                         _nw;
-    int                         _page_count;
-    int                         _ph;
-    int                         _pw;
-    int                         _px;
-    int                         _py;
-    std::string                 _filename;
-};
-}
 #include <cstdint>
 #include <string>
 namespace flw {
@@ -358,6 +121,558 @@ private:
     char                        _hour;
     char                        _min;
     char                        _sec;
+};
+}
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <vector>
+namespace flw {
+class File;
+typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
+typedef std::vector<File> FileVector;
+struct FileBuf {
+    char*                       p;
+    size_t                      s;
+                                FileBuf()
+                                    { p = nullptr; s = 0; }
+    explicit                    FileBuf(size_t S);
+                                FileBuf(const char* P, size_t S);
+                                FileBuf(const FileBuf& b);
+                                FileBuf(FileBuf&& b)
+                                    { p = b.p; s = b.s; b.p = nullptr; }
+                                FileBuf(const std::string& S)
+                                    { p = nullptr; add(S.c_str(), S.length()); }
+    virtual                     ~FileBuf()
+                                    { free(p); }
+    FileBuf&                    operator=(const FileBuf& b)
+                                    { return set(b.p, b.s); }
+    FileBuf&                    operator=(FileBuf&& b)
+                                    { free(p); p = b.p; s = b.s; b.p = nullptr; return *this; }
+    FileBuf&                    operator=(const std::string& S)
+                                    { free(p); p = nullptr; add(S.c_str(), S.length()); return *this; }
+    FileBuf&                    operator+=(const FileBuf& b)
+                                    { return add(b.p, b.s); }
+    bool                        operator==(const FileBuf& other) const;
+    bool                        operator!=(const FileBuf& other) const
+                                    { return (*this == other) == false; }
+    FileBuf&                    add(const char* P, size_t S);
+    void                        clear()
+                                    { free(p); p = nullptr; s = 0; }
+    void                        count(size_t count[257]) const
+                                    { FileBuf::Count(p, s, count); }
+    void                        debug() const
+                                    { printf("gnu::FileBuf(0x%p, %u)\n", p, (unsigned) s); }
+    uint64_t                    fletcher64() const
+                                    { return FileBuf::Fletcher64(p, s); }
+    FileBuf&                    grab(char* P, size_t S)
+                                    { free(p); p = P; s = S; return *this; }
+    FileBuf                     insert_cr(bool dos = true, bool trailing = false) const
+                                    { return FileBuf::InsertCR(p, s, dos, trailing); }
+    char*                       release()
+                                    { auto res = p; p = nullptr; s = 0; return res; }
+    FileBuf                     remove_cr() const
+                                    { return FileBuf::RemoveCR(p, s); }
+    FileBuf&                    set(const char* P, size_t S);
+    bool                        write(std::string filename) const;
+    static void                 Count(const char* P, size_t S, size_t count[257]);
+    static uint64_t             Fletcher64(const char* p, size_t s);
+    static inline FileBuf       Grab(char* P)
+                                    { auto res = FileBuf(); res.p = P; res.s = strlen(P); return res; }
+    static inline FileBuf       Grab(char* P, size_t S)
+                                    { auto res = FileBuf(); res.p = P; res.s = S; return res; }
+    static FileBuf              InsertCR(const char* P, size_t S, bool dos, bool trailing = false);
+    static FileBuf              RemoveCR(const char* P, size_t S);
+};
+class File {
+public:
+#ifdef _WIN32
+    static const int            DEFAULT_DIR_MODE  = 0x00000080;
+    static const int            DEFAULT_FILE_MODE = 0x00000080;
+#else
+    static const int            DEFAULT_DIR_MODE  = 0755;
+    static const int            DEFAULT_FILE_MODE = 0664;
+#endif
+    enum class TYPE {
+                                MISSING,
+                                DIR,
+                                FILE,
+                                OTHER,
+    };
+    File::TYPE                  type;
+    bool                        link;
+    int                         mode;
+    int64_t                     ctime;
+    int64_t                     mtime;
+    int64_t                     size;
+    std::string                 ext;
+    std::string                 filename;
+    std::string                 name;
+    std::string                 path;
+                                File()
+                                    { update(""); }
+    explicit                    File(std::string in, bool realpath = false)
+                                    { update(in, realpath); }
+    File&                       operator=(std::string in)
+                                    { return update(in); }
+    File&                       operator+=(std::string in)
+                                    { filename += in; return *this; }
+    bool                        operator==(const File& other) const
+                                    { return filename == other.filename; }
+    bool                        operator<(const File& other) const
+                                    { return filename < other.filename; }
+    bool                        operator<=(const File& other) const
+                                    { return filename <= other.filename; }
+    const char*                 c_str() const
+                                    { return filename.c_str(); }
+    std::string                 canonicalname() const
+                                    { return File::CanonicalName(filename); }
+    void                        debug(bool short_version = true) const
+                                    { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); }
+    bool                        is_circular() const;
+    bool                        is_dir() const
+                                    { return type == TYPE::DIR; }
+    bool                        is_file() const
+                                    { return type == TYPE::FILE; }
+    bool                        is_link() const
+                                    { return link; }
+    bool                        is_missing() const
+                                    { return type == TYPE::MISSING; }
+    bool                        is_other() const
+                                    { return type == TYPE::OTHER; }
+    std::string                 linkname() const;
+    std::string                 name_without_ext() const;
+    File&                       update();
+    File&                       update(std::string in, bool realpath = false);
+    std::string                 type_name() const;
+    std::string                 to_string(bool short_version = true) const;
+    static char*                Allocate(char* resize_or_null, size_t size, bool exception = true);
+    static std::string          CanonicalName(std::string filename);
+    static bool                 ChDir(std::string path);
+    static std::string          CheckFilename(std::string filename);
+    static bool                 ChMod(std::string path, int mode);
+    static FileBuf              CloseStderr();
+    static FileBuf              CloseStdout();
+    static bool                 Copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr);
+    static std::string          HomeDir();
+    static bool                 MkDir(std::string path);
+    static bool                 ModTime(std::string path, int64_t time);
+    static FILE*                Open(std::string path, std::string mode);
+    static std::string          OS();
+    static FILE*                Popen(std::string cmd, bool write = false);
+    static FileBuf              Read(std::string path);
+    static FileBuf*             Read2(std::string path);
+    static FileVector           ReadDir(std::string path);
+    static FileVector           ReadDirRec(std::string path);
+    static bool                 RedirectStderr();
+    static bool                 RedirectStdout();
+    static bool                 Remove(std::string path);
+    static bool                 RemoveRec(std::string path);
+    static bool                 Rename(std::string from, std::string to);
+    static int                  Run(std::string cmd, bool background, bool hide_win32_window = false);
+    static File                 TmpDir();
+    static File                 TmpFile(std::string prepend = "");
+    static File                 WorkDir();
+    static bool                 Write(std::string filename, const char* in, size_t in_size);
+    static inline bool          Write(std::string filename, const FileBuf& b)
+                                    { return Write(filename, b.p, b.s); }
+    };
+}
+#include <assert.h>
+#include <cstring>
+#include <map>
+#include <string>
+#include <vector>
+namespace flw {
+class JS;
+typedef std::map<std::string, JS*> JSObject;
+typedef std::vector<JS*> JSArray;
+class JS {
+    friend class JSB;
+public:
+    static const size_t         MAX_DEPTH = 32;
+    enum TYPE {
+                                OBJECT,
+                                ARRAY,
+                                STRING,
+                                NUMBER,
+                                BOOL,
+                                NIL,
+    };
+    enum class ENCODE_OPTION {
+                                NORMAL,
+                                REMOVE_LEADING,
+                                REMOVE_LEADING_AND_NEWLINES,
+    };
+                                JS(const JS&) = delete;
+                                JS(JS&&) = delete;
+    JS&                         operator=(const JS&) = delete;
+    JS&                         operator=(JS&&) = delete;
+                                JS()
+                                    { JS::COUNT++; _type = JS::NIL; _name = strdup(""); _vb = false; _parent = nullptr; _enc_flag = 0; _pos = 0; }
+                                ~JS()
+                                    { JS::COUNT--; _clear(true); }
+    bool                        operator==(JS::TYPE type) const
+                                    { return _type == type; }
+    bool                        operator!=(JS::TYPE type) const
+                                    { return _type != type; }
+    const JS*                   operator[](std::string name) const
+                                    { return _get_object(name.c_str(), true); }
+    const JS*                   operator[](size_t index) const
+                                    { return (_type == JS::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
+    std::string                 decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
+    std::string                 decode(std::string json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false)
+                                    { return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check); }
+    void                        debug() const;
+    std::string                 encode(JS::ENCODE_OPTION option = ENCODE_OPTION::NORMAL) const;
+    const JS*                   find(std::string name, bool rec = false) const;
+    const JS*                   get(std::string name, bool escape_name = true) const
+                                    { return _get_object(name.c_str(), escape_name); }
+    const JS*                   get(size_t index) const
+                                    { return (*this) [index]; }
+    bool                        is_array() const
+                                    { return _type == JS::ARRAY; }
+    bool                        is_bool() const
+                                    { return _type == JS::BOOL; }
+    bool                        is_null() const
+                                    { return _type == JS::NIL; }
+    bool                        is_number() const
+                                    { return _type == JS::NUMBER; }
+    bool                        is_object() const
+                                    { return _type == JS::OBJECT; }
+    bool                        is_string() const
+                                    { return _type == JS::STRING; }
+    std::string                 name() const
+                                    { return _name; }
+    const char*                 name_c() const
+                                    { return _name; }
+    std::string                 name_u() const
+                                    { return JS::Unescape(_name); }
+    JS*                         parent()
+                                    { return _parent; }
+    unsigned                    pos() const
+                                    { return _pos; }
+    size_t                      size() const
+                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
+    TYPE                        type() const
+                                    { return (TYPE) _type; }
+    std::string                 type_name() const
+                                    { assert(_type >= 0 && _type < (int) 6); return TYPE_NAMES[(unsigned) _type]; }
+    const JSArray*              va() const
+                                    { return (_type == JS::ARRAY) ? _va : nullptr; }
+    bool                        vb() const
+                                    { assert(_type == JS::BOOL); return (_type == JS::BOOL) ? _vb : false; }
+    double                      vn() const
+                                    { assert(_type == JS::NUMBER); return (_type == JS::NUMBER) ? _vn : 0.0; }
+    long long int               vn_i() const
+                                    { assert(_type == JS::NUMBER); return (_type == JS::NUMBER) ? (long long int) _vn : 0; }
+    const JSObject*             vo() const
+                                    { return (_type == JS::OBJECT) ? _vo : nullptr; }
+    const JSArray               vo_to_va() const;
+    std::string                 vs() const
+                                    { assert(_type == JS::STRING); return (_type == JS::STRING) ? _vs : ""; }
+    const char*                 vs_c() const
+                                    { assert(_type == JS::STRING); return (_type == JS::STRING) ? _vs : ""; }
+    std::string                 vs_u() const
+                                    { assert(_type == JS::STRING); return (_type == JS::STRING) ? JS::Unescape(_vs) : ""; }
+    static inline ssize_t       Count()
+                                    { return JS::COUNT; }
+    static size_t               CountUtf8(const char* p);
+    static std::string          Escape(const char* string);
+    static std::string          FormatNumber(double f, bool E = false);
+    static std::string          Unescape(const char* string);
+private:
+    explicit                    JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
+                                    { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
+    bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
+    bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);
+    bool                        _add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos);
+    bool                        _add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos);
+    void                        _clear(bool name);
+    std::string                 _encode(bool ignore_name, JS::ENCODE_OPTION option) const;
+    const JS*                   _get_object(const char* name, bool escape) const;
+    bool                        _set_object(const char* name, JS* js, bool ignore_duplicates);
+    static void                 _Encode(const JS* js, std::string& j, std::string& t, bool comma, JS::ENCODE_OPTION option);
+    static void                 _EncodeInline(const JS* js, std::string& j, bool comma, JS::ENCODE_OPTION option);
+    static inline JS*           _MakeArray(const char* name, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = ARRAY; r->_va = new JSArray(); return r; }
+    static inline JS*           _MakeBool(const char* name, bool vb, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = BOOL; r->_vb = vb; return r; }
+    static inline JS*           _MakeNil(const char* name, JS* parent, unsigned pos)
+                                    { return new JS(name, parent, pos); }
+    static inline JS*           _MakeNumber(const char* name, double vn, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = NUMBER; r->_vn = vn; return r; }
+    static inline JS*           _MakeObject(const char* name, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = OBJECT; r->_vo = new JSObject(); return r; }
+    static inline JS*           _MakeString(const char* name, const char* vs, JS* parent, unsigned pos)
+                                    { auto r = new JS(name, parent, pos); r->_type = STRING; r->_vs = strdup(vs); return r; }
+    static constexpr const char* TYPE_NAMES[7] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", };
+    static ssize_t              COUNT;
+    char                        _type;
+    char                        _enc_flag;
+    unsigned                    _pos;
+    JS*                         _parent;
+    char*                       _name;
+    union {
+        JSArray*                _va;
+        JSObject*               _vo;
+        bool                    _vb;
+        double                  _vn;
+        char*                   _vs;
+    };
+};
+class JSB {
+public:
+                                JSB()
+                                    { _root = _current = nullptr; }
+    virtual                     ~JSB()
+                                    { delete _root; }
+    JSB&                        operator<<(JS* json)
+                                    { return add(json); }
+    JSB&                        add(JS* json);
+    void                        clear()
+                                    { delete _root; _root = _current = nullptr; _name = ""; }
+    std::string                 encode() const;
+    JSB&                        end();
+    const JS*                   root() const
+                                    { return _root; }
+    static inline JS*           MakeArray(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); return r; }
+    static inline JS*           MakeArrayInline(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); r->_enc_flag = 1; return r; }
+    static inline JS*           MakeBool(bool vb, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::BOOL; r->_vb = vb; return r; }
+    static inline JS*           MakeNull(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NIL; return r; }
+    static inline JS*           MakeNumber(double vn, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NUMBER; r->_vn = vn; return r; }
+    static inline JS*           MakeObject(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); return r; }
+    static inline JS*           MakeObjectInline(const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); r->_enc_flag = 1; return r; }
+    static inline JS*           MakeString(const char* vs, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs).c_str() : vs); return r; }
+    static inline JS*           MakeString(std::string vs, const char* name = "", bool escape = true)
+                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs.c_str()).c_str() : vs.c_str()); return r; }
+private:
+    JS*                         _current;
+    JS*                         _root;
+    std::string                 _name;
+};
+}
+#include <string>
+#include <vector>
+#include <cmath>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Menu_.H>
+#include <FL/Fl_Preferences.H>
+#include <FL/Fl_PostScript.H>
+#ifdef DEBUG
+#include <iostream>
+#include <iomanip>
+#define FLW_LINE                        { ::printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_RED                         { ::printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_GREEN                       { ::printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_BLUE                        { ::printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
+#define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << std::endl; fflush(stdout); }
+#define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m" << std::endl; fflush(stdout); }
+#define FLW_PRINT3(A,B,C)               { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << "" << std::endl; fflush(stdout); }
+#define FLW_PRINT4(A,B,C,D)             { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m" << std::endl; fflush(stdout); }
+#define FLW_PRINT5(A,B,C,D,E)           { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m,  5=" << (E) << std::endl; fflush(stdout); }
+#define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m,  5=" << (E) << ",  \033[32m6=" << (F) << "\033[0m " << std::endl; fflush(stdout); }
+#define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m,  5=" << (E) << ",  \033[32m6=" << (F) << "\033[0m,  7=" << (G) << std::endl; fflush(stdout); }
+#define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
+#define FLW_PRINTV(...)                 FLW_PRINTV_MACRO(__VA_ARGS__, FLW_PRINTV7, FLW_PRINTV6, FLW_PRINTV5, FLW_PRINTV4, FLW_PRINTV3, FLW_PRINTV2, FLW_PRINTV1)(__VA_ARGS__);
+#define FLW_PRINTV1(A)                  { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << "" << std::endl; fflush(stdout); }
+#define FLW_PRINTV2(A,B)                { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m" << std::endl; fflush(stdout); }
+#define FLW_PRINTV3(A,B,C)              { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << "" << std::endl; fflush(stdout); }
+#define FLW_PRINTV4(A,B,C,D)            { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m" << std::endl; fflush(stdout); }
+#define FLW_PRINTV5(A,B,C,D,E)          { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m,  " #E "=" << (E) << "" << std::endl; fflush(stdout); }
+#define FLW_PRINTV6(A,B,C,D,E,F)        { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m,  " #E "=" << (E) << ",  \033[32m" #F "=" << (F) << "\033[0m" << std::endl; fflush(stdout); }
+#define FLW_PRINTV7(A,B,C,D,E,F,G)      { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m,  " #E "=" << (E) << ",  \033[32m" #F "=" << (F) << "\033[0m,  " #G "=" << (G) << "" << std::endl; fflush(stdout); }
+#define FLW_PRINTV_MACRO(A,B,C,D,E,F,G,N,...) N
+#define FLW_PRINTD(...)                 FLW_PRINTD_MACRO(__VA_ARGS__, FLW_PRINTD4, FLW_PRINTD3, FLW_PRINTD2, FLW_PRINTD1)(__VA_ARGS__);
+#define FLW_PRINTD1(A)                  { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %.10f\n", __LINE__, __func__, #A, static_cast<double>(A)); fflush(stdout); }
+#define FLW_PRINTD2(A,B)                { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %.10f,  \033[32m%s = %.10f\033[0m\n", __LINE__, __func__, #A, static_cast<double>(A), #B, static_cast<double>(B)); fflush(stdout); }
+#define FLW_PRINTD3(A,B,C)              { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %.10f,  \033[32m%s = %.10f\033[0m,  %s = %.10f\n", __LINE__, __func__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C)); fflush(stdout); }
+#define FLW_PRINTD4(A,B,C,D)            { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %.10f,  \033[32m%s = %.10f\033[0m,  %s = %.10f, \033[32m %s = %.10f\033[0m\n", __LINE__, __func__, #A, static_cast<double>(A), #B, static_cast<double>(B), #C, static_cast<double>(C), #D, static_cast<double>(D)); fflush(stdout); }
+#define FLW_PRINTD_MACRO(A,B,C,D,N,...) N
+#define FLW_PRINTDS(...)                FLW_PRINTDS_MACRO(__VA_ARGS__, FLW_PRINTDS4, FLW_PRINTDS3, FLW_PRINTDS2, FLW_PRINTDS1)(__VA_ARGS__);
+#define FLW_PRINTDS1(A)                 { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS2(A,B)               { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s,  \033[32m%s = %s\033[0m\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS3(A,B,C)             { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s,  \033[32m%s = %s\033[0m,  %s = %s\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS4(A,B,C,D)           { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s,  \033[32m%s = %s\033[0m,  %s = %s,  \033[32m%s = %s\033[0m\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str(), #D, flw::util::format_double(static_cast<double>(D), 0, '\'').c_str()); fflush(stdout); }
+#define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
+#define FLW_NL                          { ::printf("\n"); fflush(stdout); }
+#define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
+#define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
+#define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
+#else
+#define FLW_LINE
+#define FLW_RED
+#define FLW_GREEN
+#define FLW_BLUE
+#define FLW_PRINT(...)
+#define FLW_PRINTV(...)
+#define FLW_PRINTD(...)
+#define FLW_PRINTDS(...)
+#define FLW_NL
+#define FLW_ASSERT(X,Y)
+#define FLW_TRUE(X)
+#define FLW_ASSERTD(X,Y,Z)
+#endif
+namespace flw {
+extern int                      PREF_FIXED_FONT;
+extern std::string              PREF_FIXED_FONTNAME;
+extern int                      PREF_FIXED_FONTSIZE;
+extern Fl_Font                  PREF_FONT;
+extern int                      PREF_FONTSIZE;
+extern std::string              PREF_FONTNAME;
+extern std::vector<char*>       PREF_FONTNAMES;
+extern std::string              PREF_THEME;
+extern const char* const        PREF_THEMES[];
+typedef std::vector<std::string> StringVector;
+typedef std::vector<void*>       VoidVector;
+typedef std::vector<Fl_Widget*>  WidgetVector;
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
+namespace debug {
+    void                        print(const Fl_Widget* widget);
+    void                        print(const Fl_Widget* widget, std::string& indent);
+    bool                        test(bool val, int line, const char* func);
+    bool                        test(const char* ref, const char* val, int line, const char* func);
+    bool                        test(int64_t ref, int64_t val, int line, const char* func);
+    bool                        test(double ref, double val, double diff, int line, const char* func);
+}
+namespace menu {
+    void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
+    Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
+    Fl_Menu_Item*               get_item(Fl_Menu_* menu, void* v);
+    bool                        item_value(Fl_Menu_* menu, const char* text);
+    void                        set_item(Fl_Menu_* menu, const char* text, bool value);
+    void                        setonly_item(Fl_Menu_* menu, const char* text);
+}
+namespace util {
+    void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
+    double                      clock();
+    int                         count_decimals(double number);
+    Fl_Widget*                  find_widget(Fl_Group* group, std::string label);
+    std::string                 fix_menu_string(std::string in);
+    std::string                 format(const char* format, ...);
+    std::string                 format_double(double num, int decimals = 0, char del = ' ');
+    std::string                 format_int(int64_t num, char del = ' ');
+    bool                        is_whitespace_or_empty(const char* str);
+    void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
+    int64_t                     microseconds();
+    int32_t                     milliseconds();
+    bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
+    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
+    std::string                 remove_browser_format(const char* text);
+    std::string&                replace_string(std::string& string, std::string find, std::string replace);
+    void                        sleep(int milli);
+    StringVector                split_string(const std::string& string, std::string split);
+    std::string                 substr(std::string in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+    double                      to_double(std::string s, double def = INFINITY);
+    long long                   to_long(std::string s, long long def = 0);
+    static inline std::string   to_string(const char* text)
+                                    { return text != nullptr ? text : ""; }
+    void*                       zero_memory(char* mem, size_t size);
+}
+namespace theme {
+    bool                        is_dark();
+    bool                        load(std::string name);
+    int                         load_font(std::string requested_font);
+    void                        load_fonts(bool iso8859_only = true);
+    void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+    void                        load_theme_pref(Fl_Preferences& pref);
+    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2 = 1, int defw = 800, int defh = 600, std::string basename = "gui.");
+    bool                        parse(int argc, const char** argv);
+    void                        save_theme_pref(Fl_Preferences& pref);
+    void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
+    enum {
+                                THEME_DEFAULT,
+                                THEME_GLEAM,
+                                THEME_GLEAM_BLUE,
+                                THEME_GLEAM_DARK,
+                                THEME_GLEAM_TAN,
+                                THEME_GTK,
+                                THEME_GTK_BLUE,
+                                THEME_GTK_DARK,
+                                THEME_GTK_TAN,
+                                THEME_OXY,
+                                THEME_OXY_TAN,
+                                THEME_PLASTIC,
+                                THEME_PLASTIC_TAN,
+                                THEME_NIL,
+    };
+}
+namespace color {
+    extern Fl_Color             BEIGE;
+    extern Fl_Color             CHOCOLATE;
+    extern Fl_Color             CRIMSON;
+    extern Fl_Color             DARKOLIVEGREEN;
+    extern Fl_Color             DODGERBLUE;
+    extern Fl_Color             FORESTGREEN;
+    extern Fl_Color             GOLD;
+    extern Fl_Color             GRAY;
+    extern Fl_Color             INDIGO;
+    extern Fl_Color             OLIVE;
+    extern Fl_Color             PINK;
+    extern Fl_Color             ROYALBLUE;
+    extern Fl_Color             SIENNA;
+    extern Fl_Color             SILVER;
+    extern Fl_Color             SLATEGRAY;
+    extern Fl_Color             TEAL;
+    extern Fl_Color             TURQUOISE;
+    extern Fl_Color             VIOLET;
+}
+class PrintText {
+public:
+                                PrintText(std::string filename,
+                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4,
+                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT,
+                                    Fl_Font font = FL_COURIER,
+                                    Fl_Fontsize fontsize = 14,
+                                    Fl_Align align = FL_ALIGN_LEFT,
+                                    bool wrap = true,
+                                    bool border = false,
+                                    int line_num = 0);
+                                ~PrintText();
+    Fl_Fontsize                 fontsize() const
+                                    { return _fontsize; }
+    int                         page_count() const
+                                    { return _page_count; }
+    std::string                 print(const char* text, unsigned replace_tab_with_space = 0);
+    std::string                 print(const std::string& text, unsigned replace_tab_with_space = 0);
+    std::string                 print(const StringVector& lines, unsigned replace_tab_with_space = 0);
+private:
+    void                        check_for_new_page();
+    void                        measure_lw_lh(const std::string& text);
+    void                        print_line(const std::string& line);
+    void                        print_wrapped_line(const std::string& line);
+    std::string                 start();
+    std::string                 stop();
+    Fl_Align                    _align;
+    Fl_Font                     _font;
+    Fl_Fontsize                 _fontsize;
+    Fl_PostScript_File_Device*  _printer;
+    Fl_Paged_Device::Page_Format _page_format;
+    Fl_Paged_Device::Page_Layout _page_layout;
+    FILE*                       _file;
+    bool                        _border;
+    bool                        _wrap;
+    int                         _lh;
+    int                         _line_count;
+    int                         _line_num;
+    int                         _lw;
+    int                         _nw;
+    int                         _page_count;
+    int                         _ph;
+    int                         _pw;
+    int                         _px;
+    int                         _py;
+    std::string                 _filename;
 };
 }
 #include <FL/Fl_Group.H>
@@ -989,188 +1304,6 @@ private:
     void                        _add(bool insert, const StringVector& list);
     _InputMenu*                 _input;
     Fl_Menu_Button*             _menu;
-};
-}
-#include <assert.h>
-#include <string.h>
-#include <map>
-#include <string>
-#include <vector>
-namespace flw {
-class JS;
-typedef std::map<std::string, JS*> JSObject;
-typedef std::vector<JS*> JSArray;
-class JS {
-    friend class JSB;
-public:
-    static const size_t         MAX_DEPTH = 32;
-    enum TYPE {
-                                OBJECT,
-                                ARRAY,
-                                STRING,
-                                NUMBER,
-                                BOOL,
-                                NIL,
-    };
-    enum class ENCODE_OPTION {
-                                NORMAL,
-                                REMOVE_LEADING,
-                                REMOVE_LEADING_AND_NEWLINES,
-    };
-                                JS(const JS&) = delete;
-                                JS(JS&&) = delete;
-    JS&                         operator=(const JS&) = delete;
-    JS&                         operator=(JS&&) = delete;
-                                JS()
-                                    { JS::COUNT++; _type = JS::NIL; _name = strdup(""); _vb = false; _parent = nullptr; _enc_flag = 0; _pos = 0; }
-                                ~JS()
-                                    { JS::COUNT--; _clear(true); }
-    bool                        operator==(JS::TYPE type) const
-                                    { return _type == type; }
-    bool                        operator!=(JS::TYPE type) const
-                                    { return _type != type; }
-    const JS*                   operator[](std::string name) const
-                                    { return _get_object(name.c_str(), true); }
-    const JS*                   operator[](size_t index) const
-                                    { return (_type == JS::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
-    std::string                 decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
-    std::string                 decode(std::string json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false)
-                                    { return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check); }
-    void                        debug() const;
-    std::string                 encode(JS::ENCODE_OPTION option = ENCODE_OPTION::NORMAL) const;
-    const JS*                   find(std::string name, bool rec = false) const;
-    const JS*                   get(std::string name, bool escape_name = true) const
-                                    { return _get_object(name.c_str(), escape_name); }
-    const JS*                   get(size_t index) const
-                                    { return (*this) [index]; }
-    bool                        is_array() const
-                                    { return _type == JS::ARRAY; }
-    bool                        is_bool() const
-                                    { return _type == JS::BOOL; }
-    bool                        is_null() const
-                                    { return _type == JS::NIL; }
-    bool                        is_number() const
-                                    { return _type == JS::NUMBER; }
-    bool                        is_object() const
-                                    { return _type == JS::OBJECT; }
-    bool                        is_string() const
-                                    { return _type == JS::STRING; }
-    std::string                 name() const
-                                    { return _name; }
-    const char*                 name_c() const
-                                    { return _name; }
-    std::string                 name_u() const
-                                    { return JS::Unescape(_name); }
-    JS*                         parent()
-                                    { return _parent; }
-    unsigned                    pos() const
-                                    { return _pos; }
-    size_t                      size() const
-                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
-    TYPE                        type() const
-                                    { return (TYPE) _type; }
-    std::string                 type_name() const
-                                    { assert(_type >= 0 && _type < (int) 6); return TYPE_NAMES[(unsigned) _type]; }
-    const JSArray*              va() const
-                                    { return (_type == JS::ARRAY) ? _va : nullptr; }
-    bool                        vb() const
-                                    { assert(_type == JS::BOOL); return (_type == JS::BOOL) ? _vb : false; }
-    double                      vn() const
-                                    { assert(_type == JS::NUMBER); return (_type == JS::NUMBER) ? _vn : 0.0; }
-    long long int               vn_i() const
-                                    { assert(_type == JS::NUMBER); return (_type == JS::NUMBER) ? (long long int) _vn : 0; }
-    const JSObject*             vo() const
-                                    { return (_type == JS::OBJECT) ? _vo : nullptr; }
-    const JSArray               vo_to_va() const;
-    std::string                 vs() const
-                                    { assert(_type == JS::STRING); return (_type == JS::STRING) ? _vs : ""; }
-    const char*                 vs_c() const
-                                    { assert(_type == JS::STRING); return (_type == JS::STRING) ? _vs : ""; }
-    std::string                 vs_u() const
-                                    { assert(_type == JS::STRING); return (_type == JS::STRING) ? JS::Unescape(_vs) : ""; }
-    static inline ssize_t       Count()
-                                    { return JS::COUNT; }
-    static size_t               CountUtf8(const char* p);
-    static std::string          Escape(const char* string);
-    static std::string          FormatNumber(double f, bool E = false);
-    static std::string          Unescape(const char* string);
-private:
-    explicit                    JS(const char* name, JS* parent = nullptr, unsigned pos = 0)
-                                    { JS::COUNT++; _type = NIL; _name = strdup((name != nullptr) ? name : ""); _parent = parent; _enc_flag = 0; _pos = pos; }
-    bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
-    bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);
-    bool                        _add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos);
-    bool                        _add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos);
-    void                        _clear(bool name);
-    std::string                 _encode(bool ignore_name, JS::ENCODE_OPTION option) const;
-    const JS*                   _get_object(const char* name, bool escape) const;
-    bool                        _set_object(const char* name, JS* js, bool ignore_duplicates);
-    static void                 _Encode(const JS* js, std::string& j, std::string& t, bool comma, JS::ENCODE_OPTION option);
-    static void                 _EncodeInline(const JS* js, std::string& j, bool comma, JS::ENCODE_OPTION option);
-    static inline JS*           _MakeArray(const char* name, JS* parent, unsigned pos)
-                                    { auto r = new JS(name, parent, pos); r->_type = ARRAY; r->_va = new JSArray(); return r; }
-    static inline JS*           _MakeBool(const char* name, bool vb, JS* parent, unsigned pos)
-                                    { auto r = new JS(name, parent, pos); r->_type = BOOL; r->_vb = vb; return r; }
-    static inline JS*           _MakeNil(const char* name, JS* parent, unsigned pos)
-                                    { return new JS(name, parent, pos); }
-    static inline JS*           _MakeNumber(const char* name, double vn, JS* parent, unsigned pos)
-                                    { auto r = new JS(name, parent, pos); r->_type = NUMBER; r->_vn = vn; return r; }
-    static inline JS*           _MakeObject(const char* name, JS* parent, unsigned pos)
-                                    { auto r = new JS(name, parent, pos); r->_type = OBJECT; r->_vo = new JSObject(); return r; }
-    static inline JS*           _MakeString(const char* name, const char* vs, JS* parent, unsigned pos)
-                                    { auto r = new JS(name, parent, pos); r->_type = STRING; r->_vs = strdup(vs); return r; }
-    static constexpr const char* TYPE_NAMES[7] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", };
-    static ssize_t              COUNT;
-    char                        _type;
-    char                        _enc_flag;
-    unsigned                    _pos;
-    JS*                         _parent;
-    char*                       _name;
-    union {
-        JSArray*                _va;
-        JSObject*               _vo;
-        bool                    _vb;
-        double                  _vn;
-        char*                   _vs;
-    };
-};
-class JSB {
-public:
-                                JSB()
-                                    { _root = _current = nullptr; }
-    virtual                     ~JSB()
-                                    { delete _root; }
-    JSB&                        operator<<(JS* json)
-                                    { return add(json); }
-    JSB&                        add(JS* json);
-    void                        clear()
-                                    { delete _root; _root = _current = nullptr; _name = ""; }
-    std::string                 encode() const;
-    JSB&                        end();
-    const JS*                   root() const
-                                    { return _root; }
-    static inline JS*           MakeArray(const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); return r; }
-    static inline JS*           MakeArrayInline(const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::ARRAY; r->_va = new JSArray(); r->_enc_flag = 1; return r; }
-    static inline JS*           MakeBool(bool vb, const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::BOOL; r->_vb = vb; return r; }
-    static inline JS*           MakeNull(const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NIL; return r; }
-    static inline JS*           MakeNumber(double vn, const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::NUMBER; r->_vn = vn; return r; }
-    static inline JS*           MakeObject(const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); return r; }
-    static inline JS*           MakeObjectInline(const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::OBJECT; r->_vo = new JSObject(); r->_enc_flag = 1; return r; }
-    static inline JS*           MakeString(const char* vs, const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs).c_str() : vs); return r; }
-    static inline JS*           MakeString(std::string vs, const char* name = "", bool escape = true)
-                                    { auto r = new JS((escape == true) ? JS::Escape(name).c_str() : name); r->_type = JS::STRING; r->_vs = strdup((escape == true) ? JS::Escape(vs.c_str()).c_str() : vs.c_str()); return r; }
-private:
-    JS*                         _current;
-    JS*                         _root;
-    std::string                 _name;
 };
 }
 #include <FL/Fl_Box.H>

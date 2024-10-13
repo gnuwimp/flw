@@ -3,6 +3,7 @@
 
 #include "chart.h"
 #include "flw.h"
+#include "file.h"
 #include "json.h"
 #include "dlg.h"
 #include "waitcursor.h"
@@ -571,7 +572,7 @@ ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
 
 //------------------------------------------------------------------------------
 ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
-    Buf buf = File::Load(filename);
+    auto buf = File::Read(filename);
 
     if (buf.s < 10) {
         return ChartDataVector();
@@ -739,7 +740,7 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
         csv += buffer;
     }
 
-    return File::Save(filename, csv.c_str(), csv.size());
+    return File::Write(filename, csv.c_str(), csv.size());
 }
 
 //------------------------------------------------------------------------------
@@ -2748,7 +2749,7 @@ bool Chart::load_json(std::string filename) {
     redraw();
 
     auto wc  = WaitCursor();
-    auto buf = File::Load(filename);
+    auto buf = File::Read(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
@@ -3004,7 +3005,7 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
             jsb.end();
 
         auto js = jsb.encode();
-        return File::Save(filename, js.c_str(), js.length());
+        return File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

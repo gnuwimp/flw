@@ -19,15 +19,16 @@ endif
 
 #-------------------------------------------------------------------------------
 
-OBJ = obj/flw.o \
+OBJ = obj/date.o \
+	obj/file.o \
+	obj/json.o \
+	obj/flw.o \
 	obj/chart.o \
-	obj/date.o \
 	obj/datechooser.o \
 	obj/dlg.o \
 	obj/grid.o \
 	obj/gridgroup.o \
 	obj/inputmenu.o \
-	obj/json.o \
 	obj/lcdnumber.o \
 	obj/logdisplay.o \
 	obj/plot.o \
@@ -90,6 +91,9 @@ obj/datechooser.o: src/datechooser.cpp src/datechooser.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/file.o: src/file.cpp src/file.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/grid.o: src/grid.cpp src/grid.h src/tabledisplay.h  src/tableeditor.h src/flw.h

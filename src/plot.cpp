@@ -3,6 +3,7 @@
 
 #include "plot.h"
 #include "flw.h"
+#include "file.h"
 #include "waitcursor.h"
 #include "json.h"
 #include "dlg.h"
@@ -122,7 +123,7 @@ void PlotData::Debug(const PlotDataVector& in) {
 
 //------------------------------------------------------------------------------
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
-    Buf buf = File::Load(filename);
+    auto buf = File::Read(filename);
 
     if (buf.s < 3) {
         return PlotDataVector();
@@ -258,7 +259,7 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
         csv += buffer;
     }
 
-    return File::Save(filename, csv.c_str(), csv.size());
+    return File::Write(filename, csv.c_str(), csv.size());
 }
 
 //------------------------------------------------------------------------------
@@ -1538,7 +1539,7 @@ bool Plot::load_json(std::string filename) {
     redraw();
 
     auto wc  = WaitCursor();
-    auto buf = File::Load(filename);
+    auto buf = File::Read(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
@@ -1736,7 +1737,7 @@ bool Plot::save_json(std::string filename) {
             }
 
         auto js = jsb.encode();
-        return File::Save(filename, js.c_str(), js.length());
+        return File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

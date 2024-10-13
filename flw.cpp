@@ -1,6 +1,2529 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 #include "flw.h"
+#include <cstring>
+#include <ctime>
+namespace flw {
+static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static int          _DATE_DAYS_MONTH_LEAP[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""};
+static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""};
+static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
+static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
+static int _date_days(int year, int month) {
+    if (year < 1 || year > 9999 || month < 1 || month > 12) {
+        return 0;
+    }
+    else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+        return _DATE_DAYS_MONTH_LEAP[month];
+    }
+    return _DATE_DAYS_MONTH[month];
+}
+static void _date_from_time(int64_t seconds, bool utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
+    year = month = day = 1;
+    hour = min = sec = 0;
+    if (seconds < 0) {
+        return;
+    }
+    time_t    rawtime  = seconds;
+    const tm* timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
+    if (timeinfo == nullptr) {
+        return;
+    }
+    year  = timeinfo->tm_year + 1900;
+    month = timeinfo->tm_mon + 1;
+    day   = timeinfo->tm_mday;
+    hour  = timeinfo->tm_hour;
+    min   = timeinfo->tm_min;
+    sec   = timeinfo->tm_sec;
+}
+static Date _date_parse(const char* string, bool us) {
+    const char* space = strstr(string, " ");
+    int  tot   = strlen(string);
+    int  tlen  = space ? (int) (space - string) : 0;
+    int  len   = space ? tlen : tot;
+    int  year  = 1;
+    int  month = 1;
+    int  day   = 1;
+    int  hour  = 0;
+    int  min   = 0;
+    int  sec   = 0;
+    int  Y     = 0;
+    int  val[15];
+    for (int f = 0; f < 15; f++) {
+        val[f] = 0;
+    }
+    if (len == 10 && string[4] == '-' && string[7] == '-') {
+        us     = false;
+        val[4] = string[5] - '0';
+        val[5] = string[6] - '0';
+        val[6] = string[8] - '0';
+        val[7] = string[9] - '0';
+    }
+    else if (len == 8 && string[1] == '/' && string[3] == '/') {
+        Y      = 4;
+        val[4] = string[2] - '0';
+        val[5] = -1;
+        val[6] = string[0] - '0';
+        val[7] = -1;
+    }
+    else if (len == 9 && string[1] == '/' && string[4] == '/') {
+        Y      = 5;
+        val[4] = string[2] - '0';
+        val[5] = string[3] - '0';
+        val[6] = string[0] - '0';
+        val[7] = -1;
+    }
+    else if (len == 9 && string[2] == '/' && string[4]) {
+        Y      = 5;
+        val[4] = string[3] - '0';
+        val[5] = -1;
+        val[6] = string[0] - '0';
+        val[7] = string[1] - '0';
+    }
+    else if (len == 10 && string[2] == '/' && string[5] == '/') {
+        Y      = 6;
+        val[4] = string[3] - '0';
+        val[5] = string[4] - '0';
+        val[6] = string[0] - '0';
+        val[7] = string[1] - '0';
+    }
+    else if (len == 8) {
+        us     = false;
+        val[4] = string[4] - '0';
+        val[5] = string[5] - '0';
+        val[6] = string[6] - '0';
+        val[7] = string[7] - '0';
+    }
+    else {
+        return Date::InvalidDate();
+    }
+    val[0] = string[Y] - '0';
+    val[1] = string[Y + 1] - '0';
+    val[2] = string[Y + 2] - '0';
+    val[3] = string[Y + 3] - '0';
+    if (tlen && tot - tlen >= 9) {
+        val[8]  = string[tlen + 1] - '0';
+        val[9]  = string[tlen + 2] - '0';
+        val[10] = string[tlen + 4] - '0';
+        val[11] = string[tlen + 5] - '0';
+        val[12] = string[tlen + 7] - '0';
+        val[13] = string[tlen + 8] - '0';
+    }
+    else if (tlen && tot - tlen >= 7) {
+        val[8]  = string[tlen + 1] - '0';
+        val[9]  = string[tlen + 2] - '0';
+        val[10] = string[tlen + 3] - '0';
+        val[11] = string[tlen + 4] - '0';
+        val[12] = string[tlen + 5] - '0';
+        val[13] = string[tlen + 6] - '0';
+    }
+    for (int f = 0; f < 15; f++) {
+        if ((f == 5 || f == 7) && val[f] == -1) {
+            ;
+        }
+        else if (val[f] < 0 || val[f] > 9) {
+            return Date::InvalidDate();
+        }
+    }
+    year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
+    month = val[5] == -1 ? val[4] : val[4] * 10 + val[5];
+    day   = val[7] == -1 ? val[6] : val[6] * 10 + val[7];
+    hour  = val[8] * 10 + val[9];
+    min   = val[10] * 10 + val[11];
+    sec   = val[12] * 10 + val[13];
+    if (us == true) {
+        int tmp = month;
+        month   = day;
+        day     = tmp;
+    }
+    return Date(year, month, day, hour, min, sec);
+}
+static Date::DAY _date_weekday(int year, int month, int day) {
+    if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days(year, month)) {
+        int start = 0;
+        int y1    = year - 1;
+        int pre   = ((year < 1582) || ((year == 1582) && (month <= 10)));
+        if (pre) {
+            start = 6 + y1 + (y1 / 4);
+        }
+        else {
+            start = 1 + y1 + (y1 / 4) - (y1 / 100) + (y1 / 400);
+        }
+        for (int i = 1; i < month; i++) {
+            int days = _date_days(year, i);
+            if (days) {
+                start += days;
+            }
+            else {
+                return Date::DAY::INVALID;
+            }
+        }
+        start = start % 7;
+        start = start == 0 ? 7 : start;
+        for (int i = 2; i <= day; i++) {
+            start++;
+            if (start > 7) {
+                start = 1;
+            }
+        }
+        if (start < 1 || start > 7) {
+            return Date::DAY::INVALID;
+        }
+        else {
+            return (Date::DAY) start;
+        }
+    }
+    return Date::DAY::INVALID;
+}
+static bool _date_is_leapyear(int year) {
+    if (year < 1 || year > 9999) {
+        return false;
+    }
+    else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+        return true;
+    }
+    else {
+       return false;
+    }
+}
+Date::Date(bool utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
+    set(y, m, d, ho, mi, se);
+}
+Date::Date(const Date& other) {
+    set(other);
+}
+Date::Date(Date&& other) {
+    set(other);
+}
+Date::Date(int year, int month, int day, int hour, int min, int sec) {
+    _year = _month = _day = 0;
+    _hour = _min = _sec = 0;
+    set(year, month, day, hour, min, sec);
+}
+Date& Date::operator=(const Date& date) {
+    set(date);
+    return *this;
+}
+Date& Date::operator=(Date&& date) {
+    set(date);
+    return *this;
+}
+bool Date::add_days(const int days) {
+    if (days) {
+        int daym = _date_days(_year, _month);
+        if (daym > 0) {
+            int inc = days > 0 ? 1 : -1;
+            int y   = _year;
+            int m   = _month;
+            int d   = _day;
+            for (int f = 0; f < abs(days); f++) {
+                d += inc;
+                if (inc < 0 && d == 0) {
+                    m--;
+                    if (m == 0) {
+                        m = 12;
+                        y--;
+                        if (y < 1) {
+                            return false;
+                        }
+                    }
+                    d = _date_days(y, m);
+                    if (d == 0) {
+                        return false;
+                    }
+                }
+                else if (inc > 0 && d > daym) {
+                    d = 1;
+                    m++;
+                    if (m == 13) {
+                        m = 1;
+                        y++;
+                        if (y > 9999) {
+                            return false;
+                        }
+                    }
+                    daym = _date_days(y, m);
+                    if (daym == 0) {
+                        return false;
+                    }
+                }
+            }
+            _year  = y;
+            _month = m;
+            _day   = d;
+            return true;
+        }
+    }
+    return false;
+}
+bool Date::add_months(const int months) {
+    if (months) {
+        int inc = months > 0 ? 1 : -1;
+        int m   = _month;
+        int y   = _year;
+        for (int f = 0; f < abs(months); f++) {
+            m += inc;
+            if (m == 0) {
+                m = 12;
+                y--;
+                if (y < 1) {
+                    return false;
+                }
+            }
+            else if (m > 12) {
+                m = 1;
+                y++;
+                if (y > 9999) {
+                    return false;
+                }
+            }
+        }
+        const int days = _date_days(y, m);
+        if (days > 0) {
+            _year  = y;
+            _month = m;
+            if (_day > days) {
+                _day = days;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+bool Date::add_seconds(const int64_t seconds) {
+    if (seconds) {
+        int inc = seconds > 0 ? 1 : -1;
+        int h   = _hour;
+        int m   = _min;
+        int s   = _sec;
+        for (int64_t f = 0; f < llabs(seconds); f++) {
+            s += inc;
+            if (inc < 0 && s == -1) {
+                m--;
+                if (m == -1) {
+                    m = 59;
+                    h--;
+                    if (h == -1) {
+                        h = 23;
+                        if (add_days(-1) == false) {
+                            return false;
+                        }
+                    }
+                }
+                s = 59;
+            }
+            else if (inc > 0 && s == 60) {
+                m++;
+                if (m == 60) {
+                    m = 0;
+                    h++;
+                    if (h == 24) {
+                        h = 0;
+                        if (add_days(1) == false) {
+                            return false;
+                        }
+                    }
+                }
+                s = 0;
+            }
+        }
+        _hour = h;
+        _min  = m;
+        _sec  = s;
+        return true;
+    }
+    return false;
+}
+int Date::compare(const Date& other, Date::COMPARE flag) const {
+    if (_year < other._year) {
+        return -1;
+    }
+    else if (_year > other._year) {
+        return 1;
+    }
+    if (_month < other._month) {
+        return -1;
+    }
+    else if (_month > other._month) {
+        return 1;
+    }
+    if (flag >= Date::COMPARE::YYYYMMDD) {
+        if (_day < other._day) {
+            return -1;
+        }
+        else if (_day > other._day) {
+            return 1;
+        }
+    }
+    if (flag >= Date::COMPARE::YYYYMMDDHH) {
+        if (_hour < other._hour) {
+            return -1;
+        }
+        else if (_hour > other._hour) {
+            return 1;
+        }
+    }
+    if (flag >= Date::COMPARE::YYYYMMDDHHMM) {
+        if (_min < other._min) {
+            return -1;
+        }
+        else if (_min > other._min) {
+            return 1;
+        }
+    }
+    if (flag >= Date::COMPARE::YYYYMMDDHHMMSS) {
+        if (_sec < other._sec) {
+            return -1;
+        }
+        else if (_sec > other._sec) {
+            return 1;
+        }
+    }
+    return 0;
+}
+bool Date::Compare(const Date& a, const Date& b) {
+    return a.compare(b) < 0;
+}
+Date& Date::day(int day) {
+    if (day > 0 && day <= _date_days(_year, _month)) {
+        _day = day;
+    }
+    return *this;
+}
+Date& Date::day_last() {
+    _day = month_days();
+    return *this;
+}
+int Date::diff_days(const Date& date) const {
+    Date d(date);
+    int  res = 0;
+    if (compare(d, Date::COMPARE::YYYYMMDD) < 0) {
+        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
+            d.add_days(-1);
+            res++;
+        }
+    }
+    else if (compare(d, Date::COMPARE::YYYYMMDD) > 0) {
+        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
+            d.add_days(1);
+            res--;
+        }
+    }
+    return res;
+}
+int Date::diff_months(const Date& date) const {
+    Date d(date);
+    int  res = 0;
+    if (compare(d, Date::COMPARE::YYYYMM) < 0) {
+        while (compare(d, Date::COMPARE::YYYYMM)) {
+            d.add_months(-1);
+            res++;
+        }
+    }
+    else if (compare(d, Date::COMPARE::YYYYMM) > 0) {
+        while (compare(d, Date::COMPARE::YYYYMM)) {
+            d.add_months(1);
+            res--;
+        }
+    }
+    return res;
+}
+int Date::diff_seconds(const Date& date) const {
+    int64_t unix1 = time();
+    int64_t unix2 = date.time();
+    if (unix1 >= 0 && unix2 >= 0) {
+        return unix2 - unix1;
+    }
+    return 0;
+}
+std::string Date::format(Date::FORMAT format) const {
+    char tmp[100];
+    int  n = 0;
+    if (format == Date::FORMAT::ISO_LONG) {
+        n = snprintf(tmp, 100, "%04d-%02d-%02d", _year, _month, _day);
+    }
+    else if (format == Date::FORMAT::US) {
+        n = snprintf(tmp, 100, "%d/%d/%04d", _month, _day, _year);
+    }
+    else if (format == Date::FORMAT::WORLD) {
+        n = snprintf(tmp, 100, "%d/%d/%04d", _day, _month, _year);
+    }
+    else if (format == Date::FORMAT::NAME) {
+        n = snprintf(tmp, 100, "%04d %s %d", _year, month_name_short(), _day);
+    }
+    else if (format == Date::FORMAT::NAME_LONG) {
+        n = snprintf(tmp, 100, "%04d %s %d", _year, month_name(), _day);
+    }
+    else if (format == Date::FORMAT::NAME_TIME) {
+        n = snprintf(tmp, 100, "%04d %s %d - %02d%02d%02d", _year, month_name_short(), _day, _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::NAME_TIME_LONG) {
+        n = snprintf(tmp, 100, "%04d %s %d - %02d:%02d:%02d", _year, month_name(), _day, _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::YEAR_MONTH) {
+        n = snprintf(tmp, 100, "%04d %s", _year, month_name_short());
+    }
+    else if (format == Date::FORMAT::YEAR_MONTH_LONG) {
+        n = snprintf(tmp, 100, "%04d %s", _year, month_name());
+    }
+    else if (format == Date::FORMAT::ISO_TIME) {
+        n = snprintf(tmp, 100, "%04d%02d%02d %02d%02d%02d", _year, _month, _day, _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::ISO_TIME_LONG) {
+        n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::TIME_LONG) {
+        n = snprintf(tmp, 100, "%02d:%02d:%02d", _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::TIME) {
+        n = snprintf(tmp, 100, "%02d%02d%02d", _hour, _min, _sec);
+    }
+    else {
+        n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);
+    }
+    if (n < 0 || n >= 100) {
+        *tmp = 0;
+    }
+    return tmp;
+}
+std::string Date::FormatSecToISO(int64_t seconds, bool utc) {
+    const time_t rawtime  = (time_t) seconds;
+    const tm*    timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
+    char         buffer[100];
+    if (timeinfo == nullptr) {
+        return "";
+    }
+    snprintf(buffer, 100, "%04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    return buffer;
+}
+Date Date::FromString(const char* buffer, bool us) {
+    if (buffer == nullptr) {
+        return Date::InvalidDate();
+    }
+    else {
+         return _date_parse(buffer, us);
+    }
+}
+Date Date::FromTime(int64_t seconds, bool utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
+    return Date(y, m, d, ho, mi, se);
+}
+Date& Date::hour(int hour) {
+    if (hour >= 0 && hour <= 23) {
+        _hour = hour;
+    }
+    return *this;
+}
+Date Date::InvalidDate() {
+    Date date;
+    date._year = date._month = date._day = date._hour = date._min = date._sec = 0;
+    return date;
+}
+bool Date::is_leapyear() const {
+    return _date_is_leapyear(_year);
+}
+Date& Date::minute(int min) {
+    if (min >= 0 && min <= 59) {
+        _min = min;
+    }
+    return *this;
+}
+Date& Date::month(int month) {
+    if (month >= 1 && month <= 12) {
+        _month = month;
+    }
+    return *this;
+}
+int Date::month_days() const {
+    return _date_days(_year, _month);
+}
+const char* Date::month_name() const {
+    return _DATE_MONTHS[(int) _month];
+}
+const char* Date::month_name_short() const {
+    return _DATE_MONTHS_SHORT[(int) _month];
+}
+void Date::print() const {
+    auto string = format(Date::FORMAT::ISO_TIME_LONG);
+    printf("Date| %s\n", string.c_str());
+    fflush(stdout);
+}
+Date& Date::second(int sec) {
+    if (sec >= 0 && sec <= 59) {
+        _sec = sec;
+    }
+    return *this;
+}
+Date& Date::set(const Date& date) {
+    _year  = date._year;
+    _month = date._month;
+    _day   = date._day;
+    _hour  = date._hour;
+    _min   = date._min;
+    _sec   = date._sec;
+    return *this;
+}
+Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
+    if (year < 1 || year > 9999 ||
+        month < 1 || month > 12 ||
+        day < 1 || day > _date_days(year, month) ||
+        hour < 0 || hour > 23 ||
+        min < 0 || min > 59 ||
+        sec < 0 || sec > 59) {
+        return *this;
+    }
+    else {
+        _year  = year;
+        _month = month;
+        _day   = day;
+        _hour  = hour;
+        _min   = min;
+        _sec   = sec;
+        return *this;
+    }
+}
+int64_t Date::time() const {
+    tm t;
+    if (_year < 1970) {
+        return -1;
+    }
+    memset(&t, '\0', sizeof(t));
+    t.tm_year = _year - 1900;
+    t.tm_mon  = _month - 1;
+    t.tm_mday = _day;
+    t.tm_hour = _hour;
+    t.tm_min  = _min;
+    t.tm_sec  = _sec;
+    return mktime(&t);
+}
+int Date::week() const {
+    Date::DAY wday  = _date_weekday(_year, _month, _day);
+    Date::DAY wday1 = _date_weekday(_year, 1, 1);
+    if (wday != Date::DAY::INVALID && wday1 != Date::DAY::INVALID) {
+        auto w     = 0;
+        auto y1    = _year - 1;
+        auto leap  = _date_is_leapyear(_year);
+        auto leap1 = _date_is_leapyear(y1);
+        auto yday  = yearday();
+        if (yday <= (8 - (int) wday1) && wday1 > Date::DAY::THURSDAY) {
+            if (wday1 == Date::DAY::FRIDAY || (wday1 == Date::DAY::SATURDAY && leap1)) {
+                w = 53;
+            }
+            else {
+                w = 52;
+            }
+        }
+        else {
+            auto days = leap ? 366 : 365;
+            if ((days - yday) < (4 - (int) wday)) {
+                w = 1;
+            }
+            else {
+                days = yday + (7 - (int) wday) + ((int) wday1 - 1);
+                days = days / 7;
+                if (wday1 > Date::DAY::THURSDAY) {
+                    days--;
+                }
+                w = days;
+            }
+        }
+        if (w > 0 && w < 54) {
+            return w;
+        }
+    }
+    return 0;
+}
+Date::DAY Date::weekday() const {
+    return _date_weekday(_year, _month, _day);
+}
+Date& Date::weekday(Date::DAY day) {
+    if (weekday() < day) {
+        while (weekday() < day) {
+            add_days(1);
+        }
+    }
+    else if (weekday() > day) {
+        while (weekday() > day) {
+            add_days(-1);
+        }
+    }
+    return *this;
+}
+const char* Date::weekday_name() const {
+    return _DATE_WEEKDAYS[(int) _date_weekday(_year, _month, _day)];
+}
+const char* Date::weekday_name_short() const {
+    return _DATE_WEEKDAYS_SHORT[(int) _date_weekday(_year, _month, _day)];
+}
+Date& Date::year(int year) {
+    if (year >= 1 && year <= 9999) {
+        _year = year;
+    }
+    return *this;
+}
+int Date::yearday() const {
+    auto res  = 0;
+    auto leap = _date_is_leapyear(_year);
+    for (auto m = 1; m < _month && m < 13; m++) {
+        if (leap) {
+            res += _DATE_DAYS_MONTH_LEAP[m];
+        }
+        else {
+            res += _DATE_DAYS_MONTH[m];
+        }
+    }
+    return res + _day;
+}
+}
+#include <algorithm>
+#include <assert.h>
+#include <ctime>
+#include <dirent.h>
+#include <unistd.h>
+#ifdef _WIN32
+    #include <shlobj.h>
+    #include <time.h>
+#else
+    #include <sys/stat.h>
+    #include <utime.h>
+#endif
+#ifndef __APPLE__
+    #include <filesystem>
+#endif
+#ifndef PATH_MAX
+    #define PATH_MAX 1050
+#endif
+namespace flw {
+static std::string _FILE_STDOUT_NAME = "";
+static std::string _FILE_STDERR_NAME = "";
+#ifdef _WIN32
+static char* _file_from_wide(const wchar_t* in) {
+    auto out_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, nullptr, 0, nullptr, nullptr);
+    auto out     = File::Allocate(nullptr, out_len + 1);
+    WideCharToMultiByte(CP_UTF8, 0, in, -1, (LPSTR) out, out_len, nullptr, nullptr);
+    return (char*) out;
+}
+static wchar_t* _file_to_wide(const char* in) {
+    auto out_len = MultiByteToWideChar(CP_UTF8, 0, in , -1, nullptr , 0);
+    auto out     = reinterpret_cast<wchar_t*>(File::Allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
+    MultiByteToWideChar(CP_UTF8, 0, in , -1, out, out_len);
+    return out;
+}
+static int64_t _file_time(FILETIME* ft) {
+    int64_t res = (int64_t) ft->dwHighDateTime << 32 | (int64_t) ft->dwLowDateTime;
+    res = res / 10000000;
+    res = res - 11644473600;
+    return res;
+}
+#endif
+static FileBuf _file_close_redirect(int type) {
+    std::string fname;
+    FILE* fhandle;
+    if (type == 2) {
+        if (_FILE_STDERR_NAME == "") return FileBuf();
+        fname = _FILE_STDERR_NAME;
+        fhandle = stderr;
+        _FILE_STDERR_NAME = "";
+    }
+    else {
+        if (_FILE_STDOUT_NAME == "") return FileBuf();
+        fname = _FILE_STDOUT_NAME;
+        fhandle = stdout;
+        _FILE_STDOUT_NAME = "";
+    }
+#ifdef _WIN32
+    fflush(fhandle);
+    freopen("CON", "w", fhandle);
+#else
+    fflush(fhandle);
+    auto r = freopen("/dev/tty", "w", fhandle);
+    (void) r;
+#endif
+    auto res = File::Read(fname);
+    File::Remove(fname);
+    return res;
+}
+static bool _file_open_redirect(int type) {
+    bool res = false;
+    std::string fname;
+    FILE* fhandle = nullptr;
+    if (type == 2) {
+        if (_FILE_STDERR_NAME != "") return res;
+        fname = _FILE_STDERR_NAME = File::TmpFile("stderr_").filename;
+        fhandle = stderr;
+    }
+    else {
+        if (_FILE_STDOUT_NAME != "") return res;
+        fname = _FILE_STDOUT_NAME = File::TmpFile("stdout_").filename;
+        fhandle = stdout;
+    }
+#ifdef _WIN32
+        auto wpath = _file_to_wide(fname.c_str());
+        auto wmode = _file_to_wide("wb");
+        res = _wfreopen(wpath, wmode, fhandle) != nullptr;
+        free(wpath);
+        free(wmode);
+#else
+        res = freopen(fname.c_str(), "wb", fhandle) != nullptr;
+#endif
+    if (res == false && type == 1) _FILE_STDOUT_NAME = "";
+    else if (res == false && type == 2) _FILE_STDERR_NAME = "";
+    return res;
+}
+static int _file_rand() {
+    static bool INIT = false;
+    if (INIT == false) srand(time(nullptr));
+    INIT = true;
+    return rand() % 10'000;
+}
+static std::string& _file_replace_all(std::string& string, const std::string& find, const std::string& replace) {
+    if (find == "") {
+        return string;
+    }
+    else {
+        size_t start = 0;
+        while ((start = string.find(find, start)) != std::string::npos) {
+            string.replace(start, find.length(), replace);
+            start += replace.length();
+        }
+        return string;
+    }
+}
+static std::string _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos) {
+    try { return in.substr(pos, size); }
+    catch(...) { return ""; }
+}
+static void _file_sync(FILE* file) {
+    if (file != nullptr) {
+#ifdef _WIN32
+        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
+        if (handle != INVALID_HANDLE_VALUE) {
+            FlushFileBuffers(handle);
+        }
+#else
+        fsync(fileno(file));
+#endif
+    }
+}
+static const std::string _file_to_absolute_path(const std::string& in, bool realpath) {
+    std::string res;
+    auto name = in;
+    if (name == "") {
+        return "";
+    }
+#ifdef _WIN32
+    if (name.find("\\\\") == 0) {
+        res = name;
+        return name;
+    }
+    else if (name.size() < 2 || name[1] != ':') {
+        auto work = File(File::WorkDir());
+        res = work.filename;
+        res += "\\";
+        res += name;
+    }
+    else {
+        res = name;
+    }
+    _file_replace_all(res, "\\", "/");
+    auto len = res.length();
+    _file_replace_all(res, "//", "/");
+    while (len > res.length()) {
+        len = res.length();
+        _file_replace_all(res, "//", "/");
+    }
+    while (res.size() > 3 && res.back() == '/') {
+        res.pop_back();
+    }
+#else
+    if (name[0] != '/') {
+        auto work = File(File::WorkDir());
+        res = work.filename;
+        res += "/";
+        res += name;
+    }
+    else {
+        res = name;
+    }
+    auto len = res.length();
+    _file_replace_all(res, "//", "/");
+    while (len > res.length()) {
+        len = res.length();
+        _file_replace_all(res, "//", "/");
+    }
+    while (res.size() > 1 && res.back() == '/') {
+        res.pop_back();
+    }
+#endif
+    return (realpath == true) ? File::CanonicalName(res) : res;
+}
+static void _file_split_paths(std::string filename, std::string& path, std::string& name, std::string& ext) {
+    path = "";
+    name = "";
+    ext  = "";
+#ifdef _WIN32
+    auto sep = '/';
+    if (filename.find("\\\\") == 0) {
+        sep = '\\';
+        if (filename.back() == '\\') {
+            return;
+        }
+    }
+    auto pos1 = filename.find_last_of(sep);
+    if (pos1 != std::string::npos) {
+        if (filename.length() != 3) {
+            path = _file_substr(filename, 0, pos1);
+        }
+        name = _file_substr(filename, pos1 + 1);
+    }
+    auto pos2 = name.find_last_of('.');
+    if (pos2 != std::string::npos && pos2 != 0) {
+        ext = _file_substr(name, pos2 + 1);
+    }
+    if (path.back() == ':') {
+        path += sep;
+        return;
+    }
+#else
+    auto pos1 = filename.find_last_of('/');
+    if (pos1 != std::string::npos) {
+        if (pos1 > 0) {
+            path = _file_substr(filename, 0, pos1);
+        }
+        else if (filename != "/") {
+            path = "/";
+        }
+        if (filename != "/") {
+            name = _file_substr(filename, pos1 + 1);
+        }
+    }
+    auto pos2 = filename.find_last_of('.');
+    if (pos2 != std::string::npos && pos2 > pos1 + 1) {
+        ext = _file_substr(filename, pos2 + 1);
+    }
+#endif
+}
+static void _file_read(std::string path, FileBuf& buf) {
+    File file(path);
+    if (file.is_file() == false || (long long unsigned int) file.size > SIZE_MAX) {
+        return;
+    }
+    auto out = File::Allocate(nullptr, file.size + 1);
+    if (file.size == 0) {
+        buf.p = out;
+        return;
+    }
+    auto handle = File::Open(file.filename, "rb");
+    if (handle == nullptr) {
+        free(out);
+        return;
+    }
+    else if (fread(out, 1, file.size, handle) != (size_t) file.size) {
+        fclose(handle);
+        free(out);
+    }
+    else {
+        fclose(handle);
+        buf.p = out;
+        buf.s = file.size;
+    }
+}
+static void _file_read_dir_rec(FileVector& res, FileVector& files) {
+    for (auto& file : files) {
+        res.push_back(file);
+        if (file.type == File::TYPE::DIR && file.link == false && file.is_circular() == false) {
+            auto v = File::ReadDir(file.filename);
+            _file_read_dir_rec(res, v);
+        }
+    }
+}
+FileBuf::FileBuf(size_t S) {
+    p = File::Allocate(nullptr, S + 1);
+    s = S;
+}
+FileBuf::FileBuf(const char* P, size_t S) {
+    if (P == nullptr) {
+        p = nullptr;
+        s = 0;
+        return;
+    }
+    p = File::Allocate(nullptr, S + 1);
+    s = S;
+    std::memcpy(p, P, S);
+}
+FileBuf::FileBuf(const FileBuf& b) {
+    if (b.p == nullptr) {
+        p = nullptr;
+        s = 0;
+        return;
+    }
+    p = File::Allocate(nullptr, b.s + 1);
+    s = b.s;
+    std::memcpy(p, b.p, b.s);
+}
+bool FileBuf::operator==(const FileBuf& other) const {
+    return p != nullptr && s == other.s && std::memcmp(p, other.p, s) == 0;
+}
+FileBuf& FileBuf::add(const char* P, size_t S) {
+    if (p == P || P == nullptr) {
+    }
+    else if (p == nullptr) {
+        p = File::Allocate(nullptr, S + 1);
+        std::memcpy(p, P, S);
+        s = S;
+    }
+    else if (S > 0) {
+        auto t = File::Allocate(nullptr, s + S + 1);
+        std::memcpy(t, p, s);
+        std::memcpy(t + s, P, S);
+        free(p);
+        p = t;
+        s += S;
+    }
+    return *this;
+}
+void FileBuf::Count(const char* P, size_t S, size_t count[257]) {
+    assert(P);
+    auto max_line     = 0;
+    auto current_line = 0;
+    std::memset(count, 0, sizeof(size_t) * 257);
+    for (size_t f = 0; f < S; f++) {
+        auto c = (unsigned char) P[f];
+        count[c] += 1;
+        if (current_line > max_line) {
+            max_line = current_line;
+        }
+        if (c == 0 ||c == 10 || c == 13) {
+            current_line = 0;
+        }
+        else {
+            current_line++;
+        }
+    }
+    count[256] = max_line;
+}
+uint64_t FileBuf::Fletcher64(const char* P, size_t S) {
+    if (P == nullptr || S == 0) {
+        return 0;
+    }
+    auto u8data = reinterpret_cast<const uint8_t*>(P);
+    auto dwords = (uint64_t) S / 4;
+    auto sum1   = (uint64_t) 0;
+    auto sum2   = (uint64_t) 0;
+    auto data32 = reinterpret_cast<const uint32_t*>(u8data);
+    auto left   = (uint64_t) 0;
+    for (size_t f = 0; f < dwords; ++f) {
+        sum1 = (sum1 + data32[f]) % UINT32_MAX;
+        sum2 = (sum2 + sum1) % UINT32_MAX;
+    }
+    left = S - dwords * 4;
+    if (left > 0) {
+        auto tmp  = (uint32_t) 0;
+        auto byte = reinterpret_cast<uint8_t*>(&tmp);
+        for (auto f = (uint64_t) 0; f < left; ++f) {
+            byte[f] = u8data[dwords * 4 + f];
+        }
+        sum1 = (sum1 + tmp) % UINT32_MAX;
+        sum2 = (sum2 + sum1) % UINT32_MAX;
+    }
+    return (sum2 << 32) | sum1;
+}
+FileBuf FileBuf::InsertCR(const char* P, size_t S, bool dos, bool trailing) {
+    if (P == nullptr || S == 0 || (trailing == false && dos == false)) {
+        return FileBuf();
+    }
+    auto res_size = S;
+    if (dos == true) {
+        for (size_t f = 0; f < S; f++) {
+            res_size += (P[f] == '\n');
+        }
+    }
+    auto res     = File::Allocate(nullptr, res_size + 1);
+    auto restart = std::string::npos;
+    auto res_pos = (size_t) 0;
+    auto p       = (unsigned char) 0;
+    for (size_t f = 0; f < S; f++) {
+        auto c = (unsigned char) P[f];
+        if (trailing == true) {
+            if (c == '\n') {
+                if (restart != std::string::npos) {
+                    res_pos = restart;
+                }
+                restart = std::string::npos;
+            }
+            else if (restart == std::string::npos && (c == ' ' || c == '\t')) {
+                restart = res_pos;
+            }
+            else if (c != ' ' && c != '\t') {
+                restart = std::string::npos;
+            }
+        }
+        if (dos == true && c == '\n' && p != '\r') {
+            res[res_pos++] = '\r';
+        }
+        res[res_pos++] = c;
+        p = c;
+    }
+    res[res_pos] = 0;
+    if (restart != std::string::npos) {
+        res[restart] = 0;
+        res_pos = restart;
+    }
+    return FileBuf::Grab(res, res_pos);
+}
+FileBuf FileBuf::RemoveCR(const char* P, size_t S) {
+    auto res = FileBuf(S);
+    for (size_t f = 0, e = 0; f < S; f++) {
+        auto c = P[f];
+        if (c != 13) {
+            res.p[e++] = c;
+        }
+        else {
+            res.s--;
+        }
+    }
+    return res;
+}
+FileBuf& FileBuf::set(const char* P, size_t S) {
+    if (p == P) {
+    }
+    else if (P == nullptr) {
+        free(p);
+        p = nullptr;
+        s = 0;
+    }
+    else {
+        free(p);
+        p = File::Allocate(nullptr, S + 1);
+        s = S;
+        std::memcpy(p, P, S);
+    }
+    return *this;
+}
+bool FileBuf::write(std::string filename) const {
+    return File::Write(filename, p, s);
+}
+char* File::Allocate(char* resize_or_null, size_t size, bool exception) {
+    void* res = nullptr;
+    if (resize_or_null == nullptr) {
+        res = calloc(size, 1);
+    }
+    else {
+        res = realloc(resize_or_null, size);
+    }
+    if (res == nullptr && exception == true) {
+        throw "error: memory allocation failed in File::Allocate()";
+    }
+    return (char*) res;
+}
+std::string File::CanonicalName(std::string filename) {
+#if defined(_WIN32)
+    wchar_t wres[PATH_MAX];
+    auto    wpath = _file_to_wide(filename.c_str());
+    auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
+    if (len > 0 && len < PATH_MAX) {
+        auto cpath = _file_from_wide(wres);
+        auto res   = std::string(cpath);
+        free(cpath);
+        free(wpath);
+        _file_replace_all(res, "\\", "/");
+        return res;
+    }
+    else {
+        free(wpath);
+        return filename;
+    }
+#elif defined(__linux__)
+    auto path = canonicalize_file_name(filename.c_str());
+    auto res  = (path != nullptr) ? std::string(path) : filename;
+    free(path);
+    return res;
+#else
+    auto path = realpath(filename.c_str(), nullptr);
+    auto res  = (path != nullptr) ? std::string(path) : filename;
+    free(path);
+    return res;
+#endif
+    return "";
+}
+bool File::ChDir(std::string path) {
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    auto res   = _wchdir(wpath);
+    free(wpath);
+    return res == 0;
+#else
+    return ::chdir(path.c_str()) == 0;
+#endif
+}
+std::string File::CheckFilename(std::string filename) {
+    static const std::string ILLEGAL = "<>:\"/\\|?*\n\t\r";
+    std::string res;
+    for (auto& c : filename) {
+        if (ILLEGAL.find(c) == std::string::npos) {
+            res += c;
+        }
+    }
+    return res;
+}
+bool File::ChMod(std::string path, int mode) {
+    auto res = false;
+    if (mode < 0) {
+        return false;
+    }
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    res = SetFileAttributesW(wpath, mode);
+    free(wpath);
+#else
+    res = ::chmod(path.c_str(), mode) == 0;
+#endif
+    return res;
+}
+FileBuf File::CloseStderr() {
+    return _file_close_redirect(2);
+}
+FileBuf File::CloseStdout() {
+    return _file_close_redirect(1);
+}
+bool File::Copy(std::string from, std::string to, CallbackCopy callback, void* data) {
+#ifdef DEBUG
+    static const size_t BUF_SIZE = 16384;
+#else
+    static const size_t BUF_SIZE = 131072;
+#endif
+    auto file1 = File(from);
+    auto file2 = File(to);
+    if (file1 == file2) {
+        return false;
+    }
+    auto buf   = File::Allocate(nullptr, BUF_SIZE);
+    auto read  = File::Open(from, "rb");
+    auto write = File::Open(to, "wb");
+    auto count = (int64_t) 0;
+    auto size  = (size_t) 0;
+    if (read == nullptr || write == nullptr) {
+        if (read != nullptr) {
+            fclose(read);
+        }
+        if (write != nullptr) {
+            fclose(write);
+            File::Remove(to);
+        }
+        free(buf);
+        return false;
+    }
+    while ((size = fread(buf, 1, BUF_SIZE, read)) > 0) {
+        if (fwrite(buf, 1, size, write) != size) {
+            break;
+        }
+        count += size;
+        if (callback != nullptr && callback(file1.size, count, data) == false && count != file1.size) {
+            break;
+        }
+    }
+    fclose(read);
+    _file_sync(write);
+    fclose(write);
+    free(buf);
+    if (count != file1.size) {
+        File::Remove(to);
+        return false;
+    }
+    File::ModTime(to, file1.mtime);
+    File::ChMod(to, file1.mode);
+    return true;
+}
+std::string File::HomeDir() {
+    std::string res;
+#ifdef _WIN32
+    wchar_t wpath[PATH_MAX];
+    if (SHGetFolderPathW(nullptr, CSIDL_PROFILE, nullptr, 0, wpath) == S_OK) {
+        auto path = _file_from_wide(wpath);
+        res = path;
+        free(path);
+    }
+#else
+    const char* tmp = getenv("HOME");
+    res = tmp ? tmp : "";
+#endif
+    return File(res).filename;
+}
+bool File::is_circular() const {
+    if (type == TYPE::DIR && link == true) {
+        auto l = canonicalname() + "/";
+        return filename.find(l) == 0;
+    }
+    return false;
+}
+std::string File::linkname() const {
+#ifdef _WIN32
+    return "";
+#else
+    char tmp[PATH_MAX + 1];
+    auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
+    if (tmp_size > 0 && tmp_size < PATH_MAX) {
+        tmp[tmp_size] = 0;
+        return path + "/" + tmp;
+    }
+    return "";
+#endif
+}
+bool File::MkDir(std::string path) {
+    bool res = false;
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    res = _wmkdir(wpath) == 0;
+    free(wpath);
+#else
+    res = ::mkdir(path.c_str(), File::DEFAULT_DIR_MODE) == 0;
+#endif
+    return res;
+}
+bool File::ModTime(std::string path, int64_t time) {
+    auto res = false;
+#ifdef _WIN32
+    auto wpath  = _file_to_wide(path.c_str());
+    auto handle = CreateFileW(wpath, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (handle != INVALID_HANDLE_VALUE) {
+        FILETIME ftLastAccessTime;
+        FILETIME ftLastWriteTime;
+        auto     lm = (LONGLONG) 0;
+        lm = Int32x32To64((time_t) time, 10000000) + 116444736000000000;
+        ftLastAccessTime.dwLowDateTime  = (DWORD)lm;
+        ftLastAccessTime.dwHighDateTime = lm >> 32;
+        ftLastWriteTime.dwLowDateTime   = (DWORD)lm;
+        ftLastWriteTime.dwHighDateTime  = lm >> 32;
+        res = SetFileTime(handle, nullptr, &ftLastAccessTime, &ftLastWriteTime);
+        CloseHandle(handle);
+    }
+    free(wpath);
+#else
+    utimbuf ut;
+    ut.actime  = (time_t) time;
+    ut.modtime = (time_t) time;
+    res        = utime(path.c_str(), &ut) == 0;
+#endif
+    return res;
+}
+std::string File::name_without_ext() const {
+    auto dot = name.find_last_of(".");
+    return (dot == std::string::npos) ? name : name.substr(0, dot);
+}
+FILE* File::Open(std::string path, std::string mode) {
+    FILE* res = nullptr;
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    auto wmode = _file_to_wide(mode.c_str());
+    res = _wfopen(wpath, wmode);
+    free(wpath);
+    free(wmode);
+#else
+    res = fopen(path.c_str(), mode.c_str());
+#endif
+    return res;
+}
+std::string File::OS() {
+#if defined(_WIN32)
+    return "windows";
+#elif defined(__APPLE__)
+    return "macos";
+#elif defined(__linux__)
+    return "linux";
+#elif defined(__unix__)
+    return "unix";
+#else
+    return "unknown";
+#endif
+}
+FILE* File::Popen(std::string cmd, bool write) {
+    FILE* file = nullptr;
+#ifdef _WIN32
+    auto wpath = _file_to_wide(cmd.c_str());
+    auto wmode = _file_to_wide(write ? "wb" : "rb");
+    file = _wpopen(wpath, wmode);
+    free(wpath);
+    free(wmode);
+#else
+    ::fflush(nullptr);
+    file = ::popen(cmd.c_str(), (write == true) ? "w" : "r");
+#endif
+    return file;
+}
+FileBuf File::Read(std::string path) {
+    FileBuf buf;
+    _file_read(path, buf);
+    return buf;
+}
+FileBuf* File::Read2(std::string path) {
+    auto buf = new FileBuf();
+    _file_read(path, *buf);
+    return buf;
+}
+FileVector File::ReadDir(std::string path) {
+    auto file = File(path, true);
+    auto res  = FileVector();
+    if (file.type != TYPE::DIR) {
+        return res;
+    }
+#ifdef _WIN32
+    auto wpath = _file_to_wide(file.filename.c_str());
+    auto dirp  = _wopendir(wpath);
+    auto sep   = '/';
+    if (file.filename.find("\\\\") == 0) {
+        sep = '\\';
+    }
+    if (dirp != nullptr) {
+        auto entry = _wreaddir(dirp);
+        while (entry != nullptr) {
+            auto cpath = _file_from_wide(entry->d_name);
+            if (strcmp(cpath, ".") != 0 && strcmp(cpath, "..") != 0) {
+                auto name = (file.name == ".") ? file.path + sep + cpath : file.filename + sep + cpath;
+                res.push_back(File(name));
+            }
+            free(cpath);
+            entry = _wreaddir(dirp);
+        }
+        _wclosedir(dirp);
+    }
+    free(wpath);
+#else
+    auto dirp = ::opendir(file.filename.c_str());
+    if (dirp != nullptr) {
+        auto entry = ::readdir(dirp);
+        while (entry != nullptr) {
+            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                auto name = (file.name == ".") ? file.path + "/" + entry->d_name : file.filename + "/" + entry->d_name;
+                res.push_back(File(name));
+            }
+            entry = ::readdir(dirp);
+        }
+        ::closedir(dirp);
+    }
+#endif
+    std::sort(res.begin(), res.end());
+    return res;
+}
+FileVector File::ReadDirRec(std::string path) {
+    auto res   = FileVector();
+    auto files = File::ReadDir(path);
+    _file_read_dir_rec(res, files);
+    return res;
+}
+bool File::RedirectStderr() {
+    return _file_open_redirect(2);
+}
+bool File::RedirectStdout() {
+    return _file_open_redirect(1);
+}
+bool File::Remove(std::string path) {
+    auto f = File(path);
+    if (f.type == TYPE::MISSING && f.link == false) {
+        return false;
+    }
+    auto res = false;
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    if (f.type == TYPE::DIR) {
+        res = RemoveDirectoryW(wpath);
+    }
+    else {
+        res = DeleteFileW(wpath);
+    }
+    if (res == false) {
+        if (f.type == TYPE::DIR) {
+            File::ChMod(path, File::DEFAULT_DIR_MODE);
+            res = RemoveDirectoryW(wpath);
+        }
+        else {
+            File::ChMod(path, File::DEFAULT_FILE_MODE);
+            res = DeleteFileW(wpath);
+        }
+    }
+    free(wpath);
+#else
+    if (f.type == TYPE::DIR && f.link == false) {
+        res = ::rmdir(path.c_str()) == 0;
+    }
+    else {
+        res = ::unlink(path.c_str()) == 0;
+    }
+#endif
+    return res;
+}
+bool File::RemoveRec(std::string path) {
+    auto f     = File(path);
+    auto files = File::ReadDirRec(path);
+    std::reverse(files.begin(), files.end());
+    for (const auto& file : files) {
+        File::Remove(file.filename);
+    }
+    return File::Remove(path);
+}
+bool File::Rename(std::string from, std::string to) {
+    auto res    = false;
+    auto from_f = File(from);
+    auto to_f   = File(to);
+    if (from_f == to_f) {
+        return false;
+    }
+#ifdef _WIN32
+    auto wfrom = _file_to_wide(from_f.filename.c_str());
+    auto wto   = _file_to_wide(to_f.filename.c_str());
+    if (to_f.type == TYPE::DIR) {
+        File::RemoveRec(to_f.filename);
+        res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
+    }
+    else if (to_f.type == TYPE::MISSING) {
+        res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
+    }
+    else {
+        res = ReplaceFileW(wto, wfrom, nullptr, REPLACEFILE_WRITE_THROUGH, 0, 0);
+    }
+    free(wfrom);
+    free(wto);
+#else
+    if (to_f.type == TYPE::DIR) {
+        File::RemoveRec(to_f.filename);
+    }
+    res = ::rename(from_f.filename.c_str(), to_f.filename.c_str()) == 0;
+#endif
+    return res;
+}
+int File::Run(std::string cmd, bool background, bool hide_win32_window) {
+#ifdef _WIN32
+    wchar_t*            cmd_w = _file_to_wide(cmd.c_str());
+    STARTUPINFOW        startup_info;
+    PROCESS_INFORMATION process_info;
+    ZeroMemory(&startup_info, sizeof(STARTUPINFOW));
+    ZeroMemory(&process_info, sizeof(PROCESS_INFORMATION));
+    startup_info.cb          = sizeof(STARTUPINFOW);
+    startup_info.dwFlags     = STARTF_USESHOWWINDOW;
+    startup_info.wShowWindow = (hide_win32_window == true) ? SW_HIDE : SW_SHOW;
+    if (CreateProcessW(nullptr, cmd_w, nullptr, nullptr, false, 0, nullptr, nullptr, &startup_info, &process_info) == 0) {
+        free(cmd_w);
+        return -1;
+    }
+    else {
+        ULONG rc = 0;
+        if (background == false) {
+            WaitForSingleObject(process_info.hProcess, INFINITE);
+            GetExitCodeProcess(process_info.hProcess, &rc);
+        }
+        CloseHandle(process_info.hThread);
+        CloseHandle(process_info.hProcess);
+        free(cmd_w);
+        return (int) rc;
+    }
+#else
+    (void) hide_win32_window;
+    auto cmd2 = cmd;
+    if (background == true) {
+        cmd2 += " 2>&1 > /dev/null &";
+    }
+    return system(cmd2.c_str());
+#endif
+}
+File File::TmpDir() {
+    std::string res;
+    try {
+#if defined(_WIN32)
+        auto path = std::filesystem::temp_directory_path();
+        auto utf  = _file_from_wide(path.c_str());
+        res = utf;
+        free(utf);
+#elif defined(__APPLE__)
+        res = "/tmp";
+#else
+        auto path = std::filesystem::temp_directory_path();
+        res = path.c_str();
+#endif
+    }
+    catch(...) {
+        return File::WorkDir();
+    }
+    return File(res);
+}
+File File::TmpFile(std::string prepend) {
+    assert(prepend.length() < 50);
+    char buf[100];
+    snprintf(buf, 100, "%s%04d%04d%04d", prepend.c_str(), _file_rand(), _file_rand(), _file_rand());
+    return File(TmpDir().filename + "/" + buf);
+}
+std::string File::to_string(bool short_version) const {
+    char tmp[PATH_MAX + 100];
+    int n = 0;
+    if (short_version == true) {
+        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, type=%s, %ssize=%lld, mtime=%lld)",
+            filename.c_str(),
+            type_name().c_str(),
+            link ? "LINK, " : "",
+            (long long int) size,
+            (long long int) mtime);
+    }
+    else {
+        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, name=%s, ext=%s, path=%s, type=%s, link=%s, size=%lld, mtime=%lld, mode=%o)",
+            filename.c_str(),
+            name.c_str(),
+            ext.c_str(),
+            path.c_str(),
+            type_name().c_str(),
+            link ? "YES" : "NO",
+            (long long int) size,
+            (long long int) mtime,
+            mode > 0 ? mode : 0);
+    }
+    return (n > 0 && n < PATH_MAX + 100) ? tmp : "";
+}
+std::string File::type_name() const {
+    static const char* NAMES[] = { "Missing", "Directory", "File", "Other", "", };
+    return NAMES[static_cast<size_t>(type)];
+}
+File& File::update() {
+    ctime = -1;
+    ext   = "";
+    link  = false;
+    mode  = -1;
+    mtime = -1;
+    name  = "";
+    path  = "";
+    size  = -1;
+    type  = TYPE::MISSING;
+    if (filename == "") {
+        return *this;
+    }
+#ifdef _WIN32
+    auto wpath = _file_to_wide(filename.c_str());
+    WIN32_FILE_ATTRIBUTE_DATA attr;
+    if (GetFileAttributesExW(wpath, GetFileExInfoStandard, &attr) != 0) {
+        if (attr.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            type = TYPE::DIR;
+            size = 0;
+        }
+        else {
+            type = TYPE::FILE;
+            size = (attr.nFileSizeHigh * 4294967296) + attr.nFileSizeLow;
+        }
+        mtime = _file_time(&attr.ftLastWriteTime);
+        ctime = _file_time(&attr.ftCreationTime);
+        if (attr.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            link = true;
+            HANDLE handle = CreateFileW(wpath, 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+            if (handle != INVALID_HANDLE_VALUE) {
+                size = GetFileSize(handle, NULL);
+                FILETIME ftCreationTime;
+                FILETIME ftLastAccessTime;
+                FILETIME ftLastWriteTime;
+                if (GetFileTime(handle, &ftCreationTime, &ftLastAccessTime, &ftLastWriteTime) != 0) {
+                    mtime = _file_time(&ftLastWriteTime);
+                    ctime = _file_time(&ftCreationTime);
+                }
+                CloseHandle(handle);
+            }
+        }
+    }
+    free(wpath);
+    _file_split_paths(filename, path, name, ext);
+#else
+    struct stat st;
+    char        tmp[PATH_MAX + 1];
+    if (::stat(filename.c_str(), &st) == 0) {
+        size  = st.st_size;
+        ctime = st.st_ctime;
+        mtime = st.st_mtime;
+        if (S_ISDIR(st.st_mode)) {
+            type = TYPE::DIR;
+        }
+        else if (S_ISREG(st.st_mode)) {
+            type = TYPE::FILE;
+        }
+        else {
+            type = TYPE::OTHER;
+        }
+        snprintf(tmp, PATH_MAX, "%o", st.st_mode);
+        auto l = strlen(tmp);
+        if (l > 2) {
+            mode = strtol(tmp + (l - 3), nullptr, 8);
+        }
+        if (lstat(filename.c_str(), &st) == 0 && S_ISLNK(st.st_mode)) {
+            link = true;
+        }
+        _file_split_paths(filename, path, name, ext);
+    }
+    else {
+        _file_split_paths(filename, path, name, ext);
+        auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
+        if (tmp_size > 0 && tmp_size < PATH_MAX) {
+            link = true;
+        }
+    }
+#endif
+    return *this;
+}
+File& File::update(std::string in, bool realpath) {
+    filename = (in != "") ? _file_to_absolute_path(in, realpath) : "";
+    update();
+    return *this;
+}
+File File::WorkDir() {
+    std::string res;
+#ifdef _WIN32
+    auto wpath = _wgetcwd(nullptr, 0);
+    if (wpath != nullptr) {
+        auto path = _file_from_wide(wpath);
+        free(wpath);
+        res = path;
+        free(path);
+    }
+#else
+    auto path = getcwd(nullptr, 0);
+    if (path != nullptr) {
+        res = path;
+        free(path);
+    }
+#endif
+    return File(res);
+}
+bool File::Write(std::string filename, const char* in, size_t in_size) {
+    if (File(filename).type == TYPE::DIR) {
+        return false;
+    }
+    auto tmpfile = filename + ".~tmp";
+    auto file    = File::Open(tmpfile, "wb");
+    if (file == nullptr) {
+        return false;
+    }
+    auto wrote = fwrite(in, 1, in_size, file);
+    _file_sync(file);
+    fclose(file);
+    if (wrote != in_size) {
+        File::Remove(tmpfile);
+        return false;
+    }
+    else if (File::Rename(tmpfile, filename) == false) {
+        File::Remove(tmpfile);
+        return false;
+    }
+    return true;
+}
+}
+#include <cmath>
+#include <cstdint>
+#include <errno.h>
+namespace flw {
+#define _FLW_JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
+#define _FLW_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
+static const char* const _JSON_BOM = "\xef\xbb\xbf";
+static void _json_debug(const JS* js, std::string t) {
+    if (js->is_array() == true) {
+        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
+        t += "\t";
+        for (const auto js2 : *js->va()) _json_debug(js2, t);
+        t.pop_back();
+    }
+    else if (js->is_object() == true) {
+        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
+        t += "\t";
+        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
+        t.pop_back();
+    }
+    else if (js->is_null()) printf("%s%s(%u): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c());
+    else if (js->is_string()) printf("%s%s(%u): \"%s\": \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vs_c());
+    else if (js->is_number()) printf("%s%s(%u): \"%s\": %f\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vn());
+    else if (js->is_bool()) printf("%s%s(%u): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vb() ? "true" : "false");
+    fflush(stdout);
+}
+static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
+    char buf[256];
+    snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
+    return buf;
+}
+static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
+    bool        res = false;
+    std::string n1;
+    std::string n2;
+    nVal = NAN;
+    while (pos < len) {
+        unsigned char c = json[pos];
+        if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
+            n1 += c;
+            pos++;
+        }
+        else {
+            break;
+        }
+    }
+    while (pos < len) {
+        unsigned char c = json[pos];
+        if (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
+            n2 += c;
+            pos++;
+        }
+        else {
+            break;
+        }
+    }
+    int dot1  = 0;
+    int dot2  = 0;
+    int minus = 0;
+    int plus  = 0;
+    int E     = 0;
+    int term  = json[pos];
+    for (auto c : n1) {
+        dot1  += (c =='.');
+        minus += (c =='-');
+        plus  += (c =='+');
+        E     += (c =='e');
+        E     += (c =='E');
+    }
+    if (dot1 > 1 || minus > 1 || n1 == "-") {
+        return false;
+    }
+    else if (n1.back() == '.') {
+        return false;
+    }
+    else if (n1[0] == '-' && n1[1] == '0' && n1[2] != '.' && n1[2] != 0) {
+        return false;
+    }
+    else if (n1[0] == '-' && n1[1] == '.') {
+        return false;
+    }
+    else if (n1[0] == '0' && n1[1] != 0 && n1[1] != '.') {
+        return false;
+    }
+    else if (minus > 0 && n1[0] != '-') {
+        return false;
+    }
+    if (n2 != "") {
+        if (n2.length() == 1) {
+            return false;
+        }
+        else {
+            dot2 = minus = plus = E = 0;
+            for (auto c : n2) {
+                dot2  += (c =='.');
+                minus += (c =='-');
+                plus  += (c =='+');
+                E     += (c =='e');
+                E     += (c =='E');
+            }
+            if (plus + minus > 1 || E > 1) {
+                return false;
+            }
+            else if (plus > 0 && n2.back() == '+') {
+                return false;
+            }
+            else if (plus > 0 && n2[1] != '+') {
+                return false;
+            }
+            else if (minus > 0 && n2.back() == '-') {
+                return false;
+            }
+            else if (minus > 0 && n2[1] != '-') {
+                return false;
+            }
+        }
+    }
+    if (term > 32 && term != ',' && term != ':' && term != '}' && term != ']' && term != '{' && term != '[') {
+        return false;
+    }
+    errno = 0;
+    if (E > 0 || dot1 > 0) {
+        nVal = strtod((n1 + n2).c_str(), nullptr);
+    }
+    else {
+        nVal = strtoll((n1 + n2).c_str(), nullptr, 0);
+    }
+    res = (errno == 0);
+    pos--;
+    return res;
+}
+static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
+    std::string str   = "";
+    bool        term  = false;
+    unsigned    c     = 0;
+    unsigned    p     = 0;
+    pos++;
+    while (pos < len) {
+        c = json[pos];
+        if (p == '\\' && c == '\\') {
+            str += c;
+            c = 0;
+        }
+        else if (p == '\\' && c == '"') {
+            str += c;
+        }
+        else if (c == '"') {
+            pos++;
+            term = true;
+            break;
+        }
+        else if (c < 32) {
+            return false;
+        }
+        else {
+            str += c;
+        }
+        p = c;
+        pos++;
+    }
+    auto ulen = (ignore_utf_check == false) ? JS::CountUtf8(str.c_str()) : 1;
+    if (term == false) {
+        return false;
+    }
+    else if (ulen == 0 && str.length() > 0) {
+        return false;
+    }
+    if (*sVal1 == nullptr) {
+        *sVal1 = strdup(str.c_str());
+    }
+    else if (*sVal2 == nullptr) {
+        *sVal2 = strdup(str.c_str());
+    }
+    else {
+        return false;
+    }
+    pos--;
+    return true;
+}
+ssize_t JS::COUNT = 0;
+bool JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeBool("", b, this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+bool JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeNil("", this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+bool JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true && std::isnan(nVal) == false) {
+        _va->push_back(JS::_MakeNumber("", nVal, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && std::isnan(nVal) == false) {
+        res = _set_object(*sVal1, JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    nVal = NAN;
+    return res;
+}
+bool JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
+        _va->push_back(JS::_MakeString("", *sVal1, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
+        res = _set_object(*sVal1, JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    free(*sVal2);
+    *sVal1 = nullptr;
+    *sVal2 = nullptr;
+    return res;
+}
+void JS::_clear(bool name) {
+    if (_type == JS::ARRAY) {
+        for (auto js : *_va) {
+            delete js;
+        }
+        delete _va;
+        _va = nullptr;
+    }
+    else if (_type == JS::OBJECT) {
+        for (auto js : *_vo) {
+            delete js.second;
+        }
+        delete _vo;
+        _vo = nullptr;
+    }
+    else if (_type == JS::STRING) {
+        free(_vs);
+        _vs = nullptr;
+    }
+    if (name == true) {
+        free(_name);
+        _name   = nullptr;
+    }
+    _type   = JS::NIL;
+    _vb     = false;
+    _parent = nullptr;
+}
+size_t JS::CountUtf8(const char* p) {
+    auto count = (size_t) 0;
+    auto f     = (size_t) 0;
+    auto u     = reinterpret_cast<const unsigned char*>(p);
+    auto c     = (unsigned) u[0];
+    while (c != 0) {
+        if (c >= 128) {
+            if (c >= 194 && c <= 223) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+            }
+            else if (c >= 224 && c <= 239) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+            }
+            else if (c >= 240 && c <= 244) {
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+                c = u[++f];
+                if (c < 128 || c > 191) return 0;
+            }
+            else {
+                return 0;
+            }
+        }
+        count++;
+        c = u[++f];
+    }
+    return count;
+}
+std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+    auto colon   = 0;
+    auto comma   = 0;
+    auto count_a = 0;
+    auto count_o = 0;
+    auto current = (JS*) nullptr;
+    auto line    = (unsigned) 1;
+    auto n       = (JS*) nullptr;
+    auto nVal    = (double) NAN;
+    auto pos1    = (size_t) 0;
+    auto pos2    = (size_t) 0;
+    auto posn    = (size_t) 0;
+    auto sVal1   = (char*) nullptr;
+    auto sVal2   = (char*) nullptr;
+    auto tmp     = JS();
+    try {
+        _clear(true);
+        _name = strdup("");
+        tmp._type = JS::ARRAY;
+        tmp._va   = new JSArray();
+        current   = &tmp;
+        if (strncmp(json, _JSON_BOM, 3) == 0) {
+            pos1 += 3;
+        }
+        while (pos1 < len) {
+            auto start = pos1;
+            auto c     = (unsigned) json[pos1];
+            if (c == '\t' || c == '\r' || c == ' ') {
+                pos1++;
+            }
+            else if (c == '\n') {
+                line++;
+                pos1++;
+            }
+            else if (c == '"') {
+                pos2 = pos1;
+                if (sVal1 == nullptr) posn = pos1;
+                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _FLW_JSON_ERROR(start, line);
+                auto add_object = (current->is_object() == true && sVal2 != nullptr);
+                auto add_array = (current->is_array() == true);
+                if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
+                else if (add_object == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (add_object == true || add_array == true) {
+                    pos2 = (sVal2 == nullptr) ? pos2 : posn;
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
+                    colon = 0;
+                    comma = 0;
+                }
+                pos1++;
+            }
+            else if ((c >= '0' && c <= '9') || c == '-') {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
+                if (_json_parse_number(json, len, pos1, nVal) == false) throw _FLW_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
+                colon = 0;
+                comma = 0;
+                pos1++;
+            }
+            else if (c == ',') {
+                if (comma > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current == &tmp) throw _FLW_JSON_ERROR(pos1, line);
+                comma++;
+                pos1++;
+            }
+            else if (c == ':') {
+                if (colon > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                colon++;
+                pos1++;
+            }
+            else if (c == '[') {
+                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_array() == true) {
+                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    n = JS::_MakeArray("", current, pos1);
+                    current->_va->push_back(n);
+                }
+                else {
+                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
+                    n = JS::_MakeArray(sVal1, current, pos2);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
+                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
+                }
+                current = n;
+                colon = 0;
+                comma = 0;
+                count_a++;
+                pos1++;
+            }
+            else if (c == ']') {
+                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_array() == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (count_a < 0) throw _FLW_JSON_ERROR(pos1, line);
+                current = current->_parent;
+                comma = 0;
+                count_a--;
+                pos1++;
+            }
+            else if (c == '{') {
+                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_array() == true) {
+                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    n = JS::_MakeObject("", current, pos1);
+                    current->_va->push_back(n);
+                }
+                else {
+                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
+                    n = JS::_MakeObject(sVal1, current, posn);
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
+                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
+                }
+                current = n;
+                colon = 0;
+                comma = 0;
+                count_o++;
+                pos1++;
+            }
+            else if (c == '}') {
+                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
+                else if (count_o < 0) throw _FLW_JSON_ERROR(pos1, line);
+                current = current->_parent;
+                comma = 0;
+                count_o--;
+                pos1++;
+            }
+            else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
+                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
+                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
+                colon = 0;
+                comma = 0;
+                pos1 += 4;
+                pos1 += (c == 'f');
+            }
+            else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
+                pos2 = (sVal1 == nullptr) ? pos1 : posn;
+                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _FLW_JSON_ERROR(start, line);
+                colon = 0;
+                comma = 0;
+                pos1 += 4;
+            }
+            else {
+                throw _FLW_JSON_ERROR(pos1, line);
+            }
+            if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
+                throw _FLW_JSON_ERROR(pos1, line);
+            }
+        }
+        if (count_a != 0 || count_o != 0) {
+            throw _FLW_JSON_ERROR(len, 1);
+        }
+        else if (tmp.size() != 1) {
+            throw _FLW_JSON_ERROR(len, 1);
+        }
+        else if (tmp[0]->_type == JS::ARRAY) {
+            _type = JS::ARRAY;
+            _va = tmp[0]->_va;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
+            for (auto o : *_va) {
+                o->_parent = this;
+            }
+        }
+        else if (tmp[0]->_type == JS::OBJECT) {
+            _type = JS::OBJECT;
+            _vo = tmp[0]->_vo;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
+            for (const auto& it : *_vo) {
+                it.second->_parent = this;
+            }
+        }
+        else if (tmp[0]->_type == JS::BOOL) {
+            _type = JS::BOOL;
+            _vb   = tmp[0]->_vb;
+        }
+        else if (tmp[0]->_type == JS::NUMBER) {
+            _type = JS::NUMBER;
+            _vn   = tmp[0]->_vn;
+        }
+        else if (tmp[0]->_type == JS::STRING) {
+            _type = JS::STRING;
+            _vs   = tmp[0]->_vs;
+            const_cast<JS*>(tmp[0])->_type = JS::NIL;
+        }
+        else if (tmp[0]->_type == JS::NIL) {
+            _type = JS::NIL;
+        }
+        else {
+            throw _FLW_JSON_ERROR(0, 1);
+        }
+    }
+    catch(const std::string& err) {
+        _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
+        _clear(false);
+        return err;
+    }
+    return "";
+}
+void JS::debug() const {
+    std::string t;
+    _json_debug(this, t);
+}
+std::string JS::encode(JS::ENCODE_OPTION option) const {
+    std::string t;
+    std::string j;
+    try {
+        if (is_array() == true || is_object() == true) {
+            JS::_Encode(this, j, t, false, option);
+        }
+        else {
+            return _encode(true, option);
+        }
+    }
+    catch (const std::string& e) {
+        j = e;
+    }
+    return j;
+}
+std::string JS::_encode(bool ignore_name, JS::ENCODE_OPTION option) const {
+    static const std::string QUOTE = "\"";
+    std::string res;
+    std::string arr   = (option == ENCODE_OPTION::NORMAL) ? "\": [" : "\":[";
+    std::string obj   = (option == ENCODE_OPTION::NORMAL) ? "\": {" : "\":{";
+    std::string name1 = (option == ENCODE_OPTION::NORMAL) ? "\": " : "\":";
+    bool object = (_parent != nullptr && _parent->is_object() == true);
+    if (_type == JS::ARRAY) {
+        res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
+    }
+    else if (_type == JS::OBJECT) {
+        res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
+    }
+    else {
+        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name1);
+        if (_type == JS::STRING) {
+            res += QUOTE + _vs + QUOTE;
+        }
+        else if (_type == JS::NIL) {
+            res += "null";
+        }
+        else if (_type == JS::BOOL && _vb == true) {
+            res += "true";
+        }
+        else if (_type == JS::BOOL && _vb == false) {
+            res += "false";
+        }
+        else if (_type == JS::NUMBER) {
+            res += JS::FormatNumber(_vn);
+        }
+    }
+    return res;
+}
+void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, JS::ENCODE_OPTION option) {
+    std::string c = (comma == true) ? "," : "";
+    std::string n = (option == ENCODE_OPTION::REMOVE_LEADING_AND_NEWLINES) ? "" : "\n";
+    size_t      f = 0;
+    if (js->is_array() == true) {
+        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
+        for (const auto n2 : *js->_va) {
+            if (option == ENCODE_OPTION::NORMAL) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), option);
+            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), option);
+            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
+            f++;
+        }
+        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
+    }
+    else if (js->is_object() == true) {
+        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
+        for (const auto& n2 : *js->_vo) {
+            if (option == ENCODE_OPTION::NORMAL) t += "\t";
+            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), option);
+            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), option);
+            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
+            f++;
+        }
+        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
+    }
+    else {
+        j += t + js->_encode(false, option) + c + n;
+    }
+}
+void JS::_EncodeInline(const JS* js, std::string& j, bool comma, JS::ENCODE_OPTION option) {
+    std::string c = (comma == true) ? "," : "";
+    size_t      f = 0;
+    if (*js == JS::ARRAY) {
+        j += js->_encode(false, option);
+        for (const auto n : *js->_va) {
+            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), option);
+            f++;
+        }
+        j += "]" + c;
+    }
+    else if (*js == JS::OBJECT) {
+        j += js->_encode(false, option);
+        for (const auto& n : *js->_vo) {
+            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), option);
+            f++;
+        }
+        j += "}" + c;
+    }
+    else {
+        j += js->_encode(false, option) + c;
+    }
+}
+std::string JS::Escape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string) + 5);
+    while (*string != 0) {
+        auto c = *string;
+        if (c == 9) res += "\\t";
+        else if (c == 10) res += "\\n";
+        else if (c == 13) res += "\\r";
+        else if (c == 8) res += "\\b";
+        else if (c == 14) res += "\\f";
+        else if (c == 34) res += "\\\"";
+        else if (c == 92) res += "\\\\";
+        else res += c;
+        string++;
+    }
+    return res;
+}
+const JS* JS::find(std::string name, bool rec) const {
+    if (is_object() == true) {
+        auto find1 = _vo->find(name);
+        if (find1 != _vo->end()) {
+            return find1->second;
+        }
+        else if (rec == true) {
+            for (auto o : *_vo) {
+                if (o.second->is_object() == true) {
+                    return o.second->find(name, rec);
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+std::string JS::FormatNumber(double f, bool E) {
+    double ABS = fabs(f);
+    double MIN = ABS - static_cast<int64_t>(ABS);
+    size_t n   = 0;
+    char b[100];
+    if (ABS > 999'000'000'000) {
+        n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+    }
+    else {
+        if (MIN < 0.0000001) {
+            n = (E == true) ? snprintf(b, 100, "%.0e", f) : snprintf(b, 100, "%.0f", f);
+        }
+        else if (MIN < 0.001) {
+            n = (E == true) ? snprintf(b, 100, "%.7e", f) : snprintf(b, 100, "%.7f", f);
+        }
+        else {
+            n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+        }
+    }
+    if (n < 1 || n >= 100) {
+        return "0";
+    }
+    std::string s = b;
+    if (s.find('.') == std::string::npos) {
+        return s;
+    }
+    while (s.back() == '0') {
+        s.pop_back();
+    }
+    if (s.back() == '.') {
+        s.pop_back();
+    }
+    return s;
+}
+const JS* JS::_get_object(const char* name, bool escape) const {
+    if (is_object() == true) {
+        auto key   = (escape == true) ? JS::Escape(name) : name;
+        auto find1 = _vo->find(key);
+        return (find1 != _vo->end()) ? find1->second : nullptr;
+    }
+    return nullptr;
+}
+bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
+    if (is_object() == true) {
+        auto find1 = _vo->find(name);
+        if (find1 != _vo->end()) {
+            if (ignore_duplicates == false) {
+                delete js;
+                return false;
+            }
+            else {
+                delete find1->second;
+            }
+        }
+        (*_vo)[name] = js;
+    }
+    return true;
+}
+const JSArray JS::vo_to_va() const {
+    JSArray res;
+    if (_type == JS::OBJECT) {
+        for (auto& m : *_vo) {
+            res.push_back(m.second);
+        }
+    }
+    return res;
+}
+std::string JS::Unescape(const char* string) {
+    std::string res;
+    res.reserve(strlen(string));
+    while (*string != 0) {
+        unsigned char c = *string;
+        unsigned char n = *(string + 1);
+        if (c == '\\') {
+            if (n == 't') res += '\t';
+            else if (n == 'n') res += '\n';
+            else if (n == 'r') res += '\r';
+            else if (n == 'b') res += '\b';
+            else if (n == 'f') res += '\f';
+            else if (n == '\"') res += '"';
+            else if (n == '\\') res += '\\';
+            else if (n == 0) break;
+            string++;
+        }
+        else {
+            res += c;
+        }
+        string++;
+    }
+    return res;
+}
+JSB& JSB::add(JS* js) {
+    auto name = js->name();
+    if (_current == nullptr) {
+        if (name != "") {
+            delete js;
+            throw std::string("error: root object must be nameless <" + name + ">");
+        }
+        else {
+            _root = _current = js;
+        }
+    }
+    else {
+        js->_parent = _current;
+        if (_current->is_array() == true) {
+            if (name != "") {
+                delete js;
+                throw std::string("error: values added to array are nameless <" + name + ">");
+            }
+            else if (*js == JS::ARRAY || *js == JS::OBJECT) {
+                _current->_va->push_back(js);
+                _current = js;
+            }
+            else {
+                _current->_va->push_back(js);
+            }
+        }
+        else if (_current->is_object() == true) {
+            if (_current->find(name) != nullptr) {
+                delete js;
+                throw std::string("error: duplicate name <" + name + ">");
+            }
+            else if (js->is_array() == true || js->is_object() == true) {
+                (*_current->_vo)[name] = js;
+                _current = js;
+            }
+            else {
+                (*_current->_vo)[name] = js;
+            }
+        }
+        else {
+            delete js;
+            throw std::string("error: missing container");
+        }
+    }
+    return *this;
+}
+std::string JSB::encode() const {
+    if (_root == nullptr) {
+        throw std::string("error: empty json");
+    }
+    else if (_name != "") {
+        throw std::string("error: unused name value <" + _name + ">");
+    }
+    auto j = _root->encode();
+    if (j.find("error") == 0) {
+        throw j;
+    }
+    return j;
+}
+JSB& JSB::end() {
+    if (_current == nullptr) {
+        throw std::string("error: empty json");
+    }
+    else if (_current == _root) {
+        throw std::string("error: already at the top level");
+    }
+    _current = _current->parent();
+    return *this;
+}
+}
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Menu_Button.H>
@@ -421,7 +2944,7 @@ ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
     return res;
 }
 ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
-    Buf buf = File::Load(filename);
+    auto buf = File::Read(filename);
     if (buf.s < 10) {
         return ChartDataVector();
     }
@@ -550,7 +3073,7 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
         snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), JS::FormatNumber(data.high).c_str(), sep.c_str(), JS::FormatNumber(data.low).c_str(), sep.c_str(), JS::FormatNumber(data.close).c_str());
         csv += buffer;
     }
-    return File::Save(filename, csv.c_str(), csv.size());
+    return File::Write(filename, csv.c_str(), csv.size());
 }
 ChartDataVector ChartData::StdDev(const ChartDataVector& in, size_t days) {
     ChartDataVector res;
@@ -2102,7 +4625,7 @@ bool Chart::load_json(std::string filename) {
     clear();
     redraw();
     auto wc  = WaitCursor();
-    auto buf = File::Load(filename);
+    auto buf = File::Read(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
@@ -2319,7 +4842,7 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 }
             jsb.end();
         auto js = jsb.encode();
-        return File::Save(filename, js.c_str(), js.length());
+        return File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -2609,685 +5132,6 @@ void Chart::_show_menu() {
 void Chart::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
-}
-}
-#include <string.h>
-#include <time.h>
-namespace flw {
-static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-static int          _DATE_DAYS_MONTH_LEAP[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""};
-static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""};
-static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
-static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
-static int _date_days(int year, int month) {
-    if (year < 1 || year > 9999 || month < 1 || month > 12) {
-        return 0;
-    }
-    else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-        return _DATE_DAYS_MONTH_LEAP[month];
-    }
-    return _DATE_DAYS_MONTH[month];
-}
-static void _date_from_time(int64_t seconds, bool utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
-    year = month = day = 1;
-    hour = min = sec = 0;
-    if (seconds < 0) {
-        return;
-    }
-    time_t    rawtime  = seconds;
-    const tm* timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
-    if (timeinfo == nullptr) {
-        return;
-    }
-    year  = timeinfo->tm_year + 1900;
-    month = timeinfo->tm_mon + 1;
-    day   = timeinfo->tm_mday;
-    hour  = timeinfo->tm_hour;
-    min   = timeinfo->tm_min;
-    sec   = timeinfo->tm_sec;
-}
-static Date _date_parse(const char* string, bool us) {
-    const char* space = strstr(string, " ");
-    int  tot   = strlen(string);
-    int  tlen  = space ? (int) (space - string) : 0;
-    int  len   = space ? tlen : tot;
-    int  year  = 1;
-    int  month = 1;
-    int  day   = 1;
-    int  hour  = 0;
-    int  min   = 0;
-    int  sec   = 0;
-    bool iso   = false;
-    int  Y     = 0;
-    int  val[15];
-    for (int f = 0; f < 15; f++) {
-        val[f] = 0;
-    }
-    if (len == 10 && string[4] == '-' && string[7] == '-') {
-        iso    = true;
-        val[4] = string[5] - '0';
-        val[5] = string[6] - '0';
-        val[6] = string[8] - '0';
-        val[7] = string[9] - '0';
-    }
-    else if (len == 8 && string[1] == '/' && string[3] == '/') {
-        Y      = 4;
-        val[4] = string[2] - '0';
-        val[5] = -1;
-        val[6] = string[0] - '0';
-        val[7] = -1;
-    }
-    else if (len == 9 && string[1] == '/' && string[4] == '/') {
-        Y      = 5;
-        val[4] = string[2] - '0';
-        val[5] = string[3] - '0';
-        val[6] = string[0] - '0';
-        val[7] = -1;
-    }
-    else if (len == 9 && string[2] == '/' && string[4]) {
-        Y      = 5;
-        val[4] = string[3] - '0';
-        val[5] = -1;
-        val[6] = string[0] - '0';
-        val[7] = string[1] - '0';
-    }
-    else if (len == 10 && string[2] == '/' && string[5] == '/') {
-        Y      = 6;
-        val[4] = string[3] - '0';
-        val[5] = string[4] - '0';
-        val[6] = string[0] - '0';
-        val[7] = string[1] - '0';
-    }
-    else if (len == 8) {
-        iso    = true;
-        val[4] = string[4] - '0';
-        val[5] = string[5] - '0';
-        val[6] = string[6] - '0';
-        val[7] = string[7] - '0';
-    }
-    else {
-        return Date::InvalidDate();
-    }
-    val[0] = string[Y] - '0';
-    val[1] = string[Y + 1] - '0';
-    val[2] = string[Y + 2] - '0';
-    val[3] = string[Y + 3] - '0';
-    if (tlen && tot - tlen >= 9) {
-        val[8]  = string[tlen + 1] - '0';
-        val[9]  = string[tlen + 2] - '0';
-        val[10] = string[tlen + 4] - '0';
-        val[11] = string[tlen + 5] - '0';
-        val[12] = string[tlen + 7] - '0';
-        val[13] = string[tlen + 8] - '0';
-    }
-    else if (tlen && tot - tlen >= 7) {
-        val[8]  = string[tlen + 1] - '0';
-        val[9]  = string[tlen + 2] - '0';
-        val[10] = string[tlen + 3] - '0';
-        val[11] = string[tlen + 4] - '0';
-        val[12] = string[tlen + 5] - '0';
-        val[13] = string[tlen + 6] - '0';
-    }
-    for (int f = 0; f < 15; f++) {
-        if ((f == 5 || f == 7) && val[f] == -1) {
-            ;
-        }
-        else if (val[f] < 0 || val[f] > 9) {
-            return Date::InvalidDate();
-        }
-    }
-    year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
-    month = val[5] == -1 ? val[4] : val[4] * 10 + val[5];
-    day   = val[7] == -1 ? val[6] : val[6] * 10 + val[7];
-    hour  = val[8] * 10 + val[9];
-    min   = val[10] * 10 + val[11];
-    sec   = val[12] * 10 + val[13];
-    if (iso == false && us == true) {
-        int tmp = month;
-        month   = day;
-        day     = tmp;
-    }
-    return Date(year, month, day, hour, min, sec);
-}
-static Date::DAY _date_weekday(int year, int month, int day) {
-    if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days(year, month)) {
-        int start = 0;
-        int y1    = year - 1;
-        int pre   = ((year < 1582) || ((year == 1582) && (month <= 10)));
-        if (pre) {
-            start = 6 + y1 + (y1 / 4);
-        }
-        else {
-            start = 1 + y1 + (y1 / 4) - (y1 / 100) + (y1 / 400);
-        }
-        for (int i = 1; i < month; i++) {
-            int days = _date_days(year, i);
-            if (days) {
-                start += days;
-            }
-            else {
-                return Date::DAY::INVALID;
-            }
-        }
-        start = start % 7;
-        start = start == 0 ? 7 : start;
-        for (int i = 2; i <= day; i++) {
-            start++;
-            if (start > 7) {
-                start = 1;
-            }
-        }
-        if (start < 1 || start > 7) {
-            return Date::DAY::INVALID;
-        }
-        else {
-            return (Date::DAY) start;
-        }
-    }
-    return Date::DAY::INVALID;
-}
-static bool _date_is_leapyear(int year) {
-    if (year < 1 || year > 9999) {
-        return false;
-    }
-    else if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-        return true;
-    }
-    else {
-       return false;
-    }
-}
-Date::Date(bool utc) {
-    int y, m, d, ho, mi, se;
-    _date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
-    set(y, m, d, ho, mi, se);
-}
-Date::Date(const Date& other) {
-    set(other);
-}
-Date::Date(Date&& other) {
-    set(other);
-}
-Date::Date(int year, int month, int day, int hour, int min, int sec) {
-    _year = _month = _day = 0;
-    _hour = _min = _sec = 0;
-    set(year, month, day, hour, min, sec);
-}
-Date& Date::operator=(const Date& date) {
-    set(date);
-    return *this;
-}
-Date& Date::operator=(Date&& date) {
-    set(date);
-    return *this;
-}
-bool Date::add_days(const int days) {
-    if (days) {
-        int daym = _date_days(_year, _month);
-        if (daym > 0) {
-            int inc = days > 0 ? 1 : -1;
-            int y   = _year;
-            int m   = _month;
-            int d   = _day;
-            for (int f = 0; f < abs(days); f++) {
-                d += inc;
-                if (inc < 0 && d == 0) {
-                    m--;
-                    if (m == 0) {
-                        m = 12;
-                        y--;
-                        if (y < 1) {
-                            return false;
-                        }
-                    }
-                    d = _date_days(y, m);
-                    if (d == 0) {
-                        return false;
-                    }
-                }
-                else if (inc > 0 && d > daym) {
-                    d = 1;
-                    m++;
-                    if (m == 13) {
-                        m = 1;
-                        y++;
-                        if (y > 9999) {
-                            return false;
-                        }
-                    }
-                    daym = _date_days(y, m);
-                    if (daym == 0) {
-                        return false;
-                    }
-                }
-            }
-            _year  = y;
-            _month = m;
-            _day   = d;
-            return true;
-        }
-    }
-    return false;
-}
-bool Date::add_months(const int months) {
-    if (months) {
-        int inc = months > 0 ? 1 : -1;
-        int m   = _month;
-        int y   = _year;
-        for (int f = 0; f < abs(months); f++) {
-            m += inc;
-            if (m == 0) {
-                m = 12;
-                y--;
-                if (y < 1) {
-                    return false;
-                }
-            }
-            else if (m > 12) {
-                m = 1;
-                y++;
-                if (y > 9999) {
-                    return false;
-                }
-            }
-        }
-        const int days = _date_days(y, m);
-        if (days > 0) {
-            _year  = y;
-            _month = m;
-            if (_day > days) {
-                _day = days;
-            }
-            return true;
-        }
-    }
-    return false;
-}
-bool Date::add_seconds(const int64_t seconds) {
-    if (seconds) {
-        int inc = seconds > 0 ? 1 : -1;
-        int h   = _hour;
-        int m   = _min;
-        int s   = _sec;
-        for (int64_t f = 0; f < llabs(seconds); f++) {
-            s += inc;
-            if (inc < 0 && s == -1) {
-                m--;
-                if (m == -1) {
-                    m = 59;
-                    h--;
-                    if (h == -1) {
-                        h = 23;
-                        if (add_days(-1) == false) {
-                            return false;
-                        }
-                    }
-                }
-                s = 59;
-            }
-            else if (inc > 0 && s == 60) {
-                m++;
-                if (m == 60) {
-                    m = 0;
-                    h++;
-                    if (h == 24) {
-                        h = 0;
-                        if (add_days(1) == false) {
-                            return false;
-                        }
-                    }
-                }
-                s = 0;
-            }
-        }
-        _hour = h;
-        _min  = m;
-        _sec  = s;
-        return true;
-    }
-    return false;
-}
-int Date::compare(const Date& other, Date::COMPARE flag) const {
-    if (_year < other._year) {
-        return -1;
-    }
-    else if (_year > other._year) {
-        return 1;
-    }
-    if (_month < other._month) {
-        return -1;
-    }
-    else if (_month > other._month) {
-        return 1;
-    }
-    if (flag >= Date::COMPARE::YYYYMMDD) {
-        if (_day < other._day) {
-            return -1;
-        }
-        else if (_day > other._day) {
-            return 1;
-        }
-    }
-    if (flag >= Date::COMPARE::YYYYMMDDHH) {
-        if (_hour < other._hour) {
-            return -1;
-        }
-        else if (_hour > other._hour) {
-            return 1;
-        }
-    }
-    if (flag >= Date::COMPARE::YYYYMMDDHHMM) {
-        if (_min < other._min) {
-            return -1;
-        }
-        else if (_min > other._min) {
-            return 1;
-        }
-    }
-    if (flag >= Date::COMPARE::YYYYMMDDHHMMSS) {
-        if (_sec < other._sec) {
-            return -1;
-        }
-        else if (_sec > other._sec) {
-            return 1;
-        }
-    }
-    return 0;
-}
-bool Date::Compare(const Date& a, const Date& b) {
-    return a.compare(b) < 0;
-}
-Date& Date::day(int day) {
-    if (day > 0 && day <= _date_days(_year, _month)) {
-        _day = day;
-    }
-    return *this;
-}
-Date& Date::day_last() {
-    _day = month_days();
-    return *this;
-}
-int Date::diff_days(const Date& date) const {
-    Date d(date);
-    int  res = 0;
-    if (compare(d, Date::COMPARE::YYYYMMDD) < 0) {
-        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
-            d.add_days(-1);
-            res++;
-        }
-    }
-    else if (compare(d, Date::COMPARE::YYYYMMDD) > 0) {
-        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
-            d.add_days(1);
-            res--;
-        }
-    }
-    return res;
-}
-int Date::diff_months(const Date& date) const {
-    Date d(date);
-    int  res = 0;
-    if (compare(d, Date::COMPARE::YYYYMM) < 0) {
-        while (compare(d, Date::COMPARE::YYYYMM)) {
-            d.add_months(-1);
-            res++;
-        }
-    }
-    else if (compare(d, Date::COMPARE::YYYYMM) > 0) {
-        while (compare(d, Date::COMPARE::YYYYMM)) {
-            d.add_months(1);
-            res--;
-        }
-    }
-    return res;
-}
-int Date::diff_seconds(const Date& date) const {
-    int64_t unix1 = time();
-    int64_t unix2 = date.time();
-    if (unix1 >= 0 && unix2 >= 0) {
-        return unix2 - unix1;
-    }
-    return 0;
-}
-std::string Date::format(Date::FORMAT format) const {
-    char tmp[100];
-    int  n = 0;
-    if (format == Date::FORMAT::ISO_LONG) {
-        n = snprintf(tmp, 100, "%04d-%02d-%02d", _year, _month, _day);
-    }
-    else if (format == Date::FORMAT::US) {
-        n = snprintf(tmp, 100, "%d/%d/%04d", _month, _day, _year);
-    }
-    else if (format == Date::FORMAT::WORLD) {
-        n = snprintf(tmp, 100, "%d/%d/%04d", _day, _month, _year);
-    }
-    else if (format == Date::FORMAT::NAME) {
-        n = snprintf(tmp, 100, "%04d %s %d", _year, month_name_short(), _day);
-    }
-    else if (format == Date::FORMAT::NAME_LONG) {
-        n = snprintf(tmp, 100, "%04d %s %d", _year, month_name(), _day);
-    }
-    else if (format == Date::FORMAT::NAME_TIME) {
-        n = snprintf(tmp, 100, "%04d %s %d - %02d%02d%02d", _year, month_name_short(), _day, _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::NAME_TIME_LONG) {
-        n = snprintf(tmp, 100, "%04d %s %d - %02d:%02d:%02d", _year, month_name(), _day, _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::YEAR_MONTH) {
-        n = snprintf(tmp, 100, "%04d %s", _year, month_name_short());
-    }
-    else if (format == Date::FORMAT::YEAR_MONTH_LONG) {
-        n = snprintf(tmp, 100, "%04d %s", _year, month_name());
-    }
-    else if (format == Date::FORMAT::ISO_TIME) {
-        n = snprintf(tmp, 100, "%04d%02d%02d %02d%02d%02d", _year, _month, _day, _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::ISO_TIME_LONG) {
-        n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::TIME_LONG) {
-        n = snprintf(tmp, 100, "%02d:%02d:%02d", _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::TIME) {
-        n = snprintf(tmp, 100, "%02d%02d%02d", _hour, _min, _sec);
-    }
-    else {
-        n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);
-    }
-    if (n < 0 || n >= 100) {
-        *tmp = 0;
-    }
-    return tmp;
-}
-std::string Date::FormatSecToISO(int64_t seconds, bool utc) {
-    const time_t rawtime  = (time_t) seconds;
-    const tm*    timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
-    char         buffer[100];
-    if (timeinfo == nullptr) {
-        return "";
-    }
-    snprintf(buffer, 100, "%04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    return buffer;
-}
-Date Date::FromString(const char* buffer, bool us) {
-    if (buffer == nullptr) {
-        return Date::InvalidDate();
-    }
-    else {
-         return _date_parse(buffer, us);
-    }
-}
-Date Date::FromTime(int64_t seconds, bool utc) {
-    int y, m, d, ho, mi, se;
-    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
-    return Date(y, m, d, ho, mi, se);
-}
-Date& Date::hour(int hour) {
-    if (hour >= 0 && hour <= 23) {
-        _hour = hour;
-    }
-    return *this;
-}
-Date Date::InvalidDate() {
-    Date date;
-    date._year = date._month = date._day = date._hour = date._min = date._sec = 0;
-    return date;
-}
-bool Date::is_leapyear() const {
-    return _date_is_leapyear(_year);
-}
-Date& Date::minute(int min) {
-    if (min >= 0 && min <= 59) {
-        _min = min;
-    }
-    return *this;
-}
-Date& Date::month(int month) {
-    if (month >= 1 && month <= 12) {
-        _month = month;
-    }
-    return *this;
-}
-int Date::month_days() const {
-    return _date_days(_year, _month);
-}
-const char* Date::month_name() const {
-    return _DATE_MONTHS[(int) _month];
-}
-const char* Date::month_name_short() const {
-    return _DATE_MONTHS_SHORT[(int) _month];
-}
-void Date::print() const {
-    auto string = format(Date::FORMAT::ISO_TIME_LONG);
-    printf("Date| %s\n", string.c_str());
-    fflush(stdout);
-}
-Date& Date::second(int sec) {
-    if (sec >= 0 && sec <= 59) {
-        _sec = sec;
-    }
-    return *this;
-}
-Date& Date::set(const Date& date) {
-    _year  = date._year;
-    _month = date._month;
-    _day   = date._day;
-    _hour  = date._hour;
-    _min   = date._min;
-    _sec   = date._sec;
-    return *this;
-}
-Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
-    if (year < 1 || year > 9999 ||
-        month < 1 || month > 12 ||
-        day < 1 || day > _date_days(year, month) ||
-        hour < 0 || hour > 23 ||
-        min < 0 || min > 59 ||
-        sec < 0 || sec > 59) {
-        return *this;
-    }
-    else {
-        _year  = year;
-        _month = month;
-        _day   = day;
-        _hour  = hour;
-        _min   = min;
-        _sec   = sec;
-        return *this;
-    }
-}
-int64_t Date::time() const {
-    tm t;
-    if (_year < 1970) {
-        return -1;
-    }
-    memset(&t, '\0', sizeof(t));
-    t.tm_year = _year - 1900;
-    t.tm_mon  = _month - 1;
-    t.tm_mday = _day;
-    t.tm_hour = _hour;
-    t.tm_min  = _min;
-    t.tm_sec  = _sec;
-    return mktime(&t);
-}
-int Date::week() const {
-    Date::DAY wday  = _date_weekday(_year, _month, _day);
-    Date::DAY wday1 = _date_weekday(_year, 1, 1);
-    if (wday != Date::DAY::INVALID && wday1 != Date::DAY::INVALID) {
-        auto w     = 0;
-        auto y1    = _year - 1;
-        auto leap  = _date_is_leapyear(_year);
-        auto leap1 = _date_is_leapyear(y1);
-        auto yday  = yearday();
-        if (yday <= (8 - (int) wday1) && wday1 > Date::DAY::THURSDAY) {
-            if (wday1 == Date::DAY::FRIDAY || (wday1 == Date::DAY::SATURDAY && leap1)) {
-                w = 53;
-            }
-            else {
-                w = 52;
-            }
-        }
-        else {
-            auto days = leap ? 366 : 365;
-            if ((days - yday) < (4 - (int) wday)) {
-                w = 1;
-            }
-            else {
-                days = yday + (7 - (int) wday) + ((int) wday1 - 1);
-                days = days / 7;
-                if (wday1 > Date::DAY::THURSDAY) {
-                    days--;
-                }
-                w = days;
-            }
-        }
-        if (w > 0 && w < 54) {
-            return w;
-        }
-    }
-    return 0;
-}
-Date::DAY Date::weekday() const {
-    return _date_weekday(_year, _month, _day);
-}
-Date& Date::weekday(Date::DAY day) {
-    if (weekday() < day) {
-        while (weekday() < day) {
-            add_days(1);
-        }
-    }
-    else if (weekday() > day) {
-        while (weekday() > day) {
-            add_days(-1);
-        }
-    }
-    return *this;
-}
-const char* Date::weekday_name() const {
-    return _DATE_WEEKDAYS[(int) _date_weekday(_year, _month, _day)];
-}
-const char* Date::weekday_name_short() const {
-    return _DATE_WEEKDAYS_SHORT[(int) _date_weekday(_year, _month, _day)];
-}
-Date& Date::year(int year) {
-    if (year >= 1 && year <= 9999) {
-        _year = year;
-    }
-    return *this;
-}
-int Date::yearday() const {
-    auto res  = 0;
-    auto leap = _date_is_leapyear(_year);
-    for (auto m = 1; m < _month && m < 13; m++) {
-        if (leap) {
-            res += _DATE_DAYS_MONTH_LEAP[m];
-        }
-        else {
-            res += _DATE_DAYS_MONTH[m];
-        }
-    }
-    return res + _day;
 }
 }
 #include <FL/Fl_Double_Window.H>
@@ -5416,7 +7260,7 @@ const char* const           PREF_THEMES2[]           = {
                                 "tan_plastic",
                                 nullptr,
 };
-static std::string _print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+static std::string _flw_print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     bool                      cont = true;
     FILE*                     file = nullptr;
     Fl_PostScript_File_Device printer;
@@ -5821,13 +7665,13 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     return res;
 }
 std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
-    return flw::_print(ps_filename, format, layout, cb, data, 0, 0);
+    return flw::_flw_print(ps_filename, format, layout, cb, data, 0, 0);
 }
 std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     if (from < 1 || from > to) {
         return "error: invalid from/to range";
     }
-    return flw::_print(ps_filename, format, layout, cb, data, from, to);
+    return flw::_flw_print(ps_filename, format, layout, cb, data, from, to);
 }
 std::string util::remove_browser_format(const char* text) {
     auto res = std::string((text != nullptr) ? text : "");
@@ -5900,6 +7744,14 @@ flw::StringVector util::split_string(const std::string& string, std::string spli
         res.clear();
     }
     return res;
+}
+std::string util::substr(std::string in, std::string::size_type pos, std::string::size_type size) {
+    try {
+        return in.substr(pos, size);
+    }
+    catch(...) {
+        return "";
+    }
 }
 double util::to_double(std::string num, double def) {
     try {
@@ -6428,190 +8280,6 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
     pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
-}
-Buf::Buf() {
-    p = nullptr;
-    s = 0;
-}
-Buf::Buf(size_t S) {
-    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
-    s = 0;
-    if (p != nullptr) {
-        s = S;
-    }
-}
-Buf::Buf(const char* P, size_t S, bool grab) {
-    if (grab == true) {
-        p = const_cast<char*>(P);
-        s = S;
-    }
-    else if (P == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(S + 1, 1));
-        s = 0;
-        if (p == nullptr) {
-            return;
-        }
-        memcpy(p, P, S);
-        s = S;
-    }
-}
-Buf::Buf(const Buf& b) {
-    if (b.p == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-        if (p == nullptr) {
-            return;
-        }
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-}
-Buf::Buf(Buf&& b) {
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-}
-Buf& Buf::operator=(const Buf& b) {
-    if (this == &b) {
-    }
-    if (b.p == nullptr) {
-        free(p);
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        free(p);
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-        if (p == nullptr) {
-            return *this;
-        }
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-    return *this;
-}
-Buf& Buf::operator=(Buf&& b) {
-    free(p);
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-    return *this;
-}
-Buf& Buf::operator+=(const Buf& b) {
-    if (b.p == nullptr) {
-    }
-    else if (p == nullptr) {
-        *this = b;
-    }
-    else {
-        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
-        if (t == nullptr) {
-            return *this;
-        }
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
-    }
-    return *this;
-}
-bool Buf::operator==(const Buf& other) const {
-    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
-}
-File::File(std::string filename) {
-    size  = 0;
-    mtime = 0;
-    type  = TYPE::NA;
-#ifdef _WIN32
-    wchar_t wbuffer[1025];
-    struct __stat64 st;
-    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-        filename.pop_back();
-    }
-    fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-    if (_wstat64(wbuffer, &st) == 0) {
-        size  = st.st_size;
-        mtime = st.st_mtime;
-        if (S_ISDIR(st.st_mode)) {
-            type = TYPE::DIR;
-        }
-        else if (S_ISREG(st.st_mode)) {
-            type = TYPE::FILE;
-        }
-        else {
-            type = TYPE::OTHER;
-        }
-    }
-#else
-    struct stat st;
-    if (stat(filename.c_str(), &st) == 0) {
-        size  = st.st_size;
-        mtime = st.st_mtime;
-        if (S_ISDIR(st.st_mode)) {
-            type = TYPE::DIR;
-        }
-        else if (S_ISREG(st.st_mode)) {
-            type = TYPE::FILE;
-        }
-        else {
-            type = TYPE::OTHER;
-        }
-    }
-#endif
-}
-Buf File::Load(std::string filename, bool alert) {
-    auto file = File(filename);
-    if (file.type != TYPE::FILE) {
-        if (alert == true) {
-            fl_alert("error: file %s is missing or not an file", filename.c_str());
-        }
-        return Buf();
-    }
-    auto handle = fl_fopen(filename.c_str(), "rb");
-    if (handle == nullptr) {
-        if (alert == true) {
-            fl_alert("error: can't open %s", filename.c_str());
-        }
-        return Buf();
-    }
-    auto buf  = Buf(file.size);
-    auto read = fread(buf.p, 1, (size_t) file.size, handle);
-    fclose(handle);
-    if (read != (size_t) file.size) {
-        if (alert == true) {
-            fl_alert("error: failed to read %s", filename.c_str());
-        }
-        return Buf();
-    }
-    return buf;
-}
-bool File::Save(std::string filename, const char* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-            return false;
-        }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
-    }
-    return true;
 }
 PrintText::PrintText(std::string filename,
     Fl_Paged_Device::Page_Format page_format,
@@ -7269,820 +8937,6 @@ void InputMenu::values(const StringVector& list, bool copy_first_to_input) {
         _input->value(s.c_str());
         _input->insert_position(s.length(), 0);
     }
-}
-}
-#include <cstring>
-#include <cmath>
-#include <cstdint>
-#include <errno.h>
-namespace flw {
-#define _FLW_JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
-#define _FLW_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
-static const char* const _JSON_BOM = "\xef\xbb\xbf";
-static void _json_debug(const JS* js, std::string t) {
-    if (js->is_array() == true) {
-        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
-        t += "\t";
-        for (const auto js2 : *js->va()) _json_debug(js2, t);
-        t.pop_back();
-    }
-    else if (js->is_object() == true) {
-        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
-        t += "\t";
-        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
-        t.pop_back();
-    }
-    else if (js->is_null()) printf("%s%s(%u): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c());
-    else if (js->is_string()) printf("%s%s(%u): \"%s\": \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vs_c());
-    else if (js->is_number()) printf("%s%s(%u): \"%s\": %f\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vn());
-    else if (js->is_bool()) printf("%s%s(%u): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vb() ? "true" : "false");
-    fflush(stdout);
-}
-static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
-    char buf[256];
-    snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
-    return buf;
-}
-static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
-    bool        res = false;
-    std::string n1;
-    std::string n2;
-    nVal = NAN;
-    while (pos < len) {
-        unsigned char c = json[pos];
-        if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
-            n1 += c;
-            pos++;
-        }
-        else {
-            break;
-        }
-    }
-    while (pos < len) {
-        unsigned char c = json[pos];
-        if (c == 'e' || c == 'E' || c == '-' || c == '+' || (c >= '0' && c <= '9')) {
-            n2 += c;
-            pos++;
-        }
-        else {
-            break;
-        }
-    }
-    int dot1  = 0;
-    int dot2  = 0;
-    int minus = 0;
-    int plus  = 0;
-    int E     = 0;
-    int term  = json[pos];
-    for (auto c : n1) {
-        dot1  += (c =='.');
-        minus += (c =='-');
-        plus  += (c =='+');
-        E     += (c =='e');
-        E     += (c =='E');
-    }
-    if (dot1 > 1 || minus > 1 || n1 == "-") {
-        return false;
-    }
-    else if (n1.back() == '.') {
-        return false;
-    }
-    else if (n1[0] == '-' && n1[1] == '0' && n1[2] != '.' && n1[2] != 0) {
-        return false;
-    }
-    else if (n1[0] == '-' && n1[1] == '.') {
-        return false;
-    }
-    else if (n1[0] == '0' && n1[1] != 0 && n1[1] != '.') {
-        return false;
-    }
-    else if (minus > 0 && n1[0] != '-') {
-        return false;
-    }
-    if (n2 != "") {
-        if (n2.length() == 1) {
-            return false;
-        }
-        else {
-            dot2 = minus = plus = E = 0;
-            for (auto c : n2) {
-                dot2  += (c =='.');
-                minus += (c =='-');
-                plus  += (c =='+');
-                E     += (c =='e');
-                E     += (c =='E');
-            }
-            if (plus + minus > 1 || E > 1) {
-                return false;
-            }
-            else if (plus > 0 && n2.back() == '+') {
-                return false;
-            }
-            else if (plus > 0 && n2[1] != '+') {
-                return false;
-            }
-            else if (minus > 0 && n2.back() == '-') {
-                return false;
-            }
-            else if (minus > 0 && n2[1] != '-') {
-                return false;
-            }
-        }
-    }
-    if (term > 32 && term != ',' && term != ':' && term != '}' && term != ']' && term != '{' && term != '[') {
-        return false;
-    }
-    errno = 0;
-    if (E > 0 || dot1 > 0) {
-        nVal = strtod((n1 + n2).c_str(), nullptr);
-    }
-    else {
-        nVal = strtoll((n1 + n2).c_str(), nullptr, 0);
-    }
-    res = (errno == 0);
-    pos--;
-    return res;
-}
-static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
-    std::string str   = "";
-    bool        term  = false;
-    unsigned    c     = 0;
-    unsigned    p     = 0;
-    pos++;
-    while (pos < len) {
-        c = json[pos];
-        if (p == '\\' && c == '\\') {
-            str += c;
-            c = 0;
-        }
-        else if (p == '\\' && c == '"') {
-            str += c;
-        }
-        else if (c == '"') {
-            pos++;
-            term = true;
-            break;
-        }
-        else if (c < 32) {
-            return false;
-        }
-        else {
-            str += c;
-        }
-        p = c;
-        pos++;
-    }
-    auto ulen = (ignore_utf_check == false) ? JS::CountUtf8(str.c_str()) : 1;
-    if (term == false) {
-        return false;
-    }
-    else if (ulen == 0 && str.length() > 0) {
-        return false;
-    }
-    if (*sVal1 == nullptr) {
-        *sVal1 = strdup(str.c_str());
-    }
-    else if (*sVal2 == nullptr) {
-        *sVal2 = strdup(str.c_str());
-    }
-    else {
-        return false;
-    }
-    pos--;
-    return true;
-}
-ssize_t JS::COUNT = 0;
-bool JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true) {
-        _va->push_back(JS::_MakeBool("", b, this, pos));
-        res = true;
-    }
-    else if (is_object() == true) {
-        res = _set_object(*sVal1, JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    *sVal1 = nullptr;
-    return res;
-}
-bool JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true) {
-        _va->push_back(JS::_MakeNil("", this, pos));
-        res = true;
-    }
-    else if (is_object() == true) {
-        res = _set_object(*sVal1, JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    *sVal1 = nullptr;
-    return res;
-}
-bool JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true && std::isnan(nVal) == false) {
-        _va->push_back(JS::_MakeNumber("", nVal, this, pos));
-        res = true;
-    }
-    else if (is_object() == true && std::isnan(nVal) == false) {
-        res = _set_object(*sVal1, JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    *sVal1 = nullptr;
-    nVal = NAN;
-    return res;
-}
-bool JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
-        _va->push_back(JS::_MakeString("", *sVal1, this, pos));
-        res = true;
-    }
-    else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
-        res = _set_object(*sVal1, JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    free(*sVal2);
-    *sVal1 = nullptr;
-    *sVal2 = nullptr;
-    return res;
-}
-void JS::_clear(bool name) {
-    if (_type == JS::ARRAY) {
-        for (auto js : *_va) {
-            delete js;
-        }
-        delete _va;
-        _va = nullptr;
-    }
-    else if (_type == JS::OBJECT) {
-        for (auto js : *_vo) {
-            delete js.second;
-        }
-        delete _vo;
-        _vo = nullptr;
-    }
-    else if (_type == JS::STRING) {
-        free(_vs);
-        _vs = nullptr;
-    }
-    if (name == true) {
-        free(_name);
-        _name   = nullptr;
-    }
-    _type   = JS::NIL;
-    _vb     = false;
-    _parent = nullptr;
-}
-size_t JS::CountUtf8(const char* p) {
-    auto count = (size_t) 0;
-    auto f     = (size_t) 0;
-    auto u     = reinterpret_cast<const unsigned char*>(p);
-    auto c     = (unsigned) u[0];
-    while (c != 0) {
-        if (c >= 128) {
-            if (c >= 194 && c <= 223) {
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-            }
-            else if (c >= 224 && c <= 239) {
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-            }
-            else if (c >= 240 && c <= 244) {
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-                c = u[++f];
-                if (c < 128 || c > 191) return 0;
-            }
-            else {
-                return 0;
-            }
-        }
-        count++;
-        c = u[++f];
-    }
-    return count;
-}
-std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
-    auto colon   = 0;
-    auto comma   = 0;
-    auto count_a = 0;
-    auto count_o = 0;
-    auto current = (JS*) nullptr;
-    auto line    = (unsigned) 1;
-    auto n       = (JS*) nullptr;
-    auto nVal    = (double) NAN;
-    auto pos1    = (size_t) 0;
-    auto pos2    = (size_t) 0;
-    auto posn    = (size_t) 0;
-    auto sVal1   = (char*) nullptr;
-    auto sVal2   = (char*) nullptr;
-    auto tmp     = JS();
-    try {
-        _clear(true);
-        _name = strdup("");
-        tmp._type = JS::ARRAY;
-        tmp._va   = new JSArray();
-        current   = &tmp;
-        if (strncmp(json, _JSON_BOM, 3) == 0) {
-            pos1 += 3;
-        }
-        while (pos1 < len) {
-            auto start = pos1;
-            auto c     = (unsigned) json[pos1];
-            if (c == '\t' || c == '\r' || c == ' ') {
-                pos1++;
-            }
-            else if (c == '\n') {
-                line++;
-                pos1++;
-            }
-            else if (c == '"') {
-                pos2 = pos1;
-                if (sVal1 == nullptr) posn = pos1;
-                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _FLW_JSON_ERROR(start, line);
-                auto add_object = (current->is_object() == true && sVal2 != nullptr);
-                auto add_array = (current->is_array() == true);
-                if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
-                else if (add_object == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (add_object == true || add_array == true) {
-                    pos2 = (sVal2 == nullptr) ? pos2 : posn;
-                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
-                    colon = 0;
-                    comma = 0;
-                }
-                pos1++;
-            }
-            else if ((c >= '0' && c <= '9') || c == '-') {
-                pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (_json_parse_number(json, len, pos1, nVal) == false) throw _FLW_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
-                colon = 0;
-                comma = 0;
-                pos1++;
-            }
-            else if (c == ',') {
-                if (comma > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current == &tmp) throw _FLW_JSON_ERROR(pos1, line);
-                comma++;
-                pos1++;
-            }
-            else if (c == ':') {
-                if (colon > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                colon++;
-                pos1++;
-            }
-            else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                    n = JS::_MakeArray("", current, pos1);
-                    current->_va->push_back(n);
-                }
-                else {
-                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
-                    n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
-                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
-                }
-                current = n;
-                colon = 0;
-                comma = 0;
-                count_a++;
-                pos1++;
-            }
-            else if (c == ']') {
-                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_array() == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (count_a < 0) throw _FLW_JSON_ERROR(pos1, line);
-                current = current->_parent;
-                comma = 0;
-                count_a--;
-                pos1++;
-            }
-            else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                    n = JS::_MakeObject("", current, pos1);
-                    current->_va->push_back(n);
-                }
-                else {
-                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
-                    n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
-                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
-                }
-                current = n;
-                colon = 0;
-                comma = 0;
-                count_o++;
-                pos1++;
-            }
-            else if (c == '}') {
-                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (count_o < 0) throw _FLW_JSON_ERROR(pos1, line);
-                current = current->_parent;
-                comma = 0;
-                count_o--;
-                pos1++;
-            }
-            else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
-                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
-                pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
-                colon = 0;
-                comma = 0;
-                pos1 += 4;
-                pos1 += (c == 'f');
-            }
-            else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
-                pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _FLW_JSON_ERROR(start, line);
-                colon = 0;
-                comma = 0;
-                pos1 += 4;
-            }
-            else {
-                throw _FLW_JSON_ERROR(pos1, line);
-            }
-            if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
-                throw _FLW_JSON_ERROR(pos1, line);
-            }
-        }
-        if (count_a != 0 || count_o != 0) {
-            throw _FLW_JSON_ERROR(len, 1);
-        }
-        else if (tmp.size() != 1) {
-            throw _FLW_JSON_ERROR(len, 1);
-        }
-        else if (tmp[0]->_type == JS::ARRAY) {
-            _type = JS::ARRAY;
-            _va = tmp[0]->_va;
-            const_cast<JS*>(tmp[0])->_type = JS::NIL;
-            for (auto o : *_va) {
-                o->_parent = this;
-            }
-        }
-        else if (tmp[0]->_type == JS::OBJECT) {
-            _type = JS::OBJECT;
-            _vo = tmp[0]->_vo;
-            const_cast<JS*>(tmp[0])->_type = JS::NIL;
-            for (const auto& it : *_vo) {
-                it.second->_parent = this;
-            }
-        }
-        else if (tmp[0]->_type == JS::BOOL) {
-            _type = JS::BOOL;
-            _vb   = tmp[0]->_vb;
-        }
-        else if (tmp[0]->_type == JS::NUMBER) {
-            _type = JS::NUMBER;
-            _vn   = tmp[0]->_vn;
-        }
-        else if (tmp[0]->_type == JS::STRING) {
-            _type = JS::STRING;
-            _vs   = tmp[0]->_vs;
-            const_cast<JS*>(tmp[0])->_type = JS::NIL;
-        }
-        else if (tmp[0]->_type == JS::NIL) {
-            _type = JS::NIL;
-        }
-        else {
-            throw _FLW_JSON_ERROR(0, 1);
-        }
-    }
-    catch(const std::string& err) {
-        _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
-        _clear(false);
-        return err;
-    }
-    return "";
-}
-void JS::debug() const {
-    std::string t;
-    _json_debug(this, t);
-}
-std::string JS::encode(JS::ENCODE_OPTION option) const {
-    std::string t;
-    std::string j;
-    try {
-        if (is_array() == true || is_object() == true) {
-            JS::_Encode(this, j, t, false, option);
-        }
-        else {
-            return _encode(true, option);
-        }
-    }
-    catch (const std::string& e) {
-        j = e;
-    }
-    return j;
-}
-std::string JS::_encode(bool ignore_name, JS::ENCODE_OPTION option) const {
-    static const std::string QUOTE = "\"";
-    std::string res;
-    std::string arr   = (option == ENCODE_OPTION::NORMAL) ? "\": [" : "\":[";
-    std::string obj   = (option == ENCODE_OPTION::NORMAL) ? "\": {" : "\":{";
-    std::string name1 = (option == ENCODE_OPTION::NORMAL) ? "\": " : "\":";
-    bool object = (_parent != nullptr && _parent->is_object() == true);
-    if (_type == JS::ARRAY) {
-        res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
-    }
-    else if (_type == JS::OBJECT) {
-        res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
-    }
-    else {
-        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name1);
-        if (_type == JS::STRING) {
-            res += QUOTE + _vs + QUOTE;
-        }
-        else if (_type == JS::NIL) {
-            res += "null";
-        }
-        else if (_type == JS::BOOL && _vb == true) {
-            res += "true";
-        }
-        else if (_type == JS::BOOL && _vb == false) {
-            res += "false";
-        }
-        else if (_type == JS::NUMBER) {
-            res += JS::FormatNumber(_vn);
-        }
-    }
-    return res;
-}
-void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, JS::ENCODE_OPTION option) {
-    std::string c = (comma == true) ? "," : "";
-    std::string n = (option == ENCODE_OPTION::REMOVE_LEADING_AND_NEWLINES) ? "" : "\n";
-    size_t      f = 0;
-    if (js->is_array() == true) {
-        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
-        for (const auto n2 : *js->_va) {
-            if (option == ENCODE_OPTION::NORMAL) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), option);
-            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), option);
-            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
-            f++;
-        }
-        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
-    }
-    else if (js->is_object() == true) {
-        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
-        for (const auto& n2 : *js->_vo) {
-            if (option == ENCODE_OPTION::NORMAL) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), option);
-            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), option);
-            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
-            f++;
-        }
-        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
-    }
-    else {
-        j += t + js->_encode(false, option) + c + n;
-    }
-}
-void JS::_EncodeInline(const JS* js, std::string& j, bool comma, JS::ENCODE_OPTION option) {
-    std::string c = (comma == true) ? "," : "";
-    size_t      f = 0;
-    if (*js == JS::ARRAY) {
-        j += js->_encode(false, option);
-        for (const auto n : *js->_va) {
-            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), option);
-            f++;
-        }
-        j += "]" + c;
-    }
-    else if (*js == JS::OBJECT) {
-        j += js->_encode(false, option);
-        for (const auto& n : *js->_vo) {
-            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), option);
-            f++;
-        }
-        j += "}" + c;
-    }
-    else {
-        j += js->_encode(false, option) + c;
-    }
-}
-std::string JS::Escape(const char* string) {
-    std::string res;
-    res.reserve(strlen(string) + 5);
-    while (*string != 0) {
-        auto c = *string;
-        if (c == 9) res += "\\t";
-        else if (c == 10) res += "\\n";
-        else if (c == 13) res += "\\r";
-        else if (c == 8) res += "\\b";
-        else if (c == 14) res += "\\f";
-        else if (c == 34) res += "\\\"";
-        else if (c == 92) res += "\\\\";
-        else res += c;
-        string++;
-    }
-    return res;
-}
-const JS* JS::find(std::string name, bool rec) const {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-        if (find1 != _vo->end()) {
-            return find1->second;
-        }
-        else if (rec == true) {
-            for (auto o : *_vo) {
-                if (o.second->is_object() == true) {
-                    return o.second->find(name, rec);
-                }
-            }
-        }
-    }
-    return nullptr;
-}
-std::string JS::FormatNumber(double f, bool E) {
-    double ABS = fabs(f);
-    double MIN = ABS - static_cast<int64_t>(ABS);
-    size_t n   = 0;
-    char b[100];
-    if (ABS > 999'000'000'000) {
-        n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
-    }
-    else {
-        if (MIN < 0.0000001) {
-            n = (E == true) ? snprintf(b, 100, "%.0e", f) : snprintf(b, 100, "%.0f", f);
-        }
-        else if (MIN < 0.001) {
-            n = (E == true) ? snprintf(b, 100, "%.7e", f) : snprintf(b, 100, "%.7f", f);
-        }
-        else {
-            n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
-        }
-    }
-    if (n < 1 || n >= 100) {
-        return "0";
-    }
-    std::string s = b;
-    if (s.find('.') == std::string::npos) {
-        return s;
-    }
-    while (s.back() == '0') {
-        s.pop_back();
-    }
-    if (s.back() == '.') {
-        s.pop_back();
-    }
-    return s;
-}
-const JS* JS::_get_object(const char* name, bool escape) const {
-    if (is_object() == true) {
-        auto key   = (escape == true) ? JS::Escape(name) : name;
-        auto find1 = _vo->find(key);
-        return (find1 != _vo->end()) ? find1->second : nullptr;
-    }
-    return nullptr;
-}
-bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-        if (find1 != _vo->end()) {
-            if (ignore_duplicates == false) {
-                delete js;
-                return false;
-            }
-            else {
-                delete find1->second;
-            }
-        }
-        (*_vo)[name] = js;
-    }
-    return true;
-}
-const JSArray JS::vo_to_va() const {
-    JSArray res;
-    if (_type == JS::OBJECT) {
-        for (auto& m : *_vo) {
-            res.push_back(m.second);
-        }
-    }
-    return res;
-}
-std::string JS::Unescape(const char* string) {
-    std::string res;
-    res.reserve(strlen(string));
-    while (*string != 0) {
-        unsigned char c = *string;
-        unsigned char n = *(string + 1);
-        if (c == '\\') {
-            if (n == 't') res += '\t';
-            else if (n == 'n') res += '\n';
-            else if (n == 'r') res += '\r';
-            else if (n == 'b') res += '\b';
-            else if (n == 'f') res += '\f';
-            else if (n == '\"') res += '"';
-            else if (n == '\\') res += '\\';
-            else if (n == 0) break;
-            string++;
-        }
-        else {
-            res += c;
-        }
-        string++;
-    }
-    return res;
-}
-JSB& JSB::add(JS* js) {
-    auto name = js->name();
-    if (_current == nullptr) {
-        if (name != "") {
-            delete js;
-            throw std::string("error: root object must be nameless <" + name + ">");
-        }
-        else {
-            _root = _current = js;
-        }
-    }
-    else {
-        js->_parent = _current;
-        if (_current->is_array() == true) {
-            if (name != "") {
-                delete js;
-                throw std::string("error: values added to array are nameless <" + name + ">");
-            }
-            else if (*js == JS::ARRAY || *js == JS::OBJECT) {
-                _current->_va->push_back(js);
-                _current = js;
-            }
-            else {
-                _current->_va->push_back(js);
-            }
-        }
-        else if (_current->is_object() == true) {
-            if (_current->find(name) != nullptr) {
-                delete js;
-                throw std::string("error: duplicate name <" + name + ">");
-            }
-            else if (js->is_array() == true || js->is_object() == true) {
-                (*_current->_vo)[name] = js;
-                _current = js;
-            }
-            else {
-                (*_current->_vo)[name] = js;
-            }
-        }
-        else {
-            delete js;
-            throw std::string("error: missing container");
-        }
-    }
-    return *this;
-}
-std::string JSB::encode() const {
-    if (_root == nullptr) {
-        throw std::string("error: empty json");
-    }
-    else if (_name != "") {
-        throw std::string("error: unused name value <" + _name + ">");
-    }
-    auto j = _root->encode();
-    if (j.find("error") == 0) {
-        throw j;
-    }
-    return j;
-}
-JSB& JSB::end() {
-    if (_current == nullptr) {
-        throw std::string("error: empty json");
-    }
-    else if (_current == _root) {
-        throw std::string("error: already at the top level");
-    }
-    _current = _current->parent();
-    return *this;
 }
 }
 #include <FL/fl_draw.H>
@@ -9006,7 +9860,7 @@ void PlotData::Debug(const PlotDataVector& in) {
 #endif
 }
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
-    Buf buf = File::Load(filename);
+    auto buf = File::Read(filename);
     if (buf.s < 3) {
         return PlotDataVector();
     }
@@ -9115,7 +9969,7 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
         snprintf(buffer, 256, "%s%s%s\n", JS::FormatNumber(data.x).c_str(), sep.c_str(), JS::FormatNumber(data.y).c_str());
         csv += buffer;
     }
-    return File::Save(filename, csv.c_str(), csv.size());
+    return File::Write(filename, csv.c_str(), csv.size());
 }
 PlotDataVector PlotData::Swap(const PlotDataVector& in) {
     PlotDataVector res;
@@ -10091,7 +10945,7 @@ bool Plot::load_json(std::string filename) {
     clear();
     redraw();
     auto wc  = WaitCursor();
-    auto buf = File::Load(filename);
+    auto buf = File::Read(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
@@ -10261,7 +11115,7 @@ bool Plot::save_json(std::string filename) {
                 }
             }
         auto js = jsb.encode();
-        return File::Save(filename, js.c_str(), js.length());
+        return File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

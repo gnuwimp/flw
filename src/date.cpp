@@ -5,8 +5,8 @@
 
 // MKALGAM_ON
 
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 
 namespace flw {
 
@@ -76,7 +76,6 @@ static Date _date_parse(const char* string, bool us) {
     int  hour  = 0;
     int  min   = 0;
     int  sec   = 0;
-    bool iso   = false;
     int  Y     = 0;
     int  val[15];
 
@@ -85,7 +84,7 @@ static Date _date_parse(const char* string, bool us) {
     }
 
     if (len == 10 && string[4] == '-' && string[7] == '-') { // "YYYY-MM-DD"
-        iso    = true;
+        us     = false;
         val[4] = string[5] - '0';
         val[5] = string[6] - '0';
         val[6] = string[8] - '0';
@@ -120,7 +119,7 @@ static Date _date_parse(const char* string, bool us) {
         val[7] = string[1] - '0';
     }
     else if (len == 8) { // "YYYYMMDD"
-        iso    = true;
+        us     = false;
         val[4] = string[4] - '0';
         val[5] = string[5] - '0';
         val[6] = string[6] - '0';
@@ -171,7 +170,7 @@ static Date _date_parse(const char* string, bool us) {
     min   = val[10] * 10 + val[11];
     sec   = val[12] * 10 + val[13];
 
-    if (iso == false && us == true) { // Swap world and US numbers.
+    if (us == true) { // Swap world and US numbers.
         int tmp = month;
         month   = day;
         day     = tmp;

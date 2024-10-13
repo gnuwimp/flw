@@ -5,7 +5,6 @@
 
 // MKALGAM_ON
 
-#include <cstring>
 #include <cmath>
 #include <cstdint>
 #include <errno.h>

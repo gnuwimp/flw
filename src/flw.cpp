@@ -86,7 +86,7 @@ const char* const           PREF_THEMES2[]           = {
 };
 
 //------------------------------------------------------------------------------
-static std::string _print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+static std::string _flw_print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     bool                      cont = true;
     FILE*                     file = nullptr;
     Fl_PostScript_File_Device printer;
@@ -660,7 +660,7 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
 // Callback must return false to abort printing.
 //
 std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
-    return flw::_print(ps_filename, format, layout, cb, data, 0, 0);
+    return flw::_flw_print(ps_filename, format, layout, cb, data, 0, 0);
 }
 
 //------------------------------------------------------------------------------
@@ -671,7 +671,7 @@ std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format fo
         return "error: invalid from/to range";
     }
 
-    return flw::_print(ps_filename, format, layout, cb, data, from, to);
+    return flw::_flw_print(ps_filename, format, layout, cb, data, from, to);
 }
 
 //------------------------------------------------------------------------------
@@ -771,6 +771,16 @@ flw::StringVector util::split_string(const std::string& string, std::string spli
     }
 
     return res;
+}
+
+//------------------------------------------------------------------------------
+std::string util::substr(std::string in, std::string::size_type pos, std::string::size_type size) {
+    try {
+        return in.substr(pos, size);
+    }
+    catch(...) {
+        return "";
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -1457,268 +1467,6 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
     pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
-}
-
-/***
- *      ____         __
- *     |  _ \       / _|
- *     | |_) |_   _| |_
- *     |  _ <| | | |  _|
- *     | |_) | |_| | |
- *     |____/ \__,_|_|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-Buf::Buf() {
-    p = nullptr;
-    s = 0;
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(size_t S) {
-    p = (S < SIZE_MAX) ? static_cast<char*>(calloc(S + 1, 1)) : nullptr;
-    s = 0;
-
-    if (p != nullptr) {
-        s = S;
-    }
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(const char* P, size_t S, bool grab) {
-    if (grab == true) {
-        p = const_cast<char*>(P);
-        s = S;
-    }
-    else if (P == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(S + 1, 1));
-        s = 0;
-
-        if (p == nullptr) {
-            return;
-        }
-
-        memcpy(p, P, S);
-        s = S;
-    }
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(const Buf& b) {
-    if (b.p == nullptr) {
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-
-        if (p == nullptr) {
-            return;
-        }
-
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-}
-
-//------------------------------------------------------------------------------
-Buf::Buf(Buf&& b) {
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-}
-
-//------------------------------------------------------------------------------
-Buf& Buf::operator=(const Buf& b) {
-    if (this == &b) {
-    }
-    if (b.p == nullptr) {
-        free(p);
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        free(p);
-        p = static_cast<char*>(calloc(b.s + 1, 1));
-        s = 0;
-
-        if (p == nullptr) {
-            return *this;
-        }
-
-        memcpy(p, b.p, b.s);
-        s = b.s;
-    }
-
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-Buf& Buf::operator=(Buf&& b) {
-    free(p);
-    p = b.p;
-    s = b.s;
-    b.p = nullptr;
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-Buf& Buf::operator+=(const Buf& b) {
-    if (b.p == nullptr) {
-    }
-    else if (p == nullptr) {
-        *this = b;
-    }
-    else {
-        auto t = static_cast<char*>(calloc(s + b.s + 1, 1));
-
-        if (t == nullptr) {
-            return *this;
-        }
-
-        memcpy(t, p, s);
-        memcpy(t + s, b.p, b.s);
-        free(p);
-        p = t;
-        s += b.s;
-    }
-
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-bool Buf::operator==(const Buf& other) const {
-    return p != nullptr && s == other.s && memcmp(p, other.p, s) == 0;
-}
-
-/***
- *      ______ _ _
- *     |  ____(_) |
- *     | |__   _| | ___
- *     |  __| | | |/ _ \
- *     | |    | | |  __/
- *     |_|    |_|_|\___|
- *
- *
- */
-
-//------------------------------------------------------------------------------
-File::File(std::string filename) {
-    size  = 0;
-    mtime = 0;
-    type  = TYPE::NA;
-
-#ifdef _WIN32
-    wchar_t wbuffer[1025];
-    struct __stat64 st;
-
-    while (filename.empty() == false && (filename.back() == '\\' || filename.back() == '/')) {
-        filename.pop_back();
-    }
-
-    fl_utf8towc(filename.c_str(), filename.length(), wbuffer, 1024);
-
-    if (_wstat64(wbuffer, &st) == 0) {
-        size  = st.st_size;
-        mtime = st.st_mtime;
-
-        if (S_ISDIR(st.st_mode)) {
-            type = TYPE::DIR;
-        }
-        else if (S_ISREG(st.st_mode)) {
-            type = TYPE::FILE;
-        }
-        else {
-            type = TYPE::OTHER;
-        }
-    }
-#else
-    struct stat st;
-
-    if (stat(filename.c_str(), &st) == 0) {
-        size  = st.st_size;
-        mtime = st.st_mtime;
-
-        if (S_ISDIR(st.st_mode)) {
-            type = TYPE::DIR;
-        }
-        else if (S_ISREG(st.st_mode)) {
-            type = TYPE::FILE;
-        }
-        else {
-            type = TYPE::OTHER;
-        }
-    }
-#endif
-}
-
-//------------------------------------------------------------------------------
-Buf File::Load(std::string filename, bool alert) {
-    auto file = File(filename);
-
-    if (file.type != TYPE::FILE) {
-        if (alert == true) {
-            fl_alert("error: file %s is missing or not an file", filename.c_str());
-        }
-
-        return Buf();
-    }
-
-    auto handle = fl_fopen(filename.c_str(), "rb");
-
-    if (handle == nullptr) {
-        if (alert == true) {
-            fl_alert("error: can't open %s", filename.c_str());
-        }
-
-        return Buf();
-    }
-
-    auto buf  = Buf(file.size);
-    auto read = fread(buf.p, 1, (size_t) file.size, handle);
-
-    fclose(handle);
-
-    if (read != (size_t) file.size) {
-        if (alert == true) {
-            fl_alert("error: failed to read %s", filename.c_str());
-        }
-
-        return Buf();
-    }
-
-    return buf;
-}
-
-//------------------------------------------------------------------------------
-bool File::Save(std::string filename, const char* data, size_t size, bool alert) {
-    auto file = fl_fopen(filename.c_str(), "wb");
-
-    if (file != nullptr) {
-        auto wrote = fwrite(data, 1, size, file);
-        fclose(file);
-
-        if (wrote != size) {
-            if (alert == true) {
-                fl_alert("error: saving data to %s failed", filename.c_str());
-            }
-
-            return false;
-        }
-    }
-    else if (alert == true) {
-        fl_alert("error: failed to open %s", filename.c_str());
-        return false;
-    }
-
-    return true;
 }
 
 /***

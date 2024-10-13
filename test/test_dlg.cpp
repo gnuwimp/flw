@@ -6,6 +6,7 @@
 #ifndef FLW_AMALGAM
     #include "datechooser.h"
     #include "dlg.h"
+    #include "file.h"
     #include "waitcursor.h"
 #endif
 
@@ -292,8 +293,8 @@ void test_print1() {
 //------------------------------------------------------------------------------
 void test_print2() {
     auto r  = 0;
-    auto b1 = File::Load("flw.h");
-    auto b2 = File::Load("flw.cpp");
+    auto b1 = File::Read("flw.h");
+    auto b2 = File::Read("flw.cpp");
 
     while (r >= 0 && b1.p && b2.p) {
     #ifdef _WIN32

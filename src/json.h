@@ -7,7 +7,7 @@
 // MKALGAM_ON
 
 #include <assert.h>
-#include <string.h>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
