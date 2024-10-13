@@ -66,7 +66,7 @@ void test_choice() {
 
 //------------------------------------------------------------------------------
 void test_date() {
-    Date date;
+    gnu::Date date;
 
     if (dlg::date("dlg::date", date, nullptr)) {
         printf("dlg::date=%s\n", date.format().c_str());
@@ -199,7 +199,7 @@ void test_print() {
         else if (r == 1) p = dlg::print_text("dlg::print_text", HAMLET_TEXT);
         else if (r == 2) p = dlg::print_text("dlg::print_text", UTF8_TEXT);
 
-        if (p == true && r >= 0 && File(ps).size > 0) {
+        if (p == true && r >= 0 && gnu::File(ps).size > 0) {
             auto f = system((std::string("open ") + ps).c_str());
             (void) f;
         }
@@ -293,8 +293,8 @@ void test_print1() {
 //------------------------------------------------------------------------------
 void test_print2() {
     auto r  = 0;
-    auto b1 = File::Read("flw.h");
-    auto b2 = File::Read("flw.cpp");
+    auto b1 = gnu::File::Read("flw.h");
+    auto b2 = gnu::File::Read("flw.cpp");
 
     while (r >= 0 && b1.p && b2.p) {
     #ifdef _WIN32
@@ -313,7 +313,7 @@ void test_print2() {
         if (r == 0) p = dlg::print_text("dlg::print_text", b1.p);
         else if (r == 1) p = dlg::print_text("dlg::print_text", b2.p);
 
-        if (p == true && r >= 0 && File(ps).size > 0) {
+        if (p == true && r >= 0 && gnu::File(ps).size > 0) {
             auto f = system((std::string("open ") + ps).c_str());
             (void) f;
         }

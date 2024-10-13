@@ -19,7 +19,7 @@ public:
     Test(int W, int H) : Fl_Double_Window(W, H, "test_datechooser.cpp") {
         dc = new DateChooser(0, 0, W, H);
         dc->callback(Callback);
-        dc->set(Date());
+        dc->set(gnu::Date());
         size_range(64, 48);
         resizable(this);
     }
@@ -36,7 +36,7 @@ public:
         auto dc   = (const DateChooser*) w;
         auto date = dc->get();
 
-        printf("Callback=%s\n", date.format(Date::FORMAT::ISO_LONG).c_str());
+        printf("Callback=%s\n", date.format(gnu::Date::FORMAT::ISO_LONG).c_str());
         fflush(stdout);
     }
 };

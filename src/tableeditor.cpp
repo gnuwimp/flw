@@ -213,17 +213,17 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
         }
         else if (rend == TableEditor::REND::DLG_DATE) {
-            auto        date = Date::FromString(val);
+            auto        date = gnu::Date::FromString(val);
             std::string string;
 
             if (format == TableEditor::FORMAT::DATE_WORLD) {
-                string = date.format(Date::FORMAT::WORLD);
+                string = date.format(gnu::Date::FORMAT::WORLD);
             }
             else if (format == TableEditor::FORMAT::DATE_US) {
-                string = date.format(Date::FORMAT::US);
+                string = date.format(gnu::Date::FORMAT::US);
             }
             else {
-                string = date.format(Date::FORMAT::ISO_LONG);
+                string = date.format(gnu::Date::FORMAT::ISO_LONG);
             }
 
             fl_font(textfont, textsize);
@@ -570,7 +570,7 @@ void TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date = Date::FromString(val);
+        auto date = gnu::Date::FromString(val);
 
         if (strcmp(key, "+") == 0) {
             date.add_days(1);
@@ -591,7 +591,7 @@ void TableEditor::_edit_quick(const char* key) {
             date.year(date.year() - 1);
         }
 
-        auto string = date.format(Date::FORMAT::ISO_LONG);
+        auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
 
         if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
@@ -674,10 +674,10 @@ void TableEditor::_edit_show() {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date1  = Date::FromString(val);
-        auto date2  = Date(date1);
+        auto date1  = gnu::Date::FromString(val);
+        auto date2  = gnu::Date(date1);
         auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
-        auto string = date1.format(Date::FORMAT::ISO_LONG);
+        auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
 
         if ((_send_changed_event_always == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
@@ -1020,13 +1020,13 @@ int TableEditor::_ev_paste() {
             }
 
             case TableEditor::REND::DLG_DATE: {
-                auto date = Date::FromString(text);
+                auto date = gnu::Date::FromString(text);
 
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
                     return 1;
                 }
                 else {
-                    string = date.format(Date::FORMAT::ISO_LONG);
+                    string = date.format(gnu::Date::FORMAT::ISO_LONG);
                     text = string.c_str();
                     break;
                 }

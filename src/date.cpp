@@ -8,7 +8,7 @@
 #include <cstring>
 #include <ctime>
 
-namespace flw {
+namespace gnu {
 
 /***
  *      _____      _            _

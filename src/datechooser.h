@@ -37,9 +37,9 @@ public:
     explicit                    DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        draw() override;
     void                        focus();
-    Date                        get() const;
+    gnu::Date                   get() const;
     int                         handle(int event) override;
-    void                        set(const Date& date);
+    void                        set(const gnu::Date& date);
 
 
 private:
@@ -71,7 +71,7 @@ namespace dlg {
  *
  */
 
-bool                            date(const std::string& title, Date& date, Fl_Window* parent);
+bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent);
 
 } // dlg
 } // flw

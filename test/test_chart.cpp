@@ -64,8 +64,8 @@ int         RAND = 0;
 ChartDataVector create_serie1(const char* start, const char* stop, double value, double change, const ChartData::RANGE range, double divide = 0.0) {
     auto close = value;
     auto ch    = 0.0;
-    auto date1 = Date::FromString(start);
-    auto date2 = Date::FromString(stop);
+    auto date1 = gnu::Date::FromString(start);
+    auto date2 = gnu::Date::FromString(stop);
     auto res   = ChartDataVector();
 
     while (date1 <= date2) {
@@ -88,14 +88,14 @@ ChartDataVector create_serie1(const char* start, const char* stop, double value,
         }
 
         if (divide > 1.0) {
-            res.push_back(ChartData(date1.format(Date::FORMAT::ISO_TIME), high / divide, low / divide, close / divide));
+            res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), high / divide, low / divide, close / divide));
         }
         else {
-            res.push_back(ChartData(date1.format(Date::FORMAT::ISO_TIME), high, low, close));
+            res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), high, low, close));
         }
 
         if (range == ChartData::RANGE::HOUR) {
-            date1.add_seconds(Date::SECS_PER_HOUR);
+            date1.add_seconds(gnu::Date::SECS_PER_HOUR);
         }
         else if (range == ChartData::RANGE::MIN) {
             date1.add_seconds(60);
@@ -125,11 +125,11 @@ ChartDataVector create_serie1(const char* start, const char* stop, double value,
 ChartDataVector create_serie2(const char* start, const char* stop, double num = 1.0, double add = 0.0) {
     auto res   = ChartDataVector();
     auto f     = 1.0;
-    auto date1 = Date::FromString(start);
-    auto date2 = Date::FromString(stop);
+    auto date1 = gnu::Date::FromString(start);
+    auto date2 = gnu::Date::FromString(stop);
 
     while (date1 <= date2) {
-        res.push_back(ChartData(date1.format(Date::FORMAT::ISO_TIME), sinl(f) + num));
+        res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), sinl(f) + num));
         f += num;
         num += add;
         date1.add_days(1);
@@ -205,11 +205,11 @@ void test3(Chart* chart, std::string label, const ChartData::RANGE range, bool b
     }
 
     if (range == ChartData::RANGE::FRIDAY) {
-        vec2 = ChartData::DayToWeek(vec1, Date::DAY::FRIDAY);
+        vec2 = ChartData::DayToWeek(vec1, gnu::Date::DAY::FRIDAY);
         chart->set_tick_width(25);
     }
     else if (range == ChartData::RANGE::SUNDAY) {
-        vec2 = ChartData::DayToWeek(vec1, Date::DAY::SUNDAY);
+        vec2 = ChartData::DayToWeek(vec1, gnu::Date::DAY::SUNDAY);
         chart->set_tick_width(25);
     }
     else if (range == ChartData::RANGE::MONTH) {
@@ -338,12 +338,12 @@ void test6(Chart* chart, const ChartData::RANGE range) {
 //------------------------------------------------------------------------------
 void test7(Chart* chart) {
     auto vec1  = ChartDataVector();
-    auto date1 = Date::FromString("20010101");
-    auto date2 = Date::FromString("20021231");
+    auto date1 = gnu::Date::FromString("20010101");
+    auto date2 = gnu::Date::FromString("20021231");
     auto p     = -3.5;
 
     while (date1 <= date2) {
-        vec1.push_back(ChartData(date1.format(Date::FORMAT::ISO).c_str(), p));
+        vec1.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO).c_str(), p));
         date1.add_days(1);
 
         if (rand() % 3 == 1) {

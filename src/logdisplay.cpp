@@ -315,7 +315,7 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
     #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
 
     auto res = std::vector<_LogDisplayStyle>();
-    auto js  = JS();
+    auto js  = gnu::JS();
     auto err = js.decode(json.c_str(), json.length());
 
     if (err != "") {

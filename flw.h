@@ -6,7 +6,7 @@
 #define FLW_H
 #include <cstdint>
 #include <string>
-namespace flw {
+namespace gnu {
 class Date {
 public:
     enum class COMPARE {
@@ -127,7 +127,7 @@ private:
 #include <cstring>
 #include <string>
 #include <vector>
-namespace flw {
+namespace gnu {
 class File;
 typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
 typedef std::vector<File> FileVector;
@@ -283,7 +283,7 @@ public:
 #include <map>
 #include <string>
 #include <vector>
-namespace flw {
+namespace gnu {
 class JS;
 typedef std::map<std::string, JS*> JSObject;
 typedef std::vector<JS*> JSArray;
@@ -740,7 +740,7 @@ struct ChartData {
     static size_t               BinarySearch(const ChartDataVector& in, const ChartData& key);
     static ChartDataVector      DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block = ChartDataVector());
     static ChartDataVector      DayToMonth(const ChartDataVector& in, bool sum = false);
-    static ChartDataVector      DayToWeek(const ChartDataVector& in, Date::DAY weekday, bool sum = false);
+    static ChartDataVector      DayToWeek(const ChartDataVector& in, gnu::Date::DAY weekday, bool sum = false);
     static void                 Debug(const ChartDataVector& in);
     static ChartDataVector      ExponentialMovingAverage(const ChartDataVector& in, size_t days);
     static ChartDataVector      Fixed(const ChartDataVector& in, double value);
@@ -1098,9 +1098,9 @@ public:
     explicit                    DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        draw() override;
     void                        focus();
-    Date                        get() const;
+    gnu::Date                   get() const;
     int                         handle(int event) override;
-    void                        set(const Date& date);
+    void                        set(const gnu::Date& date);
 private:
     static void                 _Callback(Fl_Widget* w, void* o);
     void                        _set_label();
@@ -1116,7 +1116,7 @@ private:
     ToolGroup*                  _buttons;
 };
 namespace dlg {
-bool                            date(const std::string& title, Date& date, Fl_Window* parent);
+bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent);
 }
 }
 #include <FL/Fl_Hold_Browser.H>

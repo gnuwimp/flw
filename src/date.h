@@ -1,15 +1,15 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#ifndef FLW_DATE_H
-#define FLW_DATE_H
+#ifndef GNU_DATE_H
+#define GNU_DATE_H
 
 // MKALGAM_ON
 
 #include <cstdint>
 #include <string>
 
-namespace flw {
+namespace gnu {
 
 /***
  *      _____        _
@@ -149,8 +149,8 @@ private:
     char                        _sec;
 };
 
-} // flw
+} // gnu
 
 // MKALGAM_OFF
 
-#endif
+#endif // GNU_DATE_H

@@ -4,15 +4,20 @@ flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
 The flw library has been tested on Windows 10 using msys2 compiler tools and Xubuntu 24.04.
 Earlier versions have been compiled successfully on a Raspberry Pi 4.
 It might work on macOS with some tweaks.
-The source are using C++17 features and all widgets are in the namespace flw.
+
 FLTK must be compiled with --enable-use_std flag.
 The source will NOT compile with Microsoft Visual Studio.
 The API is not stable and may change from time to time.
 
-Use the amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
-The source files in the src/ directory are intended for development of flw.
+The source are using C++17 features and all widgets are in the namespace flw. 
+None gui classes are in namespace gnu (Date, File, JS).
 
-Most widgets are released under the [GNU General Public License v3.0](LICENSE).
+Use the amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
+The source files in the src/ directory are intended for development of flw. 
+Although date.h, date.cpp, file.h, file.cpp json.h, json.cpp are completely independent of flw and FLTK 
+and can be used stand-alone.
+
+All files (except lcdnumber.h, lcdnumber.cpp) are released under the [GNU General Public License v3.0](LICENSE).
 
 Widgets:
 * Chart - Chart widget with dates as x data.

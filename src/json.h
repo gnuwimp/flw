@@ -1,8 +1,8 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#ifndef FLW_JSON_H
-#define FLW_JSON_H
+#ifndef GNU_JSON_H
+#define GNU_JSON_H
 
 // MKALGAM_ON
 
@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace flw {
+namespace gnu {
 
 class JS;
 
@@ -235,8 +235,8 @@ private:
     std::string                 _name;
 };
 
-} // flw
+} // gnu
 
 // MKALGAM_OFF
 
-#endif
+#endif // GNU_JSON_H

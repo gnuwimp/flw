@@ -3,7 +3,7 @@
 #include "flw.h"
 #include <cstring>
 #include <ctime>
-namespace flw {
+namespace gnu {
 static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 static int          _DATE_DAYS_MONTH_LEAP[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""};
@@ -697,7 +697,7 @@ int Date::yearday() const {
 #ifndef PATH_MAX
     #define PATH_MAX 1050
 #endif
-namespace flw {
+namespace gnu {
 static std::string _FILE_STDOUT_NAME = "";
 static std::string _FILE_STDERR_NAME = "";
 #ifdef _WIN32
@@ -1714,7 +1714,7 @@ bool File::Write(std::string filename, const char* in, size_t in_size) {
 #include <cmath>
 #include <cstdint>
 #include <errno.h>
-namespace flw {
+namespace gnu {
 #define _FLW_JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
 #define _FLW_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
@@ -2642,11 +2642,11 @@ ChartData::ChartData() {
     high = low = close = 0.0;
 }
 ChartData::ChartData(std::string DATE, double value) {
-    Date valid_date = Date::FromString(DATE.c_str());
+    auto valid_date = gnu::Date::FromString(DATE.c_str());
     if (std::isfinite(value) == true &&
         fabs(value) < ChartData::MAX_VALUE &&
         valid_date.is_invalid() == false) {
-        date = valid_date.format(Date::FORMAT::ISO_TIME);
+        date = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
         high = low = close = value;
     }
     else {
@@ -2654,7 +2654,7 @@ ChartData::ChartData(std::string DATE, double value) {
     }
 }
 ChartData::ChartData(std::string DATE, double HIGH, double LOW, double CLOSE) {
-    Date valid_date = Date::FromString(DATE.c_str());
+    auto valid_date = gnu::Date::FromString(DATE.c_str());
     if (std::isfinite(HIGH) == true &&
         std::isfinite(LOW) == true &&
         std::isfinite(CLOSE) == true &&
@@ -2677,7 +2677,7 @@ ChartData::ChartData(std::string DATE, double HIGH, double LOW, double CLOSE) {
             LOW = CLOSE;
             CLOSE = tmp;
         }
-        date  = valid_date.format(Date::FORMAT::ISO_TIME);
+        date  = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
         high  = HIGH;
         low   = LOW;
         close = CLOSE;
@@ -2738,58 +2738,58 @@ size_t ChartData::BinarySearch(const ChartDataVector& in, const ChartData& key) 
     }
 }
 ChartDataVector ChartData::DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block) {
-    int             month   = -1;
-    Date            current = Date::FromString(start_date.c_str());
-    Date            stop    = Date::FromString(stop_date.c_str());
-    ChartDataVector res;
+    auto       month   = -1;
+    auto       current = gnu::Date::FromString(start_date.c_str());
+    auto const stop    = gnu::Date::FromString(stop_date.c_str());
+    auto       res     = ChartDataVector();
     if (range == ChartData::RANGE::FRIDAY) {
-        while (current.weekday() != Date::DAY::FRIDAY)
+        while (current.weekday() != gnu::Date::DAY::FRIDAY)
             current.add_days(1);
     }
     else if (range == ChartData::RANGE::SUNDAY) {
-        while (current.weekday() != Date::DAY::SUNDAY) {
+        while (current.weekday() != gnu::Date::DAY::SUNDAY) {
             current.add_days(1);
         }
     }
     while (current <= stop) {
-        Date date(1, 1, 1);
+        gnu::Date date(1, 1, 1);
         if (range == ChartData::RANGE::DAY) {
-            date = Date(current);
+            date = gnu::Date(current);
             current.add_days(1);
         }
         else if (range == ChartData::RANGE::WEEKDAY) {
-            Date::DAY weekday = current.weekday();
-            if (weekday >= Date::DAY::MONDAY && weekday <= Date::DAY::FRIDAY) {
-                date = Date(current);
+            gnu::Date::DAY weekday = current.weekday();
+            if (weekday >= gnu::Date::DAY::MONDAY && weekday <= gnu::Date::DAY::FRIDAY) {
+                date = gnu::Date(current);
             }
             current.add_days(1);
         }
         else if (range == ChartData::RANGE::FRIDAY || range == ChartData::RANGE::SUNDAY) {
-            date = Date(current);
+            date = gnu::Date(current);
             current.add_days(7);
         }
         else if (range == ChartData::RANGE::MONTH) {
             if (current.month() != month) {
                 current.day(current.month_days());
-                date = Date(current);
+                date = gnu::Date(current);
                 month = current.month();
             }
             current.add_months(1);
         }
         else if (range == ChartData::RANGE::HOUR) {
-            date = Date(current);
+            date = gnu::Date(current);
             current.add_seconds(3600);
         }
         else if (range == ChartData::RANGE::MIN) {
-            date = Date(current);
+            date = gnu::Date(current);
             current.add_seconds(60);
         }
         else if (range == ChartData::RANGE::SEC) {
-            date = Date(current);
+            date = gnu::Date(current);
             current.add_seconds(1);
         }
         if (date.year() > 1) {
-            ChartData price(date.format(Date::FORMAT::ISO_TIME_LONG));
+            ChartData price(date.format(gnu::Date::FORMAT::ISO_TIME_LONG));
             if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
                 res.push_back(price);
             }
@@ -2801,21 +2801,21 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
     size_t          f = 0;
     ChartDataVector res;
     ChartData       current;
-    Date            stop;
-    Date            pdate;
+    gnu::Date       stop;
+    gnu::Date       pdate;
     for (const auto& data : in) {
         if (f == 0) {
             current = data;
-            stop = Date::FromString(current.date.c_str());
+            stop = gnu::Date::FromString(current.date.c_str());
             stop.day_last();
         }
         else {
-            pdate = Date::FromString(data.date.c_str());
+            pdate = gnu::Date::FromString(data.date.c_str());
             if (stop < pdate) {
-                current.date = stop.format(Date::FORMAT::ISO_TIME);
+                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
                 res.push_back(current);
                 current = data;
-                stop = Date::FromString(current.date.c_str());
+                stop = gnu::Date::FromString(current.date.c_str());
                 stop.day_last();
             }
             else if (sum == true) {
@@ -2834,7 +2834,7 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
             }
         }
         if (f + 1 == in.size()) {
-            auto s = stop.format(Date::FORMAT::ISO_TIME);
+            auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
             stop.day_last();
             current.date = s;
             res.push_back(current);
@@ -2843,15 +2843,15 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
     }
     return res;
 }
-ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, Date::DAY weekday, bool sum) {
+ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, gnu::Date::DAY weekday, bool sum) {
     size_t          f = 0;
     ChartDataVector res;
     ChartData       current;
-    Date            stop;
-    Date            pdate;
+    gnu::Date       stop;
+    gnu::Date       pdate;
     for (const auto& data : in) {
         if (f == 0) {
-            stop = Date::FromString(data.date.c_str());
+            stop = gnu::Date::FromString(data.date.c_str());
             if (weekday > stop.weekday()) {
                 stop.weekday(weekday);
             }
@@ -2862,9 +2862,9 @@ ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, Date::DAY weekda
             current = data;
         }
         else {
-            pdate = Date::FromString(data.date.c_str());
+            pdate = gnu::Date::FromString(data.date.c_str());
             if (stop < pdate) {
-                current.date = stop.format(Date::FORMAT::ISO_TIME);
+                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
                 res.push_back(current);
                 current = data;
             }
@@ -2885,10 +2885,10 @@ ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, Date::DAY weekda
             while (stop < pdate) {
                 stop.add_days(7);
             }
-            current.date = stop.format(Date::FORMAT::ISO_TIME);
+            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
         }
         if (f + 1 == in.size()) {
-            current.date = stop.format(Date::FORMAT::ISO_TIME);
+            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
             res.push_back(current);
         }
         f++;
@@ -2944,7 +2944,7 @@ ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
     return res;
 }
 ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = File::Read(filename);
+    auto buf = gnu::File::Read(filename);
     if (buf.s < 10) {
         return ChartDataVector();
     }
@@ -3070,10 +3070,10 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
     csv.reserve(in.size() * 40 + 256);
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), JS::FormatNumber(data.high).c_str(), sep.c_str(), JS::FormatNumber(data.low).c_str(), sep.c_str(), JS::FormatNumber(data.close).c_str());
+        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::JS::FormatNumber(data.high).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.low).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.close).c_str());
         csv += buffer;
     }
-    return File::Write(filename, csv.c_str(), csv.size());
+    return gnu::File::Write(filename, csv.c_str(), csv.size());
 }
 ChartDataVector ChartData::StdDev(const ChartDataVector& in, size_t days) {
     ChartDataVector res;
@@ -3769,7 +3769,7 @@ bool Chart::create_line(ChartData::FORMULAS formula, bool support) {
     }
     else if (formula == ChartData::FORMULAS::DAY_TO_WEEK) {
         auto answer = fl_choice("Would you like to use highest/lowest and last close value per week?\nOr sum values per week?", nullptr, "High/Low", "Sum");
-        vec1   = ChartData::DayToWeek(line0->data(), Date::DAY::SUNDAY, answer == 2);
+        vec1   = ChartData::DayToWeek(line0->data(), gnu::Date::DAY::SUNDAY, answer == 2);
         label1 = "Weekly (Sunday)";
         type1  = line0->type();
     }
@@ -3903,12 +3903,12 @@ void Chart::_create_tooltip(bool ctrl) {
         Fl::redraw();
         return;
     }
-    const Date::FORMAT FORMAT    = (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) ? Date::FORMAT::NAME_TIME_LONG : Date::FORMAT::NAME_LONG;
-    const int          STOP      = _date_start + _ticks;
-    int                start     = _date_start;
-    int                x1        = x() + _margin_left * _CH;
-    int                left_dec  = 0;
-    int                right_dec = 0;
+    auto const FORMAT    = (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) ? gnu::Date::FORMAT::NAME_TIME_LONG : gnu::Date::FORMAT::NAME_LONG;
+    const int  STOP      = _date_start + _ticks;
+    int        start     = _date_start;
+    int        x1        = x() + _margin_left * _CH;
+    int        left_dec  = 0;
+    int        right_dec = 0;
     if (_area->left_scale().tick() < 10.0 ) {
         left_dec = util::count_decimals(_area->left_scale().tick()) + 1;
     }
@@ -3917,7 +3917,7 @@ void Chart::_create_tooltip(bool ctrl) {
     }
     while (start <= STOP && start < static_cast<int>(_dates.size())) {
         if (X >= x1 && X <= x1 + _tick_width - 1) {
-            const std::string fancy_date = Date::FromString(_dates[start].date.c_str()).format(FORMAT);
+            const std::string fancy_date = gnu::Date::FromString(_dates[start].date.c_str()).format(FORMAT);
             const ChartLine*  line       = _area->selected_line();
             _tooltip = fancy_date + "\n \n \n ";
             if (ctrl == false || line == nullptr || line->size() == 0 || line->is_visible() == false) {
@@ -4293,7 +4293,7 @@ void Chart::_draw_xlabels() {
     fl_font(flw::PREF_FIXED_FONT, CH2);
     cw2 = fl_width("X");
     while (date_c <= DATE_END && date_c < static_cast<int>(_dates.size())) {
-        const Date date  = Date::FromString(_dates[date_c].date.c_str());
+        const auto date  = gnu::Date::FromString(_dates[date_c].date.c_str());
         bool       addv  = false;
         int        month = 1;
         *buffer1 = 0;
@@ -4625,12 +4625,12 @@ bool Chart::load_json(std::string filename) {
     clear();
     redraw();
     auto wc  = WaitCursor();
-    auto buf = File::Read(filename);
+    auto buf = gnu::File::Read(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
-    auto js  = JS();
+    auto js  = gnu::JS();
     auto err = js.decode(buf.p, buf.s, true);
     if (err != "") {
         fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
@@ -4782,19 +4782,19 @@ bool Chart::save_json() {
 }
 bool Chart::save_json(std::string filename, double max_diff_high_low) const {
     auto wc  = WaitCursor();
-    auto jsb = JSB();
+    auto jsb = gnu::JSB();
     try {
-        jsb << JSB::MakeObject();
-            jsb << JSB::MakeObject("flw::chart");
-                jsb << JSB::MakeNumber(Chart::VERSION, "version");
-                jsb << JSB::MakeString(_label.c_str(), "label");
-                jsb << JSB::MakeNumber(_tick_width, "tick_width");
-                jsb << JSB::MakeString(ChartData::RangeToString(_date_range), "date_range");
-                jsb << JSB::MakeBool(_labels, "labels");
-                jsb << JSB::MakeBool(_horizontal, "horizontal");
-                jsb << JSB::MakeBool(_vertical, "vertical");
+        jsb << gnu::JSB::MakeObject();
+            jsb << gnu::JSB::MakeObject("flw::chart");
+                jsb << gnu::JSB::MakeNumber(Chart::VERSION, "version");
+                jsb << gnu::JSB::MakeString(_label.c_str(), "label");
+                jsb << gnu::JSB::MakeNumber(_tick_width, "tick_width");
+                jsb << gnu::JSB::MakeString(ChartData::RangeToString(_date_range), "date_range");
+                jsb << gnu::JSB::MakeBool(_labels, "labels");
+                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
             jsb.end();
-            jsb << JSB::MakeObject("flw::chart_areas");
+            jsb << gnu::JSB::MakeObject("flw::chart_areas");
             for (size_t f = 0; f <= static_cast<int>(ChartArea::AREA::LAST); f++) {
                 auto  perc_str = util::format("area%u", static_cast<unsigned>(f));
                 auto  min_str  = util::format("min%u", static_cast<unsigned>(f));
@@ -4802,32 +4802,32 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 auto& area     = _areas[f];
                 auto  min      = area.clamp_min();
                 auto  max      = area.clamp_max();
-                jsb << JSB::MakeNumber(_areas[f].percent(), perc_str.c_str());
-                if (min.has_value() == true) jsb << JSB::MakeNumber(min.value(), min_str.c_str());
-                if (max.has_value() == true) jsb << JSB::MakeNumber(max.value(), max_str.c_str());
+                jsb << gnu::JSB::MakeNumber(_areas[f].percent(), perc_str.c_str());
+                if (min.has_value() == true) jsb << gnu::JSB::MakeNumber(min.value(), min_str.c_str());
+                if (max.has_value() == true) jsb << gnu::JSB::MakeNumber(max.value(), max_str.c_str());
             }
             jsb.end();
-            jsb << JSB::MakeArray("flw::chart_lines");
+            jsb << gnu::JSB::MakeArray("flw::chart_lines");
                 for (auto& area : _areas) {
                     for (auto& line : area.lines()) {
                         if (line.size() > 0) {
-                            jsb << JSB::MakeObject();
-                                jsb << JSB::MakeNumber(static_cast<int>(area.area()), "area");
-                                jsb << JSB::MakeString(line.label(), "label");
-                                jsb << JSB::MakeString(line.type_to_string(), "type");
-                                jsb << JSB::MakeNumber(line.align(), "align");
-                                jsb << JSB::MakeNumber(line.color(), "color");
-                                jsb << JSB::MakeNumber(line.width(), "width");
-                                jsb << JSB::MakeBool(line.is_visible(), "visible");
-                                jsb << JSB::MakeArray("yx");
+                            jsb << gnu::JSB::MakeObject();
+                                jsb << gnu::JSB::MakeNumber(static_cast<int>(area.area()), "area");
+                                jsb << gnu::JSB::MakeString(line.label(), "label");
+                                jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
+                                jsb << gnu::JSB::MakeNumber(line.align(), "align");
+                                jsb << gnu::JSB::MakeNumber(line.color(), "color");
+                                jsb << gnu::JSB::MakeNumber(line.width(), "width");
+                                jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
+                                jsb << gnu::JSB::MakeArray("yx");
                                 for (const auto& data : line.data()) {
-                                    jsb << JSB::MakeArrayInline();
-                                        jsb << JSB::MakeString(data.date);
+                                    jsb << gnu::JSB::MakeArrayInline();
+                                        jsb << gnu::JSB::MakeString(data.date);
                                         if (fabs(data.close - data.low) > max_diff_high_low || fabs(data.close - data.high) > max_diff_high_low) {
-                                            jsb << JSB::MakeNumber(data.high);
-                                            jsb << JSB::MakeNumber(data.low);
+                                            jsb << gnu::JSB::MakeNumber(data.high);
+                                            jsb << gnu::JSB::MakeNumber(data.low);
                                         }
-                                        jsb << JSB::MakeNumber(data.close);
+                                        jsb << gnu::JSB::MakeNumber(data.close);
                                         jsb.end();
                                 }
                                 jsb.end();
@@ -4836,13 +4836,13 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                     }
                 }
             jsb.end();
-            jsb << JSB::MakeArray("flw::chart_block");
+            jsb << gnu::JSB::MakeArray("flw::chart_block");
                 for (const auto& data : _block_dates) {
-                    jsb << JSB::MakeString(data.date);
+                    jsb << gnu::JSB::MakeString(data.date);
                 }
             jsb.end();
         auto js = jsb.encode();
-        return File::Write(filename, js.c_str(), js.length());
+        return gnu::File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -5141,7 +5141,7 @@ void Chart::update_pref() {
 #include <time.h>
 namespace flw {
 class _DateChooserCanvas : public Fl_Widget {
-    Date                        _date[7][8];
+    gnu::Date                   _date[7][8];
     char                        _text[7][8][30];
     int                         _col;
     int                         _row;
@@ -5202,7 +5202,7 @@ public:
             }
         }
     }
-    Date& get() {
+    gnu::Date& get() {
         return _date[_row][_col];
     }
     int handle(int event) override {
@@ -5274,7 +5274,7 @@ public:
             do_callback();
         }
     }
-    void set_date(int row, int col, const Date& date) {
+    void set_date(int row, int col, const gnu::Date& date) {
         _date[row][col] = date;
     }
     void set_text(int row, int col, const char* text) {
@@ -5294,7 +5294,7 @@ GridGroup(X, Y, W, H, l) {
     _buttons     = new ToolGroup();
     _canvas      = new _DateChooserCanvas();
     _month_label = new Fl_Box(0, 0, 0, 0, "");
-    Date date;
+    gnu::Date date;
     set(date);
     _set_label();
     _buttons->add(_b6);
@@ -5345,7 +5345,7 @@ void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
         dc->set(dt);
     }
     else if (w == dc->_b5) {
-        dt = Date::FromTime(::time(0));
+        dt = gnu::Date::FromTime(::time(0));
         dc->set(dt);
     }
     else if (w == dc->_b3) {
@@ -5373,14 +5373,14 @@ void flw::DateChooser::draw() {
 void flw::DateChooser::focus() {
     _canvas->take_focus();
 }
-flw::Date flw::DateChooser::get() const {
+gnu::Date flw::DateChooser::get() const {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     return canvas->get();
 }
 int flw::DateChooser::handle(int event) {
     if (event == FL_KEYDOWN) {
         if (Fl::event_command()) {
-            Date dt = get();
+            gnu::Date dt = get();
             if (Fl::event_key() == FL_Left) {
                 dt.add_months(-1);
                 set(dt);
@@ -5395,15 +5395,15 @@ int flw::DateChooser::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::DateChooser::set(const Date& date) {
+void flw::DateChooser::set(const gnu::Date& date) {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date2  = date;
     if (date2.year() < 2 && date2.month() < 2) {
         date2.month(2);
     }
     auto start_cell   = 0;
-    auto first_date   = Date(date2.year(), date2.month(), 1);
-    auto current_date = Date();
+    auto first_date   = gnu::Date(date2.year(), date2.month(), 1);
+    auto current_date = gnu::Date();
     char tmp[30];
     start_cell    = (int) first_date.weekday() - 1;
     start_cell    = start_cell + first_date.month_days() < 32 ? start_cell + 7 : start_cell;
@@ -5428,18 +5428,18 @@ void flw::DateChooser::set(const Date& date) {
 void flw::DateChooser::_set_label() {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date   = canvas->get();
-    auto string = date.format(Date::FORMAT::YEAR_MONTH_LONG);
+    auto string = date.format(gnu::Date::FORMAT::YEAR_MONTH_LONG);
     _month_label->copy_label(string.c_str());
 }
 class _DateChooserDlg : public Fl_Double_Window {
-    Date&                       _value;
+    gnu::Date&                  _value;
     DateChooser*                _date_chooser;
     Fl_Button*                  _cancel;
     Fl_Button*                  _ok;
     GridGroup*                  _grid;
     bool                        _res;
 public:
-    _DateChooserDlg(const char* title, Date& date) :
+    _DateChooserDlg(const char* title, gnu::Date& date) :
     Fl_Double_Window(0, 0, 0, 0),
     _value(date) {
         end();
@@ -5494,7 +5494,7 @@ public:
         return _res;
     }
 };
-bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
+bool dlg::date(const std::string& title, gnu::Date& date, Fl_Window* parent) {
     flw::_DateChooserDlg dlg(title.c_str(), date);
     return dlg.run(parent);
 }
@@ -9428,7 +9428,7 @@ static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
 static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
     #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
     auto res = std::vector<_LogDisplayStyle>();
-    auto js  = JS();
+    auto js  = gnu::JS();
     auto err = js.decode(json.c_str(), json.length());
     if (err != "") {
         fl_alert("error: failed to parse json\n%s", err.c_str());
@@ -9835,8 +9835,8 @@ PlotData::PlotData(double X, double Y) {
 }
 void PlotData::debug(int i) const {
 #ifdef DEBUG
-    auto X = JS::FormatNumber(x);
-    auto Y = JS::FormatNumber(y);
+    auto X = gnu::JS::FormatNumber(x);
+    auto Y = gnu::JS::FormatNumber(y);
     if (i >= 0) {
         printf("[%04d] = %24.8f, %24.8f\n", i, x, y);
     }
@@ -9860,7 +9860,7 @@ void PlotData::Debug(const PlotDataVector& in) {
 #endif
 }
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = File::Read(filename);
+    auto buf = gnu::File::Read(filename);
     if (buf.s < 3) {
         return PlotDataVector();
     }
@@ -9966,10 +9966,10 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
     csv.reserve(in.size() * 20 + 256);
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s\n", JS::FormatNumber(data.x).c_str(), sep.c_str(), JS::FormatNumber(data.y).c_str());
+        snprintf(buffer, 256, "%s%s%s\n", gnu::JS::FormatNumber(data.x).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.y).c_str());
         csv += buffer;
     }
-    return File::Write(filename, csv.c_str(), csv.size());
+    return gnu::File::Write(filename, csv.c_str(), csv.size());
 }
 PlotDataVector PlotData::Swap(const PlotDataVector& in) {
     PlotDataVector res;
@@ -10945,12 +10945,12 @@ bool Plot::load_json(std::string filename) {
     clear();
     redraw();
     auto wc  = WaitCursor();
-    auto buf = File::Read(filename);
+    auto buf = gnu::File::Read(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
-    auto js  = JS();
+    auto js  = gnu::JS();
     auto err = js.decode(buf.p, buf.s);
     auto x   = PlotScale();
     auto y   = PlotScale();
@@ -11064,49 +11064,49 @@ bool Plot::save_json() {
 }
 bool Plot::save_json(std::string filename) {
     auto wc  = WaitCursor();
-    auto jsb = JSB();
+    auto jsb = gnu::JSB();
     try {
-        jsb << JSB::MakeObject();
-            jsb << JSB::MakeObject("Plot");
-                jsb << JSB::MakeNumber(Plot::VERSION, "version");
-                jsb << JSB::MakeString(_label, "label");
-                jsb << JSB::MakeBool(_labels, "labels");
-                jsb << JSB::MakeBool(_horizontal, "horizontal");
-                jsb << JSB::MakeBool(_vertical, "vertical");
-                if (std::isfinite(_min_x) == true) jsb << JSB::MakeNumber(_min_x, "minx");
-                if (std::isfinite(_max_x) == true) jsb << JSB::MakeNumber(_max_x, "maxx");
-                if (std::isfinite(_min_y) == true) jsb << JSB::MakeNumber(_min_y, "miny");
-                if (std::isfinite(_max_y) == true) jsb << JSB::MakeNumber(_max_y, "maxy");
+        jsb << gnu::JSB::MakeObject();
+            jsb << gnu::JSB::MakeObject("Plot");
+                jsb << gnu::JSB::MakeNumber(Plot::VERSION, "version");
+                jsb << gnu::JSB::MakeString(_label, "label");
+                jsb << gnu::JSB::MakeBool(_labels, "labels");
+                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
+                if (std::isfinite(_min_x) == true) jsb << gnu::JSB::MakeNumber(_min_x, "minx");
+                if (std::isfinite(_max_x) == true) jsb << gnu::JSB::MakeNumber(_max_x, "maxx");
+                if (std::isfinite(_min_y) == true) jsb << gnu::JSB::MakeNumber(_min_y, "miny");
+                if (std::isfinite(_max_y) == true) jsb << gnu::JSB::MakeNumber(_max_y, "maxy");
             jsb.end();
-            jsb << JSB::MakeObject("PlotScale::x");
-                jsb << JSB::MakeString(_x.label().c_str(), "label");
-                jsb << JSB::MakeNumber(_x.color(), "color");
-                jsb << JSB::MakeArrayInline("labels");
-                    for (const auto& l : _x.custom_labels()) jsb << JSB::MakeString(l);
+            jsb << gnu::JSB::MakeObject("PlotScale::x");
+                jsb << gnu::JSB::MakeString(_x.label().c_str(), "label");
+                jsb << gnu::JSB::MakeNumber(_x.color(), "color");
+                jsb << gnu::JSB::MakeArrayInline("labels");
+                    for (const auto& l : _x.custom_labels()) jsb << gnu::JSB::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << JSB::MakeObject("PlotScale::y");
-                jsb << JSB::MakeString(_y.label().c_str(), "label");
-                jsb << JSB::MakeNumber(_y.color(), "color");
-                jsb << JSB::MakeArrayInline("labels");
-                    for (const auto& l : _y.custom_labels()) jsb << JSB::MakeString(l);
+            jsb << gnu::JSB::MakeObject("PlotScale::y");
+                jsb << gnu::JSB::MakeString(_y.label().c_str(), "label");
+                jsb << gnu::JSB::MakeNumber(_y.color(), "color");
+                jsb << gnu::JSB::MakeArrayInline("labels");
+                    for (const auto& l : _y.custom_labels()) jsb << gnu::JSB::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << JSB::MakeArray("PlotLine");
+            jsb << gnu::JSB::MakeArray("PlotLine");
             for (const auto& line : _lines) {
                 if (line.data().size() > 0) {
-                    jsb << JSB::MakeObject();
-                        jsb << JSB::MakeNumber(line.width(), "width");
-                        jsb << JSB::MakeNumber(line.color(), "color");
-                        jsb << JSB::MakeString(line.label(), "label");
-                        jsb << JSB::MakeBool(line.is_visible(), "visible");
-                        jsb << JSB::MakeString(line.type_to_string(), "type");
-                        jsb << JSB::MakeArray("xy");
+                    jsb << gnu::JSB::MakeObject();
+                        jsb << gnu::JSB::MakeNumber(line.width(), "width");
+                        jsb << gnu::JSB::MakeNumber(line.color(), "color");
+                        jsb << gnu::JSB::MakeString(line.label(), "label");
+                        jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
+                        jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
+                        jsb << gnu::JSB::MakeArray("xy");
                         for (const auto& point : line.data()) {
                             if (std::isfinite(point.x) == true && std::isfinite(point.y) == true) {
-                                jsb << JSB::MakeArrayInline();
-                                    jsb << JSB::MakeNumber(point.x);
-                                    jsb << JSB::MakeNumber(point.y);
+                                jsb << gnu::JSB::MakeArrayInline();
+                                    jsb << gnu::JSB::MakeNumber(point.x);
+                                    jsb << gnu::JSB::MakeNumber(point.y);
                                 jsb.end();
                             }
                         }
@@ -11115,7 +11115,7 @@ bool Plot::save_json(std::string filename) {
                 }
             }
         auto js = jsb.encode();
-        return File::Write(filename, js.c_str(), js.length());
+        return gnu::File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -12716,16 +12716,16 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
         }
         else if (rend == TableEditor::REND::DLG_DATE) {
-            auto        date = Date::FromString(val);
+            auto        date = gnu::Date::FromString(val);
             std::string string;
             if (format == TableEditor::FORMAT::DATE_WORLD) {
-                string = date.format(Date::FORMAT::WORLD);
+                string = date.format(gnu::Date::FORMAT::WORLD);
             }
             else if (format == TableEditor::FORMAT::DATE_US) {
-                string = date.format(Date::FORMAT::US);
+                string = date.format(gnu::Date::FORMAT::US);
             }
             else {
-                string = date.format(Date::FORMAT::ISO_LONG);
+                string = date.format(gnu::Date::FORMAT::ISO_LONG);
             }
             fl_font(textfont, textsize);
             fl_color(textcolor);
@@ -13021,7 +13021,7 @@ void TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date = Date::FromString(val);
+        auto date = gnu::Date::FromString(val);
         if (strcmp(key, "+") == 0) {
             date.add_days(1);
         }
@@ -13040,7 +13040,7 @@ void TableEditor::_edit_quick(const char* key) {
         else if (strcmp(key, "---") == 0) {
             date.year(date.year() - 1);
         }
-        auto string = date.format(Date::FORMAT::ISO_LONG);
+        auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
         if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
@@ -13110,10 +13110,10 @@ void TableEditor::_edit_show() {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date1  = Date::FromString(val);
-        auto date2  = Date(date1);
+        auto date1  = gnu::Date::FromString(val);
+        auto date2  = gnu::Date(date1);
         auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
-        auto string = date1.format(Date::FORMAT::ISO_LONG);
+        auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
         if ((_send_changed_event_always == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
             do_callback();
@@ -13405,12 +13405,12 @@ int TableEditor::_ev_paste() {
                 }
             }
             case TableEditor::REND::DLG_DATE: {
-                auto date = Date::FromString(text);
+                auto date = gnu::Date::FromString(text);
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
                     return 1;
                 }
                 else {
-                    string = date.format(Date::FORMAT::ISO_LONG);
+                    string = date.format(gnu::Date::FORMAT::ISO_LONG);
                     text = string.c_str();
                     break;
                 }

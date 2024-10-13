@@ -27,7 +27,7 @@ namespace flw {
 
 //------------------------------------------------------------------------------
 class _DateChooserCanvas : public Fl_Widget {
-    Date                        _date[7][8];
+    gnu::Date                   _date[7][8];
     char                        _text[7][8][30];
     int                         _col;
     int                         _row;
@@ -101,7 +101,7 @@ public:
     }
 
     //------------------------------------------------------------------------------
-    Date& get() {
+    gnu::Date& get() {
         return _date[_row][_col];
     }
 
@@ -189,7 +189,7 @@ public:
     }
 
     //------------------------------------------------------------------------------
-    void set_date(int row, int col, const Date& date) {
+    void set_date(int row, int col, const gnu::Date& date) {
         _date[row][col] = date;
     }
 
@@ -226,7 +226,7 @@ GridGroup(X, Y, W, H, l) {
     _canvas      = new _DateChooserCanvas();
     _month_label = new Fl_Box(0, 0, 0, 0, "");
 
-    Date date;
+    gnu::Date date;
     set(date);
     _set_label();
 
@@ -283,7 +283,7 @@ void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
         dc->set(dt);
     }
     else if (w == dc->_b5) {
-        dt = Date::FromTime(::time(0));
+        dt = gnu::Date::FromTime(::time(0));
         dc->set(dt);
     }
     else if (w == dc->_b3) {
@@ -318,7 +318,7 @@ void flw::DateChooser::focus() {
 }
 
 //------------------------------------------------------------------------------
-flw::Date flw::DateChooser::get() const {
+gnu::Date flw::DateChooser::get() const {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     return canvas->get();
 }
@@ -327,7 +327,7 @@ flw::Date flw::DateChooser::get() const {
 int flw::DateChooser::handle(int event) {
     if (event == FL_KEYDOWN) {
         if (Fl::event_command()) {
-            Date dt = get();
+            gnu::Date dt = get();
 
             if (Fl::event_key() == FL_Left) {
                 dt.add_months(-1);
@@ -346,7 +346,7 @@ int flw::DateChooser::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
-void flw::DateChooser::set(const Date& date) {
+void flw::DateChooser::set(const gnu::Date& date) {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date2  = date;
 
@@ -355,8 +355,8 @@ void flw::DateChooser::set(const Date& date) {
     }
 
     auto start_cell   = 0;
-    auto first_date   = Date(date2.year(), date2.month(), 1);
-    auto current_date = Date();
+    auto first_date   = gnu::Date(date2.year(), date2.month(), 1);
+    auto current_date = gnu::Date();
     char tmp[30];
 
     // Optimize where to start with the 1:st in every month
@@ -392,7 +392,7 @@ void flw::DateChooser::set(const Date& date) {
 void flw::DateChooser::_set_label() {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date   = canvas->get();
-    auto string = date.format(Date::FORMAT::YEAR_MONTH_LONG);
+    auto string = date.format(gnu::Date::FORMAT::YEAR_MONTH_LONG);
 
     _month_label->copy_label(string.c_str());
 }
@@ -410,7 +410,7 @@ void flw::DateChooser::_set_label() {
 
 //------------------------------------------------------------------------------
 class _DateChooserDlg : public Fl_Double_Window {
-    Date&                       _value;
+    gnu::Date&                  _value;
     DateChooser*                _date_chooser;
     Fl_Button*                  _cancel;
     Fl_Button*                  _ok;
@@ -419,7 +419,7 @@ class _DateChooserDlg : public Fl_Double_Window {
 
 public:
     //------------------------------------------------------------------------------
-    _DateChooserDlg(const char* title, Date& date) :
+    _DateChooserDlg(const char* title, gnu::Date& date) :
     Fl_Double_Window(0, 0, 0, 0),
     _value(date) {
         end();
@@ -501,7 +501,7 @@ public:
  */
 
 //------------------------------------------------------------------------------
-bool dlg::date(const std::string& title, flw::Date& date, Fl_Window* parent) {
+bool dlg::date(const std::string& title, gnu::Date& date, Fl_Window* parent) {
     flw::_DateChooserDlg dlg(title.c_str(), date);
     return dlg.run(parent);
 }

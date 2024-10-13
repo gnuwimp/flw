@@ -99,7 +99,7 @@ struct ChartData {
     static size_t               BinarySearch(const ChartDataVector& in, const ChartData& key);
     static ChartDataVector      DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block = ChartDataVector());
     static ChartDataVector      DayToMonth(const ChartDataVector& in, bool sum = false);
-    static ChartDataVector      DayToWeek(const ChartDataVector& in, Date::DAY weekday, bool sum = false);
+    static ChartDataVector      DayToWeek(const ChartDataVector& in, gnu::Date::DAY weekday, bool sum = false);
     static void                 Debug(const ChartDataVector& in);
     static ChartDataVector      ExponentialMovingAverage(const ChartDataVector& in, size_t days);
     static ChartDataVector      Fixed(const ChartDataVector& in, double value);

@@ -90,8 +90,8 @@ PlotData::PlotData(double X, double Y) {
 //------------------------------------------------------------------------------
 void PlotData::debug(int i) const {
 #ifdef DEBUG
-    auto X = JS::FormatNumber(x);
-    auto Y = JS::FormatNumber(y);
+    auto X = gnu::JS::FormatNumber(x);
+    auto Y = gnu::JS::FormatNumber(y);
 
     if (i >= 0) {
         printf("[%04d] = %24.8f, %24.8f\n", i, x, y);
@@ -123,7 +123,7 @@ void PlotData::Debug(const PlotDataVector& in) {
 
 //------------------------------------------------------------------------------
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = File::Read(filename);
+    auto buf = gnu::File::Read(filename);
 
     if (buf.s < 3) {
         return PlotDataVector();
@@ -255,11 +255,11 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
 
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s\n", JS::FormatNumber(data.x).c_str(), sep.c_str(), JS::FormatNumber(data.y).c_str());
+        snprintf(buffer, 256, "%s%s%s\n", gnu::JS::FormatNumber(data.x).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.y).c_str());
         csv += buffer;
     }
 
-    return File::Write(filename, csv.c_str(), csv.size());
+    return gnu::File::Write(filename, csv.c_str(), csv.size());
 }
 
 //------------------------------------------------------------------------------
@@ -1539,14 +1539,14 @@ bool Plot::load_json(std::string filename) {
     redraw();
 
     auto wc  = WaitCursor();
-    auto buf = File::Read(filename);
+    auto buf = gnu::File::Read(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
 
-    auto js  = JS();
+    auto js  = gnu::JS();
     auto err = js.decode(buf.p, buf.s);
     auto x   = PlotScale();
     auto y   = PlotScale();
@@ -1683,51 +1683,51 @@ bool Plot::save_json() {
 //----------------------------------------------------------------------
 bool Plot::save_json(std::string filename) {
     auto wc  = WaitCursor();
-    auto jsb = JSB();
+    auto jsb = gnu::JSB();
 
     try {
-        jsb << JSB::MakeObject();
-            jsb << JSB::MakeObject("Plot");
-                jsb << JSB::MakeNumber(Plot::VERSION, "version");
-                jsb << JSB::MakeString(_label, "label");
-                jsb << JSB::MakeBool(_labels, "labels");
-                jsb << JSB::MakeBool(_horizontal, "horizontal");
-                jsb << JSB::MakeBool(_vertical, "vertical");
-                if (std::isfinite(_min_x) == true) jsb << JSB::MakeNumber(_min_x, "minx");
-                if (std::isfinite(_max_x) == true) jsb << JSB::MakeNumber(_max_x, "maxx");
-                if (std::isfinite(_min_y) == true) jsb << JSB::MakeNumber(_min_y, "miny");
-                if (std::isfinite(_max_y) == true) jsb << JSB::MakeNumber(_max_y, "maxy");
+        jsb << gnu::JSB::MakeObject();
+            jsb << gnu::JSB::MakeObject("Plot");
+                jsb << gnu::JSB::MakeNumber(Plot::VERSION, "version");
+                jsb << gnu::JSB::MakeString(_label, "label");
+                jsb << gnu::JSB::MakeBool(_labels, "labels");
+                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
+                if (std::isfinite(_min_x) == true) jsb << gnu::JSB::MakeNumber(_min_x, "minx");
+                if (std::isfinite(_max_x) == true) jsb << gnu::JSB::MakeNumber(_max_x, "maxx");
+                if (std::isfinite(_min_y) == true) jsb << gnu::JSB::MakeNumber(_min_y, "miny");
+                if (std::isfinite(_max_y) == true) jsb << gnu::JSB::MakeNumber(_max_y, "maxy");
             jsb.end();
-            jsb << JSB::MakeObject("PlotScale::x");
-                jsb << JSB::MakeString(_x.label().c_str(), "label");
-                jsb << JSB::MakeNumber(_x.color(), "color");
-                jsb << JSB::MakeArrayInline("labels");
-                    for (const auto& l : _x.custom_labels()) jsb << JSB::MakeString(l);
+            jsb << gnu::JSB::MakeObject("PlotScale::x");
+                jsb << gnu::JSB::MakeString(_x.label().c_str(), "label");
+                jsb << gnu::JSB::MakeNumber(_x.color(), "color");
+                jsb << gnu::JSB::MakeArrayInline("labels");
+                    for (const auto& l : _x.custom_labels()) jsb << gnu::JSB::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << JSB::MakeObject("PlotScale::y");
-                jsb << JSB::MakeString(_y.label().c_str(), "label");
-                jsb << JSB::MakeNumber(_y.color(), "color");
-                jsb << JSB::MakeArrayInline("labels");
-                    for (const auto& l : _y.custom_labels()) jsb << JSB::MakeString(l);
+            jsb << gnu::JSB::MakeObject("PlotScale::y");
+                jsb << gnu::JSB::MakeString(_y.label().c_str(), "label");
+                jsb << gnu::JSB::MakeNumber(_y.color(), "color");
+                jsb << gnu::JSB::MakeArrayInline("labels");
+                    for (const auto& l : _y.custom_labels()) jsb << gnu::JSB::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << JSB::MakeArray("PlotLine");
+            jsb << gnu::JSB::MakeArray("PlotLine");
 
             for (const auto& line : _lines) {
                 if (line.data().size() > 0) {
-                    jsb << JSB::MakeObject();
-                        jsb << JSB::MakeNumber(line.width(), "width");
-                        jsb << JSB::MakeNumber(line.color(), "color");
-                        jsb << JSB::MakeString(line.label(), "label");
-                        jsb << JSB::MakeBool(line.is_visible(), "visible");
-                        jsb << JSB::MakeString(line.type_to_string(), "type");
-                        jsb << JSB::MakeArray("xy");
+                    jsb << gnu::JSB::MakeObject();
+                        jsb << gnu::JSB::MakeNumber(line.width(), "width");
+                        jsb << gnu::JSB::MakeNumber(line.color(), "color");
+                        jsb << gnu::JSB::MakeString(line.label(), "label");
+                        jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
+                        jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
+                        jsb << gnu::JSB::MakeArray("xy");
                         for (const auto& point : line.data()) {
                             if (std::isfinite(point.x) == true && std::isfinite(point.y) == true) {
-                                jsb << JSB::MakeArrayInline();
-                                    jsb << JSB::MakeNumber(point.x);
-                                    jsb << JSB::MakeNumber(point.y);
+                                jsb << gnu::JSB::MakeArrayInline();
+                                    jsb << gnu::JSB::MakeNumber(point.x);
+                                    jsb << gnu::JSB::MakeNumber(point.y);
                                 jsb.end();
                             }
                         }
@@ -1737,7 +1737,7 @@ bool Plot::save_json(std::string filename) {
             }
 
         auto js = jsb.encode();
-        return File::Write(filename, js.c_str(), js.length());
+        return gnu::File::Write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

@@ -27,7 +27,7 @@
     #define PATH_MAX 1050
 #endif
 
-namespace flw {
+namespace gnu {
 
 /***
  *                 _            _

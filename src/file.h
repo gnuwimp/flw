@@ -1,8 +1,8 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
 
-#ifndef FLW_FILE_H
-#define FLW_FILE_H
+#ifndef GNU_FILE_H
+#define GNU_FILE_H
 
 // MKALGAM_ON
 
@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace flw {
+namespace gnu {
 
 class File;
 
@@ -200,8 +200,8 @@ public:
     static inline bool          Write(std::string filename, const FileBuf& b)
                                     { return Write(filename, b.p, b.s); }
     };
-} // flw
+} // gnu
 
 // MKALGAM_OFF
 
-#endif
+#endif // GNU_FILE_H
