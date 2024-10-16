@@ -177,7 +177,7 @@ public:
     static FileBuf              CloseStderr();
     static FileBuf              CloseStdout();
     static bool                 Copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr);
-    static std::string          HomeDir();
+    static File                 HomeDir();
     static bool                 MkDir(std::string path);
     static bool                 ModTime(std::string path, int64_t time);
     static FILE*                Open(std::string path, std::string mode);

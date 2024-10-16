@@ -2,6 +2,7 @@
 // Released under the GNU General Public License v3.0
 
 #include "file.h"
+#include "bug.h"
 
 // MKALGAM_ON
 
@@ -254,9 +255,13 @@ static void _file_split_paths(std::string filename, std::string& path, std::stri
     name = "";
     ext  = "";
 
+    if (filename == "") {
+        return;
+    }
+
 #ifdef _WIN32
     auto sep = '/';
-    
+
     if (filename.find("\\\\") == 0) {
         sep = '\\';
 
@@ -775,7 +780,7 @@ bool File::Copy(std::string from, std::string to, CallbackCopy callback, void* d
 }
 
 //------------------------------------------------------------------------------
-std::string File::HomeDir() {
+File File::HomeDir() {
     std::string res;
 
 #ifdef _WIN32
@@ -791,7 +796,7 @@ std::string File::HomeDir() {
     res = tmp ? tmp : "";
 #endif
 
-    return File(res).filename;
+    return File(res);
 }
 
 //------------------------------------------------------------------------------
@@ -957,7 +962,7 @@ FileVector File::ReadDir(std::string path) {
     auto wpath = _file_to_wide(file.filename.c_str());
     auto dirp  = _wopendir(wpath);
     auto sep   = '/';
-    
+
     if (file.filename.find("\\\\") == 0) {
         sep = '\\';
     }
@@ -1069,7 +1074,12 @@ bool File::Remove(std::string path) {
 
 //------------------------------------------------------------------------------
 bool File::RemoveRec(std::string path) {
-    auto f     = File(path);
+    auto file = File(path, true);
+
+    if (file == File::HomeDir() || file.path == "") {
+        return false;
+    }
+
     auto files = File::ReadDirRec(path);
 
     std::reverse(files.begin(), files.end());
@@ -1096,7 +1106,6 @@ bool File::Rename(std::string from, std::string to) {
     auto wto   = _file_to_wide(to_f.filename.c_str());
 
     if (to_f.type == TYPE::DIR) {
-//        RemoveDirectoryW(wto);
         File::RemoveRec(to_f.filename);
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
     }
@@ -1111,7 +1120,6 @@ bool File::Rename(std::string from, std::string to) {
     free(wto);
 #else
     if (to_f.type == TYPE::DIR) {
-//        ::rmdir(to.c_str());
         File::RemoveRec(to_f.filename);
     }
 
@@ -1202,28 +1210,28 @@ File File::TmpFile(std::string prepend) {
 std::string File::to_string(bool short_version) const {
     char tmp[PATH_MAX + 100];
     int n = 0;
-    
+
     if (short_version == true) {
-        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, type=%s, %ssize=%lld, mtime=%lld)", 
-            filename.c_str(), 
-            type_name().c_str(), 
-            link ? "LINK, " : "", 
-            (long long int) size, 
+        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, type=%s, %ssize=%lld, mtime=%lld)",
+            filename.c_str(),
+            type_name().c_str(),
+            link ? "LINK, " : "",
+            (long long int) size,
             (long long int) mtime);
     }
     else {
-        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, name=%s, ext=%s, path=%s, type=%s, link=%s, size=%lld, mtime=%lld, mode=%o)", 
-            filename.c_str(), 
-            name.c_str(), 
-            ext.c_str(), 
-            path.c_str(), 
-            type_name().c_str(), 
-            link ? "YES" : "NO", 
-            (long long int) size, 
-            (long long int) mtime, 
+        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, name=%s, ext=%s, path=%s, type=%s, link=%s, size=%lld, mtime=%lld, mode=%o)",
+            filename.c_str(),
+            name.c_str(),
+            ext.c_str(),
+            path.c_str(),
+            type_name().c_str(),
+            link ? "YES" : "NO",
+            (long long int) size,
+            (long long int) mtime,
             mode > 0 ? mode : 0);
     }
-        
+
     return (n > 0 && n < PATH_MAX + 100) ? tmp : "";
 }
 
@@ -1236,12 +1244,9 @@ std::string File::type_name() const {
 //------------------------------------------------------------------------------
 File& File::update() {
     ctime = -1;
-    ext   = "";
     link  = false;
     mode  = -1;
     mtime = -1;
-    name  = "";
-    path  = "";
     size  = -1;
     type  = TYPE::MISSING;
 
@@ -1290,7 +1295,6 @@ File& File::update() {
     }
 
     free(wpath);
-    _file_split_paths(filename, path, name, ext);
 #else
     struct stat st;
     char        tmp[PATH_MAX + 1];
@@ -1321,11 +1325,8 @@ File& File::update() {
         if (lstat(filename.c_str(), &st) == 0 && S_ISLNK(st.st_mode)) {
             link = true;
         }
-
-        _file_split_paths(filename, path, name, ext);
     }
     else {
-        _file_split_paths(filename, path, name, ext);
         auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
 
         if (tmp_size > 0 && tmp_size < PATH_MAX) {
@@ -1340,6 +1341,7 @@ File& File::update() {
 //------------------------------------------------------------------------------
 File& File::update(std::string in, bool realpath) {
     filename = (in != "") ? _file_to_absolute_path(in, realpath) : "";
+    _file_split_paths(filename, path, name, ext);
     update();
     return *this;
 }
