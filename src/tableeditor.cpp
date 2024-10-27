@@ -213,7 +213,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
         }
         else if (rend == TableEditor::REND::DLG_DATE) {
-            auto        date = gnu::Date::FromString(val);
+            auto        date = gnu::Date(val);
             std::string string;
 
             if (format == TableEditor::FORMAT::DATE_WORLD) {
@@ -570,7 +570,7 @@ void TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date = gnu::Date::FromString(val);
+        auto date = gnu::Date(val);
 
         if (strcmp(key, "+") == 0) {
             date.add_days(1);
@@ -579,7 +579,7 @@ void TableEditor::_edit_quick(const char* key) {
             date.add_months(1);
         }
         else if (strcmp(key, "+++") == 0) {
-            date.year(date.year() + 1);
+            date.add_years(1);
         }
         else if (strcmp(key, "-") == 0) {
             date.add_days(-1);
@@ -588,7 +588,7 @@ void TableEditor::_edit_quick(const char* key) {
             date.add_months(-1);
         }
         else if (strcmp(key, "---") == 0) {
-            date.year(date.year() - 1);
+            date.add_years(-1);
         }
 
         auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
@@ -674,7 +674,7 @@ void TableEditor::_edit_show() {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date1  = gnu::Date::FromString(val);
+        auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
         auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
         auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
@@ -858,9 +858,9 @@ void TableEditor::_edit_stop(bool save) {
 
 //------------------------------------------------------------------------------
 // Change value without editing
-// Use +/- to change value (+/- 1 for integers)
-// Use alt + "+|-" to change value (+/-10 for integers)
-// Use alt + shift + "+|-" to change value (+/-100 for integers)
+// Use +/- to change value (+/- 1 for integers, days for dates)
+// Use alt + "+|-" to change value (+/-10 for integers, months for dates)
+// Use alt + shift + "+|-" to change value (+/-100 for integers, years for dates)
 //
 int TableEditor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
@@ -1020,7 +1020,7 @@ int TableEditor::_ev_paste() {
             }
 
             case TableEditor::REND::DLG_DATE: {
-                auto date = gnu::Date::FromString(text);
+                auto date = gnu::Date(text);
 
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
                     return 1;

@@ -64,8 +64,8 @@ int         RAND = 0;
 ChartDataVector create_serie1(const char* start, const char* stop, double value, double change, const ChartData::RANGE range, double divide = 0.0) {
     auto close = value;
     auto ch    = 0.0;
-    auto date1 = gnu::Date::FromString(start);
-    auto date2 = gnu::Date::FromString(stop);
+    auto date1 = gnu::Date(start);
+    auto date2 = gnu::Date(stop);
     auto res   = ChartDataVector();
 
     while (date1 <= date2) {
@@ -125,8 +125,8 @@ ChartDataVector create_serie1(const char* start, const char* stop, double value,
 ChartDataVector create_serie2(const char* start, const char* stop, double num = 1.0, double add = 0.0) {
     auto res   = ChartDataVector();
     auto f     = 1.0;
-    auto date1 = gnu::Date::FromString(start);
-    auto date2 = gnu::Date::FromString(stop);
+    auto date1 = gnu::Date(start);
+    auto date2 = gnu::Date(stop);
 
     while (date1 <= date2) {
         res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), sinl(f) + num));
@@ -314,7 +314,7 @@ void test5(Chart* chart, std::string main_label, const int count) {
 
 //------------------------------------------------------------------------------
 void test6(Chart* chart, const ChartData::RANGE range) {
-    auto vec1  = create_serie1("20201012 000000", "20201016 230000", 100.0, 0.5, range);
+    auto vec1  = create_serie1("20200912 000000", "20200916 230000", 100.0, 0.5, range);
     auto line1 = ChartLine(vec1);
 
     if (range == ChartData::RANGE::HOUR) {
@@ -338,8 +338,8 @@ void test6(Chart* chart, const ChartData::RANGE range) {
 //------------------------------------------------------------------------------
 void test7(Chart* chart) {
     auto vec1  = ChartDataVector();
-    auto date1 = gnu::Date::FromString("20010101");
-    auto date2 = gnu::Date::FromString("20021231");
+    auto date1 = gnu::Date("20010101");
+    auto date2 = gnu::Date("20021231");
     auto p     = -3.5;
 
     while (date1 <= date2) {

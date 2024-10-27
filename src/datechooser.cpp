@@ -101,7 +101,7 @@ public:
     }
 
     //------------------------------------------------------------------------------
-    gnu::Date& get() {
+    gnu::Date get() {
         return _date[_row][_col];
     }
 
@@ -283,7 +283,7 @@ void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
         dc->set(dt);
     }
     else if (w == dc->_b5) {
-        dt = gnu::Date::FromTime(::time(0));
+        dt = gnu::Date(::time(0));
         dc->set(dt);
     }
     else if (w == dc->_b3) {
@@ -319,8 +319,7 @@ void flw::DateChooser::focus() {
 
 //------------------------------------------------------------------------------
 gnu::Date flw::DateChooser::get() const {
-    auto canvas = (flw::_DateChooserCanvas*) _canvas;
-    return canvas->get();
+    return static_cast<flw::_DateChooserCanvas*>(_canvas)->get();
 }
 
 //------------------------------------------------------------------------------
@@ -346,23 +345,25 @@ int flw::DateChooser::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
-void flw::DateChooser::set(const gnu::Date& date) {
-    auto canvas = (flw::_DateChooserCanvas*) _canvas;
-    auto date2  = date;
+void flw::DateChooser::set(gnu::Date date) {
+    auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
 
-    if (date2.year() < 2 && date2.month() < 2) {
-        date2.month(2);
+    if (date.is_invalid() == true) {
+        date = gnu::Date();
+    }
+    else if (date.year() < 2 && date.month() < 2) {
+        date.set_month(2);
     }
 
     auto start_cell   = 0;
-    auto first_date   = gnu::Date(date2.year(), date2.month(), 1);
+    auto first_date   = gnu::Date(date.year(), date.month(), 1);
     auto current_date = gnu::Date();
     char tmp[30];
 
     // Optimize where to start with the 1:st in every month
 
-    start_cell    = (int) first_date.weekday() - 1;
-    start_cell    = start_cell + first_date.month_days() < 32 ? start_cell + 7 : start_cell;
+    start_cell    = static_cast<int>(first_date.weekday()) - 1;
+    start_cell    = start_cell + first_date.days_in_month() < 32 ? start_cell + 7 : start_cell;
     current_date  = first_date;
 
     current_date.add_days(-start_cell);
@@ -376,7 +377,7 @@ void flw::DateChooser::set(const gnu::Date& date) {
             canvas->set_text(r, c, tmp);
             canvas->set_date(r, c, current_date);
 
-            if (current_date.month() == date2.month() && current_date.day() == date2.day()) {
+            if (current_date.month() == date.month() && current_date.day() == date.day()) {
                 canvas->set_current(r, c);
             }
 
@@ -392,7 +393,7 @@ void flw::DateChooser::set(const gnu::Date& date) {
 void flw::DateChooser::_set_label() {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date   = canvas->get();
-    auto string = date.format(gnu::Date::FORMAT::YEAR_MONTH_LONG);
+    auto string = date.format(gnu::Date::FORMAT::WEEKDAY_MONTH_YEAR);
 
     _month_label->copy_label(string.c_str());
 }

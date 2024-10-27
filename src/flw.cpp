@@ -163,15 +163,15 @@ void debug::print(const Fl_Widget* widget, std::string& indent) {
 
         if (group != nullptr) {
             indent += "\t";
-            
+
             for (int f = 0; f < group->children(); f++) {
                 debug::print(group->child(f), indent);
             }
-            
+
             indent.pop_back();
         }
     }
-    
+
     fflush(stdout);
 }
 
@@ -238,7 +238,7 @@ namespace menu {
 //----------------------------------------------------------------------
 static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
     const Fl_Menu_Item* item;
-    
+
     if (v == nullptr) {
         assert(menu && text);
         item = menu->find_item(text);
@@ -471,11 +471,11 @@ std::string util::format_double(double num, int decimals, char del) {
     if (decimals < 0) {
         decimals = util::count_decimals(num);
     }
-    
+
     if (del < 32) {
         del = 32;
     }
-    
+
     if (decimals == 0 || decimals > 9) {
         return util::format_int(static_cast<int64_t>(num), del);
     }
@@ -607,7 +607,7 @@ int32_t util::milliseconds() {
 //
 bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
     auto res = false;
-    
+
 #ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
 

@@ -2,7 +2,6 @@
 // Released under the GNU General Public License v3.0
 
 #include "file.h"
-#include "bug.h"
 
 // MKALGAM_ON
 

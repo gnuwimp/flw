@@ -39,7 +39,7 @@ public:
     void                        focus();
     gnu::Date                   get() const;
     int                         handle(int event) override;
-    void                        set(const gnu::Date& date);
+    void                        set(gnu::Date date);
 
 
 private:

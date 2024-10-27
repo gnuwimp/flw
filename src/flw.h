@@ -206,14 +206,14 @@ namespace color {
 }
 
 /***
- *      _____      _       _ _______        _   
- *     |  __ \    (_)     | |__   __|      | |  
- *     | |__) | __ _ _ __ | |_ | | _____  _| |_ 
+ *      _____      _       _ _______        _
+ *     |  __ \    (_)     | |__   __|      | |
+ *     | |__) | __ _ _ __ | |_ | | _____  _| |_
  *     |  ___/ '__| | '_ \| __|| |/ _ \ \/ / __|
- *     | |   | |  | | | | | |_ | |  __/>  <| |_ 
+ *     | |   | |  | | | | | |_ | |  __/>  <| |_
  *     |_|   |_|  |_|_| |_|\__||_|\___/_/\_\\__|
- *                                              
- *                                              
+ *
+ *
  */
 
 //------------------------------------------------------------------------------
@@ -221,14 +221,14 @@ namespace color {
 //
 class PrintText {
 public:
-                                PrintText(std::string filename, 
-                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4, 
-                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT, 
-                                    Fl_Font font = FL_COURIER, 
-                                    Fl_Fontsize fontsize = 14, 
-                                    Fl_Align align = FL_ALIGN_LEFT, 
-                                    bool wrap = true, 
-                                    bool border = false, 
+                                PrintText(std::string filename,
+                                    Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4,
+                                    Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT,
+                                    Fl_Font font = FL_COURIER,
+                                    Fl_Fontsize fontsize = 14,
+                                    Fl_Align align = FL_ALIGN_LEFT,
+                                    bool wrap = true,
+                                    bool border = false,
                                     int line_num = 0);
                                 ~PrintText();
 

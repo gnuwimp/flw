@@ -66,7 +66,7 @@ void test_choice() {
 
 //------------------------------------------------------------------------------
 void test_date() {
-    gnu::Date date;
+    gnu::Date date = gnu::Date("31/12/1999");
 
     if (dlg::date("dlg::date", date, nullptr)) {
         printf("dlg::date=%s\n", date.format().c_str());

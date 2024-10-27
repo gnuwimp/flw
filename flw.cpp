@@ -2,6 +2,7 @@
 // Released under the GNU General Public License v3.0
 #include "flw.h"
 #include <cstring>
+#include <cassert>
 #include <ctime>
 namespace gnu {
 static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -10,7 +11,7 @@ static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesd
 static const char*  _DATE_WEEKDAYS_SHORT[]  = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""};
 static const char*  _DATE_MONTHS[]          = {"", "January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December", ""};
 static const char*  _DATE_MONTHS_SHORT[]    = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ""};
-static int _date_days(int year, int month) {
+static int _date_days_in_month(int year, int month) {
     if (year < 1 || year > 9999 || month < 1 || month > 12) {
         return 0;
     }
@@ -19,14 +20,14 @@ static int _date_days(int year, int month) {
     }
     return _DATE_DAYS_MONTH[month];
 }
-static void _date_from_time(int64_t seconds, bool utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
+static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
     year = month = day = 1;
     hour = min = sec = 0;
     if (seconds < 0) {
         return;
     }
     time_t    rawtime  = seconds;
-    const tm* timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
+    const tm* timeinfo = (utc == Date::UTC::ON) ? gmtime(&rawtime) : localtime(&rawtime);
     if (timeinfo == nullptr) {
         return;
     }
@@ -37,110 +38,8 @@ static void _date_from_time(int64_t seconds, bool utc, int& year, int& month, in
     min   = timeinfo->tm_min;
     sec   = timeinfo->tm_sec;
 }
-static Date _date_parse(const char* string, bool us) {
-    const char* space = strstr(string, " ");
-    int  tot   = strlen(string);
-    int  tlen  = space ? (int) (space - string) : 0;
-    int  len   = space ? tlen : tot;
-    int  year  = 1;
-    int  month = 1;
-    int  day   = 1;
-    int  hour  = 0;
-    int  min   = 0;
-    int  sec   = 0;
-    int  Y     = 0;
-    int  val[15];
-    for (int f = 0; f < 15; f++) {
-        val[f] = 0;
-    }
-    if (len == 10 && string[4] == '-' && string[7] == '-') {
-        us     = false;
-        val[4] = string[5] - '0';
-        val[5] = string[6] - '0';
-        val[6] = string[8] - '0';
-        val[7] = string[9] - '0';
-    }
-    else if (len == 8 && string[1] == '/' && string[3] == '/') {
-        Y      = 4;
-        val[4] = string[2] - '0';
-        val[5] = -1;
-        val[6] = string[0] - '0';
-        val[7] = -1;
-    }
-    else if (len == 9 && string[1] == '/' && string[4] == '/') {
-        Y      = 5;
-        val[4] = string[2] - '0';
-        val[5] = string[3] - '0';
-        val[6] = string[0] - '0';
-        val[7] = -1;
-    }
-    else if (len == 9 && string[2] == '/' && string[4]) {
-        Y      = 5;
-        val[4] = string[3] - '0';
-        val[5] = -1;
-        val[6] = string[0] - '0';
-        val[7] = string[1] - '0';
-    }
-    else if (len == 10 && string[2] == '/' && string[5] == '/') {
-        Y      = 6;
-        val[4] = string[3] - '0';
-        val[5] = string[4] - '0';
-        val[6] = string[0] - '0';
-        val[7] = string[1] - '0';
-    }
-    else if (len == 8) {
-        us     = false;
-        val[4] = string[4] - '0';
-        val[5] = string[5] - '0';
-        val[6] = string[6] - '0';
-        val[7] = string[7] - '0';
-    }
-    else {
-        return Date::InvalidDate();
-    }
-    val[0] = string[Y] - '0';
-    val[1] = string[Y + 1] - '0';
-    val[2] = string[Y + 2] - '0';
-    val[3] = string[Y + 3] - '0';
-    if (tlen && tot - tlen >= 9) {
-        val[8]  = string[tlen + 1] - '0';
-        val[9]  = string[tlen + 2] - '0';
-        val[10] = string[tlen + 4] - '0';
-        val[11] = string[tlen + 5] - '0';
-        val[12] = string[tlen + 7] - '0';
-        val[13] = string[tlen + 8] - '0';
-    }
-    else if (tlen && tot - tlen >= 7) {
-        val[8]  = string[tlen + 1] - '0';
-        val[9]  = string[tlen + 2] - '0';
-        val[10] = string[tlen + 3] - '0';
-        val[11] = string[tlen + 4] - '0';
-        val[12] = string[tlen + 5] - '0';
-        val[13] = string[tlen + 6] - '0';
-    }
-    for (int f = 0; f < 15; f++) {
-        if ((f == 5 || f == 7) && val[f] == -1) {
-            ;
-        }
-        else if (val[f] < 0 || val[f] > 9) {
-            return Date::InvalidDate();
-        }
-    }
-    year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
-    month = val[5] == -1 ? val[4] : val[4] * 10 + val[5];
-    day   = val[7] == -1 ? val[6] : val[6] * 10 + val[7];
-    hour  = val[8] * 10 + val[9];
-    min   = val[10] * 10 + val[11];
-    sec   = val[12] * 10 + val[13];
-    if (us == true) {
-        int tmp = month;
-        month   = day;
-        day     = tmp;
-    }
-    return Date(year, month, day, hour, min, sec);
-}
 static Date::DAY _date_weekday(int year, int month, int day) {
-    if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days(year, month)) {
+    if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days_in_month(year, month)) {
         int start = 0;
         int y1    = year - 1;
         int pre   = ((year < 1582) || ((year == 1582) && (month <= 10)));
@@ -151,7 +50,7 @@ static Date::DAY _date_weekday(int year, int month, int day) {
             start = 1 + y1 + (y1 / 4) - (y1 / 100) + (y1 / 400);
         }
         for (int i = 1; i < month; i++) {
-            int days = _date_days(year, i);
+            int days = _date_days_in_month(year, i);
             if (days) {
                 start += days;
             }
@@ -187,85 +86,41 @@ static bool _date_is_leapyear(int year) {
        return false;
     }
 }
-Date::Date(bool utc) {
+Date::Date(Date::UTC utc) {
     int y, m, d, ho, mi, se;
+    _year = _month = _day = _hour = _min = _sec = 0;
     _date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
     set(y, m, d, ho, mi, se);
 }
-Date::Date(const Date& other) {
-    set(other);
-}
-Date::Date(Date&& other) {
-    set(other);
-}
 Date::Date(int year, int month, int day, int hour, int min, int sec) {
-    _year = _month = _day = 0;
-    _hour = _min = _sec = 0;
+    _year = _month = _day = _hour = _min = _sec = 0;
     set(year, month, day, hour, min, sec);
 }
-Date& Date::operator=(const Date& date) {
-    set(date);
-    return *this;
+Date::Date(int64_t unix_time, Date::UTC utc) {
+    int y, m, d, ho, mi, se;
+    _date_from_time(unix_time, utc, y, m, d, ho, mi, se);
+    set(y, m, d, ho, mi, se);
 }
-Date& Date::operator=(Date&& date) {
-    set(date);
-    return *this;
+Date::Date(std::string date, Date::US us) {
+    _year = _month = _day = _hour = _min = _sec = 0;
+    set(date, us);
 }
 bool Date::add_days(const int days) {
-    if (days) {
-        int daym = _date_days(_year, _month);
-        if (daym > 0) {
-            int inc = days > 0 ? 1 : -1;
-            int y   = _year;
-            int m   = _month;
-            int d   = _day;
-            for (int f = 0; f < abs(days); f++) {
-                d += inc;
-                if (inc < 0 && d == 0) {
-                    m--;
-                    if (m == 0) {
-                        m = 12;
-                        y--;
-                        if (y < 1) {
-                            return false;
-                        }
-                    }
-                    d = _date_days(y, m);
-                    if (d == 0) {
-                        return false;
-                    }
-                }
-                else if (inc > 0 && d > daym) {
-                    d = 1;
-                    m++;
-                    if (m == 13) {
-                        m = 1;
-                        y++;
-                        if (y > 9999) {
-                            return false;
-                        }
-                    }
-                    daym = _date_days(y, m);
-                    if (daym == 0) {
-                        return false;
-                    }
-                }
-            }
-            _year  = y;
-            _month = m;
-            _day   = d;
-            return true;
-        }
+    if (days == 0) {
+        return 0;
     }
-    return false;
-}
-bool Date::add_months(const int months) {
-    if (months) {
-        int inc = months > 0 ? 1 : -1;
-        int m   = _month;
-        int y   = _year;
-        for (int f = 0; f < abs(months); f++) {
-            m += inc;
+    int daym = _date_days_in_month(_year, _month);
+    if (daym == 0) {
+        return false;
+    }
+    int inc = days > 0 ? 1 : -1;
+    int y   = _year;
+    int m   = _month;
+    int d   = _day;
+    for (int f = 0; f < abs(days); f++) {
+        d += inc;
+        if (inc < 0 && d == 0) {
+            m--;
             if (m == 0) {
                 m = 12;
                 y--;
@@ -273,69 +128,110 @@ bool Date::add_months(const int months) {
                     return false;
                 }
             }
-            else if (m > 12) {
+            d = _date_days_in_month(y, m);
+            if (d == 0) {
+                return false;
+            }
+        }
+        else if (inc > 0 && d > daym) {
+            d = 1;
+            m++;
+            if (m == 13) {
                 m = 1;
                 y++;
                 if (y > 9999) {
                     return false;
                 }
             }
-        }
-        const int days = _date_days(y, m);
-        if (days > 0) {
-            _year  = y;
-            _month = m;
-            if (_day > days) {
-                _day = days;
+            daym = _date_days_in_month(y, m);
+            if (daym == 0) {
+                return false;
             }
-            return true;
         }
     }
-    return false;
+    _year  = y;
+    _month = m;
+    _day   = d;
+    return true;
+}
+bool Date::add_months(const int months) {
+    if (months == 0) {
+        return false;
+    }
+    int inc = months > 0 ? 1 : -1;
+    int m   = _month;
+    int y   = _year;
+    for (int f = 0; f < abs(months); f++) {
+        m += inc;
+        if (m == 0) {
+            m = 12;
+            y--;
+            if (y < 1) {
+                return false;
+            }
+        }
+        else if (m > 12) {
+            m = 1;
+            y++;
+            if (y > 9999) {
+                return false;
+            }
+        }
+    }
+    const int days = _date_days_in_month(y, m);
+    if (days <= 0) {
+        return false;
+    }
+    _year  = y;
+    _month = m;
+    if (_day > days) {
+        _day = days;
+    }
+    return true;
 }
 bool Date::add_seconds(const int64_t seconds) {
-    if (seconds) {
-        int inc = seconds > 0 ? 1 : -1;
-        int h   = _hour;
-        int m   = _min;
-        int s   = _sec;
-        for (int64_t f = 0; f < llabs(seconds); f++) {
-            s += inc;
-            if (inc < 0 && s == -1) {
-                m--;
-                if (m == -1) {
-                    m = 59;
-                    h--;
-                    if (h == -1) {
-                        h = 23;
-                        if (add_days(-1) == false) {
-                            return false;
-                        }
-                    }
-                }
-                s = 59;
-            }
-            else if (inc > 0 && s == 60) {
-                m++;
-                if (m == 60) {
-                    m = 0;
-                    h++;
-                    if (h == 24) {
-                        h = 0;
-                        if (add_days(1) == false) {
-                            return false;
-                        }
-                    }
-                }
-                s = 0;
-            }
-        }
-        _hour = h;
-        _min  = m;
-        _sec  = s;
-        return true;
+    if (seconds == 0) {
+        return false;
     }
-    return false;
+    int inc = seconds > 0 ? 1 : -1;
+    int h   = _hour;
+    int m   = _min;
+    int s   = _sec;
+    for (int64_t f = 0; f < llabs(seconds); f++) {
+        s += inc;
+        if (inc < 0 && s == -1) {
+            m--;
+            if (m == -1) {
+                m = 59;
+                h--;
+                if (h == -1) {
+                    h = 23;
+                    if (add_days(-1) == false) {
+                        return false;
+                    }
+                }
+            }
+            s = 59;
+        }
+        else if (inc > 0 && s == 60) {
+            m++;
+            if (m == 60) {
+                m = 0;
+                h++;
+                if (h == 24) {
+                    h = 0;
+                    if (add_days(1) == false) {
+                        return false;
+                    }
+                }
+            }
+            s = 0;
+        }
+    }
+    _hour = h;
+    _min  = m;
+    _sec  = s;
+    return true;
 }
 int Date::compare(const Date& other, Date::COMPARE flag) const {
     if (_year < other._year) {
@@ -384,18 +280,25 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
     }
     return 0;
 }
-bool Date::Compare(const Date& a, const Date& b) {
-    return a.compare(b) < 0;
+int Date::days_in_month() const {
+    return _date_days_in_month(_year, _month);
 }
-Date& Date::day(int day) {
-    if (day > 0 && day <= _date_days(_year, _month)) {
-        _day = day;
+int Date::days_into_year() const {
+    auto res  = 0;
+    auto leap = _date_is_leapyear(_year);
+    for (auto m = 1; m < _month && m < 13; m++) {
+        if (leap) {
+            res += _DATE_DAYS_MONTH_LEAP[m];
+        }
+        else {
+            res += _DATE_DAYS_MONTH[m];
+        }
     }
-    return *this;
+    return res + _day;
 }
-Date& Date::day_last() {
-    _day = month_days();
-    return *this;
+void Date::debug() const {
+    printf("Date| %s\n", format(Date::FORMAT::ISO_TIME_LONG).c_str());
+    fflush(stdout);
 }
 int Date::diff_days(const Date& date) const {
     Date d(date);
@@ -442,32 +345,11 @@ int Date::diff_seconds(const Date& date) const {
 std::string Date::format(Date::FORMAT format) const {
     char tmp[100];
     int  n = 0;
-    if (format == Date::FORMAT::ISO_LONG) {
+    if (format == Date::FORMAT::ISO) {
+        n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);
+    }
+    else if (format == Date::FORMAT::ISO_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d", _year, _month, _day);
-    }
-    else if (format == Date::FORMAT::US) {
-        n = snprintf(tmp, 100, "%d/%d/%04d", _month, _day, _year);
-    }
-    else if (format == Date::FORMAT::WORLD) {
-        n = snprintf(tmp, 100, "%d/%d/%04d", _day, _month, _year);
-    }
-    else if (format == Date::FORMAT::NAME) {
-        n = snprintf(tmp, 100, "%04d %s %d", _year, month_name_short(), _day);
-    }
-    else if (format == Date::FORMAT::NAME_LONG) {
-        n = snprintf(tmp, 100, "%04d %s %d", _year, month_name(), _day);
-    }
-    else if (format == Date::FORMAT::NAME_TIME) {
-        n = snprintf(tmp, 100, "%04d %s %d - %02d%02d%02d", _year, month_name_short(), _day, _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::NAME_TIME_LONG) {
-        n = snprintf(tmp, 100, "%04d %s %d - %02d:%02d:%02d", _year, month_name(), _day, _hour, _min, _sec);
-    }
-    else if (format == Date::FORMAT::YEAR_MONTH) {
-        n = snprintf(tmp, 100, "%04d %s", _year, month_name_short());
-    }
-    else if (format == Date::FORMAT::YEAR_MONTH_LONG) {
-        n = snprintf(tmp, 100, "%04d %s", _year, month_name());
     }
     else if (format == Date::FORMAT::ISO_TIME) {
         n = snprintf(tmp, 100, "%04d%02d%02d %02d%02d%02d", _year, _month, _day, _hour, _min, _sec);
@@ -475,88 +357,43 @@ std::string Date::format(Date::FORMAT format) const {
     else if (format == Date::FORMAT::ISO_TIME_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
     }
-    else if (format == Date::FORMAT::TIME_LONG) {
-        n = snprintf(tmp, 100, "%02d:%02d:%02d", _hour, _min, _sec);
-    }
     else if (format == Date::FORMAT::TIME) {
         n = snprintf(tmp, 100, "%02d%02d%02d", _hour, _min, _sec);
     }
-    else {
-        n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);
+    else if (format == Date::FORMAT::TIME_LONG) {
+        n = snprintf(tmp, 100, "%02d:%02d:%02d", _hour, _min, _sec);
+    }
+    else if (format == Date::FORMAT::US) {
+        n = snprintf(tmp, 100, "%d/%d/%04d", _month, _day, _year);
+    }
+    else if (format == Date::FORMAT::WORLD) {
+        n = snprintf(tmp, 100, "%d/%d/%04d", _day, _month, _year);
+    }
+    else if (format == Date::FORMAT::DAY_MONTH_YEAR) {
+        n = snprintf(tmp, 100, "%d %s %04d", _day, month_name(), _year);
+    }
+    else if (format == Date::FORMAT::DAY_MONTH_YEAR_SHORT) {
+        n = snprintf(tmp, 100, "%d %s, %04d", _day, month_name_short(), _year);
+    }
+    else if (format == Date::FORMAT::WEEKDAY_MONTH_YEAR) {
+        n = snprintf(tmp, 100, "%s %d %s %04d", weekday_name(), _day, month_name(), _year);
+    }
+    else if (format == Date::FORMAT::WEEKDAY_MONTH_YEAR_SHORT) {
+        n = snprintf(tmp, 100, "%s, %d %s, %04d", weekday_name_short(), _day, month_name_short(), _year);
     }
     if (n < 0 || n >= 100) {
         *tmp = 0;
     }
     return tmp;
 }
-std::string Date::FormatSecToISO(int64_t seconds, bool utc) {
-    const time_t rawtime  = (time_t) seconds;
-    const tm*    timeinfo = (utc == true) ? gmtime(&rawtime) : localtime(&rawtime);
-    char         buffer[100];
-    if (timeinfo == nullptr) {
-        return "";
-    }
-    snprintf(buffer, 100, "%04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    return buffer;
-}
-Date Date::FromString(const char* buffer, bool us) {
-    if (buffer == nullptr) {
-        return Date::InvalidDate();
-    }
-    else {
-         return _date_parse(buffer, us);
-    }
-}
-Date Date::FromTime(int64_t seconds, bool utc) {
-    int y, m, d, ho, mi, se;
-    _date_from_time(seconds, utc, y, m, d, ho, mi, se);
-    return Date(y, m, d, ho, mi, se);
-}
-Date& Date::hour(int hour) {
-    if (hour >= 0 && hour <= 23) {
-        _hour = hour;
-    }
-    return *this;
-}
-Date Date::InvalidDate() {
-    Date date;
-    date._year = date._month = date._day = date._hour = date._min = date._sec = 0;
-    return date;
-}
 bool Date::is_leapyear() const {
     return _date_is_leapyear(_year);
-}
-Date& Date::minute(int min) {
-    if (min >= 0 && min <= 59) {
-        _min = min;
-    }
-    return *this;
-}
-Date& Date::month(int month) {
-    if (month >= 1 && month <= 12) {
-        _month = month;
-    }
-    return *this;
-}
-int Date::month_days() const {
-    return _date_days(_year, _month);
 }
 const char* Date::month_name() const {
     return _DATE_MONTHS[(int) _month];
 }
 const char* Date::month_name_short() const {
     return _DATE_MONTHS_SHORT[(int) _month];
-}
-void Date::print() const {
-    auto string = format(Date::FORMAT::ISO_TIME_LONG);
-    printf("Date| %s\n", string.c_str());
-    fflush(stdout);
-}
-Date& Date::second(int sec) {
-    if (sec >= 0 && sec <= 59) {
-        _sec = sec;
-    }
-    return *this;
 }
 Date& Date::set(const Date& date) {
     _year  = date._year;
@@ -567,10 +404,158 @@ Date& Date::set(const Date& date) {
     _sec   = date._sec;
     return *this;
 }
+Date& Date::set(std::string date, Date::US us) {
+    auto str1 = date.c_str();
+    int  len1 = strlen(str1);
+    auto str2 = strstr(str1, " ");
+    while (str2 != nullptr && *str2 == ' ') {
+        str2++;
+        if (*str2 == 0) {
+            str2 = nullptr;
+        }
+    }
+    int      len2    = (str2 != nullptr) ? strlen(str2) : 0;
+    int      year    = 0;
+    int      month   = 0;
+    int      day     = 0;
+    int      hour    = 0;
+    int      min     = 0;
+    int      sec     = 0;
+    int      Y       = 0;
+    bool     time    = false;
+    unsigned val[14] = { 0 };
+    unsigned EMPTY   = -1;
+    if (len1 >= 10 && str1[4] == '-' && str1[7] == '-' && str1[10] <= ' ') {
+        us     = US::OFF;
+        val[4] = str1[5] - '0';
+        val[5] = str1[6] - '0';
+        val[6] = str1[8] - '0';
+        val[7] = str1[9] - '0';
+    }
+    else if (len1 >= 8 && str1[1] == '/' && str1[3] == '/' && str1[8] <= ' ') {
+        Y      = 4;
+        val[4] = str1[2] - '0';
+        val[5] = EMPTY;
+        val[6] = str1[0] - '0';
+        val[7] = EMPTY;
+    }
+    else if (len1 >= 9 && str1[1] == '/' && str1[4] == '/' && str1[9] <= ' ') {
+        Y      = 5;
+        val[4] = str1[2] - '0';
+        val[5] = str1[3] - '0';
+        val[6] = str1[0] - '0';
+        val[7] = EMPTY;
+    }
+    else if (len1 >= 9 && str1[2] == '/' && str1[4] && str1[9] <= ' ') {
+        Y      = 5;
+        val[4] = str1[3] - '0';
+        val[5] = EMPTY;
+        val[6] = str1[0] - '0';
+        val[7] = str1[1] - '0';
+    }
+    else if (len1 >= 10 && str1[2] == '/' && str1[5] == '/' && str1[10] <= ' ') {
+        Y      = 6;
+        val[4] = str1[3] - '0';
+        val[5] = str1[4] - '0';
+        val[6] = str1[0] - '0';
+        val[7] = str1[1] - '0';
+    }
+    else if (len1 >= 8 && str1[8] <= ' ') {
+        us     = US::OFF;
+        val[4] = str1[4] - '0';
+        val[5] = str1[5] - '0';
+        val[6] = str1[6] - '0';
+        val[7] = str1[7] - '0';
+    }
+    else {
+        return *this;
+    }
+    val[0] = str1[Y] - '0';
+    val[1] = str1[Y + 1] - '0';
+    val[2] = str1[Y + 2] - '0';
+    val[3] = str1[Y + 3] - '0';
+    if (str2 != nullptr && str2[0] >= '0' && str2[0] <= '9') {
+        if (len2 >= 4 && str2[4] <= ' ') {
+            time    = true;
+            val[8]  = str2[0] - '0';
+            val[9]  = str2[1] - '0';
+            val[10] = str2[2] - '0';
+            val[11] = str2[3] - '0';
+        }
+        else if (len2 >= 5 && str2[2] == ':' && str2[5] <= ' ') {
+            time    = true;
+            val[8]  = str2[0] - '0';
+            val[9]  = str2[1] - '0';
+            val[10] = str2[3] - '0';
+            val[11] = str2[4] - '0';
+        }
+        else if (len2 >= 6 && str2[6] <= ' ') {
+            time    = true;
+            val[8]  = str2[0] - '0';
+            val[9]  = str2[1] - '0';
+            val[10] = str2[2] - '0';
+            val[11] = str2[3] - '0';
+            val[12] = str2[4] - '0';
+            val[13] = str2[5] - '0';
+        }
+        else if (len2 >= 8 && str2[2] == ':' && str2[5] == ':' && str2[8] <= ' ') {
+            time    = true;
+            val[8]  = str2[0] - '0';
+            val[9]  = str2[1] - '0';
+            val[10] = str2[3] - '0';
+            val[11] = str2[4] - '0';
+            val[12] = str2[6] - '0';
+            val[13] = str2[7] - '0';
+        }
+        for (int f = 8; f < 14 && time == true; f++) {
+            if (val[f] > 9) {
+                time = false;
+            }
+        }
+        if (time == true) {
+            hour = val[8] * 10 + val[9];
+            min  = val[10] * 10 + val[11];
+            sec  = val[12] * 10 + val[13];
+            if (hour < 0 || hour > 23) {
+                time = false;
+            }
+            else if (min < 0 || min > 59) {
+                time = false;
+            }
+            else if (sec < 0 || sec > 59) {
+                time = false;
+            }
+        }
+    }
+    for (int f = 0; f < 8; f++) {
+        if (f == 5 && val[5] == EMPTY) {
+        }
+        else if (f == 7 && val[7] == EMPTY) {
+        }
+        else if (val[f] > 9) {
+            return *this;
+        }
+    }
+    year  = val[0] * 1000 + val[1] * 100 + val[2] * 10 + val[3];
+    month = (val[5] == EMPTY) ? val[4] : val[4] * 10 + val[5];
+    day   = (val[7] == EMPTY) ? val[6] : val[6] * 10 + val[7];
+    if (us == US::ON) {
+        int tmp = month;
+        month   = day;
+        day     = tmp;
+    }
+    if (time == true) {
+        set(year, month, day, hour, min, sec);
+    }
+    else {
+        set(year, month, day);
+    }
+    return *this;
+}
 Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
     if (year < 1 || year > 9999 ||
         month < 1 || month > 12 ||
-        day < 1 || day > _date_days(year, month) ||
+        day < 1 || day > _date_days_in_month(year, month) ||
         hour < 0 || hour > 23 ||
         min < 0 || min > 59 ||
         sec < 0 || sec > 59) {
@@ -585,6 +570,57 @@ Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
         _sec   = sec;
         return *this;
     }
+}
+Date& Date::set_day(int day) {
+    if (day > 0 && day <= _date_days_in_month(_year, _month)) {
+        _day = day;
+    }
+    return *this;
+}
+Date& Date::set_hour(int hour) {
+    if (hour >= 0 && hour <= 23) {
+        _hour = hour;
+    }
+    return *this;
+}
+Date& Date::set_minute(int min) {
+    if (min >= 0 && min <= 59) {
+        _min = min;
+    }
+    return *this;
+}
+Date& Date::set_month(int month) {
+    if (_day >= 1 &&
+        _day <= _date_days_in_month(_year, month) &&
+        month >= 1 && month <= 12) {
+        _month = month;
+    }
+    return *this;
+}
+Date& Date::set_second(int sec) {
+    if (sec >= 0 && sec <= 59) {
+        _sec = sec;
+    }
+    return *this;
+}
+Date& Date::set_weekday(Date::DAY day) {
+    if (weekday() < day) {
+        while (weekday() < day) {
+            add_days(1);
+        }
+    }
+    else if (weekday() > day) {
+        while (weekday() > day) {
+            add_days(-1);
+        }
+    }
+    return *this;
+}
+Date& Date::set_year(int year) {
+    if (year >= 1 && year <= 9999) {
+        _year = year;
+    }
+    return *this;
 }
 int64_t Date::time() const {
     tm t;
@@ -608,7 +644,7 @@ int Date::week() const {
         auto y1    = _year - 1;
         auto leap  = _date_is_leapyear(_year);
         auto leap1 = _date_is_leapyear(y1);
-        auto yday  = yearday();
+        auto yday  = days_into_year();
         if (yday <= (8 - (int) wday1) && wday1 > Date::DAY::THURSDAY) {
             if (wday1 == Date::DAY::FRIDAY || (wday1 == Date::DAY::SATURDAY && leap1)) {
                 w = 53;
@@ -640,43 +676,11 @@ int Date::week() const {
 Date::DAY Date::weekday() const {
     return _date_weekday(_year, _month, _day);
 }
-Date& Date::weekday(Date::DAY day) {
-    if (weekday() < day) {
-        while (weekday() < day) {
-            add_days(1);
-        }
-    }
-    else if (weekday() > day) {
-        while (weekday() > day) {
-            add_days(-1);
-        }
-    }
-    return *this;
-}
 const char* Date::weekday_name() const {
     return _DATE_WEEKDAYS[(int) _date_weekday(_year, _month, _day)];
 }
 const char* Date::weekday_name_short() const {
     return _DATE_WEEKDAYS_SHORT[(int) _date_weekday(_year, _month, _day)];
-}
-Date& Date::year(int year) {
-    if (year >= 1 && year <= 9999) {
-        _year = year;
-    }
-    return *this;
-}
-int Date::yearday() const {
-    auto res  = 0;
-    auto leap = _date_is_leapyear(_year);
-    for (auto m = 1; m < _month && m < 13; m++) {
-        if (leap) {
-            res += _DATE_DAYS_MONTH_LEAP[m];
-        }
-        else {
-            res += _DATE_DAYS_MONTH[m];
-        }
-    }
-    return res + _day;
 }
 }
 #include <algorithm>
@@ -865,6 +869,9 @@ static void _file_split_paths(std::string filename, std::string& path, std::stri
     path = "";
     name = "";
     ext  = "";
+    if (filename == "") {
+        return;
+    }
 #ifdef _WIN32
     auto sep = '/';
     if (filename.find("\\\\") == 0) {
@@ -1238,7 +1245,7 @@ bool File::Copy(std::string from, std::string to, CallbackCopy callback, void* d
     File::ChMod(to, file1.mode);
     return true;
 }
-std::string File::HomeDir() {
+File File::HomeDir() {
     std::string res;
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX];
@@ -1251,7 +1258,7 @@ std::string File::HomeDir() {
     const char* tmp = getenv("HOME");
     res = tmp ? tmp : "";
 #endif
-    return File(res).filename;
+    return File(res);
 }
 bool File::is_circular() const {
     if (type == TYPE::DIR && link == true) {
@@ -1456,7 +1463,10 @@ bool File::Remove(std::string path) {
     return res;
 }
 bool File::RemoveRec(std::string path) {
-    auto f     = File(path);
+    auto file = File(path, true);
+    if (file == File::HomeDir() || file.path == "") {
+        return false;
+    }
     auto files = File::ReadDirRec(path);
     std::reverse(files.begin(), files.end());
     for (const auto& file : files) {
@@ -1585,12 +1595,9 @@ std::string File::type_name() const {
 }
 File& File::update() {
     ctime = -1;
-    ext   = "";
     link  = false;
     mode  = -1;
     mtime = -1;
-    name  = "";
-    path  = "";
     size  = -1;
     type  = TYPE::MISSING;
     if (filename == "") {
@@ -1627,7 +1634,6 @@ File& File::update() {
         }
     }
     free(wpath);
-    _file_split_paths(filename, path, name, ext);
 #else
     struct stat st;
     char        tmp[PATH_MAX + 1];
@@ -1652,10 +1658,8 @@ File& File::update() {
         if (lstat(filename.c_str(), &st) == 0 && S_ISLNK(st.st_mode)) {
             link = true;
         }
-        _file_split_paths(filename, path, name, ext);
     }
     else {
-        _file_split_paths(filename, path, name, ext);
         auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
         if (tmp_size > 0 && tmp_size < PATH_MAX) {
             link = true;
@@ -1666,6 +1670,7 @@ File& File::update() {
 }
 File& File::update(std::string in, bool realpath) {
     filename = (in != "") ? _file_to_absolute_path(in, realpath) : "";
+    _file_split_paths(filename, path, name, ext);
     update();
     return *this;
 }
@@ -2642,7 +2647,7 @@ ChartData::ChartData() {
     high = low = close = 0.0;
 }
 ChartData::ChartData(std::string DATE, double value) {
-    auto valid_date = gnu::Date::FromString(DATE.c_str());
+    auto valid_date = gnu::Date(DATE.c_str());
     if (std::isfinite(value) == true &&
         fabs(value) < ChartData::MAX_VALUE &&
         valid_date.is_invalid() == false) {
@@ -2654,7 +2659,7 @@ ChartData::ChartData(std::string DATE, double value) {
     }
 }
 ChartData::ChartData(std::string DATE, double HIGH, double LOW, double CLOSE) {
-    auto valid_date = gnu::Date::FromString(DATE.c_str());
+    auto valid_date = gnu::Date(DATE.c_str());
     if (std::isfinite(HIGH) == true &&
         std::isfinite(LOW) == true &&
         std::isfinite(CLOSE) == true &&
@@ -2739,8 +2744,8 @@ size_t ChartData::BinarySearch(const ChartDataVector& in, const ChartData& key) 
 }
 ChartDataVector ChartData::DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block) {
     auto       month   = -1;
-    auto       current = gnu::Date::FromString(start_date.c_str());
-    auto const stop    = gnu::Date::FromString(stop_date.c_str());
+    auto       current = gnu::Date(start_date.c_str());
+    auto const stop    = gnu::Date(stop_date.c_str());
     auto       res     = ChartDataVector();
     if (range == ChartData::RANGE::FRIDAY) {
         while (current.weekday() != gnu::Date::DAY::FRIDAY)
@@ -2770,7 +2775,7 @@ ChartDataVector ChartData::DateSerie(std::string start_date, std::string stop_da
         }
         else if (range == ChartData::RANGE::MONTH) {
             if (current.month() != month) {
-                current.day(current.month_days());
+                current.set_day_to_last_in_month();
                 date = gnu::Date(current);
                 month = current.month();
             }
@@ -2806,17 +2811,17 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
     for (const auto& data : in) {
         if (f == 0) {
             current = data;
-            stop = gnu::Date::FromString(current.date.c_str());
-            stop.day_last();
+            stop = gnu::Date(current.date.c_str());
+            stop.set_day_to_last_in_month();
         }
         else {
-            pdate = gnu::Date::FromString(data.date.c_str());
+            pdate = gnu::Date(data.date.c_str());
             if (stop < pdate) {
                 current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
                 res.push_back(current);
                 current = data;
-                stop = gnu::Date::FromString(current.date.c_str());
-                stop.day_last();
+                stop = gnu::Date(current.date.c_str());
+                stop.set_day_to_last_in_month();
             }
             else if (sum == true) {
                 current.high  += data.high;
@@ -2835,7 +2840,7 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
         }
         if (f + 1 == in.size()) {
             auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
-            stop.day_last();
+            stop.set_day_to_last_in_month();
             current.date = s;
             res.push_back(current);
         }
@@ -2851,18 +2856,18 @@ ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, gnu::Date::DAY w
     gnu::Date       pdate;
     for (const auto& data : in) {
         if (f == 0) {
-            stop = gnu::Date::FromString(data.date.c_str());
+            stop = gnu::Date(data.date.c_str());
             if (weekday > stop.weekday()) {
-                stop.weekday(weekday);
+                stop.set_weekday(weekday);
             }
             else if (weekday < stop.weekday()) {
-                stop.weekday(weekday);
+                stop.set_weekday(weekday);
                 stop.add_days(7);
             }
             current = data;
         }
         else {
-            pdate = gnu::Date::FromString(data.date.c_str());
+            pdate = gnu::Date(data.date.c_str());
             if (stop < pdate) {
                 current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
                 res.push_back(current);
@@ -3903,7 +3908,6 @@ void Chart::_create_tooltip(bool ctrl) {
         Fl::redraw();
         return;
     }
-    auto const FORMAT    = (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) ? gnu::Date::FORMAT::NAME_TIME_LONG : gnu::Date::FORMAT::NAME_LONG;
     const int  STOP      = _date_start + _ticks;
     int        start     = _date_start;
     int        x1        = x() + _margin_left * _CH;
@@ -3917,10 +3921,14 @@ void Chart::_create_tooltip(bool ctrl) {
     }
     while (start <= STOP && start < static_cast<int>(_dates.size())) {
         if (X >= x1 && X <= x1 + _tick_width - 1) {
-            const std::string fancy_date = gnu::Date::FromString(_dates[start].date.c_str()).format(FORMAT);
-            const ChartLine*  line       = _area->selected_line();
-            _tooltip = fancy_date + "\n \n \n ";
-            if (ctrl == false || line == nullptr || line->size() == 0 || line->is_visible() == false) {
+            const ChartLine* LINE = _area->selected_line();
+            const auto       DATE = gnu::Date(_dates[start].date);
+            std::string      date = DATE.format(gnu::Date::FORMAT::DAY_MONTH_YEAR);
+            if (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) {
+                 date += " - " + DATE.format(gnu::Date::FORMAT::TIME_LONG);
+            }
+            _tooltip = date + "\n \n \n ";
+            if (ctrl == false || LINE == nullptr || LINE->size() == 0 || LINE->is_visible() == false) {
                 const double                Y_DIFF = static_cast<double>((y() + _area->rect().b()) - Y);
                 const std::optional<double> L_MIN  = _area->left_scale().min();
                 const std::optional<double> R_MIN  = _area->right_scale().min();
@@ -3934,25 +3942,25 @@ void Chart::_create_tooltip(bool ctrl) {
                 }
                 const int LEN = static_cast<int>(left.length() > right.length() ? left.length() : right.length());
                 if (left != "" && right != "") {
-                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n ", fancy_date.c_str(), LEN, left.c_str(), LEN, right.c_str());
+                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n ", date.c_str(), LEN, left.c_str(), LEN, right.c_str());
                 }
                 else if (left != "") {
-                    _tooltip = util::format("%s\nleft: %*s\n \n ", fancy_date.c_str(), LEN, left.c_str());
+                    _tooltip = util::format("%s\nleft: %*s\n \n ", date.c_str(), LEN, left.c_str());
                 }
                 else if (right != "") {
-                    _tooltip = util::format("%s\nright: %*s\n \n ", fancy_date.c_str(), LEN, right.c_str());
+                    _tooltip = util::format("%s\nright: %*s\n \n ", date.c_str(), LEN, right.c_str());
                 }
             }
             else {
-                const size_t index = ChartData::BinarySearch(line->data(), _dates[start]);
+                const size_t index = ChartData::BinarySearch(LINE->data(), _dates[start]);
                 if (index != (size_t) -1) {
-                    const int         DEC   = (line->align() == FL_ALIGN_RIGHT) ? right_dec : left_dec;
-                    const ChartData&  DATA  = line->data()[index];
+                    const int         DEC   = (LINE->align() == FL_ALIGN_RIGHT) ? right_dec : left_dec;
+                    const ChartData&  DATA  = LINE->data()[index];
                     const std::string HIGH  = util::format_double(DATA.high, DEC, '\'');
                     const std::string LOW   = util::format_double(DATA.low, DEC, '\'');
                     const std::string CLOSE = util::format_double(DATA.close, DEC, '\'');
                     const int         LEN   = static_cast<int>(LOW.length() > HIGH.length() ? LOW.length() : HIGH.length());
-                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), LEN, HIGH.c_str(), LEN, CLOSE.c_str(), LEN, LOW.c_str());
+                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", date.c_str(), LEN, HIGH.c_str(), LEN, CLOSE.c_str(), LEN, LOW.c_str());
                 }
             }
             break;
@@ -4237,30 +4245,32 @@ void Chart::_draw_tooltip() {
         return;
     }
     fl_font(flw::PREF_FIXED_FONT, _CH);
+    int ch = fl_height();
     int x1 = Fl::event_x();
     int y1 = Fl::event_y();
-    int w1 = 14;
+    int w1 = 12;
     int h1 = 5;
-    if (x1 > _area->rect().r() - _CH * (w1 + 5)) {
-        x1 -= _CH * (w1 + 4);
+    if (x1 > _area->rect().r() - ch * (w1 + 5)) {
+        x1 -= ch * (w1 + 4);
     }
     else {
-        x1 += _CH * 2;
+        x1 += ch * 2;
     }
-    if (y1 > y() + h() - _CH * (h1 + 7)) {
-        y1 -= _CH * (h1 + 2);
+    if (y1 > y() + h() - ch * (h1 + 7)) {
+        y1 -= ch * (h1 + 2);
     }
     else {
-        y1 += _CH * 2;
+        y1 += ch * 2;
     }
     w1 += 3;
     fl_color(FL_BACKGROUND2_COLOR);
-    fl_rectf(x1, y1, _CH * w1, _CH * h1);
+    fl_rectf(x1, y1, ch * w1, ch * h1);
     fl_color(FL_FOREGROUND_COLOR);
-    fl_rect(x1, y1, _CH * w1, _CH * h1);
+    fl_rect(x1, y1, ch * w1, ch * h1);
     fl_line(Fl::event_x(), y() + _area->rect().y(), Fl::event_x(), y() + _area->rect().y() + _area->rect().h());
     fl_line(x() + _area->rect().x(), Fl::event_y(), x() + _area->rect().x() + _area->rect().w(), Fl::event_y());
-    fl_draw(_tooltip.c_str(), x1 + 4, y1, _CH * w1 - 8, _CH * h1, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+    fl_draw(_tooltip.c_str(), x1 + 4, y1 + 4, ch * w1 - 8, ch * h1, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | FL_ALIGN_TOP);
+    _FLW_CHART_DEBUG(fl_rect(x1 + 4, y1 + 4, ch * w1 - 8, ch * h1))
 }
 void Chart::_draw_ver_lines(ChartArea& area) {
     if (_vertical == false) {
@@ -4293,7 +4303,7 @@ void Chart::_draw_xlabels() {
     fl_font(flw::PREF_FIXED_FONT, CH2);
     cw2 = fl_width("X");
     while (date_c <= DATE_END && date_c < static_cast<int>(_dates.size())) {
-        const auto date  = gnu::Date::FromString(_dates[date_c].date.c_str());
+        const auto date  = gnu::Date(_dates[date_c].date.c_str());
         bool       addv  = false;
         int        month = 1;
         *buffer1 = 0;
@@ -5202,7 +5212,7 @@ public:
             }
         }
     }
-    gnu::Date& get() {
+    gnu::Date get() {
         return _date[_row][_col];
     }
     int handle(int event) override {
@@ -5345,7 +5355,7 @@ void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
         dc->set(dt);
     }
     else if (w == dc->_b5) {
-        dt = gnu::Date::FromTime(::time(0));
+        dt = gnu::Date(::time(0));
         dc->set(dt);
     }
     else if (w == dc->_b3) {
@@ -5374,8 +5384,7 @@ void flw::DateChooser::focus() {
     _canvas->take_focus();
 }
 gnu::Date flw::DateChooser::get() const {
-    auto canvas = (flw::_DateChooserCanvas*) _canvas;
-    return canvas->get();
+    return static_cast<flw::_DateChooserCanvas*>(_canvas)->get();
 }
 int flw::DateChooser::handle(int event) {
     if (event == FL_KEYDOWN) {
@@ -5395,18 +5404,20 @@ int flw::DateChooser::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::DateChooser::set(const gnu::Date& date) {
-    auto canvas = (flw::_DateChooserCanvas*) _canvas;
-    auto date2  = date;
-    if (date2.year() < 2 && date2.month() < 2) {
-        date2.month(2);
+void flw::DateChooser::set(gnu::Date date) {
+    auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
+    if (date.is_invalid() == true) {
+        date = gnu::Date();
+    }
+    else if (date.year() < 2 && date.month() < 2) {
+        date.set_month(2);
     }
     auto start_cell   = 0;
-    auto first_date   = gnu::Date(date2.year(), date2.month(), 1);
+    auto first_date   = gnu::Date(date.year(), date.month(), 1);
     auto current_date = gnu::Date();
     char tmp[30];
-    start_cell    = (int) first_date.weekday() - 1;
-    start_cell    = start_cell + first_date.month_days() < 32 ? start_cell + 7 : start_cell;
+    start_cell    = static_cast<int>(first_date.weekday()) - 1;
+    start_cell    = start_cell + first_date.days_in_month() < 32 ? start_cell + 7 : start_cell;
     current_date  = first_date;
     current_date.add_days(-start_cell);
     for (auto r = 1; r <= 6; r++) {
@@ -5416,7 +5427,7 @@ void flw::DateChooser::set(const gnu::Date& date) {
             snprintf(tmp, 30, "%02d", current_date.day());
             canvas->set_text(r, c, tmp);
             canvas->set_date(r, c, current_date);
-            if (current_date.month() == date2.month() && current_date.day() == date2.day()) {
+            if (current_date.month() == date.month() && current_date.day() == date.day()) {
                 canvas->set_current(r, c);
             }
             current_date.add_days(1);
@@ -5428,7 +5439,7 @@ void flw::DateChooser::set(const gnu::Date& date) {
 void flw::DateChooser::_set_label() {
     auto canvas = (flw::_DateChooserCanvas*) _canvas;
     auto date   = canvas->get();
-    auto string = date.format(gnu::Date::FORMAT::YEAR_MONTH_LONG);
+    auto string = date.format(gnu::Date::FORMAT::WEEKDAY_MONTH_YEAR);
     _month_label->copy_label(string.c_str());
 }
 class _DateChooserDlg : public Fl_Double_Window {
@@ -12716,7 +12727,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
         }
         else if (rend == TableEditor::REND::DLG_DATE) {
-            auto        date = gnu::Date::FromString(val);
+            auto        date = gnu::Date(val);
             std::string string;
             if (format == TableEditor::FORMAT::DATE_WORLD) {
                 string = date.format(gnu::Date::FORMAT::WORLD);
@@ -13021,7 +13032,7 @@ void TableEditor::_edit_quick(const char* key) {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date = gnu::Date::FromString(val);
+        auto date = gnu::Date(val);
         if (strcmp(key, "+") == 0) {
             date.add_days(1);
         }
@@ -13029,7 +13040,7 @@ void TableEditor::_edit_quick(const char* key) {
             date.add_months(1);
         }
         else if (strcmp(key, "+++") == 0) {
-            date.year(date.year() + 1);
+            date.add_years(1);
         }
         else if (strcmp(key, "-") == 0) {
             date.add_days(-1);
@@ -13038,7 +13049,7 @@ void TableEditor::_edit_quick(const char* key) {
             date.add_months(-1);
         }
         else if (strcmp(key, "---") == 0) {
-            date.year(date.year() - 1);
+            date.add_years(-1);
         }
         auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
         if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
@@ -13110,7 +13121,7 @@ void TableEditor::_edit_show() {
         }
     }
     else if (rend == TableEditor::REND::DLG_DATE) {
-        auto date1  = gnu::Date::FromString(val);
+        auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
         auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
         auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
@@ -13405,7 +13416,7 @@ int TableEditor::_ev_paste() {
                 }
             }
             case TableEditor::REND::DLG_DATE: {
-                auto date = gnu::Date::FromString(text);
+                auto date = gnu::Date(text);
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
                     return 1;
                 }

@@ -197,7 +197,7 @@ ChartData::ChartData() {
 
 //------------------------------------------------------------------------------
 ChartData::ChartData(std::string DATE, double value) {
-    auto valid_date = gnu::Date::FromString(DATE.c_str());
+    auto valid_date = gnu::Date(DATE.c_str());
 
     if (std::isfinite(value) == true &&
         fabs(value) < ChartData::MAX_VALUE &&
@@ -213,7 +213,7 @@ ChartData::ChartData(std::string DATE, double value) {
 
 //------------------------------------------------------------------------------
 ChartData::ChartData(std::string DATE, double HIGH, double LOW, double CLOSE) {
-    auto valid_date = gnu::Date::FromString(DATE.c_str());
+    auto valid_date = gnu::Date(DATE.c_str());
 
     if (std::isfinite(HIGH) == true &&
         std::isfinite(LOW) == true &&
@@ -318,8 +318,8 @@ size_t ChartData::BinarySearch(const ChartDataVector& in, const ChartData& key) 
 //------------------------------------------------------------------------------
 ChartDataVector ChartData::DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block) {
     auto       month   = -1;
-    auto       current = gnu::Date::FromString(start_date.c_str());
-    auto const stop    = gnu::Date::FromString(stop_date.c_str());
+    auto       current = gnu::Date(start_date.c_str());
+    auto const stop    = gnu::Date(stop_date.c_str());
     auto       res     = ChartDataVector();
 
     if (range == ChartData::RANGE::FRIDAY) {
@@ -354,7 +354,7 @@ ChartDataVector ChartData::DateSerie(std::string start_date, std::string stop_da
         }
         else if (range == ChartData::RANGE::MONTH) {
             if (current.month() != month) {
-                current.day(current.month_days());
+                current.set_day_to_last_in_month();
                 date = gnu::Date(current);
                 month = current.month();
             }
@@ -397,18 +397,18 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
     for (const auto& data : in) {
         if (f == 0) {
             current = data;
-            stop = gnu::Date::FromString(current.date.c_str());
-            stop.day_last();
+            stop = gnu::Date(current.date.c_str());
+            stop.set_day_to_last_in_month();
         }
         else {
-            pdate = gnu::Date::FromString(data.date.c_str());
+            pdate = gnu::Date(data.date.c_str());
 
             if (stop < pdate) {
                 current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
                 res.push_back(current);
                 current = data;
-                stop = gnu::Date::FromString(current.date.c_str());
-                stop.day_last();
+                stop = gnu::Date(current.date.c_str());
+                stop.set_day_to_last_in_month();
             }
             else if (sum == true) {
                 current.high  += data.high;
@@ -430,7 +430,7 @@ ChartDataVector ChartData::DayToMonth(const ChartDataVector& in, bool sum) {
 
         if (f + 1 == in.size()) {
             auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
-            stop.day_last();
+            stop.set_day_to_last_in_month();
             current.date = s;
             res.push_back(current);
         }
@@ -451,20 +451,20 @@ ChartDataVector ChartData::DayToWeek(const ChartDataVector& in, gnu::Date::DAY w
 
     for (const auto& data : in) {
         if (f == 0) {
-            stop = gnu::Date::FromString(data.date.c_str());
+            stop = gnu::Date(data.date.c_str());
 
             if (weekday > stop.weekday()) {
-                stop.weekday(weekday);
+                stop.set_weekday(weekday);
             }
             else if (weekday < stop.weekday()) {
-                stop.weekday(weekday);
+                stop.set_weekday(weekday);
                 stop.add_days(7);
             }
 
             current = data;
         }
         else {
-            pdate = gnu::Date::FromString(data.date.c_str());
+            pdate = gnu::Date(data.date.c_str());
 
             if (stop < pdate) {
                 current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
@@ -1245,7 +1245,7 @@ std::optional<double> ChartScale::min() const {
  */
 
 //------------------------------------------------------------------------------
-Chart::Chart(int X, int Y, int W, int H, const char* l) : 
+Chart::Chart(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14),
 _CW(14) {
@@ -1836,7 +1836,6 @@ void Chart::_create_tooltip(bool ctrl) {
         return;
     }
 
-    auto const FORMAT    = (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) ? gnu::Date::FORMAT::NAME_TIME_LONG : gnu::Date::FORMAT::NAME_LONG;
     const int  STOP      = _date_start + _ticks;
     int        start     = _date_start;
     int        x1        = x() + _margin_left * _CH;
@@ -1853,12 +1852,17 @@ void Chart::_create_tooltip(bool ctrl) {
 
     while (start <= STOP && start < static_cast<int>(_dates.size())) {
         if (X >= x1 && X <= x1 + _tick_width - 1) { // Is mouse x pos inside current tick?
-            const std::string fancy_date = gnu::Date::FromString(_dates[start].date.c_str()).format(FORMAT);
-            const ChartLine*  line       = _area->selected_line();
+            const ChartLine* LINE = _area->selected_line();
+            const auto       DATE = gnu::Date(_dates[start].date);
+            std::string      date = DATE.format(gnu::Date::FORMAT::DAY_MONTH_YEAR);
 
-            _tooltip = fancy_date + "\n \n \n ";
+            if (_date_range == ChartData::RANGE::HOUR || _date_range == ChartData::RANGE::MIN || _date_range == ChartData::RANGE::SEC) {
+                 date += " - " + DATE.format(gnu::Date::FORMAT::TIME_LONG);
+            }
 
-            if (ctrl == false || line == nullptr || line->size() == 0 || line->is_visible() == false) { // Convert mouse pos to scale value.
+            _tooltip = date + "\n \n \n ";
+
+            if (ctrl == false || LINE == nullptr || LINE->size() == 0 || LINE->is_visible() == false) { // Convert mouse pos to scale value.
                 const double                Y_DIFF = static_cast<double>((y() + _area->rect().b()) - Y);
                 const std::optional<double> L_MIN  = _area->left_scale().min();
                 const std::optional<double> R_MIN  = _area->right_scale().min();
@@ -1876,27 +1880,27 @@ void Chart::_create_tooltip(bool ctrl) {
                 const int LEN = static_cast<int>(left.length() > right.length() ? left.length() : right.length());
 
                 if (left != "" && right != "") {
-                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n ", fancy_date.c_str(), LEN, left.c_str(), LEN, right.c_str());
+                    _tooltip = util::format("%s\nleft:  %*s\nright: %*s\n ", date.c_str(), LEN, left.c_str(), LEN, right.c_str());
                 }
                 else if (left != "") {
-                    _tooltip = util::format("%s\nleft: %*s\n \n ", fancy_date.c_str(), LEN, left.c_str());
+                    _tooltip = util::format("%s\nleft: %*s\n \n ", date.c_str(), LEN, left.c_str());
                 }
                 else if (right != "") {
-                    _tooltip = util::format("%s\nright: %*s\n \n ", fancy_date.c_str(), LEN, right.c_str());
+                    _tooltip = util::format("%s\nright: %*s\n \n ", date.c_str(), LEN, right.c_str());
                 }
             }
             else { // Use actual chart data.
-                const size_t index = ChartData::BinarySearch(line->data(), _dates[start]);
+                const size_t index = ChartData::BinarySearch(LINE->data(), _dates[start]);
 
                 if (index != (size_t) -1) {
-                    const int         DEC   = (line->align() == FL_ALIGN_RIGHT) ? right_dec : left_dec;
-                    const ChartData&  DATA  = line->data()[index];
+                    const int         DEC   = (LINE->align() == FL_ALIGN_RIGHT) ? right_dec : left_dec;
+                    const ChartData&  DATA  = LINE->data()[index];
                     const std::string HIGH  = util::format_double(DATA.high, DEC, '\'');
                     const std::string LOW   = util::format_double(DATA.low, DEC, '\'');
                     const std::string CLOSE = util::format_double(DATA.close, DEC, '\'');
                     const int         LEN   = static_cast<int>(LOW.length() > HIGH.length() ? LOW.length() : HIGH.length());
 
-                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", fancy_date.c_str(), LEN, HIGH.c_str(), LEN, CLOSE.c_str(), LEN, LOW.c_str());
+                    _tooltip = util::format("%s\nhigh:  %*s\nclose: %*s\nlow:   %*s", date.c_str(), LEN, HIGH.c_str(), LEN, CLOSE.c_str(), LEN, LOW.c_str());
                 }
             }
 
@@ -2256,37 +2260,38 @@ void Chart::_draw_tooltip() {
 
     fl_font(flw::PREF_FIXED_FONT, _CH);
 
+    int ch = fl_height();
     int x1 = Fl::event_x();
     int y1 = Fl::event_y();
-    int w1 = 14;
+    int w1 = 12;
     int h1 = 5;
 
-    if (x1 > _area->rect().r() - _CH * (w1 + 5)) {
-        x1 -= _CH * (w1 + 4);
+    if (x1 > _area->rect().r() - ch * (w1 + 5)) {
+        x1 -= ch * (w1 + 4);
     }
     else {
-        x1 += _CH * 2;
+        x1 += ch * 2;
     }
 
-    if (y1 > y() + h() - _CH * (h1 + 7)) {
-        y1 -= _CH * (h1 + 2);
+    if (y1 > y() + h() - ch * (h1 + 7)) {
+        y1 -= ch * (h1 + 2);
     }
     else {
-        y1 += _CH * 2;
+        y1 += ch * 2;
     }
 
     w1 += 3;
 
     fl_color(FL_BACKGROUND2_COLOR);
-    fl_rectf(x1, y1, _CH * w1, _CH * h1);
+    fl_rectf(x1, y1, ch * w1, ch * h1);
 
     fl_color(FL_FOREGROUND_COLOR);
-    fl_rect(x1, y1, _CH * w1, _CH * h1);
+    fl_rect(x1, y1, ch * w1, ch * h1);
 
     fl_line(Fl::event_x(), y() + _area->rect().y(), Fl::event_x(), y() + _area->rect().y() + _area->rect().h());
     fl_line(x() + _area->rect().x(), Fl::event_y(), x() + _area->rect().x() + _area->rect().w(), Fl::event_y());
-
-    fl_draw(_tooltip.c_str(), x1 + 4, y1, _CH * w1 - 8, _CH * h1, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+    fl_draw(_tooltip.c_str(), x1 + 4, y1 + 4, ch * w1 - 8, ch * h1, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | FL_ALIGN_TOP);
+    _FLW_CHART_DEBUG(fl_rect(x1 + 4, y1 + 4, ch * w1 - 8, ch * h1))
 }
 
 //------------------------------------------------------------------------------
@@ -2332,7 +2337,7 @@ void Chart::_draw_xlabels() {
     cw2 = fl_width("X");
 
     while (date_c <= DATE_END && date_c < static_cast<int>(_dates.size())) {
-        const auto date  = gnu::Date::FromString(_dates[date_c].date.c_str());
+        const auto date  = gnu::Date(_dates[date_c].date.c_str());
         bool       addv  = false;
         int        month = 1;
 
