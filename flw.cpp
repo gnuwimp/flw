@@ -4632,6 +4632,7 @@ bool Chart::load_json() {
     return load_json(filename);
 }
 bool Chart::load_json(std::string filename) {
+    _filename = "";
     clear();
     redraw();
     auto wc  = WaitCursor();
@@ -4733,6 +4734,7 @@ bool Chart::load_json(std::string filename) {
         else _FLW_CHART_ERROR(j)
     }
     init_new_data();
+    _filename = filename;
     return true;
 }
 bool Chart::_move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::AREA destination) {
@@ -10953,6 +10955,7 @@ bool Plot::load_json() {
     return load_json(filename);
 }
 bool Plot::load_json(std::string filename) {
+    _filename = "";
     clear();
     redraw();
     auto wc  = WaitCursor();
@@ -11042,6 +11045,7 @@ bool Plot::load_json(std::string filename) {
     set_min_y(clamp[2]);
     set_max_y(clamp[3]);
     init_new_data();
+    _filename = filename;
     return true;
 }
 void Plot::print() {

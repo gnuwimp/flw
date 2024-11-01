@@ -2750,6 +2750,8 @@ bool Chart::load_json() {
 
 //------------------------------------------------------------------------------
 bool Chart::load_json(std::string filename) {
+    _filename = "";
+    
     clear();
     redraw();
 
@@ -2864,6 +2866,7 @@ bool Chart::load_json(std::string filename) {
     }
 
     init_new_data();
+    _filename = filename;
     return true;
 }
 

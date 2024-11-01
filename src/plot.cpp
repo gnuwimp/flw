@@ -1535,6 +1535,7 @@ bool Plot::load_json() {
 
 //------------------------------------------------------------------------------
 bool Plot::load_json(std::string filename) {
+    _filename = "";
     clear();
     redraw();
 
@@ -1634,6 +1635,7 @@ bool Plot::load_json(std::string filename) {
     set_min_y(clamp[2]);
     set_max_y(clamp[3]);
     init_new_data();
+    _filename = filename;
     return true;
 }
 

@@ -357,6 +357,8 @@ public:
     void                        draw() override;
     void                        enable_menu()
                                     { _disable_menu = false; }
+    std::string                 filename() const
+                                    { return _filename; }
     int                         handle(int event) override;
     bool                        hor_lines() const
                                     { return _horizontal; }
@@ -463,6 +465,7 @@ private:
     int                         _ticks;                 // Number of ticks in the view.
     int                         _top_space;             // Top space from y() to first area in pixels.
     int                         _ver_pos[MAX_VLINES];   // Save x pos for vertical lines.
+    std::string                 _filename;              // Last used filename.
     std::string                 _label;                 // Top label.
     std::string                 _tooltip;               // For the popup tooltip when pressing lb inside area.
 };

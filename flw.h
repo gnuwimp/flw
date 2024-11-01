@@ -936,6 +936,8 @@ public:
     void                        draw() override;
     void                        enable_menu()
                                     { _disable_menu = false; }
+    std::string                 filename() const
+                                    { return _filename; }
     int                         handle(int event) override;
     bool                        hor_lines() const
                                     { return _horizontal; }
@@ -1038,6 +1040,7 @@ private:
     int                         _ticks;
     int                         _top_space;
     int                         _ver_pos[MAX_VLINES];
+    std::string                 _filename;
     std::string                 _label;
     std::string                 _tooltip;
 };
@@ -1635,6 +1638,8 @@ public:
     void                        draw() override;
     void                        enable_menu()
                                     { _disable_menu = false; }
+    std::string                 filename() const
+                                    { return _filename; }
     int                         handle(int event) override;
     void                        init()
                                     { _init(false); }
@@ -1714,6 +1719,7 @@ private:
     double                      _min_y;
     size_t                      _selected_line;
     size_t                      _selected_point;
+    std::string                 _filename;
     std::string                 _label;
     std::string                 _tooltip;
 };
