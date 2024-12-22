@@ -702,20 +702,15 @@ const char* Date::weekday_name_short() const {
     #define PATH_MAX 1050
 #endif
 namespace gnu {
+namespace file {
 static std::string _FILE_STDOUT_NAME = "";
 static std::string _FILE_STDERR_NAME = "";
 #ifdef _WIN32
 static char* _file_from_wide(const wchar_t* in) {
     auto out_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, nullptr, 0, nullptr, nullptr);
-    auto out     = File::Allocate(nullptr, out_len + 1);
+    auto out     = file::allocate(nullptr, out_len + 1);
     WideCharToMultiByte(CP_UTF8, 0, in, -1, (LPSTR) out, out_len, nullptr, nullptr);
     return (char*) out;
-}
-static wchar_t* _file_to_wide(const char* in) {
-    auto out_len = MultiByteToWideChar(CP_UTF8, 0, in , -1, nullptr , 0);
-    auto out     = reinterpret_cast<wchar_t*>(File::Allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
-    MultiByteToWideChar(CP_UTF8, 0, in , -1, out, out_len);
-    return out;
 }
 static int64_t _file_time(FILETIME* ft) {
     int64_t res = (int64_t) ft->dwHighDateTime << 32 | (int64_t) ft->dwLowDateTime;
@@ -723,18 +718,25 @@ static int64_t _file_time(FILETIME* ft) {
     res = res - 11644473600;
     return res;
 }
+static wchar_t* _file_to_wide(const char* in) {
+    auto out_len = MultiByteToWideChar(CP_UTF8, 0, in , -1, nullptr , 0);
+    auto out     = reinterpret_cast<wchar_t*>(file::allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
+    MultiByteToWideChar(CP_UTF8, 0, in , -1, out, out_len);
+    return out;
+}
 #endif
-static FileBuf _file_close_redirect(int type) {
+static std::string _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+static Buf _file_close_redirect(int type) {
     std::string fname;
     FILE* fhandle;
     if (type == 2) {
-        if (_FILE_STDERR_NAME == "") return FileBuf();
+        if (_FILE_STDERR_NAME == "") return Buf();
         fname = _FILE_STDERR_NAME;
         fhandle = stderr;
         _FILE_STDERR_NAME = "";
     }
     else {
-        if (_FILE_STDOUT_NAME == "") return FileBuf();
+        if (_FILE_STDOUT_NAME == "") return Buf();
         fname = _FILE_STDOUT_NAME;
         fhandle = stdout;
         _FILE_STDOUT_NAME = "";
@@ -747,8 +749,8 @@ static FileBuf _file_close_redirect(int type) {
     auto r = freopen("/dev/tty", "w", fhandle);
     (void) r;
 #endif
-    auto res = File::Read(fname);
-    File::Remove(fname);
+    auto res = file::read(fname);
+    file::remove(fname);
     return res;
 }
 static bool _file_open_redirect(int type) {
@@ -757,12 +759,12 @@ static bool _file_open_redirect(int type) {
     FILE* fhandle = nullptr;
     if (type == 2) {
         if (_FILE_STDERR_NAME != "") return res;
-        fname = _FILE_STDERR_NAME = File::TmpFile("stderr_").filename;
+        fname = _FILE_STDERR_NAME = file::tmp_file("stderr_").filename;
         fhandle = stderr;
     }
     else {
         if (_FILE_STDOUT_NAME != "") return res;
-        fname = _FILE_STDOUT_NAME = File::TmpFile("stdout_").filename;
+        fname = _FILE_STDOUT_NAME = file::tmp_file("stdout_").filename;
         fhandle = stdout;
     }
 #ifdef _WIN32
@@ -784,6 +786,41 @@ static int _file_rand() {
     INIT = true;
     return rand() % 10'000;
 }
+static void _file_read(std::string path, Buf& buf) {
+    assert(buf.p == nullptr && buf.s == 0);
+    File file(path);
+    if (file.is_file() == false || static_cast<long long unsigned int>(file.size) > SIZE_MAX) {
+        return;
+    }
+    auto out = file::allocate(nullptr, file.size + 1);
+    if (file.size == 0) {
+        buf.p = out;
+        return;
+    }
+    auto handle = file::open(file.filename, "rb");
+    if (handle == nullptr) {
+        free(out);
+        return;
+    }
+    else if (fread(out, 1, file.size, handle) != (size_t) file.size) {
+        fclose(handle);
+        free(out);
+    }
+    else {
+        fclose(handle);
+        buf.p = out;
+        buf.s = file.size;
+    }
+}
+static void _file_read_dir_rec(Files& res, Files& files) {
+    for (auto& file : files) {
+        res.push_back(file);
+        if (file.type == file::TYPE::DIR && file.link == false && file.is_circular() == false) {
+            auto v = file::read_dir(file.filename);
+            _file_read_dir_rec(res, v);
+        }
+    }
+}
 static std::string& _file_replace_all(std::string& string, const std::string& find, const std::string& replace) {
     if (find == "") {
         return string;
@@ -796,74 +833,6 @@ static std::string& _file_replace_all(std::string& string, const std::string& fi
         }
         return string;
     }
-}
-static std::string _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos) {
-    try { return in.substr(pos, size); }
-    catch(...) { return ""; }
-}
-static void _file_sync(FILE* file) {
-    if (file != nullptr) {
-#ifdef _WIN32
-        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
-        if (handle != INVALID_HANDLE_VALUE) {
-            FlushFileBuffers(handle);
-        }
-#else
-        fsync(fileno(file));
-#endif
-    }
-}
-static const std::string _file_to_absolute_path(const std::string& in, bool realpath) {
-    std::string res;
-    auto name = in;
-    if (name == "") {
-        return "";
-    }
-#ifdef _WIN32
-    if (name.find("\\\\") == 0) {
-        res = name;
-        return name;
-    }
-    else if (name.size() < 2 || name[1] != ':') {
-        auto work = File(File::WorkDir());
-        res = work.filename;
-        res += "\\";
-        res += name;
-    }
-    else {
-        res = name;
-    }
-    _file_replace_all(res, "\\", "/");
-    auto len = res.length();
-    _file_replace_all(res, "//", "/");
-    while (len > res.length()) {
-        len = res.length();
-        _file_replace_all(res, "//", "/");
-    }
-    while (res.size() > 3 && res.back() == '/') {
-        res.pop_back();
-    }
-#else
-    if (name[0] != '/') {
-        auto work = File(File::WorkDir());
-        res = work.filename;
-        res += "/";
-        res += name;
-    }
-    else {
-        res = name;
-    }
-    auto len = res.length();
-    _file_replace_all(res, "//", "/");
-    while (len > res.length()) {
-        len = res.length();
-        _file_replace_all(res, "//", "/");
-    }
-    while (res.size() > 1 && res.back() == '/') {
-        res.pop_back();
-    }
-#endif
-    return (realpath == true) ? File::CanonicalName(res) : res;
 }
 static void _file_split_paths(std::string filename, std::string& path, std::string& name, std::string& ext) {
     path = "";
@@ -914,106 +883,206 @@ static void _file_split_paths(std::string filename, std::string& path, std::stri
     }
 #endif
 }
-static void _file_read(std::string path, FileBuf& buf) {
-    File file(path);
-    if (file.is_file() == false || (long long unsigned int) file.size > SIZE_MAX) {
-        return;
+static std::string _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size) {
+    try { return in.substr(pos, size); }
+    catch(...) { return ""; }
+}
+static void _file_sync(FILE* file) {
+    if (file != nullptr) {
+#ifdef _WIN32
+        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
+        if (handle != INVALID_HANDLE_VALUE) {
+            FlushFileBuffers(handle);
+        }
+#else
+        fsync(fileno(file));
+#endif
     }
-    auto out = File::Allocate(nullptr, file.size + 1);
-    if (file.size == 0) {
-        buf.p = out;
-        return;
+}
+static const std::string _file_to_absolute_path(const std::string& in, bool realpath) {
+    std::string res;
+    auto name = in;
+    if (name == "") {
+        return "";
     }
-    auto handle = File::Open(file.filename, "rb");
-    if (handle == nullptr) {
-        free(out);
-        return;
+#ifdef _WIN32
+    if (name.find("\\\\") == 0) {
+        res = name;
+        return name;
     }
-    else if (fread(out, 1, file.size, handle) != (size_t) file.size) {
-        fclose(handle);
-        free(out);
+    else if (name.size() < 2 || name[1] != ':') {
+        auto work = File(file::work_dir());
+        res = work.filename;
+        res += "\\";
+        res += name;
     }
     else {
-        fclose(handle);
-        buf.p = out;
-        buf.s = file.size;
+        res = name;
     }
+    _file_replace_all(res, "\\", "/");
+    auto len = res.length();
+    _file_replace_all(res, "//", "/");
+    while (len > res.length()) {
+        len = res.length();
+        _file_replace_all(res, "//", "/");
+    }
+    while (res.size() > 3 && res.back() == '/') {
+        res.pop_back();
+    }
+#else
+    if (name[0] != '/') {
+        auto work = File(file::work_dir());
+        res = work.filename;
+        res += "/";
+        res += name;
+    }
+    else {
+        res = name;
+    }
+    auto len = res.length();
+    _file_replace_all(res, "//", "/");
+    while (len > res.length()) {
+        len = res.length();
+        _file_replace_all(res, "//", "/");
+    }
+    while (res.size() > 1 && res.back() == '/') {
+        res.pop_back();
+    }
+#endif
+    return (realpath == true) ? file::canonical_name(res) : res;
 }
-static void _file_read_dir_rec(FileVector& res, FileVector& files) {
-    for (auto& file : files) {
-        res.push_back(file);
-        if (file.type == File::TYPE::DIR && file.link == false && file.is_circular() == false) {
-            auto v = File::ReadDir(file.filename);
-            _file_read_dir_rec(res, v);
+char* allocate(char* resize_or_null, size_t size, bool exception) {
+    void* res = nullptr;
+    if (resize_or_null == nullptr) {
+        res = calloc(size, 1);
+    }
+    else {
+        res = realloc(resize_or_null, size);
+    }
+    if (res == nullptr && exception == true) {
+        throw "error: memory allocation failed in file::allocate()";
+    }
+    return (char*) res;
+}
+std::string canonical_name(std::string filename) {
+#if defined(_WIN32)
+    wchar_t wres[PATH_MAX];
+    auto    wpath = _file_to_wide(filename.c_str());
+    auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
+    if (len > 0 && len < PATH_MAX) {
+        auto cpath = _file_from_wide(wres);
+        auto res   = std::string(cpath);
+        free(cpath);
+        free(wpath);
+        _file_replace_all(res, "\\", "/");
+        return res;
+    }
+    else {
+        free(wpath);
+        return filename;
+    }
+#elif defined(__linux__)
+    auto path = ::canonicalize_file_name(filename.c_str());
+    auto res  = (path != nullptr) ? std::string(path) : filename;
+    free(path);
+    return res;
+#else
+    auto path = ::realpath(filename.c_str(), nullptr);
+    auto res  = (path != nullptr) ? std::string(path) : filename;
+    free(path);
+    return res;
+#endif
+    return "";
+}
+bool chdir(std::string path) {
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    auto res   = _wchdir(wpath);
+    free(wpath);
+    return res == 0;
+#else
+    return ::chdir(path.c_str()) == 0;
+#endif
+}
+std::string check_filename(std::string filename) {
+    static const std::string ILLEGAL = "<>:\"/\\|?*\n\t\r";
+    std::string res;
+    for (auto& c : filename) {
+        if (ILLEGAL.find(c) == std::string::npos) {
+            res += c;
         }
     }
+    return res;
 }
-FileBuf::FileBuf(size_t S) {
-    p = File::Allocate(nullptr, S + 1);
-    s = S;
-}
-FileBuf::FileBuf(const char* P, size_t S) {
-    if (P == nullptr) {
-        p = nullptr;
-        s = 0;
-        return;
+bool chmod(std::string path, int mode) {
+    auto res = false;
+    if (mode < 0) {
+        return false;
     }
-    p = File::Allocate(nullptr, S + 1);
-    s = S;
-    std::memcpy(p, P, S);
+#ifdef _WIN32
+    auto wpath = _file_to_wide(path.c_str());
+    res = SetFileAttributesW(wpath, mode);
+    free(wpath);
+#else
+    res = ::chmod(path.c_str(), mode) == 0;
+#endif
+    return res;
 }
-FileBuf::FileBuf(const FileBuf& b) {
-    if (b.p == nullptr) {
-        p = nullptr;
-        s = 0;
-        return;
-    }
-    p = File::Allocate(nullptr, b.s + 1);
-    s = b.s;
-    std::memcpy(p, b.p, b.s);
+Buf close_stderr() {
+    return _file_close_redirect(2);
 }
-bool FileBuf::operator==(const FileBuf& other) const {
-    return p != nullptr && s == other.s && std::memcmp(p, other.p, s) == 0;
+Buf close_stdout() {
+    return _file_close_redirect(1);
 }
-FileBuf& FileBuf::add(const char* P, size_t S) {
-    if (p == P || P == nullptr) {
+bool copy(std::string from, std::string to, CallbackCopy callback, void* data) {
+#ifdef DEBUG
+    static const size_t BUF_SIZE = 16384;
+#else
+    static const size_t BUF_SIZE = 131072;
+#endif
+    auto file1 = File(from);
+    auto file2 = File(to);
+    if (file1 == file2) {
+        return false;
     }
-    else if (p == nullptr) {
-        p = File::Allocate(nullptr, S + 1);
-        std::memcpy(p, P, S);
-        s = S;
-    }
-    else if (S > 0) {
-        auto t = File::Allocate(nullptr, s + S + 1);
-        std::memcpy(t, p, s);
-        std::memcpy(t + s, P, S);
-        free(p);
-        p = t;
-        s += S;
-    }
-    return *this;
-}
-void FileBuf::Count(const char* P, size_t S, size_t count[257]) {
-    assert(P);
-    auto max_line     = 0;
-    auto current_line = 0;
-    std::memset(count, 0, sizeof(size_t) * 257);
-    for (size_t f = 0; f < S; f++) {
-        auto c = (unsigned char) P[f];
-        count[c] += 1;
-        if (current_line > max_line) {
-            max_line = current_line;
+    auto buf   = file::allocate(nullptr, BUF_SIZE);
+    auto read  = file::open(from, "rb");
+    auto write = file::open(to, "wb");
+    auto count = static_cast<int64_t>(0);
+    auto size  = static_cast<size_t>(0);
+    if (read == nullptr || write == nullptr) {
+        if (read != nullptr) {
+            fclose(read);
         }
-        if (c == 0 ||c == 10 || c == 13) {
-            current_line = 0;
+        if (write != nullptr) {
+            fclose(write);
+            file::remove(to);
         }
-        else {
-            current_line++;
+        free(buf);
+        return false;
+    }
+    while ((size = fread(buf, 1, BUF_SIZE, read)) > 0) {
+        if (fwrite(buf, 1, size, write) != size) {
+            break;
+        }
+        count += size;
+        if (callback != nullptr && callback(file1.size, count, data) == false && count != file1.size) {
+            break;
         }
     }
-    count[256] = max_line;
+    fclose(read);
+    _file_sync(write);
+    fclose(write);
+    free(buf);
+    if (count != file1.size) {
+        file::remove(to);
+        return false;
+    }
+    file::mod_time(to, file1.mtime);
+    file::chmod(to, file1.mode);
+    return true;
 }
-uint64_t FileBuf::Fletcher64(const char* P, size_t S) {
+uint64_t fletcher64(const char* P, size_t S) {
     if (P == nullptr || S == 0) {
         return 0;
     }
@@ -1039,213 +1108,7 @@ uint64_t FileBuf::Fletcher64(const char* P, size_t S) {
     }
     return (sum2 << 32) | sum1;
 }
-FileBuf FileBuf::InsertCR(const char* P, size_t S, bool dos, bool trailing) {
-    if (P == nullptr || S == 0 || (trailing == false && dos == false)) {
-        return FileBuf();
-    }
-    auto res_size = S;
-    if (dos == true) {
-        for (size_t f = 0; f < S; f++) {
-            res_size += (P[f] == '\n');
-        }
-    }
-    auto res     = File::Allocate(nullptr, res_size + 1);
-    auto restart = std::string::npos;
-    auto res_pos = (size_t) 0;
-    auto p       = (unsigned char) 0;
-    for (size_t f = 0; f < S; f++) {
-        auto c = (unsigned char) P[f];
-        if (trailing == true) {
-            if (c == '\n') {
-                if (restart != std::string::npos) {
-                    res_pos = restart;
-                }
-                restart = std::string::npos;
-            }
-            else if (restart == std::string::npos && (c == ' ' || c == '\t')) {
-                restart = res_pos;
-            }
-            else if (c != ' ' && c != '\t') {
-                restart = std::string::npos;
-            }
-        }
-        if (dos == true && c == '\n' && p != '\r') {
-            res[res_pos++] = '\r';
-        }
-        res[res_pos++] = c;
-        p = c;
-    }
-    res[res_pos] = 0;
-    if (restart != std::string::npos) {
-        res[restart] = 0;
-        res_pos = restart;
-    }
-    return FileBuf::Grab(res, res_pos);
-}
-FileBuf FileBuf::RemoveCR(const char* P, size_t S) {
-    auto res = FileBuf(S);
-    for (size_t f = 0, e = 0; f < S; f++) {
-        auto c = P[f];
-        if (c != 13) {
-            res.p[e++] = c;
-        }
-        else {
-            res.s--;
-        }
-    }
-    return res;
-}
-FileBuf& FileBuf::set(const char* P, size_t S) {
-    if (p == P) {
-    }
-    else if (P == nullptr) {
-        free(p);
-        p = nullptr;
-        s = 0;
-    }
-    else {
-        free(p);
-        p = File::Allocate(nullptr, S + 1);
-        s = S;
-        std::memcpy(p, P, S);
-    }
-    return *this;
-}
-bool FileBuf::write(std::string filename) const {
-    return File::Write(filename, p, s);
-}
-char* File::Allocate(char* resize_or_null, size_t size, bool exception) {
-    void* res = nullptr;
-    if (resize_or_null == nullptr) {
-        res = calloc(size, 1);
-    }
-    else {
-        res = realloc(resize_or_null, size);
-    }
-    if (res == nullptr && exception == true) {
-        throw "error: memory allocation failed in File::Allocate()";
-    }
-    return (char*) res;
-}
-std::string File::CanonicalName(std::string filename) {
-#if defined(_WIN32)
-    wchar_t wres[PATH_MAX];
-    auto    wpath = _file_to_wide(filename.c_str());
-    auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
-    if (len > 0 && len < PATH_MAX) {
-        auto cpath = _file_from_wide(wres);
-        auto res   = std::string(cpath);
-        free(cpath);
-        free(wpath);
-        _file_replace_all(res, "\\", "/");
-        return res;
-    }
-    else {
-        free(wpath);
-        return filename;
-    }
-#elif defined(__linux__)
-    auto path = canonicalize_file_name(filename.c_str());
-    auto res  = (path != nullptr) ? std::string(path) : filename;
-    free(path);
-    return res;
-#else
-    auto path = realpath(filename.c_str(), nullptr);
-    auto res  = (path != nullptr) ? std::string(path) : filename;
-    free(path);
-    return res;
-#endif
-    return "";
-}
-bool File::ChDir(std::string path) {
-#ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
-    auto res   = _wchdir(wpath);
-    free(wpath);
-    return res == 0;
-#else
-    return ::chdir(path.c_str()) == 0;
-#endif
-}
-std::string File::CheckFilename(std::string filename) {
-    static const std::string ILLEGAL = "<>:\"/\\|?*\n\t\r";
-    std::string res;
-    for (auto& c : filename) {
-        if (ILLEGAL.find(c) == std::string::npos) {
-            res += c;
-        }
-    }
-    return res;
-}
-bool File::ChMod(std::string path, int mode) {
-    auto res = false;
-    if (mode < 0) {
-        return false;
-    }
-#ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
-    res = SetFileAttributesW(wpath, mode);
-    free(wpath);
-#else
-    res = ::chmod(path.c_str(), mode) == 0;
-#endif
-    return res;
-}
-FileBuf File::CloseStderr() {
-    return _file_close_redirect(2);
-}
-FileBuf File::CloseStdout() {
-    return _file_close_redirect(1);
-}
-bool File::Copy(std::string from, std::string to, CallbackCopy callback, void* data) {
-#ifdef DEBUG
-    static const size_t BUF_SIZE = 16384;
-#else
-    static const size_t BUF_SIZE = 131072;
-#endif
-    auto file1 = File(from);
-    auto file2 = File(to);
-    if (file1 == file2) {
-        return false;
-    }
-    auto buf   = File::Allocate(nullptr, BUF_SIZE);
-    auto read  = File::Open(from, "rb");
-    auto write = File::Open(to, "wb");
-    auto count = (int64_t) 0;
-    auto size  = (size_t) 0;
-    if (read == nullptr || write == nullptr) {
-        if (read != nullptr) {
-            fclose(read);
-        }
-        if (write != nullptr) {
-            fclose(write);
-            File::Remove(to);
-        }
-        free(buf);
-        return false;
-    }
-    while ((size = fread(buf, 1, BUF_SIZE, read)) > 0) {
-        if (fwrite(buf, 1, size, write) != size) {
-            break;
-        }
-        count += size;
-        if (callback != nullptr && callback(file1.size, count, data) == false && count != file1.size) {
-            break;
-        }
-    }
-    fclose(read);
-    _file_sync(write);
-    fclose(write);
-    free(buf);
-    if (count != file1.size) {
-        File::Remove(to);
-        return false;
-    }
-    File::ModTime(to, file1.mtime);
-    File::ChMod(to, file1.mode);
-    return true;
-}
-File File::HomeDir() {
+File home_dir() {
     std::string res;
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX];
@@ -1260,38 +1123,18 @@ File File::HomeDir() {
 #endif
     return File(res);
 }
-bool File::is_circular() const {
-    if (type == TYPE::DIR && link == true) {
-        auto l = canonicalname() + "/";
-        return filename.find(l) == 0;
-    }
-    return false;
-}
-std::string File::linkname() const {
-#ifdef _WIN32
-    return "";
-#else
-    char tmp[PATH_MAX + 1];
-    auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
-    if (tmp_size > 0 && tmp_size < PATH_MAX) {
-        tmp[tmp_size] = 0;
-        return path + "/" + tmp;
-    }
-    return "";
-#endif
-}
-bool File::MkDir(std::string path) {
+bool mkdir(std::string path) {
     bool res = false;
 #ifdef _WIN32
     auto wpath = _file_to_wide(path.c_str());
     res = _wmkdir(wpath) == 0;
     free(wpath);
 #else
-    res = ::mkdir(path.c_str(), File::DEFAULT_DIR_MODE) == 0;
+    res = ::mkdir(path.c_str(), file::DEFAULT_DIR_MODE) == 0;
 #endif
     return res;
 }
-bool File::ModTime(std::string path, int64_t time) {
+bool mod_time(std::string path, int64_t time) {
     auto res = false;
 #ifdef _WIN32
     auto wpath  = _file_to_wide(path.c_str());
@@ -1317,11 +1160,7 @@ bool File::ModTime(std::string path, int64_t time) {
 #endif
     return res;
 }
-std::string File::name_without_ext() const {
-    auto dot = name.find_last_of(".");
-    return (dot == std::string::npos) ? name : name.substr(0, dot);
-}
-FILE* File::Open(std::string path, std::string mode) {
+FILE* open(std::string path, std::string mode) {
     FILE* res = nullptr;
 #ifdef _WIN32
     auto wpath = _file_to_wide(path.c_str());
@@ -1334,7 +1173,7 @@ FILE* File::Open(std::string path, std::string mode) {
 #endif
     return res;
 }
-std::string File::OS() {
+std::string os() {
 #if defined(_WIN32)
     return "windows";
 #elif defined(__APPLE__)
@@ -1347,7 +1186,7 @@ std::string File::OS() {
     return "unknown";
 #endif
 }
-FILE* File::Popen(std::string cmd, bool write) {
+FILE* popen(std::string cmd, bool write) {
     FILE* file = nullptr;
 #ifdef _WIN32
     auto wpath = _file_to_wide(cmd.c_str());
@@ -1361,19 +1200,19 @@ FILE* File::Popen(std::string cmd, bool write) {
 #endif
     return file;
 }
-FileBuf File::Read(std::string path) {
-    FileBuf buf;
+Buf read(std::string path) {
+    Buf buf;
     _file_read(path, buf);
     return buf;
 }
-FileBuf* File::Read2(std::string path) {
-    auto buf = new FileBuf();
+Buf* read2(std::string path) {
+    auto buf = new Buf();
     _file_read(path, *buf);
     return buf;
 }
-FileVector File::ReadDir(std::string path) {
+Files read_dir(std::string path) {
     auto file = File(path, true);
-    auto res  = FileVector();
+    auto res  = Files();
     if (file.type != TYPE::DIR) {
         return res;
     }
@@ -1415,19 +1254,19 @@ FileVector File::ReadDir(std::string path) {
     std::sort(res.begin(), res.end());
     return res;
 }
-FileVector File::ReadDirRec(std::string path) {
-    auto res   = FileVector();
-    auto files = File::ReadDir(path);
+Files read_dir_rec(std::string path) {
+    auto res   = Files();
+    auto files = file::read_dir(path);
     _file_read_dir_rec(res, files);
     return res;
 }
-bool File::RedirectStderr() {
+bool redirect_stderr() {
     return _file_open_redirect(2);
 }
-bool File::RedirectStdout() {
+bool redirect_stdout() {
     return _file_open_redirect(1);
 }
-bool File::Remove(std::string path) {
+bool remove(std::string path) {
     auto f = File(path);
     if (f.type == TYPE::MISSING && f.link == false) {
         return false;
@@ -1443,11 +1282,11 @@ bool File::Remove(std::string path) {
     }
     if (res == false) {
         if (f.type == TYPE::DIR) {
-            File::ChMod(path, File::DEFAULT_DIR_MODE);
+            file::chmod(path, file::DEFAULT_DIR_MODE);
             res = RemoveDirectoryW(wpath);
         }
         else {
-            File::ChMod(path, File::DEFAULT_FILE_MODE);
+            file::chmod(path, file::DEFAULT_FILE_MODE);
             res = DeleteFileW(wpath);
         }
     }
@@ -1462,19 +1301,19 @@ bool File::Remove(std::string path) {
 #endif
     return res;
 }
-bool File::RemoveRec(std::string path) {
+bool remove_rec(std::string path) {
     auto file = File(path, true);
-    if (file == File::HomeDir() || file.path == "") {
+    if (file == file::home_dir() || file.path == "") {
         return false;
     }
-    auto files = File::ReadDirRec(path);
+    auto files = file::read_dir_rec(path);
     std::reverse(files.begin(), files.end());
     for (const auto& file : files) {
-        File::Remove(file.filename);
+        file::remove(file.filename);
     }
-    return File::Remove(path);
+    return file::remove(path);
 }
-bool File::Rename(std::string from, std::string to) {
+bool rename(std::string from, std::string to) {
     auto res    = false;
     auto from_f = File(from);
     auto to_f   = File(to);
@@ -1485,7 +1324,7 @@ bool File::Rename(std::string from, std::string to) {
     auto wfrom = _file_to_wide(from_f.filename.c_str());
     auto wto   = _file_to_wide(to_f.filename.c_str());
     if (to_f.type == TYPE::DIR) {
-        File::RemoveRec(to_f.filename);
+        file::remove_rec(to_f.filename);
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
     }
     else if (to_f.type == TYPE::MISSING) {
@@ -1498,13 +1337,13 @@ bool File::Rename(std::string from, std::string to) {
     free(wto);
 #else
     if (to_f.type == TYPE::DIR) {
-        File::RemoveRec(to_f.filename);
+        file::remove_rec(to_f.filename);
     }
     res = ::rename(from_f.filename.c_str(), to_f.filename.c_str()) == 0;
 #endif
     return res;
 }
-int File::Run(std::string cmd, bool background, bool hide_win32_window) {
+int run(std::string cmd, bool background, bool hide_win32_window) {
 #ifdef _WIN32
     wchar_t*            cmd_w = _file_to_wide(cmd.c_str());
     STARTUPINFOW        startup_info;
@@ -1538,7 +1377,7 @@ int File::Run(std::string cmd, bool background, bool hide_win32_window) {
     return system(cmd2.c_str());
 #endif
 }
-File File::TmpDir() {
+File tmp_dir() {
     std::string res;
     try {
 #if defined(_WIN32)
@@ -1554,44 +1393,223 @@ File File::TmpDir() {
 #endif
     }
     catch(...) {
-        return File::WorkDir();
+        return file::work_dir();
     }
     return File(res);
 }
-File File::TmpFile(std::string prepend) {
+File tmp_file(std::string prepend) {
     assert(prepend.length() < 50);
     char buf[100];
     snprintf(buf, 100, "%s%04d%04d%04d", prepend.c_str(), _file_rand(), _file_rand(), _file_rand());
-    return File(TmpDir().filename + "/" + buf);
+    return File(tmp_dir().filename + "/" + buf);
 }
-std::string File::to_string(bool short_version) const {
-    char tmp[PATH_MAX + 100];
-    int n = 0;
-    if (short_version == true) {
-        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, type=%s, %ssize=%lld, mtime=%lld)",
-            filename.c_str(),
-            type_name().c_str(),
-            link ? "LINK, " : "",
-            (long long int) size,
-            (long long int) mtime);
+File work_dir() {
+    std::string res;
+#ifdef _WIN32
+    auto wpath = _wgetcwd(nullptr, 0);
+    if (wpath != nullptr) {
+        auto path = _file_from_wide(wpath);
+        free(wpath);
+        res = path;
+        free(path);
+    }
+#else
+    auto path = getcwd(nullptr, 0);
+    if (path != nullptr) {
+        res = path;
+        free(path);
+    }
+#endif
+    return File(res);
+}
+bool write(std::string filename, const char* in, size_t in_size) {
+    if (File(filename).type == TYPE::DIR) {
+        return false;
+    }
+    auto tmpfile = filename + ".~tmp";
+    auto file    = file::open(tmpfile, "wb");
+    if (file == nullptr) {
+        return false;
+    }
+    auto wrote = fwrite(in, 1, in_size, file);
+    _file_sync(file);
+    fclose(file);
+    if (wrote != in_size) {
+        file::remove(tmpfile);
+        return false;
+    }
+    else if (file::rename(tmpfile, filename) == false) {
+        file::remove(tmpfile);
+        return false;
+    }
+    return true;
+}
+bool write(std::string filename, const Buf& b) {
+    return write(filename, b.p, b.s);
+}
+Buf::Buf(size_t S) {
+    p = file::allocate(nullptr, S + 1);
+    s = S;
+}
+Buf::Buf(const char* P, size_t S) {
+    if (P == nullptr) {
+        p = nullptr;
+        s = 0;
+        return;
+    }
+    p = file::allocate(nullptr, S + 1);
+    s = S;
+    std::memcpy(p, P, S);
+}
+Buf::Buf(const Buf& b) {
+    if (b.p == nullptr) {
+        p = nullptr;
+        s = 0;
+        return;
+    }
+    p = file::allocate(nullptr, b.s + 1);
+    s = b.s;
+    std::memcpy(p, b.p, b.s);
+}
+bool Buf::operator==(const Buf& other) const {
+    return p != nullptr && s == other.s && std::memcmp(p, other.p, s) == 0;
+}
+Buf& Buf::add(const char* P, size_t S) {
+    if (p == P || P == nullptr) {
+    }
+    else if (p == nullptr) {
+        p = file::allocate(nullptr, S + 1);
+        std::memcpy(p, P, S);
+        s = S;
+    }
+    else if (S > 0) {
+        auto t = file::allocate(nullptr, s + S + 1);
+        std::memcpy(t, p, s);
+        std::memcpy(t + s, P, S);
+        free(p);
+        p = t;
+        s += S;
+    }
+    return *this;
+}
+void Buf::Count(const char* P, size_t S, size_t count[257]) {
+    assert(P);
+    auto max_line     = 0;
+    auto current_line = 0;
+    std::memset(count, 0, sizeof(size_t) * 257);
+    for (size_t f = 0; f < S; f++) {
+        auto c = (unsigned char) P[f];
+        count[c] += 1;
+        if (current_line > max_line) {
+            max_line = current_line;
+        }
+        if (c == 0 ||c == 10 || c == 13) {
+            current_line = 0;
+        }
+        else {
+            current_line++;
+        }
+    }
+    count[256] = max_line;
+}
+Buf Buf::InsertCR(const char* P, size_t S, bool dos, bool trailing) {
+    if (P == nullptr || S == 0 || (trailing == false && dos == false)) {
+        return Buf();
+    }
+    auto res_size = S;
+    if (dos == true) {
+        for (size_t f = 0; f < S; f++) {
+            res_size += (P[f] == '\n');
+        }
+    }
+    auto res     = file::allocate(nullptr, res_size + 1);
+    auto restart = std::string::npos;
+    auto res_pos = (size_t) 0;
+    auto p       = (unsigned char) 0;
+    for (size_t f = 0; f < S; f++) {
+        auto c = (unsigned char) P[f];
+        if (trailing == true) {
+            if (c == '\n') {
+                if (restart != std::string::npos) {
+                    res_pos = restart;
+                }
+                restart = std::string::npos;
+            }
+            else if (restart == std::string::npos && (c == ' ' || c == '\t')) {
+                restart = res_pos;
+            }
+            else if (c != ' ' && c != '\t') {
+                restart = std::string::npos;
+            }
+        }
+        if (dos == true && c == '\n' && p != '\r') {
+            res[res_pos++] = '\r';
+        }
+        res[res_pos++] = c;
+        p = c;
+    }
+    res[res_pos] = 0;
+    if (restart != std::string::npos) {
+        res[restart] = 0;
+        res_pos = restart;
+    }
+    return Buf::Grab(res, res_pos);
+}
+Buf Buf::RemoveCR(const char* P, size_t S) {
+    auto res = Buf(S);
+    for (size_t f = 0, e = 0; f < S; f++) {
+        auto c = P[f];
+        if (c != 13) {
+            res.p[e++] = c;
+        }
+        else {
+            res.s--;
+        }
+    }
+    return res;
+}
+Buf& Buf::set(const char* P, size_t S) {
+    if (p == P) {
+    }
+    else if (P == nullptr) {
+        free(p);
+        p = nullptr;
+        s = 0;
     }
     else {
-        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, name=%s, ext=%s, path=%s, type=%s, link=%s, size=%lld, mtime=%lld, mode=%o)",
-            filename.c_str(),
-            name.c_str(),
-            ext.c_str(),
-            path.c_str(),
-            type_name().c_str(),
-            link ? "YES" : "NO",
-            (long long int) size,
-            (long long int) mtime,
-            mode > 0 ? mode : 0);
+        free(p);
+        p = file::allocate(nullptr, S + 1);
+        s = S;
+        std::memcpy(p, P, S);
     }
-    return (n > 0 && n < PATH_MAX + 100) ? tmp : "";
+    return *this;
 }
-std::string File::type_name() const {
-    static const char* NAMES[] = { "Missing", "Directory", "File", "Other", "", };
-    return NAMES[static_cast<size_t>(type)];
+bool Buf::write(std::string filename) const {
+    return file::write(filename, p, s);
+}
+bool File::is_circular() const {
+    if (type == TYPE::DIR && link == true) {
+        auto l = canonical_name() + "/";
+        return filename.find(l) == 0;
+    }
+    return false;
+}
+std::string File::linkname() const {
+#ifdef _WIN32
+    return "";
+#else
+    char tmp[PATH_MAX + 1];
+    auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
+    if (tmp_size > 0 && tmp_size < PATH_MAX) {
+        tmp[tmp_size] = 0;
+        return path + "/" + tmp;
+    }
+    return "";
+#endif
+}
+std::string File::name_without_ext() const {
+    auto dot = name.find_last_of(".");
+    return (dot == std::string::npos) ? name : name.substr(0, dot);
 }
 File& File::update() {
     ctime = -1;
@@ -1674,46 +1692,35 @@ File& File::update(std::string in, bool realpath) {
     update();
     return *this;
 }
-File File::WorkDir() {
-    std::string res;
-#ifdef _WIN32
-    auto wpath = _wgetcwd(nullptr, 0);
-    if (wpath != nullptr) {
-        auto path = _file_from_wide(wpath);
-        free(wpath);
-        res = path;
-        free(path);
+std::string File::to_string(bool short_version) const {
+    char tmp[PATH_MAX + 100];
+    int n = 0;
+    if (short_version == true) {
+        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, type=%s, %ssize=%lld, mtime=%lld)",
+            filename.c_str(),
+            type_name().c_str(),
+            link ? "LINK, " : "",
+            (long long int) size,
+            (long long int) mtime);
     }
-#else
-    auto path = getcwd(nullptr, 0);
-    if (path != nullptr) {
-        res = path;
-        free(path);
+    else {
+        n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, name=%s, ext=%s, path=%s, type=%s, link=%s, size=%lld, mtime=%lld, mode=%o)",
+            filename.c_str(),
+            name.c_str(),
+            ext.c_str(),
+            path.c_str(),
+            type_name().c_str(),
+            link ? "YES" : "NO",
+            (long long int) size,
+            (long long int) mtime,
+            mode > 0 ? mode : 0);
     }
-#endif
-    return File(res);
+    return (n > 0 && n < PATH_MAX + 100) ? tmp : "";
 }
-bool File::Write(std::string filename, const char* in, size_t in_size) {
-    if (File(filename).type == TYPE::DIR) {
-        return false;
-    }
-    auto tmpfile = filename + ".~tmp";
-    auto file    = File::Open(tmpfile, "wb");
-    if (file == nullptr) {
-        return false;
-    }
-    auto wrote = fwrite(in, 1, in_size, file);
-    _file_sync(file);
-    fclose(file);
-    if (wrote != in_size) {
-        File::Remove(tmpfile);
-        return false;
-    }
-    else if (File::Rename(tmpfile, filename) == false) {
-        File::Remove(tmpfile);
-        return false;
-    }
-    return true;
+std::string File::type_name() const {
+    static const char* NAMES[] = { "Missing", "Directory", "File", "Other", "", };
+    return NAMES[static_cast<size_t>(type)];
+}
 }
 }
 #include <cmath>
@@ -2949,7 +2956,7 @@ ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
     return res;
 }
 ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
     if (buf.s < 10) {
         return ChartDataVector();
     }
@@ -3078,7 +3085,7 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
         snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::JS::FormatNumber(data.high).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.low).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.close).c_str());
         csv += buffer;
     }
-    return gnu::File::Write(filename, csv.c_str(), csv.size());
+    return gnu::file::write(filename, csv.c_str(), csv.size());
 }
 ChartDataVector ChartData::StdDev(const ChartDataVector& in, size_t days) {
     ChartDataVector res;
@@ -4636,7 +4643,7 @@ bool Chart::load_json(std::string filename) {
     clear();
     redraw();
     auto wc  = WaitCursor();
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
@@ -4854,7 +4861,7 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 }
             jsb.end();
         auto js = jsb.encode();
-        return gnu::File::Write(filename, js.c_str(), js.length());
+        return gnu::file::write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -9873,7 +9880,7 @@ void PlotData::Debug(const PlotDataVector& in) {
 #endif
 }
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
     if (buf.s < 3) {
         return PlotDataVector();
     }
@@ -9982,7 +9989,7 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
         snprintf(buffer, 256, "%s%s%s\n", gnu::JS::FormatNumber(data.x).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.y).c_str());
         csv += buffer;
     }
-    return gnu::File::Write(filename, csv.c_str(), csv.size());
+    return gnu::file::write(filename, csv.c_str(), csv.size());
 }
 PlotDataVector PlotData::Swap(const PlotDataVector& in) {
     PlotDataVector res;
@@ -10959,7 +10966,7 @@ bool Plot::load_json(std::string filename) {
     clear();
     redraw();
     auto wc  = WaitCursor();
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
@@ -11130,7 +11137,7 @@ bool Plot::save_json(std::string filename) {
                 }
             }
         auto js = jsb.encode();
-        return gnu::File::Write(filename, js.c_str(), js.length());
+        return gnu::file::write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

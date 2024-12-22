@@ -572,7 +572,7 @@ ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
 
 //------------------------------------------------------------------------------
 ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
 
     if (buf.s < 10) {
         return ChartDataVector();
@@ -740,7 +740,7 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
         csv += buffer;
     }
 
-    return gnu::File::Write(filename, csv.c_str(), csv.size());
+    return gnu::file::write(filename, csv.c_str(), csv.size());
 }
 
 //------------------------------------------------------------------------------
@@ -2756,7 +2756,7 @@ bool Chart::load_json(std::string filename) {
     redraw();
 
     auto wc  = WaitCursor();
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
@@ -3013,7 +3013,7 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
             jsb.end();
 
         auto js = jsb.encode();
-        return gnu::File::Write(filename, js.c_str(), js.length());
+        return gnu::file::write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());

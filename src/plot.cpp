@@ -123,7 +123,7 @@ void PlotData::Debug(const PlotDataVector& in) {
 
 //------------------------------------------------------------------------------
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
 
     if (buf.s < 3) {
         return PlotDataVector();
@@ -259,7 +259,7 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
         csv += buffer;
     }
 
-    return gnu::File::Write(filename, csv.c_str(), csv.size());
+    return gnu::file::write(filename, csv.c_str(), csv.size());
 }
 
 //------------------------------------------------------------------------------
@@ -1540,7 +1540,7 @@ bool Plot::load_json(std::string filename) {
     redraw();
 
     auto wc  = WaitCursor();
-    auto buf = gnu::File::Read(filename);
+    auto buf = gnu::file::read(filename);
 
     if (buf.p == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
@@ -1739,7 +1739,7 @@ bool Plot::save_json(std::string filename) {
             }
 
         auto js = jsb.encode();
-        return gnu::File::Write(filename, js.c_str(), js.length());
+        return gnu::file::write(filename, js.c_str(), js.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
