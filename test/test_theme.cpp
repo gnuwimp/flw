@@ -533,14 +533,7 @@ int main(int argc, const char** argv) {
     flw::theme::parse(argc, argv);
     flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
     flw::theme::load_theme_pref(pref);
-    if (argc > 1) {
-        FLW_LINE
-        flw::theme::load_win_pref(pref, &win, theme::SHOW::BEFORE_RESIZE);
-    }
-    else {
-        FLW_LINE
-        flw::theme::load_win_pref(pref, &win, theme::SHOW::AFTER_RESIZE);
-    }
+    flw::theme::load_win_pref(pref, &win, true);
     win.create();
     win.update_pref();
     Fl::run();

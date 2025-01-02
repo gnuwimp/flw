@@ -42,9 +42,9 @@ public:
         menu->add("&File/Open...",                     FL_COMMAND + 'o',           Test::Callback, this);
         insert_recent = new flw::RecentMenu(menu, CallbackInsert, this);
         insert_recent->max_items(5);
-        menu->add("&File/Save",                        FL_COMMAND + 's',           Test::Callback, this);
         add_recent = new flw::RecentMenu(menu, CallbackAdd, this, "&File/Open recent (add)");
         add_recent->max_items(5);
+        menu->add("&File/Save",                        FL_COMMAND + 's',           Test::Callback, this);
         menu->add("&File/Close",                       0,                          Test::Callback, this);
         menu->add("&File/Quit",                        FL_COMMAND + 'q',           Test::Callback, this);
 
@@ -53,14 +53,14 @@ public:
         callback(Test::Callback, this);
         show();
 
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_recentmenu");
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_recentmenu");
         insert_recent->load_pref(pref);
         add_recent->load_pref(pref, "files2");
     }
 
     //------------------------------------------------------------------------------
     ~Test() {
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp", "test_recentmenu");
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_recentmenu");
         pref.clear();
         insert_recent->save_pref(pref);
         add_recent->save_pref(pref, "files2");

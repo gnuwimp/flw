@@ -1388,20 +1388,18 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
 }
 
 //------------------------------------------------------------------------------
-// Load window size
+// Load window size.
 //
-void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, SHOW show, int defw, int defh, std::string basename) {
+void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
     assert(window);
 
-    int  x, y, w, h, f;
+    int  x, y, w, h;
 
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
-    pref.get((basename + "fullscreen").c_str(), f, 0);
-//    pref.get((basename + "maximized").c_str(), m, 0);
-//    FLW_PRINT(f, m)
+
     if (w == 0 || h == 0) {
         w = 800;
         h = 600;
@@ -1412,25 +1410,19 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, SHOW show, in
         y = 60;
     }
 
-    if (show == SHOW::BEFORE_RESIZE && window->shown() == 0) {
-        FLW_LINE
+#ifdef _WIN32
+    if (show == true && window->shown() == 0) { // Show before resize in windows
         window->show();
     }
 
     window->resize(x, y, w, h);
+#else
+    window->resize(x, y, w, h);
 
-//    if (m == 1) {
-//        window->maximize();
-//    }
-    
-    if (f == 1) {
-        window->fullscreen();
-    }
-
-    if (show == SHOW::AFTER_RESIZE && window->shown() == 0) {
-        FLW_LINE
+    if (show == true && window->shown() == 0) {
         window->show();
     }
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -1476,8 +1468,6 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
-//    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
-    pref.set((basename + "maximized").c_str(), (window->fullscreen_active() != 0 || window->maximize_active() != 0) ? 1 : 0);
 }
 
 /***

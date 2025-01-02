@@ -370,17 +370,14 @@ void TableDisplay::active_cell(int row, int col, bool show) {
     _curr_row = row;
     _curr_col = col;
 
-    if (send) {
+    if (send == true) {
         _set_event(_curr_row, _curr_col, EVENT::CURSOR);
         do_callback();
     }
 
     redraw();
 
-    if (show &&
-        _curr_row > 0 &&
-        _curr_col > 0) {
-
+    if (show == true && _curr_row > 0 && _curr_col > 0) {
         show_cell(_curr_row, _curr_col);
     }
 }
@@ -614,14 +611,31 @@ void TableDisplay::_draw_text(const char* string, int X, int Y, int W, int H, Fl
 }
 
 //------------------------------------------------------------------------------
-int TableDisplay::_ev_keyboard_down() {
+int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
     auto key   = Fl::event_key();
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
 
 //    printf("key=%d, %c, cmd=%d, shift=%d\n", key, key, cmd, shift); fflush(stdout);
 
-    if (cmd == true && key == FL_Up) {
+    if (only_append_insert == true) {
+        if (cmd == true && key == 'a') {
+            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
+            do_callback();
+            return 1;
+        }
+        else if (cmd == true && key == 'i') {
+            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::INSERT_COLUMN : EVENT::INSERT_ROW);
+            do_callback();
+            return 1;
+        }
+        else if (cmd == true && key == 'd') {
+            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::DELETE_COLUMN : EVENT::DELETE_ROW);
+            do_callback();
+            return 1;
+        }
+    }
+    else if (cmd == true && key == FL_Up) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
         return 1;
     }
@@ -910,6 +924,12 @@ int TableDisplay::handle(int event) {
         else if (event == FL_PUSH) {
             ret = _ev_mouse_click();
         }
+    }
+    else if (event == FL_KEYDOWN) {
+        ret = _ev_keyboard_down(true);
+    }
+    else if (event == FL_PUSH) {
+        ret = _ev_mouse_click();
     }
 
     if (ret == 0 || ret == 1) {

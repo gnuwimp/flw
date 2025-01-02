@@ -149,19 +149,13 @@ namespace util {
 // Load different themes and save/load window preferences
 //
 namespace theme {
-    enum class SHOW {
-                                NO,
-                                BEFORE_RESIZE,
-                                AFTER_RESIZE,
-    };
-    
     bool                        is_dark();
     bool                        load(std::string name);
     int                         load_font(std::string requested_font);
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
     void                        load_theme_pref(Fl_Preferences& pref);
-    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, SHOW show = SHOW::AFTER_RESIZE, int defw = 800, int defh = 600, std::string basename = "gui.");
+    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
     bool                        parse(int argc, const char** argv);
     void                        save_theme_pref(Fl_Preferences& pref);
     void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");

@@ -363,14 +363,14 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
 }
 
 /***
- *       __ _ _      
- *      / _(_) |     
- *     | |_ _| | ___ 
+ *       __ _ _
+ *      / _(_) |
+ *     | |_ _| | ___
  *     |  _| | |/ _ \
  *     | | | | |  __/
  *     |_| |_|_|\___|
- *                   
- *                   
+ *
+ *
  */
 
 //------------------------------------------------------------------------------
@@ -385,7 +385,7 @@ char* allocate(char* resize_or_null, size_t size, bool exception) {
     }
 
     if (res == nullptr && exception == true) {
-        throw "error: memory allocation failed in file::allocate()";
+        throw "error: memory allocation failed in gnu::file::allocate()";
     }
 
     return (char*) res;
@@ -556,11 +556,11 @@ uint64_t fletcher64(const char* P, size_t S) {
     }
 
     auto u8data = reinterpret_cast<const uint8_t*>(P);
-    auto dwords = (uint64_t) S / 4;
-    auto sum1   = (uint64_t) 0;
-    auto sum2   = (uint64_t) 0;
+    auto dwords = static_cast<uint64_t>(S / 4);
+    auto sum1   = static_cast<uint64_t>(0);
+    auto sum2   = static_cast<uint64_t>(0);
     auto data32 = reinterpret_cast<const uint32_t*>(u8data);
-    auto left   = (uint64_t) 0;
+    auto left   = static_cast<uint64_t>(0);
 
     for (size_t f = 0; f < dwords; ++f) {
         sum1 = (sum1 + data32[f]) % UINT32_MAX;
@@ -570,10 +570,10 @@ uint64_t fletcher64(const char* P, size_t S) {
     left = S - dwords * 4;
 
     if (left > 0) {
-        auto tmp  = (uint32_t) 0;
+        auto tmp  = static_cast<uint32_t>(0);
         auto byte = reinterpret_cast<uint8_t*>(&tmp);
 
-        for (auto f = (uint64_t) 0; f < left; ++f) {
+        for (auto f = static_cast<uint64_t>(0); f < left; ++f) {
             byte[f] = u8data[dwords * 4 + f];
         }
 
@@ -1108,12 +1108,14 @@ Buf& Buf::add(const char* P, size_t S) {
 
 //------------------------------------------------------------------------------
 void Buf::Count(const char* P, size_t S, size_t count[257]) {
-    assert(P);
-
     auto max_line     = 0;
     auto current_line = 0;
 
     std::memset(count, 0, sizeof(size_t) * 257);
+
+    if (P == nullptr) {
+        return;
+    }
 
     for (size_t f = 0; f < S; f++) {
         auto c = (unsigned char) P[f];

@@ -32,7 +32,7 @@ class TableDisplay : public Fl_Group {
     friend class _TableDisplayFindDialog;
 
 public:
-    static constexpr const char* HELP_TEXT = "Press ctrl + 'g' to show go to cell dialog.\nPress ctrl + 'f' to show find text dialog.";
+    static constexpr const char* HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
 
     enum class SELECT {
                                 NO,
@@ -132,7 +132,7 @@ protected:
     virtual void                _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false);
     void                        _draw_row(int row, int W, int Y, int H);
     void                        _draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align);
-    int                         _ev_keyboard_down();
+    int                         _ev_keyboard_down(bool only_append_insert = false);
     int                         _ev_mouse_click();
     int                         _ev_mouse_drag();
     int                         _ev_mouse_move();
