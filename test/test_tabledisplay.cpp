@@ -23,7 +23,18 @@ public:
     char buffer[200];
     int  widths[ROWS + 1];
 
-    TestTable() : TableDisplay() {
+    TestTable(Fl_Callback* cb) : TableDisplay() {
+        callback(cb, this);
+        header(true, true);
+        lines(true, true);
+        resize_column_width(true);
+        select_mode(TableDisplay::SELECT::CELL);
+        resize_column_width(true);
+        take_focus();
+//        header(true, false);
+//        header(false, false);
+//        lines(false, false);
+
         widths[0] = flw::PREF_FONTSIZE * 8;
 
         for (auto f = 1; f <= ROWS; f++) {
@@ -132,7 +143,7 @@ class Test : public Fl_Double_Window {
 public:
     Test() : Fl_Double_Window(800, 480, "test_tabledisplay.cpp") {
         bar   = new Fl_Menu_Bar(0, 0, 0, 0);
-        table = new TestTable();
+        table = new TestTable(Test::Callback);
 
         bar->add("Select/TableDisplay::SELECT::NO", 0, CallbackSelect, this, FL_MENU_RADIO);
         bar->add("Select/TableDisplay::SELECT::CELL", 0, CallbackSelect, this, FL_MENU_RADIO | FL_MENU_VALUE);
@@ -166,18 +177,7 @@ public:
         ((Fl_Menu_Item*) bar->find_item("Scrollbar/Both"))->setonly();
         ((Fl_Menu_Item*) bar->find_item("Select/TableDisplay::SELECT::CELL"))->setonly();
 
-        table->header(true, true);
-        table->lines(true, true);
-        table->resize_column_width(true);
-        table->select_mode(TableDisplay::SELECT::CELL);
-        table->resize_column_width(true);
-        table->take_focus();
-        table->callback(Callback, table);
-
-        // table->header(true, false);
-        // table->header(false, false);
-        // bar->hide();
-        // table->lines(false, false);
+//        bar->hide();
 
         resizable(this);
         size_range(64, 48);
@@ -217,6 +217,27 @@ public:
         }
         else if (table->event() == TableDisplay::EVENT::ROW_CTRL) {
             fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::ROW_CTRL\n", table->event_row(), table->event_col());
+        }
+        else if (table->event() == TableDisplay::EVENT::SIZE) {
+            fprintf(stderr, "Callback: rows=%4d, columns=%4d => TableDisplay::EVENT::SIZE\n", table->rows(), table->columns());
+        }
+        else if (table->event() == TableDisplay::EVENT::APPEND_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::APPEND_ROW\n", table->event_row());
+        }
+        else if (table->event() == TableDisplay::EVENT::APPEND_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::APPEND_COLUMN\n", table->event_col());
+        }
+        else if (table->event() == TableDisplay::EVENT::INSERT_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::INSERT_ROW\n", table->event_row());
+        }
+        else if (table->event() == TableDisplay::EVENT::INSERT_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::INSERT_COLUMN\n", table->event_col());
+        }
+        else if (table->event() == TableDisplay::EVENT::DELETE_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::DELETE_ROW\n", table->event_row());
+        }
+        else if (table->event() == TableDisplay::EVENT::DELETE_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::DELETE_COLUMN\n", table->event_col());
         }
 
         fflush(stderr);

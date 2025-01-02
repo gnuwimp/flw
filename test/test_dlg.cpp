@@ -7,6 +7,7 @@
     #include "datechooser.h"
     #include "dlg.h"
     #include "file.h"
+    #include "tableeditor.h"
     #include "waitcursor.h"
 #endif
 
@@ -518,6 +519,7 @@ int main(int argc, const char** argv) {
     puts("    abort");
     puts("    check");
     puts("    choice");
+    puts("    csv");
     puts("    date");
     puts("    font");
     puts("    html");
@@ -545,7 +547,11 @@ int main(int argc, const char** argv) {
                 run = argv[f];
             }
         }
-
+        
+        if (run != "") {
+            printf("Current: %s\n", run.c_str());
+        }
+        
         if (run == "loadsmall") {
             test_font_small();
             run = "";

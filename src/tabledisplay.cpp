@@ -16,14 +16,14 @@
 namespace flw {
 
 /***
- *        _______    _     _      _____  _           _              _____                _ _ _                
- *       |__   __|  | |   | |    |  __ \(_)         | |            / ____|              | | | |               
- *          | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _| (___   ___ _ __ ___ | | | |__   __ _ _ __ 
+ *        _______    _     _      _____  _           _              _____                _ _ _
+ *       |__   __|  | |   | |    |  __ \(_)         | |            / ____|              | | | |
+ *          | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _| (___   ___ _ __ ___ | | | |__   __ _ _ __
  *          | |/ _` | '_ \| |/ _ \ |  | | / __| '_ \| |/ _` | | | |\___ \ / __| '__/ _ \| | | '_ \ / _` | '__|
- *          | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| |____) | (__| | | (_) | | | |_) | (_| | |   
- *          |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |_____/ \___|_|  \___/|_|_|_.__/ \__,_|_|   
- *      ______                                | |             __/ |                                           
- *     |______|                               |_|            |___/                                            
+ *          | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| |____) | (__| | | (_) | | | |_) | (_| | |
+ *          |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |_____/ \___|_|  \___/|_|_|_.__/ \__,_|_|
+ *      ______                                | |             __/ |
+ *     |______|                               |_|            |___/
  */
 
 //------------------------------------------------------------------------------
@@ -48,14 +48,14 @@ public:
 };
 
 /***
- *        _______    _     _      _____  _           _              _____     _ _ _____  _       _             
- *       |__   __|  | |   | |    |  __ \(_)         | |            / ____|   | | |  __ \(_)     | |            
- *          | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _| |     ___| | | |  | |_  __ _| | ___   __ _ 
+ *        _______    _     _      _____  _           _              _____     _ _ _____  _       _
+ *       |__   __|  | |   | |    |  __ \(_)         | |            / ____|   | | |  __ \(_)     | |
+ *          | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _| |     ___| | | |  | |_  __ _| | ___   __ _
  *          | |/ _` | '_ \| |/ _ \ |  | | / __| '_ \| |/ _` | | | | |    / _ \ | | |  | | |/ _` | |/ _ \ / _` |
  *          | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| | |___|  __/ | | |__| | | (_| | | (_) | (_| |
  *          |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |\_____\___|_|_|_____/|_|\__,_|_|\___/ \__, |
  *      ______                                | |             __/ |                                       __/ |
- *     |______|                               |_|            |___/                                       |___/ 
+ *     |______|                               |_|            |___/                                       |___/
  */
 
 //------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ class _TableDisplayCellDialog : public Fl_Double_Window {
     bool                            _ret;
 
 public:
-    _TableDisplayCellDialog(int row, int col) : 
+    _TableDisplayCellDialog(int row, int col) :
     Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
         end();
 
@@ -146,14 +146,14 @@ public:
 };
 
 /***
- *        _______    _     _      _____  _           _             ______ _           _ _____  _       _             
- *       |__   __|  | |   | |    |  __ \(_)         | |           |  ____(_)         | |  __ \(_)     | |            
- *          | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _| |__   _ _ __   __| | |  | |_  __ _| | ___   __ _ 
+ *        _______    _     _      _____  _           _             ______ _           _ _____  _       _
+ *       |__   __|  | |   | |    |  __ \(_)         | |           |  ____(_)         | |  __ \(_)     | |
+ *          | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _| |__   _ _ __   __| | |  | |_  __ _| | ___   __ _
  *          | |/ _` | '_ \| |/ _ \ |  | | / __| '_ \| |/ _` | | | |  __| | | '_ \ / _` | |  | | |/ _` | |/ _ \ / _` |
  *          | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| | |    | | | | | (_| | |__| | | (_| | | (_) | (_| |
  *          |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |_|    |_|_| |_|\__,_|_____/|_|\__,_|_|\___/ \__, |
  *      ______                                | |             __/ |                                             __/ |
- *     |______|                               |_|            |___/                                             |___/ 
+ *     |______|                               |_|            |___/                                             |___/
  */
 
 //------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ class _TableDisplayFindDialog : public Fl_Double_Window {
     bool                        _repeat;
 
 public:
-    explicit _TableDisplayFindDialog(TableDisplay* table) : 
+    explicit _TableDisplayFindDialog(TableDisplay* table) :
     Fl_Double_Window(0, 0, 10, 10, "Find Text In Table Cells") {
         end();
 
@@ -317,14 +317,14 @@ public:
 };
 
 /***
- *      _______    _     _      _____  _           _             
- *     |__   __|  | |   | |    |  __ \(_)         | |            
- *        | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _ 
+ *      _______    _     _      _____  _           _
+ *     |__   __|  | |   | |    |  __ \(_)         | |
+ *        | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _
  *        | |/ _` | '_ \| |/ _ \ |  | | / __| '_ \| |/ _` | | | |
  *        | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| |
  *        |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |
  *                                          | |             __/ |
- *                                          |_|            |___/ 
+ *                                          |_|            |___/
  */
 
 //------------------------------------------------------------------------------
@@ -348,6 +348,7 @@ TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group
     box(FL_BORDER_BOX);
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
+    tooltip(TableDisplay::HELP_TEXT);
     clip_children(1);
     util::labelfont(this);
     TableDisplay::clear();
@@ -370,7 +371,7 @@ void TableDisplay::active_cell(int row, int col, bool show) {
     _curr_col = col;
 
     if (send) {
-        _set_event(_curr_row, _curr_col, TableDisplay::EVENT::CURSOR);
+        _set_event(_curr_row, _curr_col, EVENT::CURSOR);
         do_callback();
     }
 
@@ -451,7 +452,7 @@ void TableDisplay::clear() {
     _disable_ver     = false;
     _drag            = false;
     _edit            = nullptr;
-    _event           = TableDisplay::EVENT::UNDEFINED;
+    _event           = EVENT::UNDEFINED;
     _event_col       = -1;
     _event_row       = -1;
     _expand          = false;
@@ -618,7 +619,7 @@ int TableDisplay::_ev_keyboard_down() {
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
 
-    // printf("key=%d, alt=%d, cmd=%d, shift=%d\n", key, alt, cmd, shift); fflush(stdout);
+//    printf("key=%d, %c, cmd=%d, shift=%d\n", key, key, cmd, shift); fflush(stdout);
 
     if (cmd == true && key == FL_Up) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
@@ -697,6 +698,21 @@ int TableDisplay::_ev_keyboard_down() {
 
         return 1;
     }
+    else if (cmd == true && key == 'a') {
+        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
+        do_callback();
+        return 1;
+    }
+    else if (cmd == true && key == 'i') {
+        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::INSERT_COLUMN : EVENT::INSERT_ROW);
+        do_callback();
+        return 1;
+    }
+    else if (cmd == true && key == 'd') {
+        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::DELETE_COLUMN : EVENT::DELETE_ROW);
+        do_callback();
+        return 1;
+    }
 
     return 0;
 }
@@ -719,11 +735,11 @@ int TableDisplay::_ev_mouse_click () {
     }
 
     if (r == 0 && c >= 1) { // Mouse click on top header cells
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? TableDisplay::EVENT::COLUMN_CTRL : TableDisplay::EVENT::COLUMN);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? EVENT::COLUMN_CTRL : EVENT::COLUMN);
         do_callback();
     }
     else if (c == 0 && r >= 1) { // Mouse click on left header cells
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? TableDisplay::EVENT::ROW_CTRL : TableDisplay::EVENT::ROW);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? EVENT::ROW_CTRL : EVENT::ROW);
         do_callback();
     }
     else if (r == -1 || c == -1) { // Mouse click outside cell
@@ -828,7 +844,7 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
     auto mx = Fl::event_x();
 
     if (!((_ver->visible() != 0 && mx >= _ver->x()) || (_hor->visible() != 0 && my >= _hor->y()))) { // Dont click on scrollbars
-        if (_show_col_header && (my - y()) < _height) {
+        if (_show_col_header == true && (my - y()) < _height) {
             row = 0;
         }
         else {
@@ -848,7 +864,7 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
             }
         }
 
-        if (_show_row_header && (mx - x()) < _cell_width(0)) {
+        if (_show_row_header == true && (mx - x()) < _cell_width(0)) {
             col = 0;
         }
         else {
@@ -857,11 +873,10 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
 
             for (auto c = _start_col; c <= _cols; c++) {
                 auto cw = _cell_width(c);
-
                 if (x1 > x2) {
                     break;
                 }
-                else if (mx > x1 && (mx < x1 + cw || c == _cols)) {
+                else if (mx > x1 && (mx < (x1 + cw) || (_expand == true && c == _cols))) {
                     col = c;
                     break;
                 }
@@ -935,42 +950,42 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         else {
             if (range > 0) {
                 switch (move) {
-                    case _TABLEDISPLAY_MOVE::FIRST_ROW:
-                        r = 1;
-                        break;
+                case _TABLEDISPLAY_MOVE::FIRST_ROW:
+                    r = 1;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::UP:
-                        r = r > 1 ? r - 1 : 1;
-                        break;
+                case _TABLEDISPLAY_MOVE::UP:
+                    r = r > 1 ? r - 1 : 1;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::SCROLL_UP:
-                        r = r > 8 ? r - 8 : 1;
-                        break;
+                case _TABLEDISPLAY_MOVE::SCROLL_UP:
+                    r = r > 8 ? r - 8 : 1;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::PAGE_UP:
-                        r = _start_row - range > 0 ? _start_row - range : 1;
-                        _start_row = r;
-                        break;
+                case _TABLEDISPLAY_MOVE::PAGE_UP:
+                    r = _start_row - range > 0 ? _start_row - range : 1;
+                    _start_row = r;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::DOWN:
-                        r = r < _rows ? r + 1 : _rows;
-                        break;
+                case _TABLEDISPLAY_MOVE::DOWN:
+                    r = r < _rows ? r + 1 : _rows;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::SCROLL_DOWN:
-                        r = r < _rows - 8 ? r + 8 : _rows;
-                        break;
+                case _TABLEDISPLAY_MOVE::SCROLL_DOWN:
+                    r = r < _rows - 8 ? r + 8 : _rows;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::PAGE_DOWN:
-                        r = _start_row + range <= _rows ? _start_row + range : _rows;
-                        _start_row = r;
-                        break;
+                case _TABLEDISPLAY_MOVE::PAGE_DOWN:
+                    r = _start_row + range <= _rows ? _start_row + range : _rows;
+                    _start_row = r;
+                    break;
 
-                    case _TABLEDISPLAY_MOVE::LAST_ROW:
-                        r = _rows;
-                        break;
+                case _TABLEDISPLAY_MOVE::LAST_ROW:
+                    r = _rows;
+                    break;
 
-                    default:
-                        break;
+                default:
+                    break;
                 }
             }
         }
@@ -983,32 +998,32 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         }
         else {
             switch (move) {
-                case _TABLEDISPLAY_MOVE::LEFT:
-                    c = c > 1 ? c - 1 : 1;
-                    break;
+            case _TABLEDISPLAY_MOVE::LEFT:
+                c = c > 1 ? c - 1 : 1;
+                break;
 
-                case _TABLEDISPLAY_MOVE::SCROLL_LEFT:
-                    c = c > 4 ? c - 4 : 1;
-                    break;
+            case _TABLEDISPLAY_MOVE::SCROLL_LEFT:
+                c = c > 4 ? c - 4 : 1;
+                break;
 
-                case _TABLEDISPLAY_MOVE::RIGHT:
-                    c = c < _cols ? c + 1 : _cols;
-                    break;
+            case _TABLEDISPLAY_MOVE::RIGHT:
+                c = c < _cols ? c + 1 : _cols;
+                break;
 
-                case _TABLEDISPLAY_MOVE::SCROLL_RIGHT:
-                    c = c < _cols - 4 ? c + 4 : _cols;
-                    break;
+            case _TABLEDISPLAY_MOVE::SCROLL_RIGHT:
+                c = c < _cols - 4 ? c + 4 : _cols;
+                break;
 
-                case _TABLEDISPLAY_MOVE::FIRST_COL:
-                    c = 1;
-                    break;
+            case _TABLEDISPLAY_MOVE::FIRST_COL:
+                c = 1;
+                break;
 
-                case _TABLEDISPLAY_MOVE::LAST_COL:
-                    c = _cols;
-                    break;
+            case _TABLEDISPLAY_MOVE::LAST_COL:
+                c = _cols;
+                break;
 
-                default:
-                    break;
+            default:
+                break;
             }
         }
 
@@ -1075,7 +1090,7 @@ void TableDisplay::size(int rows, int cols) {
         _start_row = 1;
         _start_col = 1;
 
-        _set_event(_curr_row, _curr_col, TableDisplay::EVENT::SIZE);
+        _set_event(_curr_row, _curr_col, EVENT::SIZE);
         do_callback();
     }
 

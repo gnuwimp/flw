@@ -719,19 +719,27 @@ std::string& util::replace_string(std::string& string, std::string find, std::st
     }
 
     try {
-        size_t start = 0;
+        auto res   = std::string();
+        auto start = static_cast<size_t>(0);
+        auto pos   = static_cast<size_t>(0);
 
-        while ((start = string.find(find, start)) != std::string::npos) {
-            string.replace(start, find.length(), replace);
-            start += replace.length();
+        res.reserve(string.length() + (replace.length() > find.length() ? string.length() * 0.1 : 0));
+
+        while ((pos = string.find(find, start)) != std::string::npos) {
+            res   += string.substr(start, pos - start);
+            res   += replace;
+            pos   += find.length();
+            start  = pos;
         }
 
+        res += string.substr(start);
+        string.swap(res);
+        return string;
     }
     catch(...) {
         string = "";
+        return string;
     }
-
-    return string;
 }
 
 //------------------------------------------------------------------------------
@@ -1382,18 +1390,18 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
 //------------------------------------------------------------------------------
 // Load window size
 //
-void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2, int defw, int defh, std::string basename) {
+void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, SHOW show, int defw, int defh, std::string basename) {
     assert(window);
 
-    int  x, y, w, h, f, m;
+    int  x, y, w, h, f;
 
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
     pref.get((basename + "fullscreen").c_str(), f, 0);
-    pref.get((basename + "maximized").c_str(), m, 0);
-
+//    pref.get((basename + "maximized").c_str(), m, 0);
+//    FLW_PRINT(f, m)
     if (w == 0 || h == 0) {
         w = 800;
         h = 600;
@@ -1404,20 +1412,23 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_
         y = 60;
     }
 
-    if (show_0_1_2 > 1 && window->shown() == 0) {
+    if (show == SHOW::BEFORE_RESIZE && window->shown() == 0) {
+        FLW_LINE
         window->show();
     }
 
     window->resize(x, y, w, h);
 
+//    if (m == 1) {
+//        window->maximize();
+//    }
+    
     if (f == 1) {
         window->fullscreen();
     }
-    else if (m == 1) {
-        window->maximize();
-    }
 
-    if (show_0_1_2 == 1 && window->shown() == 0) {
+    if (show == SHOW::AFTER_RESIZE && window->shown() == 0) {
+        FLW_LINE
         window->show();
     }
 }
@@ -1465,8 +1476,8 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
-    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
-    pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
+//    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
+    pref.set((basename + "maximized").c_str(), (window->fullscreen_active() != 0 || window->maximize_active() != 0) ? 1 : 0);
 }
 
 /***

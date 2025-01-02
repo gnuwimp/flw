@@ -4,6 +4,7 @@
 #include "tableeditor.h"
 #include "datechooser.h"
 #include "dlg.h"
+#include "file.h"
 
 // MKALGAM_ON
 
@@ -23,14 +24,14 @@
 namespace flw {
 
 /***
- *                 _            _       
- *                (_)          | |      
- *      _ __  _ __ ___   ____ _| |_ ___ 
+ *                 _            _
+ *                (_)          | |
+ *      _ __  _ __ ___   ____ _| |_ ___
  *     | '_ \| '__| \ \ / / _` | __/ _ \
  *     | |_) | |  | |\ V / (_| | ||  __/
  *     | .__/|_|  |_| \_/ \__,_|\__\___|
- *     | |                              
- *     |_|                              
+ *     | |
+ *     |_|
  */
 
 //----------------------------------------------------------------------
@@ -75,14 +76,14 @@ int _tableeditor_to_ints(std::string string, int64_t numbers[], size_t size) {
 }
 
 /***
- *      _______    _     _      ______    _ _ _             
- *     |__   __|  | |   | |    |  ____|  | (_) |            
- *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __ 
+ *      _______    _     _      ______    _ _ _
+ *     |__   __|  | |   | |    |  ____|  | (_) |
+ *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __
  *        | |/ _` | '_ \| |/ _ \  __| / _` | | __/ _ \| '__|
- *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |   
- *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|   
- *                                                          
- *                                                          
+ *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |
+ *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|
+ *
+ *
  */
 
 const char* TableEditor::SELECT_DATE = "Select Date";
@@ -114,37 +115,37 @@ void TableEditor::_delete_current_cell() {
             auto set  = false;
 
             switch (rend) {
-                case TableEditor::REND::TEXT:
-                case TableEditor::REND::SECRET:
-                case TableEditor::REND::INPUT_CHOICE:
-                case TableEditor::REND::DLG_FILE:
-                case TableEditor::REND::DLG_DIR:
-                case TableEditor::REND::DLG_LIST:
-                    set = cell_value(_curr_row, _curr_col, "");
-                    break;
+            case TableEditor::REND::TEXT:
+            case TableEditor::REND::SECRET:
+            case TableEditor::REND::INPUT_CHOICE:
+            case TableEditor::REND::DLG_FILE:
+            case TableEditor::REND::DLG_DIR:
+            case TableEditor::REND::DLG_LIST:
+                set = cell_value(_curr_row, _curr_col, "");
+                break;
 
-                case TableEditor::REND::INTEGER:
-                    set = cell_value(_curr_row, _curr_col, "0");
-                    break;
+            case TableEditor::REND::INTEGER:
+                set = cell_value(_curr_row, _curr_col, "0");
+                break;
 
-                case TableEditor::REND::NUMBER:
-                    set = cell_value(_curr_row, _curr_col, "0.0");
-                    break;
+            case TableEditor::REND::NUMBER:
+                set = cell_value(_curr_row, _curr_col, "0.0");
+                break;
 
-                case TableEditor::REND::BOOLEAN:
-                    set = cell_value(_curr_row, _curr_col, "0");
-                    break;
+            case TableEditor::REND::BOOLEAN:
+                set = cell_value(_curr_row, _curr_col, "0");
+                break;
 
-                case TableEditor::REND::DLG_DATE:
-                    set = cell_value(_curr_row, _curr_col, "1970-01-01");
-                    break;
+            case TableEditor::REND::DLG_DATE:
+                set = cell_value(_curr_row, _curr_col, "1970-01-01");
+                break;
 
-                case TableEditor::REND::DLG_COLOR:
-                    set = cell_value(_curr_row, _curr_col, "56");
-                    break;
+            case TableEditor::REND::DLG_COLOR:
+                set = cell_value(_curr_row, _curr_col, "56");
+                break;
 
-                default:
-                    break;
+            default:
+                break;
             }
 
             if (set == true) {
@@ -965,72 +966,72 @@ int TableEditor::_ev_paste() {
         std::string string;
 
         switch(rend) {
-            case TableEditor::REND::CHOICE:
-            case TableEditor::REND::DLG_LIST:
-            case TableEditor::REND::SLIDER:
-            case TableEditor::REND::VALUE_SLIDER:
+        case TableEditor::REND::CHOICE:
+        case TableEditor::REND::DLG_LIST:
+        case TableEditor::REND::SLIDER:
+        case TableEditor::REND::VALUE_SLIDER:
+            return 1;
+
+        case TableEditor::REND::DLG_DIR:
+        case TableEditor::REND::DLG_FILE:
+        case TableEditor::REND::INPUT_CHOICE:
+        case TableEditor::REND::SECRET:
+        case TableEditor::REND::TEXT:
+            break;
+
+        case TableEditor::REND::BOOLEAN:
+            if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
+                text = "1";
+            }
+            else if (strcmp("0", text) == 0 || strcmp("false", text) == 0) {
+                text = "0";
+            }
+            else {
                 return 1;
+            }
 
-            case TableEditor::REND::DLG_DIR:
-            case TableEditor::REND::DLG_FILE:
-            case TableEditor::REND::INPUT_CHOICE:
-            case TableEditor::REND::SECRET:
-            case TableEditor::REND::TEXT:
+        case TableEditor::REND::DLG_COLOR:
+        case TableEditor::REND::INTEGER:
+            if (*text < '0' || *text > '9') {
+                return 1;
+            }
+            else {
+                auto num = _tableeditor_to_int(text, 0);
+                snprintf(buffer, 100, "%lld", (long long int) num);
+                text = buffer;
+
+                if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
+                    return 1;
+                }
+                else {
+                    break;
+                }
+            }
+
+        case TableEditor::REND::NUMBER: {
+            if (*text < '0' || *text > '9') {
+                return 1;
+            }
+            else {
+                auto num = util::to_double(text, 0.0);
+                snprintf(buffer, 100, "%f", num);
+                text = buffer;
                 break;
-
-            case TableEditor::REND::BOOLEAN:
-                if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
-                    text = "1";
-                }
-                else if (strcmp("0", text) == 0 || strcmp("false", text) == 0) {
-                    text = "0";
-                }
-                else {
-                    return 1;
-                }
-
-            case TableEditor::REND::DLG_COLOR:
-            case TableEditor::REND::INTEGER:
-                if (*text < '0' || *text > '9') {
-                    return 1;
-                }
-                else {
-                    auto num = _tableeditor_to_int(text, 0);
-                    snprintf(buffer, 100, "%lld", (long long int) num);
-                    text = buffer;
-
-                    if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
-                        return 1;
-                    }
-                    else {
-                        break;
-                    }
-                }
-
-            case TableEditor::REND::NUMBER: {
-                if (*text < '0' || *text > '9') {
-                    return 1;
-                }
-                else {
-                    auto num = util::to_double(text, 0.0);
-                    snprintf(buffer, 100, "%f", num);
-                    text = buffer;
-                    break;
-                }
             }
+        }
 
-            case TableEditor::REND::DLG_DATE: {
-                auto date = gnu::Date(text);
+        case TableEditor::REND::DLG_DATE: {
+            auto date = gnu::Date(text);
 
-                if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
-                    return 1;
-                }
-                else {
-                    string = date.format(gnu::Date::FORMAT::ISO_LONG);
-                    text = string.c_str();
-                    break;
-                }
+            if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
+                return 1;
             }
+            else {
+                string = date.format(gnu::Date::FORMAT::ISO_LONG);
+                text = string.c_str();
+                break;
+            }
+        }
         }
 
         if ((_send_changed_event_always == true || strcmp(val, text) != 0) && cell_value(_curr_row, _curr_col, text) == true) {

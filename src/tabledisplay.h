@@ -15,14 +15,14 @@
 namespace flw {
 
 /***
- *      _______    _     _      _____  _           _             
- *     |__   __|  | |   | |    |  __ \(_)         | |            
- *        | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _ 
+ *      _______    _     _      _____  _           _
+ *     |__   __|  | |   | |    |  __ \(_)         | |
+ *        | | __ _| |__ | | ___| |  | |_ ___ _ __ | | __ _ _   _
  *        | |/ _` | '_ \| |/ _ \ |  | | / __| '_ \| |/ _` | | | |
  *        | | (_| | |_) | |  __/ |__| | \__ \ |_) | | (_| | |_| |
  *        |_|\__,_|_.__/|_|\___|_____/|_|___/ .__/|_|\__,_|\__, |
  *                                          | |             __/ |
- *                                          |_|            |___/ 
+ *                                          |_|            |___/
  */
 
 //------------------------------------------------------------------------------
@@ -32,21 +32,29 @@ class TableDisplay : public Fl_Group {
     friend class _TableDisplayFindDialog;
 
 public:
+    static constexpr const char* HELP_TEXT = "Press ctrl + 'g' to show go to cell dialog.\nPress ctrl + 'f' to show find text dialog.";
+
     enum class SELECT {
                                 NO,
                                 CELL,
                                 ROW,
     };
 
-    enum class EVENT {
+    enum class EVENT { // These messages are sent to Fl_Callback and most of them does nothing (up to user).
                                 UNDEFINED,
-                                CHANGED,
-                                CURSOR,
-                                COLUMN,
-                                COLUMN_CTRL,
-                                ROW,
-                                ROW_CTRL,
-                                SIZE,
+                                CHANGED,        // Data has been changed.
+                                CURSOR,         // Cursor has been moved (cell has been changed).
+                                COLUMN,         // Column header has been clicked.
+                                COLUMN_CTRL,    // Column header has been clicked and ctrl key has been pressed.
+                                ROW,            // Row header has been clicked.
+                                ROW_CTRL,       // Row header has been clicked and ctrl key has been pressed.
+                                SIZE,           // Size has been changed.
+                                APPEND_ROW,     // Append row at current cell.
+                                APPEND_COLUMN,  // Append column at current cell.
+                                INSERT_ROW,     // Insert row at current cell.
+                                INSERT_COLUMN,  // Insert column at current cell.
+                                DELETE_ROW,     // Delete row at current cell.
+                                DELETE_COLUMN,  // Delete column at current cell.
     };
 
     explicit                    TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);

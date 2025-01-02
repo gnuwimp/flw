@@ -673,7 +673,7 @@ Date& Date::set(std::string date, Date::US us) {
             val[13] = str2[7] - '0';
         }
 
-        for (int f = 8; f < 14 && time == true; f++) { // Check time and disable if eny error.
+        for (int f = 8; f < 14 && time == true; f++) { // Check time and disable if any error.
             if (val[f] > 9) {
                 time = false;
             }

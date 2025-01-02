@@ -356,7 +356,6 @@ public:
         table = new TestTable();
 
         bar->add("Debug/Clear", 0, Test::CallbackDebugClear, this);
-
         bar->add("Size/Shrink", 0, Test::CallbackShrink, this);
         bar->add("Event/Always", 0, Test::CallbackEvent, this, FL_MENU_TOGGLE);
 
@@ -411,6 +410,27 @@ public:
         }
         else if (table->event() == TableDisplay::EVENT::ROW_CTRL) {
             fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::ROW_CTRL\n", table->event_row(), table->event_col());
+        }
+        else if (table->event() == TableDisplay::EVENT::SIZE) {
+            fprintf(stderr, "Callback: rows=%4d, columns=%4d => TableDisplay::EVENT::SIZE\n", table->rows(), table->columns());
+        }
+        else if (table->event() == TableDisplay::EVENT::APPEND_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::APPEND_ROW\n", table->event_row());
+        }
+        else if (table->event() == TableDisplay::EVENT::APPEND_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::APPEND_COLUMN\n", table->event_col());
+        }
+        else if (table->event() == TableDisplay::EVENT::INSERT_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::INSERT_ROW\n", table->event_row());
+        }
+        else if (table->event() == TableDisplay::EVENT::INSERT_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::INSERT_COLUMN\n", table->event_col());
+        }
+        else if (table->event() == TableDisplay::EVENT::DELETE_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::DELETE_ROW\n", table->event_row());
+        }
+        else if (table->event() == TableDisplay::EVENT::DELETE_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::DELETE_COLUMN\n", table->event_col());
         }
 
         fflush(stderr);

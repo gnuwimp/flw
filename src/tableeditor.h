@@ -11,14 +11,14 @@
 namespace flw {
 
 /***
- *      _______    _     _      ______    _ _ _             
- *     |__   __|  | |   | |    |  ____|  | (_) |            
- *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __ 
+ *      _______    _     _      ______    _ _ _
+ *     |__   __|  | |   | |    |  ____|  | (_) |
+ *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __
  *        | |/ _` | '_ \| |/ _ \  __| / _` | | __/ _ \| '__|
- *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |   
- *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|   
- *                                                          
- *                                                          
+ *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |
+ *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|
+ *
+ *
  */
 //------------------------------------------------------------------------------
 // A table editing widget
@@ -69,7 +69,7 @@ public:
     static const char*          SELECT_DIR;
     static const char*          SELECT_FILE;
     static const char*          SELECT_LIST;
-    
+
     explicit                    TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        send_changed_event_always(bool value)
                                     { _send_changed_event_always = value; }
