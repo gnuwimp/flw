@@ -960,7 +960,7 @@ char* allocate(char* resize_or_null, size_t size, bool exception) {
         res = realloc(resize_or_null, size);
     }
     if (res == nullptr && exception == true) {
-        throw "error: memory allocation failed in file::allocate()";
+        throw "error: memory allocation failed in gnu::file::allocate()";
     }
     return (char*) res;
 }
@@ -1087,20 +1087,20 @@ uint64_t fletcher64(const char* P, size_t S) {
         return 0;
     }
     auto u8data = reinterpret_cast<const uint8_t*>(P);
-    auto dwords = (uint64_t) S / 4;
-    auto sum1   = (uint64_t) 0;
-    auto sum2   = (uint64_t) 0;
+    auto dwords = static_cast<uint64_t>(S / 4);
+    auto sum1   = static_cast<uint64_t>(0);
+    auto sum2   = static_cast<uint64_t>(0);
     auto data32 = reinterpret_cast<const uint32_t*>(u8data);
-    auto left   = (uint64_t) 0;
+    auto left   = static_cast<uint64_t>(0);
     for (size_t f = 0; f < dwords; ++f) {
         sum1 = (sum1 + data32[f]) % UINT32_MAX;
         sum2 = (sum2 + sum1) % UINT32_MAX;
     }
     left = S - dwords * 4;
     if (left > 0) {
-        auto tmp  = (uint32_t) 0;
+        auto tmp  = static_cast<uint32_t>(0);
         auto byte = reinterpret_cast<uint8_t*>(&tmp);
-        for (auto f = (uint64_t) 0; f < left; ++f) {
+        for (auto f = static_cast<uint64_t>(0); f < left; ++f) {
             byte[f] = u8data[dwords * 4 + f];
         }
         sum1 = (sum1 + tmp) % UINT32_MAX;
@@ -1493,10 +1493,12 @@ Buf& Buf::add(const char* P, size_t S) {
     return *this;
 }
 void Buf::Count(const char* P, size_t S, size_t count[257]) {
-    assert(P);
     auto max_line     = 0;
     auto current_line = 0;
     std::memset(count, 0, sizeof(size_t) * 257);
+    if (P == nullptr) {
+        return;
+    }
     for (size_t f = 0; f < S; f++) {
         auto c = (unsigned char) P[f];
         count[c] += 1;
@@ -7726,16 +7728,24 @@ std::string& util::replace_string(std::string& string, std::string find, std::st
         return string;
     }
     try {
-        size_t start = 0;
-        while ((start = string.find(find, start)) != std::string::npos) {
-            string.replace(start, find.length(), replace);
-            start += replace.length();
+        auto res   = std::string();
+        auto start = static_cast<size_t>(0);
+        auto pos   = static_cast<size_t>(0);
+        res.reserve(string.length() + (replace.length() > find.length() ? string.length() * 0.1 : 0));
+        while ((pos = string.find(find, start)) != std::string::npos) {
+            res   += string.substr(start, pos - start);
+            res   += replace;
+            pos   += find.length();
+            start  = pos;
         }
+        res += string.substr(start);
+        string.swap(res);
+        return string;
     }
     catch(...) {
         string = "";
+        return string;
     }
-    return string;
 }
 void util::sleep(int milli) {
 #ifdef _WIN32
@@ -8238,15 +8248,13 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     _scrollbar();
 }
-void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2, int defw, int defh, std::string basename) {
+void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
     assert(window);
-    int  x, y, w, h, f, m;
+    int  x, y, w, h;
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
-    pref.get((basename + "fullscreen").c_str(), f, 0);
-    pref.get((basename + "maximized").c_str(), m, 0);
     if (w == 0 || h == 0) {
         w = 800;
         h = 600;
@@ -8255,19 +8263,17 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_
         x = 80;
         y = 60;
     }
-    if (show_0_1_2 > 1 && window->shown() == 0) {
+#ifdef _WIN32
+    if (show == true && window->shown() == 0) {
         window->show();
     }
     window->resize(x, y, w, h);
-    if (f == 1) {
-        window->fullscreen();
-    }
-    else if (m == 1) {
-        window->maximize();
-    }
-    if (show_0_1_2 == 1 && window->shown() == 0) {
+#else
+    window->resize(x, y, w, h);
+    if (show == true && window->shown() == 0) {
         window->show();
     }
+#endif
 }
 bool theme::parse(int argc, const char** argv) {
     auto res = false;
@@ -8298,8 +8304,6 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string b
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
-    pref.set((basename + "fullscreen").c_str(), window->fullscreen_active() ? 1 : 0);
-    pref.set((basename + "maximized").c_str(), window->maximize_active() ? 1 : 0);
 }
 PrintText::PrintText(std::string filename,
     Fl_Paged_Device::Page_Format page_format,
@@ -11933,9 +11937,10 @@ TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group
     box(FL_BORDER_BOX);
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
+    tooltip(TableDisplay::HELP_TEXT);
     clip_children(1);
     util::labelfont(this);
-    TableDisplay::clear();
+    reset();
 }
 void TableDisplay::active_cell(int row, int col, bool show) {
     auto send = false;
@@ -11948,14 +11953,12 @@ void TableDisplay::active_cell(int row, int col, bool show) {
     }
     _curr_row = row;
     _curr_col = col;
-    if (send) {
-        _set_event(_curr_row, _curr_col, TableDisplay::EVENT::CURSOR);
+    if (send == true) {
+        _set_event(_curr_row, _curr_col, EVENT::CURSOR);
         do_callback();
     }
     redraw();
-    if (show &&
-        _curr_row > 0 &&
-        _curr_col > 0) {
+    if (show == true && _curr_row > 0 && _curr_col > 0) {
         show_cell(_curr_row, _curr_col);
     }
 }
@@ -11998,35 +12001,43 @@ int TableDisplay::_cell_width(int col, int X) {
     }
     return cw;
 }
-void TableDisplay::clear() {
-    _cols            = 0;
-    _curr_col        = -1;
-    _curr_row        = -1;
-    _current_cell[0] = 0;
-    _current_cell[1] = 0;
-    _current_cell[2] = 0;
-    _current_cell[3] = 0;
-    _disable_hor     = false;
-    _disable_ver     = false;
-    _drag            = false;
-    _edit            = nullptr;
-    _event           = TableDisplay::EVENT::UNDEFINED;
-    _event_col       = -1;
-    _event_row       = -1;
-    _expand          = false;
-    _height          = flw::PREF_FONTSIZE * 2;
-    _resize          = false;
-    _resize_col      = -1;
-    _rows            = 0;
-    _select          = TableDisplay::SELECT::NO;
-    _show_col_header = false;
-    _show_hor_lines  = false;
-    _show_row_header = false;
-    _show_ver_lines  = false;
-    _start_col       = 1;
-    _start_row       = 1;
-    _find            = "";
-    redraw();
+void TableDisplay::cmd_copy() {
+    auto val = cell_value(_curr_row, _curr_col);
+    Fl::copy(val, strlen(val), 1);
+}
+void TableDisplay::cmd_find() {
+    auto dlg = _TableDisplayFindDialog(this);
+    dlg.run(window());
+}
+void TableDisplay::cmd_goto() {
+    auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
+    if (dlg.run(window()) == true) {
+        active_cell(dlg.row(), dlg.col(), true);
+    }
+}
+void TableDisplay::debug() const {
+#ifdef DEBUG
+    printf("flw::TableDisplay:\n");
+    printf("    rows            = %4d\n", _rows);
+    printf("    cols            = %4d\n", _cols);
+    printf("    curr_row        = %4d\n", _curr_row);
+    printf("    curr_col        = %4d\n", _curr_col);
+    printf("    start_row       = %4d\n", _start_row);
+    printf("    start_col       = %4d\n", _start_col);
+    printf("    event           = %4d\n", (int) _event);
+    printf("    event_row       = %4d\n", _event_row);
+    printf("    event_col       = %4d\n", _event_col);
+    printf("    height          = %4d\n", _height);
+    printf("    resize_col      = %4d\n", _resize_col);
+    printf("    show_col_header = %4d\n", _show_col_header);
+    printf("    show_hor_lines  = %4d\n", _show_hor_lines);
+    printf("    show_row_header = %4d\n", _show_row_header);
+    printf("    show_ver_lines  = %4d\n", _show_ver_lines);
+    printf("    resize          = %4d\n", _resize);
+    printf("    expand          = %4d\n", _expand);
+    printf("    disable_hor     = %4d\n", _disable_hor);
+    printf("    disable_ver     = %4d\n", _disable_ver);
+#endif
 }
 void TableDisplay::draw() {
     if (_edit) {
@@ -12140,81 +12151,108 @@ void TableDisplay::_draw_text(const char* string, int X, int Y, int W, int H, Fl
     }
     fl_draw(string, X, Y, W, H, align);
 }
-int TableDisplay::_ev_keyboard_down() {
+int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
     auto key   = Fl::event_key();
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
-    if (cmd == true && key == FL_Up) {
+    if (only_append_insert == true) {
+        if (cmd == true && key == 'a') {
+            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
+            do_callback();
+            return 1;
+        }
+        else if (cmd == true && key == 'i') {
+            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::INSERT_COLUMN : EVENT::INSERT_ROW);
+            do_callback();
+            return 1;
+        }
+        else if (cmd == true && key == 'd') {
+            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::DELETE_COLUMN : EVENT::DELETE_ROW);
+            do_callback();
+            return 1;
+        }
+    }
+    else if (cmd == true && key == FL_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
         return 1;
     }
-    else if (key == FL_Up) {
+    else if (key == FL_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::UP);
         return 1;
     }
-    else if (cmd == true && key == FL_Down) {
+    else if (cmd == true && key == FL_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_DOWN);
         return 1;
     }
-    else if (key == FL_Down) {
+    else if (key == FL_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::DOWN);
         return 1;
     }
-    else if (cmd == true && key == FL_Left) {
+    else if (cmd == true && key == FL_Left && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_LEFT);
         return 1;
     }
-    else if (key == FL_Left || (key == FL_Tab && shift == true)) {
+    else if ((key == FL_Left && shift == false) || (key == FL_Tab && shift == true)) {
         _move_cursor(_TABLEDISPLAY_MOVE::LEFT);
         return 1;
     }
-    else if (cmd == true && key == FL_Right) {
+    else if (cmd == true && key == FL_Right && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_RIGHT);
         return 1;
     }
-    else if (key == FL_Right || key == FL_Tab) {
+    else if ((key == FL_Right && shift == false) || (key == FL_Tab && shift == false)) {
         _move_cursor(_TABLEDISPLAY_MOVE::RIGHT);
         return 1;
     }
-    else if (cmd == true && key == FL_Page_Up) {
+    else if (cmd == true && key == FL_Page_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::FIRST_ROW);
         return 1;
     }
-    else if (key == FL_Page_Up) {
+    else if (key == FL_Page_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::PAGE_UP);
         return 1;
     }
-    else if (cmd == true && key == FL_Page_Down) {
+    else if (cmd == true && key == FL_Page_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::LAST_ROW);
         return 1;
     }
-    else if (key == FL_Page_Down) {
+    else if (key == FL_Page_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::PAGE_DOWN);
         return 1;
     }
-    else if (key == FL_Home) {
+    else if (key == FL_Home && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::FIRST_COL);
         return 1;
     }
-    else if (key == FL_End) {
+    else if (key == FL_End && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::LAST_COL);
         return 1;
     }
-    else if (cmd == true && key == 'c') {
-        auto val = cell_value(_curr_row, _curr_col);
-        Fl::copy(val, strlen(val), 1);
+    else if (cmd == true && key == 'c' && shift == false) {
+        cmd_copy();
         return 1;
     }
-    else if (cmd == true && key == 'g') {
-        auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
-        if (dlg.run(window()) == true) {
-            active_cell(dlg.row(), dlg.col(), true);
-        }
+    else if (cmd == true && key == 'g' && shift == false) {
+        cmd_goto();
         return 1;
     }
-    else if (cmd == true && key == 'f') {
-        auto dlg = _TableDisplayFindDialog(this);
-        dlg.run(window());
+    else if (cmd == true && key == 'f' && shift == false) {
+        cmd_find();
+        return 1;
+    }
+    else if (cmd == true && key == 'a') {
+        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
+        do_callback();
+        return 1;
+    }
+    else if (cmd == true && key == 'i') {
+        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::INSERT_COLUMN : EVENT::INSERT_ROW);
+        do_callback();
+        return 1;
+    }
+    else if (cmd == true && key == 'd') {
+        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::DELETE_COLUMN : EVENT::DELETE_ROW);
+        do_callback();
         return 1;
     }
     return 0;
@@ -12232,11 +12270,11 @@ int TableDisplay::_ev_mouse_click () {
         Fl::focus(this);
     }
     if (r == 0 && c >= 1) {
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? TableDisplay::EVENT::COLUMN_CTRL : TableDisplay::EVENT::COLUMN);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? EVENT::COLUMN_CTRL : EVENT::COLUMN);
         do_callback();
     }
     else if (c == 0 && r >= 1) {
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? TableDisplay::EVENT::ROW_CTRL : TableDisplay::EVENT::ROW);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? EVENT::ROW_CTRL : EVENT::ROW);
         do_callback();
     }
     else if (r == -1 || c == -1) {
@@ -12321,7 +12359,7 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
     auto my = Fl::event_y();
     auto mx = Fl::event_x();
     if (!((_ver->visible() != 0 && mx >= _ver->x()) || (_hor->visible() != 0 && my >= _hor->y()))) {
-        if (_show_col_header && (my - y()) < _height) {
+        if (_show_col_header == true && (my - y()) < _height) {
             row = 0;
         }
         else {
@@ -12338,7 +12376,7 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
                 y1 += _height;
             }
         }
-        if (_show_row_header && (mx - x()) < _cell_width(0)) {
+        if (_show_row_header == true && (mx - x()) < _cell_width(0)) {
             col = 0;
         }
         else {
@@ -12349,7 +12387,7 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
                 if (x1 > x2) {
                     break;
                 }
-                else if (mx > x1 && (mx < x1 + cw || c == _cols)) {
+                else if (mx > x1 && (mx < (x1 + cw) || (_expand == true && c == _cols))) {
                     col = c;
                     break;
                 }
@@ -12379,6 +12417,12 @@ int TableDisplay::handle(int event) {
         else if (event == FL_PUSH) {
             ret = _ev_mouse_click();
         }
+    }
+    else if (event == FL_KEYDOWN) {
+        ret = _ev_keyboard_down(true);
+    }
+    else if (event == FL_PUSH) {
+        ret = _ev_mouse_click();
     }
     if (ret == 0 || ret == 1) {
         return ret;
@@ -12477,6 +12521,36 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         }
     }
 }
+void TableDisplay::reset() {
+    _cols            = 0;
+    _curr_col        = -1;
+    _curr_row        = -1;
+    _current_cell[0] = 0;
+    _current_cell[1] = 0;
+    _current_cell[2] = 0;
+    _current_cell[3] = 0;
+    _disable_hor     = false;
+    _disable_ver     = false;
+    _drag            = false;
+    _edit            = nullptr;
+    _event           = EVENT::UNDEFINED;
+    _event_col       = -1;
+    _event_row       = -1;
+    _expand          = false;
+    _height          = flw::PREF_FONTSIZE * 2;
+    _resize          = false;
+    _resize_col      = -1;
+    _rows            = 0;
+    _select          = TableDisplay::SELECT::NO;
+    _show_col_header = false;
+    _show_hor_lines  = false;
+    _show_row_header = false;
+    _show_ver_lines  = false;
+    _start_col       = 1;
+    _start_row       = 1;
+    _find            = "";
+    redraw();
+}
 void TableDisplay::show_cell(int row, int col) {
     if (_rows > 0 && row > 0 && row <= _rows) {
         auto rc = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
@@ -12522,7 +12596,7 @@ void TableDisplay::size(int rows, int cols) {
         _curr_col  = 1;
         _start_row = 1;
         _start_col = 1;
-        _set_event(_curr_row, _curr_col, TableDisplay::EVENT::SIZE);
+        _set_event(_curr_row, _curr_col, EVENT::SIZE);
         do_callback();
     }
     redraw();
@@ -12644,15 +12718,34 @@ const char* TableEditor::SELECT_DIR  = "Select Directory";
 const char* TableEditor::SELECT_FILE = "Select File";
 const char* TableEditor::SELECT_LIST = "Select String";
 TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
-    TableEditor::clear();
+    TableEditor::reset();
 }
-void TableEditor::clear() {
-    TableDisplay::clear();
-    _send_changed_event_always = false;
-    _edit2 = nullptr;
-    _edit3 = nullptr;
+void TableEditor::cmd_add(int count) {
+    if (count == 100) {
+        _edit_start("+++");
+    }
+    else if (count == 10) {
+        _edit_start("++");
+    }
+    else if (count == 1) {
+        _edit_start("+");
+    }
+    else if (count == -100) {
+        _edit_start("---");
+    }
+    else if (count == -10) {
+        _edit_start("--");
+    }
+    else if (count == -1) {
+        _edit_start("-");
+    }
 }
-void TableEditor::_delete_current_cell() {
+void TableEditor::cmd_cut() {
+    auto val = cell_value(_curr_row, _curr_col);
+    Fl::copy(val, strlen(val), 1);
+    cmd_delete();
+}
+void TableEditor::cmd_delete() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
         if (edit == true) {
@@ -12693,13 +12786,16 @@ void TableEditor::_delete_current_cell() {
         }
     }
 }
+void TableEditor::cmd_paste() {
+    Fl::paste(*this, 1);
+}
 void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
     auto align     = cell_align(row, col);
     auto textcolor = cell_textcolor(row, col);
     auto textfont  = cell_textfont(row, col);
     auto textsize  = cell_textsize(row, col);
-    auto val       = static_cast<TableDisplay*>(this)->cell_value(row, col);
+    auto val       = cell_value(row, col);
     assert(val);
     if (row > 0 && col > 0) {
         auto format = cell_format(row, col);
@@ -12857,7 +12953,7 @@ void TableEditor::_edit_create() {
     auto textcolor = FL_FOREGROUND_COLOR;
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
-    auto val       = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+    auto val       = cell_value(_curr_row, _curr_col);
     assert(val);
     if (rend == TableEditor::REND::TEXT ||
         rend == TableEditor::REND::INTEGER ||
@@ -12987,7 +13083,7 @@ void TableEditor::_edit_create() {
 }
 void TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+    auto val  = cell_value(_curr_row, _curr_col);
     char buffer[100];
     assert(val);
     if (rend == TableEditor::REND::INTEGER) {
@@ -13105,7 +13201,7 @@ void TableEditor::_edit_quick(const char* key) {
 }
 void TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+    auto val  = cell_value(_curr_row, _curr_col);
     assert(val);
     if (rend == TableEditor::REND::DLG_COLOR) {
         auto color1 = (int) _tableeditor_to_int(val, 0);
@@ -13177,9 +13273,9 @@ void TableEditor::_edit_start(const char* key) {
     }
 }
 void TableEditor::_edit_stop(bool save) {
-    if (_edit) {
+    if (_edit != nullptr) {
         auto rend = cell_rend(_curr_row, _curr_col);
-        auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+        auto val  = cell_value(_curr_row, _curr_col);
         auto stop = true;
         if (save == true) {
             if (rend == TableEditor::REND::TEXT ||
@@ -13295,7 +13391,7 @@ int TableEditor::_ev_keyboard_down2() {
     auto alt   = Fl::event_alt() != 0;
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
-    if (_edit) {
+    if (_edit != nullptr) {
         if (key == FL_Enter || key == FL_KP_Enter) {
             _edit_stop();
             return 1;
@@ -13311,44 +13407,42 @@ int TableEditor::_ev_keyboard_down2() {
             return 1;
         }
         else if (cmd == true && key == FL_BackSpace) {
-            _delete_current_cell();
+            cmd_delete();
             return 1;
         }
         else if (key == FL_Delete) {
-            _delete_current_cell();
+            cmd_delete();
         }
         else if (cmd == true && key == 'x') {
-            auto val = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
-            Fl::copy(val, strlen(val), 1);
-            _delete_current_cell();
+            cmd_cut();
             return 1;
         }
         else if (cmd == true && key == 'v') {
-            Fl::paste(*this, 1);
+            cmd_paste();
             return 1;
         }
         else if (alt == true && shift == true && (key == '+' || text == "+" || key == FL_KP + '+')) {
-            _edit_start("+++");
+            cmd_add(100);
             return 1;
         }
         else if (alt == true && (key == '+' || text == "+" || key == FL_KP + '+')) {
-            _edit_start("++");
+            cmd_add(10);
             return 1;
         }
         else if (key == '+' || text == "+" || key == FL_KP + '+') {
-            _edit_start("+");
+            cmd_add(1);
             return 1;
         }
         else if (alt == true && shift == true && (key == '-' || text == "-" || key == FL_KP + '-')) {
-            _edit_start("---");
+            cmd_add(-100);
             return 1;
         }
         else if (alt == true && (key == '-' || text == "-" || key == FL_KP + '-')) {
-            _edit_start("--");
+            cmd_add(-10);
             return 1;
         }
         else if (key == '-' || text == "-" || key == FL_KP + '-') {
-            _edit_start("-");
+            cmd_add(-1);
             return 1;
         }
     }
@@ -13374,7 +13468,7 @@ int TableEditor::_ev_paste() {
     auto text = Fl::event_text();
     if (_curr_row > 0 && _curr_col > 0 && text && *text) {
         auto        rend = cell_rend(_curr_row, _curr_col);
-        auto        val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+        auto        val  = cell_value(_curr_row, _curr_col);
         char        buffer[100];
         std::string string;
         switch(rend) {
@@ -13477,6 +13571,12 @@ int TableEditor::handle(int event) {
     else {
         return TableDisplay::handle(event);
     }
+}
+void TableEditor::reset() {
+    TableDisplay::reset();
+    _send_changed_event_always = false;
+    _edit2 = nullptr;
+    _edit3 = nullptr;
 }
 }
 #include <assert.h>

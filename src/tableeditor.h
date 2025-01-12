@@ -64,7 +64,7 @@ public:
                                 DLG_DATE,
                                 DLG_LIST,
     };
-
+    
     static const char*          SELECT_DATE;
     static const char*          SELECT_DIR;
     static const char*          SELECT_FILE;
@@ -83,14 +83,17 @@ public:
                                     { (void) row; (void) col; return TableEditor::REND::TEXT; }
     virtual bool                cell_value(int row, int col, const char* value)
                                     { (void) row; (void) col; (void) value; return false; }
-    void                        clear() override;
-    virtual int                 handle(int event) override;
+    void                        cmd_add(int count);
+    void                        cmd_cut();
+    void                        cmd_delete();
+    void                        cmd_paste();
+    int                         handle(int event) override;
+    void                        reset() override;
 
     static const char*          FormatSlider(double val, double min, double max, double step);
 
 private:
     bool                        _send_changed_event_always;
-    void                        _delete_current_cell();
     void                        _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false) override;
     void                        _edit_create();
     void                        _edit_quick(const char* key);

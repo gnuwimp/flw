@@ -75,11 +75,14 @@ public:
                                         { (void) col; return flw::PREF_FONTSIZE * 6; }
     virtual void                cell_width(int col, int width)
                                         { (void) col; (void) width; }
-    virtual void                clear();
     int                         column() const
                                     { return _curr_col; }
     int                         columns() const
                                     { return _cols; }
+    void                        cmd_copy();
+    void                        cmd_find();
+    void                        cmd_goto();
+    void                        debug() const;
     virtual void                draw() override;
     void                        expand_last_column(bool expand = false)
                                     { _expand = expand; redraw(); }
@@ -96,6 +99,7 @@ public:
     void                        height(int height)
                                     { _height = height; }
     void                        lines(bool ver = false, bool hor = false);
+    virtual void                reset();
     void                        resize_column_width(bool resize = false)
                                     { _resize = resize; }
     int                         row() const

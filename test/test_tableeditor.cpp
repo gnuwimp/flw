@@ -102,8 +102,8 @@ public:
             values[r][5]  = strdup("Password");
             values[r][6]  = (r % 2 == 0) ? strdup("Moloch") : strdup("Beelzebub");
             values[r][7]  = (r % 2 == 0) ? strdup("Behemoth") : strdup("Marduk");
-            values[r][8]  = string_format_dup(TableEditor::FormatSlider(rand() % 10 * 10, 0, 100, 10));
-            values[r][9]  = string_format_dup(TableEditor::FormatSlider(rand() % 1000 - rand() % 1000, -1000, 1000, 10));
+            values[r][8]  = string_format_dup(TableEditor::FormatSlider(rand() % 10000, 0, 10000, 20));
+            values[r][9]  = string_format_dup(TableEditor::FormatSlider(rand() % 5000 - rand() % 5000, -5000, 1000, 10));
             values[r][10] = string_format_dup("%d", rand() % 256);
             values[r][11] = strdup("Makefile");
             values[r][12] = strdup("obj");

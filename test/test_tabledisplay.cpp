@@ -169,6 +169,8 @@ public:
         bar->add("Scrollbar/Horizontal", 0, CallbackScrollbar, this, FL_MENU_RADIO);
         bar->add("Scrollbar/Vertical", 0, CallbackScrollbar, this, FL_MENU_RADIO);
         bar->add("Scrollbar/Both", 0, CallbackScrollbar, this, FL_MENU_RADIO);
+        
+//        bar->add("Debug/Remove all rows", 0, CallbackDebugRemoveAllRows, this);
 
         ((Fl_Menu_Item*) bar->find_item("Header/Both"))->setonly();
         ((Fl_Menu_Item*) bar->find_item("Lines/Both"))->setonly();
@@ -241,6 +243,14 @@ public:
         }
 
         fflush(stderr);
+    }
+
+    static void CallbackDebugRemoveAllRows(Fl_Widget*, void* v) {
+        Test* w = (Test*) v;
+
+        w->table->size(0, COLS);
+        w->table->redraw();
+        w->table->debug();
     }
 
     static void CallbackExpand(Fl_Widget*, void* v) {

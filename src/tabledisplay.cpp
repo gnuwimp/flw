@@ -351,7 +351,7 @@ TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group
     tooltip(TableDisplay::HELP_TEXT);
     clip_children(1);
     util::labelfont(this);
-    TableDisplay::clear();
+    reset();
 }
 
 //------------------------------------------------------------------------------
@@ -437,35 +437,50 @@ int TableDisplay::_cell_width(int col, int X) {
 }
 
 //------------------------------------------------------------------------------
-void TableDisplay::clear() {
-    _cols            = 0;
-    _curr_col        = -1;
-    _curr_row        = -1;
-    _current_cell[0] = 0;
-    _current_cell[1] = 0;
-    _current_cell[2] = 0;
-    _current_cell[3] = 0;
-    _disable_hor     = false;
-    _disable_ver     = false;
-    _drag            = false;
-    _edit            = nullptr;
-    _event           = EVENT::UNDEFINED;
-    _event_col       = -1;
-    _event_row       = -1;
-    _expand          = false;
-    _height          = flw::PREF_FONTSIZE * 2;
-    _resize          = false;
-    _resize_col      = -1;
-    _rows            = 0;
-    _select          = TableDisplay::SELECT::NO;
-    _show_col_header = false;
-    _show_hor_lines  = false;
-    _show_row_header = false;
-    _show_ver_lines  = false;
-    _start_col       = 1;
-    _start_row       = 1;
-    _find            = "";
-    redraw();
+void TableDisplay::cmd_copy() {
+    auto val = cell_value(_curr_row, _curr_col);
+    Fl::copy(val, strlen(val), 1);
+}
+
+//------------------------------------------------------------------------------
+void TableDisplay::cmd_find() {
+    auto dlg = _TableDisplayFindDialog(this);
+    dlg.run(window());
+}
+
+//------------------------------------------------------------------------------
+void TableDisplay::cmd_goto() {
+    auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
+
+    if (dlg.run(window()) == true) {
+        active_cell(dlg.row(), dlg.col(), true);
+    }
+}
+
+//------------------------------------------------------------------------------
+void TableDisplay::debug() const {
+#ifdef DEBUG
+    printf("flw::TableDisplay:\n");
+    printf("    rows            = %4d\n", _rows);
+    printf("    cols            = %4d\n", _cols);
+    printf("    curr_row        = %4d\n", _curr_row);
+    printf("    curr_col        = %4d\n", _curr_col);
+    printf("    start_row       = %4d\n", _start_row);
+    printf("    start_col       = %4d\n", _start_col);
+    printf("    event           = %4d\n", (int) _event);
+    printf("    event_row       = %4d\n", _event_row);
+    printf("    event_col       = %4d\n", _event_col);
+    printf("    height          = %4d\n", _height);
+    printf("    resize_col      = %4d\n", _resize_col);
+    printf("    show_col_header = %4d\n", _show_col_header);
+    printf("    show_hor_lines  = %4d\n", _show_hor_lines);
+    printf("    show_row_header = %4d\n", _show_row_header);
+    printf("    show_ver_lines  = %4d\n", _show_ver_lines);
+    printf("    resize          = %4d\n", _resize);
+    printf("    expand          = %4d\n", _expand);
+    printf("    disable_hor     = %4d\n", _disable_hor);
+    printf("    disable_ver     = %4d\n", _disable_ver);
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -635,81 +650,72 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
             return 1;
         }
     }
-    else if (cmd == true && key == FL_Up) {
+    else if (cmd == true && key == FL_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
         return 1;
     }
-    else if (key == FL_Up) {
+    else if (key == FL_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::UP);
         return 1;
     }
-    else if (cmd == true && key == FL_Down) {
+    else if (cmd == true && key == FL_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_DOWN);
         return 1;
     }
-    else if (key == FL_Down) {
+    else if (key == FL_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::DOWN);
         return 1;
     }
-    else if (cmd == true && key == FL_Left) {
+    else if (cmd == true && key == FL_Left && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_LEFT);
         return 1;
     }
-    else if (key == FL_Left || (key == FL_Tab && shift == true)) {
+    else if ((key == FL_Left && shift == false) || (key == FL_Tab && shift == true)) {
         _move_cursor(_TABLEDISPLAY_MOVE::LEFT);
         return 1;
     }
-    else if (cmd == true && key == FL_Right) {
+    else if (cmd == true && key == FL_Right && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_RIGHT);
         return 1;
     }
-    else if (key == FL_Right || key == FL_Tab) {
+    else if ((key == FL_Right && shift == false) || (key == FL_Tab && shift == false)) {
         _move_cursor(_TABLEDISPLAY_MOVE::RIGHT);
         return 1;
     }
-    else if (cmd == true && key == FL_Page_Up) {
+    else if (cmd == true && key == FL_Page_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::FIRST_ROW);
         return 1;
     }
-    else if (key == FL_Page_Up) {
+    else if (key == FL_Page_Up && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::PAGE_UP);
         return 1;
     }
-    else if (cmd == true && key == FL_Page_Down) {
+    else if (cmd == true && key == FL_Page_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::LAST_ROW);
         return 1;
     }
-    else if (key == FL_Page_Down) {
+    else if (key == FL_Page_Down && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::PAGE_DOWN);
         return 1;
     }
-    else if (key == FL_Home) {
+    else if (key == FL_Home && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::FIRST_COL);
         return 1;
     }
-    else if (key == FL_End) {
+    else if (key == FL_End && shift == false) {
         _move_cursor(_TABLEDISPLAY_MOVE::LAST_COL);
         return 1;
     }
-    else if (cmd == true && key == 'c') {
-        auto val = cell_value(_curr_row, _curr_col);
-
-        Fl::copy(val, strlen(val), 1);
+    else if (cmd == true && key == 'c' && shift == false) {
+        cmd_copy();
         return 1;
     }
-    else if (cmd == true && key == 'g') {
-        auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
-
-        if (dlg.run(window()) == true) {
-            active_cell(dlg.row(), dlg.col(), true);
-        }
-
+    else if (cmd == true && key == 'g' && shift == false) {
+        cmd_goto();
         return 1;
     }
-    else if (cmd == true && key == 'f') {
-        auto dlg = _TableDisplayFindDialog(this);
-        dlg.run(window());
-
+    else if (cmd == true && key == 'f' && shift == false) {
+        cmd_find();
         return 1;
     }
     else if (cmd == true && key == 'a') {
@@ -970,42 +976,42 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         else {
             if (range > 0) {
                 switch (move) {
-                case _TABLEDISPLAY_MOVE::FIRST_ROW:
-                    r = 1;
-                    break;
+                    case _TABLEDISPLAY_MOVE::FIRST_ROW:
+                        r = 1;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::UP:
-                    r = r > 1 ? r - 1 : 1;
-                    break;
+                    case _TABLEDISPLAY_MOVE::UP:
+                        r = r > 1 ? r - 1 : 1;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::SCROLL_UP:
-                    r = r > 8 ? r - 8 : 1;
-                    break;
+                    case _TABLEDISPLAY_MOVE::SCROLL_UP:
+                        r = r > 8 ? r - 8 : 1;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::PAGE_UP:
-                    r = _start_row - range > 0 ? _start_row - range : 1;
-                    _start_row = r;
-                    break;
+                    case _TABLEDISPLAY_MOVE::PAGE_UP:
+                        r = _start_row - range > 0 ? _start_row - range : 1;
+                        _start_row = r;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::DOWN:
-                    r = r < _rows ? r + 1 : _rows;
-                    break;
+                    case _TABLEDISPLAY_MOVE::DOWN:
+                        r = r < _rows ? r + 1 : _rows;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::SCROLL_DOWN:
-                    r = r < _rows - 8 ? r + 8 : _rows;
-                    break;
+                    case _TABLEDISPLAY_MOVE::SCROLL_DOWN:
+                        r = r < _rows - 8 ? r + 8 : _rows;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::PAGE_DOWN:
-                    r = _start_row + range <= _rows ? _start_row + range : _rows;
-                    _start_row = r;
-                    break;
+                    case _TABLEDISPLAY_MOVE::PAGE_DOWN:
+                        r = _start_row + range <= _rows ? _start_row + range : _rows;
+                        _start_row = r;
+                        break;
 
-                case _TABLEDISPLAY_MOVE::LAST_ROW:
-                    r = _rows;
-                    break;
+                    case _TABLEDISPLAY_MOVE::LAST_ROW:
+                        r = _rows;
+                        break;
 
-                default:
-                    break;
+                    default:
+                        break;
                 }
             }
         }
@@ -1018,32 +1024,32 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         }
         else {
             switch (move) {
-            case _TABLEDISPLAY_MOVE::LEFT:
-                c = c > 1 ? c - 1 : 1;
-                break;
+                case _TABLEDISPLAY_MOVE::LEFT:
+                    c = c > 1 ? c - 1 : 1;
+                    break;
 
-            case _TABLEDISPLAY_MOVE::SCROLL_LEFT:
-                c = c > 4 ? c - 4 : 1;
-                break;
+                case _TABLEDISPLAY_MOVE::SCROLL_LEFT:
+                    c = c > 4 ? c - 4 : 1;
+                    break;
 
-            case _TABLEDISPLAY_MOVE::RIGHT:
-                c = c < _cols ? c + 1 : _cols;
-                break;
+                case _TABLEDISPLAY_MOVE::RIGHT:
+                    c = c < _cols ? c + 1 : _cols;
+                    break;
 
-            case _TABLEDISPLAY_MOVE::SCROLL_RIGHT:
-                c = c < _cols - 4 ? c + 4 : _cols;
-                break;
+                case _TABLEDISPLAY_MOVE::SCROLL_RIGHT:
+                    c = c < _cols - 4 ? c + 4 : _cols;
+                    break;
 
-            case _TABLEDISPLAY_MOVE::FIRST_COL:
-                c = 1;
-                break;
+                case _TABLEDISPLAY_MOVE::FIRST_COL:
+                    c = 1;
+                    break;
 
-            case _TABLEDISPLAY_MOVE::LAST_COL:
-                c = _cols;
-                break;
+                case _TABLEDISPLAY_MOVE::LAST_COL:
+                    c = _cols;
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
             }
         }
 
@@ -1051,6 +1057,38 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
             active_cell(r, c, true);
         }
     }
+}
+
+//------------------------------------------------------------------------------
+void TableDisplay::reset() {
+    _cols            = 0;
+    _curr_col        = -1;
+    _curr_row        = -1;
+    _current_cell[0] = 0;
+    _current_cell[1] = 0;
+    _current_cell[2] = 0;
+    _current_cell[3] = 0;
+    _disable_hor     = false;
+    _disable_ver     = false;
+    _drag            = false;
+    _edit            = nullptr;
+    _event           = EVENT::UNDEFINED;
+    _event_col       = -1;
+    _event_row       = -1;
+    _expand          = false;
+    _height          = flw::PREF_FONTSIZE * 2;
+    _resize          = false;
+    _resize_col      = -1;
+    _rows            = 0;
+    _select          = TableDisplay::SELECT::NO;
+    _show_col_header = false;
+    _show_hor_lines  = false;
+    _show_row_header = false;
+    _show_ver_lines  = false;
+    _start_col       = 1;
+    _start_row       = 1;
+    _find            = "";
+    redraw();
 }
 
 //------------------------------------------------------------------------------

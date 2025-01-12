@@ -599,7 +599,7 @@ namespace theme {
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
     void                        load_theme_pref(Fl_Preferences& pref);
-    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, int show_0_1_2 = 1, int defw = 800, int defh = 600, std::string basename = "gui.");
+    void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
     bool                        parse(int argc, const char** argv);
     void                        save_theme_pref(Fl_Preferences& pref);
     void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
@@ -1813,6 +1813,7 @@ namespace flw {
 class TableDisplay : public Fl_Group {
     friend class _TableDisplayFindDialog;
 public:
+    static constexpr const char* HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
     enum class SELECT {
                                 NO,
                                 CELL,
@@ -1827,6 +1828,12 @@ public:
                                 ROW,
                                 ROW_CTRL,
                                 SIZE,
+                                APPEND_ROW,
+                                APPEND_COLUMN,
+                                INSERT_ROW,
+                                INSERT_COLUMN,
+                                DELETE_ROW,
+                                DELETE_COLUMN,
     };
     explicit                    TableDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        active_cell(int row = -1, int col = -1, bool show = false);
@@ -1846,11 +1853,14 @@ public:
                                         { (void) col; return flw::PREF_FONTSIZE * 6; }
     virtual void                cell_width(int col, int width)
                                         { (void) col; (void) width; }
-    virtual void                clear();
     int                         column() const
                                     { return _curr_col; }
     int                         columns() const
                                     { return _cols; }
+    void                        cmd_copy();
+    void                        cmd_find();
+    void                        cmd_goto();
+    void                        debug() const;
     virtual void                draw() override;
     void                        expand_last_column(bool expand = false)
                                     { _expand = expand; redraw(); }
@@ -1867,6 +1877,7 @@ public:
     void                        height(int height)
                                     { _height = height; }
     void                        lines(bool ver = false, bool hor = false);
+    virtual void                reset();
     void                        resize_column_width(bool resize = false)
                                     { _resize = resize; }
     int                         row() const
@@ -1901,7 +1912,7 @@ protected:
     virtual void                _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false);
     void                        _draw_row(int row, int W, int Y, int H);
     void                        _draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align);
-    int                         _ev_keyboard_down();
+    int                         _ev_keyboard_down(bool only_append_insert = false);
     int                         _ev_mouse_click();
     int                         _ev_mouse_drag();
     int                         _ev_mouse_move();
@@ -1997,12 +2008,15 @@ public:
                                     { (void) row; (void) col; return TableEditor::REND::TEXT; }
     virtual bool                cell_value(int row, int col, const char* value)
                                     { (void) row; (void) col; (void) value; return false; }
-    void                        clear() override;
-    virtual int                 handle(int event) override;
+    void                        cmd_add(int count);
+    void                        cmd_cut();
+    void                        cmd_delete();
+    void                        cmd_paste();
+    int                         handle(int event) override;
+    void                        reset() override;
     static const char*          FormatSlider(double val, double min, double max, double step);
 private:
     bool                        _send_changed_event_always;
-    void                        _delete_current_cell();
     void                        _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false) override;
     void                        _edit_create();
     void                        _edit_quick(const char* key);

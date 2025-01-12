@@ -93,20 +93,41 @@ const char* TableEditor::SELECT_LIST = "Select String";
 
 //------------------------------------------------------------------------------
 TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
-    TableEditor::clear();
+    TableEditor::reset();
 }
 
 //------------------------------------------------------------------------------
-void TableEditor::clear() {
-    TableDisplay::clear();
-
-    _send_changed_event_always = false;
-    _edit2 = nullptr;
-    _edit3 = nullptr;
+void TableEditor::cmd_add(int count) {
+    if (count == 100) {
+        _edit_start("+++");
+    }
+    else if (count == 10) {
+        _edit_start("++");
+    }
+    else if (count == 1) {
+        _edit_start("+");
+    }
+    else if (count == -100) {
+        _edit_start("---");
+    }
+    else if (count == -10) {
+        _edit_start("--");
+    }
+    else if (count == -1) {
+        _edit_start("-");
+    }
 }
 
 //------------------------------------------------------------------------------
-void TableEditor::_delete_current_cell() {
+void TableEditor::cmd_cut() {
+    auto val = cell_value(_curr_row, _curr_col);
+
+    Fl::copy(val, strlen(val), 1);
+    cmd_delete();
+}
+
+//------------------------------------------------------------------------------
+void TableEditor::cmd_delete() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
 
@@ -115,37 +136,37 @@ void TableEditor::_delete_current_cell() {
             auto set  = false;
 
             switch (rend) {
-            case TableEditor::REND::TEXT:
-            case TableEditor::REND::SECRET:
-            case TableEditor::REND::INPUT_CHOICE:
-            case TableEditor::REND::DLG_FILE:
-            case TableEditor::REND::DLG_DIR:
-            case TableEditor::REND::DLG_LIST:
-                set = cell_value(_curr_row, _curr_col, "");
-                break;
+                case TableEditor::REND::TEXT:
+                case TableEditor::REND::SECRET:
+                case TableEditor::REND::INPUT_CHOICE:
+                case TableEditor::REND::DLG_FILE:
+                case TableEditor::REND::DLG_DIR:
+                case TableEditor::REND::DLG_LIST:
+                    set = cell_value(_curr_row, _curr_col, "");
+                    break;
 
-            case TableEditor::REND::INTEGER:
-                set = cell_value(_curr_row, _curr_col, "0");
-                break;
+                case TableEditor::REND::INTEGER:
+                    set = cell_value(_curr_row, _curr_col, "0");
+                    break;
 
-            case TableEditor::REND::NUMBER:
-                set = cell_value(_curr_row, _curr_col, "0.0");
-                break;
+                case TableEditor::REND::NUMBER:
+                    set = cell_value(_curr_row, _curr_col, "0.0");
+                    break;
 
-            case TableEditor::REND::BOOLEAN:
-                set = cell_value(_curr_row, _curr_col, "0");
-                break;
+                case TableEditor::REND::BOOLEAN:
+                    set = cell_value(_curr_row, _curr_col, "0");
+                    break;
 
-            case TableEditor::REND::DLG_DATE:
-                set = cell_value(_curr_row, _curr_col, "1970-01-01");
-                break;
+                case TableEditor::REND::DLG_DATE:
+                    set = cell_value(_curr_row, _curr_col, "1970-01-01");
+                    break;
 
-            case TableEditor::REND::DLG_COLOR:
-                set = cell_value(_curr_row, _curr_col, "56");
-                break;
+                case TableEditor::REND::DLG_COLOR:
+                    set = cell_value(_curr_row, _curr_col, "56");
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
             }
 
             if (set == true) {
@@ -158,6 +179,11 @@ void TableEditor::_delete_current_cell() {
 }
 
 //------------------------------------------------------------------------------
+void TableEditor::cmd_paste() {
+    Fl::paste(*this, 1);
+}
+
+//------------------------------------------------------------------------------
 void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
 
@@ -165,7 +191,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
     auto textcolor = cell_textcolor(row, col);
     auto textfont  = cell_textfont(row, col);
     auto textsize  = cell_textsize(row, col);
-    auto val       = static_cast<TableDisplay*>(this)->cell_value(row, col);
+    auto val       = cell_value(row, col);
 
     assert(val);
 
@@ -350,7 +376,7 @@ void TableEditor::_edit_create() {
     auto textcolor = FL_FOREGROUND_COLOR;
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
-    auto val       = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+    auto val       = cell_value(_curr_row, _curr_col);
 
     assert(val);
 
@@ -507,7 +533,7 @@ void TableEditor::_edit_create() {
 //------------------------------------------------------------------------------
 void TableEditor::_edit_quick(const char* key) {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+    auto val  = cell_value(_curr_row, _curr_col);
     char buffer[100];
 
     assert(val);
@@ -642,7 +668,7 @@ void TableEditor::_edit_quick(const char* key) {
 //------------------------------------------------------------------------------
 void TableEditor::_edit_show() {
     auto rend = cell_rend(_curr_row, _curr_col);
-    auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+    auto val  = cell_value(_curr_row, _curr_col);
 
     assert(val);
 
@@ -731,9 +757,9 @@ void TableEditor::_edit_start(const char* key) {
 
 //------------------------------------------------------------------------------
 void TableEditor::_edit_stop(bool save) {
-    if (_edit) {
+    if (_edit != nullptr) {
         auto rend = cell_rend(_curr_row, _curr_col);
-        auto val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+        auto val  = cell_value(_curr_row, _curr_col);
         auto stop = true;
 
         if (save == true) {
@@ -870,9 +896,9 @@ int TableEditor::_ev_keyboard_down2() {
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
 
-    // printf("key=%d <%s>, alt=%d, cmd=%d, shift=%d\n", key, text.c_str(), alt, cmd, shift); fflush(stdout);
+//    printf("key=%d <%s>, alt=%d, cmd=%d, shift=%d\n", key, text.c_str(), alt, cmd, shift); fflush(stdout);
 
-    if (_edit) {
+    if (_edit != nullptr) {
         if (key == FL_Enter || key == FL_KP_Enter) {
             _edit_stop();
             return 1;
@@ -888,45 +914,42 @@ int TableEditor::_ev_keyboard_down2() {
             return 1;
         }
         else if (cmd == true && key == FL_BackSpace) {
-            _delete_current_cell();
+            cmd_delete();
             return 1;
         }
         else if (key == FL_Delete) {
-            _delete_current_cell();
+            cmd_delete();
         }
         else if (cmd == true && key == 'x') {
-            auto val = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
-
-            Fl::copy(val, strlen(val), 1);
-            _delete_current_cell();
+            cmd_cut();
             return 1;
         }
         else if (cmd == true && key == 'v') {
-            Fl::paste(*this, 1);
+            cmd_paste();
             return 1;
         }
         else if (alt == true && shift == true && (key == '+' || text == "+" || key == FL_KP + '+')) { // !!! Problems with shift as it changes key depending on layout
-            _edit_start("+++");
+            cmd_add(100);
             return 1;
         }
         else if (alt == true && (key == '+' || text == "+" || key == FL_KP + '+')) {
-            _edit_start("++");
+            cmd_add(10);
             return 1;
         }
         else if (key == '+' || text == "+" || key == FL_KP + '+') {
-            _edit_start("+");
+            cmd_add(1);
             return 1;
         }
         else if (alt == true && shift == true && (key == '-' || text == "-" || key == FL_KP + '-')) { // !!! Problems with shift as it changes key depending on layout
-            _edit_start("---");
+            cmd_add(-100);
             return 1;
         }
         else if (alt == true && (key == '-' || text == "-" || key == FL_KP + '-')) {
-            _edit_start("--");
+            cmd_add(-10);
             return 1;
         }
         else if (key == '-' || text == "-" || key == FL_KP + '-') {
-            _edit_start("-");
+            cmd_add(-1);
             return 1;
         }
     }
@@ -961,77 +984,77 @@ int TableEditor::_ev_paste() {
 
     if (_curr_row > 0 && _curr_col > 0 && text && *text) {
         auto        rend = cell_rend(_curr_row, _curr_col);
-        auto        val  = static_cast<TableDisplay*>(this)->cell_value(_curr_row, _curr_col);
+        auto        val  = cell_value(_curr_row, _curr_col);
         char        buffer[100];
         std::string string;
 
         switch(rend) {
-        case TableEditor::REND::CHOICE:
-        case TableEditor::REND::DLG_LIST:
-        case TableEditor::REND::SLIDER:
-        case TableEditor::REND::VALUE_SLIDER:
-            return 1;
-
-        case TableEditor::REND::DLG_DIR:
-        case TableEditor::REND::DLG_FILE:
-        case TableEditor::REND::INPUT_CHOICE:
-        case TableEditor::REND::SECRET:
-        case TableEditor::REND::TEXT:
-            break;
-
-        case TableEditor::REND::BOOLEAN:
-            if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
-                text = "1";
-            }
-            else if (strcmp("0", text) == 0 || strcmp("false", text) == 0) {
-                text = "0";
-            }
-            else {
+            case TableEditor::REND::CHOICE:
+            case TableEditor::REND::DLG_LIST:
+            case TableEditor::REND::SLIDER:
+            case TableEditor::REND::VALUE_SLIDER:
                 return 1;
-            }
 
-        case TableEditor::REND::DLG_COLOR:
-        case TableEditor::REND::INTEGER:
-            if (*text < '0' || *text > '9') {
-                return 1;
-            }
-            else {
-                auto num = _tableeditor_to_int(text, 0);
-                snprintf(buffer, 100, "%lld", (long long int) num);
-                text = buffer;
+            case TableEditor::REND::DLG_DIR:
+            case TableEditor::REND::DLG_FILE:
+            case TableEditor::REND::INPUT_CHOICE:
+            case TableEditor::REND::SECRET:
+            case TableEditor::REND::TEXT:
+                break;
 
-                if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
+            case TableEditor::REND::BOOLEAN:
+                if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
+                    text = "1";
+                }
+                else if (strcmp("0", text) == 0 || strcmp("false", text) == 0) {
+                    text = "0";
+                }
+                else {
+                    return 1;
+                }
+
+            case TableEditor::REND::DLG_COLOR:
+            case TableEditor::REND::INTEGER:
+                if (*text < '0' || *text > '9') {
                     return 1;
                 }
                 else {
+                    auto num = _tableeditor_to_int(text, 0);
+                    snprintf(buffer, 100, "%lld", (long long int) num);
+                    text = buffer;
+
+                    if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
+                        return 1;
+                    }
+                    else {
+                        break;
+                    }
+                }
+
+            case TableEditor::REND::NUMBER: {
+                if (*text < '0' || *text > '9') {
+                    return 1;
+                }
+                else {
+                    auto num = util::to_double(text, 0.0);
+                    snprintf(buffer, 100, "%f", num);
+                    text = buffer;
                     break;
                 }
             }
 
-        case TableEditor::REND::NUMBER: {
-            if (*text < '0' || *text > '9') {
-                return 1;
-            }
-            else {
-                auto num = util::to_double(text, 0.0);
-                snprintf(buffer, 100, "%f", num);
-                text = buffer;
-                break;
-            }
-        }
+            case TableEditor::REND::DLG_DATE: {
+                auto date = gnu::Date(text);
 
-        case TableEditor::REND::DLG_DATE: {
-            auto date = gnu::Date(text);
-
-            if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
-                return 1;
+                if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
+                    return 1;
+                }
+                else {
+                    string = date.format(gnu::Date::FORMAT::ISO_LONG);
+                    text = string.c_str();
+                    break;
+                }
             }
-            else {
-                string = date.format(gnu::Date::FORMAT::ISO_LONG);
-                text = string.c_str();
-                break;
-            }
-        }
         }
 
         if ((_send_changed_event_always == true || strcmp(val, text) != 0) && cell_value(_curr_row, _curr_col, text) == true) {
@@ -1081,6 +1104,15 @@ int TableEditor::handle(int event) {
     else {
         return TableDisplay::handle(event);
     }
+}
+
+//------------------------------------------------------------------------------
+void TableEditor::reset() {
+    TableDisplay::reset();
+
+    _send_changed_event_always = false;
+    _edit2 = nullptr;
+    _edit3 = nullptr;
 }
 
 } // flw
