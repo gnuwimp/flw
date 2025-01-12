@@ -246,6 +246,7 @@ public:
         self->plot->xscale().set_label("");
         self->plot->yscale().set_label("");
         self->plot->update_pref();
+        self->plot->resize();
     }
 
     //--------------------------------------------------------------------------
@@ -321,7 +322,7 @@ public:
             srand(RAND);
         }
 
-        plot->clear();
+        plot->reset();
 
         if (TEST == TEST_CUSTOM_X) {
             plot->add_line(PlotLine(create_custom_x(), "TYPE::VECTOR", PlotLine::TYPE::VECTOR, color::TEAL, 21));

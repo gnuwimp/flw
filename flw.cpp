@@ -2547,7 +2547,7 @@ JSB& JSB::end() {
 #include <FL/fl_show_colormap.H>
 #include <algorithm>
 namespace flw {
-#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); clear(); return false; }
+#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 #define _FLW_CHART_DEBUG(X)
 #define _FLW_CHART_CLIP(X) { X; }
@@ -2598,16 +2598,6 @@ std::optional<double> ChartArea::clamp_min() const {
     }
     return std::nullopt;
 }
-void ChartArea::clear() {
-    _clamp_max = INFINITY;
-    _clamp_min = INFINITY;
-    _percent   = 0;
-    _rect      = Fl_Rect();
-    _selected  = 0;
-    _left.clear();
-    _right.clear();
-    _lines.clear();
-}
 void ChartArea::debug() const {
 #ifdef DEBUG
     printf("\t--------------------------------------\n");
@@ -2645,6 +2635,16 @@ void ChartArea::delete_line(size_t index) {
         }
         count++;
     }
+}
+void ChartArea::reset() {
+    _clamp_max = INFINITY;
+    _clamp_min = INFINITY;
+    _percent   = 0;
+    _rect      = Fl_Rect();
+    _selected  = 0;
+    _left.reset();
+    _right.reset();
+    _lines.clear();
 }
 ChartLine* ChartArea::selected_line() {
     if (_selected >= _lines.size()) {
@@ -3159,20 +3159,10 @@ ChartData::RANGE  ChartData::StringToRange(std::string range) {
     else                        return RANGE::DAY;
 }
 ChartLine::ChartLine(const ChartDataVector& data, std::string label, ChartLine::TYPE type) {
-    clear();
+    reset();
     set_data(data);
     set_label(label);
     set_type(type);
-}
-void ChartLine::clear() {
-    _data.clear();
-    _align   = FL_ALIGN_LEFT;
-    _color   = FL_FOREGROUND_COLOR;
-    _label   = "";
-    _rect    = Fl_Rect();
-    _type    = TYPE::LINE;
-    _visible = true;
-    _width   = 1;
 }
 void ChartLine::debug(size_t num) const {
 #ifdef DEBUG
@@ -3195,6 +3185,16 @@ void ChartLine::debug(size_t num) const {
 #else
     (void) num;
 #endif
+}
+void ChartLine::reset() {
+    _data.clear();
+    _align   = FL_ALIGN_LEFT;
+    _color   = FL_FOREGROUND_COLOR;
+    _label   = "";
+    _rect    = Fl_Rect();
+    _type    = TYPE::LINE;
+    _visible = true;
+    _width   = 1;
 }
 ChartLine&  ChartLine::set_type_from_string(std::string val) {
     if (val == "LINE_DOT")                     _type = TYPE::LINE_DOT;
@@ -3343,7 +3343,7 @@ public:
     }
 };
 ChartScale::ChartScale() {
-    clear();
+    reset();
 }
 int ChartScale::calc_margin() {
     if (diff() < ChartData::MIN_VALUE) {
@@ -3393,12 +3393,6 @@ void ChartScale::calc_tick(int height) {
             _tick = 0.0;
         }
     }
-}
-void ChartScale::clear() {
-    _min   = INFINITY;
-    _max   = INFINITY;
-    _tick  = 0.0;
-    _pixel = 0.0;
 }
 void ChartScale::debug(const char* name) const {
 #ifdef DEBUG
@@ -3450,6 +3444,12 @@ std::optional<double> ChartScale::min() const {
     }
     return std::nullopt;
 }
+void ChartScale::reset() {
+    _min   = INFINITY;
+    _max   = INFINITY;
+    _tick  = 0.0;
+    _pixel = 0.0;
+}
 Chart::Chart(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14),
@@ -3475,7 +3475,7 @@ _CW(14) {
     _menu->add(_CHART_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_CHART_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_CHART_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_CHART_CLEAR,            0, _FLW_CHART_CB(clear()));
+    _menu->add(_CHART_CLEAR,            0, _FLW_CHART_CB(reset()));
     _menu->add(_CHART_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
     _menu->add(_CHART_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
     _menu->add(_CHART_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()), FL_MENU_DIVIDER);
@@ -3506,7 +3506,7 @@ _CW(14) {
     _areas.push_back(ChartArea(ChartArea::AREA::FOUR));
     _areas.push_back(ChartArea(ChartArea::AREA::FIVE));
     _disable_menu = false;
-    clear();
+    reset();
     update_pref();
 }
 void Chart::_calc_area_height() {
@@ -3637,8 +3637,8 @@ void Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
         auto min_clamp = area.clamp_min();
         auto max_clamp = area.clamp_max();
-        area.left_scale().clear();
-        area.right_scale().clear();
+        area.left_scale().reset();
+        area.right_scale().reset();
         for (const auto& line : area.lines()) {
             if (line.size() == 0 || line.is_visible() == false) {
                 continue;
@@ -3720,36 +3720,6 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
     auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init();
-}
-void Chart::clear() {
-    static_cast<Fl_Valuator*>(_scroll)->value(0);
-    _block_dates.clear();
-    _dates.clear();
-    for (auto& area : _areas) {
-        area.clear();
-    }
-    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
-    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
-    _area         = nullptr;
-    _bottom_space = 0;
-    _date_start   = 0;
-    _margin_left  = _CHART_MIN_MARGIN;
-    _margin_right = _CHART_MIN_MARGIN;
-    _old          = Fl_Rect();
-    _printing     = false;
-    _ticks        = 0;
-    _tooltip      = "";
-    _top_space    = 0;
-    _ver_pos[0]   = -1;
-    set_alt_size();
-    set_area_size();
-    set_date_range();
-    set_hor_lines();
-    set_main_label();
-    set_line_labels();
-    set_tick_width();
-    set_ver_lines();
-    init();
 }
 bool Chart::create_line(ChartData::FORMULAS formula, bool support) {
     if (_area == nullptr || _area->selected_line() == nullptr) {
@@ -4642,7 +4612,7 @@ bool Chart::load_json() {
 }
 bool Chart::load_json(std::string filename) {
     _filename = "";
-    clear();
+    reset();
     redraw();
     auto wc  = WaitCursor();
     auto buf = gnu::file::read(filename);
@@ -4661,7 +4631,7 @@ bool Chart::load_json(std::string filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != Chart::VERSION) { fl_alert("error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), Chart::VERSION); clear(); return false; }
+                    if (j2->vn_i() != Chart::VERSION) { fl_alert("error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), Chart::VERSION); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -4773,6 +4743,36 @@ void Chart::print_to_postscript() {
     dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1, top_window());
     _printing = false;
     redraw();
+}
+void Chart::reset() {
+    static_cast<Fl_Valuator*>(_scroll)->value(0);
+    _block_dates.clear();
+    _dates.clear();
+    for (auto& area : _areas) {
+        area.reset();
+    }
+    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
+    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
+    _area         = nullptr;
+    _bottom_space = 0;
+    _date_start   = 0;
+    _margin_left  = _CHART_MIN_MARGIN;
+    _margin_right = _CHART_MIN_MARGIN;
+    _old          = Fl_Rect();
+    _printing     = false;
+    _ticks        = 0;
+    _tooltip      = "";
+    _top_space    = 0;
+    _ver_pos[0]   = -1;
+    set_alt_size();
+    set_area_size();
+    set_date_range();
+    set_hor_lines();
+    set_main_label();
+    set_line_labels();
+    set_tick_width();
+    set_ver_lines();
+    init();
 }
 void Chart::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {
@@ -9819,7 +9819,7 @@ void LogDisplay::value(const char* text) {
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Hor_Slider.H>
 namespace flw {
-#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); clear(); return false; }
+#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 #define _FLW_PLOT_DEBUG(X)
 #define _FLW_PLOT_CLIP(X) { X; }
@@ -10003,7 +10003,7 @@ PlotDataVector PlotData::Swap(const PlotDataVector& in) {
     return res;
 }
 PlotLine::PlotLine() {
-    clear();
+    reset();
 }
 PlotLine::PlotLine(const PlotDataVector& data, std::string label, PlotLine::TYPE type, Fl_Color color, unsigned width) {
     _color   = color;
@@ -10012,15 +10012,6 @@ PlotLine::PlotLine(const PlotDataVector& data, std::string label, PlotLine::TYPE
     _type    = type;
     _visible = true;
     _width   = (width <= PlotLine::MAX_WIDTH) ? width : 1;
-}
-void PlotLine::clear() {
-    _color   = FL_BLUE;
-    _label   = "";
-    _rect    = Fl_Rect();
-    _type    = TYPE::LINE;
-    _visible = true;
-    _width   = 1;
-    _data.clear();
 }
 void PlotLine::debug() const {
 #ifdef DEBUG
@@ -10041,6 +10032,15 @@ void PlotLine::debug() const {
     printf("\t\tmaxY    = %22.8f\n", maxy);
     fflush(stdout);
 #endif
+}
+void PlotLine::reset() {
+    _color   = FL_BLUE;
+    _label   = "";
+    _rect    = Fl_Rect();
+    _type    = TYPE::LINE;
+    _visible = true;
+    _width   = 1;
+    _data.clear();
 }
 PlotLine& PlotLine::set_type_from_string(std::string val) {
     if (val == "LINE_DASH")             _type = TYPE::LINE_DASH;
@@ -10221,16 +10221,6 @@ void PlotScale::calc_tick(double height) {
         }
     }
 }
-void PlotScale::clear() {
-    _color  = FL_FOREGROUND_COLOR;
-    _fr     = 0;
-    _label  = "";
-    _labels = StringVector();
-    _pixel  = 0.0;
-    _text   = 0;
-    _tick   = 0.0;
-    clear_min_max();
-}
 void PlotScale::debug(const char* s) const {
 #ifdef DEBUG
     printf("\t-----------------------------------------\n");
@@ -10267,6 +10257,16 @@ void PlotScale::measure_labels(int cw, bool custom) {
         _text = (l1.length() > l2.length()) ? l1.length() * cw : l2.length() * cw;
     }
 }
+void PlotScale::reset() {
+    _color  = FL_FOREGROUND_COLOR;
+    _fr     = 0;
+    _label  = "";
+    _labels = StringVector();
+    _pixel  = 0.0;
+    _text   = 0;
+    _tick   = 0.0;
+    reset_min_max();
+}
 Plot::Plot(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14), _CW(14) {
@@ -10285,7 +10285,7 @@ _CH(14), _CW(14) {
     _menu->add(_PLOT_SETUP_LABELS,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_PLOT_SETUP_HLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_PLOT_SETUP_VLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_PLOT_CLEAR,         0, _FLW_PLOT_CB(clear()));
+    _menu->add(_PLOT_CLEAR,         0, _FLW_PLOT_CB(reset()));
     _menu->add(_PLOT_SETUP_LABEL,   0, _FLW_PLOT_CB(setup_label(LABEL::MAIN)));
     _menu->add(_PLOT_SETUP_XLABEL,  0, _FLW_PLOT_CB(setup_label(LABEL::X)));
     _menu->add(_PLOT_SETUP_YLABEL,  0, _FLW_PLOT_CB(setup_label(LABEL::Y)));
@@ -10312,7 +10312,7 @@ _CH(14), _CW(14) {
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
     _disable_menu = false;
-    clear();
+    reset();
     update_pref();
 }
 bool Plot::add_line(const PlotLine& line) {
@@ -10323,8 +10323,8 @@ bool Plot::add_line(const PlotLine& line) {
     return true;
 }
 void Plot::_calc_min_max() {
-    _x.clear_min_max();
-    _y.clear_min_max();
+    _x.reset_min_max();
+    _y.reset_min_max();
     for (const auto& line : _lines) {
         if (line.is_visible() == false) {
             continue;
@@ -10375,27 +10375,6 @@ bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
     widget->draw();
     widget->resize(rect.x(), rect.y(), rect.w(), rect.h());
     return false;
-}
-void Plot::clear() {
-    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
-    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
-    _old            = Fl_Rect();
-    _selected_line  = 0;
-    _selected_point = -1;
-    _x              = PlotScale();
-    _y              = PlotScale();
-    _lines.clear();
-    selection_color(FL_FOREGROUND_COLOR);
-    set_hor_lines();
-    set_label();
-    set_line_labels();
-    set_max_x();
-    set_max_y();
-    set_min_x();
-    set_min_y();
-    set_ver_lines();
-    update_pref();
-    init();
 }
 bool Plot::create_line(PlotData::FORMULAS formula) {
     if (_selected_line >= _lines.size()) {
@@ -10967,7 +10946,7 @@ bool Plot::load_json() {
 }
 bool Plot::load_json(std::string filename) {
     _filename = "";
-    clear();
+    reset();
     redraw();
     auto wc  = WaitCursor();
     auto buf = gnu::file::read(filename);
@@ -11062,6 +11041,27 @@ bool Plot::load_json(std::string filename) {
 void Plot::print() {
     dlg::print("Print Plot", Plot::_CallbackPrinter, this, 1, 1, top_window());
     redraw();
+}
+void Plot::reset() {
+    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
+    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
+    _old            = Fl_Rect();
+    _selected_line  = 0;
+    _selected_point = -1;
+    _x              = PlotScale();
+    _y              = PlotScale();
+    _lines.clear();
+    selection_color(FL_FOREGROUND_COLOR);
+    set_hor_lines();
+    set_label();
+    set_line_labels();
+    set_max_x();
+    set_max_y();
+    set_min_x();
+    set_min_y();
+    set_ver_lines();
+    update_pref();
+    init();
 }
 void Plot::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {

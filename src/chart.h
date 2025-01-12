@@ -147,11 +147,10 @@ public:
     };
 
     explicit                    ChartLine()
-                                    { clear(); }
+                                    { reset(); }
     explicit                    ChartLine(const ChartDataVector& data, std::string label = "", TYPE type = ChartLine::TYPE::LINE);
     Fl_Align                    align() const
                                     { return _align; }
-    void                        clear();
     Fl_Color                    color() const
                                     { return _color; }
     const ChartDataVector&      data() const
@@ -163,6 +162,7 @@ public:
                                     { return _label; }
     const Fl_Rect&              label_rect() const
                                     { return _rect; }
+    void                        reset();
     ChartLine&                  set_align(Fl_Align val)
                                     { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; }
     ChartLine&                  set_color(Fl_Color val)
@@ -220,7 +220,6 @@ public:
                                 ChartScale();
     int                         calc_margin();
     void                        calc_tick(int height);
-    void                        clear();
     void                        debug(const char* name) const;
     double                      diff() const;
     void                        fix_height();
@@ -228,6 +227,7 @@ public:
     std::optional<double>       min() const;
     double                      pixel() const
                                     { return _pixel; }
+    void                        reset();
     void                        set_max(double val)
                                     { _max = val; }
     void                        set_min(double val)
@@ -269,13 +269,12 @@ public:
     };
 
     explicit                    ChartArea(ChartArea::AREA area)
-                                    { _area = area; clear(); }
+                                    { _area = area; reset(); }
     bool                        add_line(const ChartLine& chart_line);
     AREA                        area() const
                                     { return _area; }
     std::optional<double>       clamp_max() const;
     std::optional<double>       clamp_min() const;
-    void                        clear();
     void                        debug() const;
     void                        delete_line(size_t index);
     ChartScale&                 left_scale()
@@ -288,6 +287,7 @@ public:
                                     { return _percent; }
     Fl_Rect&                    rect()
                                     { return _rect; }
+    void                        reset();
     ChartScale&                 right_scale()
                                     { return _right; }
     size_t                      selected() const
@@ -346,7 +346,6 @@ public:
                                     { return _alt_size; }
     ChartArea&                  area(ChartArea::AREA area)
                                     { return _areas[static_cast<size_t>(area)]; }
-    void                        clear();
     bool                        create_line(ChartData::FORMULAS formula, bool support = false);
     void                        debug() const;
     void                        debug_line() const;
@@ -374,6 +373,7 @@ public:
     std::string                 main_label() const
                                     { return _label; }
     void                        print_to_postscript();
+    void                        reset();
     void                        resize(int X, int Y, int W, int H) override;
     bool                        save_csv();
     bool                        save_json();

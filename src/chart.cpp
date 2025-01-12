@@ -32,7 +32,7 @@ namespace flw {
  *     |_|
  */
 
-#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); clear(); return false; }
+#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 //#define _FLW_CHART_DEBUG(X) { X; }
 #define _FLW_CHART_DEBUG(X)
@@ -108,19 +108,6 @@ std::optional<double> ChartArea::clamp_min() const {
 }
 
 //------------------------------------------------------------------------------
-void ChartArea::clear() {
-    _clamp_max = INFINITY;
-    _clamp_min = INFINITY;
-    _percent   = 0;
-    _rect      = Fl_Rect();
-    _selected  = 0;
-
-    _left.clear();
-    _right.clear();
-    _lines.clear();
-}
-
-//------------------------------------------------------------------------------
 void ChartArea::debug() const {
 #ifdef DEBUG
     printf("\t--------------------------------------\n");
@@ -168,6 +155,19 @@ void ChartArea::delete_line(size_t index) {
 
         count++;
     }
+}
+
+//------------------------------------------------------------------------------
+void ChartArea::reset() {
+    _clamp_max = INFINITY;
+    _clamp_min = INFINITY;
+    _percent   = 0;
+    _rect      = Fl_Rect();
+    _selected  = 0;
+
+    _left.reset();
+    _right.reset();
+    _lines.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -848,23 +848,10 @@ ChartData::RANGE  ChartData::StringToRange(std::string range) {
 
 //------------------------------------------------------------------------------
 ChartLine::ChartLine(const ChartDataVector& data, std::string label, ChartLine::TYPE type) {
-    clear();
+    reset();
     set_data(data);
     set_label(label);
     set_type(type);
-}
-
-//------------------------------------------------------------------------------
-void ChartLine::clear() {
-    _data.clear();
-
-    _align   = FL_ALIGN_LEFT;
-    _color   = FL_FOREGROUND_COLOR;
-    _label   = "";
-    _rect    = Fl_Rect();
-    _type    = TYPE::LINE;
-    _visible = true;
-    _width   = 1;
 }
 
 //------------------------------------------------------------------------------
@@ -891,6 +878,19 @@ void ChartLine::debug(size_t num) const {
 #else
     (void) num;
 #endif
+}
+
+//------------------------------------------------------------------------------
+void ChartLine::reset() {
+    _data.clear();
+
+    _align   = FL_ALIGN_LEFT;
+    _color   = FL_FOREGROUND_COLOR;
+    _label   = "";
+    _rect    = Fl_Rect();
+    _type    = TYPE::LINE;
+    _visible = true;
+    _width   = 1;
 }
 
 //------------------------------------------------------------------------------
@@ -1091,7 +1091,7 @@ public:
 
 //------------------------------------------------------------------------------
 ChartScale::ChartScale() {
-    clear();
+    reset();
 }
 
 //------------------------------------------------------------------------------
@@ -1162,14 +1162,6 @@ void ChartScale::calc_tick(int height) {
 }
 
 //------------------------------------------------------------------------------
-void ChartScale::clear() {
-    _min   = INFINITY;
-    _max   = INFINITY;
-    _tick  = 0.0;
-    _pixel = 0.0;
-}
-
-//------------------------------------------------------------------------------
 void ChartScale::debug(const char* name) const {
 #ifdef DEBUG
     printf("\t\t---------------------------------------------\n");
@@ -1233,6 +1225,14 @@ std::optional<double> ChartScale::min() const {
     return std::nullopt;
 }
 
+//------------------------------------------------------------------------------
+void ChartScale::reset() {
+    _min   = INFINITY;
+    _max   = INFINITY;
+    _tick  = 0.0;
+    _pixel = 0.0;
+}
+
 /***
  *       _____ _                _
  *      / ____| |              | |
@@ -1274,7 +1274,7 @@ _CW(14) {
     _menu->add(_CHART_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_CHART_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_CHART_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_CHART_CLEAR,            0, _FLW_CHART_CB(clear()));
+    _menu->add(_CHART_CLEAR,            0, _FLW_CHART_CB(reset()));
     _menu->add(_CHART_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
     _menu->add(_CHART_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
     _menu->add(_CHART_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()), FL_MENU_DIVIDER);
@@ -1309,7 +1309,7 @@ _CW(14) {
 
     _disable_menu = false;
 
-    clear();
+    reset();
     update_pref();
 }
 
@@ -1482,8 +1482,8 @@ void Chart::_calc_ymin_ymax() {
         auto min_clamp = area.clamp_min();
         auto max_clamp = area.clamp_max();
 
-        area.left_scale().clear();
-        area.right_scale().clear();
+        area.left_scale().reset();
+        area.right_scale().reset();
 
         for (const auto& line : area.lines()) {
             if (line.size() == 0 || line.is_visible() == false) {
@@ -1588,43 +1588,6 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
     auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init();
-}
-
-//------------------------------------------------------------------------------
-void Chart::clear() {
-    static_cast<Fl_Valuator*>(_scroll)->value(0);
-
-    _block_dates.clear();
-    _dates.clear();
-
-    for (auto& area : _areas) {
-        area.clear();
-    }
-
-    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
-    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
-
-    _area         = nullptr;
-    _bottom_space = 0;
-    _date_start   = 0;
-    _margin_left  = _CHART_MIN_MARGIN;
-    _margin_right = _CHART_MIN_MARGIN;
-    _old          = Fl_Rect();
-    _printing     = false;
-    _ticks        = 0;
-    _tooltip      = "";
-    _top_space    = 0;
-    _ver_pos[0]   = -1;
-
-    set_alt_size();
-    set_area_size();
-    set_date_range();
-    set_hor_lines();
-    set_main_label();
-    set_line_labels();
-    set_tick_width();
-    set_ver_lines();
-    init();
 }
 
 //------------------------------------------------------------------------------
@@ -2752,7 +2715,7 @@ bool Chart::load_json() {
 bool Chart::load_json(std::string filename) {
     _filename = "";
     
-    clear();
+    reset();
     redraw();
 
     auto wc  = WaitCursor();
@@ -2777,7 +2740,7 @@ bool Chart::load_json(std::string filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != Chart::VERSION) { fl_alert("error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), Chart::VERSION); clear(); return false; }
+                    if (j2->vn_i() != Chart::VERSION) { fl_alert("error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), Chart::VERSION); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -2906,6 +2869,43 @@ void Chart::print_to_postscript() {
     dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1, top_window());
     _printing = false;
     redraw();
+}
+
+//------------------------------------------------------------------------------
+void Chart::reset() {
+    static_cast<Fl_Valuator*>(_scroll)->value(0);
+
+    _block_dates.clear();
+    _dates.clear();
+
+    for (auto& area : _areas) {
+        area.reset();
+    }
+
+    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
+    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
+
+    _area         = nullptr;
+    _bottom_space = 0;
+    _date_start   = 0;
+    _margin_left  = _CHART_MIN_MARGIN;
+    _margin_right = _CHART_MIN_MARGIN;
+    _old          = Fl_Rect();
+    _printing     = false;
+    _ticks        = 0;
+    _tooltip      = "";
+    _top_space    = 0;
+    _ver_pos[0]   = -1;
+
+    set_alt_size();
+    set_area_size();
+    set_date_range();
+    set_hor_lines();
+    set_main_label();
+    set_line_labels();
+    set_tick_width();
+    set_ver_lines();
+    init();
 }
 
 //------------------------------------------------------------------------------

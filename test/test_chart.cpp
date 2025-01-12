@@ -721,7 +721,7 @@ public:
             srand(RAND);
         }
 
-        chart->clear();
+        chart->reset();
 
 
         if (TEST == TEST_RANGE_DAY)             test1(chart, TEST, "ChartLine::TYPE::LINE", 100.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 3, 2);

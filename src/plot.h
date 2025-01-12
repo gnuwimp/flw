@@ -100,7 +100,6 @@ public:
 
                                 PlotLine();
                                 PlotLine(const PlotDataVector& data, std::string label, PlotLine::TYPE type = PlotLine::TYPE::LINE, Fl_Color color = FL_BLUE, unsigned width = 1);
-    void                        clear();
     Fl_Color                    color() const
                                     { return _color; }
     const PlotDataVector&       data() const
@@ -118,6 +117,7 @@ public:
                                     { return _label; }
     const Fl_Rect&              label_rect() const
                                     { return _rect; }
+    void                        reset();
     PlotLine&                   set_color(Fl_Color val)
                                     { _color = val; return *this; }
     PlotLine&                   set_data(const PlotDataVector& val)
@@ -169,11 +169,8 @@ class PlotScale {
 public:
 
                                 PlotScale()
-                                    { clear(); }
+                                    { reset(); }
     void                        calc_tick(double height);
-    void                        clear();
-    void                        clear_min_max()
-                                    { _min = _max = INFINITY; }
     Fl_Color                    color() const
                                     { return _color; }
     const StringVector&         custom_labels() const
@@ -194,6 +191,9 @@ public:
                                     { return _min; }
     double                      pixel() const
                                     { return _pixel; }
+    void                        reset();
+    void                        reset_min_max()
+                                    { _min = _max = INFINITY; }
     void                        set_color(int val)
                                     { _color = val; }
     void                        set_custom_labels(StringVector val)
@@ -256,7 +256,6 @@ public:
 
     explicit                    Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     bool                        add_line(const PlotLine& line);
-    void                        clear();
     bool                        create_line(PlotData::FORMULAS formula);
     void                        debug() const;
     void                        debug_line() const;
@@ -279,6 +278,9 @@ public:
     bool                        load_json();
     bool                        load_json(std::string filename);
     void                        print();
+    void                        reset();
+    void                        resize()
+                                    { size(w(), h()); }
     void                        resize(int X, int Y, int W, int H) override;
     bool                        save_csv();
     bool                        save_json();

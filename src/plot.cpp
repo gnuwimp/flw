@@ -30,7 +30,7 @@ namespace flw {
  *     |_|
  */
 
-#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); clear(); return false; }
+#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 //#define _FLW_PLOT_DEBUG(X) { X; }
 #define _FLW_PLOT_DEBUG(X)
@@ -286,7 +286,7 @@ PlotDataVector PlotData::Swap(const PlotDataVector& in) {
 
 //------------------------------------------------------------------------------
 PlotLine::PlotLine() {
-    clear();
+    reset();
 }
 
 //------------------------------------------------------------------------------
@@ -297,18 +297,6 @@ PlotLine::PlotLine(const PlotDataVector& data, std::string label, PlotLine::TYPE
     _type    = type;
     _visible = true;
     _width   = (width <= PlotLine::MAX_WIDTH) ? width : 1;
-}
-
-//------------------------------------------------------------------------------
-void PlotLine::clear() {
-    _color   = FL_BLUE;
-    _label   = "";
-    _rect    = Fl_Rect();
-    _type    = TYPE::LINE;
-    _visible = true;
-    _width   = 1;
-
-    _data.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -332,6 +320,18 @@ void PlotLine::debug() const {
     printf("\t\tmaxY    = %22.8f\n", maxy);
     fflush(stdout);
 #endif
+}
+
+//------------------------------------------------------------------------------
+void PlotLine::reset() {
+    _color   = FL_BLUE;
+    _label   = "";
+    _rect    = Fl_Rect();
+    _type    = TYPE::LINE;
+    _visible = true;
+    _width   = 1;
+
+    _data.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -576,19 +576,6 @@ void PlotScale::calc_tick(double height) {
 }
 
 //------------------------------------------------------------------------------
-void PlotScale::clear() {
-    _color  = FL_FOREGROUND_COLOR;
-    _fr     = 0;
-    _label  = "";
-    _labels = StringVector();
-    _pixel  = 0.0;
-    _text   = 0;
-    _tick   = 0.0;
-
-    clear_min_max();
-}
-
-//------------------------------------------------------------------------------
 void PlotScale::debug(const char* s) const {
 #ifdef DEBUG
     printf("\t-----------------------------------------\n");
@@ -631,6 +618,19 @@ void PlotScale::measure_labels(int cw, bool custom) {
     }
 }
 
+//------------------------------------------------------------------------------
+void PlotScale::reset() {
+    _color  = FL_FOREGROUND_COLOR;
+    _fr     = 0;
+    _label  = "";
+    _labels = StringVector();
+    _pixel  = 0.0;
+    _text   = 0;
+    _tick   = 0.0;
+
+    reset_min_max();
+}
+
 /***
  *      _____  _       _
  *     |  __ \| |     | |
@@ -663,7 +663,7 @@ _CH(14), _CW(14) {
     _menu->add(_PLOT_SETUP_LABELS,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_PLOT_SETUP_HLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
     _menu->add(_PLOT_SETUP_VLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_PLOT_CLEAR,         0, _FLW_PLOT_CB(clear()));
+    _menu->add(_PLOT_CLEAR,         0, _FLW_PLOT_CB(reset()));
     _menu->add(_PLOT_SETUP_LABEL,   0, _FLW_PLOT_CB(setup_label(LABEL::MAIN)));
     _menu->add(_PLOT_SETUP_XLABEL,  0, _FLW_PLOT_CB(setup_label(LABEL::X)));
     _menu->add(_PLOT_SETUP_YLABEL,  0, _FLW_PLOT_CB(setup_label(LABEL::Y)));
@@ -692,7 +692,7 @@ _CH(14), _CW(14) {
 
     _disable_menu = false;
 
-    clear();
+    reset();
     update_pref();
 }
 
@@ -708,8 +708,8 @@ bool Plot::add_line(const PlotLine& line) {
 
 //------------------------------------------------------------------------------
 void Plot::_calc_min_max() {
-    _x.clear_min_max();
-    _y.clear_min_max();
+    _x.reset_min_max();
+    _y.reset_min_max();
 
     for (const auto& line : _lines) {
         if (line.is_visible() == false) {
@@ -775,31 +775,6 @@ bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
     widget->resize(rect.x(), rect.y(), rect.w(), rect.h());
 
     return false;
-}
-
-//------------------------------------------------------------------------------
-void Plot::clear() {
-    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
-    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
-
-    _old            = Fl_Rect();
-    _selected_line  = 0;
-    _selected_point = -1;
-    _x              = PlotScale();
-    _y              = PlotScale();
-
-    _lines.clear();
-    selection_color(FL_FOREGROUND_COLOR);
-    set_hor_lines();
-    set_label();
-    set_line_labels();
-    set_max_x();
-    set_max_y();
-    set_min_x();
-    set_min_y();
-    set_ver_lines();
-    update_pref();
-    init();
 }
 
 //------------------------------------------------------------------------------
@@ -1536,7 +1511,7 @@ bool Plot::load_json() {
 //------------------------------------------------------------------------------
 bool Plot::load_json(std::string filename) {
     _filename = "";
-    clear();
+    reset();
     redraw();
 
     auto wc  = WaitCursor();
@@ -1643,6 +1618,31 @@ bool Plot::load_json(std::string filename) {
 void Plot::print() {
     dlg::print("Print Plot", Plot::_CallbackPrinter, this, 1, 1, top_window());
     redraw();
+}
+
+//------------------------------------------------------------------------------
+void Plot::reset() {
+    *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
+    *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
+
+    _old            = Fl_Rect();
+    _selected_line  = 0;
+    _selected_point = -1;
+    _x              = PlotScale();
+    _y              = PlotScale();
+
+    _lines.clear();
+    selection_color(FL_FOREGROUND_COLOR);
+    set_hor_lines();
+    set_label();
+    set_line_labels();
+    set_max_x();
+    set_max_y();
+    set_min_x();
+    set_min_y();
+    set_ver_lines();
+    update_pref();
+    init();
 }
 
 //------------------------------------------------------------------------------
