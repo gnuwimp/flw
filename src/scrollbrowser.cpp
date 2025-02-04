@@ -123,6 +123,8 @@ void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelsize(flw::PREF_FONTSIZE);
     textfont(text_font);
     textsize(text_size);
+    _menu->textfont(text_font);
+    _menu->textsize(text_size);
 }
 
 // MKALGAM_OFF

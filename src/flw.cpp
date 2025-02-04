@@ -336,7 +336,7 @@ double util::clock() {
 int util::count_decimals(double num) {
     num = fabs(num);
 
-    if (num > 9'223'372'036'854'775'807.0) {
+    if (num > 999'999'999'999'999) {
         return 0;
     }
 
@@ -344,34 +344,31 @@ int util::count_decimals(double num) {
     char*  end     = 0;
     double inum = static_cast<int64_t>(num);
     double fnum = num - inum;
-    char   buffer[100];
+    char   buffer[400];
 
-    if (num > 999'999'999'999'999) {
-        snprintf(buffer, 100, "%.1f", fnum);
-    }
-    else if (num > 9'999'999'999'999) {
-        snprintf(buffer, 100, "%.2f", fnum);
+    if (num > 9'999'999'999'999) {
+        snprintf(buffer, 400, "%.1f", fnum);
     }
     else if (num > 999'999'999'999) {
-        snprintf(buffer, 100, "%.3f", fnum);
+        snprintf(buffer, 400, "%.2f", fnum);
     }
     else if (num > 99'999'999'999) {
-        snprintf(buffer, 100, "%.4f", fnum);
+        snprintf(buffer, 400, "%.3f", fnum);
     }
     else if (num > 9'999'999'999) {
-        snprintf(buffer, 100, "%.5f", fnum);
+        snprintf(buffer, 400, "%.4f", fnum);
     }
     else if (num > 999'999'999) {
-        snprintf(buffer, 100, "%.6f", fnum);
+        snprintf(buffer, 400, "%.5f", fnum);
     }
     else if (num > 99'999'999) {
-        snprintf(buffer, 100, "%.7f", fnum);
+        snprintf(buffer, 400, "%.6f", fnum);
     }
     else if (num > 9'999'999) {
-        snprintf(buffer, 100, "%.8f", fnum);
+        snprintf(buffer, 400, "%.7f", fnum);
     }
     else {
-        snprintf(buffer, 100, "%.9f", fnum);
+        snprintf(buffer, 400, "%.8f", fnum);
     }
 
     size_t len = strlen(buffer);
@@ -464,8 +461,8 @@ std::string util::format(const char* format, ...) {
 
 //------------------------------------------------------------------------------
 std::string util::format_double(double num, int decimals, char del) {
-    if (num > 9'223'372'036'854'775'807.0) {
-        return "err";
+    if (num > 9'007'199'254'740'992.0) {
+        return "";
     }
 
     if (decimals < 0) {
@@ -480,24 +477,20 @@ std::string util::format_double(double num, int decimals, char del) {
         return util::format_int(static_cast<int64_t>(num), del);
     }
 
-    char res[100];
     char fr_str[100];
     auto int_num    = static_cast<int64_t>(fabs(num));
     auto double_num = static_cast<double>(fabs(num) - int_num);
-    auto int_str    = util::format_int(int_num, del);
-    auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
-    *res = 0;
+    auto res        = util::format_int(int_num, del);
+    auto n          = snprintf(fr_str, 100, "%.*f", decimals, double_num);
 
-    if (len > 0 && len < 100) {
-        if (num < 0.0) {
-            res[0] = '-';
-            res[1] = 0;
-        }
-
-        strncat(res, int_str.c_str(), 99);
-        strncat(res, fr_str + 1, 99);
+    if (num < 0.0) {
+        res = "-" + res;
     }
 
+    if (n > 0 && n < 100) {
+        res += fr_str + 1;
+    }
+    
     return res;
 }
 
@@ -507,7 +500,7 @@ std::string util::format_int(int64_t num, char del) {
     char tmp1[32];
     char tmp2[32];
 
-    if (del < 1) {
+    if (del < 32) {
         del = 32;
     }
     memset(tmp2, 0, 32);

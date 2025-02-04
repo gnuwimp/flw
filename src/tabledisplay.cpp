@@ -634,7 +634,9 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
 //    printf("key=%d, %c, cmd=%d, shift=%d\n", key, key, cmd, shift); fflush(stdout);
 
     if (only_append_insert == true) {
-        if (cmd == true && key == 'a') {
+        if (_enable_keys == false) {
+        }
+        else if (cmd == true && key == 'a') {
             _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
             do_callback();
             return 1;
@@ -717,6 +719,8 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
     else if (cmd == true && key == 'f' && shift == false) {
         cmd_find();
         return 1;
+    }
+    else if (_enable_keys == false) {
     }
     else if (cmd == true && key == 'a') {
         _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
@@ -1072,6 +1076,7 @@ void TableDisplay::reset() {
     _disable_ver     = false;
     _drag            = false;
     _edit            = nullptr;
+    _enable_keys     = false;
     _event           = EVENT::UNDEFINED;
     _event_col       = -1;
     _event_row       = -1;

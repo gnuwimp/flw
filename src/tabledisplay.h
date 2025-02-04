@@ -84,6 +84,8 @@ public:
     void                        cmd_goto();
     void                        debug() const;
     virtual void                draw() override;
+    void                        enable_append_keys(bool val = false)
+                                    { _enable_keys = val; }
     void                        expand_last_column(bool expand = false)
                                     { _expand = expand; redraw(); }
     TableDisplay::EVENT         event() const
@@ -158,6 +160,7 @@ protected:
     bool                        _disable_hor;
     bool                        _disable_ver;
     bool                        _drag;
+    bool                        _enable_keys;
     bool                        _expand;
     bool                        _resize;
     bool                        _show_col_header;

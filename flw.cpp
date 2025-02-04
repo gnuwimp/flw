@@ -7444,40 +7444,37 @@ double util::clock() {
 }
 int util::count_decimals(double num) {
     num = fabs(num);
-    if (num > 9'223'372'036'854'775'807.0) {
+    if (num > 999'999'999'999'999) {
         return 0;
     }
     int    res     = 0;
     char*  end     = 0;
     double inum = static_cast<int64_t>(num);
     double fnum = num - inum;
-    char   buffer[100];
-    if (num > 999'999'999'999'999) {
-        snprintf(buffer, 100, "%.1f", fnum);
-    }
-    else if (num > 9'999'999'999'999) {
-        snprintf(buffer, 100, "%.2f", fnum);
+    char   buffer[400];
+    if (num > 9'999'999'999'999) {
+        snprintf(buffer, 400, "%.1f", fnum);
     }
     else if (num > 999'999'999'999) {
-        snprintf(buffer, 100, "%.3f", fnum);
+        snprintf(buffer, 400, "%.2f", fnum);
     }
     else if (num > 99'999'999'999) {
-        snprintf(buffer, 100, "%.4f", fnum);
+        snprintf(buffer, 400, "%.3f", fnum);
     }
     else if (num > 9'999'999'999) {
-        snprintf(buffer, 100, "%.5f", fnum);
+        snprintf(buffer, 400, "%.4f", fnum);
     }
     else if (num > 999'999'999) {
-        snprintf(buffer, 100, "%.6f", fnum);
+        snprintf(buffer, 400, "%.5f", fnum);
     }
     else if (num > 99'999'999) {
-        snprintf(buffer, 100, "%.7f", fnum);
+        snprintf(buffer, 400, "%.6f", fnum);
     }
     else if (num > 9'999'999) {
-        snprintf(buffer, 100, "%.8f", fnum);
+        snprintf(buffer, 400, "%.7f", fnum);
     }
     else {
-        snprintf(buffer, 100, "%.9f", fnum);
+        snprintf(buffer, 400, "%.8f", fnum);
     }
     size_t len = strlen(buffer);
     end = buffer + len - 1;
@@ -7546,8 +7543,8 @@ std::string util::format(const char* format, ...) {
     return res;
 }
 std::string util::format_double(double num, int decimals, char del) {
-    if (num > 9'223'372'036'854'775'807.0) {
-        return "err";
+    if (num > 9'007'199'254'740'992.0) {
+        return "";
     }
     if (decimals < 0) {
         decimals = util::count_decimals(num);
@@ -7558,20 +7555,16 @@ std::string util::format_double(double num, int decimals, char del) {
     if (decimals == 0 || decimals > 9) {
         return util::format_int(static_cast<int64_t>(num), del);
     }
-    char res[100];
     char fr_str[100];
     auto int_num    = static_cast<int64_t>(fabs(num));
     auto double_num = static_cast<double>(fabs(num) - int_num);
-    auto int_str    = util::format_int(int_num, del);
-    auto len        = snprintf(fr_str, 99, "%.*f", decimals, double_num);
-    *res = 0;
-    if (len > 0 && len < 100) {
-        if (num < 0.0) {
-            res[0] = '-';
-            res[1] = 0;
-        }
-        strncat(res, int_str.c_str(), 99);
-        strncat(res, fr_str + 1, 99);
+    auto res        = util::format_int(int_num, del);
+    auto n          = snprintf(fr_str, 100, "%.*f", decimals, double_num);
+    if (num < 0.0) {
+        res = "-" + res;
+    }
+    if (n > 0 && n < 100) {
+        res += fr_str + 1;
     }
     return res;
 }
@@ -7579,7 +7572,7 @@ std::string util::format_int(int64_t num, char del) {
     auto pos = 0;
     char tmp1[32];
     char tmp2[32];
-    if (del < 1) {
+    if (del < 32) {
         del = 32;
     }
     memset(tmp2, 0, 32);
@@ -11503,6 +11496,8 @@ void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelsize(flw::PREF_FONTSIZE);
     textfont(text_font);
     textsize(text_size);
+    _menu->textfont(text_font);
+    _menu->textsize(text_size);
 }
 #include <FL/fl_draw.H>
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
@@ -12156,7 +12151,9 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
     if (only_append_insert == true) {
-        if (cmd == true && key == 'a') {
+        if (_enable_keys == false) {
+        }
+        else if (cmd == true && key == 'a') {
             _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
             do_callback();
             return 1;
@@ -12239,6 +12236,8 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
     else if (cmd == true && key == 'f' && shift == false) {
         cmd_find();
         return 1;
+    }
+    else if (_enable_keys == false) {
     }
     else if (cmd == true && key == 'a') {
         _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
@@ -12533,6 +12532,7 @@ void TableDisplay::reset() {
     _disable_ver     = false;
     _drag            = false;
     _edit            = nullptr;
+    _enable_keys     = false;
     _event           = EVENT::UNDEFINED;
     _event_col       = -1;
     _event_row       = -1;
