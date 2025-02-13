@@ -30,7 +30,6 @@ namespace flw {
  *     |_|
  */
 
-#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 //#define _FLW_PLOT_DEBUG(X) { X; }
 #define _FLW_PLOT_DEBUG(X)
@@ -39,8 +38,6 @@ namespace flw {
 
 static const char* const _PLOT_ADD_LINE     = "Create line...";
 static const char* const _PLOT_CLEAR        = "Clear plot";
-static const char* const _PLOT_DEBUG        = "Debug";
-static const char* const _PLOT_DEBUG_LINE   = "Debug line";
 static const char* const _PLOT_LOAD_CVS     = "Add line from cvs...";
 static const char* const _PLOT_LOAD_JSON    = "Load plot from JSON...";
 static const char* const _PLOT_PRINT        = "Print to PostScript file...";
@@ -61,6 +58,11 @@ static const char* const _PLOT_SETUP_VLINES = "Show vertical lines";
 static const char* const _PLOT_SETUP_XLABEL = "X Label...";
 static const char* const _PLOT_SETUP_YLABEL = "Y Label...";
 static const int         _PLOT_TICK_SIZE    = 4;
+
+#ifdef DEBUG
+static const char* const _PLOT_DEBUG        = "Debug";
+static const char* const _PLOT_DEBUG_LINE   = "Debug line";
+#endif
 
 /***
  *      _____  _       _   _____        _
@@ -90,8 +92,8 @@ PlotData::PlotData(double X, double Y) {
 //------------------------------------------------------------------------------
 void PlotData::debug(int i) const {
 #ifdef DEBUG
-    auto X = gnu::JS::FormatNumber(x);
-    auto Y = gnu::JS::FormatNumber(y);
+    auto X = gnu::json::format_number(x);
+    auto Y = gnu::json::format_number(y);
 
     if (i >= 0) {
         printf("[%04d] = %24.8f, %24.8f\n", i, x, y);
@@ -255,7 +257,7 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
 
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s\n", gnu::JS::FormatNumber(data.x).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.y).c_str());
+        snprintf(buffer, 256, "%s%s%s\n", gnu::json::format_number(data.x).c_str(), sep.c_str(), gnu::json::format_number(data.y).c_str());
         csv += buffer;
     }
 
@@ -1510,6 +1512,7 @@ bool Plot::load_json() {
 
 //------------------------------------------------------------------------------
 bool Plot::load_json(std::string filename) {
+#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
     _filename = "";
     reset();
     redraw();
@@ -1522,14 +1525,13 @@ bool Plot::load_json(std::string filename) {
         return false;
     }
 
-    auto js  = gnu::JS();
-    auto err = js.decode(buf.p, buf.s);
-    auto x   = PlotScale();
-    auto y   = PlotScale();
+    auto   js       = gnu::json::decode(buf.p, buf.s);
+    auto   x        = PlotScale();
+    auto   y        = PlotScale();
     double clamp[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
 
-    if (err != "") {
-        fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
+    if (js.has_err() == true) {
+        fl_alert("error: failed to parse %s (%s)", filename.c_str(), js.err_c());
         return false;
     }
 
@@ -1611,6 +1613,7 @@ bool Plot::load_json(std::string filename) {
     set_max_y(clamp[3]);
     init_new_data();
     _filename = filename;
+
     return true;
 }
 
@@ -1685,58 +1688,62 @@ bool Plot::save_json() {
 //----------------------------------------------------------------------
 bool Plot::save_json(std::string filename) {
     auto wc  = WaitCursor();
-    auto jsb = gnu::JSB();
+    auto jsb = gnu::json::Builder();
 
     try {
-        jsb << gnu::JSB::MakeObject();
-            jsb << gnu::JSB::MakeObject("Plot");
-                jsb << gnu::JSB::MakeNumber(Plot::VERSION, "version");
-                jsb << gnu::JSB::MakeString(_label, "label");
-                jsb << gnu::JSB::MakeBool(_labels, "labels");
-                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
-                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
-                if (std::isfinite(_min_x) == true) jsb << gnu::JSB::MakeNumber(_min_x, "minx");
-                if (std::isfinite(_max_x) == true) jsb << gnu::JSB::MakeNumber(_max_x, "maxx");
-                if (std::isfinite(_min_y) == true) jsb << gnu::JSB::MakeNumber(_min_y, "miny");
-                if (std::isfinite(_max_y) == true) jsb << gnu::JSB::MakeNumber(_max_y, "maxy");
+        jsb << gnu::json::Builder::MakeObject();
+            jsb << gnu::json::Builder::MakeObject("Plot");
+                jsb << gnu::json::Builder::MakeNumber(Plot::VERSION, "version");
+                jsb << gnu::json::Builder::MakeString(_label, "label");
+                jsb << gnu::json::Builder::MakeBool(_labels, "labels");
+                jsb << gnu::json::Builder::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::json::Builder::MakeBool(_vertical, "vertical");
+                if (std::isfinite(_min_x) == true) jsb << gnu::json::Builder::MakeNumber(_min_x, "minx");
+                if (std::isfinite(_max_x) == true) jsb << gnu::json::Builder::MakeNumber(_max_x, "maxx");
+                if (std::isfinite(_min_y) == true) jsb << gnu::json::Builder::MakeNumber(_min_y, "miny");
+                if (std::isfinite(_max_y) == true) jsb << gnu::json::Builder::MakeNumber(_max_y, "maxy");
             jsb.end();
-            jsb << gnu::JSB::MakeObject("PlotScale::x");
-                jsb << gnu::JSB::MakeString(_x.label().c_str(), "label");
-                jsb << gnu::JSB::MakeNumber(_x.color(), "color");
-                jsb << gnu::JSB::MakeArrayInline("labels");
-                    for (const auto& l : _x.custom_labels()) jsb << gnu::JSB::MakeString(l);
+            
+            jsb << gnu::json::Builder::MakeObject("PlotScale::x");
+                jsb << gnu::json::Builder::MakeString(_x.label().c_str(), "label");
+                jsb << gnu::json::Builder::MakeNumber(_x.color(), "color");
+                jsb << gnu::json::Builder::MakeArrayInline("labels");
+                    for (const auto& l : _x.custom_labels()) jsb << gnu::json::Builder::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << gnu::JSB::MakeObject("PlotScale::y");
-                jsb << gnu::JSB::MakeString(_y.label().c_str(), "label");
-                jsb << gnu::JSB::MakeNumber(_y.color(), "color");
-                jsb << gnu::JSB::MakeArrayInline("labels");
-                    for (const auto& l : _y.custom_labels()) jsb << gnu::JSB::MakeString(l);
+            
+            jsb << gnu::json::Builder::MakeObject("PlotScale::y");
+                jsb << gnu::json::Builder::MakeString(_y.label().c_str(), "label");
+                jsb << gnu::json::Builder::MakeNumber(_y.color(), "color");
+                jsb << gnu::json::Builder::MakeArrayInline("labels");
+                    for (const auto& l : _y.custom_labels()) jsb << gnu::json::Builder::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << gnu::JSB::MakeArray("PlotLine");
+            
+            jsb << gnu::json::Builder::MakeArray("PlotLine");
 
             for (const auto& line : _lines) {
                 if (line.data().size() > 0) {
-                    jsb << gnu::JSB::MakeObject();
-                        jsb << gnu::JSB::MakeNumber(line.width(), "width");
-                        jsb << gnu::JSB::MakeNumber(line.color(), "color");
-                        jsb << gnu::JSB::MakeString(line.label(), "label");
-                        jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
-                        jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
-                        jsb << gnu::JSB::MakeArray("xy");
-                        for (const auto& point : line.data()) {
-                            if (std::isfinite(point.x) == true && std::isfinite(point.y) == true) {
-                                jsb << gnu::JSB::MakeArrayInline();
-                                    jsb << gnu::JSB::MakeNumber(point.x);
-                                    jsb << gnu::JSB::MakeNumber(point.y);
-                                jsb.end();
+                    jsb << gnu::json::Builder::MakeObject();
+                        jsb << gnu::json::Builder::MakeNumber(line.width(), "width");
+                        jsb << gnu::json::Builder::MakeNumber(line.color(), "color");
+                        jsb << gnu::json::Builder::MakeString(line.label(), "label");
+                        jsb << gnu::json::Builder::MakeBool(line.is_visible(), "visible");
+                        jsb << gnu::json::Builder::MakeString(line.type_to_string(), "type");
+                        jsb << gnu::json::Builder::MakeArray("xy");
+                            for (const auto& point : line.data()) {
+                                if (std::isfinite(point.x) == true && std::isfinite(point.y) == true) {
+                                    jsb << gnu::json::Builder::MakeArrayInline();
+                                        jsb << gnu::json::Builder::MakeNumber(point.x);
+                                        jsb << gnu::json::Builder::MakeNumber(point.y);
+                                    jsb.end();
+                                }
                             }
-                        }
                         jsb.end();
                     jsb.end();
                 }
             }
+            jsb.end();
 
         auto js = jsb.encode();
         return gnu::file::write(filename, js.c_str(), js.length());

@@ -10,70 +10,82 @@ else
 $(error Unknow operating system $(OS))
 endif
 
+CXXFLAGS += 
+
 ifeq ($(OS), Windows)
-	FLTO    =
-	STATIC  = -static
-	OSFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800
+	CXX      = g++
+	CC       = gcc
+	CXXFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-plain-output -std=c++17 -W -Wall
+	CFLAGS   = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-plain-output -W -Wall
+	LDLAGS   = -static
+	CPROF1   = -fprofile-generate=obj -fprofile-update=atomic
+	LPROF1   = -fprofile-generate=obj
+	PROF2    = -fprofile-use=obj
 else ifeq ($(OS), Linux)
-	FLTO    = -flto
-	STATIC  =
-	OSFLAGS =
+	CXX      = g++
+	CC       = gcc
+	CXXFLAGS = -fdiagnostics-plain-output -std=c++17 -W -Wall
+	CFLAGS   = -fdiagnostics-plain-output -W -Wall
+	LDLAGS   = 
+	FLTO     = -flto=auto
+	CPROF1   = -fprofile-generate=obj -fprofile-update=atomic
+	LPROF1   = -fprofile-generate=obj
+	PROF2    = -fprofile-use=obj
+else ifeq ($(OS), macOS)
+	CXX      = clang++
+	CC       = clang
+	CXXFLAGS = -std=c++17 -W -Wall
+	CFLAGS   = -W -Wall
+	LDLAGS   = 
+else
+	CXX      = g++
+	CC       = gcc
+	CXXFLAGS = -std=c++17 -W -Wall
+	CFLAGS   = -W -Wall
+	LDLAGS   = 
 endif
 
 ifeq ($(build), sanitize)
-	CXXFLAGS = -fsanitize=address -g -DDEBUG $(OSFLAGS)
-	CFLAGS   = -DDEBUG
-	LDFLAGS  = -fsanitize=address
+	CXXFLAGS += -fsanitize=address -O0 -g -DDEBUG
+	CFLAGS   += -O0 -g -DDEBUG
+	LDFLAGS  += -fsanitize=address
 else ifeq ($(build), debug)
-	CXXFLAGS = -g -DDEBUG $(OSFLAGS)
-	CFLAGS   = -DDEBUG
-	LDFLAGS  =
+	CXXFLAGS += -O0 -g -DDEBUG
+	CFLAGS   += -O0 -g -DDEBUG
+	LDFLAGS  +=
 else ifeq ($(build), release)
-	CXXFLAGS = -O2 -DNDEBUG $(OSFLAGS)
-	CFLAGS   = -O2
-	LDFLAGS  = $(STATIC) $(FLTO)
-else ifeq ($(build), profile1)
-	CXXFLAGS = -O2 -DNDEBUG -fprofile-generate=obj $(OSFLAGS)
-	CFLAGS   = -O2
-	LDFLAGS  = -fprofile-generate=obj
-else ifeq ($(build), profile2)
-	CXXFLAGS = -O2 -DNDEBUG -fprofile-use=obj $(OSFLAGS)
-	CFLAGS   = -O2
-	LDFLAGS  = $(STATIC) $(FLTO) -fprofile-use=obj
+	CXXFLAGS += -O2 -DNDEBUG $(FLTO)
+	CFLAGS   += -O2 -DNDEBUG $(FLTO)
+	LDFLAGS  += $(FLTO)
+else ifeq ($(build), pgo1)
+	CXXFLAGS += -O2 -DNDEBUG $(CPROF1) $(FLTO)
+	CFLAGS   += -O2 -DNEDBUG $(CPROF1) $(FLTO)
+	LDFLAGS  += $(LPROF1) $(FLTO)
+else ifeq ($(build), pgo2)
+	CXXFLAGS += -O2 -DNDEBUG $(PROF2) $(FLTO)
+	CFLAGS   += -O2 -DNDEBUG $(PROF2) $(FLTO)
+	LDFLAGS  += $(PROF2) $(FLTO)
 else
-	CXXFLAGS = -O -DDEBUG $(OSFLAGS)
-	CFLAGS   = -O -DDEBUG
-	LDFLAGS  =
+	CXXFLAGS += -O0 -DDEBUG
+	CFLAGS   += -O0 -DDEBUG
+	LDFLAGS  +=
 endif
 
-FLTK_CXXFLAGS = $(shell /usr/local/bin/fltk-config --cxxflags)
-FLTK_LDFLAGS  = $(shell /usr/local/bin/fltk-config --ldflags)
-FLTKI_LDFLAGS = $(shell /usr/local/bin/fltk-config --ldflags --use-images)
+FLTK_CXXFLAGS      = $(shell /usr/local/bin/fltk-config --cxxflags)
+FLTK_LDFLAGS       = $(shell /usr/local/bin/fltk-config --ldflags)
+FLTK_IMAGE_LDFLAGS = $(shell /usr/local/bin/fltk-config --ldflags --use-images)
 
-ifeq ($(OS), macOS)
-	CXX = clang++
-	CC  = clang
-else ifeq ($(OS), Windows)
-	FLTK_LDFLAGS += -lwinspool
-	FLTKI_LDFLAGS += -lwinspool
-else
-	CXX = g++
-	CC  = gcc
-	CXXFLAGS += -fdiagnostics-plain-output
-endif
-
-CXXFLAGS += -std=c++17
-CXXFLAGS += -W
-CXXFLAGS += -Wall
+#FLTK_CXXFLAGS = $(shell /usr/local/debug/bin/fltk-config --cxxflags)
+#FLTK_LDFLAGS  = $(shell /usr/local/debug/bin/fltk-config --ldflags)
+#FLTKI_LDFLAGS = $(shell /usr/local/debug/bin/fltk-config --ldflags --use-images)
 
 $(info >>>>>> flags from makeinclude)
-$(info OS            = $(OS))
-$(info CXXFLAGS      = $(CXXFLAGS))
-$(info CFLAGS        = $(CFLAGS))
-$(info LDFLAGS       = $(LDFLAGS))
-$(info FLTK_CXXFLAGS = $(FLTK_CXXFLAGS))
-$(info FLTK_LDFLAGS  = $(FLTK_LDFLAGS))
-$(info FLTKI_LDFLAGS = $(FLTKI_LDFLAGS))
-$(info CXX           = $(CXX))
-$(info CC            = $(CC))
+$(info CXX                = $(CXX))
+$(info CC                 = $(CC))
+$(info CXXFLAGS           = $(CXXFLAGS))
+$(info CFLAGS             = $(CFLAGS))
+$(info LDFLAGS            = $(LDFLAGS))
+$(info FLTK_CXXFLAGS      = $(FLTK_CXXFLAGS))
+$(info FLTK_LDFLAGS       = $(FLTK_LDFLAGS))
+$(info FLTK_IMAGE_LDFLAGS = $(FLTK_IMAGE_LDFLAGS))
 $(info $())

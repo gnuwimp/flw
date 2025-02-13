@@ -32,7 +32,6 @@ namespace flw {
  *     |_|
  */
 
-#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 //#define _FLW_CHART_DEBUG(X) { X; }
 #define _FLW_CHART_DEBUG(X)
@@ -42,8 +41,6 @@ namespace flw {
 static const char* const _CHART_ADD_CSV         = "Add line from CSV file...";
 static const char* const _CHART_ADD_LINE        = "Create line...";
 static const char* const _CHART_CLEAR           = "Clear chart";
-static const char* const _CHART_DEBUG           = "Debug chart";
-static const char* const _CHART_DEBUG_LINE      = "Print visible values";
 static const char* const _CHART_LOAD_JSON       = "Load chart from JSON...";
 static const char* const _CHART_PRINT           = "Print to PostScript file...";
 static const char* const _CHART_SAVE_CSV        = "Save line to CSV...";
@@ -62,10 +59,14 @@ static const char* const _CHART_SHOW_HLINES     = "Show horizontal lines";
 static const char* const _CHART_SHOW_LABELS     = "Show line labels";
 static const char* const _CHART_SHOW_VLINES     = "Show vertical lines";
 static const int         _CHART_MIN_MARGIN      =  3;
-static const int         _CHART_MAX_MARGIN      = 20;
 static const int         _CHART_MIN_AREA_SIZE   = 10;
 static const int         _CHART_TICK_SIZE       =  4;
 static const std::string _CHART_LABEL_SYMBOL    = "@-> ";
+
+#ifdef DEBUG
+static const char* const _CHART_DEBUG           = "Debug chart";
+static const char* const _CHART_DEBUG_LINE      = "Print visible values";
+#endif
 
 /***
  *       _____ _                _
@@ -611,18 +612,18 @@ ChartDataVector ChartData::Modify(const ChartDataVector& in, ChartData::MODIFY m
 
     for (const auto& data : in) {
         switch (modify) {
-        case MODIFY::SUBTRACTION:
-            res.push_back(ChartData(data.date, data.high - value, data.low - value, data.close - value));
-            break;
-        case MODIFY::MULTIPLICATION:
-            res.push_back(ChartData(data.date, data.high * value, data.low * value, data.close * value));
-            break;
-        case MODIFY::DIVISION:
-            res.push_back(ChartData(data.date, data.high / value, data.low / value, data.close / value));
-            break;
-        default: // MODIFY::ADDITION
-            res.push_back(ChartData(data.date, data.high + value, data.low + value, data.close + value));
-            break;
+            case MODIFY::SUBTRACTION:
+                res.push_back(ChartData(data.date, data.high - value, data.low - value, data.close - value));
+                break;
+            case MODIFY::MULTIPLICATION:
+                res.push_back(ChartData(data.date, data.high * value, data.low * value, data.close * value));
+                break;
+            case MODIFY::DIVISION:
+                res.push_back(ChartData(data.date, data.high / value, data.low / value, data.close / value));
+                break;
+            default: // MODIFY::ADDITION
+                res.push_back(ChartData(data.date, data.high + value, data.low + value, data.close + value));
+                break;
         }
     }
 
@@ -736,7 +737,7 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
 
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::JS::FormatNumber(data.high).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.low).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.close).c_str());
+        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
         csv += buffer;
     }
 
@@ -2713,8 +2714,10 @@ bool Chart::load_json() {
 
 //------------------------------------------------------------------------------
 bool Chart::load_json(std::string filename) {
+#define _FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
+
     _filename = "";
-    
+
     reset();
     redraw();
 
@@ -2726,11 +2729,10 @@ bool Chart::load_json(std::string filename) {
         return false;
     }
 
-    auto js  = gnu::JS();
-    auto err = js.decode(buf.p, buf.s, true);
+    auto js = gnu::json::decode(buf.p, buf.s, true);
 
-    if (err != "") {
-        fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
+    if (js.has_err() == true) {
+        fl_alert("error: failed to parse %s (%s)", filename.c_str(), js.err_c());
         return false;
     }
 
@@ -2830,6 +2832,7 @@ bool Chart::load_json(std::string filename) {
 
     init_new_data();
     _filename = filename;
+
     return true;
 }
 
@@ -2950,20 +2953,21 @@ bool Chart::save_json() {
 //----------------------------------------------------------------------
 bool Chart::save_json(std::string filename, double max_diff_high_low) const {
     auto wc  = WaitCursor();
-    auto jsb = gnu::JSB();
+    auto jsb = gnu::json::Builder();
 
     try {
-        jsb << gnu::JSB::MakeObject();
-            jsb << gnu::JSB::MakeObject("flw::chart");
-                jsb << gnu::JSB::MakeNumber(Chart::VERSION, "version");
-                jsb << gnu::JSB::MakeString(_label.c_str(), "label");
-                jsb << gnu::JSB::MakeNumber(_tick_width, "tick_width");
-                jsb << gnu::JSB::MakeString(ChartData::RangeToString(_date_range), "date_range");
-                jsb << gnu::JSB::MakeBool(_labels, "labels");
-                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
-                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
+        jsb << gnu::json::Builder::MakeObject();
+            jsb << gnu::json::Builder::MakeObject("flw::chart");
+                jsb << gnu::json::Builder::MakeNumber(Chart::VERSION, "version");
+                jsb << gnu::json::Builder::MakeString(_label.c_str(), "label");
+                jsb << gnu::json::Builder::MakeNumber(_tick_width, "tick_width");
+                jsb << gnu::json::Builder::MakeString(ChartData::RangeToString(_date_range), "date_range");
+                jsb << gnu::json::Builder::MakeBool(_labels, "labels");
+                jsb << gnu::json::Builder::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::json::Builder::MakeBool(_vertical, "vertical");
             jsb.end();
-            jsb << gnu::JSB::MakeObject("flw::chart_areas");
+
+            jsb << gnu::json::Builder::MakeObject("flw::chart_areas");
             for (size_t f = 0; f <= static_cast<int>(ChartArea::AREA::LAST); f++) {
                 auto  perc_str = util::format("area%u", static_cast<unsigned>(f));
                 auto  min_str  = util::format("min%u", static_cast<unsigned>(f));
@@ -2972,33 +2976,34 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 auto  min      = area.clamp_min();
                 auto  max      = area.clamp_max();
 
-                jsb << gnu::JSB::MakeNumber(_areas[f].percent(), perc_str.c_str());
-                if (min.has_value() == true) jsb << gnu::JSB::MakeNumber(min.value(), min_str.c_str());
-                if (max.has_value() == true) jsb << gnu::JSB::MakeNumber(max.value(), max_str.c_str());
+                jsb << gnu::json::Builder::MakeNumber(_areas[f].percent(), perc_str.c_str());
+                if (min.has_value() == true) jsb << gnu::json::Builder::MakeNumber(min.value(), min_str.c_str());
+                if (max.has_value() == true) jsb << gnu::json::Builder::MakeNumber(max.value(), max_str.c_str());
             }
             jsb.end();
-            jsb << gnu::JSB::MakeArray("flw::chart_lines");
+
+            jsb << gnu::json::Builder::MakeArray("flw::chart_lines");
                 for (auto& area : _areas) {
                     for (auto& line : area.lines()) {
                         if (line.size() > 0) {
-                            jsb << gnu::JSB::MakeObject();
-                                jsb << gnu::JSB::MakeNumber(static_cast<int>(area.area()), "area");
-                                jsb << gnu::JSB::MakeString(line.label(), "label");
-                                jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
-                                jsb << gnu::JSB::MakeNumber(line.align(), "align");
-                                jsb << gnu::JSB::MakeNumber(line.color(), "color");
-                                jsb << gnu::JSB::MakeNumber(line.width(), "width");
-                                jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
-                                jsb << gnu::JSB::MakeArray("yx");
+                            jsb << gnu::json::Builder::MakeObject();
+                                jsb << gnu::json::Builder::MakeNumber(static_cast<int>(area.area()), "area");
+                                jsb << gnu::json::Builder::MakeString(line.label(), "label");
+                                jsb << gnu::json::Builder::MakeString(line.type_to_string(), "type");
+                                jsb << gnu::json::Builder::MakeNumber(line.align(), "align");
+                                jsb << gnu::json::Builder::MakeNumber(line.color(), "color");
+                                jsb << gnu::json::Builder::MakeNumber(line.width(), "width");
+                                jsb << gnu::json::Builder::MakeBool(line.is_visible(), "visible");
+                                jsb << gnu::json::Builder::MakeArray("yx");
                                 for (const auto& data : line.data()) {
-                                    jsb << gnu::JSB::MakeArrayInline();
-                                        jsb << gnu::JSB::MakeString(data.date);
+                                    jsb << gnu::json::Builder::MakeArrayInline();
+                                        jsb << gnu::json::Builder::MakeString(data.date);
                                         if (fabs(data.close - data.low) > max_diff_high_low || fabs(data.close - data.high) > max_diff_high_low) {
-                                            jsb << gnu::JSB::MakeNumber(data.high);
-                                            jsb << gnu::JSB::MakeNumber(data.low);
+                                            jsb << gnu::json::Builder::MakeNumber(data.high);
+                                            jsb << gnu::json::Builder::MakeNumber(data.low);
                                         }
-                                        jsb << gnu::JSB::MakeNumber(data.close);
-                                        jsb.end();
+                                        jsb << gnu::json::Builder::MakeNumber(data.close);
+                                    jsb.end();
                                 }
                                 jsb.end();
                             jsb.end();
@@ -3006,14 +3011,15 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                     }
                 }
             jsb.end();
-            jsb << gnu::JSB::MakeArray("flw::chart_block");
+            
+            jsb << gnu::json::Builder::MakeArray("flw::chart_block");
                 for (const auto& data : _block_dates) {
-                    jsb << gnu::JSB::MakeString(data.date);
+                    jsb << gnu::json::Builder::MakeString(data.date);
                 }
             jsb.end();
 
-        auto js = jsb.encode();
-        return gnu::file::write(filename, js.c_str(), js.length());
+        auto json = jsb.encode();
+        return gnu::file::write(filename, json.c_str(), json.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -3067,32 +3073,32 @@ void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
 
     switch (dlg::choice("Select Number Of Chart Areas", list, 0, top_window())) {
-    case 0:
-        set_area_size(100);
-        break;
-    case 1:
-        set_area_size(50, 50);
-        break;
-    case 2:
-        set_area_size(60, 40);
-        break;
-    case 3:
-        set_area_size(34, 33, 33);
-        break;
-    case 4:
-        set_area_size(50, 25, 25);
-        break;
-    case 5:
-        set_area_size(25, 25, 25, 25);
-        break;
-    case 6:
-        set_area_size(40, 20, 20, 20);
-        break;
-    case 7:
-        set_area_size(20, 20, 20, 20, 20);
-        break;
-    default:
-        break;
+        case 0:
+            set_area_size(100);
+            break;
+        case 1:
+            set_area_size(50, 50);
+            break;
+        case 2:
+            set_area_size(60, 40);
+            break;
+        case 3:
+            set_area_size(34, 33, 33);
+            break;
+        case 4:
+            set_area_size(50, 25, 25);
+            break;
+        case 5:
+            set_area_size(25, 25, 25, 25);
+            break;
+        case 6:
+            set_area_size(40, 20, 20, 20);
+            break;
+        case 7:
+            set_area_size(20, 20, 20, 20, 20);
+            break;
+        default:
+            break;
     }
 
     init();
@@ -3155,50 +3161,50 @@ void Chart::setup_create_line() {
     };
 
     switch (dlg::choice("Select Formula", list, 0, top_window())) {
-    case 0:
-        create_line(ChartData::FORMULAS::MOVING_AVERAGE);
-        break;
-    case 1:
-        create_line(ChartData::FORMULAS::EXP_MOVING_AVERAGE);
-        break;
-    case 2:
-        create_line(ChartData::FORMULAS::MOMENTUM);
-        break;
-    case 3:
-        create_line(ChartData::FORMULAS::MOMENTUM, true);
-        break;
-    case 4:
-        create_line(ChartData::FORMULAS::STD_DEV);
-        break;
-    case 5:
-        create_line(ChartData::FORMULAS::STOCHASTICS);
-        break;
-    case 6:
-        create_line(ChartData::FORMULAS::STOCHASTICS, true);
-        break;
-    case 7:
-        create_line(ChartData::FORMULAS::RSI);
-        break;
-    case 8:
-        create_line(ChartData::FORMULAS::RSI, true);
-        break;
-    case 9:
-        create_line(ChartData::FORMULAS::ATR);
-        break;
-    case 10:
-        create_line(ChartData::FORMULAS::DAY_TO_WEEK);
-        break;
-    case 11:
-        create_line(ChartData::FORMULAS::DAY_TO_MONTH);
-        break;
-    case 12:
-        create_line(ChartData::FORMULAS::MODIFY);
-        break;
-    case 13:
-        create_line(ChartData::FORMULAS::FIXED);
-        break;
-    default:
-        break;
+        case 0:
+            create_line(ChartData::FORMULAS::MOVING_AVERAGE);
+            break;
+        case 1:
+            create_line(ChartData::FORMULAS::EXP_MOVING_AVERAGE);
+            break;
+        case 2:
+            create_line(ChartData::FORMULAS::MOMENTUM);
+            break;
+        case 3:
+            create_line(ChartData::FORMULAS::MOMENTUM, true);
+            break;
+        case 4:
+            create_line(ChartData::FORMULAS::STD_DEV);
+            break;
+        case 5:
+            create_line(ChartData::FORMULAS::STOCHASTICS);
+            break;
+        case 6:
+            create_line(ChartData::FORMULAS::STOCHASTICS, true);
+            break;
+        case 7:
+            create_line(ChartData::FORMULAS::RSI);
+            break;
+        case 8:
+            create_line(ChartData::FORMULAS::RSI, true);
+            break;
+        case 9:
+            create_line(ChartData::FORMULAS::ATR);
+            break;
+        case 10:
+            create_line(ChartData::FORMULAS::DAY_TO_WEEK);
+            break;
+        case 11:
+            create_line(ChartData::FORMULAS::DAY_TO_MONTH);
+            break;
+        case 12:
+            create_line(ChartData::FORMULAS::MODIFY);
+            break;
+        case 13:
+            create_line(ChartData::FORMULAS::FIXED);
+            break;
+        default:
+            break;
     }
 }
 

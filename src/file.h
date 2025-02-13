@@ -15,7 +15,7 @@ namespace gnu {
 namespace file {
 
 class File;
-class Buf;
+struct Buf;
 
 typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
 typedef std::vector<File> Files;

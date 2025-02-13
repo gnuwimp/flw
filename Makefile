@@ -1,20 +1,15 @@
 include makeinclude
 
-ifneq ($(OS), macOS)
-	CXXFLAGS += -Wno-cast-function-type
-endif
-
-ifeq ($(OS), macOS)
-	CXXFLAGS += -Wno-overloaded-virtual
-endif
-
 CXXFLAGS += $(FLTK_CXXFLAGS)
 CXXFLAGS += -DFLW_USE_PNG
-LDFLAGS  += $(FLTKI_LDFLAGS)
+LDFLAGS  += $(FLTK_IMAGE_LDFLAGS)
 INC       = -Isrc
 
 ifeq ($(OS), Windows)
 	THEME_RESOURCE = obj/theme.res
+else ifeq ($(OS), Linux)
+else ifeq ($(OS), macOS)
+else
 endif
 
 #-------------------------------------------------------------------------------
@@ -47,10 +42,7 @@ ifeq ($(amalgam), 1)
 	INC       = -I.
 endif
 
-LIB = obj/libflw.a
-
 all: obj \
-	$(LIB) \
 	test_chart.exe \
 	test_datechooser.exe \
 	test_dlg.exe \
@@ -73,9 +65,6 @@ all: obj \
 
 obj:
 	mkdir obj
-
-obj/libflw.a: $(OBJ)
-	ar rc -o $@ $(OBJ)
 
 $(THEME_RESOURCE): res/theme.rc
 	windres res/theme.rc -O coff -o $(THEME_RESOURCE)
@@ -148,148 +137,148 @@ obj/waitcursor.o: src/waitcursor.cpp src/waitcursor.h
 
 #-------------------------------------------------------------------------------
 
-obj/test_chart.o: test/test_chart.cpp src/chart.h $(LIB)
+obj/test_chart.o: test/test_chart.cpp src/chart.h $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_chart.exe: obj/test_chart.o $(LIB)
+test_chart.exe: obj/test_chart.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_chart: test_chart.exe
 	./test_chart.exe $(arg)
 
-obj/test_datechooser.o: test/test_datechooser.cpp $(LIB)
+obj/test_datechooser.o: test/test_datechooser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_datechooser.exe: obj/test_datechooser.o $(LIB)
+test_datechooser.exe: obj/test_datechooser.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_datechooser: test_datechooser.exe
 	./test_datechooser.exe $(arg)
 
-obj/test_dlg.o: test/test_dlg.cpp $(LIB)
+obj/test_dlg.o: test/test_dlg.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_dlg.exe: obj/test_dlg.o $(LIB)
+test_dlg.exe: obj/test_dlg.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_dlg: test_dlg.exe
 	./test_dlg.exe $(arg)
 
-obj/test_grid.o: test/test_grid.cpp $(LIB)
+obj/test_grid.o: test/test_grid.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_grid.exe: obj/test_grid.o $(LIB)
+test_grid.exe: obj/test_grid.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-obj/test_gridgroup.o: test/test_gridgroup.cpp $(LIB)
+obj/test_gridgroup.o: test/test_gridgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_gridgroup.exe: obj/test_gridgroup.o $(LIB)
+test_gridgroup.exe: obj/test_gridgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_gridgroup: test_gridgroup.exe
 	./test_gridgroup.exe $(arg)
 
-obj/test_inputmenu.o: test/test_inputmenu.cpp $(LIB)
+obj/test_inputmenu.o: test/test_inputmenu.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_inputmenu.exe: obj/test_inputmenu.o $(LIB)
+test_inputmenu.exe: obj/test_inputmenu.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_inputmenu: test_inputmenu.exe
 	./test_inputmenu.exe $(arg)
 
-obj/test_lcdnumber.o: test/test_lcdnumber.cpp $(LIB)
+obj/test_lcdnumber.o: test/test_lcdnumber.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_lcdnumber.exe: obj/test_lcdnumber.o $(LIB)
+test_lcdnumber.exe: obj/test_lcdnumber.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-obj/test_logdisplay.o: test/test_logdisplay.cpp $(LIB)
+obj/test_logdisplay.o: test/test_logdisplay.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_logdisplay.exe: obj/test_logdisplay.o $(LIB)
+test_logdisplay.exe: obj/test_logdisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_logdisplay: test_logdisplay.exe
 	./test_logdisplay.exe $(arg)
 
-obj/test_plot.o: test/test_plot.cpp $(LIB)
+obj/test_plot.o: test/test_plot.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_plot.exe: obj/test_plot.o $(LIB)
+test_plot.exe: obj/test_plot.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_plot: test_plot.exe
 	./test_plot.exe $(arg)
 
-obj/test_recentmenu.o: test/test_recentmenu.cpp $(LIB)
+obj/test_recentmenu.o: test/test_recentmenu.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_recentmenu.exe: obj/test_recentmenu.o $(LIB)
+test_recentmenu.exe: obj/test_recentmenu.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_recentmenu: test_recentmenu.exe
 	./test_recentmenu.exe $(arg)
 
-obj/test_splitgroup.o: test/test_splitgroup.cpp $(LIB)
+obj/test_splitgroup.o: test/test_splitgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/test_scrollbrowser.o: test/test_scrollbrowser.cpp $(LIB)
+obj/test_scrollbrowser.o: test/test_scrollbrowser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_scrollbrowser.exe: obj/test_scrollbrowser.o $(LIB)
+test_scrollbrowser.exe: obj/test_scrollbrowser.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_scrollbrowser: test_scrollbrowser.exe
 	./test_scrollbrowser.exe $(arg)
 
-test_splitgroup.exe: obj/test_splitgroup.o $(LIB)
+test_splitgroup.exe: obj/test_splitgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_splitgroup: test_splitgroup.exe
 	./test_splitgroup.exe $(arg)
 
-obj/test_tabledisplay.o: test/test_tabledisplay.cpp $(LIB)
+obj/test_tabledisplay.o: test/test_tabledisplay.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_tabledisplay.exe: obj/test_tabledisplay.o $(LIB)
+test_tabledisplay.exe: obj/test_tabledisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_tabledisplay: test_tabledisplay.exe
 	./test_tabledisplay.exe $(arg)
 
-obj/test_tableeditor.o: test/test_tableeditor.cpp $(LIB)
+obj/test_tableeditor.o: test/test_tableeditor.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_tableeditor.exe: obj/test_tableeditor.o $(LIB)
+test_tableeditor.exe: obj/test_tableeditor.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_tableeditor: test_tableeditor.exe
 	./test_tableeditor.exe $(arg)
 
-obj/test_tabsgroup.o: test/test_tabsgroup.cpp $(LIB)
+obj/test_tabsgroup.o: test/test_tabsgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_tabsgroup.exe: obj/test_tabsgroup.o $(LIB)
+test_tabsgroup.exe: obj/test_tabsgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_tabsgroup: test_tabsgroup.exe
 	./test_tabsgroup.exe $(arg)
 
-obj/test_toolgroup.o: test/test_toolgroup.cpp $(LIB)
+obj/test_toolgroup.o: test/test_toolgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_toolgroup.exe: obj/test_toolgroup.o $(LIB) $(THEME_RESOURCE)
+test_toolgroup.exe: obj/test_toolgroup.o $(OBJ) $(THEME_RESOURCE)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_toolgroup: test_toolgroup.exe
 	./test_toolgroup.exe $(arg)
 
-obj/test_theme.o: test/test_theme.cpp $(LIB)
+obj/test_theme.o: test/test_theme.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_theme.exe: obj/test_theme.o $(LIB) $(THEME_RESOURCE)
+test_theme.exe: obj/test_theme.o $(OBJ) $(THEME_RESOURCE)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 run_theme: test_theme.exe

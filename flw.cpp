@@ -1729,34 +1729,160 @@ std::string File::type_name() const {
 #include <cstdint>
 #include <errno.h>
 namespace gnu {
-#define _FLW_JSON_ERROR(X,Y) _json_format_error(__LINE__, (unsigned) (X), Y)
-#define _FLW_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
+namespace json {
+#define _GNU_JSON_ERROR(X,Y) _format_error(__LINE__, static_cast<unsigned>(X), Y)
+#define _GNU_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
-static void _json_debug(const JS* js, std::string t) {
+static void _debug(const JS* js, std::string t) {
     if (js->is_array() == true) {
-        printf("%sARRAY(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
+        printf("%sARRAY(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
         t += "\t";
-        for (const auto js2 : *js->va()) _json_debug(js2, t);
+        for (const auto js2 : *js->va()) _debug(js2, t);
         t.pop_back();
     }
     else if (js->is_object() == true) {
-        printf("%sOBJECT(%u, %u): \"%s\"\n", t.c_str(), js->pos(), (unsigned) js->size(), js->name().c_str());
+        printf("%sOBJECT(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
         t += "\t";
-        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
+        for (auto js2 : *js->vo()) _debug(js2.second, t);
         t.pop_back();
     }
-    else if (js->is_null()) printf("%s%s(%u): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c());
-    else if (js->is_string()) printf("%s%s(%u): \"%s\": \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vs_c());
-    else if (js->is_number()) printf("%s%s(%u): \"%s\": %f\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vn());
-    else if (js->is_bool()) printf("%s%s(%u): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->name_c(), js->vb() ? "true" : "false");
+    else if (js->is_null()) printf("%s%s(%u, %p): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c());
+    else if (js->is_string()) printf("%s%s(%u, %p): \"%s\": \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c(), js->vs_c());
+    else if (js->is_number()) printf("%s%s(%u, %p): \"%s\": %f\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c(), js->vn());
+    else if (js->is_bool()) printf("%s%s(%u, %p): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c(), js->vb() ? "true" : "false");
     fflush(stdout);
 }
-static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
+static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
+    static const std::string QUOTE = "\"";
+    std::string res;
+    std::string arr    = (option == ENCODE::DEFAULT) ? "\": [" : "\":[";
+    std::string obj    = (option == ENCODE::DEFAULT) ? "\": {" : "\":{";
+    std::string name1  = (option == ENCODE::DEFAULT) ? "\": " : "\":";
+    bool        object = (js.parent() != nullptr && js.parent()->is_object() == true);
+    if (js.is_array() == true) {
+        if (object == false || ignore_name == true) {
+            res = "[";
+        }
+        else {
+            res = QUOTE + js.name() + arr;
+        }
+    }
+    else if (js.is_object() == true) {
+        if (object == false || ignore_name == true) {
+            res = "{";
+        }
+        else {
+            res = QUOTE + js.name() + obj;
+        }
+    }
+    else {
+        res = (object == false || ignore_name == true) ? "" : (QUOTE + js.name() + name1);
+        if (js.is_string() == true) {
+            res += QUOTE + js.vs() + QUOTE;
+        }
+        else if (js.is_null() == true) {
+            res += "null";
+        }
+        else if (js.is_bool() == true) {
+            res += (js.vb() == true) ? "true" : "false";
+        }
+        else if (js.is_number()) {
+            res += json::format_number(js.vn());
+        }
+    }
+    return res;
+}
+static void _encode_inline(const JS& js, std::string& j, bool comma, ENCODE option) {
+    std::string c = (comma == true) ? "," : "";
+    size_t      f = 0;
+    if (js.is_array() == true) {
+        j += json::_encode(js, false, option);
+        for (const auto n : *js.va()) {
+            json::_encode_inline(*n, j, f < (js.va()->size() - 1), option);
+            f++;
+        }
+        j += "]" + c;
+    }
+    else if (js.is_object() == true) {
+        j += json::_encode(js, false, option);
+        for (const auto& n : *js.vo()) {
+            json::_encode_inline(*n.second, j, f < (js.vo()->size() - 1), option);
+            f++;
+        }
+        j += "}" + c;
+    }
+    else {
+        j += json::_encode(js, false, option) + c;
+    }
+}
+static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma, ENCODE option) {
+    std::string c = (comma == true) ? "," : "";
+    std::string n = (option == ENCODE::FLAT) ? "" : "\n";
+    size_t      f = 0;
+    if (js.is_array() == true) {
+        j += t + json::_encode(js, j == "", option);
+        if (js.has_inline() == false && js.size() > 0) {
+            j += n;
+        }
+        for (const auto n2 : *js.va()) {
+            if (option == ENCODE::DEFAULT) {
+                t += "\t";
+            }
+            if (js.has_inline() == true) {
+                json::_encode_inline(*n2, j, f < (js.va()->size() - 1), option);
+            }
+            else {
+                json::_encode_all(*n2, j, t, f < (js.va()->size() - 1), option);
+            }
+            if (option == ENCODE::DEFAULT) {
+                t.pop_back();
+            }
+            f++;
+        }
+        if (js.has_inline() == true || js.size() == 0) {
+            j += "]" + c + n;
+        }
+        else {
+            j += t + "]" + c + n;
+        }
+    }
+    else if (js.is_object() == true) {
+        j += t + json::_encode(js, j == "", option);
+        if (js.has_inline() == false && js.size() > 0) {
+            j += n;
+        }
+        for (const auto& n2 : *js.vo()) {
+            if (option == ENCODE::DEFAULT) {
+                t += "\t";
+            }
+            if (js.has_inline() == true) {
+                json::_encode_inline(*n2.second, j, f < (js.vo()->size() - 1), option);
+            }
+            else {
+                json::_encode_all(*n2.second, j, t, f < (js.vo()->size() - 1), option);
+            }
+            if (option == ENCODE::DEFAULT) {
+                t.pop_back();
+            }
+            f++;
+        }
+        if (js.has_inline() == true || js.size() == 0) {
+            j += "}" + c + n;
+        }
+        else {
+            j += t + "}" + c + n;
+        }
+    }
+    else {
+        j += t + json::_encode(js, false, option) + c + n;
+    }
+}
+static std::string _format_error(unsigned source, unsigned pos, unsigned line) {
     char buf[256];
     snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
     return buf;
 }
-static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
+static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
     bool        res = false;
     std::string n1;
     std::string n2;
@@ -1856,7 +1982,7 @@ static bool _json_parse_number(const char* json, size_t len, size_t& pos, double
     pos--;
     return res;
 }
-static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
+static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
     std::string str   = "";
     bool        term  = false;
     unsigned    c     = 0;
@@ -1885,7 +2011,7 @@ static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t l
         p = c;
         pos++;
     }
-    auto ulen = (ignore_utf_check == false) ? JS::CountUtf8(str.c_str()) : 1;
+    auto ulen = (ignore_utf_check == false) ? json::count_utf8(str.c_str()) : 1;
     if (term == false) {
         return false;
     }
@@ -1904,90 +2030,8 @@ static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t l
     pos--;
     return true;
 }
-ssize_t JS::COUNT = 0;
-bool JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true) {
-        _va->push_back(JS::_MakeBool("", b, this, pos));
-        res = true;
-    }
-    else if (is_object() == true) {
-        res = _set_object(*sVal1, JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    *sVal1 = nullptr;
-    return res;
 }
-bool JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true) {
-        _va->push_back(JS::_MakeNil("", this, pos));
-        res = true;
-    }
-    else if (is_object() == true) {
-        res = _set_object(*sVal1, JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    *sVal1 = nullptr;
-    return res;
-}
-bool JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true && std::isnan(nVal) == false) {
-        _va->push_back(JS::_MakeNumber("", nVal, this, pos));
-        res = true;
-    }
-    else if (is_object() == true && std::isnan(nVal) == false) {
-        res = _set_object(*sVal1, JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    *sVal1 = nullptr;
-    nVal = NAN;
-    return res;
-}
-bool JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
-    bool res = false;
-    if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
-        _va->push_back(JS::_MakeString("", *sVal1, this, pos));
-        res = true;
-    }
-    else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
-        res = _set_object(*sVal1, JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
-    }
-    free(*sVal1);
-    free(*sVal2);
-    *sVal1 = nullptr;
-    *sVal2 = nullptr;
-    return res;
-}
-void JS::_clear(bool name) {
-    if (_type == JS::ARRAY) {
-        for (auto js : *_va) {
-            delete js;
-        }
-        delete _va;
-        _va = nullptr;
-    }
-    else if (_type == JS::OBJECT) {
-        for (auto js : *_vo) {
-            delete js.second;
-        }
-        delete _vo;
-        _vo = nullptr;
-    }
-    else if (_type == JS::STRING) {
-        free(_vs);
-        _vs = nullptr;
-    }
-    if (name == true) {
-        free(_name);
-        _name   = nullptr;
-    }
-    _type   = JS::NIL;
-    _vb     = false;
-    _parent = nullptr;
-}
-size_t JS::CountUtf8(const char* p) {
+size_t json::count_utf8(const char* p) {
     auto count = (size_t) 0;
     auto f     = (size_t) 0;
     auto u     = reinterpret_cast<const unsigned char*>(p);
@@ -2021,7 +2065,9 @@ size_t JS::CountUtf8(const char* p) {
     }
     return count;
 }
-std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+    auto ret     = JS();
+    auto tmp     = JS();
     auto colon   = 0;
     auto comma   = 0;
     auto count_a = 0;
@@ -2035,11 +2081,8 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
     auto posn    = (size_t) 0;
     auto sVal1   = (char*) nullptr;
     auto sVal2   = (char*) nullptr;
-    auto tmp     = JS();
     try {
-        _clear(true);
-        _name = strdup("");
-        tmp._type = JS::ARRAY;
+        tmp._type = TYPE::ARRAY;
         tmp._va   = new JSArray();
         current   = &tmp;
         if (strncmp(json, _JSON_BOM, 3) == 0) {
@@ -2058,15 +2101,15 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             else if (c == '"') {
                 pos2 = pos1;
                 if (sVal1 == nullptr) posn = pos1;
-                if (_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _FLW_JSON_ERROR(start, line);
+                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _GNU_JSON_ERROR(start, line);
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
                 auto add_array = (current->is_array() == true);
-                if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
-                else if (add_object == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
+                if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw _GNU_JSON_ERROR(start, line);
+                else if (add_object == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
                 else if (add_object == true || add_array == true) {
                     pos2 = (sVal2 == nullptr) ? pos2 : posn;
-                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
                     colon = 0;
                     comma = 0;
                 }
@@ -2074,42 +2117,42 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             }
             else if ((c >= '0' && c <= '9') || c == '-') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (_json_parse_number(json, len, pos1, nVal) == false) throw _FLW_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _FLW_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
+                if (_parse_number(json, len, pos1, nVal) == false) throw _GNU_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
+                else if (comma == 0 && current->size() > 0) throw _GNU_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
                 pos1++;
             }
             else if (c == ',') {
-                if (comma > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current == &tmp) throw _FLW_JSON_ERROR(pos1, line);
+                if (comma > 0) throw _GNU_JSON_ERROR(pos1, line);
+                else if (current == &tmp) throw _GNU_JSON_ERROR(pos1, line);
                 comma++;
                 pos1++;
             }
             else if (c == ':') {
-                if (colon > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                if (colon > 0) throw _GNU_JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw _GNU_JSON_ERROR(pos1, line);
+                else if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
                 colon++;
                 pos1++;
             }
             else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
+                if (current->size() == 0 && comma > 0) throw _GNU_JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw _GNU_JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
                     n = JS::_MakeArray("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw _GNU_JSON_ERROR(pos1, line);
                     n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
-                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _GNU_JSON_ERROR(pos1, line);
+                    _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
                 colon = 0;
@@ -2118,30 +2161,30 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                 pos1++;
             }
             else if (c == ']') {
-                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_array() == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (count_a < 0) throw _FLW_JSON_ERROR(pos1, line);
+                if (current->_parent == nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                else if (current->is_array() == false) throw _GNU_JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw _GNU_JSON_ERROR(pos1, line);
+                else if (count_a < 0) throw _GNU_JSON_ERROR(pos1, line);
                 current = current->_parent;
                 comma = 0;
                 count_a--;
                 pos1++;
             }
             else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _FLW_JSON_ERROR(pos1, line);
+                if (current->size() == 0 && comma > 0) throw _GNU_JSON_ERROR(pos1, line);
+                else if (current->size() > 0 && comma != 1) throw _GNU_JSON_ERROR(pos1, line);
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
                     n = JS::_MakeObject("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _FLW_JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                    else if (colon != 1) throw _GNU_JSON_ERROR(pos1, line);
                     n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _FLW_JSON_ERROR(pos1, line);
-                    _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
+                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _GNU_JSON_ERROR(pos1, line);
+                    _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
                 colon = 0;
@@ -2150,11 +2193,11 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
                 pos1++;
             }
             else if (c == '}') {
-                if (current->_parent == nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _FLW_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _FLW_JSON_ERROR(pos1, line);
-                else if (count_o < 0) throw _FLW_JSON_ERROR(pos1, line);
+                if (current->_parent == nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                else if (current->is_object() == false) throw _GNU_JSON_ERROR(pos1, line);
+                else if (sVal1 != nullptr || sVal2 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                else if (comma > 0 && ignore_trailing_comma == false) throw _GNU_JSON_ERROR(pos1, line);
+                else if (count_o < 0) throw _GNU_JSON_ERROR(pos1, line);
                 current = current->_parent;
                 comma = 0;
                 count_o--;
@@ -2163,10 +2206,10 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
                     (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _FLW_JSON_ERROR(start, line);
+                if (current->size() > 0 && comma == 0) throw _GNU_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
@@ -2174,83 +2217,77 @@ std::string JS::decode(const char* json, size_t len, bool ignore_trailing_comma,
             }
             else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _FLW_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _FLW_JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _FLW_JSON_ERROR(start, line);
+                if (current->size() > 0 && comma == 0) throw _GNU_JSON_ERROR(start, line);
+                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
+                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
+                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _GNU_JSON_ERROR(start, line);
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
             }
             else {
-                throw _FLW_JSON_ERROR(pos1, line);
+                throw _GNU_JSON_ERROR(pos1, line);
             }
             if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
-                throw _FLW_JSON_ERROR(pos1, line);
+                throw _GNU_JSON_ERROR(pos1, line);
             }
         }
         if (count_a != 0 || count_o != 0) {
-            throw _FLW_JSON_ERROR(len, 1);
+            throw _GNU_JSON_ERROR(len, 1);
         }
         else if (tmp.size() != 1) {
-            throw _FLW_JSON_ERROR(len, 1);
+            throw _GNU_JSON_ERROR(len, 1);
         }
-        else if (tmp[0]->_type == JS::ARRAY) {
-            _type = JS::ARRAY;
-            _va = tmp[0]->_va;
-            const_cast<JS*>(tmp[0])->_type = JS::NIL;
-            for (auto o : *_va) {
-                o->_parent = this;
-            }
+        else if (tmp[0]->_type == TYPE::ARRAY) {
+            ret._type = TYPE::ARRAY;
+            ret._va = tmp[0]->_va;
+            ret._set_child_parent_to_me();
+            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
         }
-        else if (tmp[0]->_type == JS::OBJECT) {
-            _type = JS::OBJECT;
-            _vo = tmp[0]->_vo;
-            const_cast<JS*>(tmp[0])->_type = JS::NIL;
-            for (const auto& it : *_vo) {
-                it.second->_parent = this;
-            }
+        else if (tmp[0]->_type == TYPE::OBJECT) {
+            ret._type = TYPE::OBJECT;
+            ret._vo = tmp[0]->_vo;
+            ret._set_child_parent_to_me();
+            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
         }
-        else if (tmp[0]->_type == JS::BOOL) {
-            _type = JS::BOOL;
-            _vb   = tmp[0]->_vb;
+        else if (tmp[0]->_type == TYPE::BOOL) {
+            ret._type = TYPE::BOOL;
+            ret._vb   = tmp[0]->_vb;
         }
-        else if (tmp[0]->_type == JS::NUMBER) {
-            _type = JS::NUMBER;
-            _vn   = tmp[0]->_vn;
+        else if (tmp[0]->_type == TYPE::NUMBER) {
+            ret._type = TYPE::NUMBER;
+            ret._vn   = tmp[0]->_vn;
         }
-        else if (tmp[0]->_type == JS::STRING) {
-            _type = JS::STRING;
-            _vs   = tmp[0]->_vs;
-            const_cast<JS*>(tmp[0])->_type = JS::NIL;
+        else if (tmp[0]->_type == TYPE::STRING) {
+            ret._type = TYPE::STRING;
+            ret._vs   = tmp[0]->_vs;
+            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
         }
-        else if (tmp[0]->_type == JS::NIL) {
-            _type = JS::NIL;
+        else if (tmp[0]->_type == TYPE::NIL) {
+            ret._type = TYPE::NIL;
         }
         else {
-            throw _FLW_JSON_ERROR(0, 1);
+            throw _GNU_JSON_ERROR(0, 1);
         }
     }
     catch(const std::string& err) {
-        _FLW_JSON_FREE_STRINGS(sVal1, sVal2)
-        _clear(false);
-        return err;
+        _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
+        ret._set_err(err);
     }
-    return "";
+    return ret;
 }
-void JS::debug() const {
-    std::string t;
-    _json_debug(this, t);
+json::JS json::decode(const std::string& json, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+    return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check);
 }
-std::string JS::encode(JS::ENCODE_OPTION option) const {
+std::string json::encode(const JS& js, ENCODE option) {
     std::string t;
     std::string j;
     try {
-        if (is_array() == true || is_object() == true) {
-            JS::_Encode(this, j, t, false, option);
+        if (js.is_array() == true || js.is_object() == true) {
+            json::_encode_all(js, j, t, false, option);
         }
         else {
-            return _encode(true, option);
+            j = json::_encode(js, true, option);
         }
     }
     catch (const std::string& e) {
@@ -2258,93 +2295,7 @@ std::string JS::encode(JS::ENCODE_OPTION option) const {
     }
     return j;
 }
-std::string JS::_encode(bool ignore_name, JS::ENCODE_OPTION option) const {
-    static const std::string QUOTE = "\"";
-    std::string res;
-    std::string arr   = (option == ENCODE_OPTION::NORMAL) ? "\": [" : "\":[";
-    std::string obj   = (option == ENCODE_OPTION::NORMAL) ? "\": {" : "\":{";
-    std::string name1 = (option == ENCODE_OPTION::NORMAL) ? "\": " : "\":";
-    bool object = (_parent != nullptr && _parent->is_object() == true);
-    if (_type == JS::ARRAY) {
-        res = (object == false || ignore_name == true) ? res = "[" : (QUOTE + _name + arr);
-    }
-    else if (_type == JS::OBJECT) {
-        res = (object == false || ignore_name == true) ? "{" : (QUOTE + _name + obj);
-    }
-    else {
-        res = (object == false || ignore_name == true) ? "" : (QUOTE + _name + name1);
-        if (_type == JS::STRING) {
-            res += QUOTE + _vs + QUOTE;
-        }
-        else if (_type == JS::NIL) {
-            res += "null";
-        }
-        else if (_type == JS::BOOL && _vb == true) {
-            res += "true";
-        }
-        else if (_type == JS::BOOL && _vb == false) {
-            res += "false";
-        }
-        else if (_type == JS::NUMBER) {
-            res += JS::FormatNumber(_vn);
-        }
-    }
-    return res;
-}
-void JS::_Encode(const JS* js, std::string& j, std::string& t, bool comma, JS::ENCODE_OPTION option) {
-    std::string c = (comma == true) ? "," : "";
-    std::string n = (option == ENCODE_OPTION::REMOVE_LEADING_AND_NEWLINES) ? "" : "\n";
-    size_t      f = 0;
-    if (js->is_array() == true) {
-        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
-        for (const auto n2 : *js->_va) {
-            if (option == ENCODE_OPTION::NORMAL) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n2, j, f < (js->_va->size() - 1), option);
-            else JS::_Encode(n2, j, t, f < (js->_va->size() - 1), option);
-            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
-            f++;
-        }
-        j += ((js->_enc_flag == 1) ? ("]" + c + "\n") : (t + "]" + c + n));
-    }
-    else if (js->is_object() == true) {
-        j += t + js->_encode(j == "", option) + ((js->_enc_flag == 1) ? "" : n);
-        for (const auto& n2 : *js->_vo) {
-            if (option == ENCODE_OPTION::NORMAL) t += "\t";
-            if (js->_enc_flag == 1) JS::_EncodeInline(n2.second, j, f < (js->_vo->size() - 1), option);
-            else JS::_Encode(n2.second, j, t, f < (js->_vo->size() - 1), option);
-            if (option == ENCODE_OPTION::NORMAL) t.pop_back();
-            f++;
-        }
-        j += ((js->_enc_flag == 1) ? ("}" + c + "\n") : (t + "}" + c + n));
-    }
-    else {
-        j += t + js->_encode(false, option) + c + n;
-    }
-}
-void JS::_EncodeInline(const JS* js, std::string& j, bool comma, JS::ENCODE_OPTION option) {
-    std::string c = (comma == true) ? "," : "";
-    size_t      f = 0;
-    if (*js == JS::ARRAY) {
-        j += js->_encode(false, option);
-        for (const auto n : *js->_va) {
-            JS::_EncodeInline(n, j, f < (js->_va->size() - 1), option);
-            f++;
-        }
-        j += "]" + c;
-    }
-    else if (*js == JS::OBJECT) {
-        j += js->_encode(false, option);
-        for (const auto& n : *js->_vo) {
-            JS::_EncodeInline(n.second, j, f < (js->_vo->size() - 1), option);
-            f++;
-        }
-        j += "}" + c;
-    }
-    else {
-        j += js->_encode(false, option) + c;
-    }
-}
-std::string JS::Escape(const char* string) {
+std::string json::escape(const char* string) {
     std::string res;
     res.reserve(strlen(string) + 5);
     while (*string != 0) {
@@ -2361,23 +2312,7 @@ std::string JS::Escape(const char* string) {
     }
     return res;
 }
-const JS* JS::find(std::string name, bool rec) const {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-        if (find1 != _vo->end()) {
-            return find1->second;
-        }
-        else if (rec == true) {
-            for (auto o : *_vo) {
-                if (o.second->is_object() == true) {
-                    return o.second->find(name, rec);
-                }
-            }
-        }
-    }
-    return nullptr;
-}
-std::string JS::FormatNumber(double f, bool E) {
+std::string json::format_number(double f, bool E) {
     double ABS = fabs(f);
     double MIN = ABS - static_cast<int64_t>(ABS);
     size_t n   = 0;
@@ -2411,40 +2346,7 @@ std::string JS::FormatNumber(double f, bool E) {
     }
     return s;
 }
-const JS* JS::_get_object(const char* name, bool escape) const {
-    if (is_object() == true) {
-        auto key   = (escape == true) ? JS::Escape(name) : name;
-        auto find1 = _vo->find(key);
-        return (find1 != _vo->end()) ? find1->second : nullptr;
-    }
-    return nullptr;
-}
-bool JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-        if (find1 != _vo->end()) {
-            if (ignore_duplicates == false) {
-                delete js;
-                return false;
-            }
-            else {
-                delete find1->second;
-            }
-        }
-        (*_vo)[name] = js;
-    }
-    return true;
-}
-const JSArray JS::vo_to_va() const {
-    JSArray res;
-    if (_type == JS::OBJECT) {
-        for (auto& m : *_vo) {
-            res.push_back(m.second);
-        }
-    }
-    return res;
-}
-std::string JS::Unescape(const char* string) {
+std::string json::unescape(const char* string) {
     std::string res;
     res.reserve(strlen(string));
     while (*string != 0) {
@@ -2468,7 +2370,293 @@ std::string JS::Unescape(const char* string) {
     }
     return res;
 }
-JSB& JSB::add(JS* js) {
+ssize_t json::JS::COUNT = 0;
+ssize_t json::JS::MAX   = 0;
+json::JS::JS() {
+    JS::COUNT++;
+    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+    _inline = false;
+    _name   = nullptr;
+    _parent = nullptr;
+    _pos    = 0;
+    _type   = TYPE::NIL;
+    _vb     = false;
+}
+json::JS::JS(const char* name, JS* parent, unsigned pos) {
+    JS::COUNT++;
+    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+    _inline = false;
+    _name   = (name != nullptr) ? strdup(name) : nullptr;
+    _parent = parent;
+    _pos    = pos;
+    _type   = TYPE::NIL;
+    _vb     = false;
+}
+json::JS::JS(JS&& other) {
+    JS::COUNT++;
+    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+    _inline = other._inline;
+    _name   = other._name;
+    _parent = other._parent;
+    _pos    = other._pos;
+    _type   = other._type;
+    if (other._type == TYPE::ARRAY) {
+        _va = other._va;
+    }
+    else if (other._type == TYPE::OBJECT) {
+        _vo = other._vo;
+    }
+    else if (other._type == TYPE::BOOL) {
+        _vb = other._vb;
+    }
+    else if (other._type == TYPE::STRING) {
+        _vs = other._vs;
+    }
+    else if (other._type == TYPE::NUMBER) {
+        _vn = other._vn;
+    }
+    other._type = TYPE::NIL;
+    other._name = nullptr;
+    _set_child_parent_to_me();
+}
+json::JS::~JS() {
+    JS::COUNT--;
+    _clear(true);
+}
+json::JS& json::JS::operator=(JS&& other) {
+    _clear(true);
+    _inline = other._inline;
+    _name   = other._name;
+    _parent = other._parent;
+    _pos    = other._pos;
+    _type   = other._type;
+    if (other._type == TYPE::ARRAY) {
+        _va = other._va;
+    }
+    else if (other._type == TYPE::OBJECT) {
+        _vo = other._vo;
+    }
+    else if (other._type == TYPE::BOOL) {
+        _vb = other._vb;
+    }
+    else if (other._type == TYPE::STRING) {
+        _vs = other._vs;
+    }
+    else if (other._type == TYPE::NUMBER) {
+        _vn = other._vn;
+    }
+    other._type = TYPE::NIL;
+    other._name = nullptr;
+    _set_child_parent_to_me();
+    return *this;
+}
+bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeBool("", b, this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, json::JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+bool json::JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true) {
+        _va->push_back(JS::_MakeNil("", this, pos));
+        res = true;
+    }
+    else if (is_object() == true) {
+        res = _set_object(*sVal1, json::JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    return res;
+}
+bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true && std::isnan(nVal) == false) {
+        _va->push_back(JS::_MakeNumber("", nVal, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && std::isnan(nVal) == false) {
+        res = _set_object(*sVal1, json::JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    *sVal1 = nullptr;
+    nVal = NAN;
+    return res;
+}
+bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
+    bool res = false;
+    if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
+        _va->push_back(JS::_MakeString("", *sVal1, this, pos));
+        res = true;
+    }
+    else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
+        res = _set_object(*sVal1, json::JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
+    }
+    free(*sVal1);
+    free(*sVal2);
+    *sVal1 = nullptr;
+    *sVal2 = nullptr;
+    return res;
+}
+void json::JS::_clear(bool name) {
+    if (is_array() == true) {
+        for (auto js : *_va) {
+            delete js;
+        }
+        delete _va;
+        _va = nullptr;
+    }
+    else if (is_object() == true) {
+        for (auto js : *_vo) {
+            delete js.second;
+        }
+        delete _vo;
+        _vo = nullptr;
+    }
+    else if (is_string() == true || has_err() == true) {
+        free(_vs);
+        _vs = nullptr;
+    }
+    if (name == true) {
+        free(_name);
+        _name = nullptr;
+    }
+    _type   = TYPE::NIL;
+    _vb     = false;
+    _parent = nullptr;
+}
+void json::JS::debug() const {
+    std::string t;
+    _debug(this, t);
+}
+const json::JS* json::JS::find(std::string name, bool rec) const {
+    if (is_object() == true) {
+        auto find1 = _vo->find(name);
+        if (find1 != _vo->end()) {
+            return find1->second;
+        }
+        else if (rec == true) {
+            for (auto o : *_vo) {
+                if (o.second->is_object() == true) {
+                    return o.second->find(name, rec);
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+const json::JS* json::JS::_get_object(const char* name, bool escape) const {
+    if (is_object() == true) {
+        auto key   = (escape == true) ? json::escape(name) : name;
+        auto find1 = _vo->find(key);
+        return (find1 != _vo->end()) ? find1->second : nullptr;
+    }
+    return nullptr;
+}
+json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
+    auto r   = new JS(name, parent, pos);
+    r->_type = TYPE::ARRAY;
+    r->_va   = new JSArray();
+    return r;
+}
+json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned pos) {
+    auto r   = new JS(name, parent, pos);
+    r->_type = TYPE::BOOL;
+    r->_vb   = vb;
+    return r;
+}
+json::JS* json::JS::_MakeNil(const char* name, JS* parent, unsigned pos) {
+    return new JS(name, parent, pos);
+}
+json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
+    auto r   = new JS(name, parent, pos);
+    r->_type = TYPE::NUMBER;
+    r->_vn   = vn;
+    return r;
+}
+json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
+    auto r   = new JS(name, parent, pos);
+    r->_type = TYPE::OBJECT;
+    r->_vo   = new JSObject();
+    return r;
+}
+json::JS* json::JS::_MakeString(const char* name, const char* vs, JS* parent, unsigned pos) {
+    auto r   = new JS(name, parent, pos);
+    r->_type = TYPE::STRING;
+    r->_vs   = strdup(vs);
+    return r;
+}
+void json::JS::_set_err(const std::string& err) {
+    _clear(true);
+    _vs   = strdup(err.c_str());
+    _type = TYPE::ERR;
+}
+bool json::JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
+    if (is_object() == true) {
+        auto find1 = _vo->find(name);
+        if (find1 != _vo->end()) {
+            if (ignore_duplicates == false) {
+                delete js;
+                return false;
+            }
+            else {
+                delete find1->second;
+            }
+        }
+        (*_vo)[name] = js;
+    }
+    return true;
+}
+void json::JS::_set_child_parent_to_me() {
+    if (is_array() == true) {
+        for (auto o : *_va) {
+            o->_parent = this;
+        }
+    }
+    else if (is_object() == true) {
+        for (const auto& it : *_vo) {
+            it.second->_parent = this;
+        }
+    }
+}
+std::string json::JS::to_string() const {
+    std::string ret = type_name();
+    char b[100];
+    if (_type == TYPE::NUMBER) {
+        snprintf(b, 100, ": %f", _vn);
+        ret += b;
+    }
+    else if (_type == TYPE::STRING) {
+        ret += ": ";
+        ret += _vs;
+    }
+    else if (_type == TYPE::BOOL) {
+        ret += ": ";
+        ret += _vb ? "true" : "false";
+    }
+    else if (_type == TYPE::ARRAY || _type == TYPE::OBJECT) {
+        snprintf(b, 100, ": %d", static_cast<int>(size()));
+        ret += b;
+    }
+    return ret;
+}
+const json::JSArray json::JS::vo_to_va() const {
+    JSArray res;
+    if (_type == TYPE::OBJECT) {
+        for (auto& m : *_vo) {
+            res.push_back(m.second);
+        }
+    }
+    return res;
+}
+json::Builder& json::Builder::add(JS* js) {
     auto name = js->name();
     if (_current == nullptr) {
         if (name != "") {
@@ -2486,7 +2674,7 @@ JSB& JSB::add(JS* js) {
                 delete js;
                 throw std::string("error: values added to array are nameless <" + name + ">");
             }
-            else if (*js == JS::ARRAY || *js == JS::OBJECT) {
+            else if (*js == TYPE::ARRAY || *js == TYPE::OBJECT) {
                 _current->_va->push_back(js);
                 _current = js;
             }
@@ -2514,20 +2702,20 @@ JSB& JSB::add(JS* js) {
     }
     return *this;
 }
-std::string JSB::encode() const {
+std::string json::Builder::encode(ENCODE option) const {
     if (_root == nullptr) {
         throw std::string("error: empty json");
     }
     else if (_name != "") {
         throw std::string("error: unused name value <" + _name + ">");
     }
-    auto j = _root->encode();
+    auto j = json::encode(*_root, option);
     if (j.find("error") == 0) {
         throw j;
     }
     return j;
 }
-JSB& JSB::end() {
+json::Builder& json::Builder::end() {
     if (_current == nullptr) {
         throw std::string("error: empty json");
     }
@@ -2536,6 +2724,61 @@ JSB& JSB::end() {
     }
     _current = _current->parent();
     return *this;
+}
+json::JS* json::Builder::MakeArray(const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::ARRAY;
+    r->_va   = new JSArray();
+    return r;
+}
+json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
+    auto r     = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type   = TYPE::ARRAY;
+    r->_va     = new JSArray();
+    r->_inline = true;
+    return r;
+}
+json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::BOOL;
+    r->_vb   = vb;
+    return r;
+}
+json::JS* json::Builder::MakeNull(const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::NIL;
+    return r;
+}
+json::JS* json::Builder::MakeNumber(double vn, const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::NUMBER;
+    r->_vn   = vn;
+    return r;
+}
+json::JS* json::Builder::MakeObject(const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::OBJECT;
+    r->_vo   = new JSObject();
+    return r;
+}
+json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
+    auto r     = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type   = TYPE::OBJECT;
+    r->_vo     = new JSObject();
+    r->_inline = true;
+    return r;
+}
+json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::STRING;
+    r->_vs   = strdup((escape == true) ? json::escape(vs).c_str() : vs);
+    return r;
+}
+json::JS* json::Builder::MakeString(std::string vs, const char* name, bool escape) {
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::STRING;
+    r->_vs   = strdup((escape == true) ? json::escape(vs.c_str()).c_str() : vs.c_str());
+    return r;
 }
 }
 #include <FL/Fl_File_Chooser.H>
@@ -2547,15 +2790,12 @@ JSB& JSB::end() {
 #include <FL/fl_show_colormap.H>
 #include <algorithm>
 namespace flw {
-#define _FLW_CHART_ERROR(X)     { fl_alert("error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 #define _FLW_CHART_DEBUG(X)
 #define _FLW_CHART_CLIP(X) { X; }
 static const char* const _CHART_ADD_CSV         = "Add line from CSV file...";
 static const char* const _CHART_ADD_LINE        = "Create line...";
 static const char* const _CHART_CLEAR           = "Clear chart";
-static const char* const _CHART_DEBUG           = "Debug chart";
-static const char* const _CHART_DEBUG_LINE      = "Print visible values";
 static const char* const _CHART_LOAD_JSON       = "Load chart from JSON...";
 static const char* const _CHART_PRINT           = "Print to PostScript file...";
 static const char* const _CHART_SAVE_CSV        = "Save line to CSV...";
@@ -2574,10 +2814,13 @@ static const char* const _CHART_SHOW_HLINES     = "Show horizontal lines";
 static const char* const _CHART_SHOW_LABELS     = "Show line labels";
 static const char* const _CHART_SHOW_VLINES     = "Show vertical lines";
 static const int         _CHART_MIN_MARGIN      =  3;
-static const int         _CHART_MAX_MARGIN      = 20;
 static const int         _CHART_MIN_AREA_SIZE   = 10;
 static const int         _CHART_TICK_SIZE       =  4;
 static const std::string _CHART_LABEL_SYMBOL    = "@-> ";
+#ifdef DEBUG
+static const char* const _CHART_DEBUG           = "Debug chart";
+static const char* const _CHART_DEBUG_LINE      = "Print visible values";
+#endif
 bool ChartArea::add_line(const ChartLine& chart_line) {
     if (_lines.size() >= ChartArea::MAX_LINES) {
         return false;
@@ -2987,18 +3230,18 @@ ChartDataVector ChartData::Modify(const ChartDataVector& in, ChartData::MODIFY m
     }
     for (const auto& data : in) {
         switch (modify) {
-        case MODIFY::SUBTRACTION:
-            res.push_back(ChartData(data.date, data.high - value, data.low - value, data.close - value));
-            break;
-        case MODIFY::MULTIPLICATION:
-            res.push_back(ChartData(data.date, data.high * value, data.low * value, data.close * value));
-            break;
-        case MODIFY::DIVISION:
-            res.push_back(ChartData(data.date, data.high / value, data.low / value, data.close / value));
-            break;
-        default:
-            res.push_back(ChartData(data.date, data.high + value, data.low + value, data.close + value));
-            break;
+            case MODIFY::SUBTRACTION:
+                res.push_back(ChartData(data.date, data.high - value, data.low - value, data.close - value));
+                break;
+            case MODIFY::MULTIPLICATION:
+                res.push_back(ChartData(data.date, data.high * value, data.low * value, data.close * value));
+                break;
+            case MODIFY::DIVISION:
+                res.push_back(ChartData(data.date, data.high / value, data.low / value, data.close / value));
+                break;
+            default:
+                res.push_back(ChartData(data.date, data.high + value, data.low + value, data.close + value));
+                break;
         }
     }
     return res;
@@ -3084,7 +3327,7 @@ bool ChartData::SaveCSV(const ChartDataVector& in, std::string filename, std::st
     csv.reserve(in.size() * 40 + 256);
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::JS::FormatNumber(data.high).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.low).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.close).c_str());
+        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
         csv += buffer;
     }
     return gnu::file::write(filename, csv.c_str(), csv.size());
@@ -4611,6 +4854,7 @@ bool Chart::load_json() {
     return load_json(filename);
 }
 bool Chart::load_json(std::string filename) {
+#define _FLW_CHART_ERROR(X) { fl_alert("error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
     _filename = "";
     reset();
     redraw();
@@ -4620,10 +4864,9 @@ bool Chart::load_json(std::string filename) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
-    auto js  = gnu::JS();
-    auto err = js.decode(buf.p, buf.s, true);
-    if (err != "") {
-        fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
+    auto js = gnu::json::decode(buf.p, buf.s, true);
+    if (js.has_err() == true) {
+        fl_alert("error: failed to parse %s (%s)", filename.c_str(), js.err_c());
         return false;
     }
     if (js.is_object() == false) _FLW_CHART_ERROR(&js);
@@ -4803,19 +5046,19 @@ bool Chart::save_json() {
 }
 bool Chart::save_json(std::string filename, double max_diff_high_low) const {
     auto wc  = WaitCursor();
-    auto jsb = gnu::JSB();
+    auto jsb = gnu::json::Builder();
     try {
-        jsb << gnu::JSB::MakeObject();
-            jsb << gnu::JSB::MakeObject("flw::chart");
-                jsb << gnu::JSB::MakeNumber(Chart::VERSION, "version");
-                jsb << gnu::JSB::MakeString(_label.c_str(), "label");
-                jsb << gnu::JSB::MakeNumber(_tick_width, "tick_width");
-                jsb << gnu::JSB::MakeString(ChartData::RangeToString(_date_range), "date_range");
-                jsb << gnu::JSB::MakeBool(_labels, "labels");
-                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
-                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
+        jsb << gnu::json::Builder::MakeObject();
+            jsb << gnu::json::Builder::MakeObject("flw::chart");
+                jsb << gnu::json::Builder::MakeNumber(Chart::VERSION, "version");
+                jsb << gnu::json::Builder::MakeString(_label.c_str(), "label");
+                jsb << gnu::json::Builder::MakeNumber(_tick_width, "tick_width");
+                jsb << gnu::json::Builder::MakeString(ChartData::RangeToString(_date_range), "date_range");
+                jsb << gnu::json::Builder::MakeBool(_labels, "labels");
+                jsb << gnu::json::Builder::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::json::Builder::MakeBool(_vertical, "vertical");
             jsb.end();
-            jsb << gnu::JSB::MakeObject("flw::chart_areas");
+            jsb << gnu::json::Builder::MakeObject("flw::chart_areas");
             for (size_t f = 0; f <= static_cast<int>(ChartArea::AREA::LAST); f++) {
                 auto  perc_str = util::format("area%u", static_cast<unsigned>(f));
                 auto  min_str  = util::format("min%u", static_cast<unsigned>(f));
@@ -4823,33 +5066,33 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                 auto& area     = _areas[f];
                 auto  min      = area.clamp_min();
                 auto  max      = area.clamp_max();
-                jsb << gnu::JSB::MakeNumber(_areas[f].percent(), perc_str.c_str());
-                if (min.has_value() == true) jsb << gnu::JSB::MakeNumber(min.value(), min_str.c_str());
-                if (max.has_value() == true) jsb << gnu::JSB::MakeNumber(max.value(), max_str.c_str());
+                jsb << gnu::json::Builder::MakeNumber(_areas[f].percent(), perc_str.c_str());
+                if (min.has_value() == true) jsb << gnu::json::Builder::MakeNumber(min.value(), min_str.c_str());
+                if (max.has_value() == true) jsb << gnu::json::Builder::MakeNumber(max.value(), max_str.c_str());
             }
             jsb.end();
-            jsb << gnu::JSB::MakeArray("flw::chart_lines");
+            jsb << gnu::json::Builder::MakeArray("flw::chart_lines");
                 for (auto& area : _areas) {
                     for (auto& line : area.lines()) {
                         if (line.size() > 0) {
-                            jsb << gnu::JSB::MakeObject();
-                                jsb << gnu::JSB::MakeNumber(static_cast<int>(area.area()), "area");
-                                jsb << gnu::JSB::MakeString(line.label(), "label");
-                                jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
-                                jsb << gnu::JSB::MakeNumber(line.align(), "align");
-                                jsb << gnu::JSB::MakeNumber(line.color(), "color");
-                                jsb << gnu::JSB::MakeNumber(line.width(), "width");
-                                jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
-                                jsb << gnu::JSB::MakeArray("yx");
+                            jsb << gnu::json::Builder::MakeObject();
+                                jsb << gnu::json::Builder::MakeNumber(static_cast<int>(area.area()), "area");
+                                jsb << gnu::json::Builder::MakeString(line.label(), "label");
+                                jsb << gnu::json::Builder::MakeString(line.type_to_string(), "type");
+                                jsb << gnu::json::Builder::MakeNumber(line.align(), "align");
+                                jsb << gnu::json::Builder::MakeNumber(line.color(), "color");
+                                jsb << gnu::json::Builder::MakeNumber(line.width(), "width");
+                                jsb << gnu::json::Builder::MakeBool(line.is_visible(), "visible");
+                                jsb << gnu::json::Builder::MakeArray("yx");
                                 for (const auto& data : line.data()) {
-                                    jsb << gnu::JSB::MakeArrayInline();
-                                        jsb << gnu::JSB::MakeString(data.date);
+                                    jsb << gnu::json::Builder::MakeArrayInline();
+                                        jsb << gnu::json::Builder::MakeString(data.date);
                                         if (fabs(data.close - data.low) > max_diff_high_low || fabs(data.close - data.high) > max_diff_high_low) {
-                                            jsb << gnu::JSB::MakeNumber(data.high);
-                                            jsb << gnu::JSB::MakeNumber(data.low);
+                                            jsb << gnu::json::Builder::MakeNumber(data.high);
+                                            jsb << gnu::json::Builder::MakeNumber(data.low);
                                         }
-                                        jsb << gnu::JSB::MakeNumber(data.close);
-                                        jsb.end();
+                                        jsb << gnu::json::Builder::MakeNumber(data.close);
+                                    jsb.end();
                                 }
                                 jsb.end();
                             jsb.end();
@@ -4857,13 +5100,13 @@ bool Chart::save_json(std::string filename, double max_diff_high_low) const {
                     }
                 }
             jsb.end();
-            jsb << gnu::JSB::MakeArray("flw::chart_block");
+            jsb << gnu::json::Builder::MakeArray("flw::chart_block");
                 for (const auto& data : _block_dates) {
-                    jsb << gnu::JSB::MakeString(data.date);
+                    jsb << gnu::json::Builder::MakeString(data.date);
                 }
             jsb.end();
-        auto js = jsb.encode();
-        return gnu::file::write(filename, js.c_str(), js.length());
+        auto json = jsb.encode();
+        return gnu::file::write(filename, json.c_str(), json.length());
     }
     catch(const std::string& e) {
         fl_alert("error: failed to encode json\n%s", e.c_str());
@@ -4902,32 +5145,32 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
     switch (dlg::choice("Select Number Of Chart Areas", list, 0, top_window())) {
-    case 0:
-        set_area_size(100);
-        break;
-    case 1:
-        set_area_size(50, 50);
-        break;
-    case 2:
-        set_area_size(60, 40);
-        break;
-    case 3:
-        set_area_size(34, 33, 33);
-        break;
-    case 4:
-        set_area_size(50, 25, 25);
-        break;
-    case 5:
-        set_area_size(25, 25, 25, 25);
-        break;
-    case 6:
-        set_area_size(40, 20, 20, 20);
-        break;
-    case 7:
-        set_area_size(20, 20, 20, 20, 20);
-        break;
-    default:
-        break;
+        case 0:
+            set_area_size(100);
+            break;
+        case 1:
+            set_area_size(50, 50);
+            break;
+        case 2:
+            set_area_size(60, 40);
+            break;
+        case 3:
+            set_area_size(34, 33, 33);
+            break;
+        case 4:
+            set_area_size(50, 25, 25);
+            break;
+        case 5:
+            set_area_size(25, 25, 25, 25);
+            break;
+        case 6:
+            set_area_size(40, 20, 20, 20);
+            break;
+        case 7:
+            set_area_size(20, 20, 20, 20, 20);
+            break;
+        default:
+            break;
     }
     init();
 }
@@ -4978,50 +5221,50 @@ void Chart::setup_create_line() {
         "Horizontal fixed line"
     };
     switch (dlg::choice("Select Formula", list, 0, top_window())) {
-    case 0:
-        create_line(ChartData::FORMULAS::MOVING_AVERAGE);
-        break;
-    case 1:
-        create_line(ChartData::FORMULAS::EXP_MOVING_AVERAGE);
-        break;
-    case 2:
-        create_line(ChartData::FORMULAS::MOMENTUM);
-        break;
-    case 3:
-        create_line(ChartData::FORMULAS::MOMENTUM, true);
-        break;
-    case 4:
-        create_line(ChartData::FORMULAS::STD_DEV);
-        break;
-    case 5:
-        create_line(ChartData::FORMULAS::STOCHASTICS);
-        break;
-    case 6:
-        create_line(ChartData::FORMULAS::STOCHASTICS, true);
-        break;
-    case 7:
-        create_line(ChartData::FORMULAS::RSI);
-        break;
-    case 8:
-        create_line(ChartData::FORMULAS::RSI, true);
-        break;
-    case 9:
-        create_line(ChartData::FORMULAS::ATR);
-        break;
-    case 10:
-        create_line(ChartData::FORMULAS::DAY_TO_WEEK);
-        break;
-    case 11:
-        create_line(ChartData::FORMULAS::DAY_TO_MONTH);
-        break;
-    case 12:
-        create_line(ChartData::FORMULAS::MODIFY);
-        break;
-    case 13:
-        create_line(ChartData::FORMULAS::FIXED);
-        break;
-    default:
-        break;
+        case 0:
+            create_line(ChartData::FORMULAS::MOVING_AVERAGE);
+            break;
+        case 1:
+            create_line(ChartData::FORMULAS::EXP_MOVING_AVERAGE);
+            break;
+        case 2:
+            create_line(ChartData::FORMULAS::MOMENTUM);
+            break;
+        case 3:
+            create_line(ChartData::FORMULAS::MOMENTUM, true);
+            break;
+        case 4:
+            create_line(ChartData::FORMULAS::STD_DEV);
+            break;
+        case 5:
+            create_line(ChartData::FORMULAS::STOCHASTICS);
+            break;
+        case 6:
+            create_line(ChartData::FORMULAS::STOCHASTICS, true);
+            break;
+        case 7:
+            create_line(ChartData::FORMULAS::RSI);
+            break;
+        case 8:
+            create_line(ChartData::FORMULAS::RSI, true);
+            break;
+        case 9:
+            create_line(ChartData::FORMULAS::ATR);
+            break;
+        case 10:
+            create_line(ChartData::FORMULAS::DAY_TO_WEEK);
+            break;
+        case 11:
+            create_line(ChartData::FORMULAS::DAY_TO_MONTH);
+            break;
+        case 12:
+            create_line(ChartData::FORMULAS::MODIFY);
+            break;
+        case 13:
+            create_line(ChartData::FORMULAS::FIXED);
+            break;
+        default:
+            break;
     }
 }
 void Chart::setup_date_range() {
@@ -9445,10 +9688,9 @@ static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
 static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
     #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
     auto res = std::vector<_LogDisplayStyle>();
-    auto js  = gnu::JS();
-    auto err = js.decode(json.c_str(), json.length());
-    if (err != "") {
-        fl_alert("error: failed to parse json\n%s", err.c_str());
+    auto js  = gnu::json::decode(json.c_str(), json.length());
+    if (js.has_err() == true) {
+        fl_alert("error: failed to parse json\n%s", js.err_c());
         return res;
     }
     if (js.is_array() == false) FLW_LOGDISPLAY_ERROR(&js)
@@ -9812,14 +10054,11 @@ void LogDisplay::value(const char* text) {
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Hor_Slider.H>
 namespace flw {
-#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
 #define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 #define _FLW_PLOT_DEBUG(X)
 #define _FLW_PLOT_CLIP(X) { X; }
 static const char* const _PLOT_ADD_LINE     = "Create line...";
 static const char* const _PLOT_CLEAR        = "Clear plot";
-static const char* const _PLOT_DEBUG        = "Debug";
-static const char* const _PLOT_DEBUG_LINE   = "Debug line";
 static const char* const _PLOT_LOAD_CVS     = "Add line from cvs...";
 static const char* const _PLOT_LOAD_JSON    = "Load plot from JSON...";
 static const char* const _PLOT_PRINT        = "Print to PostScript file...";
@@ -9840,6 +10079,10 @@ static const char* const _PLOT_SETUP_VLINES = "Show vertical lines";
 static const char* const _PLOT_SETUP_XLABEL = "X Label...";
 static const char* const _PLOT_SETUP_YLABEL = "Y Label...";
 static const int         _PLOT_TICK_SIZE    = 4;
+#ifdef DEBUG
+static const char* const _PLOT_DEBUG        = "Debug";
+static const char* const _PLOT_DEBUG_LINE   = "Debug line";
+#endif
 PlotData::PlotData(double X, double Y) {
     x = y = INFINITY;
     if (std::isfinite(X) == true &&
@@ -9852,8 +10095,8 @@ PlotData::PlotData(double X, double Y) {
 }
 void PlotData::debug(int i) const {
 #ifdef DEBUG
-    auto X = gnu::JS::FormatNumber(x);
-    auto Y = gnu::JS::FormatNumber(y);
+    auto X = gnu::json::format_number(x);
+    auto Y = gnu::json::format_number(y);
     if (i >= 0) {
         printf("[%04d] = %24.8f, %24.8f\n", i, x, y);
     }
@@ -9983,7 +10226,7 @@ bool PlotData::SaveCSV(const PlotDataVector& in, std::string filename, std::stri
     csv.reserve(in.size() * 20 + 256);
     for (const auto& data : in) {
         char buffer[256];
-        snprintf(buffer, 256, "%s%s%s\n", gnu::JS::FormatNumber(data.x).c_str(), sep.c_str(), gnu::JS::FormatNumber(data.y).c_str());
+        snprintf(buffer, 256, "%s%s%s\n", gnu::json::format_number(data.x).c_str(), sep.c_str(), gnu::json::format_number(data.y).c_str());
         csv += buffer;
     }
     return gnu::file::write(filename, csv.c_str(), csv.size());
@@ -10938,6 +11181,7 @@ bool Plot::load_json() {
     return load_json(filename);
 }
 bool Plot::load_json(std::string filename) {
+#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
     _filename = "";
     reset();
     redraw();
@@ -10947,13 +11191,12 @@ bool Plot::load_json(std::string filename) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
-    auto js  = gnu::JS();
-    auto err = js.decode(buf.p, buf.s);
-    auto x   = PlotScale();
-    auto y   = PlotScale();
+    auto   js       = gnu::json::decode(buf.p, buf.s);
+    auto   x        = PlotScale();
+    auto   y        = PlotScale();
     double clamp[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
-    if (err != "") {
-        fl_alert("error: failed to parse %s (%s)", filename.c_str(), err.c_str());
+    if (js.has_err() == true) {
+        fl_alert("error: failed to parse %s (%s)", filename.c_str(), js.err_c());
         return false;
     }
     if (js.is_object() == false) _FLW_PLOT_ERROR(&js);
@@ -11083,56 +11326,57 @@ bool Plot::save_json() {
 }
 bool Plot::save_json(std::string filename) {
     auto wc  = WaitCursor();
-    auto jsb = gnu::JSB();
+    auto jsb = gnu::json::Builder();
     try {
-        jsb << gnu::JSB::MakeObject();
-            jsb << gnu::JSB::MakeObject("Plot");
-                jsb << gnu::JSB::MakeNumber(Plot::VERSION, "version");
-                jsb << gnu::JSB::MakeString(_label, "label");
-                jsb << gnu::JSB::MakeBool(_labels, "labels");
-                jsb << gnu::JSB::MakeBool(_horizontal, "horizontal");
-                jsb << gnu::JSB::MakeBool(_vertical, "vertical");
-                if (std::isfinite(_min_x) == true) jsb << gnu::JSB::MakeNumber(_min_x, "minx");
-                if (std::isfinite(_max_x) == true) jsb << gnu::JSB::MakeNumber(_max_x, "maxx");
-                if (std::isfinite(_min_y) == true) jsb << gnu::JSB::MakeNumber(_min_y, "miny");
-                if (std::isfinite(_max_y) == true) jsb << gnu::JSB::MakeNumber(_max_y, "maxy");
+        jsb << gnu::json::Builder::MakeObject();
+            jsb << gnu::json::Builder::MakeObject("Plot");
+                jsb << gnu::json::Builder::MakeNumber(Plot::VERSION, "version");
+                jsb << gnu::json::Builder::MakeString(_label, "label");
+                jsb << gnu::json::Builder::MakeBool(_labels, "labels");
+                jsb << gnu::json::Builder::MakeBool(_horizontal, "horizontal");
+                jsb << gnu::json::Builder::MakeBool(_vertical, "vertical");
+                if (std::isfinite(_min_x) == true) jsb << gnu::json::Builder::MakeNumber(_min_x, "minx");
+                if (std::isfinite(_max_x) == true) jsb << gnu::json::Builder::MakeNumber(_max_x, "maxx");
+                if (std::isfinite(_min_y) == true) jsb << gnu::json::Builder::MakeNumber(_min_y, "miny");
+                if (std::isfinite(_max_y) == true) jsb << gnu::json::Builder::MakeNumber(_max_y, "maxy");
             jsb.end();
-            jsb << gnu::JSB::MakeObject("PlotScale::x");
-                jsb << gnu::JSB::MakeString(_x.label().c_str(), "label");
-                jsb << gnu::JSB::MakeNumber(_x.color(), "color");
-                jsb << gnu::JSB::MakeArrayInline("labels");
-                    for (const auto& l : _x.custom_labels()) jsb << gnu::JSB::MakeString(l);
+            jsb << gnu::json::Builder::MakeObject("PlotScale::x");
+                jsb << gnu::json::Builder::MakeString(_x.label().c_str(), "label");
+                jsb << gnu::json::Builder::MakeNumber(_x.color(), "color");
+                jsb << gnu::json::Builder::MakeArrayInline("labels");
+                    for (const auto& l : _x.custom_labels()) jsb << gnu::json::Builder::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << gnu::JSB::MakeObject("PlotScale::y");
-                jsb << gnu::JSB::MakeString(_y.label().c_str(), "label");
-                jsb << gnu::JSB::MakeNumber(_y.color(), "color");
-                jsb << gnu::JSB::MakeArrayInline("labels");
-                    for (const auto& l : _y.custom_labels()) jsb << gnu::JSB::MakeString(l);
+            jsb << gnu::json::Builder::MakeObject("PlotScale::y");
+                jsb << gnu::json::Builder::MakeString(_y.label().c_str(), "label");
+                jsb << gnu::json::Builder::MakeNumber(_y.color(), "color");
+                jsb << gnu::json::Builder::MakeArrayInline("labels");
+                    for (const auto& l : _y.custom_labels()) jsb << gnu::json::Builder::MakeString(l);
                 jsb.end();
             jsb.end();
-            jsb << gnu::JSB::MakeArray("PlotLine");
+            jsb << gnu::json::Builder::MakeArray("PlotLine");
             for (const auto& line : _lines) {
                 if (line.data().size() > 0) {
-                    jsb << gnu::JSB::MakeObject();
-                        jsb << gnu::JSB::MakeNumber(line.width(), "width");
-                        jsb << gnu::JSB::MakeNumber(line.color(), "color");
-                        jsb << gnu::JSB::MakeString(line.label(), "label");
-                        jsb << gnu::JSB::MakeBool(line.is_visible(), "visible");
-                        jsb << gnu::JSB::MakeString(line.type_to_string(), "type");
-                        jsb << gnu::JSB::MakeArray("xy");
-                        for (const auto& point : line.data()) {
-                            if (std::isfinite(point.x) == true && std::isfinite(point.y) == true) {
-                                jsb << gnu::JSB::MakeArrayInline();
-                                    jsb << gnu::JSB::MakeNumber(point.x);
-                                    jsb << gnu::JSB::MakeNumber(point.y);
-                                jsb.end();
+                    jsb << gnu::json::Builder::MakeObject();
+                        jsb << gnu::json::Builder::MakeNumber(line.width(), "width");
+                        jsb << gnu::json::Builder::MakeNumber(line.color(), "color");
+                        jsb << gnu::json::Builder::MakeString(line.label(), "label");
+                        jsb << gnu::json::Builder::MakeBool(line.is_visible(), "visible");
+                        jsb << gnu::json::Builder::MakeString(line.type_to_string(), "type");
+                        jsb << gnu::json::Builder::MakeArray("xy");
+                            for (const auto& point : line.data()) {
+                                if (std::isfinite(point.x) == true && std::isfinite(point.y) == true) {
+                                    jsb << gnu::json::Builder::MakeArrayInline();
+                                        jsb << gnu::json::Builder::MakeNumber(point.x);
+                                        jsb << gnu::json::Builder::MakeNumber(point.y);
+                                    jsb.end();
+                                }
                             }
-                        }
                         jsb.end();
                     jsb.end();
                 }
             }
+            jsb.end();
         auto js = jsb.encode();
         return gnu::file::write(filename, js.c_str(), js.length());
     }

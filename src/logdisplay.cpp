@@ -315,11 +315,10 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
     #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
 
     auto res = std::vector<_LogDisplayStyle>();
-    auto js  = gnu::JS();
-    auto err = js.decode(json.c_str(), json.length());
+    auto js  = gnu::json::decode(json.c_str(), json.length());
 
-    if (err != "") {
-        fl_alert("error: failed to parse json\n%s", err.c_str());
+    if (js.has_err() == true) {
+        fl_alert("error: failed to parse json\n%s", js.err_c());
         return res;
     }
 
@@ -356,7 +355,7 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
             res.push_back(style);
         }
     }
-
+    
     return res;
 }
 
