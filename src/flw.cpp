@@ -490,7 +490,7 @@ std::string util::format_double(double num, int decimals, char del) {
     if (n > 0 && n < 100) {
         res += fr_str + 1;
     }
-    
+
     return res;
 }
 
@@ -1333,6 +1333,38 @@ void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resourc
 }
 
 //------------------------------------------------------------------------------
+// Load window size.
+//
+void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, std::string basename) {
+    int  x, y, w, h;
+
+    pref.get((basename + "x").c_str(), x, 0);
+    pref.get((basename + "y").c_str(), y, 0);
+    pref.get((basename + "w").c_str(), w, 0);
+    pref.get((basename + "h").c_str(), h, 0);
+
+    if (x < 0 || x > Fl::w()) {
+        x = 0;
+    }
+
+    if (y < 0 || y > Fl::h()) {
+        y = 0;
+    }
+
+    if (w > Fl::w()) {
+        x = 0;
+        w = Fl::w();
+    }
+
+    if (h > Fl::h()) {
+        y = 0;
+        h = Fl::h();
+    }
+
+    rect = Fl_Rect(x, y, w, h);
+}
+
+//------------------------------------------------------------------------------
 // Load theme and font data
 //
 void theme::load_theme_pref(Fl_Preferences& pref) {
@@ -1393,14 +1425,22 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, in
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
 
-    if (w == 0 || h == 0) {
-        w = 800;
-        h = 600;
+    if (x < 0 || x > Fl::w()) {
+        x = 0;
     }
 
-    if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
-        x = 80;
-        y = 60;
+    if (y < 0 || y > Fl::h()) {
+        y = 0;
+    }
+
+    if (w > Fl::w()) {
+        x = 0;
+        w = Fl::w();
+    }
+
+    if (h > Fl::h()) {
+        y = 0;
+        h = Fl::h();
     }
 
 #ifdef _WIN32
@@ -1438,6 +1478,16 @@ bool theme::parse(int argc, const char** argv) {
     Fl_Tooltip::font(flw::PREF_FONT);
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     return res;
+}
+
+//------------------------------------------------------------------------------
+// Save window size
+//
+void theme::save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, std::string basename) {
+    pref.set((basename + "x").c_str(), rect.x());
+    pref.set((basename + "y").c_str(), rect.y());
+    pref.set((basename + "w").c_str(), rect.w());
+    pref.set((basename + "h").c_str(), rect.h());
 }
 
 //------------------------------------------------------------------------------

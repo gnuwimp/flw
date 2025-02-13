@@ -154,9 +154,11 @@ namespace theme {
     int                         load_font(std::string requested_font);
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+    void                        load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, std::string basename);
     void                        load_theme_pref(Fl_Preferences& pref);
     void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
     bool                        parse(int argc, const char** argv);
+    void                        save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, std::string basename);
     void                        save_theme_pref(Fl_Preferences& pref);
     void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
 

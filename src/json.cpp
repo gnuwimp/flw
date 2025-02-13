@@ -811,7 +811,7 @@ json::JS::JS() {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
 
-    _inline = false;
+    _inl    = false;
     _name   = nullptr;
     _parent = nullptr;
     _pos    = 0;
@@ -824,7 +824,7 @@ json::JS::JS(const char* name, JS* parent, unsigned pos) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
 
-    _inline = false;
+    _inl    = false;
     _name   = (name != nullptr) ? strdup(name) : nullptr;
     _parent = parent;
     _pos    = pos;
@@ -837,7 +837,7 @@ json::JS::JS(JS&& other) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
 
-    _inline = other._inline;
+    _inl    = other._inl;
     _name   = other._name;
     _parent = other._parent;
     _pos    = other._pos;
@@ -875,7 +875,7 @@ json::JS::~JS() {
 json::JS& json::JS::operator=(JS&& other) {
     _clear(true);
 
-    _inline = other._inline;
+    _inl    = other._inl;
     _name   = other._name;
     _parent = other._parent;
     _pos    = other._pos;
@@ -1286,10 +1286,10 @@ json::JS* json::Builder::MakeArray(const char* name, bool escape) {
 
 //------------------------------------------------------------------------------
 json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
-    auto r     = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type   = TYPE::ARRAY;
-    r->_va     = new JSArray();
-    r->_inline = true;
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::ARRAY;
+    r->_va   = new JSArray();
+    r->_inl  = true;
 
     return r;
 }
@@ -1331,10 +1331,10 @@ json::JS* json::Builder::MakeObject(const char* name, bool escape) {
 
 //------------------------------------------------------------------------------
 json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
-    auto r     = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type   = TYPE::OBJECT;
-    r->_vo     = new JSObject();
-    r->_inline = true;
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::OBJECT;
+    r->_vo   = new JSObject();
+    r->_inl  = true;
 
     return r;
 }

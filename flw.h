@@ -356,7 +356,7 @@ public:
     bool                        has_err() const
                                     { return _type == TYPE::ERR; }
     bool                        has_inline() const
-                                    { return _inline; }
+                                    { return _inl; }
     bool                        is_array() const
                                     { return _type == TYPE::ARRAY; }
     bool                        is_bool() const
@@ -427,7 +427,7 @@ private:
     static constexpr const char* TYPE_NAMES[10] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "ERR", "", ""};
     static ssize_t              COUNT;
     static ssize_t              MAX;
-    bool                        _inline;
+    bool                        _inl;
     TYPE                        _type;
     uint32_t                    _pos;
     JS*                         _parent;
@@ -596,9 +596,11 @@ namespace theme {
     int                         load_font(std::string requested_font);
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
+    void                        load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, std::string basename);
     void                        load_theme_pref(Fl_Preferences& pref);
     void                        load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, std::string basename = "gui.");
     bool                        parse(int argc, const char** argv);
+    void                        save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, std::string basename);
     void                        save_theme_pref(Fl_Preferences& pref);
     void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename = "gui.");
     enum {

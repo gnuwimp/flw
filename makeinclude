@@ -10,14 +10,14 @@ else
 $(error Unknow operating system $(OS))
 endif
 
-CXXFLAGS += 
+CXXFLAGS +=
 
 ifeq ($(OS), Windows)
 	CXX      = g++
 	CC       = gcc
 	CXXFLAGS = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-plain-output -std=c++17 -W -Wall
 	CFLAGS   = -D__USE_MINGW1_ANSI_STDIO=1 -D__MSVCRT_VERSION__=0x0800 -fdiagnostics-plain-output -W -Wall
-	LDLAGS   = -static
+	LDFLAGS  = -static
 	CPROF1   = -fprofile-generate=obj -fprofile-update=atomic
 	LPROF1   = -fprofile-generate=obj
 	PROF2    = -fprofile-use=obj
@@ -26,7 +26,7 @@ else ifeq ($(OS), Linux)
 	CC       = gcc
 	CXXFLAGS = -fdiagnostics-plain-output -std=c++17 -W -Wall
 	CFLAGS   = -fdiagnostics-plain-output -W -Wall
-	LDLAGS   = 
+	LDLAGS   =
 	FLTO     = -flto=auto
 	CPROF1   = -fprofile-generate=obj -fprofile-update=atomic
 	LPROF1   = -fprofile-generate=obj
@@ -36,13 +36,13 @@ else ifeq ($(OS), macOS)
 	CC       = clang
 	CXXFLAGS = -std=c++17 -W -Wall
 	CFLAGS   = -W -Wall
-	LDLAGS   = 
+	LDLAGS   =
 else
 	CXX      = g++
 	CC       = gcc
 	CXXFLAGS = -std=c++17 -W -Wall
 	CFLAGS   = -W -Wall
-	LDLAGS   = 
+	LDLAGS   =
 endif
 
 ifeq ($(build), sanitize)
@@ -80,6 +80,7 @@ FLTK_IMAGE_LDFLAGS = $(shell /usr/local/bin/fltk-config --ldflags --use-images)
 #FLTKI_LDFLAGS = $(shell /usr/local/debug/bin/fltk-config --ldflags --use-images)
 
 $(info >>>>>> flags from makeinclude)
+$(info OS                 = $(OS))
 $(info CXX                = $(CXX))
 $(info CC                 = $(CC))
 $(info CXXFLAGS           = $(CXXFLAGS))

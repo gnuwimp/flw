@@ -95,7 +95,7 @@ public:
     bool                        has_err() const
                                     { return _type == TYPE::ERR; }
     bool                        has_inline() const
-                                    { return _inline; }
+                                    { return _inl; }
     bool                        is_array() const
                                     { return _type == TYPE::ARRAY; }
     bool                        is_bool() const
@@ -171,7 +171,7 @@ private:
     static ssize_t              COUNT;
     static ssize_t              MAX;
 
-    bool                        _inline;
+    bool                        _inl;
     TYPE                        _type;
     uint32_t                    _pos;
     JS*                         _parent;

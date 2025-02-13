@@ -2375,7 +2375,7 @@ ssize_t json::JS::MAX   = 0;
 json::JS::JS() {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
-    _inline = false;
+    _inl    = false;
     _name   = nullptr;
     _parent = nullptr;
     _pos    = 0;
@@ -2385,7 +2385,7 @@ json::JS::JS() {
 json::JS::JS(const char* name, JS* parent, unsigned pos) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
-    _inline = false;
+    _inl    = false;
     _name   = (name != nullptr) ? strdup(name) : nullptr;
     _parent = parent;
     _pos    = pos;
@@ -2395,7 +2395,7 @@ json::JS::JS(const char* name, JS* parent, unsigned pos) {
 json::JS::JS(JS&& other) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
-    _inline = other._inline;
+    _inl    = other._inl;
     _name   = other._name;
     _parent = other._parent;
     _pos    = other._pos;
@@ -2425,7 +2425,7 @@ json::JS::~JS() {
 }
 json::JS& json::JS::operator=(JS&& other) {
     _clear(true);
-    _inline = other._inline;
+    _inl    = other._inl;
     _name   = other._name;
     _parent = other._parent;
     _pos    = other._pos;
@@ -2732,10 +2732,10 @@ json::JS* json::Builder::MakeArray(const char* name, bool escape) {
     return r;
 }
 json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
-    auto r     = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type   = TYPE::ARRAY;
-    r->_va     = new JSArray();
-    r->_inline = true;
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::ARRAY;
+    r->_va   = new JSArray();
+    r->_inl  = true;
     return r;
 }
 json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
@@ -2762,10 +2762,10 @@ json::JS* json::Builder::MakeObject(const char* name, bool escape) {
     return r;
 }
 json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
-    auto r     = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type   = TYPE::OBJECT;
-    r->_vo     = new JSObject();
-    r->_inline = true;
+    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
+    r->_type = TYPE::OBJECT;
+    r->_vo   = new JSObject();
+    r->_inl  = true;
     return r;
 }
 json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escape) {
@@ -8451,6 +8451,22 @@ void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resourc
     (void) name;
 #endif
 }
+void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, std::string basename) {
+    int  x, y, w, h;
+    pref.get((basename + "x").c_str(), x, 0);
+    pref.get((basename + "y").c_str(), y, 0);
+    pref.get((basename + "w").c_str(), w, 0);
+    pref.get((basename + "h").c_str(), h, 0);
+    if (x < 0 || w >= Fl::w() || x + w >= Fl::w()) {
+        x = 0;
+        w = 800;
+    }
+    if (y < 0 || h >= Fl::h() || y + h >= Fl::h()) {
+        y = 0;
+        h = 600;
+    }
+    rect = Fl_Rect(x, y, w, h);
+}
 void theme::load_theme_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
@@ -8491,13 +8507,13 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, in
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
-    if (w == 0 || h == 0) {
+    if (x < 0 || w >= Fl::w() || x + w >= Fl::w()) {
+        x = 0;
         w = 800;
-        h = 600;
     }
-    if (x + w <= 0 || y + h <= 0 || x >= Fl::w() || y >= Fl::h()) {
-        x = 80;
-        y = 60;
+    if (y < 0 || h >= Fl::h() || y + h >= Fl::h()) {
+        y = 0;
+        h = 600;
     }
 #ifdef _WIN32
     if (show == true && window->shown() == 0) {
@@ -8526,6 +8542,12 @@ bool theme::parse(int argc, const char** argv) {
     Fl_Tooltip::font(flw::PREF_FONT);
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     return res;
+}
+void theme::save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, std::string basename) {
+    pref.set((basename + "x").c_str(), rect.x());
+    pref.set((basename + "y").c_str(), rect.y());
+    pref.set((basename + "w").c_str(), rect.w());
+    pref.set((basename + "h").c_str(), rect.h());
 }
 void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
