@@ -284,21 +284,6 @@ static std::string _file_substr(const std::string& in, std::string::size_type po
 }
 
 //------------------------------------------------------------------------------
-static void _file_sync(FILE* file) {
-    if (file != nullptr) {
-#ifdef _WIN32
-        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
-
-        if (handle != INVALID_HANDLE_VALUE) {
-            FlushFileBuffers(handle);
-        }
-#else
-        fsync(fileno(file));
-#endif
-    }
-}
-
-//------------------------------------------------------------------------------
 static const std::string _file_to_absolute_path(const std::string& in, bool realpath) {
     std::string res;
     auto name = in;
@@ -488,7 +473,7 @@ Buf close_stdout() {
 }
 
 //------------------------------------------------------------------------------
-bool copy(std::string from, std::string to, CallbackCopy callback, void* data) {
+bool copy(std::string from, std::string to, CallbackCopy callback, void* data, bool flush_write) {
 #ifdef DEBUG
     static const size_t BUF_SIZE = 16384;
 #else
@@ -535,7 +520,11 @@ bool copy(std::string from, std::string to, CallbackCopy callback, void* data) {
     }
 
     fclose(read);
-    _file_sync(write);
+    
+    if (flush_write == true) {
+        file::flush(write);
+    }
+    
     fclose(write);
     free(buf);
 
@@ -582,6 +571,21 @@ uint64_t fletcher64(const char* P, size_t S) {
     }
 
     return (sum2 << 32) | sum1;
+}
+
+//------------------------------------------------------------------------------
+void flush(FILE* file) {
+    if (file != nullptr) {
+#ifdef _WIN32
+        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
+
+        if (handle != INVALID_HANDLE_VALUE) {
+            FlushFileBuffers(handle);
+        }
+#else
+        fsync(fileno(file));
+#endif
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -1004,7 +1008,7 @@ File work_dir() {
 }
 
 //------------------------------------------------------------------------------
-bool write(std::string filename, const char* in, size_t in_size) {
+bool write(std::string filename, const char* in, size_t in_size, bool flush_write) {
     if (File(filename).type == TYPE::DIR) {
         return false;
     }
@@ -1017,7 +1021,11 @@ bool write(std::string filename, const char* in, size_t in_size) {
     }
 
     auto wrote = fwrite(in, 1, in_size, file);
-    _file_sync(file);
+    
+    if (flush_write == true) {
+        file::flush(file);
+    }
+    
     fclose(file);
 
     if (wrote != in_size) {
@@ -1033,8 +1041,8 @@ bool write(std::string filename, const char* in, size_t in_size) {
 }
 
 //------------------------------------------------------------------------------
-bool write(std::string filename, const Buf& b) {
-    return write(filename, b.p, b.s);
+bool write(std::string filename, const Buf& b, bool flush_write) {
+    return write(filename, b.p, b.s, flush_write);
 }
 
 /***
@@ -1234,8 +1242,8 @@ Buf& Buf::set(const char* P, size_t S) {
 }
 
 //------------------------------------------------------------------------------
-bool Buf::write(std::string filename) const {
-    return file::write(filename, p, s);
+bool Buf::write(std::string filename, bool flush_write) const {
+    return file::write(filename, p, s, flush_write);
 }
 
 /***

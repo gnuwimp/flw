@@ -44,10 +44,10 @@ void                            list(std::string title, const StringVector& list
 void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 void                            panic(std::string message);
-bool                            password1(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password(std::string title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_check(std::string title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
 void                            print(std::string title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);

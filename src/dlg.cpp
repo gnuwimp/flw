@@ -95,7 +95,7 @@ void center_message_dialog() {
 //------------------------------------------------------------------------------
 bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
     auto dlg = dlg::FontDialog(font, fontsize, "Select Font", limit_to_default);
- 
+
     if (dlg.run() == false) {
         return false;
     }
@@ -114,14 +114,14 @@ void panic(std::string message) {
 }
 
 /***
- *           _____  _        _____ _               _    
- *          |  __ \| |      / ____| |             | |   
+ *           _____  _        _____ _               _
+ *          |  __ \| |      / ____| |             | |
  *          | |  | | | __ _| |    | |__   ___  ___| | __
  *          | |  | | |/ _` | |    | '_ \ / _ \/ __| |/ /
- *          | |__| | | (_| | |____| | | |  __/ (__|   < 
+ *          | |__| | | (_| | |____| | | |  __/ (__|   <
  *          |_____/|_|\__, |\_____|_| |_|\___|\___|_|\_\
- *      ______         __/ |                            
- *     |______|       |___/                             
+ *      ______         __/ |
+ *     |______|       |___/
  */
 
 //------------------------------------------------------------------------------
@@ -216,9 +216,9 @@ public:
     void resize(int X, int Y, int W, int H) override {
         Fl_Double_Window::resize(X, Y, W, H);
         _grid->resize(0, 0, W, H);
-        
+
         auto y = _scroll->y() + 4;
-        
+
         for (auto b : _checkbuttons) {
             b->resize(_scroll->x() + 4, y, _scroll->w() - Fl::scrollbar_size() - 8, flw::PREF_FONTSIZE * 2);
             y += flw::PREF_FONTSIZE * 2;
@@ -235,7 +235,7 @@ public:
             Fl::wait();
             Fl::flush();
         }
-        
+
         if (_ret == true) {
             for (auto b : _checkbuttons) {
                 res.push_back(std::string((static_cast<Fl_Check_Button*>(b)->value() == 0) ? "0" : "1") + b->label());
@@ -253,14 +253,14 @@ StringVector check(std::string title, const StringVector& list, Fl_Window* paren
 }
 
 /***
- *           _____  _        _____ _           _          
- *          |  __ \| |      / ____| |         (_)         
- *          | |  | | | __ _| |    | |__   ___  _  ___ ___ 
+ *           _____  _        _____ _           _
+ *          |  __ \| |      / ____| |         (_)
+ *          | |  | | | __ _| |    | |__   ___  _  ___ ___
  *          | |  | | |/ _` | |    | '_ \ / _ \| |/ __/ _ \
  *          | |__| | | (_| | |____| | | | (_) | | (_|  __/
  *          |_____/|_|\__, |\_____|_| |_|\___/|_|\___\___|
- *      ______         __/ |                              
- *     |______|       |___/                               
+ *      ______         __/ |
+ *     |______|       |___/
  */
 
 //------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ public:
             Fl::wait();
             Fl::flush();
         }
-        
+
         return _ret;
     }
 };
@@ -533,10 +533,10 @@ const char* PASSWORD_OK     = "&Ok";
 class _DlgPassword : public Fl_Double_Window {
 public:
     enum class TYPE {
-                                ASK_PASSWORD,
-                                ASK_PASSWORD_AND_KEYFILE,
-                                CONFIRM_PASSWORD,
-                                CONFIRM_PASSWORD_AND_KEYFILE,
+                                PASSWORD,
+                                PASSWORD_CHECK,
+                                PASSWORD_CHECK_WITH_FILE,
+                                PASSWORD_WITH_FILE,
     };
 
 private:
@@ -596,18 +596,18 @@ public:
         auto W = flw::PREF_FONTSIZE * 35;
         auto H = flw::PREF_FONTSIZE * 13.5;
 
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
+        if (_mode == _DlgPassword::TYPE::PASSWORD) {
             _password2->hide();
             _browse->hide();
             _file->hide();
             H = flw::PREF_FONTSIZE * 6.5;
         }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK) {
             _browse->hide();
             _file->hide();
             H = flw::PREF_FONTSIZE * 10;
         }
-        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_WITH_FILE) {
             _password2->hide();
             _grid->resize(_file, 1, 10, -1, 4);
             H = flw::PREF_FONTSIZE * 10;
@@ -646,6 +646,8 @@ public:
             else {
                 self->_file->value("");
             }
+
+            self->check();
         }
         else if (w == self->_cancel) {
             self->_ret = false;
@@ -661,21 +663,40 @@ public:
     void check() {
         auto p1 = _password1->value();
         auto p2 = _password2->value();
+        auto f  = _file->value();
 
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD ||
-            _mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-
-            if (strlen(p1)) {
+        if (_mode == _DlgPassword::TYPE::PASSWORD) {
+            if (strlen(p1) > 0) {
                 _close->activate();
             }
             else {
                 _close->deactivate();
             }
         }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD ||
-                 _mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-
-            if (strlen(p1) && strcmp(p1, p2) == 0) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK) {
+            if (strlen(p1) > 0 && strcmp(p1, p2) == 0) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK_WITH_FILE) {
+            if (strlen(p1) > 0 && strcmp(p1, p2) == 0) {
+                _close->activate();
+            }
+            else if (strlen(p1) == 0 && strlen(p2) == 0 && strlen(f) > 0) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_WITH_FILE) {
+            if (strlen(p1) > 0) {
+                _close->activate();
+            }
+            else if (strlen(f) > 0) {
                 _close->activate();
             }
             else {
@@ -706,41 +727,77 @@ public:
     }
 };
 
-//------------------------------------------------------------------------------
-bool password1(std::string title, std::string& password, Fl_Window* parent) {
+/** @brief Get password from user.
+*
+* @param[in]     title     Dialog title.
+* @param[in,out] password  User password.
+* @param[in]     parent    Parent window, can be null.
+*
+* @return True if ok has been pressed.
+*/
+bool password(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD);
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD);
     return dlg.run(password, file);
 }
 
-//------------------------------------------------------------------------------
-bool password2(std::string title, std::string& password, Fl_Window* parent) {
+/** @brief Get password from user.
+*
+* Password must be confirmed.
+*
+* @param[in]     title     Dialog title.
+* @param[in,out] password  User password.
+* @param[in]     parent    Parent window, can be null.
+*
+* @return True if ok has been pressed.
+*/
+bool password_check(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD);
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_CHECK);
     return dlg.run(password, file);
 }
 
-//------------------------------------------------------------------------------
-bool password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE);
+/** @brief Get password and key file from user.
+*
+* Password can be empty if a file has been choosen.
+*
+* @param[in]     title     Dialog title.
+* @param[in,out] password  User password.
+* @param[in,out] file      User file.
+* @param[in]     parent    Parent window, can be null.
+*
+* @return True if ok has been pressed.
+*/
+bool password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_CHECK_WITH_FILE);
     return dlg.run(password, file);
 }
 
-//------------------------------------------------------------------------------
-bool password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
+/** @brief Get password and key file from user.
+*
+* Password must be confirmed or empty if a file has been choosen.
+*
+* @param[in]     title     Dialog title.
+* @param[in,out] password  User password.
+* @param[in,out] file      User file.
+* @param[in]     parent    Parent window, can be null.
+*
+* @return True if ok has been pressed.
+*/
+bool password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_WITH_FILE);
     return dlg.run(password, file);
 }
 
 /***
- *           _____  _       _____      _       _   
- *          |  __ \| |     |  __ \    (_)     | |  
- *          | |  | | | __ _| |__) | __ _ _ __ | |_ 
+ *           _____  _       _____      _       _
+ *          |  __ \| |     |  __ \    (_)     | |
+ *          | |  | | | __ _| |__) | __ _ _ __ | |_
  *          | |  | | |/ _` |  ___/ '__| | '_ \| __|
- *          | |__| | | (_| | |   | |  | | | | | |_ 
+ *          | |__| | | (_| | |   | |  | | | | | |_
  *          |_____/|_|\__, |_|   |_|  |_|_| |_|\__|
- *      ______         __/ |                       
- *     |______|       |___/                        
+ *      ______         __/ |
+ *     |______|       |___/
  */
 
 //------------------------------------------------------------------------------
@@ -772,7 +829,7 @@ public:
         _to     = new Fl_Hor_Slider(0, 0, 0, 0);
         _cb     = cb;
         _data   = data;
-        
+
         _grid->add(_from,     1,   3,  -1,   4);
         _grid->add(_to,       1,  10,  -1,   4);
         _grid->add(_format,   1,  15,  -1,   4);
@@ -802,7 +859,7 @@ public:
         _to->precision(0);
         _to->value(to);
         _to->tooltip("End page number.");
-        
+
         if (from < 1 || from > to) {
             _from->deactivate();
             _from->range(0, 1);
@@ -815,7 +872,7 @@ public:
             _from->deactivate();
             _to->deactivate();
         }
-        
+
         dlg::_init_printer_formats(_format, _layout);
         _DlgPrint::Callback(_from, this);
         _DlgPrint::Callback(_to, this);
@@ -840,7 +897,7 @@ public:
         }
         else if (w == self->_file) {
             auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
-            
+
             if (filename != nullptr) {
                 self->_file->copy_label(filename);
             }
@@ -863,7 +920,7 @@ public:
         auto layout = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto file   = _file->label();
         auto err    = (from == 0) ? util::print(file, format, layout, _cb, _data) : util::print(file, format, layout, _cb, _data, from, to);
-        
+
         if (err != "") {
             fl_alert("Printing failed!\n%s", err.c_str());
             return;
@@ -890,14 +947,14 @@ void print(std::string title, PrintCallback cb, void* data, int from, int to, Fl
 }
 
 /***
- *           _____  _       _____      _       _ _______        _   
- *          |  __ \| |     |  __ \    (_)     | |__   __|      | |  
- *          | |  | | | __ _| |__) | __ _ _ __ | |_ | | _____  _| |_ 
+ *           _____  _       _____      _       _ _______        _
+ *          |  __ \| |     |  __ \    (_)     | |__   __|      | |
+ *          | |  | | | __ _| |__) | __ _ _ __ | |_ | | _____  _| |_
  *          | |  | | |/ _` |  ___/ '__| | '_ \| __|| |/ _ \ \/ / __|
- *          | |__| | | (_| | |   | |  | | | | | |_ | |  __/>  <| |_ 
+ *          | |__| | | (_| | |   | |  | | | | | |_ | |  __/>  <| |_
  *          |_____/|_|\__, |_|   |_|  |_|_| |_|\__||_|\___/_/\_\\__|
- *      ______         __/ |                                        
- *     |______|       |___/                                         
+ *      ______         __/ |
+ *     |______|       |___/
  */
 
 //------------------------------------------------------------------------------
@@ -944,7 +1001,7 @@ public:
         _ret      = false;
         _font     = FL_COURIER;
         _fontsize = 14;
-        
+
         _grid->add(_border,   1,   1,  -1,   4);
         _grid->add(_wrap,     1,   6,  -1,   4);
         _grid->add(_line,     1,  13,  -1,   4);
@@ -1018,7 +1075,7 @@ public:
         }
         else if (w == self->_file) {
             auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
-            
+
             if (filename != nullptr) {
                 self->_file->copy_label(filename);
             }
@@ -1029,7 +1086,7 @@ public:
             if (dlg.run() == true) {
                 auto l = util::format("%s - %d", dlg.fontname().c_str(), dlg.fontsize());
                 self->_fonts->copy_label(l.c_str());
-                
+
                 self->_font     = dlg.font();
                 self->_fontsize = dlg.fontsize();
             }
@@ -1059,18 +1116,18 @@ public:
         auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
         auto file    = _file->label();
-        auto printer = PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);            
+        auto printer = PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
         auto err     = printer.print(_text, tab);
-        
+
         if (err == "") {
             auto s = _label2;
-            s += util::format("\n%d page%s was printed.", printer.page_count(), printer.page_count() > 1 ? "s" : ""); 
+            s += util::format("\n%d page%s was printed.", printer.page_count(), printer.page_count() > 1 ? "s" : "");
             _label->copy_label(s.c_str());
             _ret = true;
         }
         else {
             auto s = _label2;
-            s += util::format("\nPrinting failed!\n%s", err.c_str()); 
+            s += util::format("\nPrinting failed!\n%s", err.c_str());
             _label->copy_label(s.c_str());
             _ret = false;
         }
@@ -1337,14 +1394,14 @@ int select(std::string title, const StringVector& list, const std::string& selec
 }
 
 /***
- *           _____  _        _____ _ _     _           
- *          |  __ \| |      / ____| (_)   | |          
- *          | |  | | | __ _| (___ | |_  __| | ___ _ __ 
+ *           _____  _        _____ _ _     _
+ *          |  __ \| |      / ____| (_)   | |
+ *          | |  | | | __ _| (___ | |_  __| | ___ _ __
  *          | |  | | |/ _` |\___ \| | |/ _` |/ _ \ '__|
- *          | |__| | | (_| |____) | | | (_| |  __/ |   
- *          |_____/|_|\__, |_____/|_|_|\__,_|\___|_|   
- *      ______         __/ |                           
- *     |______|       |___/                            
+ *          | |__| | | (_| |____) | | | (_| |  __/ |
+ *          |_____/|_|\__, |_____/|_|_|\__,_|\___|_|
+ *      ______         __/ |
+ *     |______|       |___/
  */
 
 //------------------------------------------------------------------------------
@@ -1417,7 +1474,7 @@ public:
             Fl::wait();
             Fl::flush();
         }
-        
+
         return _ret;
     }
 };
@@ -1823,11 +1880,11 @@ Fl_Double_Window(0, 0, 0, 0, "Working...") {
     _button->labelfont(flw::PREF_FONT);
     _button->labelsize(flw::PREF_FONTSIZE);
     _progress->color(FL_SELECTION_COLOR);
-    
+
     if (label != "") {
         copy_label(label.c_str());
     }
-    
+
     resizable(this);
     size(W, H);
     size_range(W, H);
@@ -2074,14 +2131,14 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _sizes->when(FL_WHEN_CHANGED);
 
     theme::load_fonts();
-    
+
     auto count = 0;
-    
+
     for (auto name : flw::PREF_FONTNAMES) {
         if (limit_to_default == true && count == 12) {
             break;
         }
-        
+
         _fonts->add(name);
         count++;
     }

@@ -53,8 +53,9 @@ std::string                     check_filename(std::string filename);
 bool                            chmod(std::string path, int mode);
 Buf                             close_stderr();
 Buf                             close_stdout();
-bool                            copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr);
+bool                            copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr, bool flush_write = true);
 uint64_t                        fletcher64(const char* p, size_t s);
+void                            flush(FILE* file);
 File                            home_dir();
 bool                            mkdir(std::string path);
 bool                            mod_time(std::string path, int64_t time);
@@ -74,8 +75,8 @@ int                             run(std::string cmd, bool background, bool hide_
 File                            tmp_dir();
 File                            tmp_file(std::string prepend = "");
 File                            work_dir();
-bool                            write(std::string filename, const char* in, size_t in_size);
-bool                            write(std::string filename, const Buf& b);
+bool                            write(std::string filename, const char* in, size_t in_size, bool flush_write = true);
+bool                            write(std::string filename, const Buf& b, bool flush_write = true);
 
 /***
  *      ____         __
@@ -135,7 +136,7 @@ struct Buf {
     Buf                         remove_cr() const
                                     { return Buf::RemoveCR(p, s); }
     Buf&                        set(const char* P, size_t S);
-    bool                        write(std::string filename) const;
+    bool                        write(std::string filename, bool flush_write = true) const;
 
     static void                 Count(const char* P, size_t S, size_t count[257]);
     static inline Buf           Grab(char* P)

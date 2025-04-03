@@ -393,19 +393,17 @@ void test_pwd() {
     std::string password, file;
     bool ret;
 
-    ret = dlg::password1("dlg::password1", password);
-    printf("dlg::password1=%d, '%s'\n", ret, password.c_str());
+    ret = dlg::password("dlg::password", password);
+    printf("dlg::password = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
 
-    ret = dlg::password2("dlg::password2", password);
-    printf("dlg::password2=%d, '%s'\n", ret, password.c_str());
+    ret = dlg::password_check("dlg::password_check", password);
+    printf("dlg::password_check = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
 
-    ret = dlg::password3("dlg::password3", password, file);
-    printf("dlg::password3=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
+    ret = dlg::password_with_file("dlg::password_with_file", password, file);
+    printf("dlg::password_with_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
 
-    dlg::PASSWORD_CANCEL = "custom &cancel";
-    dlg::PASSWORD_OK = "custom &ok";
-    ret = dlg::password4("dlg::password4", password, file);
-    printf("dlg::password4=%d, '%s', '%s'\n", ret, password.c_str(), file.c_str());
+    ret = dlg::password_check_with_file("dlg::password_check_with_file", password, file);
+    printf("dlg::password_check_with_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
 
     fflush(stdout);
 }
