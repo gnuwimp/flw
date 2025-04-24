@@ -887,18 +887,6 @@ static std::string _file_substr(const std::string& in, std::string::size_type po
     try { return in.substr(pos, size); }
     catch(...) { return ""; }
 }
-static void _file_sync(FILE* file) {
-    if (file != nullptr) {
-#ifdef _WIN32
-        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
-        if (handle != INVALID_HANDLE_VALUE) {
-            FlushFileBuffers(handle);
-        }
-#else
-        fsync(fileno(file));
-#endif
-    }
-}
 static const std::string _file_to_absolute_path(const std::string& in, bool realpath) {
     std::string res;
     auto name = in;
@@ -1034,7 +1022,7 @@ Buf close_stderr() {
 Buf close_stdout() {
     return _file_close_redirect(1);
 }
-bool copy(std::string from, std::string to, CallbackCopy callback, void* data) {
+bool copy(std::string from, std::string to, CallbackCopy callback, void* data, bool flush_write) {
 #ifdef DEBUG
     static const size_t BUF_SIZE = 16384;
 #else
@@ -1071,7 +1059,9 @@ bool copy(std::string from, std::string to, CallbackCopy callback, void* data) {
         }
     }
     fclose(read);
-    _file_sync(write);
+    if (flush_write == true) {
+        file::flush(write);
+    }
     fclose(write);
     free(buf);
     if (count != file1.size) {
@@ -1107,6 +1097,18 @@ uint64_t fletcher64(const char* P, size_t S) {
         sum2 = (sum2 + sum1) % UINT32_MAX;
     }
     return (sum2 << 32) | sum1;
+}
+void flush(FILE* file) {
+    if (file != nullptr) {
+#ifdef _WIN32
+        auto handle = (HANDLE) _get_osfhandle(_fileno(file));
+        if (handle != INVALID_HANDLE_VALUE) {
+            FlushFileBuffers(handle);
+        }
+#else
+        fsync(fileno(file));
+#endif
+    }
 }
 File home_dir() {
     std::string res;
@@ -1422,7 +1424,7 @@ File work_dir() {
 #endif
     return File(res);
 }
-bool write(std::string filename, const char* in, size_t in_size) {
+bool write(std::string filename, const char* in, size_t in_size, bool flush_write) {
     if (File(filename).type == TYPE::DIR) {
         return false;
     }
@@ -1432,7 +1434,9 @@ bool write(std::string filename, const char* in, size_t in_size) {
         return false;
     }
     auto wrote = fwrite(in, 1, in_size, file);
-    _file_sync(file);
+    if (flush_write == true) {
+        file::flush(file);
+    }
     fclose(file);
     if (wrote != in_size) {
         file::remove(tmpfile);
@@ -1444,8 +1448,8 @@ bool write(std::string filename, const char* in, size_t in_size) {
     }
     return true;
 }
-bool write(std::string filename, const Buf& b) {
-    return write(filename, b.p, b.s);
+bool write(std::string filename, const Buf& b, bool flush_write) {
+    return write(filename, b.p, b.s, flush_write);
 }
 Buf::Buf(size_t S) {
     p = file::allocate(nullptr, S + 1);
@@ -1586,8 +1590,8 @@ Buf& Buf::set(const char* P, size_t S) {
     }
     return *this;
 }
-bool Buf::write(std::string filename) const {
-    return file::write(filename, p, s);
+bool Buf::write(std::string filename, bool flush_write) const {
+    return file::write(filename, p, s, flush_write);
 }
 bool File::is_circular() const {
     if (type == TYPE::DIR && link == true) {
@@ -6134,10 +6138,10 @@ const char* PASSWORD_OK     = "&Ok";
 class _DlgPassword : public Fl_Double_Window {
 public:
     enum class TYPE {
-                                ASK_PASSWORD,
-                                ASK_PASSWORD_AND_KEYFILE,
-                                CONFIRM_PASSWORD,
-                                CONFIRM_PASSWORD_AND_KEYFILE,
+                                PASSWORD,
+                                PASSWORD_CHECK,
+                                PASSWORD_CHECK_WITH_FILE,
+                                PASSWORD_WITH_FILE,
     };
 private:
     Fl_Button*                  _browse;
@@ -6189,18 +6193,18 @@ public:
         _password2->when(FL_WHEN_CHANGED);
         auto W = flw::PREF_FONTSIZE * 35;
         auto H = flw::PREF_FONTSIZE * 13.5;
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD) {
+        if (_mode == _DlgPassword::TYPE::PASSWORD) {
             _password2->hide();
             _browse->hide();
             _file->hide();
             H = flw::PREF_FONTSIZE * 6.5;
         }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK) {
             _browse->hide();
             _file->hide();
             H = flw::PREF_FONTSIZE * 10;
         }
-        else if (_mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_WITH_FILE) {
             _password2->hide();
             _grid->resize(_file, 1, 10, -1, 4);
             H = flw::PREF_FONTSIZE * 10;
@@ -6234,6 +6238,7 @@ public:
             else {
                 self->_file->value("");
             }
+            self->check();
         }
         else if (w == self->_cancel) {
             self->_ret = false;
@@ -6247,18 +6252,39 @@ public:
     void check() {
         auto p1 = _password1->value();
         auto p2 = _password2->value();
-        if (_mode == _DlgPassword::TYPE::ASK_PASSWORD ||
-            _mode == _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE) {
-            if (strlen(p1)) {
+        auto f  = _file->value();
+        if (_mode == _DlgPassword::TYPE::PASSWORD) {
+            if (strlen(p1) > 0) {
                 _close->activate();
             }
             else {
                 _close->deactivate();
             }
         }
-        else if (_mode == _DlgPassword::TYPE::CONFIRM_PASSWORD ||
-                 _mode == _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE) {
-            if (strlen(p1) && strcmp(p1, p2) == 0) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK) {
+            if (strlen(p1) > 0 && strcmp(p1, p2) == 0) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK_WITH_FILE) {
+            if (strlen(p1) > 0 && strcmp(p1, p2) == 0) {
+                _close->activate();
+            }
+            else if (strlen(p1) == 0 && strlen(p2) == 0 && strlen(f) > 0) {
+                _close->activate();
+            }
+            else {
+                _close->deactivate();
+            }
+        }
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_WITH_FILE) {
+            if (strlen(p1) > 0) {
+                _close->activate();
+            }
+            else if (strlen(f) > 0) {
                 _close->activate();
             }
             else {
@@ -6282,22 +6308,22 @@ public:
         return _ret;
     }
 };
-bool password1(std::string title, std::string& password, Fl_Window* parent) {
+bool password(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD);
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD);
     return dlg.run(password, file);
 }
-bool password2(std::string title, std::string& password, Fl_Window* parent) {
+bool password_check(std::string title, std::string& password, Fl_Window* parent) {
     std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD);
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_CHECK);
     return dlg.run(password, file);
 }
-bool password3(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::ASK_PASSWORD_AND_KEYFILE);
+bool password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_CHECK_WITH_FILE);
     return dlg.run(password, file);
 }
-bool password4(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::CONFIRM_PASSWORD_AND_KEYFILE);
+bool password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_WITH_FILE);
     return dlg.run(password, file);
 }
 class _DlgPrint : public Fl_Double_Window {
@@ -8457,13 +8483,19 @@ void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, std::string base
     pref.get((basename + "y").c_str(), y, 0);
     pref.get((basename + "w").c_str(), w, 0);
     pref.get((basename + "h").c_str(), h, 0);
-    if (x < 0 || w >= Fl::w() || x + w >= Fl::w()) {
+    if (x < 0 || x > Fl::w()) {
         x = 0;
-        w = 800;
     }
-    if (y < 0 || h >= Fl::h() || y + h >= Fl::h()) {
+    if (y < 0 || y > Fl::h()) {
         y = 0;
-        h = 600;
+    }
+    if (w > Fl::w()) {
+        x = 0;
+        w = Fl::w();
+    }
+    if (h > Fl::h()) {
+        y = 0;
+        h = Fl::h();
     }
     rect = Fl_Rect(x, y, w, h);
 }
@@ -8507,13 +8539,19 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, in
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
-    if (x < 0 || w >= Fl::w() || x + w >= Fl::w()) {
+    if (x < 0 || x > Fl::w()) {
         x = 0;
-        w = 800;
     }
-    if (y < 0 || h >= Fl::h() || y + h >= Fl::h()) {
+    if (y < 0 || y > Fl::h()) {
         y = 0;
-        h = 600;
+    }
+    if (w > Fl::w()) {
+        x = 0;
+        w = Fl::w();
+    }
+    if (h > Fl::h()) {
+        y = 0;
+        h = Fl::h();
     }
 #ifdef _WIN32
     if (show == true && window->shown() == 0) {

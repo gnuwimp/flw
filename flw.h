@@ -162,8 +162,9 @@ std::string                     check_filename(std::string filename);
 bool                            chmod(std::string path, int mode);
 Buf                             close_stderr();
 Buf                             close_stdout();
-bool                            copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr);
+bool                            copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr, bool flush_write = true);
 uint64_t                        fletcher64(const char* p, size_t s);
+void                            flush(FILE* file);
 File                            home_dir();
 bool                            mkdir(std::string path);
 bool                            mod_time(std::string path, int64_t time);
@@ -183,8 +184,8 @@ int                             run(std::string cmd, bool background, bool hide_
 File                            tmp_dir();
 File                            tmp_file(std::string prepend = "");
 File                            work_dir();
-bool                            write(std::string filename, const char* in, size_t in_size);
-bool                            write(std::string filename, const Buf& b);
+bool                            write(std::string filename, const char* in, size_t in_size, bool flush_write = true);
+bool                            write(std::string filename, const Buf& b, bool flush_write = true);
 struct Buf {
     char*                       p;
     size_t                      s;
@@ -228,7 +229,7 @@ struct Buf {
     Buf                         remove_cr() const
                                     { return Buf::RemoveCR(p, s); }
     Buf&                        set(const char* P, size_t S);
-    bool                        write(std::string filename) const;
+    bool                        write(std::string filename, bool flush_write = true) const;
     static void                 Count(const char* P, size_t S, size_t count[257]);
     static inline Buf           Grab(char* P)
                                     { auto res = Buf(); res.p = P; res.s = strlen(P); return res; }
@@ -1190,10 +1191,10 @@ void                            list(std::string title, const StringVector& list
 void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
 void                            panic(std::string message);
-bool                            password1(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password2(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password3(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-bool                            password4(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password(std::string title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_check(std::string title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
 void                            print(std::string title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
 bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
