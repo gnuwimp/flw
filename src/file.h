@@ -155,7 +155,7 @@ public:
     size_t                      size() const
                                     { return _size; } ///< Return size in bytes.
     void                        size(size_t new_size)
-                                    { assert(new_size < _size); _size = new_size; } ///< Set new size, must be less than current size.
+                                    { assert(new_size <= _size); _size = new_size; } ///< Set new size, must be less than current size.
     char*                       str()
                                     { return _str; } ///< Return buffer data, can be NULL.
     bool                        write(const std::string& path, bool flush = true) const;
