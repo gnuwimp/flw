@@ -27,8 +27,10 @@ namespace flw {
 //
 class TabsGroup : public Fl_Group {
 public:
-    static const int            DEFAULT_SPACE = 2;
-
+    static const int            DEFAULT_SPACE_PX = 2;
+    static int                  MIN_MIN_WIDTH_NS_CH;
+    static int                  MIN_MIN_WIDTH_EW_CH;
+    
     enum class TABS {
                                 NORTH,
                                 SOUTH,
@@ -65,7 +67,7 @@ public:
     void                        swap(int from, int to);
     TABS                        tabs() const
                                     { return _tabs; }
-    void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE);
+    void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
@@ -88,6 +90,7 @@ private:
     WidgetVector                _widgets;
     bool                        _drag;
     int                         _active;
+    int                         _align;
     int                         _e;
     int                         _n;
     int                         _pos;

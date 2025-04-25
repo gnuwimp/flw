@@ -30,11 +30,11 @@ public:
     Fl_Widget*                  widget;
 
     //--------------------------------------------------------------------------
-    explicit _TabsGroupButton(std::string label, Fl_Widget* WIDGET, void* o) : Fl_Toggle_Button(0, 0, 0, 0) {
+    explicit _TabsGroupButton(int align, std::string label, Fl_Widget* WIDGET, void* o) : Fl_Toggle_Button(0, 0, 0, 0) {
         tw     = 0;
         widget = WIDGET;
 
-        align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        this->align(align);
         copy_label(label.c_str());
         tooltip("");
         when(FL_WHEN_CHANGED);
@@ -56,6 +56,9 @@ public:
  *                                                 |_|
  */
 
+int TabsGroup::MIN_MIN_WIDTH_NS_CH = 4;
+int TabsGroup::MIN_MIN_WIDTH_EW_CH = 4;
+
 //------------------------------------------------------------------------------
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
@@ -70,6 +73,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _s      = 0;
     _w      = 0;
     _e      = 0;
+    _align  = 0;
 
     _pack->end();
     _scroll->box(FL_NO_BOX);
@@ -83,7 +87,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
 void TabsGroup::add(std::string label, Fl_Widget* widget, const Fl_Widget* after) {
     assert(widget);
 
-    auto button = new _TabsGroupButton(label, widget, this);
+    auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : (int) _widgets.size();
 
     if (idx < 0 || idx >= (int) _widgets.size() - 1) {
@@ -348,7 +352,7 @@ void TabsGroup::hide_tabs() {
 
 //------------------------------------------------------------------------------
 void TabsGroup::insert(std::string label, Fl_Widget* widget, const Fl_Widget* before) {
-    auto button = new _TabsGroupButton(label, widget, this);
+    auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
 
     if (idx >= (int) _widgets.size()) {
@@ -448,11 +452,11 @@ void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     auto pack_h = (height + _space) * (int) _widgets.size() - _space;
     auto scroll = 0;
 
-    if (_pos < flw::PREF_FONTSIZE * _space) { // Set min size for widgets on the left
-        _pos = flw::PREF_FONTSIZE * _space;
+    if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH) { // Set min size for widgets on the left
+        _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH;
     }
-    else if (_pos > W - flw::PREF_FONTSIZE * 3) { // Set min size for widgets on the right
-        _pos = W - flw::PREF_FONTSIZE * 3;
+    else if (_pos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH) { // Set min size for widgets on the right
+        _pos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH;
     }
 
     if (pack_h > H) {
@@ -487,7 +491,11 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
 
         b->tw = 0;
         fl_measure(b->label(), b->tw, th);
-
+        
+        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_NS_CH) {
+            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_NS_CH;
+        }
+        
         b->tw += flw::PREF_FONTSIZE;
         pack_w += b->tw + _space;
     }
@@ -617,12 +625,12 @@ void TabsGroup::swap(int from, int to) {
 
 //------------------------------------------------------------------------------
 void TabsGroup::tabs(TABS tabs, int space_max_20) {
-    _tabs   = tabs;
-    _space  = (space_max_20 >= 0 && space_max_20 <= 20) ? space_max_20 : TabsGroup::DEFAULT_SPACE;
-    auto al = FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
+    _tabs  = tabs;
+    _space = (space_max_20 >= 0 && space_max_20 <= 20) ? space_max_20 : TabsGroup::DEFAULT_SPACE_PX;
+    _align = FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
 
     if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
-        al = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
+        _align = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
         _scroll->type(Fl_Scroll::HORIZONTAL);
         _pack->type(Fl_Pack::HORIZONTAL);
     }
@@ -632,7 +640,7 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
     }
 
     for (auto widget : _widgets) {
-        widget->align(al);
+        widget->align(_align);
     }
 
     _pack->spacing(_space);

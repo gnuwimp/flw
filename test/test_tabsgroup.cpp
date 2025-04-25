@@ -48,6 +48,7 @@ public:
         b4 = new Fl_Button(0, 0, 0, 0, "Set Border");
         b5 = new Fl_Button(0, 0, 0, 0, "Debug");
         b6 = new Fl_Button(0, 0, 0, 0, "Change Tab Label");
+        b7 = new Fl_Button(0, 0, 0, 0, "Clear Some Labels");
 
         n->callback(Callback, this);
         s->callback(Callback, this);
@@ -59,6 +60,7 @@ public:
         b4->callback(Callback, this);
         b5->callback(Callback, this);
         b6->callback(Callback, this);
+        b7->callback(Callback, this);
 
         add(tabs);
         
@@ -68,10 +70,11 @@ public:
         tabs->add("Border", b4);
         tabs->add("Debug", b5);
         tabs->add("Label", b6);
-        tabs->add("NORTH", n);
-        tabs->add("SOUTH", s);
-        tabs->add("WEST", w);
-        tabs->add("EAST", e);
+        tabs->add("N", n);
+        tabs->add("S", s);
+        tabs->add("W", w);
+        tabs->add("W", e);
+        tabs->add("CLEAR", b7);
         tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
         tabs->box(FL_BORDER_BOX);
         
@@ -140,6 +143,16 @@ public:
             TEST->tabs->label("This Is A New Label", TEST->b6);
             TEST->tabs->do_layout();
         }
+        else if (w == TEST->b7) {
+            TEST->tabs->label("", TEST->b1);
+            TEST->tabs->label("", TEST->b2);
+            TEST->tabs->label("", TEST->b3);
+            TEST->tabs->label("", TEST->b4);
+            TEST->tabs->label("", TEST->b5);
+            TEST->tabs->label("", TEST->b6);
+            TEST->tabs->label("", TEST->b7);
+            TEST->tabs->do_layout();
+        }
     }
     
     TabsGroup*      tabs;
@@ -153,6 +166,7 @@ public:
     Fl_Button*      b4;
     Fl_Button*      b5;
     Fl_Button*      b6;
+    Fl_Button*      b7;
     static Test1*   TEST;
 };
 
