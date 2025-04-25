@@ -127,11 +127,11 @@ void PlotData::Debug(const PlotDataVector& in) {
 PlotDataVector PlotData::LoadCSV(std::string filename, std::string sep) {
     auto buf = gnu::file::read(filename);
 
-    if (buf.s < 3) {
+    if (buf.size() < 3) {
         return PlotDataVector();
     }
 
-    std::string    str   = buf.p;
+    std::string    str   = buf.c_str();
     StringVector   lines = util::split_string(str, "\n");
     PlotDataVector res;
 
@@ -1520,12 +1520,12 @@ bool Plot::load_json(std::string filename) {
     auto wc  = WaitCursor();
     auto buf = gnu::file::read(filename);
 
-    if (buf.p == nullptr) {
+    if (buf.c_str() == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
 
-    auto   js       = gnu::json::decode(buf.p, buf.s);
+    auto   js       = gnu::json::decode(buf.c_str(), buf.size());
     auto   x        = PlotScale();
     auto   y        = PlotScale();
     double clamp[4] = { INFINITY, INFINITY, INFINITY, INFINITY };

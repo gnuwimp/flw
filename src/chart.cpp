@@ -575,11 +575,11 @@ ChartDataVector ChartData::Fixed(const ChartDataVector& in, double value) {
 ChartDataVector ChartData::LoadCSV(std::string filename, std::string sep) {
     auto buf = gnu::file::read(filename);
 
-    if (buf.s < 10) {
+    if (buf.size() < 10) {
         return ChartDataVector();
     }
 
-    std::string     str   = buf.p;
+    std::string     str   = buf.c_str();
     StringVector    lines = util::split_string(str, "\n");
     ChartDataVector res;
 
@@ -2724,12 +2724,12 @@ bool Chart::load_json(std::string filename) {
     auto wc  = WaitCursor();
     auto buf = gnu::file::read(filename);
 
-    if (buf.p == nullptr) {
+    if (buf.c_str() == nullptr) {
         fl_alert("error: failed to load %s", filename.c_str());
         return false;
     }
 
-    auto js = gnu::json::decode(buf.p, buf.s, true);
+    auto js = gnu::json::decode(buf.c_str(), buf.size(), true);
 
     if (js.has_err() == true) {
         fl_alert("error: failed to parse %s (%s)", filename.c_str(), js.err_c());

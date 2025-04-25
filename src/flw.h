@@ -57,9 +57,10 @@
 #define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
 
 #define FLW_NL                          { ::printf("\n"); fflush(stdout); }
-#define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
-#define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
-#define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
+#define FLW_ASSERT(X,Y)                 if ((X) == 0) fl_alert("assert in %s on line %d: %s", __func__, __LINE__, Y);
+#define FLW_TEST(X,Y)                   flw::debug::test(X,Y,__LINE__,__func__);
+#define FLW_TEST_FLOAT(X,Y,Z)           flw::debug::test(X,Y,Z,__LINE__,__func__);
+#define FLW_TEST_TRUE(X)                flw::debug::test(X,__LINE__,__func__);
 #else
 #define FLW_LINE
 #define FLW_RED
@@ -71,8 +72,9 @@
 #define FLW_PRINTDS(...)
 #define FLW_NL
 #define FLW_ASSERT(X,Y)
-#define FLW_TRUE(X)
-#define FLW_ASSERTD(X,Y,Z)
+#define FLW_TEST(X,Y)
+#define FLW_TEST_FLOAT(X,Y,Z)
+#define FLW_TEST_TRUE(X)
 #endif
 
 namespace flw {

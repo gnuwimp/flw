@@ -132,6 +132,7 @@ private:
     char                        _sec;
 };
 }
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -156,139 +157,159 @@ enum class TYPE {
     static const int            DEFAULT_FILE_MODE = 0664;
 #endif
 char*                           allocate(char* resize_or_null, size_t size, bool exception = true);
-std::string                     canonical_name(std::string filename);
-bool                            chdir(std::string path);
-std::string                     check_filename(std::string filename);
-bool                            chmod(std::string path, int mode);
+std::string                     canonical_name(const std::string& path);
+bool                            chdir(const std::string& path);
+std::string                     check_filename(const std::string& name);
+bool                            chmod(const std::string& path, int mode);
+bool                            chtime(const std::string& path, int64_t time);
 Buf                             close_stderr();
 Buf                             close_stdout();
-bool                            copy(std::string from, std::string to, CallbackCopy callback = nullptr, void* data = nullptr, bool flush_write = true);
+bool                            copy(const std::string& from, const std::string& to, CallbackCopy callback = nullptr, void* data = nullptr, bool flush_write = true);
 uint64_t                        fletcher64(const char* p, size_t s);
 void                            flush(FILE* file);
 File                            home_dir();
-bool                            mkdir(std::string path);
-bool                            mod_time(std::string path, int64_t time);
-FILE*                           open(std::string path, std::string mode);
+bool                            is_circular(const std::string& path);
+bool                            mkdir(const std::string& path);
+FILE*                           open(const std::string& path, const std::string& mode);
 std::string                     os();
-FILE*                           popen(std::string cmd, bool write = false);
-Buf                             read(std::string path);
-Buf*                            read2(std::string path);
-Files                           read_dir(std::string path);
-Files                           read_dir_rec(std::string path);
+FILE*                           popen(const std::string& cmd, bool write = false);
+Buf                             read(const std::string& path);
+Buf*                            read2(const std::string& path);
+Files                           read_dir(const std::string& path);
+Files                           read_dir_rec(const std::string& path);
 bool                            redirect_stderr();
 bool                            redirect_stdout();
-bool                            remove(std::string path);
-bool                            remove_rec(std::string path);
-bool                            rename(std::string from, std::string to);
-int                             run(std::string cmd, bool background, bool hide_win32_window = false);
+bool                            remove(const std::string& path);
+bool                            remove_rec(const std::string& path);
+bool                            rename(const std::string& from, const std::string& to);
+int                             run(const std::string& cmd, bool background, bool hide_win32_window = false);
 File                            tmp_dir();
-File                            tmp_file(std::string prepend = "");
+File                            tmp_file(const std::string& prepend = "");
 File                            work_dir();
-bool                            write(std::string filename, const char* in, size_t in_size, bool flush_write = true);
-bool                            write(std::string filename, const Buf& b, bool flush_write = true);
-struct Buf {
-    char*                       p;
-    size_t                      s;
+bool                            write(const std::string& path, const char* buffer, size_t size, bool flush = true);
+bool                            write(const std::string& path, const Buf& b, bool flush = true);
+class Buf {
+public:
                                 Buf()
-                                    { p = nullptr; s = 0; }
-    explicit                    Buf(size_t S);
-                                Buf(const char* P, size_t S);
+                                    { _str = nullptr; _size = 0; }
+    explicit                    Buf(size_t size);
+                                Buf(const char* buffer, size_t size);
                                 Buf(const Buf& b);
                                 Buf(Buf&& b)
-                                    { p = b.p; s = b.s; b.p = nullptr; }
-                                Buf(const std::string& S)
-                                    { p = nullptr; add(S.c_str(), S.length()); }
+                                    { _str = b._str; _size = b._size; b._str = nullptr; }
+                                Buf(const std::string& string)
+                                    { _str = nullptr; add(string.c_str(), string.length()); }
     virtual                     ~Buf()
-                                    { free(p); }
+                                    { free(_str); }
     Buf&                        operator=(const Buf& b)
-                                    { return set(b.p, b.s); }
+                                    { return set(b._str, b._size); }
     Buf&                        operator=(Buf&& b)
-                                    { free(p); p = b.p; s = b.s; b.p = nullptr; return *this; }
-    Buf&                        operator=(const std::string& S)
-                                    { free(p); p = nullptr; add(S.c_str(), S.length()); return *this; }
+                                    { free(_str); _str = b._str; _size = b._size; b._str = nullptr; return *this; }
+    Buf&                        operator=(const std::string& string)
+                                    { free(_str); _str = nullptr; add(string.c_str(), string.length()); return *this; }
     Buf&                        operator+=(const Buf& b)
-                                    { return add(b.p, b.s); }
+                                    { return add(b._str, b._size); }
     bool                        operator==(const Buf& other) const;
     bool                        operator!=(const Buf& other) const
                                     { return (*this == other) == false; }
-    Buf&                        add(const char* P, size_t S);
+    Buf&                        add(const char* buffer, size_t size);
+    const char*                 c_str() const
+                                    { return _str; }
     void                        clear()
-                                    { free(p); p = nullptr; s = 0; }
+                                    { free(_str); _str = nullptr; _size = 0; }
     void                        count(size_t count[257]) const
-                                    { Buf::Count(p, s, count); }
+                                    { Buf::Count(_str, _size, count); }
     void                        debug() const
-                                    { printf("gnu::Buf(0x%p, %u)\n", p, (unsigned) s); }
+                                    { printf("gnu::Buf(0x%p, %u)\n", _str, (unsigned) _size); }
     uint64_t                    fletcher64() const
-                                    { return file::fletcher64(p, s); }
-    Buf&                        grab(char* P, size_t S)
-                                    { free(p); p = P; s = S; return *this; }
+                                    { return file::fletcher64(_str, _size); }
+    Buf&                        grab(char* buffer, size_t size)
+                                    { free(_str); _str = buffer; _size = size; return *this; }
     Buf                         insert_cr(bool dos = true, bool trailing = false) const
-                                    { return Buf::InsertCR(p, s, dos, trailing); }
+                                    { return Buf::InsertCR(_str, _size, dos, trailing); }
     char*                       release()
-                                    { auto res = p; p = nullptr; s = 0; return res; }
+                                    { auto res = _str; _str = nullptr; _size = 0; return res; }
     Buf                         remove_cr() const
-                                    { return Buf::RemoveCR(p, s); }
-    Buf&                        set(const char* P, size_t S);
-    bool                        write(std::string filename, bool flush_write = true) const;
-    static void                 Count(const char* P, size_t S, size_t count[257]);
-    static inline Buf           Grab(char* P)
-                                    { auto res = Buf(); res.p = P; res.s = strlen(P); return res; }
-    static inline Buf           Grab(char* P, size_t S)
-                                    { auto res = Buf(); res.p = P; res.s = S; return res; }
-    static Buf                  InsertCR(const char* P, size_t S, bool dos, bool trailing = false);
-    static Buf                  RemoveCR(const char* P, size_t S);
+                                    { return Buf::RemoveCR(_str, _size); }
+    Buf&                        set(const char* buffer, size_t size);
+    size_t                      size() const
+                                    { return _size; }
+    void                        size(size_t new_size)
+                                    { assert(new_size < _size); _size = new_size; }
+    char*                       str()
+                                    { return _str; }
+    bool                        write(const std::string& path, bool flush = true) const;
+    static void                 Count(const char* buffer, size_t size, size_t count[257]);
+    static inline Buf           Grab(char* string)
+                                    { auto res = Buf(); res._str = string; res._size = strlen(string); return res; }
+    static inline Buf           Grab(char* buffer, size_t size)
+                                    { auto res = Buf(); res._str = buffer; res._size = size; return res; }
+    static Buf                  InsertCR(const char* buffer, size_t size, bool dos, bool trailing = false);
+    static Buf                  RemoveCR(const char* buffer, size_t size);
+private:
+    char*                       _str;
+    size_t                      _size;
 };
 class File {
 public:
-    TYPE                        type;
-    bool                        link;
-    int                         mode;
-    int64_t                     ctime;
-    int64_t                     mtime;
-    int64_t                     size;
-    std::string                 ext;
-    std::string                 filename;
-    std::string                 name;
-    std::string                 path;
-                                File()
-                                    { update(""); }
-    explicit                    File(std::string in, bool realpath = false)
-                                    { update(in, realpath); }
-    File&                       operator=(std::string in)
-                                    { return update(in); }
-    File&                       operator+=(std::string in)
-                                    { filename += in; return *this; }
+    explicit                    File(const std::string& path = "", bool realpath = false);
     bool                        operator==(const File& other) const
-                                    { return filename == other.filename; }
+                                    { return _filename == other._filename; }
     bool                        operator<(const File& other) const
-                                    { return filename < other.filename; }
+                                    { return _filename < other._filename; }
     bool                        operator<=(const File& other) const
-                                    { return filename <= other.filename; }
+                                    { return _filename <= other._filename; }
     const char*                 c_str() const
-                                    { return filename.c_str(); }
+                                    { return _filename.c_str(); }
     std::string                 canonical_name() const
-                                    { return file::canonical_name(filename); }
+                                    { return file::canonical_name(_filename); }
+    int64_t                     ctime() const
+                                    { return _ctime; }
     void                        debug(bool short_version = true) const
                                     { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); }
     bool                        exist() const
-                                    { return type != TYPE::MISSING; }
-    bool                        is_circular() const;
+                                    { return _type != TYPE::MISSING; }
+    const std::string&          ext() const
+                                    { return _ext; }
+    const std::string&          filename() const
+                                    { return _filename; }
     bool                        is_dir() const
-                                    { return type == TYPE::DIR; }
+                                    { return _type == TYPE::DIR; }
     bool                        is_file() const
-                                    { return type == TYPE::FILE; }
+                                    { return _type == TYPE::FILE; }
     bool                        is_link() const
-                                    { return link; }
+                                    { return _link; }
     bool                        is_missing() const
-                                    { return type == TYPE::MISSING; }
+                                    { return _type == TYPE::MISSING; }
     bool                        is_other() const
-                                    { return type == TYPE::OTHER; }
+                                    { return _type == TYPE::OTHER; }
     std::string                 linkname() const;
+    int                         mode() const
+                                    { return _mode; }
+    int64_t                     mtime() const
+                                    { return _mtime; }
+    const std::string&          name() const
+                                    { return _name; }
     std::string                 name_without_ext() const;
-    File&                       update();
-    File&                       update(std::string in, bool realpath = false);
+    const std::string&          path() const
+                                    { return _path; }
+    int64_t                     size() const
+                                    { return _size; }
     std::string                 to_string(bool short_version = true) const;
+    TYPE                        type() const
+                                    { return _type; }
     std::string                 type_name() const;
+private:
+    TYPE                        _type;
+    bool                        _link;
+    int                         _mode;
+    int64_t                     _ctime;
+    int64_t                     _mtime;
+    int64_t                     _size;
+    std::string                 _ext;
+    std::string                 _filename;
+    std::string                 _name;
+    std::string                 _path;
 };
 }
 }
@@ -517,9 +538,10 @@ private:
 #define FLW_PRINTDS4(A,B,C,D)           { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s,  \033[32m%s = %s\033[0m,  %s = %s,  \033[32m%s = %s\033[0m\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str(), #D, flw::util::format_double(static_cast<double>(D), 0, '\'').c_str()); fflush(stdout); }
 #define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
 #define FLW_NL                          { ::printf("\n"); fflush(stdout); }
-#define FLW_ASSERT(X,Y)                 flw::debug::test(X,Y,__LINE__,__func__);
-#define FLW_TRUE(X)                     flw::debug::test(X,__LINE__,__func__);
-#define FLW_ASSERTD(X,Y,Z)              flw::debug::test(X,Y,Z,__LINE__,__func__);
+#define FLW_ASSERT(X,Y)                 if ((X) == 0) fl_alert("assert in %s on line %d: %s", __func__, __LINE__, Y);
+#define FLW_TEST(X,Y)                   flw::debug::test(X,Y,__LINE__,__func__);
+#define FLW_TEST_FLOAT(X,Y,Z)           flw::debug::test(X,Y,Z,__LINE__,__func__);
+#define FLW_TEST_TRUE(X)                flw::debug::test(X,__LINE__,__func__);
 #else
 #define FLW_LINE
 #define FLW_RED
@@ -531,8 +553,9 @@ private:
 #define FLW_PRINTDS(...)
 #define FLW_NL
 #define FLW_ASSERT(X,Y)
-#define FLW_TRUE(X)
-#define FLW_ASSERTD(X,Y,Z)
+#define FLW_TEST(X,Y)
+#define FLW_TEST_FLOAT(X,Y,Z)
+#define FLW_TEST_TRUE(X)
 #endif
 namespace flw {
 extern int                      PREF_FIXED_FONT;

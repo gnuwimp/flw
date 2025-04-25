@@ -1,13 +1,24 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief File and directory functions.
+*
+* gnu::file namespace has assorted functions for files and directories.\n
+* gnu::file::File class has common file info data such as name, size, type.\n
+* gnu::file::Buf class is a simple buffer container.\n
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "file.h"
 
 // MKALGAM_ON
 
 #include <algorithm>
-#include <assert.h>
+#include <filesystem>
+#include <climits>
 #include <ctime>
+#include <assert.h>
 #include <dirent.h>
 #include <unistd.h>
 
@@ -17,10 +28,6 @@
 #else
     #include <sys/stat.h>
     #include <utime.h>
-#endif
-
-#ifndef __APPLE__
-    #include <filesystem>
 #endif
 
 #ifndef PATH_MAX
@@ -41,57 +48,47 @@ namespace file {
  *     |_|
  */
 
-static std::string _FILE_STDOUT_NAME = "";
-static std::string _FILE_STDERR_NAME = "";
+static std::string          _STDOUT_NAME = "";
+static std::string          _STDERR_NAME = "";
 
 #ifdef _WIN32
-
-//------------------------------------------------------------------------------
-static char* _file_from_wide(const wchar_t* in) {
-    auto out_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, nullptr, 0, nullptr, nullptr);
-    auto out     = file::allocate(nullptr, out_len + 1);
-
-    WideCharToMultiByte(CP_UTF8, 0, in, -1, (LPSTR) out, out_len, nullptr, nullptr);
-    return (char*) out;
-}
-
-//------------------------------------------------------------------------------
-static int64_t _file_time(FILETIME* ft) {
-    int64_t res = (int64_t) ft->dwHighDateTime << 32 | (int64_t) ft->dwLowDateTime;
-    res = res / 10000000;
-    res = res - 11644473600;
-    return res;
-}
-
-//------------------------------------------------------------------------------
-static wchar_t* _file_to_wide(const char* in) {
-    auto out_len = MultiByteToWideChar(CP_UTF8, 0, in , -1, nullptr , 0);
-    auto out     = reinterpret_cast<wchar_t*>(file::allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
-
-    MultiByteToWideChar(CP_UTF8, 0, in , -1, out, out_len);
-    return out;
-}
-
+static char*                _from_wide(const wchar_t* wstring);
+static int64_t              _time(FILETIME* ft);
+static wchar_t*             _to_wide(const char* string);
 #endif
 
-static std::string _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+static Buf                  _close_redirect(int type);
+static bool                 _open_redirect(int type);
+static unsigned             _rand();
+static void                 _read(const std::string& path, Buf& buf);
+static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
+static void                 _read_dir_rec(Files& res, Files& files);
+static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
+static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
+static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+static std::string          _to_absolute_path(const std::string& filename, bool realpath);
 
-//------------------------------------------------------------------------------
-static Buf _file_close_redirect(int type) {
+/** @brief Close redirect.
+*
+* @param[in] type  1 (stdout) or 2 (stderr).
+*
+* @return Read bytes from file.
+*/
+static Buf _close_redirect(int type) {
     std::string fname;
     FILE* fhandle;
 
     if (type == 2) {
-        if (_FILE_STDERR_NAME == "") return Buf();
-        fname = _FILE_STDERR_NAME;
+        if (_STDERR_NAME == "") return Buf();
+        fname = _STDERR_NAME;
         fhandle = stderr;
-        _FILE_STDERR_NAME = "";
+        _STDERR_NAME = "";
     }
     else {
-        if (_FILE_STDOUT_NAME == "") return Buf();
-        fname = _FILE_STDOUT_NAME;
+        if (_STDOUT_NAME == "") return Buf();
+        fname = _STDOUT_NAME;
         fhandle = stdout;
-        _FILE_STDOUT_NAME = "";
+        _STDOUT_NAME = "";
     }
 
 #ifdef _WIN32
@@ -108,26 +105,49 @@ static Buf _file_close_redirect(int type) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-static bool _file_open_redirect(int type) {
+#ifdef _WIN32
+/** @brief Convert wide to utf.
+*
+* @param[in] wstring  Wide character string.
+*
+* @return UTF string, delete with free().
+*/
+static char* _from_wide(const wchar_t* wstring) {
+    auto out_len = WideCharToMultiByte(CP_UTF8, 0, wstring, -1, nullptr, 0, nullptr, nullptr);
+    auto out     = file::allocate(nullptr, out_len + 1);
+
+    WideCharToMultiByte(CP_UTF8, 0, wstring, -1, (LPSTR) out, out_len, nullptr, nullptr);
+    return (char*) out;
+}
+#endif
+
+/** @brief Open redirect.
+*
+* Open result file.
+*
+* @param[in] type  1 (stdout) or 2 (stderr).
+*
+* @return True if ok.
+*/
+static bool _open_redirect(int type) {
     bool res = false;
     std::string fname;
     FILE* fhandle = nullptr;
 
     if (type == 2) {
-        if (_FILE_STDERR_NAME != "") return res;
-        fname = _FILE_STDERR_NAME = file::tmp_file("stderr_").filename;
+        if (_STDERR_NAME != "") return res;
+        fname = _STDERR_NAME = file::tmp_file("stderr_").filename();
         fhandle = stderr;
     }
     else {
-        if (_FILE_STDOUT_NAME != "") return res;
-        fname = _FILE_STDOUT_NAME = file::tmp_file("stdout_").filename;
+        if (_STDOUT_NAME != "") return res;
+        fname = _STDOUT_NAME = file::tmp_file("stdout_").filename();
         fhandle = stdout;
     }
 
 #ifdef _WIN32
-        auto wpath = _file_to_wide(fname.c_str());
-        auto wmode = _file_to_wide("wb");
+        auto wpath = file::_to_wide(fname.c_str());
+        auto wmode = file::_to_wide("wb");
 
         res = _wfreopen(wpath, wmode, fhandle) != nullptr;
         free(wpath);
@@ -136,67 +156,93 @@ static bool _file_open_redirect(int type) {
         res = freopen(fname.c_str(), "wb", fhandle) != nullptr;
 #endif
 
-    if (res == false && type == 1) _FILE_STDOUT_NAME = "";
-    else if (res == false && type == 2) _FILE_STDERR_NAME = "";
+    if (res == false && type == 1) _STDOUT_NAME = "";
+    else if (res == false && type == 2) _STDERR_NAME = "";
     return res;
 }
 
-//------------------------------------------------------------------------------
-static int _file_rand() {
+/** @brief Generate random number.
+*
+* @return Random number.
+*/
+static unsigned _rand() {
     static bool INIT = false;
     if (INIT == false) srand(time(nullptr));
     INIT = true;
-    return rand() % 10'000;
+
+    static unsigned long next = 1;
+
+    if (RAND_MAX < 50000) {
+        next = next * 1103515245 + 12345;
+        return ((unsigned)(next / 65536) % 32768);
+    }
+    else {
+        return rand();
+    }
 }
 
-//------------------------------------------------------------------------------
-static void _file_read(std::string path, Buf& buf) {
-    assert(buf.p == nullptr && buf.s == 0);
+/** @brief Read bytes from file.
+*
+* @param[in] path  File path.
+* @param[in] buf   Result buffer.
+*/
+static void _read(const std::string& path, Buf& buf) {
+    assert(buf.c_str() == nullptr && buf.size() == 0);
 
     File file(path);
 
-    if (file.is_file() == false || static_cast<long long unsigned int>(file.size) > SIZE_MAX) {
+    if (file.is_file() == false || static_cast<long long unsigned int>(file.size()) > SSIZE_MAX) {
         return;
     }
 
-    auto out = file::allocate(nullptr, file.size + 1);
+    auto out = file::allocate(nullptr, file.size() + 1);
 
-    if (file.size == 0) {
-        buf.p = out;
+    if (file.size() == 0) {
+        buf.grab(out, 0);
         return;
     }
 
-    auto handle = file::open(file.filename, "rb");
+    auto handle = file::open(file.filename(), "rb");
 
     if (handle == nullptr) {
         free(out);
         return;
     }
-    else if (fread(out, 1, file.size, handle) != (size_t) file.size) {
+    else if (fread(out, 1, static_cast<size_t>(file.size()), handle) != static_cast<size_t>(file.size())) {
         fclose(handle);
         free(out);
+        return;
     }
-    else {
-        fclose(handle);
-        buf.p = out;
-        buf.s = file.size;
-    }
+
+    fclose(handle);
+    buf.grab(out, file.size());
 }
 
-//------------------------------------------------------------------------------
-static void _file_read_dir_rec(Files& res, Files& files) {
+/** @brief Read file entries recursive.
+*
+* @param[in] res    Result vector.
+* @param[in] files  Files from current directory.
+*/
+static void _read_dir_rec(Files& res, Files& files) {
     for (auto& file : files) {
         res.push_back(file);
 
-        if (file.type == file::TYPE::DIR && file.link == false && file.is_circular() == false) {
-            auto v = file::read_dir(file.filename);
-            _file_read_dir_rec(res, v);
+        if (file.type() == file::TYPE::DIR && file.is_link() == false) {
+            auto v = file::read_dir(file.filename());
+            file::_read_dir_rec(res, v);
         }
     }
 }
 
-//------------------------------------------------------------------------------
-static std::string& _file_replace_all(std::string& string, const std::string& find, const std::string& replace) {
+/** @brief Replace strings.
+*
+* @param[in] string   String to be replaced in.
+* @param[in] find     Find this string.
+* @param[in] replace  Replace with this string.
+*
+* @return Input string.
+*/
+static std::string& _replace_all(std::string& string, const std::string& find, const std::string& replace) {
     if (find == "") {
         return string;
     }
@@ -212,8 +258,14 @@ static std::string& _file_replace_all(std::string& string, const std::string& fi
     }
 }
 
-//------------------------------------------------------------------------------
-static void _file_split_paths(std::string filename, std::string& path, std::string& name, std::string& ext) {
+/** @brief Split full filename.
+*
+* @param[in] filename  Filename to split.
+* @param[in] path      Result path.
+* @param[in] name      Result name + ext.
+* @param[in] ext       Extension only.
+*/
+static void _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext) {
     path = "";
     name = "";
     ext  = "";
@@ -237,16 +289,16 @@ static void _file_split_paths(std::string filename, std::string& path, std::stri
 
     if (pos1 != std::string::npos) {
         if (filename.length() != 3) {
-            path = _file_substr(filename, 0, pos1);
+            path = file::_substr(filename, 0, pos1);
         }
 
-        name = _file_substr(filename, pos1 + 1);
+        name = file::_substr(filename, pos1 + 1);
     }
 
     auto pos2 = name.find_last_of('.');
 
     if (pos2 != std::string::npos && pos2 != 0) {
-        ext = _file_substr(name, pos2 + 1);
+        ext = file::_substr(name, pos2 + 1);
     }
 
     if (path.back() == ':') {
@@ -258,39 +310,63 @@ static void _file_split_paths(std::string filename, std::string& path, std::stri
 
     if (pos1 != std::string::npos) {
         if (pos1 > 0) {
-            path = _file_substr(filename, 0, pos1);
+            path = file::_substr(filename, 0, pos1);
         }
         else if (filename != "/") {
             path = "/";
         }
 
         if (filename != "/") {
-            name = _file_substr(filename, pos1 + 1);
+            name = file::_substr(filename, pos1 + 1);
         }
     }
 
     auto pos2 = filename.find_last_of('.');
 
     if (pos2 != std::string::npos && pos2 > pos1 + 1) {
-        ext = _file_substr(filename, pos2 + 1);
+        ext = file::_substr(filename, pos2 + 1);
     }
 #endif
 }
 
-//------------------------------------------------------------------------------
-static std::string _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size) {
-    try { return in.substr(pos, size); }
+/** @brief Get substring.
+*
+* @param[in] string  String to be replaced in.
+* @param[in] pos     Position in string.
+* @param[in] count   Number of bytes.
+*
+* @return Replaced string.
+*/
+static std::string _substr(const std::string& in, std::string::size_type pos, std::string::size_type count) {
+    try { return in.substr(pos, count); }
     catch(...) { return ""; }
 }
 
-//------------------------------------------------------------------------------
-static const std::string _file_to_absolute_path(const std::string& in, bool realpath) {
-    std::string res;
-    auto name = in;
+#ifdef _WIN32
+/** @brief Convert FILETIME to seconds.
+*
+* @param[in] ft  Filetime.
+*
+* @return Seconds.
+*/
+static int64_t _time(FILETIME* ft) {
+    int64_t res = static_cast<int64_t>(ft->dwHighDateTime) << 32 | static_cast<int64_t>(ft->dwLowDateTime);
+    res = res / 10000000;
+    res = res - 11644473600;
+    return res;
+}
+#endif
 
-    if (name == "") {
-        return "";
-    }
+/** @brief Convert filename to absolute path.
+*
+* @param[in] filename  Filename to convert.
+* @param[in] realpath  True to use the real file path.
+*
+* @return Absolute path.
+*/
+static std::string _to_absolute_path(const std::string& filename, bool realpath) {
+    std::string res;
+    auto name = filename;
 
 #ifdef _WIN32
     if (name.find("\\\\") == 0) {
@@ -299,7 +375,7 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
     }
     else if (name.size() < 2 || name[1] != ':') {
         auto work = File(file::work_dir());
-        res = work.filename;
+        res = work.filename();
         res += "\\";
         res += name;
     }
@@ -307,14 +383,14 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
         res = name;
     }
 
-    _file_replace_all(res, "\\", "/");
+    file::_replace_all(res, "\\", "/");
 
     auto len = res.length();
-    _file_replace_all(res, "//", "/");
+    file::_replace_all(res, "//", "/");
 
     while (len > res.length()) {
         len = res.length();
-        _file_replace_all(res, "//", "/");
+        file::_replace_all(res, "//", "/");
     }
 
     while (res.size() > 3 && res.back() == '/') {
@@ -323,7 +399,7 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
 #else
     if (name[0] != '/') {
         auto work = File(file::work_dir());
-        res = work.filename;
+        res = work.filename();
         res += "/";
         res += name;
     }
@@ -332,11 +408,11 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
     }
 
     auto len = res.length();
-    _file_replace_all(res, "//", "/");
+    file::_replace_all(res, "//", "/");
 
     while (len > res.length()) {
         len = res.length();
-        _file_replace_all(res, "//", "/");
+        file::_replace_all(res, "//", "/");
     }
 
     while (res.size() > 1 && res.back() == '/') {
@@ -346,6 +422,22 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
 
     return (realpath == true) ? file::canonical_name(res) : res;
 }
+
+#ifdef _WIN32
+/** @brief Convert utf to wide.
+*
+* @param[in] string  UTF character string.
+*
+* @return Wide character string, delete with free().
+*/
+static wchar_t* _to_wide(const char* string) {
+    auto out_len = MultiByteToWideChar(CP_UTF8, 0, string , -1, nullptr , 0);
+    auto out     = reinterpret_cast<wchar_t*>(file::allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
+
+    MultiByteToWideChar(CP_UTF8, 0, string , -1, out, out_len);
+    return out;
+}
+#endif
 
 /***
  *       __ _ _
@@ -358,7 +450,14 @@ static const std::string _file_to_absolute_path(const std::string& in, bool real
  *
  */
 
-//------------------------------------------------------------------------------
+/** @brief Allocate memory.
+*
+* @param[in] resize_or_null  Pointer for reallocation or NULL to allocate new memory.
+* @param[in] size            Size in bytes.
+* @param[in] exception       True to throw exception for failure.
+*
+* @return Allocated memory, delete with free().
+*/
 char* allocate(char* resize_or_null, size_t size, bool exception) {
     void* res = nullptr;
 
@@ -376,49 +475,50 @@ char* allocate(char* resize_or_null, size_t size, bool exception) {
     return (char*) res;
 }
 
-//------------------------------------------------------------------------------
-std::string canonical_name(std::string filename) {
+/** @brief Convert filename to a canonicalized absolute pathname.
+*
+* @param[in] path  Path to convert.
+*
+* @return Result filename or input path for enu error.
+*/
+std::string canonical_name(const std::string& path) {
 #if defined(_WIN32)
     wchar_t wres[PATH_MAX];
-    auto    wpath = _file_to_wide(filename.c_str());
+    auto    wpath = file::_to_wide(path.c_str());
     auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
 
     if (len > 0 && len < PATH_MAX) {
-        auto cpath = _file_from_wide(wres);
+        auto cpath = file::_from_wide(wres);
         auto res   = std::string(cpath);
 
         free(cpath);
         free(wpath);
 
-        _file_replace_all(res, "\\", "/");
+        file::_replace_all(res, "\\", "/");
         return res;
     }
     else {
         free(wpath);
-        return filename;
+        return path;
     }
-#elif defined(__linux__)
-    auto path = ::canonicalize_file_name(filename.c_str());
-    auto res  = (path != nullptr) ? std::string(path) : filename;
-
-    free(path);
-    return res;
 #else
-    auto path = ::realpath(filename.c_str(), nullptr);
-    auto res  = (path != nullptr) ? std::string(path) : filename;
+    auto tmp = realpath(path.c_str(), nullptr);
+    auto res = (tmp != nullptr) ? std::string(tmp) : path;
 
-    free(path);
+    free(tmp);
     return res;
 #endif
-    return "";
 }
 
-//------------------------------------------------------------------------------
-// Change directory for an file or directory
-//
-bool chdir(std::string path) {
+/** @brief Change directory.
+*
+* @param[in] path  Directory path.
+*
+* @return True if ok.
+*/
+bool chdir(const std::string& path) {
 #ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
+    auto wpath = file::_to_wide(path.c_str());
     auto res   = _wchdir(wpath);
 
     free(wpath);
@@ -428,12 +528,17 @@ bool chdir(std::string path) {
 #endif
 }
 
-//------------------------------------------------------------------------------
-std::string check_filename(std::string filename) {
+/** @brief Check filename for invalid characters.
+*
+* @param[in] name  Filename without any path.
+*
+* @return A copy of input filename or a filename without illegal characters.
+*/
+std::string check_filename(const std::string& name) {
     static const std::string ILLEGAL = "<>:\"/\\|?*\n\t\r";
     std::string res;
 
-    for (auto& c : filename) {
+    for (auto& c : name) {
         if (ILLEGAL.find(c) == std::string::npos) {
             res += c;
         }
@@ -442,8 +547,14 @@ std::string check_filename(std::string filename) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-bool chmod(std::string path, int mode) {
+/** @brief Change file mode.
+*
+* @param[in] path  Path.
+* @param[in] mode  OS dependent value.
+*
+* @return True if ok.
+*/
+bool chmod(const std::string& path, int mode) {
     auto res = false;
 
     if (mode < 0) {
@@ -451,7 +562,7 @@ bool chmod(std::string path, int mode) {
     }
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
+    auto wpath = file::_to_wide(path.c_str());
 
     res = SetFileAttributesW(wpath, mode);
     free(wpath);
@@ -462,18 +573,74 @@ bool chmod(std::string path, int mode) {
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set modified time.
+*
+* @param[in] path  File path.
+* @param[in] time  Time in seconds since epoch (>= 0).
+*
+* @return True if ok.
+*/
+bool chtime(const std::string& path, int64_t time) {
+    auto res = false;
+
+#ifdef _WIN32
+    auto wpath  = file::_to_wide(path.c_str());
+    auto handle = CreateFileW(wpath, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+    if (handle != INVALID_HANDLE_VALUE) {
+        FILETIME ftLastAccessTime;
+        FILETIME ftLastWriteTime;
+        auto     lm = (LONGLONG) 0;
+
+        lm = Int32x32To64((time_t) time, 10000000) + 116444736000000000;
+        ftLastAccessTime.dwLowDateTime  = (DWORD)lm;
+        ftLastAccessTime.dwHighDateTime = lm >> 32;
+        ftLastWriteTime.dwLowDateTime   = (DWORD)lm;
+        ftLastWriteTime.dwHighDateTime  = lm >> 32;
+
+        res = SetFileTime(handle, nullptr, &ftLastAccessTime, &ftLastWriteTime);
+        CloseHandle(handle);
+    }
+
+    free(wpath);
+#else
+    utimbuf ut;
+
+    ut.actime  = (time_t) time;
+    ut.modtime = (time_t) time;
+    res        = utime(path.c_str(), &ut) == 0;
+#endif
+
+    return res;
+}
+
+/** @brief Close redirect.
+*
+* @return Data from stderr.
+*/
 Buf close_stderr() {
-    return _file_close_redirect(2);
+    return file::_close_redirect(2);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Close redirect.
+*
+* @return Data from stdout.
+*/
 Buf close_stdout() {
-    return _file_close_redirect(1);
+    return file::_close_redirect(1);
 }
 
-//------------------------------------------------------------------------------
-bool copy(std::string from, std::string to, CallbackCopy callback, void* data, bool flush_write) {
+/** @brief Copy file.
+*
+* @param[in] from   From path.
+* @param[in] to     To path.
+* @param[in] cb     Callback between every time (optional).
+* @param[in] data   Callback data (optional).
+* @param[in] flush  True to call flush after file have been copied (optional, default true).
+*
+* @return True if ok.
+*/
+bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
 #ifdef DEBUG
     static const size_t BUF_SIZE = 16384;
 #else
@@ -514,31 +681,38 @@ bool copy(std::string from, std::string to, CallbackCopy callback, void* data, b
 
         count += size;
 
-        if (callback != nullptr && callback(file1.size, count, data) == false && count != file1.size) {
+        if (cb != nullptr && cb(file1.size(), count, data) == false && count != file1.size()) {
             break;
         }
     }
 
     fclose(read);
-    
-    if (flush_write == true) {
+
+    if (flush == true) {
         file::flush(write);
     }
-    
+
     fclose(write);
     free(buf);
 
-    if (count != file1.size) {
+    if (count != file1.size()) {
         file::remove(to);
         return false;
     }
 
-    file::mod_time(to, file1.mtime);
-    file::chmod(to, file1.mode);
+    file::chtime(to, file1.mtime());
+    file::chmod(to, file1.mode());
+
     return true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Create fletcher checksum.
+*
+* @param[in] P  Input data.
+* @param[in] S  Data size.
+*
+* @return Checksum.
+*/
 uint64_t fletcher64(const char* P, size_t S) {
     if (P == nullptr || S == 0) {
         return 0;
@@ -573,7 +747,11 @@ uint64_t fletcher64(const char* P, size_t S) {
     return (sum2 << 32) | sum1;
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief Flush file handle.
+*
+* @param[in,out] file  File handle.
+*/
 void flush(FILE* file) {
     if (file != nullptr) {
 #ifdef _WIN32
@@ -588,32 +766,66 @@ void flush(FILE* file) {
     }
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief Get home directory.
+*
+* @return Home directory or work directory for any failure.
+*/
 File home_dir() {
-    std::string res;
 
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX];
 
     if (SHGetFolderPathW(nullptr, CSIDL_PROFILE, nullptr, 0, wpath) == S_OK) {
-        auto path = _file_from_wide(wpath);
-        res = path;
+        auto path = file::_from_wide(wpath);
+        auto res = File(path);
         free(path);
+        return res;
     }
 #else
-    const char* tmp = getenv("HOME");
-    res = tmp ? tmp : "";
+    const char* path = getenv("HOME");
+
+    if (path != nullptr) {
+        return File(path);
+    }
 #endif
 
-    return File(res);
+    return work_dir();
 }
 
-//------------------------------------------------------------------------------
-bool mkdir(std::string path) {
+/**
+* @brief Is link to a directory a circular one?
+*
+* @param[in] self  Fi object.
+*
+* @return True if directory is circular.
+*/
+bool is_circular(const std::string& path) {
+    auto file = File(path, false);
+
+    if (file.type() != TYPE::DIR || file.is_link() == false) {
+        return false;
+    }
+
+    auto l = file.canonical_name() + "/";
+    puts(file.filename().c_str());
+    puts(l.c_str());
+    return file.filename().find(l) == 0;
+}
+
+/** @brief Create a directory.
+*
+* Default file mode is file::DEFAULT_DIR_MODE.
+*
+* @param[in] path  Path to directory.
+*
+* @return True if ok.
+*/
+bool mkdir(const std::string& path) {
     bool res = false;
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
+    auto wpath = file::_to_wide(path.c_str());
 
     res = _wmkdir(wpath) == 0;
     free(wpath);
@@ -624,48 +836,20 @@ bool mkdir(std::string path) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-bool mod_time(std::string path, int64_t time) {
-    auto res = false;
-
-#ifdef _WIN32
-    auto wpath  = _file_to_wide(path.c_str());
-    auto handle = CreateFileW(wpath, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-
-    if (handle != INVALID_HANDLE_VALUE) {
-        FILETIME ftLastAccessTime;
-        FILETIME ftLastWriteTime;
-        auto     lm = (LONGLONG) 0;
-
-        lm = Int32x32To64((time_t) time, 10000000) + 116444736000000000;
-        ftLastAccessTime.dwLowDateTime  = (DWORD)lm;
-        ftLastAccessTime.dwHighDateTime = lm >> 32;
-        ftLastWriteTime.dwLowDateTime   = (DWORD)lm;
-        ftLastWriteTime.dwHighDateTime  = lm >> 32;
-
-        res = SetFileTime(handle, nullptr, &ftLastAccessTime, &ftLastWriteTime);
-        CloseHandle(handle);
-    }
-
-    free(wpath);
-#else
-    utimbuf ut;
-
-    ut.actime  = (time_t) time;
-    ut.modtime = (time_t) time;
-    res        = utime(path.c_str(), &ut) == 0;
-#endif
-
-    return res;
-}
-
-//------------------------------------------------------------------------------
-FILE* open(std::string path, std::string mode) {
+/**
+* @brief Open file handle.
+*
+* @param[in] path  Path to file.
+* @param[in] mode  File mode.
+*
+* @return File handle or NULL.
+*/
+FILE* open(const std::string& path, const std::string& mode) {
     FILE* res = nullptr;
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
-    auto wmode = _file_to_wide(mode.c_str());
+    auto wpath = file::_to_wide(path.c_str());
+    auto wmode = file::_to_wide(mode.c_str());
 
     res = _wfopen(wpath, wmode);
     free(wpath);
@@ -677,7 +861,11 @@ FILE* open(std::string path, std::string mode) {
     return res;
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief Return operating system name.
+*
+* @return "windows", "macos", "linux" or "unknown".
+*/
 std::string os() {
 #if defined(_WIN32)
     return "windows";
@@ -692,13 +880,20 @@ std::string os() {
 #endif
 }
 
-//------------------------------------------------------------------------------
-FILE* popen(std::string cmd, bool write) {
+/**
+* @brief Open process handle.
+*
+* @param[in] cmd    Command.
+* @param[in] write  True to write to process.
+*
+* @return File handle or NULL.
+*/
+FILE* popen(const std::string& cmd, bool write) {
     FILE* file = nullptr;
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(cmd.c_str());
-    auto wmode = _file_to_wide(write ? "wb" : "rb");
+    auto wpath = file::_to_wide(cmd.c_str());
+    auto wmode = file::_to_wide(write ? "wb" : "rb");
 
     file = _wpopen(wpath, wmode);
     free(wpath);
@@ -711,35 +906,52 @@ FILE* popen(std::string cmd, bool write) {
     return file;
 }
 
-//------------------------------------------------------------------------------
-Buf read(std::string path) {
+/**
+* @brief Read file.
+*
+* @param[in] path  Path to file.
+*
+* @return Read data or empty for any error.
+*/
+Buf read(const std::string& path) {
     Buf buf;
-    _file_read(path, buf);
+    file::_read(path, buf);
     return buf;
 }
 
-//------------------------------------------------------------------------------
-Buf* read2(std::string path) {
+/**
+* @brief Read file.
+*
+* @param[in] path  Path to file.
+*
+* @return Read data or empty for any error.
+*/
+Buf* read2(const std::string& path) {
     auto buf = new Buf();
-    _file_read(path, *buf);
+    file::_read(path, *buf);
     return buf;
 }
 
-//------------------------------------------------------------------------------
-Files read_dir(std::string path) {
-    auto file = File(path, true);
+/** @brief Read directory.
+*
+* @param[in] path  Path to directory.
+*
+* @return Vector with files.
+*/
+Files read_dir(const std::string& path) {
+    auto file = File(path, false);
     auto res  = Files();
 
-    if (file.type != TYPE::DIR) {
+    if (file.type() != TYPE::DIR || file::is_circular(path) == true) {
         return res;
     }
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(file.filename.c_str());
+    auto wpath = file::_to_wide(file.filename().c_str());
     auto dirp  = _wopendir(wpath);
     auto sep   = '/';
 
-    if (file.filename.find("\\\\") == 0) {
+    if (file.filename().find("\\\\") == 0) {
         sep = '\\';
     }
 
@@ -747,10 +959,10 @@ Files read_dir(std::string path) {
         auto entry = _wreaddir(dirp);
 
         while (entry != nullptr) {
-            auto cpath = _file_from_wide(entry->d_name);
+            auto cpath = file::_from_wide(entry->d_name);
 
             if (strcmp(cpath, ".") != 0 && strcmp(cpath, "..") != 0) {
-                auto name = (file.name == ".") ? file.path + sep + cpath : file.filename + sep + cpath;
+                auto name = (file.name() == ".") ? file.path() + sep + cpath : file.filename() + sep + cpath;
                 res.push_back(File(name));
             }
 
@@ -763,14 +975,14 @@ Files read_dir(std::string path) {
 
     free(wpath);
 #else
-    auto dirp = ::opendir(file.filename.c_str());
+    auto dirp = ::opendir(file.filename().c_str());
 
     if (dirp != nullptr) {
         auto entry = ::readdir(dirp);
 
         while (entry != nullptr) {
             if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-                auto name = (file.name == ".") ? file.path + "/" + entry->d_name : file.filename + "/" + entry->d_name;
+                auto name = (file.name() == ".") ? file.path() + "/" + entry->d_name : file.filename() + "/" + entry->d_name;
                 res.push_back(File(name));
             }
 
@@ -785,39 +997,55 @@ Files read_dir(std::string path) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-Files read_dir_rec(std::string path) {
+/** @brief Read directory and all child directories.
+*
+* @param[in] path  Path to directory.
+*
+* @return Vector with files.
+*/
+Files read_dir_rec(const std::string& path) {
     auto res   = Files();
     auto files = file::read_dir(path);
 
-    _file_read_dir_rec(res, files);
+    file::_read_dir_rec(res, files);
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Redirecting stderr to file.
+*
+* @return True if ok.
+*/
 bool redirect_stderr() {
-    return _file_open_redirect(2);
+    return _open_redirect(2);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Redirecting stdout to file.
+*
+* @return True if ok.
+*/
 bool redirect_stdout() {
-    return _file_open_redirect(1);
+    return _open_redirect(1);
 }
 
-//------------------------------------------------------------------------------
-bool remove(std::string path) {
+/** @brief Remove file or directory.
+*
+* @param[in] path  Path to file/directory.
+*
+* @return True if deleted, missing file or failure will return false.
+*/
+bool remove(const std::string& path) {
     auto f = File(path);
 
-    if (f.type == TYPE::MISSING && f.link == false) {
+    if (f.type() == TYPE::MISSING && f.is_link() == false) {
         return false;
     }
 
     auto res = false;
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(path.c_str());
+    auto wpath = file::_to_wide(path.c_str());
 
-    if (f.type == TYPE::DIR) {
+    if (f.type() == TYPE::DIR) {
         res = RemoveDirectoryW(wpath);
     }
     else {
@@ -825,7 +1053,7 @@ bool remove(std::string path) {
     }
 
     if (res == false) {
-        if (f.type == TYPE::DIR) {
+        if (f.type() == TYPE::DIR) {
             file::chmod(path, file::DEFAULT_DIR_MODE);
             res = RemoveDirectoryW(wpath);
         }
@@ -837,7 +1065,7 @@ bool remove(std::string path) {
 
     free(wpath);
 #else
-    if (f.type == TYPE::DIR && f.link == false) {
+    if (f.type() == TYPE::DIR && f.is_link() == false) {
         res = ::rmdir(path.c_str()) == 0;
     }
     else {
@@ -848,11 +1076,18 @@ bool remove(std::string path) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-bool remove_rec(std::string path) {
+/** @brief Remove file or directory.
+*
+* If it is a directory all its child directories will be deleted.
+*
+* @param[in] path  Path to file/directory.
+*
+* @return True if deleted, missing file or failure will return false.
+*/
+bool remove_rec(const std::string& path) {
     auto file = File(path, true);
 
-    if (file == file::home_dir() || file.path == "") {
+    if (file == file::home_dir() || file.path() == "") {
         return false;
     }
 
@@ -861,14 +1096,20 @@ bool remove_rec(std::string path) {
     std::reverse(files.begin(), files.end());
 
     for (const auto& file : files) {
-        file::remove(file.filename);
+        file::remove(file.filename());
     }
 
     return file::remove(path);
 }
 
-//------------------------------------------------------------------------------
-bool rename(std::string from, std::string to) {
+/** @brief Rename file or directory.
+*
+* @param[in] from  Source path.
+* @param[in] to    Destination path.
+*
+* @return True if ok.
+*/
+bool rename(const std::string& from, const std::string& to) {
     auto res    = false;
     auto from_f = File(from);
     auto to_f   = File(to);
@@ -878,14 +1119,14 @@ bool rename(std::string from, std::string to) {
     }
 
 #ifdef _WIN32
-    auto wfrom = _file_to_wide(from_f.filename.c_str());
-    auto wto   = _file_to_wide(to_f.filename.c_str());
+    auto wfrom = file::_to_wide(from_f.filename().c_str());
+    auto wto   = file::_to_wide(to_f.filename().c_str());
 
-    if (to_f.type == TYPE::DIR) {
-        file::remove_rec(to_f.filename);
+    if (to_f.type() == TYPE::DIR) {
+        file::remove_rec(to_f.filename());
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
     }
-    else if (to_f.type == TYPE::MISSING) {
+    else if (to_f.type() == TYPE::MISSING) {
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
     }
     else {
@@ -895,20 +1136,27 @@ bool rename(std::string from, std::string to) {
     free(wfrom);
     free(wto);
 #else
-    if (to_f.type == TYPE::DIR) {
-        file::remove_rec(to_f.filename);
+    if (to_f.type() == TYPE::DIR) {
+        file::remove_rec(to_f.filename());
     }
 
-    res = ::rename(from_f.filename.c_str(), to_f.filename.c_str()) == 0;
+    res = ::rename(from_f.filename().c_str(), to_f.filename().c_str()) == 0;
 #endif
 
     return res;
 }
 
-//------------------------------------------------------------------------------
-int run(std::string cmd, bool background, bool hide_win32_window) {
+/** @brief Run a command.
+*
+* @param[in] cmd                Command line arguments.
+* @param[in] background         Run in backgrund as a separate process.
+* @param[in] hide_win32_window  True to hide window (does int work?).
+*
+* @return Return code from process or 1 for error.
+*/
+int run(const std::string& cmd, bool background, bool hide_win32_window) {
 #ifdef _WIN32
-    wchar_t*            cmd_w = _file_to_wide(cmd.c_str());
+    wchar_t*            cmd_w = file::_to_wide(cmd.c_str());
     STARTUPINFOW        startup_info;
     PROCESS_INFORMATION process_info;
 
@@ -949,90 +1197,107 @@ int run(std::string cmd, bool background, bool hide_win32_window) {
 #endif
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get temp directory.
+*
+* @return Tmp path.
+*/
 File tmp_dir() {
-    std::string res;
-
     try {
 #if defined(_WIN32)
         auto path = std::filesystem::temp_directory_path();
-        auto utf  = _file_from_wide(path.c_str());
-        res = utf;
+        auto utf  = file::_from_wide(path.c_str());
+        auto res = File(utf);
         free(utf);
+        return res;
 #elif defined(__APPLE__)
-        res = "/tmp";
+        return File("/tmp");
 #else
         auto path = std::filesystem::temp_directory_path();
-        res = path.c_str();
+        return File(path);
 #endif
     }
     catch(...) {
-        return file::work_dir();
     }
 
-    return File(res);
+    return file::work_dir();
 }
 
-//------------------------------------------------------------------------------
-File tmp_file(std::string prepend) {
-    assert(prepend.length() < 50);
-
+/** @brief Get temp file.
+*
+* @return Tmp path.
+*/
+File tmp_file(const std::string& prepend) {
     char buf[100];
-    snprintf(buf, 100, "%s%04d%04d%04d", prepend.c_str(), _file_rand(), _file_rand(), _file_rand());
-    return File(tmp_dir().filename + "/" + buf);
+    snprintf(buf, 100, "%u", file::_rand());
+    std::string res = prepend + buf;
+    return File(tmp_dir().filename() + "/" + res);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get working directory.
+*
+* @return Working directory or "." for any error.
+*/
 File work_dir() {
-    std::string res;
-
 #ifdef _WIN32
     auto wpath = _wgetcwd(nullptr, 0);
 
     if (wpath != nullptr) {
-        auto path = _file_from_wide(wpath);
+        auto path = file::_from_wide(wpath);
+        auto res  = File(path);
+
         free(wpath);
-        res = path;
         free(path);
+
+        return res;
     }
 #else
     auto path = getcwd(nullptr, 0);
 
     if (path != nullptr) {
-        res = path;
+        auto res = File(path);
         free(path);
+        return res;
     }
 #endif
 
-    return File(res);
+    return File(".");
 }
 
-//------------------------------------------------------------------------------
-bool write(std::string filename, const char* in, size_t in_size, bool flush_write) {
-    if (File(filename).type == TYPE::DIR) {
+/**
+* @brief Write data to file.
+*
+* @param[in] path    Destination filename.
+* @param[in] buffer  Buffer to write.
+* @param[in] size    Buffer size.
+* @param[in] flush   True to flush after write.
+*
+* @return True if ok.
+*/
+bool write(const std::string& path, const char* buffer, size_t size, bool flush) {
+    if (File(path).type() == TYPE::DIR) {
         return false;
     }
 
-    auto tmpfile = filename + ".~tmp";
+    auto tmpfile = path + ".~tmp";
     auto file    = file::open(tmpfile, "wb");
 
     if (file == nullptr) {
         return false;
     }
 
-    auto wrote = fwrite(in, 1, in_size, file);
-    
-    if (flush_write == true) {
+    auto wrote = fwrite(buffer, 1, size, file);
+
+    if (flush == true) {
         file::flush(file);
     }
-    
+
     fclose(file);
 
-    if (wrote != in_size) {
+    if (wrote != size) {
         file::remove(tmpfile);
         return false;
     }
-    else if (file::rename(tmpfile, filename) == false) {
+    else if (file::rename(tmpfile, path) == false) {
         file::remove(tmpfile);
         return false;
     }
@@ -1040,9 +1305,16 @@ bool write(std::string filename, const char* in, size_t in_size, bool flush_writ
     return true;
 }
 
-//------------------------------------------------------------------------------
-bool write(std::string filename, const Buf& b, bool flush_write) {
-    return write(filename, b.p, b.s, flush_write);
+/**
+* @brief Write data to file.
+*
+* @param[in] path  Destination filename.
+* @param[in] buf   Buffer to write.
+*
+* @return True if ok.
+*/
+bool write(const std::string& path, const Buf& b, bool flush) {
+    return write(path, b.c_str(), b.size(), flush);
 }
 
 /***
@@ -1056,77 +1328,121 @@ bool write(std::string filename, const Buf& b, bool flush_write) {
  *
  */
 
-//------------------------------------------------------------------------------
-Buf::Buf(size_t S) {
-    p = file::allocate(nullptr, S + 1);
-    s = S;
+/**
+* @brief Create new buffer.
+*
+* One extra bytes is automatically allocated.
+*
+* @param[in] size  Number of bytes.
+*/
+Buf::Buf(size_t size) {
+    _str = file::allocate(nullptr, size + 1);
+    _size = size;
 }
 
-//------------------------------------------------------------------------------
-Buf::Buf(const char* P, size_t S) {
-    if (P == nullptr) {
-        p = nullptr;
-        s = 0;
-        return;
+/**
+* @brief Create new buffer and copy indata.
+*
+* One extra bytes is automatically allocated if input buffer is not NULL.
+*
+* @param[in] buffer  Buffer, if NULL then nothing will be allocated.
+* @param[in] size    Number of bytes.
+*/
+Buf::Buf(const char* buffer, size_t size) {
+    if (buffer == nullptr) {
+        _str  = nullptr;
+        _size = 0;
     }
+    else {
+        _str  = file::allocate(nullptr, size + 1);
+        _size = size;
 
-    p = file::allocate(nullptr, S + 1);
-    s = S;
-    std::memcpy(p, P, S);
+        std::memcpy(_str, buffer, size);
+    }
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief Create new buffer and copy indata.
+*
+* One extra bytes is automatically allocated if input buffer is not NULL.
+*
+* @param[in] b  Buffer object to copy.
+*/
 Buf::Buf(const Buf& b) {
-    if (b.p == nullptr) {
-        p = nullptr;
-        s = 0;
-        return;
+    if (b._str == nullptr) {
+        _str  = nullptr;
+        _size = 0;
     }
+    else {
+        _str  = file::allocate(nullptr, b._size + 1);
+        _size = b._size;
 
-    p = file::allocate(nullptr, b.s + 1);
-    s = b.s;
-    std::memcpy(p, b.p, b.s);
+        std::memcpy(_str, b._str, b._size);
+    }
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief Compare two objects.
+*
+* @param[in] other  Object to compare with.
+*
+* @return True if equal, same size and equal bytes.
+*/
 bool Buf::operator==(const Buf& other) const {
-    return p != nullptr && s == other.s && std::memcmp(p, other.p, s) == 0;
+    return _str != nullptr && _size == other._size && std::memcmp(_str, other._str, _size) == 0;
 }
 
-//------------------------------------------------------------------------------
-Buf& Buf::add(const char* P, size_t S) {
-    if (p == P || P == nullptr) {
+/**
+* @brief Add buffer to object.
+*
+* If internal buffer is NULL then new memory will be allocated.
+*
+* @param[in] buffer  Buffer, if NULL then nothing will be added.
+* @param[in] size    Number of bytes.
+*
+* @return True if equal, same size and equal bytes.
+*/
+Buf& Buf::add(const char* buffer, size_t size) {
+    if (_str == buffer || buffer == nullptr) {
     }
-    else if (p == nullptr) {
-        p = file::allocate(nullptr, S + 1);
-        std::memcpy(p, P, S);
-        s = S;
+    else if (_str == nullptr) {
+        _str = file::allocate(nullptr, size + 1);
+        std::memcpy(_str, buffer, size);
+        _size = size;
     }
-    else if (S > 0) {
-        auto t = file::allocate(nullptr, s + S + 1);
-        std::memcpy(t, p, s);
-        std::memcpy(t + s, P, S);
-        free(p);
-        p = t;
-        s += S;
+    else if (size > 0) {
+        auto t = file::allocate(nullptr, _size + size + 1);
+        std::memcpy(t, _str, _size);
+        std::memcpy(t + _size, buffer, size);
+        free(_str);
+        _str = t;
+        _size += size;
     }
 
     return *this;
 }
 
-//------------------------------------------------------------------------------
-void Buf::Count(const char* P, size_t S, size_t count[257]) {
+/**
+* @brief Count all bytes.
+*
+* Last byte, count[256] will be set to longest line.
+*
+* @param[in] buffer  Buffer, if NULL then nothing will be added.
+* @param[in] size    Number of bytes.
+* @param[in] count   Destination array.
+*/
+void Buf::Count(const char* buffer, size_t size, size_t count[257]) {
     auto max_line     = 0;
     auto current_line = 0;
 
     std::memset(count, 0, sizeof(size_t) * 257);
 
-    if (P == nullptr) {
+    if (buffer == nullptr) {
         return;
     }
 
-    for (size_t f = 0; f < S; f++) {
-        auto c = (unsigned char) P[f];
+    for (size_t f = 0; f < size; f++) {
+        auto c = (unsigned char) buffer[f];
 
         count[c] += 1;
 
@@ -1145,20 +1461,28 @@ void Buf::Count(const char* P, size_t S, size_t count[257]) {
     count[256] = max_line;
 }
 
-//------------------------------------------------------------------------------
-// Remove (optional) trailing space and insert (optional) \r for every \n.
-// Returns Buf with NULL p if nothing has been changed or invalid arguments.
-//
-Buf Buf::InsertCR(const char* P, size_t S, bool dos, bool trailing) {
-    if (P == nullptr || S == 0 || (trailing == false && dos == false)) {
+/**
+* @brief Remove (optional) trailing space and insert (optional) "\r" for every "\n".
+*
+* For text only.
+*
+* @param[in] buffer    Input buffer.
+* @param[in] size      Buffer size.
+* @param[in] dos       Insert "\r" for every "\n".
+* @param[in] trailing  True to remove trailing whitespace.
+*
+* @return Converted text or an object with NULL data if "trailing" and "dos" is false.
+*/
+Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
+    if (buffer == nullptr || size == 0 || (trailing == false && dos == false)) {
         return Buf();
     }
 
-    auto res_size = S;
+    auto res_size = size;
 
     if (dos == true) { // Count lines.
-        for (size_t f = 0; f < S; f++) {
-            res_size += (P[f] == '\n');
+        for (size_t f = 0; f < size; f++) {
+            res_size += (buffer[f] == '\n');
         }
     }
 
@@ -1167,8 +1491,8 @@ Buf Buf::InsertCR(const char* P, size_t S, bool dos, bool trailing) {
     auto res_pos = (size_t) 0;
     auto p       = (unsigned char) 0;
 
-    for (size_t f = 0; f < S; f++) {
-        auto c = (unsigned char) P[f];
+    for (size_t f = 0; f < size; f++) {
+        auto c = (unsigned char) buffer[f];
 
         if (trailing == true) {
             if (c == '\n') {
@@ -1204,46 +1528,67 @@ Buf Buf::InsertCR(const char* P, size_t S, bool dos, bool trailing) {
     return Buf::Grab(res, res_pos);
 }
 
-//------------------------------------------------------------------------------
-Buf Buf::RemoveCR(const char* P, size_t S) {
-    auto res = Buf(S);
+/**
+* @brief Remove "\r" from text.
+*
+* @param[in] buffer  Input buffer.
+* @param[in] size    Buffer size.
+*
+* @return Converted text.
+*/
+Buf Buf::RemoveCR(const char* buffer, size_t size) {
+    auto res = Buf(size);
 
-    for (size_t f = 0, e = 0; f < S; f++) {
-        auto c = P[f];
+    for (size_t f = 0, e = 0; f < size; f++) {
+        auto c = buffer[f];
 
         if (c != 13) {
-            res.p[e++] = c;
+            res._str[e++] = c;
         }
         else {
-            res.s--;
+            res._size--;
         }
     }
 
     return res;
 }
 
-//------------------------------------------------------------------------------
-Buf& Buf::set(const char* P, size_t S) {
-    if (p == P) {
+/**
+* @brief Set new data.
+*
+* @param[in] buffer  Copy this buffer.
+* @param[in] size    Buffer size.
+*
+* @return This object.
+*/
+Buf& Buf::set(const char* buffer, size_t size) {
+    if (_str == buffer) {
     }
-    else if (P == nullptr) {
-        free(p);
-        p = nullptr;
-        s = 0;
+    else if (buffer == nullptr) {
+        free(_str);
+        _str = nullptr;
+        _size = 0;
     }
     else {
-        free(p);
-        p = file::allocate(nullptr, S + 1);
-        s = S;
-        std::memcpy(p, P, S);
+        free(_str);
+        _str = file::allocate(nullptr, size + 1);
+        _size = size;
+        std::memcpy(_str, buffer, size);
     }
 
     return *this;
 }
 
-//------------------------------------------------------------------------------
-bool Buf::write(std::string filename, bool flush_write) const {
-    return file::write(filename, p, s, flush_write);
+/**
+* @brief Write buffer to file.
+*
+* @param[in] path   Path to write to.
+* @param[in] flush  True to flush file (default true).
+*
+* @return True if ok.
+*/
+bool Buf::write(const std::string& path, bool flush) const {
+    return file::write(path, _str, _size, flush);
 }
 
 /***
@@ -1257,85 +1602,61 @@ bool Buf::write(std::string filename, bool flush_write) const {
  *
  */
 
-//------------------------------------------------------------------------------
-bool File::is_circular() const {
-    if (type == TYPE::DIR && link == true) {
-        auto l = canonical_name() + "/";
-        return filename.find(l) == 0;
+/**
+* @brief Create file object.
+*
+* @param[in] path      File path.
+* @param[in] realpath  True to use the real path if it is an link.
+*/
+File::File(const std::string& path, bool realpath) {
+    _ctime = -1;
+    _link  = false;
+    _mode  = -1;
+    _mtime = -1;
+    _size  = -1;
+    _type  = TYPE::MISSING;
+
+    if (path != "") {
+        _filename = file::_to_absolute_path(path, realpath);
+        file::_split_paths(_filename, _path, _name, _ext);
     }
-
-    return false;
-}
-
-//------------------------------------------------------------------------------
-std::string File::linkname() const {
-#ifdef _WIN32
-    return "";
-#else
-    char tmp[PATH_MAX + 1];
-    auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
-
-    if (tmp_size > 0 && tmp_size < PATH_MAX) {
-        tmp[tmp_size] = 0;
-        return path + "/" + tmp;
-    }
-
-    return "";
-#endif
-}
-
-//------------------------------------------------------------------------------
-std::string File::name_without_ext() const {
-    auto dot = name.find_last_of(".");
-    return (dot == std::string::npos) ? name : name.substr(0, dot);
-}
-
-//------------------------------------------------------------------------------
-File& File::update() {
-    ctime = -1;
-    link  = false;
-    mode  = -1;
-    mtime = -1;
-    size  = -1;
-    type  = TYPE::MISSING;
-
-    if (filename == "") {
-        return *this;
+    else {
+        return;
     }
 
 #ifdef _WIN32
-    auto wpath = _file_to_wide(filename.c_str());
+    auto wpath = file::_to_wide(_filename.c_str());
 
     WIN32_FILE_ATTRIBUTE_DATA attr;
 
     if (GetFileAttributesExW(wpath, GetFileExInfoStandard, &attr) != 0) {
         if (attr.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            type = TYPE::DIR;
-            size = 0;
+            _type = TYPE::DIR;
+            _size = 0;
         }
         else {
-            type = TYPE::FILE;
-            size = (attr.nFileSizeHigh * 4294967296) + attr.nFileSizeLow;
+            _type = TYPE::FILE;
+            _size = (attr.nFileSizeHigh * 4294967296) + attr.nFileSizeLow;
         }
 
-        mtime = _file_time(&attr.ftLastWriteTime);
-        ctime = _file_time(&attr.ftCreationTime);
+        _mtime = file::_time(&attr.ftLastWriteTime);
+        _ctime = file::_time(&attr.ftCreationTime);
 
         if (attr.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            link = true;
+            _link = true;
 
             HANDLE handle = CreateFileW(wpath, 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
             if (handle != INVALID_HANDLE_VALUE) {
-                size = GetFileSize(handle, NULL);
+                _size = GetFileSize(handle, NULL);
 
                 FILETIME ftCreationTime;
                 FILETIME ftLastAccessTime;
                 FILETIME ftLastWriteTime;
 
                 if (GetFileTime(handle, &ftCreationTime, &ftLastAccessTime, &ftLastWriteTime) != 0) {
-                    mtime = _file_time(&ftLastWriteTime);
-                    ctime = _file_time(&ftCreationTime);
+                    _mtime = file::_time(&ftLastWriteTime);
+                    _ctime = file::_time(&ftCreationTime);
                 }
 
                 CloseHandle(handle);
@@ -1348,86 +1669,125 @@ File& File::update() {
     struct stat st;
     char        tmp[PATH_MAX + 1];
 
-    if (::stat(filename.c_str(), &st) == 0) {
-        size  = st.st_size;
-        ctime = st.st_ctime;
-        mtime = st.st_mtime;
+    if (::stat(_filename.c_str(), &st) == 0) {
+        _size  = st.st_size;
+        _ctime = st.st_ctime;
+        _mtime = st.st_mtime;
 
         if (S_ISDIR(st.st_mode)) {
-            type = TYPE::DIR;
+            _type = TYPE::DIR;
         }
         else if (S_ISREG(st.st_mode)) {
-            type = TYPE::FILE;
+            _type = TYPE::FILE;
         }
         else {
-            type = TYPE::OTHER;
+            _type = TYPE::OTHER;
         }
-
 
         snprintf(tmp, PATH_MAX, "%o", st.st_mode);
         auto l = strlen(tmp);
 
         if (l > 2) {
-            mode = strtol(tmp + (l - 3), nullptr, 8);
+            _mode = strtol(tmp + (l - 3), nullptr, 8);
         }
 
-        if (lstat(filename.c_str(), &st) == 0 && S_ISLNK(st.st_mode)) {
-            link = true;
+        if (lstat(_filename.c_str(), &st) == 0 && S_ISLNK(st.st_mode)) {
+            _link = true;
         }
     }
     else {
-        auto tmp_size = readlink(filename.c_str(), tmp, PATH_MAX);
+        auto tmp_size = readlink(_filename.c_str(), tmp, PATH_MAX);
 
         if (tmp_size > 0 && tmp_size < PATH_MAX) {
-            link = true;
+            _link = true;
         }
     }
 #endif
 
-    return *this;
+    if (_type == TYPE::DIR) {
+        _ext = "";
+    }
 }
 
-//------------------------------------------------------------------------------
-File& File::update(std::string in, bool realpath) {
-    filename = (in != "") ? _file_to_absolute_path(in, realpath) : "";
-    _file_split_paths(filename, path, name, ext);
-    update();
-    return *this;
+/**
+* @brief Read link name (not for windows).
+*
+* @return Link name, if not an link it will return a empty string.
+*/
+std::string File::linkname() const {
+#ifdef _WIN32
+    return "";
+#else
+    char tmp[PATH_MAX + 1];
+    auto tmp_size = readlink(_filename.c_str(), tmp, PATH_MAX);
+
+    if (tmp_size > 0 && tmp_size < PATH_MAX) {
+        tmp[tmp_size] = 0;
+        return _path + "/" + tmp;
+    }
+
+    return "";
+#endif
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief If file is not and directory return name without the extension.
+*
+* @return Name without extension.
+*/
+std::string File::name_without_ext() const {
+    if (_type != TYPE::DIR) {
+        auto dot = _name.find_last_of(".");
+        return (dot == std::string::npos) ? _name : _name.substr(0, dot);
+    }
+    else {
+        return _name;
+    }
+}
+
+/**
+* @brief Return a file info string.
+*
+* @param[in] short_version  True to make result string shorter.
+*
+* @return String with name and size.
+*/
 std::string File::to_string(bool short_version) const {
     char tmp[PATH_MAX + 100];
     int n = 0;
 
     if (short_version == true) {
         n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, type=%s, %ssize=%lld, mtime=%lld)",
-            filename.c_str(),
+            _filename.c_str(),
             type_name().c_str(),
-            link ? "LINK, " : "",
-            (long long int) size,
-            (long long int) mtime);
+            _link ? "LINK, " : "",
+            (long long int) _size,
+            (long long int) _mtime);
     }
     else {
         n = snprintf(tmp, PATH_MAX + 100, "File(filename=%s, name=%s, ext=%s, path=%s, type=%s, link=%s, size=%lld, mtime=%lld, mode=%o)",
-            filename.c_str(),
-            name.c_str(),
-            ext.c_str(),
-            path.c_str(),
+            _filename.c_str(),
+            _name.c_str(),
+            _ext.c_str(),
+            _path.c_str(),
             type_name().c_str(),
-            link ? "YES" : "NO",
-            (long long int) size,
-            (long long int) mtime,
-            mode > 0 ? mode : 0);
+            _link ? "YES" : "NO",
+            (long long int) _size,
+            (long long int) _mtime,
+            _mode > 0 ? _mode : 0);
     }
 
     return (n > 0 && n < PATH_MAX + 100) ? tmp : "";
 }
 
-//------------------------------------------------------------------------------
+/**
+* @brief Return type name in english.
+*
+* @return "Missing", Directory", "File" or "Other".
+*/
 std::string File::type_name() const {
     static const char* NAMES[] = { "Missing", "Directory", "File", "Other", "", };
-    return NAMES[static_cast<size_t>(type)];
+    return NAMES[static_cast<size_t>(_type)];
 }
 
 } // file

@@ -200,7 +200,7 @@ void test_print() {
         else if (r == 1) p = dlg::print_text("dlg::print_text", HAMLET_TEXT);
         else if (r == 2) p = dlg::print_text("dlg::print_text", UTF8_TEXT);
 
-        if (p == true && r >= 0 && gnu::file::File(ps).size > 0) {
+        if (p == true && r >= 0 && gnu::file::File(ps).size() > 0) {
             auto f = system((std::string("evince ") + ps).c_str());
             (void) f;
         }
@@ -297,13 +297,13 @@ void test_print2() {
     auto b1 = gnu::file::read("flw.h");
     auto b2 = gnu::file::read("flw.cpp");
 
-    while (r >= 0 && b1.p && b2.p) {
+    while (r >= 0 && b1.c_str() && b2.c_str()) {
     #ifdef _WIN32
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
-        if (r == 0) dlg::print_text("dlg::print_text", b1.p);
-        else if (r == 1) dlg::print_text("dlg::print_text", b2.p);
+        if (r == 0) dlg::print_text("dlg::print_text", b1.c_str());
+        else if (r == 1) dlg::print_text("dlg::print_text", b2.c_str());
     #else
         std::string ps = "output.ps";
         auto p = false;
@@ -311,10 +311,10 @@ void test_print2() {
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
-        if (r == 0) p = dlg::print_text("dlg::print_text", b1.p);
-        else if (r == 1) p = dlg::print_text("dlg::print_text", b2.p);
+        if (r == 0) p = dlg::print_text("dlg::print_text", b1.c_str());
+        else if (r == 1) p = dlg::print_text("dlg::print_text", b2.c_str());
 
-        if (p == true && r >= 0 && gnu::file::File(ps).size > 0) {
+        if (p == true && r >= 0 && gnu::file::File(ps).size() > 0) {
             auto f = system((std::string("evince ") + ps).c_str());
             (void) f;
         }
