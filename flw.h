@@ -235,7 +235,7 @@ public:
     size_t                      size() const
                                     { return _size; }
     void                        size(size_t new_size)
-                                    { assert(new_size < _size); _size = new_size; }
+                                    { assert(new_size <= _size); _size = new_size; }
     char*                       str()
                                     { return _str; }
     bool                        write(const std::string& path, bool flush = true) const;
