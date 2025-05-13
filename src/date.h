@@ -83,7 +83,7 @@ public:
     explicit                    Date(Date::UTC utc = Date::UTC::OFF);
                                 Date(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
     explicit                    Date(int64_t unix_time, Date::UTC utc = Date::UTC::OFF);
-    explicit                    Date(std::string date, Date::US us = Date::US::OFF);
+    explicit                    Date(const std::string& date, Date::US us = Date::US::OFF);
     bool                        operator<(const Date& other) const
                                     { return compare(other) < 0 ? true : false; }
     bool                        operator<=(const Date& other) const
@@ -129,7 +129,7 @@ public:
     int                         second() const
                                     { return _sec; }
     Date&                       set(const Date& other);
-    Date&                       set(std::string date, Date::US us = Date::US::OFF);
+    Date&                       set(const std::string& date, Date::US us = Date::US::OFF);
     Date&                       set(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
     Date&                       set_day(int day);
     Date&                       set_day_to_last_in_month()

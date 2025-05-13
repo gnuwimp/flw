@@ -57,7 +57,7 @@ public:
     explicit                    Date(Date::UTC utc = Date::UTC::OFF);
                                 Date(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
     explicit                    Date(int64_t unix_time, Date::UTC utc = Date::UTC::OFF);
-    explicit                    Date(std::string date, Date::US us = Date::US::OFF);
+    explicit                    Date(const std::string& date, Date::US us = Date::US::OFF);
     bool                        operator<(const Date& other) const
                                     { return compare(other) < 0 ? true : false; }
     bool                        operator<=(const Date& other) const
@@ -103,7 +103,7 @@ public:
     int                         second() const
                                     { return _sec; }
     Date&                       set(const Date& other);
-    Date&                       set(std::string date, Date::US us = Date::US::OFF);
+    Date&                       set(const std::string& date, Date::US us = Date::US::OFF);
     Date&                       set(int year, int month, int day, int hour = 0, int min = 0, int sec = 0);
     Date&                       set_day(int day);
     Date&                       set_day_to_last_in_month()
@@ -137,12 +137,12 @@ private:
 #include <cstring>
 #include <string>
 #include <vector>
+#include <array>
 namespace gnu {
 namespace file {
 class File;
-struct Buf;
+class Buf;
 typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
-typedef std::vector<File> Files;
 enum class TYPE {
                                 MISSING,
                                 DIR,
@@ -156,7 +156,7 @@ enum class TYPE {
     static const int            DEFAULT_DIR_MODE  = 0755;
     static const int            DEFAULT_FILE_MODE = 0664;
 #endif
-char*                           allocate(char* resize_or_null, size_t size, bool exception = true);
+char*                           allocate(char* resize_or_null, size_t size);
 std::string                     canonical_name(const std::string& path);
 bool                            chdir(const std::string& path);
 std::string                     check_filename(const std::string& name);
@@ -165,7 +165,7 @@ bool                            chtime(const std::string& path, int64_t time);
 Buf                             close_stderr();
 Buf                             close_stdout();
 bool                            copy(const std::string& from, const std::string& to, CallbackCopy callback = nullptr, void* data = nullptr, bool flush_write = true);
-uint64_t                        fletcher64(const char* p, size_t s);
+uint64_t                        fletcher64(const char* buffer, size_t buffer_size);
 void                            flush(FILE* file);
 File                            home_dir();
 bool                            is_circular(const std::string& path);
@@ -175,8 +175,8 @@ std::string                     os();
 FILE*                           popen(const std::string& cmd, bool write = false);
 Buf                             read(const std::string& path);
 Buf*                            read2(const std::string& path);
-Files                           read_dir(const std::string& path);
-Files                           read_dir_rec(const std::string& path);
+std::vector<File>               read_dir(const std::string& path);
+std::vector<File>               read_dir_rec(const std::string& path);
 bool                            redirect_stderr();
 bool                            redirect_stdout();
 bool                            remove(const std::string& path);
@@ -187,7 +187,7 @@ File                            tmp_dir();
 File                            tmp_file(const std::string& prepend = "");
 File                            work_dir();
 bool                            write(const std::string& path, const char* buffer, size_t size, bool flush = true);
-bool                            write(const std::string& path, const Buf& b, bool flush = true);
+bool                            write(const std::string& path, const Buf& buf, bool flush = true);
 class Buf {
 public:
                                 Buf()
@@ -201,6 +201,10 @@ public:
                                     { _str = nullptr; add(string.c_str(), string.length()); }
     virtual                     ~Buf()
                                     { free(_str); }
+    unsigned char&              operator[](size_t index)
+                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; }
+    unsigned char               operator[](size_t index) const
+                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; }
     Buf&                        operator=(const Buf& b)
                                     { return set(b._str, b._size); }
     Buf&                        operator=(Buf&& b)
@@ -217,10 +221,10 @@ public:
                                     { return _str; }
     void                        clear()
                                     { free(_str); _str = nullptr; _size = 0; }
-    void                        count(size_t count[257]) const
-                                    { Buf::Count(_str, _size, count); }
+    std::array<size_t, 257>     count() const
+                                    { return Buf::Count(_str, _size); }
     void                        debug() const
-                                    { printf("gnu::Buf(0x%p, %u)\n", _str, (unsigned) _size); }
+                                    { printf("gnu::Buf(0x%p, %llu)\n", _str, (long long unsigned) _size); }
     uint64_t                    fletcher64() const
                                     { return file::fletcher64(_str, _size); }
     Buf&                        grab(char* buffer, size_t size)
@@ -234,12 +238,12 @@ public:
     Buf&                        set(const char* buffer, size_t size);
     size_t                      size() const
                                     { return _size; }
-    void                        size(size_t new_size)
-                                    { assert(new_size <= _size); _size = new_size; }
+    void                        size(size_t size)
+                                    {  if (size >= _size) throw std::string("error: gnu::file::Buf::size(): size is out of range"); _size = size; }
     char*                       str()
                                     { return _str; }
     bool                        write(const std::string& path, bool flush = true) const;
-    static void                 Count(const char* buffer, size_t size, size_t count[257]);
+    static std::array<size_t, 257> Count(const char* buffer, size_t size);
     static inline Buf           Grab(char* string)
                                     { auto res = Buf(); res._str = string; res._size = strlen(string); return res; }
     static inline Buf           Grab(char* buffer, size_t size)
@@ -291,6 +295,8 @@ public:
     const std::string&          name() const
                                     { return _name; }
     std::string                 name_without_ext() const;
+    const std::string&          parent() const
+                                    { return _path; }
     const std::string&          path() const
                                     { return _path; }
     int64_t                     size() const
@@ -335,6 +341,7 @@ enum class ENCODE : uint8_t {
                                 TRIM,
                                 FLAT,
 };
+static const size_t             MAX_DEPTH = 32;
 class JS;
 typedef std::map<std::string, JS*> JSObject;
 typedef std::vector<JS*> JSArray;
@@ -350,7 +357,6 @@ class JS {
     friend JS                   decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check);
     friend std::string          encode(const JS* js, ENCODE option);
 public:
-    static const size_t         MAX_DEPTH = 32;
                                 JS(const JS&) = delete;
     JS&                         operator=(const JS&) = delete;
                                 JS();
@@ -361,8 +367,8 @@ public:
                                     { return _type == type; }
     bool                        operator!=(TYPE type) const
                                     { return _type != type; }
-    const JS*                   operator[](std::string name) const
-                                    { return _get_object(name.c_str(), true); }
+    const JS*                   operator[](const std::string& name) const
+                                    { return _get_value(name.c_str(), true); }
     const JS*                   operator[](size_t index) const
                                     { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
     void                        debug() const;
@@ -370,9 +376,9 @@ public:
                                     { return (_type == TYPE::ERR) ? _vs : ""; }
     const char*                 err_c() const
                                     { return (_type == TYPE::ERR) ? _vs : ""; }
-    const JS*                   find(std::string name, bool rec = false) const;
-    const JS*                   get(std::string name, bool escape_name = true) const
-                                    { return _get_object(name.c_str(), escape_name); }
+    const JS*                   find(const std::string& name, bool rec = false) const;
+    const JS*                   get(const std::string& name, bool escape_name = true) const
+                                    { return _get_value(name.c_str(), escape_name); }
     const JS*                   get(size_t index) const
                                     { return (*this) [index]; }
     bool                        has_err() const
@@ -432,17 +438,17 @@ public:
 private:
                                 JS(const char* name, JS* parent = nullptr, unsigned pos = 0);
     bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
-    bool                        _add_nil(char** sVal1, bool ignore_duplicates, unsigned pos);
+    bool                        _add_null(char** sVal1, bool ignore_duplicates, unsigned pos);
     bool                        _add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos);
     bool                        _add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos);
     void                        _clear(bool name);
-    const JS*                   _get_object(const char* name, bool escape) const;
+    const JS*                   _get_value(const char* name, bool escape) const;
     void                        _set_err(const std::string& err);
-    bool                        _set_object(const char* name, JS* js, bool ignore_duplicates);
+    bool                        _set_value(const char* name, JS* js, bool ignore_duplicates);
     void                        _set_child_parent_to_me();
     static JS*                  _MakeArray(const char* name, JS* parent, unsigned pos);
     static JS*                  _MakeBool(const char* name, bool vb, JS* parent, unsigned pos);
-    static JS*                  _MakeNil(const char* name, JS* parent, unsigned pos);
+    static JS*                  _MakeNull(const char* name, JS* parent, unsigned pos);
     static JS*                  _MakeNumber(const char* name, double vn, JS* parent, unsigned pos);
     static JS*                  _MakeObject(const char* name, JS* parent, unsigned pos);
     static JS*                  _MakeString(const char* name, const char* vs, JS* parent, unsigned pos);
@@ -485,7 +491,7 @@ public:
     static JS*                  MakeObject(const char* name = "", bool escape = true);
     static JS*                  MakeObjectInline(const char* name = "", bool escape = true);
     static JS*                  MakeString(const char* vs, const char* name = "", bool escape = true);
-    static JS*                  MakeString(std::string vs, const char* name = "", bool escape = true);
+    static JS*                  MakeString(const std::string& vs, const char* name = "", bool escape = true);
 private:
     JS*                         _current;
     JS*                         _root;

@@ -62,7 +62,7 @@ static bool                 _open_redirect(int type);
 static unsigned             _rand();
 static void                 _read(const std::string& path, Buf& buf);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _read_dir_rec(Files& res, Files& files);
+static void                 _read_dir_rec(std::vector<File>& res, std::vector<File>& files);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
 static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
 static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
@@ -102,6 +102,7 @@ static Buf _close_redirect(int type) {
 
     auto res = file::read(fname);
     file::remove(fname);
+
     return res;
 }
 
@@ -117,6 +118,7 @@ static char* _from_wide(const wchar_t* wstring) {
     auto out     = file::allocate(nullptr, out_len + 1);
 
     WideCharToMultiByte(CP_UTF8, 0, wstring, -1, (LPSTR) out, out_len, nullptr, nullptr);
+
     return (char*) out;
 }
 #endif
@@ -156,8 +158,13 @@ static bool _open_redirect(int type) {
         res = freopen(fname.c_str(), "wb", fhandle) != nullptr;
 #endif
 
-    if (res == false && type == 1) _STDOUT_NAME = "";
-    else if (res == false && type == 2) _STDERR_NAME = "";
+    if (res == false && type == 1) {
+        _STDOUT_NAME = "";
+    }
+    else if (res == false && type == 2) {
+        _STDERR_NAME = "";
+    }
+
     return res;
 }
 
@@ -167,7 +174,11 @@ static bool _open_redirect(int type) {
 */
 static unsigned _rand() {
     static bool INIT = false;
-    if (INIT == false) srand(time(nullptr));
+
+    if (INIT == false) {
+        srand(time(nullptr));
+    }
+
     INIT = true;
 
     static unsigned long next = 1;
@@ -223,7 +234,7 @@ static void _read(const std::string& path, Buf& buf) {
 * @param[in] res    Result vector.
 * @param[in] files  Files from current directory.
 */
-static void _read_dir_rec(Files& res, Files& files) {
+static void _read_dir_rec(std::vector<File>& res, std::vector<File>& files) {
     for (auto& file : files) {
         res.push_back(file);
 
@@ -242,20 +253,21 @@ static void _read_dir_rec(Files& res, Files& files) {
 *
 * @return Input string.
 */
+
 static std::string& _replace_all(std::string& string, const std::string& find, const std::string& replace) {
-    if (find == "") {
+    if (find.empty() == true) {
         return string;
     }
-    else {
-        size_t start = 0;
 
-        while ((start = string.find(find, start)) != std::string::npos) {
-            string.replace(start, find.length(), replace);
-            start += replace.length();
-        }
+    size_t start = std::string::npos;
 
-        return string;
+    while ((start = string.find(find, start)) != std::string::npos) {
+        printf("\t%s\n", string.c_str());
+        string.replace(start, find.length(), replace);
+        start += replace.length();
     }
+
+    return string;
 }
 
 /** @brief Split full filename.
@@ -435,6 +447,7 @@ static wchar_t* _to_wide(const char* string) {
     auto out     = reinterpret_cast<wchar_t*>(file::allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
 
     MultiByteToWideChar(CP_UTF8, 0, string , -1, out, out_len);
+
     return out;
 }
 #endif
@@ -452,13 +465,17 @@ static wchar_t* _to_wide(const char* string) {
 
 /** @brief Allocate memory.
 *
+* New memory is set to 0.\n
+* But not reallocated memory.\n
+*
 * @param[in] resize_or_null  Pointer for reallocation or NULL to allocate new memory.
 * @param[in] size            Size in bytes.
-* @param[in] exception       True to throw exception for failure.
 *
 * @return Allocated memory, delete with free().
+*
+* @throws std::string exception on error.
 */
-char* allocate(char* resize_or_null, size_t size, bool exception) {
+char* allocate(char* resize_or_null, size_t size) {
     void* res = nullptr;
 
     if (resize_or_null == nullptr) {
@@ -468,8 +485,8 @@ char* allocate(char* resize_or_null, size_t size, bool exception) {
         res = realloc(resize_or_null, size);
     }
 
-    if (res == nullptr && exception == true) {
-        throw "error: memory allocation failed in gnu::file::allocate()";
+    if (res == nullptr) {
+        throw std::string("error: gnu::file::allocate(): memory allocation failed");
     }
 
     return (char*) res;
@@ -708,29 +725,29 @@ bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void*
 
 /** @brief Create fletcher checksum.
 *
-* @param[in] P  Input data.
-* @param[in] S  Data size.
+* @param[in] buffer       Input buffer.
+* @param[in] buffer_size  Buffer size.
 *
 * @return Checksum.
 */
-uint64_t fletcher64(const char* P, size_t S) {
-    if (P == nullptr || S == 0) {
+uint64_t fletcher64(const char* buffer, size_t buffer_size) {
+    if (buffer == nullptr || buffer_size == 0) {
         return 0;
     }
 
-    auto u8data = reinterpret_cast<const uint8_t*>(P);
-    auto dwords = static_cast<uint64_t>(S / 4);
+    auto u8data = reinterpret_cast<const uint8_t*>(buffer);
+    auto dwords = static_cast<uint64_t>(buffer_size / 4);
     auto sum1   = static_cast<uint64_t>(0);
     auto sum2   = static_cast<uint64_t>(0);
     auto data32 = reinterpret_cast<const uint32_t*>(u8data);
     auto left   = static_cast<uint64_t>(0);
 
-    for (size_t f = 0; f < dwords; ++f) {
+    for (uint64_t f = 0; f < dwords; ++f) {
         sum1 = (sum1 + data32[f]) % UINT32_MAX;
         sum2 = (sum2 + sum1) % UINT32_MAX;
     }
 
-    left = S - dwords * 4;
+    left = buffer_size - dwords * 4;
 
     if (left > 0) {
         auto tmp  = static_cast<uint32_t>(0);
@@ -796,7 +813,7 @@ File home_dir() {
 /**
 * @brief Is link to a directory a circular one?
 *
-* @param[in] self  Fi object.
+* @param[in] path  Path to file.
 *
 * @return True if directory is circular.
 */
@@ -938,9 +955,9 @@ Buf* read2(const std::string& path) {
 *
 * @return Vector with files.
 */
-Files read_dir(const std::string& path) {
+std::vector<File> read_dir(const std::string& path) {
     auto file = File(path, false);
-    auto res  = Files();
+    auto res  = std::vector<File>();
 
     if (file.type() != TYPE::DIR || file::is_circular(path) == true) {
         return res;
@@ -1003,8 +1020,8 @@ Files read_dir(const std::string& path) {
 *
 * @return Vector with files.
 */
-Files read_dir_rec(const std::string& path) {
-    auto res   = Files();
+std::vector<File> read_dir_rec(const std::string& path) {
+    auto res   = std::vector<File>();
     auto files = file::read_dir(path);
 
     file::_read_dir_rec(res, files);
@@ -1269,7 +1286,7 @@ File work_dir() {
 * @param[in] path    Destination filename.
 * @param[in] buffer  Buffer to write.
 * @param[in] size    Buffer size.
-* @param[in] flush   True to flush after write.
+* @param[in] flush   True to flush after write, default true.
 *
 * @return True if ok.
 */
@@ -1308,13 +1325,14 @@ bool write(const std::string& path, const char* buffer, size_t size, bool flush)
 /**
 * @brief Write data to file.
 *
-* @param[in] path  Destination filename.
-* @param[in] buf   Buffer to write.
+* @param[in] path   Destination filename.
+* @param[in] buf    Buffer to write.
+* @param[in] flush  True to flush after write, default true.
 *
 * @return True if ok.
 */
-bool write(const std::string& path, const Buf& b, bool flush) {
-    return write(path, b.c_str(), b.size(), flush);
+bool write(const std::string& path, const Buf& buf, bool flush) {
+    return write(path, buf.c_str(), buf.size(), flush);
 }
 
 /***
@@ -1331,11 +1349,17 @@ bool write(const std::string& path, const Buf& b, bool flush) {
 /**
 * @brief Create new buffer.
 *
-* One extra bytes is automatically allocated.
+* One extra byte is automatically allocated.
 *
 * @param[in] size  Number of bytes.
+*
+* @throws std::string exception on error.
 */
 Buf::Buf(size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf(): size out of range");
+    }
+
     _str = file::allocate(nullptr, size + 1);
     _size = size;
 }
@@ -1347,8 +1371,14 @@ Buf::Buf(size_t size) {
 *
 * @param[in] buffer  Buffer, if NULL then nothing will be allocated.
 * @param[in] size    Number of bytes.
+*
+* @throws std::string exception on error.
 */
 Buf::Buf(const char* buffer, size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf(): size out of range");
+    }
+
     if (buffer == nullptr) {
         _str  = nullptr;
         _size = 0;
@@ -1367,6 +1397,8 @@ Buf::Buf(const char* buffer, size_t size) {
 * One extra bytes is automatically allocated if input buffer is not NULL.
 *
 * @param[in] b  Buffer object to copy.
+*
+* @throws std::string exception on error.
 */
 Buf::Buf(const Buf& b) {
     if (b._str == nullptr) {
@@ -1401,8 +1433,14 @@ bool Buf::operator==(const Buf& other) const {
 * @param[in] size    Number of bytes.
 *
 * @return True if equal, same size and equal bytes.
+*
+* @throws std::string exception on error.
 */
 Buf& Buf::add(const char* buffer, size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf:add(): size out of range");
+    }
+
     if (_str == buffer || buffer == nullptr) {
     }
     else if (_str == nullptr) {
@@ -1423,22 +1461,20 @@ Buf& Buf::add(const char* buffer, size_t size) {
 }
 
 /**
-* @brief Count all bytes.
+* @brief Count all bytes in text file.
 *
-* Last byte, count[256] will be set to longest line.
-*
-* @param[in] buffer  Buffer, if NULL then nothing will be added.
+* @param[in] buffer  Buffer to count.
 * @param[in] size    Number of bytes.
-* @param[in] count   Destination array.
+*
+* @return An array with 257 values, value [256] contains byte count for the longest line.
 */
-void Buf::Count(const char* buffer, size_t size, size_t count[257]) {
-    auto max_line     = 0;
-    auto current_line = 0;
-
-    std::memset(count, 0, sizeof(size_t) * 257);
+std::array<size_t, 257> Buf::Count(const char* buffer, size_t size) {
+    size_t max_line     = 0;
+    size_t current_line = 0;
+    auto   count        = std::array<size_t, 257>{0};
 
     if (buffer == nullptr) {
-        return;
+        return count;
     }
 
     for (size_t f = 0; f < size; f++) {
@@ -1459,6 +1495,8 @@ void Buf::Count(const char* buffer, size_t size, size_t count[257]) {
     }
 
     count[256] = max_line;
+
+    return count;
 }
 
 /**
@@ -1472,9 +1510,14 @@ void Buf::Count(const char* buffer, size_t size, size_t count[257]) {
 * @param[in] trailing  True to remove trailing whitespace.
 *
 * @return Converted text or an object with NULL data if "trailing" and "dos" is false.
+*
+* @throws std::string exception on error.
 */
 Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
-    if (buffer == nullptr || size == 0 || (trailing == false && dos == false)) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf::InsertCR(): size out of range");
+    }
+    else if (buffer == nullptr || size == 0 || (trailing == false && dos == false)) {
         return Buf();
     }
 
@@ -1535,6 +1578,8 @@ Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
 * @param[in] size    Buffer size.
 *
 * @return Converted text.
+*
+* @throws std::string exception on error.
 */
 Buf Buf::RemoveCR(const char* buffer, size_t size) {
     auto res = Buf(size);
@@ -1556,12 +1601,20 @@ Buf Buf::RemoveCR(const char* buffer, size_t size) {
 /**
 * @brief Set new data.
 *
+* Current memory will be deleted.
+*
 * @param[in] buffer  Copy this buffer.
 * @param[in] size    Buffer size.
 *
-* @return This object.
+* @return Reference to this object.
+*
+* @throws std::string exception on error.
 */
 Buf& Buf::set(const char* buffer, size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf:set(): size out of range");
+    }
+
     if (_str == buffer) {
     }
     else if (buffer == nullptr) {
@@ -1603,7 +1656,7 @@ bool Buf::write(const std::string& path, bool flush) const {
  */
 
 /**
-* @brief Create file object.
+* @brief Get file info for input path.
 *
 * @param[in] path      File path.
 * @param[in] realpath  True to use the real path if it is an link.

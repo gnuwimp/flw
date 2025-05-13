@@ -22,10 +22,14 @@ ifeq ($(OS), Windows)
 	LPROF1   = -fprofile-generate=obj
 	PROF2    = -fprofile-use=obj
 else ifeq ($(OS), Linux)
-	CXX      = g++
-	CC       = gcc
-	CXXFLAGS = -fdiagnostics-plain-output -std=c++17 -W -Wall
-	CFLAGS   = -fdiagnostics-plain-output -W -Wall
+	CXX      = clang++
+	CC       = clang
+	CXXFLAGS = -std=c++17 -W -Wall
+	CFLAGS   = -W -Wall
+#	CXX      = g++
+#	CC       = gcc
+#	CXXFLAGS = -fdiagnostics-plain-output -std=c++17 -W -Wall
+#	CFLAGS   = -fdiagnostics-plain-output -W -Wall
 	LDLAGS   =
 	FLTO     = -flto=auto
 	CPROF1   = -fprofile-generate=obj -fprofile-update=atomic
@@ -46,6 +50,9 @@ else
 endif
 
 ifeq ($(build), sanitize)
+#	CXXFLAGS += -fsanitize=address -O0 -g -DDEBUG
+#	CFLAGS   += -fsanitize=address -O0 -g -DDEBUG
+#	LDFLAGS  += -fsanitize=address -fsanitize-memory-track-origins
 	CXXFLAGS += -fsanitize=address -O0 -g -DDEBUG
 	CFLAGS   += -O0 -g -DDEBUG
 	LDFLAGS  += -fsanitize=address

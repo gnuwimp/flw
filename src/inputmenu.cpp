@@ -32,8 +32,6 @@ public:
 
     //--------------------------------------------------------------------------
     _InputMenu() : Fl_Input(0, 0, 0, 0) {
-        tooltip(_INPUTMENU_TOOLTIP.c_str());
-
         index     = -1;
         show_menu = false;
     }
@@ -104,6 +102,7 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _input->callback(InputMenu::Callback, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
     _menu->callback(InputMenu::Callback, this);
+    _menu->tooltip(_INPUTMENU_TOOLTIP.c_str());
     update_pref();
 }
 

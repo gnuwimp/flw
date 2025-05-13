@@ -101,7 +101,7 @@ Date::Date(int64_t unix_time, Date::UTC utc) {
     _date_from_time(unix_time, utc, y, m, d, ho, mi, se);
     set(y, m, d, ho, mi, se);
 }
-Date::Date(std::string date, Date::US us) {
+Date::Date(const std::string& date, Date::US us) {
     _year = _month = _day = _hour = _min = _sec = 0;
     set(date, us);
 }
@@ -404,9 +404,9 @@ Date& Date::set(const Date& date) {
     _sec   = date._sec;
     return *this;
 }
-Date& Date::set(std::string date, Date::US us) {
+Date& Date::set(const std::string& date, Date::US us) {
     auto str1 = date.c_str();
-    int  len1 = strlen(str1);
+    auto len1 = static_cast<int>(date.length());
     auto str2 = strstr(str1, " ");
     while (str2 != nullptr && *str2 == ' ') {
         str2++;
@@ -714,7 +714,7 @@ static bool                 _open_redirect(int type);
 static unsigned             _rand();
 static void                 _read(const std::string& path, Buf& buf);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _read_dir_rec(Files& res, Files& files);
+static void                 _read_dir_rec(std::vector<File>& res, std::vector<File>& files);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
 static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
 static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
@@ -777,13 +777,19 @@ static bool _open_redirect(int type) {
 #else
         res = freopen(fname.c_str(), "wb", fhandle) != nullptr;
 #endif
-    if (res == false && type == 1) _STDOUT_NAME = "";
-    else if (res == false && type == 2) _STDERR_NAME = "";
+    if (res == false && type == 1) {
+        _STDOUT_NAME = "";
+    }
+    else if (res == false && type == 2) {
+        _STDERR_NAME = "";
+    }
     return res;
 }
 static unsigned _rand() {
     static bool INIT = false;
-    if (INIT == false) srand(time(nullptr));
+    if (INIT == false) {
+        srand(time(nullptr));
+    }
     INIT = true;
     static unsigned long next = 1;
     if (RAND_MAX < 50000) {
@@ -818,7 +824,7 @@ static void _read(const std::string& path, Buf& buf) {
     fclose(handle);
     buf.grab(out, file.size());
 }
-static void _read_dir_rec(Files& res, Files& files) {
+static void _read_dir_rec(std::vector<File>& res, std::vector<File>& files) {
     for (auto& file : files) {
         res.push_back(file);
         if (file.type() == file::TYPE::DIR && file.is_link() == false) {
@@ -828,17 +834,16 @@ static void _read_dir_rec(Files& res, Files& files) {
     }
 }
 static std::string& _replace_all(std::string& string, const std::string& find, const std::string& replace) {
-    if (find == "") {
+    if (find.empty() == true) {
         return string;
     }
-    else {
-        size_t start = 0;
-        while ((start = string.find(find, start)) != std::string::npos) {
-            string.replace(start, find.length(), replace);
-            start += replace.length();
-        }
-        return string;
+    size_t start = std::string::npos;
+    while ((start = string.find(find, start)) != std::string::npos) {
+        printf("\t%s\n", string.c_str());
+        string.replace(start, find.length(), replace);
+        start += replace.length();
     }
+    return string;
 }
 static void _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext) {
     path = "";
@@ -958,7 +963,7 @@ static wchar_t* _to_wide(const char* string) {
     return out;
 }
 #endif
-char* allocate(char* resize_or_null, size_t size, bool exception) {
+char* allocate(char* resize_or_null, size_t size) {
     void* res = nullptr;
     if (resize_or_null == nullptr) {
         res = calloc(size, 1);
@@ -966,8 +971,8 @@ char* allocate(char* resize_or_null, size_t size, bool exception) {
     else {
         res = realloc(resize_or_null, size);
     }
-    if (res == nullptr && exception == true) {
-        throw "error: memory allocation failed in gnu::file::allocate()";
+    if (res == nullptr) {
+        throw std::string("error: gnu::file::allocate(): memory allocation failed");
     }
     return (char*) res;
 }
@@ -1111,21 +1116,21 @@ bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void*
     file::chmod(to, file1.mode());
     return true;
 }
-uint64_t fletcher64(const char* P, size_t S) {
-    if (P == nullptr || S == 0) {
+uint64_t fletcher64(const char* buffer, size_t buffer_size) {
+    if (buffer == nullptr || buffer_size == 0) {
         return 0;
     }
-    auto u8data = reinterpret_cast<const uint8_t*>(P);
-    auto dwords = static_cast<uint64_t>(S / 4);
+    auto u8data = reinterpret_cast<const uint8_t*>(buffer);
+    auto dwords = static_cast<uint64_t>(buffer_size / 4);
     auto sum1   = static_cast<uint64_t>(0);
     auto sum2   = static_cast<uint64_t>(0);
     auto data32 = reinterpret_cast<const uint32_t*>(u8data);
     auto left   = static_cast<uint64_t>(0);
-    for (size_t f = 0; f < dwords; ++f) {
+    for (uint64_t f = 0; f < dwords; ++f) {
         sum1 = (sum1 + data32[f]) % UINT32_MAX;
         sum2 = (sum2 + sum1) % UINT32_MAX;
     }
-    left = S - dwords * 4;
+    left = buffer_size - dwords * 4;
     if (left > 0) {
         auto tmp  = static_cast<uint32_t>(0);
         auto byte = reinterpret_cast<uint8_t*>(&tmp);
@@ -1237,9 +1242,9 @@ Buf* read2(const std::string& path) {
     file::_read(path, *buf);
     return buf;
 }
-Files read_dir(const std::string& path) {
+std::vector<File> read_dir(const std::string& path) {
     auto file = File(path, false);
-    auto res  = Files();
+    auto res  = std::vector<File>();
     if (file.type() != TYPE::DIR || file::is_circular(path) == true) {
         return res;
     }
@@ -1281,8 +1286,8 @@ Files read_dir(const std::string& path) {
     std::sort(res.begin(), res.end());
     return res;
 }
-Files read_dir_rec(const std::string& path) {
-    auto res   = Files();
+std::vector<File> read_dir_rec(const std::string& path) {
+    auto res   = std::vector<File>();
     auto files = file::read_dir(path);
     file::_read_dir_rec(res, files);
     return res;
@@ -1473,14 +1478,20 @@ bool write(const std::string& path, const char* buffer, size_t size, bool flush)
     }
     return true;
 }
-bool write(const std::string& path, const Buf& b, bool flush) {
-    return write(path, b.c_str(), b.size(), flush);
+bool write(const std::string& path, const Buf& buf, bool flush) {
+    return write(path, buf.c_str(), buf.size(), flush);
 }
 Buf::Buf(size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf(): size out of range");
+    }
     _str = file::allocate(nullptr, size + 1);
     _size = size;
 }
 Buf::Buf(const char* buffer, size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf(): size out of range");
+    }
     if (buffer == nullptr) {
         _str  = nullptr;
         _size = 0;
@@ -1506,6 +1517,9 @@ bool Buf::operator==(const Buf& other) const {
     return _str != nullptr && _size == other._size && std::memcmp(_str, other._str, _size) == 0;
 }
 Buf& Buf::add(const char* buffer, size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf:add(): size out of range");
+    }
     if (_str == buffer || buffer == nullptr) {
     }
     else if (_str == nullptr) {
@@ -1523,12 +1537,12 @@ Buf& Buf::add(const char* buffer, size_t size) {
     }
     return *this;
 }
-void Buf::Count(const char* buffer, size_t size, size_t count[257]) {
-    auto max_line     = 0;
-    auto current_line = 0;
-    std::memset(count, 0, sizeof(size_t) * 257);
+std::array<size_t, 257> Buf::Count(const char* buffer, size_t size) {
+    size_t max_line     = 0;
+    size_t current_line = 0;
+    auto   count        = std::array<size_t, 257>{0};
     if (buffer == nullptr) {
-        return;
+        return count;
     }
     for (size_t f = 0; f < size; f++) {
         auto c = (unsigned char) buffer[f];
@@ -1544,9 +1558,13 @@ void Buf::Count(const char* buffer, size_t size, size_t count[257]) {
         }
     }
     count[256] = max_line;
+    return count;
 }
 Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
-    if (buffer == nullptr || size == 0 || (trailing == false && dos == false)) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf::InsertCR(): size out of range");
+    }
+    else if (buffer == nullptr || size == 0 || (trailing == false && dos == false)) {
         return Buf();
     }
     auto res_size = size;
@@ -1602,6 +1620,9 @@ Buf Buf::RemoveCR(const char* buffer, size_t size) {
     return res;
 }
 Buf& Buf::set(const char* buffer, size_t size) {
+    if (size == (size_t) -1) {
+        throw std::string("error: gnu::file::Buf:set(): size out of range");
+    }
     if (_str == buffer) {
     }
     else if (buffer == nullptr) {
@@ -1757,6 +1778,7 @@ std::string File::type_name() const {
 #include <cmath>
 #include <cstdint>
 #include <errno.h>
+#include <climits>
 namespace gnu {
 namespace json {
 #define _GNU_JSON_ERROR(X,Y) _format_error(__LINE__, static_cast<unsigned>(X), Y)
@@ -1937,7 +1959,6 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
         }
     }
     int dot1  = 0;
-    int dot2  = 0;
     int minus = 0;
     int plus  = 0;
     int E     = 0;
@@ -1972,9 +1993,8 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
             return false;
         }
         else {
-            dot2 = minus = plus = E = 0;
+            minus = plus = E = 0;
             for (auto c : n2) {
-                dot2  += (c =='.');
                 minus += (c =='-');
                 plus  += (c =='+');
                 E     += (c =='e');
@@ -2129,16 +2149,28 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
             }
             else if (c == '"') {
                 pos2 = pos1;
-                if (sVal1 == nullptr) posn = pos1;
-                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _GNU_JSON_ERROR(start, line);
+                if (sVal1 == nullptr) {
+                    posn = pos1;
+                }
+                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
                 auto add_array = (current->is_array() == true);
-                if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _GNU_JSON_ERROR(start, line);
-                else if (add_object == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
+                if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma == 0 && current->size() > 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (add_object == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
                 else if (add_object == true || add_array == true) {
                     pos2 = (sVal2 == nullptr) ? pos2 : posn;
-                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) {
+                        throw _GNU_JSON_ERROR(start, line);
+                    }
                     colon = 0;
                     comma = 0;
                 }
@@ -2146,41 +2178,73 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
             }
             else if ((c >= '0' && c <= '9') || c == '-') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (_parse_number(json, len, pos1, nVal) == false) throw _GNU_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _GNU_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
-                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
+                if (_parse_number(json, len, pos1, nVal) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma == 0 && current->size() > 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->is_object() == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
                 colon = 0;
                 comma = 0;
                 pos1++;
             }
             else if (c == ',') {
-                if (comma > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current == &tmp) throw _GNU_JSON_ERROR(pos1, line);
+                if (comma > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current == &tmp) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 comma++;
                 pos1++;
             }
             else if (c == ':') {
-                if (colon > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                if (colon > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->is_object() == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (sVal1 == nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 colon++;
                 pos1++;
             }
             else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _GNU_JSON_ERROR(pos1, line);
+                if (current->size() == 0 && comma > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->size() > 0 && comma != 1) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
                     n = JS::_MakeArray("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
+                    else if (colon != 1) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
                     n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _GNU_JSON_ERROR(pos1, line);
+                    if (current->_set_value(sVal1, n, ignore_duplicates) == false) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
                     _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
@@ -2190,29 +2254,51 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                 pos1++;
             }
             else if (c == ']') {
-                if (current->_parent == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->is_array() == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (count_a < 0) throw _GNU_JSON_ERROR(pos1, line);
+                if (current->_parent == nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->is_array() == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (sVal1 != nullptr || sVal2 != nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (comma > 0 && ignore_trailing_comma == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (count_a < 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 current = current->_parent;
                 comma = 0;
                 count_a--;
                 pos1++;
             }
             else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _GNU_JSON_ERROR(pos1, line);
+                if (current->size() == 0 && comma > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->size() > 0 && comma != 1) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
                     n = JS::_MakeObject("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
+                    else if (colon != 1) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
                     n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _GNU_JSON_ERROR(pos1, line);
+                    if (current->_set_value(sVal1, n, ignore_duplicates) == false) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
                     _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
                 current = n;
@@ -2222,23 +2308,43 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                 pos1++;
             }
             else if (c == '}') {
-                if (current->_parent == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (count_o < 0) throw _GNU_JSON_ERROR(pos1, line);
+                if (current->_parent == nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->is_object() == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (sVal1 != nullptr || sVal2 != nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (comma > 0 && ignore_trailing_comma == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (count_o < 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 current = current->_parent;
                 comma = 0;
                 count_o--;
                 pos1++;
             }
-            else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
-                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
+            else if (
+                    (c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
+                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')
+                ) {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
-                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
+                if (current->size() > 0 && comma == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->is_object() == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
@@ -2246,10 +2352,18 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
             }
             else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _GNU_JSON_ERROR(start, line);
+                if (current->size() > 0 && comma == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->is_object() == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->_add_null(&sVal1, ignore_duplicates, pos1) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
@@ -2257,7 +2371,7 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
             else {
                 throw _GNU_JSON_ERROR(pos1, line);
             }
-            if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
+            if (count_a > (int) json::MAX_DEPTH || count_o > (int) json::MAX_DEPTH) {
                 throw _GNU_JSON_ERROR(pos1, line);
             }
         }
@@ -2329,38 +2443,54 @@ std::string json::escape(const char* string) {
     res.reserve(strlen(string) + 5);
     while (*string != 0) {
         auto c = *string;
-        if (c == 9) res += "\\t";
-        else if (c == 10) res += "\\n";
-        else if (c == 13) res += "\\r";
-        else if (c == 8) res += "\\b";
-        else if (c == 14) res += "\\f";
-        else if (c == 34) res += "\\\"";
-        else if (c == 92) res += "\\\\";
-        else res += c;
+        if (c == 9) {
+            res += "\\t";
+        }
+        else if (c == 10) {
+            res += "\\n";
+        }
+        else if (c == 13) {
+            res += "\\r";
+        }
+        else if (c == 8) {
+            res += "\\b";
+        }
+        else if (c == 14) {
+            res += "\\f";
+        }
+        else if (c == 34) {
+            res += "\\\"";
+        }
+        else if (c == 92) {
+            res += "\\\\";
+        }
+        else {
+            res += c;
+        }
         string++;
     }
     return res;
 }
 std::string json::format_number(double f, bool E) {
     double ABS = fabs(f);
-    double MIN = ABS - static_cast<int64_t>(ABS);
+    double MIN = (ABS >= static_cast<double>(LLONG_MAX)) ? 0.0 : ABS - static_cast<int64_t>(ABS);
     size_t n   = 0;
-    char b[100];
+    char b[400];
     if (ABS > 999'000'000'000) {
-        n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+        n = (E == true) ? snprintf(b, 400, "%e", f) : snprintf(b, 400, "%f", f);
     }
     else {
         if (MIN < 0.0000001) {
-            n = (E == true) ? snprintf(b, 100, "%.0e", f) : snprintf(b, 100, "%.0f", f);
+            n = (E == true) ? snprintf(b, 400, "%.0e", f) : snprintf(b, 400, "%.0f", f);
         }
         else if (MIN < 0.001) {
-            n = (E == true) ? snprintf(b, 100, "%.7e", f) : snprintf(b, 100, "%.7f", f);
+            n = (E == true) ? snprintf(b, 400, "%.7e", f) : snprintf(b, 400, "%.7f", f);
         }
         else {
-            n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+            n = (E == true) ? snprintf(b, 400, "%e", f) : snprintf(b, 400, "%f", f);
         }
     }
-    if (n < 1 || n >= 100) {
+    if (n < 1 || n >= 400) {
         return "0";
     }
     std::string s = b;
@@ -2403,23 +2533,27 @@ ssize_t json::JS::COUNT = 0;
 ssize_t json::JS::MAX   = 0;
 json::JS::JS() {
     JS::COUNT++;
-    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+    if (JS::COUNT > JS::MAX) {
+        JS::MAX = JS::COUNT;
+    }
     _inl    = false;
     _name   = nullptr;
     _parent = nullptr;
     _pos    = 0;
     _type   = TYPE::NIL;
-    _vb     = false;
+    _va     = nullptr;
 }
 json::JS::JS(const char* name, JS* parent, unsigned pos) {
     JS::COUNT++;
-    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+    if (JS::COUNT > JS::MAX) {
+        JS::MAX = JS::COUNT;
+    }
     _inl    = false;
     _name   = (name != nullptr) ? strdup(name) : nullptr;
     _parent = parent;
     _pos    = pos;
     _type   = TYPE::NIL;
-    _vb     = false;
+    _va     = nullptr;
 }
 json::JS::JS(JS&& other) {
     JS::COUNT++;
@@ -2486,20 +2620,20 @@ bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned 
         res = true;
     }
     else if (is_object() == true) {
-        res = _set_object(*sVal1, json::JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
     }
     free(*sVal1);
     *sVal1 = nullptr;
     return res;
 }
-bool json::JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
+bool json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
     bool res = false;
     if (is_array() == true) {
-        _va->push_back(JS::_MakeNil("", this, pos));
+        _va->push_back(JS::_MakeNull("", this, pos));
         res = true;
     }
     else if (is_object() == true) {
-        res = _set_object(*sVal1, json::JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeNull(*sVal1, this, pos), ignore_duplicates);
     }
     free(*sVal1);
     *sVal1 = nullptr;
@@ -2512,7 +2646,7 @@ bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, u
         res = true;
     }
     else if (is_object() == true && std::isnan(nVal) == false) {
-        res = _set_object(*sVal1, json::JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
     }
     free(*sVal1);
     *sVal1 = nullptr;
@@ -2526,7 +2660,7 @@ bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, u
         res = true;
     }
     else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
-        res = _set_object(*sVal1, json::JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
     }
     free(*sVal1);
     free(*sVal2);
@@ -2565,29 +2699,30 @@ void json::JS::debug() const {
     std::string t;
     _debug(this, t);
 }
-const json::JS* json::JS::find(std::string name, bool rec) const {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-        if (find1 != _vo->end()) {
-            return find1->second;
-        }
-        else if (rec == true) {
-            for (auto o : *_vo) {
-                if (o.second->is_object() == true) {
-                    return o.second->find(name, rec);
-                }
+const json::JS* json::JS::find(const std::string& name, bool rec) const {
+    if (is_object() == false) {
+        return nullptr;
+    }
+    auto find1 = _vo->find(name);
+    if (find1 != _vo->end()) {
+        return find1->second;
+    }
+    else if (rec == true) {
+        for (auto o : *_vo) {
+            if (o.second->is_object() == true) {
+                return o.second->find(name, rec);
             }
         }
     }
     return nullptr;
 }
-const json::JS* json::JS::_get_object(const char* name, bool escape) const {
-    if (is_object() == true) {
-        auto key   = (escape == true) ? json::escape(name) : name;
-        auto find1 = _vo->find(key);
-        return (find1 != _vo->end()) ? find1->second : nullptr;
+const json::JS* json::JS::_get_value(const char* name, bool escape) const {
+    if (is_object() == false) {
+        return nullptr;
     }
-    return nullptr;
+    auto key   = (escape == true) ? json::escape(name) : name;
+    auto find1 = _vo->find(key);
+    return (find1 != _vo->end()) ? find1->second : nullptr;
 }
 json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
@@ -2601,7 +2736,7 @@ json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned po
     r->_vb   = vb;
     return r;
 }
-json::JS* json::JS::_MakeNil(const char* name, JS* parent, unsigned pos) {
+json::JS* json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
     return new JS(name, parent, pos);
 }
 json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
@@ -2627,20 +2762,21 @@ void json::JS::_set_err(const std::string& err) {
     _vs   = strdup(err.c_str());
     _type = TYPE::ERR;
 }
-bool json::JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-        if (find1 != _vo->end()) {
-            if (ignore_duplicates == false) {
-                delete js;
-                return false;
-            }
-            else {
-                delete find1->second;
-            }
-        }
-        (*_vo)[name] = js;
+bool json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
+    if (is_object() == false) {
+        return false;
     }
+    auto find1 = _vo->find(name);
+    if (find1 != _vo->end()) {
+        if (ignore_duplicates == false) {
+            delete js;
+            return false;
+        }
+        else {
+            delete find1->second;
+        }
+    }
+    (*_vo)[name] = js;
     return true;
 }
 void json::JS::_set_child_parent_to_me() {
@@ -2657,9 +2793,9 @@ void json::JS::_set_child_parent_to_me() {
 }
 std::string json::JS::to_string() const {
     std::string ret = type_name();
-    char b[100];
+    char b[400];
     if (_type == TYPE::NUMBER) {
-        snprintf(b, 100, ": %f", _vn);
+        snprintf(b, 400, ": %f", _vn);
         ret += b;
     }
     else if (_type == TYPE::STRING) {
@@ -2671,17 +2807,23 @@ std::string json::JS::to_string() const {
         ret += _vb ? "true" : "false";
     }
     else if (_type == TYPE::ARRAY || _type == TYPE::OBJECT) {
-        snprintf(b, 100, ": %d", static_cast<int>(size()));
+        snprintf(b, 400, ": %d children", static_cast<int>(size()));
         ret += b;
     }
-    return ret;
+    if (_name != nullptr && *_name != 0) {
+        return std::string(_name) + ": " + ret;
+    }
+    else {
+        return ret;
+    }
 }
 const json::JSArray json::JS::vo_to_va() const {
     JSArray res;
-    if (_type == TYPE::OBJECT) {
-        for (auto& m : *_vo) {
-            res.push_back(m.second);
-        }
+    if (_type != TYPE::OBJECT) {
+        return res;
+    }
+    for (auto& m : *_vo) {
+        res.push_back(m.second);
     }
     return res;
 }
@@ -2803,11 +2945,8 @@ json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escap
     r->_vs   = strdup((escape == true) ? json::escape(vs).c_str() : vs);
     return r;
 }
-json::JS* json::Builder::MakeString(std::string vs, const char* name, bool escape) {
-    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::STRING;
-    r->_vs   = strdup((escape == true) ? json::escape(vs.c_str()).c_str() : vs.c_str());
-    return r;
+json::JS* json::Builder::MakeString(const std::string& vs, const char* name, bool escape) {
+    return Builder::MakeString(vs.c_str(), name, escape);
 }
 }
 #include <FL/Fl_File_Chooser.H>
@@ -9144,7 +9283,6 @@ public:
     int             index;
     StringVector    history;
     _InputMenu() : Fl_Input(0, 0, 0, 0) {
-        tooltip(_INPUTMENU_TOOLTIP.c_str());
         index     = -1;
         show_menu = false;
     }
@@ -9192,6 +9330,7 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _input->callback(InputMenu::Callback, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
     _menu->callback(InputMenu::Callback, this);
+    _menu->tooltip(_INPUTMENU_TOOLTIP.c_str());
     update_pref();
 }
 void InputMenu::Callback(Fl_Widget* w, void* o) {

@@ -172,7 +172,7 @@ Date::Date(int64_t unix_time, Date::UTC utc) {
 // "00:00"
 // Invalid input sets date to 0
 //
-Date::Date(std::string date, Date::US us) {
+Date::Date(const std::string& date, Date::US us) {
     _year = _month = _day = _hour = _min = _sec = 0;
     set(date, us);
 }
@@ -563,9 +563,9 @@ Date& Date::set(const Date& date) {
 }
 
 //------------------------------------------------------------------------------
-Date& Date::set(std::string date, Date::US us) {
+Date& Date::set(const std::string& date, Date::US us) {
     auto str1 = date.c_str();
-    int  len1 = strlen(str1);
+    auto len1 = static_cast<int>(date.length());
     auto str2 = strstr(str1, " ");
 
     while (str2 != nullptr && *str2 == ' ') { // Find possible time string.

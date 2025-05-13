@@ -1,5 +1,14 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief JSON parser and builder.
+*
+* gnu::json::JS Represents one json value.\n
+* gnu::json::Builder Utility class to create JSON data.\n
+* gnu::json Has function to decode and encode JSON.\n
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "json.h"
 
@@ -8,6 +17,7 @@
 #include <cmath>
 #include <cstdint>
 #include <errno.h>
+#include <climits>
 
 namespace gnu {
 namespace json {
@@ -28,7 +38,11 @@ namespace json {
 
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
 
-//------------------------------------------------------------------------------
+/** @brief Print json node and all child nodes to stdout.
+*
+* @param[in] js  JSON node.
+* @param[in] t   Indendtation string.
+*/
 static void _debug(const JS* js, std::string t) {
     if (js->is_array() == true) {
         printf("%sARRAY(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
@@ -49,7 +63,14 @@ static void _debug(const JS* js, std::string t) {
     fflush(stdout);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Encode one json node.
+*
+* @param[in] js           JSON value.
+* @param[in] ignore_name  True to make it nameless.
+* @param[in] option       Whitespace option.
+*
+* @return Encoded string.
+*/
 static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
     static const std::string QUOTE = "\"";
 
@@ -95,7 +116,15 @@ static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Encode json value inline.
+*
+* No new line between values, only comma.
+*
+* @param[in]     js      JSON value.
+* @param[in,out] j       Result string.
+* @param[in]     comma   True to add comma.
+* @param[in]     option  Whitespace option.
+*/
 static void _encode_inline(const JS& js, std::string& j, bool comma, ENCODE option) {
     std::string c = (comma == true) ? "," : "";
     size_t      f = 0;
@@ -125,7 +154,14 @@ static void _encode_inline(const JS& js, std::string& j, bool comma, ENCODE opti
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Encode all json nodes.
+*
+* @param[in]     js      Root node.
+* @param[in,out] j       Result string.
+* @param[in,out] t       Indendtation string.
+* @param[in]     comma   True to add comma.
+* @param[in]     option  Whitespace option.
+*/
 static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma, ENCODE option) {
     std::string c = (comma == true) ? "," : "";
     std::string n = (option == ENCODE::FLAT) ? "" : "\n";
@@ -202,14 +238,29 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Format error string.
+*
+* @param[in] source  Source line.
+* @param[in] pos     Byte pos in json data.
+* @param[in] line    Line number in json data.
+*
+* @return Error string.
+*/
 static std::string _format_error(unsigned source, unsigned pos, unsigned line) {
     char buf[256];
     snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
     return buf;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Convert string to number.
+*
+* @param[in]     json  JSON string.
+* @param[in]     len   JSON string length.
+* @param[in,out] pos   Position in json string.
+* @param[in,out] val   Result number, contains NAN for any failure.
+*
+* @return True if ok.
+*/
 static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
     bool        res = false;
     std::string n1;
@@ -242,7 +293,6 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
     }
 
     int dot1  = 0;
-    int dot2  = 0;
     int minus = 0;
     int plus  = 0;
     int E     = 0;
@@ -280,9 +330,9 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
             return false;
         }
         else {
-            dot2 = minus = plus = E = 0;
+            minus = plus = E = 0;
+            
             for (auto c : n2) {
-                dot2  += (c =='.');
                 minus += (c =='-');
                 plus  += (c =='+');
                 E     += (c =='e');
@@ -322,10 +372,21 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
 
     res = (errno == 0);
     pos--;
+
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Parse string.
+*
+* @param[in]     ignore_utf_check  True to skip basic utf8 check.
+* @param[in]     json              JSON string.
+* @param[in]     len               JSON string length.
+* @param[in,out] pos               Position in json string.
+* @param[in,out] sval1             Result string if it is NULL.
+* @param[in,out] sval2             Result string if it is NULL but sval1 is not NULL.
+*
+* @return True if any of result strings have been set.
+*/
 static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
     std::string str   = "";
     bool        term  = false;
@@ -380,6 +441,7 @@ static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, s
     }
 
     pos--;
+
     return true;
 }
 
@@ -396,7 +458,12 @@ static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, s
  *     |__/
  */
 
-//------------------------------------------------------------------------------
+/** @brief Basic utf8 character counting
+*
+* @param[in] p  String to count.
+*
+* @return Number of characters or 0 if empty or it has invalid characters.
+*/
 size_t json::count_utf8(const char* p) {
     auto count = (size_t) 0;
     auto f     = (size_t) 0;
@@ -435,23 +502,32 @@ size_t json::count_utf8(const char* p) {
     return count;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Decode json string into json values.
+*
+* @param[in] json                   JSON string data.
+* @param[in] len                    Length of json string.
+* @param[in] ignore_trailing_comma  True to ignore trailing commas.
+* @param[in] ignore_duplicates      True to ignore duplicate names.
+* @param[in] ignore_utf_check       True to skip basic utf8 check.
+*
+* @return Root JSON node, type will be set to TYPE::ERR for any error.
+*/
 json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
-    auto ret     = JS();
-    auto tmp     = JS();
-    auto colon   = 0;
-    auto comma   = 0;
-    auto count_a = 0;
-    auto count_o = 0;
-    auto current = (JS*) nullptr;
-    auto line    = (unsigned) 1;
-    auto n       = (JS*) nullptr;
-    auto nVal    = (double) NAN;
-    auto pos1    = (size_t) 0;
-    auto pos2    = (size_t) 0;
-    auto posn    = (size_t) 0;
-    auto sVal1   = (char*) nullptr;
-    auto sVal2   = (char*) nullptr;
+    auto ret     = JS();                // Return value.
+    auto tmp     = JS();                // Temporary working root
+    auto colon   = 0;                   // Colon counter.
+    auto comma   = 0;                   // Comman counter.
+    auto count_a = 0;                   // Array counter, should be 0 when done or error.
+    auto count_o = 0;                   // Object counter, should be 0 when done or error.
+    auto current = (JS*) nullptr;       // Current active object.
+    auto line    = (unsigned) 1;        // Line counter.
+    auto n       = (JS*) nullptr;       // Value to be added.
+    auto nVal    = (double) NAN;        // JSON number.
+    auto pos1    = (size_t) 0;          // Position in input string.
+    auto pos2    = (size_t) 0;          // Temporary position.
+    auto posn    = (size_t) 0;          // Temporary position.
+    auto sVal1   = (char*) nullptr;     // JSON String value.
+    auto sVal2   = (char*) nullptr;     // JSON String value.
 
     try {
         tmp._type = TYPE::ARRAY;
@@ -473,68 +549,119 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                 line++;
                 pos1++;
             }
-            else if (c == '"') {
+            else if (c == '"') { // Parse string.
                 pos2 = pos1;
-                if (sVal1 == nullptr) posn = pos1;
-                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) throw _GNU_JSON_ERROR(start, line);
+
+                if (sVal1 == nullptr) {
+                    posn = pos1;
+                }
+
+                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
 
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
                 auto add_array = (current->is_array() == true);
 
-                if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _GNU_JSON_ERROR(start, line);
-                else if (add_object == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
+                if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma == 0 && current->size() > 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (add_object == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
                 else if (add_object == true || add_array == true) {
                     pos2 = (sVal2 == nullptr) ? pos2 : posn;
-                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
+
+                    if (current->_add_string(&sVal1, &sVal2, ignore_duplicates, pos2) == false) {
+                        throw _GNU_JSON_ERROR(start, line);
+                    }
+
                     colon = 0;
                     comma = 0;
                 }
 
                 pos1++;
             }
-            else if ((c >= '0' && c <= '9') || c == '-') {
+            else if ((c >= '0' && c <= '9') || c == '-') { // Parse number.
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (_parse_number(json, len, pos1, nVal) == false) throw _GNU_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma == 0 && current->size() > 0) throw _GNU_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
-                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
+
+                if (_parse_number(json, len, pos1, nVal) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma == 0 && current->size() > 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->is_object() == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->_add_number(&sVal1, nVal, ignore_duplicates, pos2) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
 
                 colon = 0;
                 comma = 0;
                 pos1++;
             }
-            else if (c == ',') {
-                if (comma > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current == &tmp) throw _GNU_JSON_ERROR(pos1, line);
+            else if (c == ',') { // Comma separator, throw if two commas.
+                if (comma > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current == &tmp) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
 
                 comma++;
                 pos1++;
             }
             else if (c == ':') {
-                if (colon > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                if (colon > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->is_object() == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (sVal1 == nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
 
                 colon++;
                 pos1++;
             }
-            else if (c == '[') {
-                if (current->size() == 0 && comma > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _GNU_JSON_ERROR(pos1, line);
+            else if (c == '[') { // Start of array.
+                if (current->size() == 0 && comma > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->size() > 0 && comma != 1) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
 
                     n = JS::_MakeArray("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
+                    else if (colon != 1) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
 
                     n = JS::_MakeArray(sVal1, current, pos2);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _GNU_JSON_ERROR(pos1, line);
+
+                    if (current->_set_value(sVal1, n, ignore_duplicates) == false) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
+
                     _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
 
@@ -544,33 +671,57 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                 count_a++;
                 pos1++;
             }
-            else if (c == ']') {
-                if (current->_parent == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->is_array() == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (count_a < 0) throw _GNU_JSON_ERROR(pos1, line);
+            else if (c == ']') { // End of array.
+                if (current->_parent == nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->is_array() == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (sVal1 != nullptr || sVal2 != nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (comma > 0 && ignore_trailing_comma == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (count_a < 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
 
                 current = current->_parent;
                 comma = 0;
                 count_a--;
                 pos1++;
             }
-            else if (c == '{') {
-                if (current->size() == 0 && comma > 0) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->size() > 0 && comma != 1) throw _GNU_JSON_ERROR(pos1, line);
+            else if (c == '{') { // Start of object.
+                if (current->size() == 0 && comma > 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->size() > 0 && comma != 1) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
                 else if (current->is_array() == true) {
-                    if (sVal1 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 != nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
 
                     n = JS::_MakeObject("", current, pos1);
                     current->_va->push_back(n);
                 }
                 else {
-                    if (sVal1 == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                    else if (colon != 1) throw _GNU_JSON_ERROR(pos1, line);
+                    if (sVal1 == nullptr) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
+                    else if (colon != 1) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
 
                     n = JS::_MakeObject(sVal1, current, posn);
-                    if (current->_set_object(sVal1, n, ignore_duplicates) == false) throw _GNU_JSON_ERROR(pos1, line);
+
+                    if (current->_set_value(sVal1, n, ignore_duplicates) == false) {
+                        throw _GNU_JSON_ERROR(pos1, line);
+                    }
+
                     _GNU_JSON_FREE_STRINGS(sVal1, sVal2)
                 }
 
@@ -580,47 +731,77 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                 count_o++;
                 pos1++;
             }
-            else if (c == '}') {
-                if (current->_parent == nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (current->is_object() == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (sVal1 != nullptr || sVal2 != nullptr) throw _GNU_JSON_ERROR(pos1, line);
-                else if (comma > 0 && ignore_trailing_comma == false) throw _GNU_JSON_ERROR(pos1, line);
-                else if (count_o < 0) throw _GNU_JSON_ERROR(pos1, line);
+            else if (c == '}') { // End of object.
+                if (current->_parent == nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (current->is_object() == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (sVal1 != nullptr || sVal2 != nullptr) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (comma > 0 && ignore_trailing_comma == false) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
+                else if (count_o < 0) {
+                    throw _GNU_JSON_ERROR(pos1, line);
+                }
 
                 current = current->_parent;
                 comma = 0;
                 count_o--;
                 pos1++;
             }
-            else if ((c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
-                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')) {
+            else if (
+                    (c == 't' && json[pos1 + 1] == 'r' && json[pos1 + 2] == 'u' && json[pos1 + 3] == 'e') ||
+                    (c == 'f' && json[pos1 + 1] == 'a' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 's' && json[pos1 + 4] == 'e')
+                ) { // True or false values.
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
-                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) throw _GNU_JSON_ERROR(start, line);
+
+                if (current->size() > 0 && comma == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->is_object() == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->_add_bool(&sVal1, c == 't', ignore_duplicates, pos2) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
 
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
                 pos1 += (c == 'f');
             }
-            else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') {
+            else if (c == 'n' && json[pos1 + 1] == 'u' && json[pos1 + 2] == 'l' && json[pos1 + 3] == 'l') { // NULL value.
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (current->size() > 0 && comma == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (comma > 0 && current->size() == 0) throw _GNU_JSON_ERROR(start, line);
-                else if (current->is_object() == true && colon != 1) throw _GNU_JSON_ERROR(start, line);
-                else if (current->_add_nil(&sVal1, ignore_duplicates, pos1) == false) throw _GNU_JSON_ERROR(start, line);
+
+                if (current->size() > 0 && comma == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (comma > 0 && current->size() == 0) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->is_object() == true && colon != 1) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
+                else if (current->_add_null(&sVal1, ignore_duplicates, pos1) == false) {
+                    throw _GNU_JSON_ERROR(start, line);
+                }
 
                 colon = 0;
                 comma = 0;
                 pos1 += 4;
             }
-            else {
+            else { // Unknown input.
                 throw _GNU_JSON_ERROR(pos1, line);
             }
 
-            if (count_a > (int) JS::MAX_DEPTH || count_o > (int) JS::MAX_DEPTH) {
+            if (count_a > (int) json::MAX_DEPTH || count_o > (int) json::MAX_DEPTH) { // Break parsing it it has to deep structure.
                 throw _GNU_JSON_ERROR(pos1, line);
             }
         }
@@ -628,35 +809,35 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
         if (count_a != 0 || count_o != 0) {
             throw _GNU_JSON_ERROR(len, 1);
         }
-        else if (tmp.size() != 1) {
+        else if (tmp.size() != 1) { // Root value can have only one value.
             throw _GNU_JSON_ERROR(len, 1);
         }
-        else if (tmp[0]->_type == TYPE::ARRAY) {
+        else if (tmp[0]->_type == TYPE::ARRAY) { // Child is array so set result value.
             ret._type = TYPE::ARRAY;
             ret._va = tmp[0]->_va;
             ret._set_child_parent_to_me();
             const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
         }
-        else if (tmp[0]->_type == TYPE::OBJECT) {
+        else if (tmp[0]->_type == TYPE::OBJECT) { // Child is object so set result value.
             ret._type = TYPE::OBJECT;
             ret._vo = tmp[0]->_vo;
             ret._set_child_parent_to_me();
             const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
         }
-        else if (tmp[0]->_type == TYPE::BOOL) {
+        else if (tmp[0]->_type == TYPE::BOOL) { // Only one boolean.
             ret._type = TYPE::BOOL;
             ret._vb   = tmp[0]->_vb;
         }
-        else if (tmp[0]->_type == TYPE::NUMBER) {
+        else if (tmp[0]->_type == TYPE::NUMBER) { // Only one number.
             ret._type = TYPE::NUMBER;
             ret._vn   = tmp[0]->_vn;
         }
-        else if (tmp[0]->_type == TYPE::STRING) {
+        else if (tmp[0]->_type == TYPE::STRING) { // Only one string.
             ret._type = TYPE::STRING;
             ret._vs   = tmp[0]->_vs;
             const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
         }
-        else if (tmp[0]->_type == TYPE::NIL) {
+        else if (tmp[0]->_type == TYPE::NIL) { // Only one null value.
             ret._type = TYPE::NIL;
         }
         else {
@@ -671,12 +852,26 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
     return ret;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Decode json string into json values.
+*
+* @param[in] json                   JSON string data.
+* @param[in] ignore_trailing_comma  True to ignore trailing commas.
+* @param[in] ignore_duplicates      True to ignore duplicate names.
+* @param[in] ignore_utf_check       True to skip basic utf8 check.
+*
+* @return Root JSON node, type will be set to TYPE::ERR for any error.
+*/
 json::JS json::decode(const std::string& json, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
     return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Encode json node to string.
+*
+* @param[in] js      JSON object.
+* @param[in] option  Whitespace option.
+*
+* @return JSON string.
+*/
 std::string json::encode(const JS& js, ENCODE option) {
     std::string t;
     std::string j;
@@ -696,7 +891,12 @@ std::string json::encode(const JS& js, ENCODE option) {
     return j;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Escape string.
+*
+* @param[in] string  String to escape.
+*
+* @return Escaped string.
+*/
 std::string json::escape(const char* string) {
     std::string res;
     res.reserve(strlen(string) + 5);
@@ -704,14 +904,30 @@ std::string json::escape(const char* string) {
     while (*string != 0) {
         auto c = *string;
 
-        if (c == 9) res += "\\t";
-        else if (c == 10) res += "\\n";
-        else if (c == 13) res += "\\r";
-        else if (c == 8) res += "\\b";
-        else if (c == 14) res += "\\f";
-        else if (c == 34) res += "\\\"";
-        else if (c == 92) res += "\\\\";
-        else res += c;
+        if (c == 9) {
+            res += "\\t";
+        }
+        else if (c == 10) {
+            res += "\\n";
+        }
+        else if (c == 13) {
+            res += "\\r";
+        }
+        else if (c == 8) {
+            res += "\\b";
+        }
+        else if (c == 14) {
+            res += "\\f";
+        }
+        else if (c == 34) {
+            res += "\\\"";
+        }
+        else if (c == 92) {
+            res += "\\\\";
+        }
+        else {
+            res += c;
+        }
 
         string++;
     }
@@ -719,29 +935,35 @@ std::string json::escape(const char* string) {
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Format a number to string.
+*
+* @param[in] f  Number.
+* @param[in] E  True to create a exponential version.
+*
+* @return Converted number.
+*/
 std::string json::format_number(double f, bool E) {
     double ABS = fabs(f);
-    double MIN = ABS - static_cast<int64_t>(ABS);
+    double MIN = (ABS >= static_cast<double>(LLONG_MAX)) ? 0.0 : ABS - static_cast<int64_t>(ABS);
     size_t n   = 0;
-    char b[100];
+    char b[400];
 
     if (ABS > 999'000'000'000) {
-        n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+        n = (E == true) ? snprintf(b, 400, "%e", f) : snprintf(b, 400, "%f", f);
     }
     else {
         if (MIN < 0.0000001) {
-            n = (E == true) ? snprintf(b, 100, "%.0e", f) : snprintf(b, 100, "%.0f", f);
+            n = (E == true) ? snprintf(b, 400, "%.0e", f) : snprintf(b, 400, "%.0f", f);
         }
         else if (MIN < 0.001) {
-            n = (E == true) ? snprintf(b, 100, "%.7e", f) : snprintf(b, 100, "%.7f", f);
+            n = (E == true) ? snprintf(b, 400, "%.7e", f) : snprintf(b, 400, "%.7f", f);
         }
         else {
-            n = (E == true) ? snprintf(b, 100, "%e", f) : snprintf(b, 100, "%f", f);
+            n = (E == true) ? snprintf(b, 400, "%e", f) : snprintf(b, 400, "%f", f);
         }
     }
 
-    if (n < 1 || n >= 100) {
+    if (n < 1 || n >= 400) {
         return "0";
     }
 
@@ -762,7 +984,12 @@ std::string json::format_number(double f, bool E) {
     return s;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Unsecape string.
+*
+* @param[in] string  String to unescape.
+*
+* @return Unescaped string.
+*/
 std::string json::unescape(const char* string) {
     std::string res;
     res.reserve(strlen(string));
@@ -806,33 +1033,50 @@ std::string json::unescape(const char* string) {
 ssize_t json::JS::COUNT = 0;
 ssize_t json::JS::MAX   = 0;
 
-//------------------------------------------------------------------------------
+/** @brief Create new empty object.
+*
+* The type is set to TYPE::NIL.
+*/
 json::JS::JS() {
     JS::COUNT++;
-    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+
+    if (JS::COUNT > JS::MAX) {
+        JS::MAX = JS::COUNT;
+    }
 
     _inl    = false;
     _name   = nullptr;
     _parent = nullptr;
     _pos    = 0;
     _type   = TYPE::NIL;
-    _vb     = false;
+    _va     = nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Create new object a name and a parent.
+*
+* @param[in] name    Name of value.
+* @param[in] parent  Parent object.
+* @param[in] pos     Position in input string.
+*/
 json::JS::JS(const char* name, JS* parent, unsigned pos) {
     JS::COUNT++;
-    if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
+
+    if (JS::COUNT > JS::MAX) {
+        JS::MAX = JS::COUNT;
+    }
 
     _inl    = false;
     _name   = (name != nullptr) ? strdup(name) : nullptr;
     _parent = parent;
     _pos    = pos;
     _type   = TYPE::NIL;
-    _vb     = false;
+    _va     = nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Move constructor.
+*
+* @param[in] other  Object to move.
+*/
 json::JS::JS(JS&& other) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
@@ -865,13 +1109,20 @@ json::JS::JS(JS&& other) {
     _set_child_parent_to_me();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Delete memory.
+*
+*/
 json::JS::~JS() {
     JS::COUNT--;
     _clear(true);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Move operator.
+*
+* @param[in] other  Object to move.
+*
+* @return This object.
+*/
 json::JS& json::JS::operator=(JS&& other) {
     _clear(true);
 
@@ -905,8 +1156,15 @@ json::JS& json::JS::operator=(JS&& other) {
     return *this;
 }
 
-
-//------------------------------------------------------------------------------
+/** @brief Add boolean object to array or object.
+*
+* @param[in,out] sVal1              Name for object value, its memory will be deleted.
+* @param[in]     b                  Bool value.
+* @param[in]     ignore_duplicates  True to ignore duplicates.
+* @param[in]     pos                Pos in input data.
+*
+* @return True if ok.
+*/
 bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
@@ -915,32 +1173,49 @@ bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned 
         res = true;
     }
     else if (is_object() == true) {
-        res = _set_object(*sVal1, json::JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeBool(*sVal1, b, this, pos), ignore_duplicates);
     }
 
     free(*sVal1);
     *sVal1 = nullptr;
+
     return res;
 }
 
-//------------------------------------------------------------------------------
-bool json::JS::_add_nil(char** sVal1, bool ignore_duplicates, unsigned pos) {
+/** @brief Add null object to array or object.
+*
+* @param[in,out] sVal1              Name for object value, its memory will be deleted.
+* @param[in]     ignore_duplicates  True to ignore duplicates.
+* @param[in]     pos                Pos in input data.
+*
+* @return True if ok.
+*/
+bool json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
     if (is_array() == true) {
-        _va->push_back(JS::_MakeNil("", this, pos));
+        _va->push_back(JS::_MakeNull("", this, pos));
         res = true;
     }
     else if (is_object() == true) {
-        res = _set_object(*sVal1, json::JS::_MakeNil(*sVal1, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeNull(*sVal1, this, pos), ignore_duplicates);
     }
 
     free(*sVal1);
     *sVal1 = nullptr;
+
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Add number object to array or object.
+*
+* @param[in,out] sVal1              Name for object value, its memory will be deleted.
+* @param[in,out] nVal               Number value, it will be set to NAN.
+* @param[in]     ignore_duplicates  True to ignore duplicates.
+* @param[in]     pos                Pos in input data.
+*
+* @return True if ok.
+*/
 bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
@@ -949,16 +1224,26 @@ bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, u
         res = true;
     }
     else if (is_object() == true && std::isnan(nVal) == false) {
-        res = _set_object(*sVal1, json::JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeNumber(*sVal1, nVal, this, pos), ignore_duplicates);
     }
 
     free(*sVal1);
     *sVal1 = nullptr;
     nVal = NAN;
+
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Add string object to array or object.
+*
+* @param[in,out] sVal1              Name for object value, its memory will be deleted.
+* @param[in,out] sVal2              String object value, its memory will be deleted.
+* @param[in,out] nVal               Number value, it will be set to NAN.
+* @param[in]     ignore_duplicates  True to ignore duplicates.
+* @param[in]     pos                Pos in input data.
+*
+* @return True if ok.
+*/
 bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
@@ -967,7 +1252,7 @@ bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, u
         res = true;
     }
     else if (is_object() == true && *sVal1 != nullptr && *sVal2 != nullptr) {
-        res = _set_object(*sVal1, json::JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
+        res = _set_value(*sVal1, json::JS::_MakeString(*sVal1, *sVal2, this, pos), ignore_duplicates);
     }
 
     free(*sVal1);
@@ -979,7 +1264,10 @@ bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, u
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Clear all values.
+*
+* @param[in] name  True to delete name also.
+*/
 void json::JS::_clear(bool name) {
     if (is_array() == true) {
         for (auto js : *_va) {
@@ -1012,25 +1300,37 @@ void json::JS::_clear(bool name) {
     _parent = nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Print debug info.
+*
+*/
 void json::JS::debug() const {
     std::string t;
     _debug(this, t);
 }
 
-//------------------------------------------------------------------------------
-const json::JS* json::JS::find(std::string name, bool rec) const {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
+/** @brief Find named JSON object.
+*
+* This instance must be an object (TYPE::OBJECT).
+*
+* @param[in] name  Name to search for.
+* @param[in] rec   True to search recursive.
+*
+* @return Found node or NULL.
+*/
+const json::JS* json::JS::find(const std::string& name, bool rec) const {
+    if (is_object() == false) {
+        return nullptr;
+    }
 
-        if (find1 != _vo->end()) {
-            return find1->second;
-        }
-        else if (rec == true) {
-            for (auto o : *_vo) {
-                if (o.second->is_object() == true) {
-                    return o.second->find(name, rec);
-                }
+    auto find1 = _vo->find(name);
+
+    if (find1 != _vo->end()) {
+        return find1->second;
+    }
+    else if (rec == true) {
+        for (auto o : *_vo) {
+            if (o.second->is_object() == true) {
+                return o.second->find(name, rec);
             }
         }
     }
@@ -1038,50 +1338,96 @@ const json::JS* json::JS::find(std::string name, bool rec) const {
     return nullptr;
 }
 
-//------------------------------------------------------------------------------
-const json::JS* json::JS::_get_object(const char* name, bool escape) const {
-    if (is_object() == true) {
-        auto key   = (escape == true) ? json::escape(name) : name;
-        auto find1 = _vo->find(key);
-        return (find1 != _vo->end()) ? find1->second : nullptr;
+/** @brief Get value.
+*
+* @param[in] name  Name of value.
+*
+* @return Found value or NULL.
+*/
+const json::JS* json::JS::_get_value(const char* name, bool escape) const {
+    if (is_object() == false) {
+        return nullptr;
     }
 
-    return nullptr;
+    auto key   = (escape == true) ? json::escape(name) : name;
+    auto find1 = _vo->find(key);
+
+    return (find1 != _vo->end()) ? find1->second : nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an array.
+*
+* @param[in] name  Name of value.
+* @param[in] js    Parent of new value.
+* @param[in] pos   Index in file.
+*
+* @return Array value.
+*/
 json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
+
     r->_type = TYPE::ARRAY;
     r->_va   = new JSArray();
 
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an bool.
+*
+* @param[in] name  Name of value.
+* @param[in] vb    Bool value.
+* @param[in] js    Parent of new value.
+* @param[in] pos   Index in file.
+*
+* @return Bool value.
+*/
 json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
+
     r->_type = TYPE::BOOL;
     r->_vb   = vb;
 
     return r;
 }
 
-//------------------------------------------------------------------------------
-json::JS* json::JS::_MakeNil(const char* name, JS* parent, unsigned pos) {
+/** @brief Make an null value.
+*
+* @param[in] name  Name of value.
+* @param[in] js    Parent of new value.
+* @param[in] pos   Index in file.
+*
+* @return Null value.
+*/
+json::JS* json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
     return new JS(name, parent, pos);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an number value.
+*
+* @param[in] name  Name of value.
+* @param[in] vn    Number value.
+* @param[in] js    Parent of new value.
+* @param[in] pos   Index in file.
+*
+* @return Nil value.
+*/
 json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
+
     r->_type = TYPE::NUMBER;
     r->_vn   = vn;
 
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make a object value.
+*
+* @param[in] name  Name of value.
+* @param[in] js    Parent of new value.
+* @param[in] pos   Index in file.
+*
+* @return Object value.
+*/
 json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
     r->_type = TYPE::OBJECT;
@@ -1090,16 +1436,28 @@ json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make a string.
+*
+* @param[in] name  Name of value.
+* @param[in] vs    String value.
+* @param[in] js    Parent of new value.
+* @param[in] pos   Index in file.
+*
+* @return Nil value.
+*/
 json::JS* json::JS::_MakeString(const char* name, const char* vs, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
+
     r->_type = TYPE::STRING;
     r->_vs   = strdup(vs);
 
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set error message
+*
+* @param[in] err  Message.
+*/
 void json::JS::_set_err(const std::string& err) {
     _clear(true);
 
@@ -1107,30 +1465,41 @@ void json::JS::_set_err(const std::string& err) {
     _type = TYPE::ERR;
 }
 
-//------------------------------------------------------------------------------
-// Delete existing object before setting new.
-//
-bool json::JS::_set_object(const char* name, JS* js, bool ignore_duplicates) {
-    if (is_object() == true) {
-        auto find1 = _vo->find(name);
-
-        if (find1 != _vo->end()) {
-            if (ignore_duplicates == false) {
-                delete js;
-                return false;
-            }
-            else {
-                delete find1->second;
-            }
-        }
-
-        (*_vo)[name] = js;
+/** @brief Set value in object.
+*
+* Delete existing value before setting new.
+*
+* @param[in] name               New name.
+* @param[in] js                 JS value.
+* @param[in] ignore_duplicates  True to ignore duplicates.
+*
+* @return True if ok.
+*/
+bool json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
+    if (is_object() == false) {
+        return false;
     }
+
+    auto find1 = _vo->find(name);
+
+    if (find1 != _vo->end()) {
+        if (ignore_duplicates == false) {
+            delete js;
+            return false;
+        }
+        else {
+            delete find1->second;
+        }
+    }
+
+    (*_vo)[name] = js;
 
     return true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set parent for all children thi this.
+*
+*/
 void json::JS::_set_child_parent_to_me() {
     if (is_array() == true) {
         for (auto o : *_va) {
@@ -1144,13 +1513,16 @@ void json::JS::_set_child_parent_to_me() {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get a string of this value.
+*
+* @return String description, not a real json value.
+*/
 std::string json::JS::to_string() const {
     std::string ret = type_name();
-    char b[100];
+    char b[400];
 
     if (_type == TYPE::NUMBER) {
-        snprintf(b, 100, ": %f", _vn);
+        snprintf(b, 400, ": %f", _vn);
         ret += b;
     }
     else if (_type == TYPE::STRING) {
@@ -1162,21 +1534,31 @@ std::string json::JS::to_string() const {
         ret += _vb ? "true" : "false";
     }
     else if (_type == TYPE::ARRAY || _type == TYPE::OBJECT) {
-        snprintf(b, 100, ": %d", static_cast<int>(size()));
+        snprintf(b, 400, ": %d children", static_cast<int>(size()));
         ret += b;
     }
-
-    return ret;
+    
+    if (_name != nullptr && *_name != 0) {
+        return std::string(_name) + ": " + ret;
+    }
+    else {
+        return ret;
+    }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Create an array with all children for an object.
+*
+* @return JSON array.
+*/
 const json::JSArray json::JS::vo_to_va() const {
     JSArray res;
 
-    if (_type == TYPE::OBJECT) {
-        for (auto& m : *_vo) {
-            res.push_back(m.second);
-        }
+    if (_type != TYPE::OBJECT) {
+        return res;
+    }
+
+    for (auto& m : *_vo) {
+        res.push_back(m.second);
     }
 
     return res;
@@ -1193,7 +1575,14 @@ const json::JSArray json::JS::vo_to_va() const {
  *
  */
 
-//------------------------------------------------------------------------------
+/** @brief Add json value,
+*
+* @param[in] js  JSON value.
+*
+* @return Reference to this object.
+*
+* @throws std::string exception on error.
+*/
 json::Builder& json::Builder::add(JS* js) {
     auto name = js->name();
 
@@ -1244,7 +1633,14 @@ json::Builder& json::Builder::add(JS* js) {
     return *this;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Encode to json.
+*
+* @param[in] option  Encode option.
+*
+* @return JSON string.
+*
+* @throws std::string exception on error.
+*/
 std::string json::Builder::encode(ENCODE option) const {
     if (_root == nullptr) {
         throw std::string("error: empty json");
@@ -1262,7 +1658,12 @@ std::string json::Builder::encode(ENCODE option) const {
     return j;
 }
 
-//------------------------------------------------------------------------------
+/** @brief End current node. 
+*
+* @return Reference to this object.
+*
+* @throws std::string exception on error.
+*/
 json::Builder& json::Builder::end() {
     if (_current == nullptr) {
         throw std::string("error: empty json");
@@ -1272,10 +1673,17 @@ json::Builder& json::Builder::end() {
     }
 
     _current = _current->parent();
+
     return *this;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an array.
+*
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeArray(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::ARRAY;
@@ -1284,7 +1692,13 @@ json::JS* json::Builder::MakeArray(const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an array inline (without newlines).
+*
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::ARRAY;
@@ -1294,7 +1708,14 @@ json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an bool.
+*
+* @param[in] vb      Bool value.
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::BOOL;
@@ -1303,7 +1724,13 @@ json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an null value.
+*
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeNull(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::NIL;
@@ -1311,7 +1738,14 @@ json::JS* json::Builder::MakeNull(const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make an number value.
+*
+* @param[in] vn      Number value.
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeNumber(double vn, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::NUMBER;
@@ -1320,7 +1754,13 @@ json::JS* json::Builder::MakeNumber(double vn, const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make a object value.
+*
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeObject(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::OBJECT;
@@ -1329,7 +1769,13 @@ json::JS* json::Builder::MakeObject(const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make a object inline (no newline).
+*
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::OBJECT;
@@ -1339,7 +1785,14 @@ json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
     return r;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Make a string value.
+*
+* @param[in] vs      String value.
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
 json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
     r->_type = TYPE::STRING;
@@ -1348,13 +1801,16 @@ json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escap
     return r;
 }
 
-//------------------------------------------------------------------------------
-json::JS* json::Builder::MakeString(std::string vs, const char* name, bool escape) {
-    auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::STRING;
-    r->_vs   = strdup((escape == true) ? json::escape(vs.c_str()).c_str() : vs.c_str());
-
-    return r;
+/** @brief Make a string value.
+*
+* @param[in] vs      String value.
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
+*
+* @return New value.
+*/
+json::JS* json::Builder::MakeString(const std::string& vs, const char* name, bool escape) {
+    return Builder::MakeString(vs.c_str(), name, escape);
 }
 
 } // flw
