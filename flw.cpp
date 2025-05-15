@@ -7136,6 +7136,7 @@ class _DlgTheme : public Fl_Double_Window {
     Fl_Button*                  _close;
     Fl_Button*                  _fixedfont;
     Fl_Button*                  _font;
+    Fl_Check_Button*            _scale;
     GridGroup*                  _grid;
     int                         _theme_row;
 public:
@@ -7148,11 +7149,13 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use Scaling");
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
-        _grid->add(_theme,         1,   1,  -1, -16);
-        _grid->add(_font_label,    1, -15,  -1,   4);
-        _grid->add(_fixed_label,   1, -10,  -1,   4);
+        _grid->add(_theme,         1,   1,  -1, -21);
+        _grid->add(_font_label,    1, -20,  -1,   4);
+        _grid->add(_fixed_label,   1, -15,  -1,   4);
+        _grid->add(_scale,         1, -11,  16,   4);
         _grid->add(_font,        -51,  -5,  16,   4);
         _grid->add(_fixedfont,   -34,  -5,  16,   4);
         _grid->add(_close,       -17,  -5,  16,   4);
@@ -7163,6 +7166,9 @@ public:
         if (enable_fixedfont == false) {
           _fixedfont->deactivate();
         }
+        if (flw::PREF_SCALE_ON == true) {
+            _scale->value(1);
+        }
         _close->callback(Callback, this);
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
@@ -7172,6 +7178,7 @@ public:
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _font_label->box(FL_BORDER_BOX);
         _font_label->color(FL_BACKGROUND2_COLOR);
+        _scale->callback(Callback, this);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
@@ -7264,6 +7271,21 @@ public:
             }
             self->update_pref();
         }
+        else if (w == self->_scale) {
+            flw::PREF_SCALE_ON = self->_scale->value();
+            if (flw::PREF_SCALE_ON == true) {
+                if (flw::PREF_SCALE > 0.5 && flw::PREF_SCALE_ON < 4.0) {
+                    Fl::screen_scale(self->top_window()->screen_num(), flw::PREF_SCALE);
+                }
+                else {
+                    Fl::screen_scale(self->top_window()->screen_num(), 1.0);
+                }
+            }
+            else {
+                Fl::screen_scale(self->top_window()->screen_num(), 1.0);
+            }
+            self->update_pref();
+        }
         else if (w == self->_close) {
             self->hide();
         }
@@ -7284,7 +7306,7 @@ public:
         _fixed_label->labelfont(flw::PREF_FIXED_FONT);
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 28);
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
         size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
         _grid->resize(0, 0, w(), h());
         theme::_scrollbar();
@@ -7682,6 +7704,8 @@ int                         PREF_FIXED_FONTSIZE     = 14;
 int                         PREF_FONT               = FL_HELVETICA;
 int                         PREF_FONTSIZE           = 14;
 std::string                 PREF_FONTNAME           = "FL_HELVETICA";
+double                      PREF_SCALE              = 1.0;
+bool                        PREF_SCALE_ON           = false;
 std::string                 PREF_THEME              = "default";
 const char* const           PREF_THEMES[]           = {
                                 "default",
@@ -8537,7 +8561,7 @@ bool theme::is_dark() {
         return false;
     }
 }
-bool theme::load(std::string name) {
+bool theme::load(const std::string& name) {
     if (theme::_SCROLLSIZE == 0) {
         theme::_SCROLLSIZE = Fl::scrollbar_size();
     }
@@ -8586,7 +8610,7 @@ bool theme::load(std::string name) {
     theme::_scrollbar();
     return true;
 }
-int theme::load_font(std::string requested_font) {
+int theme::load_font(const std::string& requested_font) {
     theme::load_fonts();
     auto count = 0;
     for (auto font : flw::PREF_FONTNAMES) {
@@ -8641,7 +8665,7 @@ void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resourc
     (void) name;
 #endif
 }
-void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, std::string basename) {
+void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, const std::string& basename) {
     int  x, y, w, h;
     pref.get((basename + "x").c_str(), x, 0);
     pref.get((basename + "y").c_str(), y, 0);
@@ -8696,26 +8720,19 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     _scrollbar();
 }
-void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, std::string basename) {
+double theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, const std::string& basename) {
     assert(window);
-    int  x, y, w, h;
+    int  x, y, w, h, s;
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
+    pref.get((basename + "s").c_str(), s, 1);
     if (x < 0 || x > Fl::w()) {
         x = 0;
     }
     if (y < 0 || y > Fl::h()) {
         y = 0;
-    }
-    if (w > Fl::w()) {
-        x = 0;
-        w = Fl::w();
-    }
-    if (h > Fl::h()) {
-        y = 0;
-        h = Fl::h();
     }
 #ifdef _WIN32
     if (show == true && window->shown() == 0) {
@@ -8728,6 +8745,12 @@ void theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, in
         window->show();
     }
 #endif
+    flw::PREF_SCALE_ON = s;
+    flw::PREF_SCALE    = Fl::screen_scale(window->screen_num());
+    if (flw::PREF_SCALE_ON == false) {
+        Fl::screen_scale(window->screen_num(), 1.0);
+    }
+    return flw::PREF_SCALE;
 }
 bool theme::parse(int argc, const char** argv) {
     auto res = false;
@@ -8745,7 +8768,7 @@ bool theme::parse(int argc, const char** argv) {
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     return res;
 }
-void theme::save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, std::string basename) {
+void theme::save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, const std::string& basename) {
     pref.set((basename + "x").c_str(), rect.x());
     pref.set((basename + "y").c_str(), rect.y());
     pref.set((basename + "w").c_str(), rect.w());
@@ -8758,12 +8781,13 @@ void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("mono_name", flw::PREF_FIXED_FONTNAME.c_str());
     pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
 }
-void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, std::string basename) {
+void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, const std::string& basename) {
     assert(window);
     pref.set((basename + "x").c_str(), window->x());
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
+    pref.set((basename + "s").c_str(), flw::PREF_SCALE_ON);
 }
 PrintText::PrintText(std::string filename,
     Fl_Paged_Device::Page_Format page_format,

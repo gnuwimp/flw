@@ -1641,6 +1641,7 @@ class _DlgTheme : public Fl_Double_Window {
     Fl_Button*                  _close;
     Fl_Button*                  _fixedfont;
     Fl_Button*                  _font;
+    Fl_Check_Button*            _scale;
     GridGroup*                  _grid;
     int                         _theme_row;
 
@@ -1656,12 +1657,14 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use Scaling");
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
 
-        _grid->add(_theme,         1,   1,  -1, -16);
-        _grid->add(_font_label,    1, -15,  -1,   4);
-        _grid->add(_fixed_label,   1, -10,  -1,   4);
+        _grid->add(_theme,         1,   1,  -1, -21);
+        _grid->add(_font_label,    1, -20,  -1,   4);
+        _grid->add(_fixed_label,   1, -15,  -1,   4);
+        _grid->add(_scale,         1, -11,  16,   4);
         _grid->add(_font,        -51,  -5,  16,   4);
         _grid->add(_fixedfont,   -34,  -5,  16,   4);
         _grid->add(_close,       -17,  -5,  16,   4);
@@ -1675,6 +1678,10 @@ public:
           _fixedfont->deactivate();
         }
 
+        if (flw::PREF_SCALE_ON == true) {
+            _scale->value(1);
+        }
+
         _close->callback(Callback, this);
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
@@ -1684,6 +1691,7 @@ public:
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _font_label->box(FL_BORDER_BOX);
         _font_label->color(FL_BACKGROUND2_COLOR);
+        _scale->callback(Callback, this);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
@@ -1790,6 +1798,23 @@ public:
 
             self->update_pref();
         }
+        else if (w == self->_scale) {
+            flw::PREF_SCALE_ON = self->_scale->value();
+
+            if (flw::PREF_SCALE_ON == true) {
+                if (flw::PREF_SCALE > 0.5 && flw::PREF_SCALE_ON < 4.0) {
+                    Fl::screen_scale(self->top_window()->screen_num(), flw::PREF_SCALE);
+                }
+                else {
+                    Fl::screen_scale(self->top_window()->screen_num(), 1.0);
+                }
+            }
+            else {
+                Fl::screen_scale(self->top_window()->screen_num(), 1.0);
+            }
+            
+            self->update_pref();
+        }
         else if (w == self->_close) {
             self->hide();
         }
@@ -1815,7 +1840,7 @@ public:
         _fixed_label->labelfont(flw::PREF_FIXED_FONT);
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 28);
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
         size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
         _grid->resize(0, 0, w(), h());
         theme::_scrollbar();
@@ -1827,7 +1852,7 @@ public:
             }
 
         }
-
+        
         Fl::redraw();
     }
 };
