@@ -259,10 +259,9 @@ static std::string& _replace_all(std::string& string, const std::string& find, c
         return string;
     }
 
-    size_t start = std::string::npos;
+    size_t start = 0;
 
     while ((start = string.find(find, start)) != std::string::npos) {
-        printf("\t%s\n", string.c_str());
         string.replace(start, find.length(), replace);
         start += replace.length();
     }
@@ -383,6 +382,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
 #ifdef _WIN32
     if (name.find("\\\\") == 0) {
         res = name;
+
         return name;
     }
     else if (name.size() < 2 || name[1] != ':') {
@@ -825,8 +825,7 @@ bool is_circular(const std::string& path) {
     }
 
     auto l = file.canonical_name() + "/";
-    puts(file.filename().c_str());
-    puts(l.c_str());
+
     return file.filename().find(l) == 0;
 }
 
