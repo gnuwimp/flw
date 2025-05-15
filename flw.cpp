@@ -837,9 +837,8 @@ static std::string& _replace_all(std::string& string, const std::string& find, c
     if (find.empty() == true) {
         return string;
     }
-    size_t start = std::string::npos;
+    size_t start = 0;
     while ((start = string.find(find, start)) != std::string::npos) {
-        printf("\t%s\n", string.c_str());
         string.replace(start, find.length(), replace);
         start += replace.length();
     }
@@ -1177,8 +1176,6 @@ bool is_circular(const std::string& path) {
         return false;
     }
     auto l = file.canonical_name() + "/";
-    puts(file.filename().c_str());
-    puts(l.c_str());
     return file.filename().find(l) == 0;
 }
 bool mkdir(const std::string& path) {
