@@ -65,7 +65,7 @@ enum class TYPE {
 #endif
 
 char*                           allocate(char* resize_or_null, size_t size);
-std::string                     canonical_name(const std::string& path);
+File                            canonical(const std::string& path);
 bool                            chdir(const std::string& path);
 std::string                     check_filename(const std::string& name);
 bool                            chmod(const std::string& path, int mode);
@@ -77,6 +77,7 @@ uint64_t                        fletcher64(const char* buffer, size_t buffer_siz
 void                            flush(FILE* file);
 File                            home_dir();
 bool                            is_circular(const std::string& path);
+File                            linkname(const std::string& path);
 bool                            mkdir(const std::string& path);
 FILE*                           open(const std::string& path, const std::string& mode);
 std::string                     os();
@@ -140,7 +141,7 @@ public:
     Buf&                        operator+=(const Buf& b)
                                     { return add(b._str, b._size); } ///< @brief Add buffer. @throws std::string exception on error.
     bool                        operator==(const Buf& other) const;
-    bool                        operator!=(const Buf& other) const 
+    bool                        operator!=(const Buf& other) const
                                     { return (*this == other) == false; } ///< @brief Compare buffer objects.
     Buf&                        add(const char* buffer, size_t size);
     const char*                 c_str() const
@@ -197,7 +198,7 @@ private:
 
 /** @brief Portable file information class.
 *
-* Paths in windows are always slashes.
+* Paths in windows are always slashes.\n
 *
 * @snippet file.cpp gnu::file file example
 */
@@ -212,8 +213,8 @@ public:
                                     { return _filename <= other._filename; } ///< @brief Compare filenames.
     const char*                 c_str() const
                                     { return _filename.c_str(); } ///< @brief Return filename.
-    std::string                 canonical_name() const
-                                    { return file::canonical_name(_filename); } ///< @brief Return canonical file name.
+    File                        canonical() const
+                                    { return file::canonical(_filename); } ///< @brief Return canonical file name.
     int64_t                     ctime() const
                                     { return _ctime; } ///< @brief Return created file time.
     void                        debug(bool short_version = true) const
@@ -224,6 +225,8 @@ public:
                                     { return _ext; } ///< @brief Return file extension, not for directories.
     const std::string&          filename() const
                                     { return _filename; } ///< @brief Return full filename.
+    bool                        is_circular() const
+                                    { return file::is_circular(_filename); } ///< @brief Is link to a directory a circular one?
     bool                        is_dir() const
                                     { return _type == TYPE::DIR; } ///< @brief Is file a directory?
     bool                        is_file() const
@@ -234,7 +237,8 @@ public:
                                     { return _type == TYPE::MISSING; }  ///< @brief Is file missing?
     bool                        is_other() const
                                     { return _type == TYPE::OTHER; }  ///< @brief Is file something else?
-    std::string                 linkname() const;
+    File                        linkname() const
+                                    { return file::linkname(_filename); } ///< @brief Read link name.
     int                         mode() const
                                     { return _mode; } ///< @brief Return file mode.
     int64_t                     mtime() const

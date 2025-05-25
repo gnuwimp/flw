@@ -181,11 +181,8 @@ static unsigned _rand() {
 
     INIT = true;
 
-    static unsigned long next = 1;
-
     if (RAND_MAX < 50000) {
-        next = next * 1103515245 + 12345;
-        return ((unsigned)(next / 65536) % 32768);
+        return rand() * rand();
     }
     else {
         return rand();
@@ -380,13 +377,21 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     auto name = filename;
 
 #ifdef _WIN32
-    if (name.find("\\\\") == 0) {
-        res = name;
-
+    if (
+        (name.find("\\\\.\\") == 0 || name.find("\\\\?\\") == 0) &&
+        name.length() > 5 &&
+        name[5] == ':' &&
+        ((name[4] >= 'a' && name[4] <= 'z') ||
+        (name[4] >= 'A' && name[4] <= 'Z'))
+    ) {
+        res = name.substr(4);
+    }
+    else if (name.find("\\\\") == 0) {
         return name;
     }
     else if (name.size() < 2 || name[1] != ':') {
         auto work = File(file::work_dir());
+
         res = work.filename();
         res += "\\";
         res += name;
@@ -432,7 +437,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     }
 #endif
 
-    return (realpath == true) ? file::canonical_name(res) : res;
+    return (realpath == true) ? file::canonical(res).filename() : res;
 }
 
 #ifdef _WIN32
@@ -496,9 +501,9 @@ char* allocate(char* resize_or_null, size_t size) {
 *
 * @param[in] path  Path to convert.
 *
-* @return Result filename or input path for enu error.
+* @return Canonical file name.
 */
-std::string canonical_name(const std::string& path) {
+File canonical(const std::string& path) {
 #if defined(_WIN32)
     wchar_t wres[PATH_MAX];
     auto    wpath = file::_to_wide(path.c_str());
@@ -506,24 +511,23 @@ std::string canonical_name(const std::string& path) {
 
     if (len > 0 && len < PATH_MAX) {
         auto cpath = file::_from_wide(wres);
-        auto res   = std::string(cpath);
+        auto res   = File(cpath);
 
         free(cpath);
         free(wpath);
 
-        file::_replace_all(res, "\\", "/");
         return res;
     }
     else {
         free(wpath);
-        return path;
+        return File(path);
     }
 #else
     auto tmp = realpath(path.c_str(), nullptr);
     auto res = (tmp != nullptr) ? std::string(tmp) : path;
 
     free(tmp);
-    return res;
+    return File(res);
 #endif
 }
 
@@ -659,7 +663,7 @@ Buf close_stdout() {
 */
 bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
 #ifdef DEBUG
-    static const size_t BUF_SIZE = 16384;
+    static const size_t BUF_SIZE = 1024;
 #else
     static const size_t BUF_SIZE = 131072;
 #endif
@@ -684,7 +688,6 @@ bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void*
 
         if (write != nullptr) {
             fclose(write);
-            file::remove(to);
         }
 
         free(buf);
@@ -786,7 +789,7 @@ void flush(FILE* file) {
 /**
 * @brief Get home directory.
 *
-* @return Home directory or work directory for any failure.
+* @return Home directory or work/current directory for any failure.
 */
 File home_dir() {
 
@@ -824,9 +827,67 @@ bool is_circular(const std::string& path) {
         return false;
     }
 
-    auto l = file.canonical_name() + "/";
+    auto l = file.linkname().filename() + "/";
 
     return file.filename().find(l) == 0;
+}
+
+/**
+* @brief Read link name.
+*
+* @param[in] path  Path to file.
+*
+* @return Destination link name, if not an link it will return canonicalized path.
+*/
+File linkname(const std::string& path) {
+#ifdef _WIN32
+    auto wpath = file::_to_wide(path.c_str());
+    auto hpath = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
+    if (hpath == INVALID_HANDLE_VALUE) {
+        free(wpath);
+        return File(path, false);
+    }
+
+    auto hlen  = GetFinalPathNameByHandleW(hpath, NULL, 0, FILE_NAME_OPENED);
+
+    if (hlen == 0) {
+        CloseHandle(hpath);
+        free(wpath);
+        return File(path, false);
+    }
+
+    auto rpath = static_cast<wchar_t*>(malloc(sizeof(wchar_t) * hlen + 10));
+
+    GetFinalPathNameByHandleW(hpath, rpath, hlen, FILE_NAME_OPENED);
+
+    auto upath = file::_from_wide(rpath);
+    auto res   = File(upath, true);
+
+    CloseHandle(hpath);
+    free(wpath);
+    free(rpath);
+    free(upath);
+
+    return res;
+#else
+    char tmp[PATH_MAX + 1];
+    auto tmp_size = readlink(path.c_str(), tmp, PATH_MAX);
+
+    if (tmp_size < 0 || tmp_size >= PATH_MAX) {
+        return File(path, true);
+    }
+
+    tmp[tmp_size] = 0;
+
+    if (*tmp == '/') {
+        return File(tmp, true);
+    }
+    else {
+        auto parent = File(path, false).path();
+        return File(parent + "/" + tmp, true);
+    }
+#endif
 }
 
 /** @brief Create a directory.
@@ -1068,6 +1129,10 @@ bool remove(const std::string& path) {
         res = DeleteFileW(wpath);
     }
 
+    if (res == false && f.type() == TYPE::MISSING && f.is_link() == true) {
+        res = RemoveDirectoryW(wpath);
+    }
+    
     if (res == false) {
         if (f.type() == TYPE::DIR) {
             file::chmod(path, file::DEFAULT_DIR_MODE);
@@ -1657,8 +1722,10 @@ bool Buf::write(const std::string& path, bool flush) const {
 /**
 * @brief Get file info for input path.
 *
+* On windows if a link points to a missing file/directory will have its type to MISSING.\n
+*
 * @param[in] path      File path.
-* @param[in] realpath  True to use the real path if it is an link.
+* @param[in] realpath  True to find the canonical path to the file.
 */
 File::File(const std::string& path, bool realpath) {
     _ctime = -1;
@@ -1712,6 +1779,15 @@ File::File(const std::string& path, bool realpath) {
                 }
 
                 CloseHandle(handle);
+
+                if (realpath == true) { // Not needed on linux.
+                    _filename = file::linkname(_filename).filename();
+                    file::_split_paths(_filename, _path, _name, _ext);
+                }
+            }
+            else {
+                _size = -1;
+                _type = TYPE::MISSING;
             }
         }
     }
@@ -1759,27 +1835,6 @@ File::File(const std::string& path, bool realpath) {
     if (_type == TYPE::DIR) {
         _ext = "";
     }
-}
-
-/**
-* @brief Read link name (not for windows).
-*
-* @return Link name, if not an link it will return a empty string.
-*/
-std::string File::linkname() const {
-#ifdef _WIN32
-    return "";
-#else
-    char tmp[PATH_MAX + 1];
-    auto tmp_size = readlink(_filename.c_str(), tmp, PATH_MAX);
-
-    if (tmp_size > 0 && tmp_size < PATH_MAX) {
-        tmp[tmp_size] = 0;
-        return _path + "/" + tmp;
-    }
-
-    return "";
-#endif
 }
 
 /**
