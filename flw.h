@@ -157,7 +157,7 @@ enum class TYPE {
     static const int            DEFAULT_FILE_MODE = 0664;
 #endif
 char*                           allocate(char* resize_or_null, size_t size);
-std::string                     canonical_name(const std::string& path);
+File                            canonical(const std::string& path);
 bool                            chdir(const std::string& path);
 std::string                     check_filename(const std::string& name);
 bool                            chmod(const std::string& path, int mode);
@@ -169,6 +169,7 @@ uint64_t                        fletcher64(const char* buffer, size_t buffer_siz
 void                            flush(FILE* file);
 File                            home_dir();
 bool                            is_circular(const std::string& path);
+File                            linkname(const std::string& path);
 bool                            mkdir(const std::string& path);
 FILE*                           open(const std::string& path, const std::string& mode);
 std::string                     os();
@@ -265,8 +266,8 @@ public:
                                     { return _filename <= other._filename; }
     const char*                 c_str() const
                                     { return _filename.c_str(); }
-    std::string                 canonical_name() const
-                                    { return file::canonical_name(_filename); }
+    File                        canonical() const
+                                    { return file::canonical(_filename); }
     int64_t                     ctime() const
                                     { return _ctime; }
     void                        debug(bool short_version = true) const
@@ -277,6 +278,8 @@ public:
                                     { return _ext; }
     const std::string&          filename() const
                                     { return _filename; }
+    bool                        is_circular() const
+                                    { return file::is_circular(_filename); }
     bool                        is_dir() const
                                     { return _type == TYPE::DIR; }
     bool                        is_file() const
@@ -287,7 +290,8 @@ public:
                                     { return _type == TYPE::MISSING; }
     bool                        is_other() const
                                     { return _type == TYPE::OTHER; }
-    std::string                 linkname() const;
+    File                        linkname() const
+                                    { return file::linkname(_filename); }
     int                         mode() const
                                     { return _mode; }
     int64_t                     mtime() const
@@ -2122,8 +2126,8 @@ namespace flw {
 class TabsGroup : public Fl_Group {
 public:
     static const int            DEFAULT_SPACE_PX = 2;
-    static int                  MIN_MIN_WIDTH_NS_CH;
-    static int                  MIN_MIN_WIDTH_EW_CH;
+    static int                  MIN_WIDTH_NORTH_SOUTH;
+    static int                  MIN_WIDTH_EAST_WEST;
     enum class TABS {
                                 NORTH,
                                 SOUTH,
@@ -2131,10 +2135,10 @@ public:
                                 EAST,
     };
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        add(std::string label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
+    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; do_layout(); }
-    Fl_Widget*                  child(int num) const;
+    Fl_Widget*                  child(int index) const;
     int                         children() const
                                     { return (int) _widgets.size(); }
     void                        clear();
@@ -2145,12 +2149,12 @@ public:
     int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs();
-    void                        insert(std::string label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
+    void                        insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
     bool                        is_tabs_visible() const
                                     { return _scroll->visible(); }
     std::string                 label(Fl_Widget* widget);
-    void                        label(std::string label, Fl_Widget* widget);
-    Fl_Widget*                  remove(int num);
+    void                        label(const std::string& label, Fl_Widget* widget);
+    Fl_Widget*                  remove(int index);
     Fl_Widget*                  remove(Fl_Widget* widget)
                                     { return TabsGroup::remove(find(widget)); }
     void                        resize(int X, int Y, int W, int H) override;
@@ -2172,6 +2176,7 @@ private:
     void                        _resize_east_west(int X, int Y, int W, int H);
     void                        _resize_north_south(int X, int Y, int W, int H);
     void                        _resize_widgets();
+    Fl_Align                    _align;
     Fl_Pack*                    _pack;
     Fl_Rect                     _area;
     Fl_Scroll*                  _scroll;
@@ -2179,7 +2184,6 @@ private:
     WidgetVector                _widgets;
     bool                        _drag;
     int                         _active;
-    int                         _align;
     int                         _e;
     int                         _n;
     int                         _pos;

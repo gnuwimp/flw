@@ -66,6 +66,10 @@ all: obj \
 obj:
 	mkdir obj
 
+doc: Doxyfile
+	mkdir -p documentation
+	doxygen 
+
 $(THEME_RESOURCE): res/theme.rc
 	windres res/theme.rc -O coff -o $(THEME_RESOURCE)
 
@@ -288,3 +292,4 @@ run_theme: test_theme.exe
 
 clean:
 	rm -f obj/* *.exe *.ps *.pdf
+	rm -R -f documentation

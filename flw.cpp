@@ -791,10 +791,8 @@ static unsigned _rand() {
         srand(time(nullptr));
     }
     INIT = true;
-    static unsigned long next = 1;
     if (RAND_MAX < 50000) {
-        next = next * 1103515245 + 12345;
-        return ((unsigned)(next / 65536) % 32768);
+        return rand() * rand();
     }
     else {
         return rand();
@@ -909,8 +907,16 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     std::string res;
     auto name = filename;
 #ifdef _WIN32
-    if (name.find("\\\\") == 0) {
-        res = name;
+    if (
+        (name.find("\\\\.\\") == 0 || name.find("\\\\?\\") == 0) &&
+        name.length() > 5 &&
+        name[5] == ':' &&
+        ((name[4] >= 'a' && name[4] <= 'z') ||
+        (name[4] >= 'A' && name[4] <= 'Z'))
+    ) {
+        res = name.substr(4);
+    }
+    else if (name.find("\\\\") == 0) {
         return name;
     }
     else if (name.size() < 2 || name[1] != ':') {
@@ -952,7 +958,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
         res.pop_back();
     }
 #endif
-    return (realpath == true) ? file::canonical_name(res) : res;
+    return (realpath == true) ? file::canonical(res).filename() : res;
 }
 #ifdef _WIN32
 static wchar_t* _to_wide(const char* string) {
@@ -975,28 +981,27 @@ char* allocate(char* resize_or_null, size_t size) {
     }
     return (char*) res;
 }
-std::string canonical_name(const std::string& path) {
+File canonical(const std::string& path) {
 #if defined(_WIN32)
     wchar_t wres[PATH_MAX];
     auto    wpath = file::_to_wide(path.c_str());
     auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
     if (len > 0 && len < PATH_MAX) {
         auto cpath = file::_from_wide(wres);
-        auto res   = std::string(cpath);
+        auto res   = File(cpath);
         free(cpath);
         free(wpath);
-        file::_replace_all(res, "\\", "/");
         return res;
     }
     else {
         free(wpath);
-        return path;
+        return File(path);
     }
 #else
     auto tmp = realpath(path.c_str(), nullptr);
     auto res = (tmp != nullptr) ? std::string(tmp) : path;
     free(tmp);
-    return res;
+    return File(res);
 #endif
 }
 bool chdir(const std::string& path) {
@@ -1067,7 +1072,7 @@ Buf close_stdout() {
 }
 bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
 #ifdef DEBUG
-    static const size_t BUF_SIZE = 16384;
+    static const size_t BUF_SIZE = 1024;
 #else
     static const size_t BUF_SIZE = 131072;
 #endif
@@ -1087,7 +1092,6 @@ bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void*
         }
         if (write != nullptr) {
             fclose(write);
-            file::remove(to);
         }
         free(buf);
         return false;
@@ -1175,8 +1179,47 @@ bool is_circular(const std::string& path) {
     if (file.type() != TYPE::DIR || file.is_link() == false) {
         return false;
     }
-    auto l = file.canonical_name() + "/";
+    auto l = file.linkname().filename() + "/";
     return file.filename().find(l) == 0;
+}
+File linkname(const std::string& path) {
+#ifdef _WIN32
+    auto wpath = file::_to_wide(path.c_str());
+    auto hpath = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hpath == INVALID_HANDLE_VALUE) {
+        free(wpath);
+        return File(path, false);
+    }
+    auto hlen  = GetFinalPathNameByHandleW(hpath, NULL, 0, FILE_NAME_OPENED);
+    if (hlen == 0) {
+        CloseHandle(hpath);
+        free(wpath);
+        return File(path, false);
+    }
+    auto rpath = static_cast<wchar_t*>(malloc(sizeof(wchar_t) * hlen + 10));
+    GetFinalPathNameByHandleW(hpath, rpath, hlen, FILE_NAME_OPENED);
+    auto upath = file::_from_wide(rpath);
+    auto res   = File(upath, true);
+    CloseHandle(hpath);
+    free(wpath);
+    free(rpath);
+    free(upath);
+    return res;
+#else
+    char tmp[PATH_MAX + 1];
+    auto tmp_size = readlink(path.c_str(), tmp, PATH_MAX);
+    if (tmp_size < 0 || tmp_size >= PATH_MAX) {
+        return File(path, true);
+    }
+    tmp[tmp_size] = 0;
+    if (*tmp == '/') {
+        return File(tmp, true);
+    }
+    else {
+        auto parent = File(path, false).path();
+        return File(parent + "/" + tmp, true);
+    }
+#endif
 }
 bool mkdir(const std::string& path) {
     bool res = false;
@@ -1308,6 +1351,9 @@ bool remove(const std::string& path) {
     }
     else {
         res = DeleteFileW(wpath);
+    }
+    if (res == false && f.type() == TYPE::MISSING && f.is_link() == true) {
+        res = RemoveDirectoryW(wpath);
     }
     if (res == false) {
         if (f.type() == TYPE::DIR) {
@@ -1679,6 +1725,14 @@ File::File(const std::string& path, bool realpath) {
                     _ctime = file::_time(&ftCreationTime);
                 }
                 CloseHandle(handle);
+                if (realpath == true) {
+                    _filename = file::linkname(_filename).filename();
+                    file::_split_paths(_filename, _path, _name, _ext);
+                }
+            }
+            else {
+                _size = -1;
+                _type = TYPE::MISSING;
             }
         }
     }
@@ -1718,19 +1772,6 @@ File::File(const std::string& path, bool realpath) {
     if (_type == TYPE::DIR) {
         _ext = "";
     }
-}
-std::string File::linkname() const {
-#ifdef _WIN32
-    return "";
-#else
-    char tmp[PATH_MAX + 1];
-    auto tmp_size = readlink(_filename.c_str(), tmp, PATH_MAX);
-    if (tmp_size > 0 && tmp_size < PATH_MAX) {
-        tmp[tmp_size] = 0;
-        return _path + "/" + tmp;
-    }
-    return "";
-#endif
 }
 std::string File::name_without_ext() const {
     if (_type != TYPE::DIR) {
@@ -14077,9 +14118,10 @@ class _TabsGroupButton : public Fl_Toggle_Button {
 public:
     int                         tw;
     Fl_Widget*                  widget;
-    explicit _TabsGroupButton(int align, std::string label, Fl_Widget* WIDGET, void* o) : Fl_Toggle_Button(0, 0, 0, 0) {
-        tw     = 0;
-        widget = WIDGET;
+    explicit _TabsGroupButton(Fl_Align align, const std::string& label, Fl_Widget* widget, void* o) :
+    Fl_Toggle_Button(0, 0, 0, 0) {
+        tw           = 0;
+        this->widget = widget;
         this->align(align);
         copy_label(label.c_str());
         tooltip("");
@@ -14090,8 +14132,8 @@ public:
         labelsize(flw::PREF_FONTSIZE);
     }
 };
-int TabsGroup::MIN_MIN_WIDTH_NS_CH = 4;
-int TabsGroup::MIN_MIN_WIDTH_EW_CH = 4;
+int TabsGroup::MIN_WIDTH_NORTH_SOUTH = 4;
+int TabsGroup::MIN_WIDTH_EAST_WEST = 4;
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
@@ -14112,7 +14154,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     tabs(TABS::NORTH);
     update_pref();
 }
-void TabsGroup::add(std::string label, Fl_Widget* widget, const Fl_Widget* after) {
+void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after) {
     assert(widget);
     auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : (int) _widgets.size();
@@ -14154,8 +14196,8 @@ void TabsGroup::Callback(Fl_Widget* sender, void* object) {
     }
     self->_resize_widgets();
 }
-Fl_Widget* TabsGroup::child(int num) const {
-    return (num >= 0 && num < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[num])->widget : nullptr;
+Fl_Widget* TabsGroup::child(int index) const {
+    return (index >= 0 && index < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[index])->widget : nullptr;
 }
 void TabsGroup::clear() {
     _scroll->remove(_pack);
@@ -14326,7 +14368,7 @@ void TabsGroup::hide_tabs() {
     _scroll->hide();
     do_layout();
 }
-void TabsGroup::insert(std::string label, Fl_Widget* widget, const Fl_Widget* before) {
+void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before) {
     auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
     if (idx >= (int) _widgets.size()) {
@@ -14350,25 +14392,24 @@ std::string TabsGroup::label(Fl_Widget* widget) {
     }
     return _widgets[num]->label();
 }
-void TabsGroup::label(std::string label, Fl_Widget* widget) {
+void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
     if (num == -1) {
         return;
     }
     _widgets[num]->copy_label(label.c_str());
 }
-Fl_Widget* TabsGroup::remove(int num) {
-    if (num < 0 || num >= (int) _widgets.size()) {
+Fl_Widget* TabsGroup::remove(int index) {
+    if (index < 0 || index >= (int) _widgets.size()) {
         return nullptr;
     }
-    auto W = _widgets[num];
-    auto b = static_cast<_TabsGroupButton*>(W);
-    auto w = b->widget;
-    _widgets.erase(_widgets.begin() + num);
-    remove(w);
-    _scroll->remove(b);
-    delete b;
-    if (num < _active) {
+    auto button = static_cast<_TabsGroupButton*>(_widgets[index]);
+    auto res    = button->widget;
+    _widgets.erase(_widgets.begin() + index);
+    remove(res);
+    _scroll->remove(button);
+    delete button;
+    if (index < _active) {
         _active--;
     }
     else if (_active == (int) _widgets.size()) {
@@ -14376,7 +14417,7 @@ Fl_Widget* TabsGroup::remove(int num) {
     }
     do_layout();
     TabsGroup::Callback(_active_button(), this);
-    return w;
+    return res;
 }
 void TabsGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
@@ -14401,11 +14442,11 @@ void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     auto height = flw::PREF_FONTSIZE + 8;
     auto pack_h = (height + _space) * (int) _widgets.size() - _space;
     auto scroll = 0;
-    if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH) {
-        _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH;
+    if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
+        _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
     }
-    else if (_pos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH) {
-        _pos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH;
+    else if (_pos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
+        _pos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
     }
     if (pack_h > H) {
         scroll = (_scroll->scrollbar_size() == 0) ? Fl::scrollbar_size() : _scroll->scrollbar_size();
@@ -14433,8 +14474,8 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
         auto th = 0;
         b->tw = 0;
         fl_measure(b->label(), b->tw, th);
-        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_NS_CH) {
-            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_NS_CH;
+        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH) {
+            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH;
         }
         b->tw += flw::PREF_FONTSIZE;
         pack_w += b->tw + _space;
