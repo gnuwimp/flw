@@ -73,7 +73,7 @@ public:
         tabs->add("N", n);
         tabs->add("S", s);
         tabs->add("W", w);
-        tabs->add("W", e);
+        tabs->add("E", e);
         tabs->add("CLEAR", b7);
         tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
         tabs->box(FL_BORDER_BOX);

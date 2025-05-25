@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief Tab group widget.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "tabsgroup.h"
 
@@ -23,16 +28,26 @@ namespace flw {
  *     |______|                                      |_|
  */
 
-//------------------------------------------------------------------------------
+/** @brief Tab button.
+*
+* It stores also its accompanying widget,
+*/
 class _TabsGroupButton : public Fl_Toggle_Button {
 public:
-    int                         tw;
-    Fl_Widget*                  widget;
+    int                         tw;     // Width of label when button are on top or bottom.
+    Fl_Widget*                  widget; // Child widget.
 
-    //--------------------------------------------------------------------------
-    explicit _TabsGroupButton(int align, std::string label, Fl_Widget* WIDGET, void* o) : Fl_Toggle_Button(0, 0, 0, 0) {
-        tw     = 0;
-        widget = WIDGET;
+    /** @brief Create tab button.
+    *
+    * @param[in] align   Label align.
+    * @param[in] label   Label text.
+    * @param[in] widget  Child widget.
+    * @param[in] o       Pointer to parent TabsGroup.
+    */
+    explicit _TabsGroupButton(Fl_Align align, const std::string& label, Fl_Widget* widget, void* o) :
+    Fl_Toggle_Button(0, 0, 0, 0) {
+        tw           = 0;
+        this->widget = widget;
 
         this->align(align);
         copy_label(label.c_str());
@@ -56,10 +71,19 @@ public:
  *                                                 |_|
  */
 
-int TabsGroup::MIN_MIN_WIDTH_NS_CH = 4;
-int TabsGroup::MIN_MIN_WIDTH_EW_CH = 4;
+int TabsGroup::MIN_WIDTH_NORTH_SOUTH = 4;
+int TabsGroup::MIN_WIDTH_EAST_WEST = 4;
 
-//------------------------------------------------------------------------------
+/** @brief Create tab group.
+*
+* By default tabs will be set to north/top of widget.
+*
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+* @param[in] l  Optional label.
+*/
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
@@ -83,8 +107,15 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     update_pref();
 }
 
-//------------------------------------------------------------------------------
-void TabsGroup::add(std::string label, Fl_Widget* widget, const Fl_Widget* after) {
+/** @brief Add child widget.
+*
+* If no after widget is used it will be added last.
+*
+* @param[in] label   Label for this widget.
+* @param[in] widget  Child widget.
+* @param[in] after   Add widget after this, optional.
+*/
+void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after) {
     assert(widget);
 
     auto button = new _TabsGroupButton(_align, label, widget, this);
@@ -107,12 +138,19 @@ void TabsGroup::add(std::string label, Fl_Widget* widget, const Fl_Widget* after
     do_layout();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get active tab button.
+*
+* @return Button or NULL.
+*/
 Fl_Widget* TabsGroup::_active_button() {
     return (_active >= 0 && _active < (int) _widgets.size()) ? _widgets[_active] : nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Tab button has been activated so switch to new widget.
+*
+* @param[in] sender  Tab button.
+* @param[in] object  This object.
+*/
 void TabsGroup::Callback(Fl_Widget* sender, void* object) {
     auto self   = static_cast<TabsGroup*>(object);
     auto count  = 0;
@@ -139,12 +177,19 @@ void TabsGroup::Callback(Fl_Widget* sender, void* object) {
     self->_resize_widgets();
 }
 
-//------------------------------------------------------------------------------
-Fl_Widget* TabsGroup::child(int num) const {
-    return (num >= 0 && num < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[num])->widget : nullptr;
+/** @brief Get child widget.
+*
+* @param[in] index  Child index.
+*
+* @return Widget or NULL.
+*/
+Fl_Widget* TabsGroup::child(int index) const {
+    return (index >= 0 && index < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[index])->widget : nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Remove all widgets.
+*
+*/
 void TabsGroup::clear() {
     _scroll->remove(_pack);
     _scroll->clear();
@@ -159,7 +204,9 @@ void TabsGroup::clear() {
     Fl::redraw();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Print some debug info.
+*
+*/
 void TabsGroup::debug() const {
 #ifdef DEBUG
     printf("TabsGroup ==>\n");
@@ -185,13 +232,21 @@ void TabsGroup::debug() const {
 #endif
 }
 
-//------------------------------------------------------------------------------
+/** @brief Redraw widget.
+*
+* Force scroll widget to redraw (is it needed?).
+*/
 void TabsGroup::draw() {
     _scroll->redraw();
     Fl_Group::draw();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Find index for widget.
+*
+* @param[in] widget  Widget to find.
+*
+* @return Index or -1 if not found.
+*/
 int TabsGroup::find(const Fl_Widget* widget) const {
     auto num = 0;
 
@@ -209,13 +264,22 @@ int TabsGroup::find(const Fl_Widget* widget) const {
     return -1;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Handle events.
+*
+* If tabs are west/east then check for mouse drag events and resize width of buttons.\n
+* Check also for key events, tab buttons can be selected with alt + 0-9.\n
+* And they can also be moved with alt+shift+left/right keys.\n
+*
+* @param[in] event  Event value.
+*
+* @return Either 1 from this widget or value from parent widget.
+*/
 int TabsGroup::handle(int event) {
     if (_widgets.size() == 0) {
         return Fl_Group::handle(event);
     }
 
-    if (_tabs == TABS::WEST || _tabs == TABS::EAST) { // Only left/right mode has resize width by using mouse drag.
+    if (_tabs == TABS::WEST || _tabs == TABS::EAST) { // Only left/right mode can resize width by using mouse.
         if (event == FL_DRAG) {
             if (_drag == true) {
                 auto pos = 0;
@@ -334,24 +398,37 @@ int TabsGroup::handle(int event) {
     return Fl_Group::handle(event);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get help text.
+*
+* @return Help text.
+*/
 const char* TabsGroup::Help() {
     static const char* const HELP =
     "Use alt + left/right to move between tabs.\n"
     "Or alt (command key) + [1 - 9] to select tab.\n"
     "And alt + shift + left/right to move tabs.\n"
     "Tabs on the left/right side can have its width changed by dragging the mouse.";
+
     return HELP;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Hide all tab buttons.
+*
+*/
 void TabsGroup::hide_tabs() {
     _scroll->hide();
     do_layout();
 }
 
-//------------------------------------------------------------------------------
-void TabsGroup::insert(std::string label, Fl_Widget* widget, const Fl_Widget* before) {
+/** @brief Insert child widget.
+*
+* If "before" widget is NULL then the widget will be inserted first.
+*
+* @param[in] label   Label for this widget.
+* @param[in] widget  Child widget.
+* @param[in] before  Insert before this, optional.
+*/
+void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before) {
     auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
 
@@ -371,7 +448,12 @@ void TabsGroup::insert(std::string label, Fl_Widget* widget, const Fl_Widget* be
     do_layout();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get tab button label.
+*
+* @param[in] widget  Child widget to get tab button label for.
+*
+* @return Label string or empty string.
+*/
 std::string TabsGroup::label(Fl_Widget* widget) {
     auto num = find(widget);
 
@@ -382,8 +464,12 @@ std::string TabsGroup::label(Fl_Widget* widget) {
     return _widgets[num]->label();
 }
 
-//------------------------------------------------------------------------------
-void TabsGroup::label(std::string label, Fl_Widget* widget) {
+/** @brief Set tab button label.
+*
+* @param[in] label   New label.
+* @param[in] widget  Child widget to set tab button label for.
+*/
+void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num == -1) {
@@ -393,22 +479,26 @@ void TabsGroup::label(std::string label, Fl_Widget* widget) {
     _widgets[num]->copy_label(label.c_str());
 }
 
-//------------------------------------------------------------------------------
-Fl_Widget* TabsGroup::remove(int num) {
-    if (num < 0 || num >= (int) _widgets.size()) {
+/** @brief Remove child widget.
+*
+* @param[in] index  Child index.
+*
+* @return Removed child widget or NULL.
+*/
+Fl_Widget* TabsGroup::remove(int index) {
+    if (index < 0 || index >= (int) _widgets.size()) {
         return nullptr;
     }
 
-    auto W = _widgets[num];
-    auto b = static_cast<_TabsGroupButton*>(W);
-    auto w = b->widget;
+    auto button = static_cast<_TabsGroupButton*>(_widgets[index]);
+    auto res    = button->widget;
 
-    _widgets.erase(_widgets.begin() + num);
-    remove(w);
-    _scroll->remove(b);
-    delete b;
+    _widgets.erase(_widgets.begin() + index);
+    remove(res);
+    _scroll->remove(button);
+    delete button;
 
-    if (num < _active) {
+    if (index < _active) {
         _active--;
     }
     else if (_active == (int) _widgets.size()) {
@@ -417,10 +507,13 @@ Fl_Widget* TabsGroup::remove(int num) {
 
     do_layout();
     TabsGroup::Callback(_active_button(), this);
-    return w;
+
+    return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize group.
+*
+*/
 void TabsGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
@@ -446,17 +539,19 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     _resize_widgets();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize tab buttons if they are on the left or right side.
+*
+*/
 void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     auto height = flw::PREF_FONTSIZE + 8;
     auto pack_h = (height + _space) * (int) _widgets.size() - _space;
     auto scroll = 0;
 
-    if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH) { // Set min size for widgets on the left
-        _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH;
+    if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) { // Set min size for widgets on the left
+        _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
     }
-    else if (_pos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH) { // Set min size for widgets on the right
-        _pos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_EW_CH;
+    else if (_pos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) { // Set min size for widgets on the right
+        _pos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
     }
 
     if (pack_h > H) {
@@ -479,7 +574,9 @@ void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize tab buttons if they are on the top or bottom side.
+*
+*/
 void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
     auto height = flw::PREF_FONTSIZE + 8;
     auto scroll = 0;
@@ -491,11 +588,11 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
 
         b->tw = 0;
         fl_measure(b->label(), b->tw, th);
-        
-        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_NS_CH) {
-            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_MIN_WIDTH_NS_CH;
+
+        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH) {
+            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH;
         }
-        
+
         b->tw += flw::PREF_FONTSIZE;
         pack_w += b->tw + _space;
     }
@@ -521,7 +618,9 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize child widget (only the visible one).
+*
+*/
 void TabsGroup::_resize_widgets() {
     for (auto w : _widgets) { // Resize tabs widgets.
         auto b = static_cast<_TabsGroupButton*>(w);
@@ -534,15 +633,22 @@ void TabsGroup::_resize_widgets() {
     Fl::redraw();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Show tab buttons.
+*
+*/
 void TabsGroup::show_tabs() {
     _scroll->show();
     do_layout();
 }
 
-//------------------------------------------------------------------------------
-// Sort widget array then set pointers manually in the pack widget.
-//
+/** @brief Sort tab buttons using the labels.
+*
+* Sort widget array then set pointers manually in the pack widget.
+*
+* @param[in] ascending    True to sort ascending, false for descending order.
+* @param[in] casecompare  True use case compare.
+*
+*/
 void TabsGroup::sort(bool ascending, bool casecompare) {
     auto pack = const_cast<Fl_Widget**>(_pack->array());
     auto butt = _active_button();
@@ -571,7 +677,12 @@ void TabsGroup::sort(bool ascending, bool casecompare) {
     do_layout();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Swap two tab buttons/widgets.
+*
+* @param[in] from  From index.
+* @param[in] to    To index.
+*
+*/
 void TabsGroup::swap(int from, int to) {
     auto last = (int) _widgets.size() - 1;
 
@@ -623,7 +734,12 @@ void TabsGroup::swap(int from, int to) {
     do_layout();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set where tab buttons should be.
+*
+* @param[in] tabs          North/south/west/east.
+* @param[in] space_max_20  Max 20 pixel between tab buttons.
+*
+*/
 void TabsGroup::tabs(TABS tabs, int space_max_20) {
     _tabs  = tabs;
     _space = (space_max_20 >= 0 && space_max_20 <= 20) ? space_max_20 : TabsGroup::DEFAULT_SPACE_PX;
@@ -653,7 +769,12 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Update font preferences.
+*
+* @param[in] characters  Number of characters for west/east label width.
+* @param[in] font        Font to use.
+* @param[in] fontsize    Size of font.
+*/
 void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
     _pos  = fontsize * characters;
@@ -664,12 +785,18 @@ void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fonts
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get current active widget.
+*
+* @return Widget or NULL.
+*/
 Fl_Widget* TabsGroup::value() const {
     return (_active >= 0 && _active < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[_active])->widget : nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set active widget.
+*
+* @param[in] num  Valid index.
+*/
 void TabsGroup::value(int num) {
     if (num >= 0 && num < (int) _widgets.size()) {
         TabsGroup::Callback(_widgets[num], this);
