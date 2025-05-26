@@ -86,7 +86,7 @@ extern Fl_Font                  PREF_FONT;              // Default font - FL_HEL
 extern int                      PREF_FONTSIZE;          // Default font size - 14
 extern std::string              PREF_FONTNAME;          // Default font name - "FL_HELVETICA"
 extern std::vector<char*>       PREF_FONTNAMES;         // List of font names - used internally - load with theme::load_fonts()
-extern double                   PREF_SCALE;             //
+extern double                   PREF_SCALE_VAL;         //
 extern bool                     PREF_SCALE_ON;          //
 extern std::string              PREF_THEME;             // Name of theme - default "default"
 extern const char* const        PREF_THEMES[];          // Name of themes

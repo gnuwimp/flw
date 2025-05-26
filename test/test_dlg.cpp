@@ -546,6 +546,10 @@ int main(int argc, const char** argv) {
             }
         }
         
+        if (run == "all") {
+            run = "";
+        }
+                
         if (run != "") {
             printf("Current: %s\n", run.c_str());
         }

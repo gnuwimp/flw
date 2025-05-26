@@ -575,7 +575,7 @@ extern Fl_Font                  PREF_FONT;
 extern int                      PREF_FONTSIZE;
 extern std::string              PREF_FONTNAME;
 extern std::vector<char*>       PREF_FONTNAMES;
-extern double                   PREF_SCALE;
+extern double                   PREF_SCALE_VAL;
 extern bool                     PREF_SCALE_ON;
 extern std::string              PREF_THEME;
 extern const char* const        PREF_THEMES[];

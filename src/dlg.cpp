@@ -844,6 +844,8 @@ public:
         _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _file->callback(_DlgPrint::Callback, this);
         _file->tooltip("Select output PostScript file.");
+        _format->textfont(flw::PREF_FONT);
+        _format->textsize(flw::PREF_FONTSIZE);
         _from->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _from->callback(_DlgPrint::Callback, this);
         _from->color(FL_BACKGROUND2_COLOR);
@@ -851,6 +853,8 @@ public:
         _from->precision(0);
         _from->value(from);
         _from->tooltip("Start page number.");
+        _layout->textfont(flw::PREF_FONT);
+        _layout->textsize(flw::PREF_FONTSIZE);
         _print->callback(_DlgPrint::Callback, this);
         _to->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _to->callback(_DlgPrint::Callback, this);
@@ -1022,6 +1026,8 @@ public:
         _align->add("Right align");
         _align->tooltip("Line numbers are only used for left aligned text.");
         _align->value(0);
+        _align->textfont(flw::PREF_FONT);
+        _align->textsize(flw::PREF_FONTSIZE);
         _border->tooltip("Print line border around the print area.");
         _close->callback(_DlgPrintText::Callback, this);
         _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
@@ -1030,9 +1036,13 @@ public:
         _fonts->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fonts->callback(_DlgPrintText::Callback, this);
         _fonts->tooltip("Select font to use.");
+        _format->textfont(flw::PREF_FONT);
+        _format->textsize(flw::PREF_FONTSIZE);
         _label->align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _label->box(FL_BORDER_BOX);
         _label->box(FL_THIN_DOWN_BOX);
+        _layout->textfont(flw::PREF_FONT);
+        _layout->textsize(flw::PREF_FONTSIZE);
         _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _line->callback(_DlgPrintText::Callback, this);
         _line->color(FL_BACKGROUND2_COLOR);
@@ -1664,7 +1674,7 @@ public:
         _grid->add(_theme,         1,   1,  -1, -21);
         _grid->add(_font_label,    1, -20,  -1,   4);
         _grid->add(_fixed_label,   1, -15,  -1,   4);
-        _grid->add(_scale,         1, -11,  16,   4);
+        _grid->add(_scale,         1, -10,  -1,   4);
         _grid->add(_font,        -51,  -5,  16,   4);
         _grid->add(_fixedfont,   -34,  -5,  16,   4);
         _grid->add(_close,       -17,  -5,  16,   4);
@@ -1678,20 +1688,22 @@ public:
           _fixedfont->deactivate();
         }
 
-        if (flw::PREF_SCALE_ON == true) {
-            _scale->value(1);
-        }
-
         _close->callback(Callback, this);
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
         _fixed_label->color(FL_BACKGROUND2_COLOR);
+        _fixed_label->tooltip("Default fixed font");
         _fixedfont->callback(Callback, this);
+        _fixedfont->tooltip("Set default fixed font.");
         _font->callback(Callback, this);
+        _font->tooltip("Set default font.");
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _font_label->box(FL_BORDER_BOX);
         _font_label->color(FL_BACKGROUND2_COLOR);
+        _font_label->tooltip("Default font.");
         _scale->callback(Callback, this);
+        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.");
+        _scale->value(flw::PREF_SCALE_ON);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
@@ -1704,6 +1716,18 @@ public:
             }
             else {
                 break;
+            }
+        }
+
+        if (flw::PREF_SCALE_VAL < 0.1) {
+            if (parent != nullptr) {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(parent->screen_num());
+            }
+            else if (Fl::first_window() != nullptr) {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(Fl::first_window()->screen_num());
+            }
+            else {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(0);
             }
         }
 
@@ -1802,8 +1826,8 @@ public:
             flw::PREF_SCALE_ON = self->_scale->value();
 
             if (flw::PREF_SCALE_ON == true) {
-                if (flw::PREF_SCALE > 0.5 && flw::PREF_SCALE_ON < 4.0) {
-                    Fl::screen_scale(self->top_window()->screen_num(), flw::PREF_SCALE);
+                if (flw::PREF_SCALE_VAL > 0.5 && flw::PREF_SCALE_ON < 4.0) {
+                    Fl::screen_scale(self->top_window()->screen_num(), flw::PREF_SCALE_VAL);
                 }
                 else {
                     Fl::screen_scale(self->top_window()->screen_num(), 1.0);
@@ -1812,7 +1836,7 @@ public:
             else {
                 Fl::screen_scale(self->top_window()->screen_num(), 1.0);
             }
-            
+
             self->update_pref();
         }
         else if (w == self->_close) {
@@ -1852,7 +1876,7 @@ public:
             }
 
         }
-        
+
         Fl::redraw();
     }
 };

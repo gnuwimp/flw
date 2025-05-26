@@ -50,8 +50,8 @@ int                         PREF_FIXED_FONTSIZE     = 14;
 int                         PREF_FONT               = FL_HELVETICA;
 int                         PREF_FONTSIZE           = 14;
 std::string                 PREF_FONTNAME           = "FL_HELVETICA";
-double                      PREF_SCALE              = 1.0;
-bool                        PREF_SCALE_ON           = false;
+double                      PREF_SCALE_VAL          = 0.0;
+bool                        PREF_SCALE_ON           = true;
 std::string                 PREF_THEME              = "default";
 const char* const           PREF_THEMES[]           = {
                                 "default",
@@ -1450,14 +1450,14 @@ double theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, 
     }
 #endif
 
-    flw::PREF_SCALE_ON = s;
-    flw::PREF_SCALE    = Fl::screen_scale(window->screen_num());
+    flw::PREF_SCALE_ON  = s;
+    flw::PREF_SCALE_VAL = Fl::screen_scale(window->screen_num());
 
     if (flw::PREF_SCALE_ON == false) {
         Fl::screen_scale(window->screen_num(), 1.0);
     }
 
-    return flw::PREF_SCALE;
+    return flw::PREF_SCALE_VAL;
 }
 
 //------------------------------------------------------------------------------
@@ -1473,6 +1473,19 @@ bool theme::parse(int argc, const char** argv) {
 
         if (fontsize >= 6 && fontsize <= 72) {
             flw::PREF_FONTSIZE = fontsize;
+        }
+
+        if (std::string("scaleoff") == argv[f] && flw::PREF_SCALE_VAL < 0.1) {
+            flw::PREF_SCALE_ON = false;
+
+            if (Fl::first_window() != nullptr) {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(Fl::first_window()->screen_num());
+                Fl::screen_scale(Fl::first_window()->screen_num(), 1.0);
+            }
+            else {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(0);
+                Fl::screen_scale(0, 1.0);
+            }
         }
     }
 
