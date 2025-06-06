@@ -90,19 +90,19 @@ public:
 
     static void Callback(Fl_Widget* w, void*) {
         if (w == TEST->e) {
-            TEST->tabs->tabs(TabsGroup::TABS::EAST, 8);
+            TEST->tabs->tabs(TabsGroup::TABS::RIGHT, 8);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->n) {
-            TEST->tabs->tabs(TabsGroup::TABS::NORTH);
+            TEST->tabs->tabs(TabsGroup::TABS::TOP);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->s) {
-            TEST->tabs->tabs(TabsGroup::TABS::SOUTH, 8);
+            TEST->tabs->tabs(TabsGroup::TABS::BOTTOM, 8);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->w) {
-            TEST->tabs->tabs(TabsGroup::TABS::WEST);
+            TEST->tabs->tabs(TabsGroup::TABS::LEFT);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->b1) {

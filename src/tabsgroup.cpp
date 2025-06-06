@@ -734,7 +734,7 @@ void TabsGroup::swap(int from, int to) {
     do_layout();
 }
 
-/** @brief Set where tab buttons should be.
+/** @brief Set on which side the tab buttons should be.
 *
 * @param[in] tabs          North/south/west/east.
 * @param[in] space_max_20  Max 20 pixel between tab buttons.

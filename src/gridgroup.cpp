@@ -1,25 +1,31 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief A simple layout widget that uses a grid for placing widgets.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "gridgroup.h"
-#include "flw.h"
 
 // MKALGAM_ON
 
 namespace flw {
 
 /***
- *           _____      _     _  _____                        _____ _     _ _     _ 
+ *           _____      _     _  _____                        _____ _     _ _     _
  *          / ____|    (_)   | |/ ____|                      / ____| |   (_) |   | |
  *         | |  __ _ __ _  __| | |  __ _ __ ___  _   _ _ __ | |    | |__  _| | __| |
  *         | | |_ | '__| |/ _` | | |_ | '__/ _ \| | | | '_ \| |    | '_ \| | |/ _` |
  *         | |__| | |  | | (_| | |__| | | | (_) | |_| | |_) | |____| | | | | | (_| |
  *          \_____|_|  |_|\__,_|\_____|_|  \___/ \__,_| .__/ \_____|_| |_|_|_|\__,_|
- *      ______                                        | |                           
- *     |______|                                       |_|                           
+ *      ______                                        | |
+ *     |______|                                       |_|
  */
 
-//------------------------------------------------------------------------------
+/** @brief Every widget is stored in a _GridGroupChild.
+*
+*/
 struct _GridGroupChild {
     Fl_Widget*                  widget;
     short                       x;
@@ -31,13 +37,21 @@ struct _GridGroupChild {
     short                       t;
     short                       b;
 
-    //--------------------------------------------------------------------------
+    /** @brief Create new child.
+    *
+    */
     _GridGroupChild(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
         set(WIDGET, X, Y, W, H);
         adjust();
     }
 
-    //--------------------------------------------------------------------------
+    /** @brief Adjust its size and position.
+    *
+    * @param[in] L  Left side.
+    * @param[in] R  Right side.
+    * @param[in] T  Top side.
+    * @param[in] B  Bottom side.
+    */
     void adjust(int L = 0, int R = 0, int T = 0, int B = 0) {
         l = L;
         r = R;
@@ -45,7 +59,9 @@ struct _GridGroupChild {
         b = B;
     }
 
-    //--------------------------------------------------------------------------
+    /** @brief Replace child data/widget.
+    *
+    */
     void set(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
         widget = WIDGET;
         x      = X;
@@ -66,7 +82,14 @@ struct _GridGroupChild {
  *                                                |_|
  */
 
-//------------------------------------------------------------------------------
+/** @brief Create new GridGroup.
+*
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+* @param[in] l  Optional label.
+*/
 GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
@@ -75,24 +98,51 @@ GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _size = 0;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Delete widget.
+*
+* GridGroup deleted child data.\n
+* Parent Fl_Group delete all child widgets.\n
+*/
 GridGroup::~GridGroup() {
     for (auto v : _widgets) {
         delete static_cast<_GridGroupChild*>(v);
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Add child widget.
+*
+* X and Y can use negative values.\n
+* Then it will calculate positions from right side or from the bottom.\n
+* With default values GridGroup::add(WIDGET, 1, 1, 10, 4) will resize widget to (14/2, 14/2, 14 / 2 * 10, 14 / 2 * 4)\n
+*
+* W and H can use negative values.\n
+* Then it will adjust width or height from right side or from the bottom.\n
+*
+* GridGroup::add(WIDGET, 1, 1, )
+*
+* @param[in] widget  Widget to add.
+* @param[in] X       X pos using grid coordinates .
+* @param[in] Y       Y pos using grid coordinates.
+* @param[in] W       Width in grid coordinates.
+* @param[in] H       height in grid coordinates.
+*/
 void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H) {
     _widgets.push_back(new _GridGroupChild(widget, X, Y, W, H));
     Fl_Group::add(widget);
 }
 
-//------------------------------------------------------------------------------
+    /** @brief Adjust size and position of a child widget.
+    *
+    * @param[in] widget  Child widget.
+    * @param[in] L       Left side.
+    * @param[in] R       Right side.
+    * @param[in] T       Top side.
+    * @param[in] B       Bottom side.
+    */
 void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     for (auto& v : _widgets) {
         auto child = static_cast<_GridGroupChild*>(v);
-        
+
         if (child->widget == widget) {
             child->adjust(L, R, T, B);
             return;
@@ -104,13 +154,24 @@ void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     #endif
 }
 
-//------------------------------------------------------------------------------
+/** @brief Delete all child widgets,
+*
+* Use this method, not Fl_Group::clear().
+*/
 void GridGroup::clear() {
     _widgets.clear();
     Fl_Group::clear();
 }
 
 //------------------------------------------------------------------------------
+/** @brief Handle message.
+*
+* Take care of moving from widget to widget with tab key.
+*
+* @param[in] event  Event value.
+*
+* @return 1 if new widget gets the focus.
+*/
 int GridGroup::handle(int event) {
     if (event == FL_KEYDOWN && Fl::event_key() == FL_Tab) {
         if (children() > 0) {
@@ -120,9 +181,9 @@ int GridGroup::handle(int event) {
 
             _last_active_widget(&first, &last);
 
-//            puts("");
-//            printf("FIRST: %p: %s\n", first ? first : 0, first && first->label() ? first->label() : "NULL");
-//            printf("LAST:  %p: %s\n", last ? last : 0, last && last->label() ? last->label() : "NULL");
+            //puts("");
+            //printf("FIRST: %p: %s\n", first ? first : 0, first && first->label() ? first->label() : "NULL");
+            //printf("LAST:  %p: %s\n", last ? last : 0, last && last->label() ? last->label() : "NULL");
 
             if (Fl::event_shift() == 0) {
                 if (first != nullptr && current != nullptr && current == last) {
@@ -145,6 +206,11 @@ int GridGroup::handle(int event) {
 }
 
 //------------------------------------------------------------------------------
+/** @brief Set first and last active widget.
+*
+* @param[out] first  Set last active widget.
+* @param[out] last   Set first active widget.
+*/
 void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
     for (int f = 0; f < children(); f++) {
         auto c = child(f);
@@ -163,10 +229,16 @@ void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
 }
 
 //------------------------------------------------------------------------------
+/** @brief Remove widget from group.
+*
+* @param[in] widget  Widget to remove.
+*
+* @return If input widget is found then it is returned or nullptr.
+*/
 Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
         auto child = static_cast<_GridGroupChild*>(*it);
-        
+
         if (child->widget == widget) {
             delete child;
             Fl_Group::remove(widget);
@@ -178,11 +250,13 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
     #ifdef DEBUG
         fprintf(stderr, "error: GridGroup::remove can't find widget\n");
     #endif
-    
+
     return nullptr;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize widget and all child widgets,
+*
+*/
 void GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
@@ -250,11 +324,18 @@ void GridGroup::resize(int X, int Y, int W, int H) {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize child widget.
+*
+* @param[in] widget  Widget to resize.
+* @param[in] X       X pos using grid coordinates .
+* @param[in] Y       Y pos using grid coordinates.
+* @param[in] W       Width in grid coordinates.
+* @param[in] H       height in grid coordinates.
+*/
 void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
     for (auto& v : _widgets) {
         auto child = static_cast<_GridGroupChild*>(v);
-        
+
         if (child->widget == widget) {
             child->set(widget, X, Y, W, H);
             return;

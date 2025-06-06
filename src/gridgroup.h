@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief A simple layout widget that uses a grid for placing widgets.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #ifndef FLW_GRIDGROUP_H
 #define FLW_GRIDGROUP_H
@@ -23,11 +28,14 @@ namespace flw {
  *                                                |_|
  */
 
-//------------------------------------------------------------------------------
-// A simple layout widget that uses a grid for placing widgets.
-// One cell is set to flw::PREF_FONTSIZE / 2.
-// Override by calling size() method (min 4, max 72 pixels).
-//
+/** @brief A simple layout widget that uses a grid for placing widgets.
+*
+* One cell is set to flw::PREF_FONTSIZE / 2.\n
+* Override default value by calling GridGroup::size(int).\n
+*
+* @snippet gridgroup.cpp flw::GridGroup GridGroup example
+* @image html gridgroup.png
+*/
 class GridGroup : public Fl_Group {
 public:
     explicit                    GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -36,21 +44,21 @@ public:
     void                        adjust(Fl_Widget* widget, int L = 0, int R = 0, int T = 0, int B = 0);
     void                        clear();
     void                        do_layout()
-                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
+                                    { resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all child widgets.
     int                         handle(int event) override;
     Fl_Widget*                  remove(Fl_Widget* widget);
     void                        resize(int X, int Y, int W, int H) override;
     void                        resize(Fl_Widget* widget, int X, int Y, int W, int H);
     int                         size() const
-                                    { return _size; }
+                                    { return _size; } ///< @brief Get grid size. @return Size in pixels.
     void                        size(int size)
-                                    { _size = (size >= 4 && size <= 72) ? size : 0; }
+                                    { _size = (size >= 4 && size <= 72) ? size : 0; } ///< @brief Set grid size. @param[in] size  From 4 to 72 pixel.
 
 private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
 
-    VoidVector                  _widgets;
-    int                         _size;
+    VoidVector                  _widgets;   // Array with _GridGroupChild objects.
+    int                         _size;      // Grid size in pixels.
 };
 
 } // flw

@@ -18,19 +18,31 @@
 
 namespace flw {
 
+/***
+ *      _______    _          _____                       
+ *     |__   __|  | |        / ____|                      
+ *        | | __ _| |__  ___| |  __ _ __ ___  _   _ _ __  
+ *        | |/ _` | '_ \/ __| | |_ | '__/ _ \| | | | '_ \ 
+ *        | | (_| | |_) \__ \ |__| | | | (_) | |_| | |_) |
+ *        |_|\__,_|_.__/|___/\_____|_|  \___/ \__,_| .__/ 
+ *                                                 | |    
+ *                                                 |_|    
+ */
+
 /** @brief Group widget with a tab bar.
 *
 * Only one child widget is visible at one time.\n
-* You can move between tabs using alt (or command key on macOS) + left/right.\n
-* Move tabs around by using alt + up/down.\n
-* Use shortcut keys (alt/command + 0-9).\n
+* You can move between tabs using alt + left/right.\n
+* Or use a shortcut key for the first 10 tabs (alt + 1-9/0).\n
+* Move tabs around by using alt + shift + left/right.\n
 *\n
-* By default tabs are on the NORTH side and tabs size is font size * 10.\n
-* If tabs are on the EAST/WEAST side you can change the width by using the mouse.\n
+* By default tabs are on the TABS::NORTH side and tabs size is font size * 10.\n
+* If tabs are on the TABS::EAST or TABS::WEST side you can change the width by using the mouse.\n
 *\n
 * Do a resize after adding widgets by calling do_layout().\n
 *
-* @snippet tabsgroup.cpp flw tabsgroup example
+* @snippet tabsgroup.cpp flw::TabsGroup TabsGroup example
+* @image html tabsgroup.png
 */
 class TabsGroup : public Fl_Group {
 public:
@@ -42,10 +54,14 @@ public:
     *
     */
     enum class TABS {
-                                NORTH,  ///< @brief Top of container.
-                                SOUTH,  ///< @brief Bottom of container.
-                                WEST,   ///< @brief On the left side of container.
-                                EAST,   ///< @brief On the right side of the container.
+                                NORTH,          ///< @brief Top of container.
+                                TOP = NORTH,    ///< @brief Top of container.
+                                SOUTH,          ///< @brief Bottom of container.
+                                BOTTOM = SOUTH, ///< @brief Bottom of container.
+                                WEST,           ///< @brief On the left side of container.
+                                LEFT = WEST,    ///< @brief On the left side of container.
+                                EAST,           ///< @brief On the right side of the container.
+                                RIGHT = EAST,   ///< @brief On the right side of the container.
     };
 
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -76,7 +92,7 @@ public:
     void                        sort(bool ascending = true, bool casecompare = false);
     void                        swap(int from, int to);
     TABS                        tabs() const
-                                    { return _tabs; } ///< @brief Pos of the tab buttons (NORT, SOUTH, EAST, WEST).
+                                    { return _tabs; } ///< @brief Pos of the tab buttons (TABS::NORTH, TABS::SOUTH, TABS::EAST, TABS::WEST).
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
