@@ -1769,34 +1769,40 @@ private:
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
 namespace flw {
-    class RecentMenu {
-    public:
-                                        RecentMenu(Fl_Menu_* menu, Fl_Callback* file_callback, void* userdata, std::string base_label = "&File/Open recent", std::string clear_label = "/Clear");
-        void                            append(std::string file)
-                                            { return _add(file, true); }
-        static void                     CallbackClear(Fl_Widget*, void* o);
-        void                            insert(std::string file)
-                                            { return _add(file, false); }
-        StringVector                    items() const
-                                            { return _files; }
-        void                            max_items(size_t max)
-                                            { if (max > 0 && max <= 100) _max = max; }
-        Fl_Menu_*                       menu()
-                                            { return _menu; }
-        void                            load_pref(Fl_Preferences& pref, std::string base_name = "files");
-        void                            save_pref(Fl_Preferences& pref, std::string base_name = "files");
-    private:
-        void                            _add(std::string file, bool append);
-        size_t                          _add_string(StringVector& in, size_t max_size, std::string string);
-        size_t                          _insert_string(StringVector& in, size_t max_size, std::string string);
-        std::string                     _base;
-        Fl_Callback*                    _callback;
-        std::string                     _clear;
-        StringVector                    _files;
-        size_t                          _max;
-        Fl_Menu_*                       _menu;
-        void*                           _user;
-    };
+class RecentMenu {
+public:
+                                    RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
+    void                            append(const std::string& item)
+                                        { return _add(item, true); }
+    void                            insert(const std::string& item)
+                                        { return _add(item, false); }
+    StringVector                    items() const
+                                        { return _items; }
+    size_t                          max_items() const
+                                        { return _max; }
+    void                            max_items(size_t max)
+                                        { if (max > 0 && max <= 100) _max = max; }
+    Fl_Menu_*                       menu()
+                                        { return _menu; }
+    void                            load_pref(Fl_Preferences& pref, const std::string& base_name = "files");
+    void                            save_pref(Fl_Preferences& pref, const std::string& base_name = "files");
+    void*                           user_data()
+                                        { return _user; }
+    void                            user_data(void* data)
+                                        { _user = data; }
+    static void                     CallbackClear(Fl_Widget*, void* o);
+private:
+    void                            _add(const std::string& item, bool append);
+    size_t                          _add_string(StringVector& items, size_t max_size, const std::string& string);
+    size_t                          _insert_string(StringVector& items, size_t max_size, const std::string& string);
+    std::string                     _base;
+    Fl_Callback*                    _callback;
+    std::string                     _clear;
+    StringVector                    _items;
+    size_t                          _max;
+    Fl_Menu_*                       _menu;
+    void*                           _user;
+};
 }
 #include <FL/Fl.H>
 #include <FL/Fl_Group.H>
@@ -2130,9 +2136,13 @@ public:
     static int                  MIN_WIDTH_EAST_WEST;
     enum class TABS {
                                 NORTH,
+                                TOP = NORTH,
                                 SOUTH,
+                                BOTTOM = SOUTH,
                                 WEST,
+                                LEFT = WEST,
                                 EAST,
+                                RIGHT = EAST,
     };
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
