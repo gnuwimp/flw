@@ -37,7 +37,7 @@ namespace flw {
 * After that oldest item will be removed from list before adding or inserting a new item.\n
 * Use RecentMenu::max_items() to change that.\n
 *
-* @snippet recentmenu.cpp flw::RecentMenu RecentMenu example
+* @snippet recentmenu.cpp flw::RecentMenu example
 * @image html recentmenu.png
 */
 class RecentMenu {

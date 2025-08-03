@@ -945,8 +945,12 @@ WARN_LOGFILE           =
 
 #INPUT                  = 
 INPUT                  = \
+../src/dlg.h \
+../src/dlg.cpp \
 ../src/file.h \
 ../src/file.cpp \
+../src/flw.h \
+../src/flw.cpp \
 ../src/json.h \
 ../src/json.cpp \
 ../src/gridgroup.h \
@@ -1082,7 +1086,12 @@ EXCLUDE_PATTERNS       =
 # wildcard * is used, a substring. Examples: ANamespace, AClass,
 # ANamespace::AClass, ANamespace::*Test
 
-EXCLUDE_SYMBOLS        = _GridGroupChild _TabsGroupButton
+EXCLUDE_SYMBOLS        = 
+#	"flw::dlg::_DlgCheck" \
+#	flw::dlg::_DlgChoice \
+#	flw::_GridGroupChild \
+#	flw::_TabsGroupButton \
+
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include

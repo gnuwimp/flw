@@ -149,13 +149,13 @@ ERR:
  */
 
 //------------------------------------------------------------------------------
-void debug::print(const Fl_Widget* widget) {
+void debug::print(const Fl_Widget* widget, bool recursive) {
     std::string indent;
-    debug::print(widget, indent);
+    debug::print(widget, indent, recursive);
 }
 
 //------------------------------------------------------------------------------
-void debug::print(const Fl_Widget* widget, std::string& indent) {
+void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) {
     if (widget == nullptr) {
         puts("flw::debug::print() => null widget");
     }
@@ -163,7 +163,7 @@ void debug::print(const Fl_Widget* widget, std::string& indent) {
         printf("%sx=%4d, y=%4d, w=%4d, h=%4d, %c, \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->visible() ? 'V' : 'H', widget->label() ? widget->label() : "NULL");
         auto group = widget->as_group();
 
-        if (group != nullptr) {
+        if (group != nullptr && recursive == true) {
             indent += "\t";
 
             for (int f = 0; f < group->children(); f++) {
@@ -784,6 +784,19 @@ std::string util::substr(std::string in, std::string::size_type pos, std::string
     catch(...) {
         return "";
     }
+}
+
+/** @brief Swap rectangles.
+*
+* @param[in] w1  Widget 1.
+* @param[in] w2  Widget 2.
+*/
+void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
+    auto r1 = Fl_Rect(w1);
+    auto r2 = Fl_Rect(w2);
+    
+    w1->resize(r2.x(), r2.y(), r2.w(), r2.h());
+    w2->resize(r1.x(), r1.y(), r1.w(), r1.h());
 }
 
 //------------------------------------------------------------------------------

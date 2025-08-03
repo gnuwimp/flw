@@ -7,7 +7,7 @@ int main() {
     Fl::scheme("oxy");
     Fl::screen_scale(0, 1.0);
 
-    // [flw::TabsGroup TabsGroup example]
+    // [flw::TabsGroup example]
 
     auto win = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::TabsGroup");
     auto tabs = new flw::TabsGroup(0, 0, 640, 480);
@@ -37,5 +37,5 @@ int main() {
     win->show();
     Fl::run();
 
-    // [flw::TabsGroup TabsGroup example]
+    // [flw::TabsGroup example]
 }

@@ -24,7 +24,7 @@ namespace flw {
  */
 
 /** @brief Every widget is stored in a _GridGroupChild.
-*
+* @private
 */
 struct _GridGroupChild {
     Fl_Widget*                  widget;

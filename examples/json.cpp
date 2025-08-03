@@ -4,7 +4,7 @@
 #include "flw.h"
 
 int main() {
-    // [gnu::json json example]
+    // [gnu::json::JS example]
 
 static const std::string JSON = R"(
 {
@@ -35,15 +35,15 @@ static const std::string JSON = R"(
     const gnu::json::JS*     o  = js.find("GlossEntry", true);
     const gnu::json::JSArray a1 = o->vo_to_va();
     const gnu::json::JS*     a2 = js.find("GlossSeeAlso", true);
-    
+
     puts(o->to_string().c_str());
-    
+
     for (auto v : a1) {
         printf("\t%s: %s => %s\n", o->name_c(), v->name_c(), v->to_string().c_str());
     }
-    
+
     puts("");
-    
+
     for (auto v : *a2->va()) {
         printf("\t%s: %s\n", a2->name_c(), v->vs_c());
     }
@@ -62,12 +62,12 @@ GlossEntry: OBJECT: 7 children
 	GlossSeeAlso: XML
 */
 
-    // [gnu::json json example]
+    // [gnu::json::JS example]
 
-    // [gnu::json builder example]
+    // [gnu::json::Builder example]
 
     gnu::json::Builder bld;
-    
+
     try {
         bld << bld.MakeObject();
             bld << bld.MakeObject("object");
@@ -80,7 +80,7 @@ GlossEntry: OBJECT: 7 children
                     bld << bld.MakeNumber(789.123);
                 bld.end();
             bld.end();
-            
+
             bld << bld.MakeArray("array");
                 bld << bld.MakeNumber(1);
                 bld << bld.MakeString("Hello");
@@ -122,7 +122,7 @@ GlossEntry: OBJECT: 7 children
 }
 */
 
-    // [gnu::json builder example]
+    // [gnu::json::Builder example]
 
     return 0;
 }

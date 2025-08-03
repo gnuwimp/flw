@@ -7,7 +7,7 @@ int main() {
     Fl::scheme("oxy");
     Fl::screen_scale(0, 1.0);
 
-    // [flw::GridGroup GridGroup example]
+    // [flw::GridGroup example]
 
     auto win = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::GridGroup");
     auto grid = new flw::GridGroup(0, 0, 640, 480);
@@ -42,5 +42,5 @@ int main() {
     win->show();
     Fl::run();
 
-    // [flw::GridGroup GridGroup example]
+    // [flw::GridGroup example]
 }

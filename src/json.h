@@ -83,7 +83,7 @@ std::string                     unescape(const char* string);
 *
 * Can only be one type at a time.
 *
-* @snippet json.cpp gnu::json json example
+* @snippet json.cpp gnu::json::JS example
 *
 */
 class JS {
@@ -226,7 +226,7 @@ private:
 *
 * Throws exception for all errors.\n
 *
-* @snippet json.cpp gnu::json builder example
+* @snippet json.cpp gnu::json::Builder example
 */
 class Builder {
 public:

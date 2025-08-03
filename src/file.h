@@ -34,8 +34,9 @@ class File;
 class Buf;
 
 typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data); ///< @brief Callback for file copy.
+typedef std::vector<File> Files;
 
-/***
+/*
  *       __ _ _
  *      / _(_) |
  *     | |_ _| | ___
@@ -84,8 +85,8 @@ std::string                     os();
 FILE*                           popen(const std::string& cmd, bool write = false);
 Buf                             read(const std::string& path);
 Buf*                            read2(const std::string& path);
-std::vector<File>               read_dir(const std::string& path);
-std::vector<File>               read_dir_rec(const std::string& path);
+Files                           read_dir(const std::string& path);
+Files                           read_dir_rec(const std::string& path);
 bool                            redirect_stderr();
 bool                            redirect_stdout();
 bool                            remove(const std::string& path);
@@ -98,7 +99,7 @@ File                            work_dir();
 bool                            write(const std::string& path, const char* buffer, size_t size, bool flush = true);
 bool                            write(const std::string& path, const Buf& buf, bool flush = true);
 
-/***
+/*
  *      ____         __
  *     |  _ \       / _|
  *     | |_) |_   _| |_
@@ -185,7 +186,7 @@ private:
 
 };
 
-/***
+/*
  *      ______ _ _
  *     |  ____(_) |
  *     | |__   _| | ___
@@ -200,7 +201,7 @@ private:
 *
 * Paths in windows are always slashes.\n
 *
-* @snippet file.cpp gnu::file file example
+* @snippet file.cpp gnu::file example
 */
 class File {
 public:

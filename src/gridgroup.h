@@ -33,7 +33,7 @@ namespace flw {
 * One cell is set to flw::PREF_FONTSIZE / 2.\n
 * Override default value by calling GridGroup::size(int).\n
 *
-* @snippet gridgroup.cpp flw::GridGroup GridGroup example
+* @snippet gridgroup.cpp flw::GridGroup example
 * @image html gridgroup.png
 */
 class GridGroup : public Fl_Group {

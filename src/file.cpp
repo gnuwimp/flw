@@ -37,7 +37,7 @@
 namespace gnu {
 namespace file {
 
-/***
+/*
  *                 _            _
  *                (_)          | |
  *      _ __  _ __ ___   ____ _| |_ ___
@@ -62,7 +62,7 @@ static bool                 _open_redirect(int type);
 static unsigned             _rand();
 static void                 _read(const std::string& path, Buf& buf);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _read_dir_rec(std::vector<File>& res, std::vector<File>& files);
+static void                 _read_dir_rec(Files& res, Files& files);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
 static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
 static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
@@ -231,7 +231,7 @@ static void _read(const std::string& path, Buf& buf) {
 * @param[in] res    Result vector.
 * @param[in] files  Files from current directory.
 */
-static void _read_dir_rec(std::vector<File>& res, std::vector<File>& files) {
+static void _read_dir_rec(Files& res, Files& files) {
     for (auto& file : files) {
         res.push_back(file);
 
@@ -457,7 +457,7 @@ static wchar_t* _to_wide(const char* string) {
 }
 #endif
 
-/***
+/*
  *       __ _ _
  *      / _(_) |
  *     | |_ _| | ___
@@ -1015,9 +1015,9 @@ Buf* read2(const std::string& path) {
 *
 * @return Vector with files.
 */
-std::vector<File> read_dir(const std::string& path) {
+Files read_dir(const std::string& path) {
     auto file = File(path, false);
-    auto res  = std::vector<File>();
+    auto res  = Files();
 
     if (file.type() != TYPE::DIR || file::is_circular(path) == true) {
         return res;
@@ -1080,8 +1080,8 @@ std::vector<File> read_dir(const std::string& path) {
 *
 * @return Vector with files.
 */
-std::vector<File> read_dir_rec(const std::string& path) {
-    auto res   = std::vector<File>();
+Files read_dir_rec(const std::string& path) {
+    auto res   = Files();
     auto files = file::read_dir(path);
 
     file::_read_dir_rec(res, files);
@@ -1399,7 +1399,7 @@ bool write(const std::string& path, const Buf& buf, bool flush) {
     return write(path, buf.c_str(), buf.size(), flush);
 }
 
-/***
+/*
  *      ____         __
  *     |  _ \       / _|
  *     | |_) |_   _| |_
@@ -1708,7 +1708,7 @@ bool Buf::write(const std::string& path, bool flush) const {
     return file::write(path, _str, _size, flush);
 }
 
-/***
+/*
  *      ______ _ _
  *     |  ____(_) |
  *     | |__   _| | ___

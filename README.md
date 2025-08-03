@@ -35,19 +35,20 @@ Widgets:
 * TabsGroup - A tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
 
 Dialogs:
-* AbortDialog - Show a message dialog and let user abort current work.
-* FontDialog - Select a font.
-* WorkDialog - Display a message and progress bar while doing some time consuming work.
-* dlg::check - Show a dialog with dynamic list of Fl_Check_Button widgets.
-* dlg::choice - Show a string selection dialog with Fl_Choice.
+* FontDialog - A dialog for selecting font and font size.
+* WorkDialog - A dialog with a message list and a progress bar for time consuming work.
 * dlg::date - Show a date selection dialog.
 * dlg::html - Show text in a html view.
-* dlg::list* - Show a list of strings.
-* dlg::password* - Ask user for password and optional password confirmation.
-* dlg::print_text* - Print plain text to postscript.
-* dlg::select* - Let user select a string from a list and also to filter shown strings.
+* dlg::list - Show a list of strings.
+* dlg::password - Ask user for password and optional password confirmation.
+* dlg::print - Print drawing from a user callback.
+* dlg::print_text - Print plain text to postscript.
+* dlg::select_checkboxes - Show a dialog with a list of checkboxes.
+* dlg::select_choice - Show a string selection dialog with Fl_Choice.
+* dlg::select_string - Let user select a string from a list and also to filter shown strings.
 * dlg::slider - Show a number input dialog that uses a Fl_Hor_Value_Slider widget.
 * dlg::text - Show text in an editor widget.
+* dlg::text_edit - Show and edit a text in an editor widget.
 * dlg::theme - Let user select a theme.
 
 ## Screenshots of some of the widgets

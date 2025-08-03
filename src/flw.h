@@ -79,27 +79,27 @@
 
 namespace flw {
 
-extern int                      PREF_FIXED_FONT;        // Fixed font - FL_COURIER
-extern std::string              PREF_FIXED_FONTNAME;    // Fixed font name - "FL_COURIER"
-extern int                      PREF_FIXED_FONTSIZE;    // Fixed font size - default 14
-extern Fl_Font                  PREF_FONT;              // Default font - FL_HELVETICA
-extern int                      PREF_FONTSIZE;          // Default font size - 14
-extern std::string              PREF_FONTNAME;          // Default font name - "FL_HELVETICA"
-extern std::vector<char*>       PREF_FONTNAMES;         // List of font names - used internally - load with theme::load_fonts()
-extern double                   PREF_SCALE_VAL;         //
-extern bool                     PREF_SCALE_ON;          //
-extern std::string              PREF_THEME;             // Name of theme - default "default"
-extern const char* const        PREF_THEMES[];          // Name of themes
+extern int                      PREF_FIXED_FONT;                        ///< @brief Fixed font - default FL_COURIER.
+extern std::string              PREF_FIXED_FONTNAME;                    ///< @brief Fixed font name - default "FL_COURIER".
+extern int                      PREF_FIXED_FONTSIZE;                    ///< @brief Fixed font size - default 14.
+extern Fl_Font                  PREF_FONT;                              ///< @brief Default font - default FL_HELVETICA.
+extern int                      PREF_FONTSIZE;                          ///< @brief Default font size - default 14.
+extern std::string              PREF_FONTNAME;                          ///< @brief Default font name - default "FL_HELVETICA".
+extern std::vector<char*>       PREF_FONTNAMES;                         ///< @brief List of font names - used internally - load with flw::theme::load_fonts().
+extern double                   PREF_SCALE_VAL;                         ///< @brief Scale value.
+extern bool                     PREF_SCALE_ON;                          ///< @brief Scale on or off.
+extern std::string              PREF_THEME;                             ///< @brief Name of theme - default "default".
+extern const char* const        PREF_THEMES[];                          ///< @brief Name of themes.
 
-typedef std::vector<std::string> StringVector;
-typedef std::vector<void*>       VoidVector;
-typedef std::vector<Fl_Widget*>  WidgetVector;
-typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
+typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
+typedef std::vector<void*>       VoidVector;                            ///< @brief Vector with void pointers
+typedef std::vector<Fl_Widget*>  WidgetVector;                          ///< @brief Vector with widget pointers.
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);    ///< @brief A drawing callback for printing to postscript.
 
 //------------------------------------------------------------------------------
 namespace debug {
-    void                        print(const Fl_Widget* widget);
-    void                        print(const Fl_Widget* widget, std::string& indent);
+    void                        print(const Fl_Widget* widget, bool recursive = true);
+    void                        print(const Fl_Widget* widget, std::string& indent, bool recursive = true);
     bool                        test(bool val, int line, const char* func);
     bool                        test(const char* ref, const char* val, int line, const char* func);
     bool                        test(int64_t ref, int64_t val, int line, const char* func);
@@ -142,6 +142,7 @@ namespace util {
     void                        sleep(int milli);
     StringVector                split_string(const std::string& string, std::string split);
     std::string                 substr(std::string in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+    void                        swap_rect(Fl_Widget* w1, Fl_Widget* w2);
     double                      to_double(std::string s, double def = INFINITY);
     long long                   to_long(std::string s, long long def = 0);
     static inline std::string   to_string(const char* text)
