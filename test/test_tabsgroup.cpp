@@ -17,22 +17,22 @@ using namespace flw;
 
 int BORDER = 0;
 
-/***
- *      _______        _  __ 
+/*
+ *      _______        _  __
  *     |__   __|      | |/_ |
  *        | | ___  ___| |_| |
  *        | |/ _ \/ __| __| |
  *        | |  __/\__ \ |_| |
  *        |_|\___||___/\__|_|
- *                           
- *                           
+ *
+ *
  */
 
 class Test1 : public Fl_Double_Window {
 public:
     Test1(int W, int H) : Fl_Double_Window(W, H, "Test1 :: test_tabsgroup.cpp") {
         end();
-        
+
         TEST = this;
 
 //        tabs = new TabsGroup(50, 50, W - 100, H - 100);
@@ -63,7 +63,7 @@ public:
         b7->callback(Callback, this);
 
         add(tabs);
-        
+
         tabs->add("Delete", b1);
         tabs->add("Hide/Show", b2);
         tabs->add("Delete", b3);
@@ -77,15 +77,15 @@ public:
         tabs->add("CLEAR", b7);
         tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
         tabs->box(FL_BORDER_BOX);
-        
+        tabs->do_layout();
+
         resizable(tabs);
         size_range(64, 48);
         Callback(w, nullptr);
-        
+
 //        tabs->color(FL_YELLOW);
 //        tabs->value(7);
 //        tabs->update_pref(23);
-//        tabs->do_layout();
     }
 
     static void Callback(Fl_Widget* w, void*) {
@@ -154,7 +154,7 @@ public:
             TEST->tabs->do_layout();
         }
     }
-    
+
     TabsGroup*      tabs;
     Fl_Button*      e;
     Fl_Button*      n;
@@ -172,15 +172,15 @@ public:
 
 Test1* Test1::TEST = nullptr;
 
-/***
- *      _______        _   ___  
- *     |__   __|      | | |__ \ 
+/*
+ *      _______        _   ___
+ *     |__   __|      | | |__ \
  *        | | ___  ___| |_   ) |
- *        | |/ _ \/ __| __| / / 
- *        | |  __/\__ \ |_ / /_ 
+ *        | |/ _ \/ __| __| / /
+ *        | |  __/\__ \ |_ / /_
  *        |_|\___||___/\__|____|
- *                              
- *                              
+ *
+ *
  */
 
 class Editor : public Fl_Text_Editor {
@@ -192,7 +192,7 @@ public:
         buffer(b);
         b->text(t);
     }
-    
+
     ~Editor() {
         buffer(nullptr);
         delete b;
@@ -203,25 +203,27 @@ class Test2 : public Fl_Double_Window {
 public:
     Test2(int W, int H) : Fl_Double_Window(W, H, "Test2 :: test_tabsgroup.cpp") {
         end();
-        
-        TEST = this;
-        tabs = new TabsGroup(0, 0, W, H);
-        b1   = new Fl_Button(0, 0, 0, 0, "14");
-        b2   = new Fl_Button(0, 0, 0, 0, "Insert first");
-        b11  = new Fl_Button(0, 0, 0, 0, "Insert before");
-        b3   = new Fl_Button(0, 0, 0, 0, "Add last");
-        b12  = new Fl_Button(0, 0, 0, 0, "Add after");
-        b4   = new Fl_Button(0, 0, 0, 0, "Delete all");
-        b10  = new Fl_Button(0, 0, 0, 0, "Delete curr");
-        b13  = new Fl_Button(0, 0, 0, 0, "Asc");
-        b14  = new Fl_Button(0, 0, 0, 0, "Desc");
-        b5   = new Fl_Button(0, 0, 0, 0, "N");
-        b6   = new Fl_Button(0, 0, 0, 0, "S");
-        b7   = new Fl_Button(0, 0, 0, 0, "W");
-        b8   = new Fl_Button(0, 0, 0, 0, "E");
-        b9   = new Fl_Button(0, 0, 0, 0, "Debug");
-        b15  = new Fl_Button(0, 0, 0, 0, "Theme");
-        b16  = new Fl_Button(0, 0, 0, 0, "Hide");
+
+        TEST   = this;
+        shrink = false;
+        tabs   = new TabsGroup(0, 0, W, H);
+        b1     = new Fl_Button(0, 0, 0, 0, "Make");
+        b2     = new Fl_Button(0, 0, 0, 0, "Insert first");
+        b11    = new Fl_Button(0, 0, 0, 0, "Insert before");
+        b3     = new Fl_Button(0, 0, 0, 0, "Add last");
+        b12    = new Fl_Button(0, 0, 0, 0, "Add after");
+        b4     = new Fl_Button(0, 0, 0, 0, "Delete all");
+        b10    = new Fl_Button(0, 0, 0, 0, "Delete curr");
+        b13    = new Fl_Button(0, 0, 0, 0, "Asc");
+        b14    = new Fl_Button(0, 0, 0, 0, "Desc");
+        b5     = new Fl_Button(0, 0, 0, 0, "&N");
+        b6     = new Fl_Button(0, 0, 0, 0, "&S");
+        b7     = new Fl_Button(0, 0, 0, 0, "&W");
+        b8     = new Fl_Button(0, 0, 0, 0, "&E");
+        b9     = new Fl_Button(0, 0, 0, 0, "&Debug");
+        b15    = new Fl_Button(0, 0, 0, 0, "Theme");
+        b16    = new Fl_Button(0, 0, 0, 0, "Hide");
+        b17    = new Fl_Button(0, 0, 0, 0, "Size");
 
         add(b1);
         add(b2);
@@ -239,8 +241,9 @@ public:
         add(b9);
         add(b15);
         add(b16);
+        add(b17);
         add(tabs);
-        
+
         b1->callback(Test2::Callback, this);
         b2->callback(Test2::Callback, this);
         b3->callback(Test2::Callback, this);
@@ -257,8 +260,12 @@ public:
         b14->callback(Test2::Callback, this);
         b15->callback(Test2::Callback, this);
         b16->callback(Test2::Callback, this);
+        b17->callback(Test2::Callback, this);
         tabs->tabs(TabsGroup::TABS::WEST);
-       
+        tabs->disable_keyboard();
+        tabs->enable_keyboard();
+        //tabs->tabs(TabsGroup::TABS::NORTH);
+
         resizable(tabs);
         size_range(64, 48);
         flw::util::labelfont(this);
@@ -267,7 +274,8 @@ public:
 
     static void Callback(Fl_Widget* w, void*) {
         if (w == TEST->b1) {
-            TEST->create(14, "add last", true);
+            TEST->create(32, "add last", true);
+            //TEST->create(4, "add last", true);
         }
         else if (w == TEST->b2) {
             TEST->create(1, "insert first");
@@ -307,7 +315,7 @@ public:
         }
         else if (w == TEST->b9) {
 //            flw::debug::print(TEST);
-            TEST->tabs->debug();
+            TEST->tabs->debug(false);
             Fl::redraw();
         }
         else if (w == TEST->b15) {
@@ -326,27 +334,36 @@ public:
                 TEST->b16->label("Hide");
             }
         }
-        
+        else if (w == TEST->b17) {
+            TEST->shrink = !TEST->shrink;
+            TEST->size(TEST->w(), TEST->h());
+        }
+
         TEST->tabs->take_focus();
     }
-    
+
     void create(int num, std::string what, bool clear = false) {
         if (clear == true) {
             tabs->clear();
         }
 
         auto count = tabs->children();
+        auto first = (Fl_Widget*) nullptr;
+
         srand(time(nullptr));
-        
+
         for (int f = 1; f <= num; f++) {
             char l[100];
+            char l2[100];
             snprintf(l, 100, "Widget %02d", ++count);
-//            auto b = new Fl_Button(0, 0, 0, 0);
-//            b->copy_label(l);
+            snprintf(l2, 100, "%06d", count);
             auto t = new Editor(l);
-            
             auto r = rand() % 4;
-            
+
+            if (first == nullptr) {
+                first = t;
+            }
+
             if (r == 0) {
                 snprintf(l, 100, "Button %02d", count);
             }
@@ -359,7 +376,7 @@ public:
             else if (r == 3) {
                 snprintf(l, 100, "wider button %02d", count);
             }
-            
+
             if (what == "add last") {
                 tabs->add(l, t);
             }
@@ -375,14 +392,25 @@ public:
             else {
                 assert(false);
             }
+
+            tabs->tooltip(l2, t);
         }
+
+        tabs->do_layout();
     }
 
     void resize(int X, int Y, int W, int H) override {
         auto fs = flw::PREF_FONTSIZE;
-        
+
         Fl_Double_Window::resize(X, Y, W, H);
-        tabs->resize(0, fs * 2, W, H - fs * 2);
+
+        if (shrink == false) {
+            tabs->resize(0, fs * 2, W, H - fs * 2);
+        }
+        else {
+            tabs->resize(50, 50, W - 100, H - 100);
+        }
+
         b1->resize(0, 0, 3 * fs, fs * 2);
         b2->resize(fs * 3, 0, 7 * fs, fs * 2);
         b11->resize(fs * 10, 0, 7 * fs, fs * 2);
@@ -399,6 +427,7 @@ public:
         b9->resize(fs * 63, 0, 4 * fs, fs * 2);
         b15->resize(fs * 67, 0, 4 * fs, fs * 2);
         b16->resize(fs * 71, 0, 4 * fs, fs * 2);
+        b17->resize(fs * 74, 0, 4 * fs, fs * 2);
     }
 
     TabsGroup*      tabs;
@@ -418,29 +447,31 @@ public:
     Fl_Button*      b14;
     Fl_Button*      b15;
     Fl_Button*      b16;
+    Fl_Button*      b17;
+    bool            shrink;
     static Test2*   TEST;
 };
 
 Test2* Test2::TEST = nullptr;
 
-/***
- *                      _       
- *                     (_)      
- *      _ __ ___   __ _ _ _ __  
- *     | '_ ` _ \ / _` | | '_ \ 
+/*
+ *                      _
+ *                     (_)
+ *      _ __ ___   __ _ _ _ __
+ *     | '_ ` _ \ / _` | | '_ \
  *     | | | | | | (_| | | | | |
  *     |_| |_| |_|\__,_|_|_| |_|
- *                              
- *                              
+ *
+ *
  */
 
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
     }
-    
+
 //    flw::PREF_FONTSIZE = 10;
-    
+
     {
         Test1 test1(800, 600);
         test1.show();
