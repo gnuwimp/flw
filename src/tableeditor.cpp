@@ -715,10 +715,10 @@ void TableEditor::_edit_show() {
         auto choices = cell_choice(_curr_row, _curr_col);
 
         if (choices.size() > 0) {
-            auto row = dlg::select(TableEditor::SELECT_LIST, choices, val);
+            auto row = dlg::select_string(TableEditor::SELECT_LIST, choices, val);
 
-            if (row > 0) {
-                const auto& string = choices[row - 1];
+            if (row >= 0) {
+                const auto& string = choices[row];
 
                 if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
                     _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);

@@ -18,39 +18,14 @@
 using namespace flw;
 
 //------------------------------------------------------------------------------
-void test_abort() {
-    {
-        auto dialog = dlg::AbortDialog("dlg::AbortDialog");
-
-        dialog.show("This will never stop until you press the button\nHello World");
-
-        while (dialog.check() == false) {
-        }
-    }
-
-    {
-        auto dialog = dlg::AbortDialog("", -100.0, 100.0);
-        auto count  = -100.0;
-
-        dialog.show("This will take some time");
-
-        while (dialog.check() == false && count <= 100.0) {
-            dialog.value(count);
-            util::sleep(100);
-            count += 1.0;
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
 void test_check() {
+    size_t       c = 0;
     StringVector v = { "1Whether", "0tis nobler", "1in the", "0mind to suffer", "1The slings", 
                        "0and arrows", "1of outrageous", "0fortune", "1Or to", "0take arms", 
                        "1against", "0a sea", "1of troubles", "0And by", "1opposing", "0end them?", 
                        "1To die", "0to sleep", "1No more", "0and by a", "1sleep to say", "0we end" };
-    size_t       c = 0;
-    
-    for (auto s : dlg::check("dlg::check", v)) {
+
+    for (auto s : dlg::select_checkboxes("flw::dlg::select_checkboxes", v)) {
         printf("%2u = %s => %s\n", (unsigned) c, s.c_str(), v[c].c_str());
         c++;
     }
@@ -61,7 +36,7 @@ void test_check() {
 void test_choice() {
     StringVector v = {"Hello", "World", "How", "Are", "You?"};
 
-    printf("line %d was selected\n", dlg::choice("dlg::choice", v, 1));
+    printf("line %d was selected\n", dlg::select_choice("dlg::select_choice", v, 1));
     fflush(stdout);
 }
 
@@ -178,7 +153,73 @@ void test_list() {
 }
 
 //------------------------------------------------------------------------------
+bool test_printa(void*, int pw, int ph, int page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool test_printb(void* data, int pw, int ph, int) {
+    auto c = static_cast<int*>(data);
+    char b[100];
+    snprintf(b, 100, "%d", *c);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+    (*c)--;
+    return *c > 0;
+}
+
+//------------------------------------------------------------------------------
+bool test_printc(void*, int pw, int ph, int page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+bool test_printd(void*, int pw, int ph, int page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 5);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return page != 6;
+}
+
+//------------------------------------------------------------------------------
 void test_print() {
+    int b = 33;
+    dlg::print("dlg::print - Pages Between From And To", test_printa, nullptr, 5, 10);
+    dlg::print("dlg::print - Many Pages", test_printb, &b);
+    dlg::print("dlg::print - One Page", test_printc);
+    dlg::print("dlg::print - Stop On Page 6", test_printd, nullptr, 1, 11);
+}
+
+//------------------------------------------------------------------------------
+void test_print_text1() {
     auto r = 0;
 
     while (r >= 0) {
@@ -209,10 +250,10 @@ void test_print() {
 }
 
 //------------------------------------------------------------------------------
-void test_print1() {
+void test_print_text2() {
     {
-        auto printer = PrintText("..", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
-        FLW_PRINT(printer.print(HAMLET_TEXT))
+        //auto printer = PrintText("..", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
+        //FLW_PRINT(printer.print(HAMLET_TEXT))
     }
 
     {
@@ -292,7 +333,7 @@ void test_print1() {
 }
 
 //------------------------------------------------------------------------------
-void test_print2() {
+void test_print_text3() {
     auto r  = 0;
     auto b1 = gnu::file::read("flw.h");
     auto b2 = gnu::file::read("flw.cpp");
@@ -323,72 +364,6 @@ void test_print2() {
 }
 
 //------------------------------------------------------------------------------
-bool test_print3a(void*, int pw, int ph, int page) {
-    char b[100];
-    snprintf(b, 100, "%d", page);
-
-    fl_font(FL_COURIER, 36);
-    fl_color(FL_BLACK);
-    fl_line_style(FL_SOLID, 1);
-    fl_rect(0, 0, pw, ph);
-    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
-
-    return true;
-}
-
-//------------------------------------------------------------------------------
-bool test_print3b(void* data, int pw, int ph, int) {
-    auto c = static_cast<int*>(data);
-    char b[100];
-    snprintf(b, 100, "%d", *c);
-
-    fl_font(FL_COURIER, 36);
-    fl_color(FL_BLACK);
-    fl_line_style(FL_SOLID, 1);
-    fl_rect(0, 0, pw, ph);
-    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
-    (*c)--;
-    return *c > 0;
-}
-
-//------------------------------------------------------------------------------
-bool test_print3c(void*, int pw, int ph, int page) {
-    char b[100];
-    snprintf(b, 100, "%d", page);
-
-    fl_font(FL_COURIER, 36);
-    fl_color(FL_BLACK);
-    fl_line_style(FL_SOLID, 1);
-    fl_rect(0, 0, pw, ph);
-    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
-
-    return false;
-}
-
-//------------------------------------------------------------------------------
-bool test_print3d(void*, int pw, int ph, int page) {
-    char b[100];
-    snprintf(b, 100, "%d", page);
-
-    fl_font(FL_COURIER, 36);
-    fl_color(FL_BLACK);
-    fl_line_style(FL_SOLID, 5);
-    fl_rect(0, 0, pw, ph);
-    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
-
-    return page != 6;
-}
-
-//------------------------------------------------------------------------------
-void test_print3() {
-    int b = 33;
-    dlg::print("dlg::print - Pages Between From And To", test_print3a, nullptr, 5, 10);
-    dlg::print("dlg::print - Many Pages", test_print3b, &b);
-    dlg::print("dlg::print - One Page", test_print3c);
-    dlg::print("dlg::print - Stop On Page 6", test_print3d, nullptr, 1, 11);
-}
-
-//------------------------------------------------------------------------------
 void test_pwd() {
     std::string password, file;
     bool ret;
@@ -396,20 +371,20 @@ void test_pwd() {
     ret = dlg::password("dlg::password", password);
     printf("dlg::password = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
 
-    ret = dlg::password_check("dlg::password_check", password);
-    printf("dlg::password_check = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
+    ret = dlg::password_confirm("dlg::password_check", password);
+    printf("dlg::password_confirm = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
 
-    ret = dlg::password_with_file("dlg::password_with_file", password, file);
-    printf("dlg::password_with_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
+    ret = dlg::password_and_file("dlg::password_with_file", password, file);
+    printf("dlg::password_and_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
 
-    ret = dlg::password_check_with_file("dlg::password_check_with_file", password, file);
-    printf("dlg::password_check_with_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
+    ret = dlg::password_confirm_and_file("dlg::password_check_with_file", password, file);
+    printf("dlg::password_confirm_and_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
 
     fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
-void test_select() {
+void test_select_string() {
     std::vector<std::string> v;
     char c[100];
 
@@ -418,8 +393,8 @@ void test_select() {
         v.push_back(std::string(c));
     }
 
-    printf("line %d was selected\n", (int) dlg::select("dlg::select", v, 66));
-    printf("line %d was selected\n", (int) dlg::select("dlg::select", v, "Hello World 00044"));
+    printf("line %d was selected\n", (int) dlg::select_string("dlg::select_string", v, 66));
+    printf("line %d was selected\n", (int) dlg::select_string("dlg::select_string", v, "Hello World 00044"));
     fflush(stdout);
 }
 
@@ -472,13 +447,15 @@ void test_wait() {
 //------------------------------------------------------------------------------
 void test_work() {
     {
-        auto work  = dlg::WorkDialog("dlg::WorkDialog", nullptr, true, true);
+        auto work  = dlg::WorkDialog("dlg::WorkDialog with a single string message", true, true);
         auto start = util::clock();
-
+        
+        work.start();
+        
         while (true) {
-            auto s = util::format("@bRunning for = %.1f sec", util::clock() - start);
+            auto s = util::format("@lRunning forever %.1f sec", util::clock() - start);
 
-            if (work.run(0.1, s) == false) {
+            if (work.update(s) == false) {
                 break;
             }
 
@@ -487,24 +464,25 @@ void test_work() {
     }
 
     {
-        auto work = dlg::WorkDialog("dlg::WorkDialog", nullptr, false, false, 60, 10);
-        auto stop = util::clock() + 5.0;
+        auto work = dlg::WorkDialog("dlg::WorkDialog with progress bar", true, true, 0.0, 0.0);
+        auto val  = 0.0;
 
+        work.range(0.0, 100.0);
+        work.resize(0, 0, 640, 480);
+        work.start();
+        
         while (true) {
             auto m = std::vector<std::string>();
 
-            m.push_back(util::format("@bHello World"));
-            m.push_back(util::format("Quitting in %.1f sec", stop - util::clock()));
-            m.push_back(util::format("@B95Quitting in %.1f sec", stop - util::clock()));
+            m.push_back(util::format("@bWorking from 0.0 to 100.0"));
+            m.push_back(util::format("@B95Current value is %.1f", val));
 
-            if (work.run(0.1, m) == false) {
-                break;
-            }
-            else if (util::clock() - stop > 0.0) {
+            if (work.update(val, m, 50) == false || work.value() >= 100.0) {
                 break;
             }
 
             util::sleep(20);
+            val += 0.2;
         }
     }
 }
@@ -514,7 +492,6 @@ int main(int argc, const char** argv) {
     theme::parse(argc, argv);
 
     puts("run individual tests with");
-    puts("    abort");
     puts("    check");
     puts("    choice");
     puts("    csv");
@@ -523,8 +500,9 @@ int main(int argc, const char** argv) {
     puts("    html");
     puts("    list");
     puts("    print");
-    puts("    print1");
-    puts("    print2");
+    puts("    print_text1");
+    puts("    print_text2");
+    puts("    print_text3");
     puts("    pwd");
     puts("    select");
     puts("    slider");
@@ -575,10 +553,6 @@ int main(int argc, const char** argv) {
             test_font2();
         }
 
-        if (run == "" || run == "abort") {
-            test_abort();
-        }
-
         if (run == "" || run == "check") {
             test_check();
         }
@@ -603,20 +577,20 @@ int main(int argc, const char** argv) {
             test_print();
         }
 
-        if (run == "print1")  {
-            test_print1();
+        if (run == "print_text1")  {
+            test_print_text1();
         }
 
-        if (run == "print2")  {
-            test_print2();
+        if (run == "print_text2")  {
+            test_print_text2();
         }
 
-        if (run == "print3")  {
-            test_print3();
+        if (run == "print_text3")  {
+            test_print_text3();
         }
 
         if (run == "" || run == "select") {
-            test_select();
+            test_select_string();
         }
 
         if (run == "" || run == "slider")  {

@@ -64,6 +64,7 @@ class _TableDisplayCellDialog : public Fl_Double_Window {
     Fl_Int_Input*                   _col;
     GridGroup*                      _grid;
     bool                            _ret;
+    bool                            _run;
 
 public:
     _TableDisplayCellDialog(int row, int col) :
@@ -74,6 +75,7 @@ public:
         _grid = new GridGroup(0, 0, w(), h());
         _row  = new Fl_Int_Input(0, 0, 0, 0, "Row:");
         _ret  = false;
+        _run  = false;
 
         _grid->add(_row,   1,  3,  -1,   4);
         _grid->add(_col,   1, 10,  -1,   4);
@@ -106,18 +108,16 @@ public:
 
     //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
-        auto dlg = static_cast<_TableDisplayCellDialog*>(o);
+        auto self = static_cast<_TableDisplayCellDialog*>(o);
 
-        if (w == dlg) {
-            dlg->hide();
+        if (w == self) {
+            self->_run = false;
+            self->hide();
         }
-        else if (w == dlg->_row) {
-            dlg->_ret = true;
-            dlg->hide();
-        }
-        else if (w == dlg->_col) {
-            dlg->_ret = true;
-            dlg->hide();
+        else if (w == self->_row || w == self->_col) {
+            self->_ret = true;
+            self->_run = false;
+            self->hide();
         }
     }
 
@@ -133,10 +133,11 @@ public:
 
     //--------------------------------------------------------------------------
     bool run(Fl_Window* parent) {
+        _run = true;
         flw::util::center_window(this, parent);
         show();
 
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -165,6 +166,7 @@ class _TableDisplayFindDialog : public Fl_Double_Window {
     GridGroup*                  _grid;
     TableDisplay*               _table;
     bool                        _repeat;
+    bool                        _run;
 
 public:
     explicit _TableDisplayFindDialog(TableDisplay* table) :
@@ -178,6 +180,7 @@ public:
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
+        _run    = false;
 
         _grid->add(_find,     8,  1,  -1,   4);
         _grid->add(_prev,   -51, -5,  16,   4);
@@ -207,23 +210,25 @@ public:
 
     //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void* o) {
-        auto dlg = static_cast<_TableDisplayFindDialog*>(o);
+        auto self = static_cast<_TableDisplayFindDialog*>(o);
 
-        if (w == dlg) {
-            dlg->hide();
+        if (w == self) {
+            self->_run = false;
+            self->hide();
         }
-        else if (w == dlg->_close) {
-            dlg->_table->_find = dlg->_find->value();
-            dlg->hide();
+        else if (w == self->_close) {
+            self->_table->_find = self->_find->value();
+            self->_run = false;
+            self->hide();
         }
-        else if (w == dlg->_next) {
-            dlg->find(true);
+        else if (w == self->_next) {
+            self->find(true);
         }
-        else if (w == dlg->_prev) {
-            dlg->find(false);
+        else if (w == self->_prev) {
+            self->find(false);
         }
-        else if (w == dlg->_find) {
-            dlg->find(dlg->_repeat);
+        else if (w == self->_find) {
+            self->find(self->_repeat);
         }
     }
 
@@ -306,10 +311,11 @@ public:
 
     //--------------------------------------------------------------------------
     void run(Fl_Window* parent) {
+        _run = true;
         flw::util::center_window(this, parent);
         show();
 
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }

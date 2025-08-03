@@ -939,6 +939,7 @@ public:
     Fl_Input*                   _label;
     GridGroup*                  _grid;
     bool                        _ret;
+    bool                        _run;
 
 public:
     //--------------------------------------------------------------------------
@@ -947,8 +948,6 @@ public:
     _line(line) {
         end();
 
-        _line   = line;
-        _ret    = false;
         _align  = new Fl_Choice(0, 0, 0, 0, "Align");
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
@@ -957,6 +956,9 @@ public:
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
+        _line   = line;
+        _ret    = false;
+        _run    = false;
 
         _grid->add(_label,     12,   1,  -1,  4);
         _grid->add(_type,      12,   6,  -1,  4);
@@ -1010,7 +1012,10 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<ChartLineSetup*>(o);
 
-        if (w == self || w == self->_cancel) {
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_color) {
@@ -1023,6 +1028,7 @@ public:
         }
         else if (w == self->_close) {
             self->_ret = true;
+            self->_run = false;
             self->update_line();
             self->hide();
         }
@@ -1030,9 +1036,10 @@ public:
 
     //--------------------------------------------------------------------------
     bool run() {
+        _run = true;
         show();
 
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -1665,7 +1672,7 @@ bool Chart::create_line(ChartData::FORMULAS formula, bool support) {
     }
     else if (formula == ChartData::FORMULAS::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::choice("Select Modification", list, 0, top_window());
+        auto ans  = dlg::select_choice("Select Modification", list, 0, top_window());
 
         if (ans < 0 || ans > static_cast<int>(ChartData::MODIFY::LAST)) {
             return false;
@@ -3072,7 +3079,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
 
-    switch (dlg::choice("Select Number Of Chart Areas", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Number Of Chart Areas", list, 0, top_window())) {
         case 0:
             set_area_size(100);
             break;
@@ -3160,7 +3167,7 @@ void Chart::setup_create_line() {
         "Horizontal fixed line"
     };
 
-    switch (dlg::choice("Select Formula", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Formula", list, 0, top_window())) {
         case 0:
             create_line(ChartData::FORMULAS::MOVING_AVERAGE);
             break;
@@ -3211,7 +3218,7 @@ void Chart::setup_create_line() {
 //------------------------------------------------------------------------------
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
+    auto sel  = dlg::select_choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
 
     if (sel == -1) {
         return;
@@ -3227,7 +3234,7 @@ void Chart::setup_delete_lines() {
         return;
     }
 
-    auto list_labels = dlg::check("Delete Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
+    auto list_labels = dlg::select_checkboxes("Delete Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
 
     if (list_labels.size() == 0) {
         return;
@@ -3276,14 +3283,14 @@ void Chart::setup_move_lines() {
         return;
     }
 
-    auto list_labels = dlg::check("Move Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
+    auto list_labels = dlg::select_checkboxes("Move Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
 
     if (list_labels.size() == 0) {
         return;
     }
 
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::choice("Select Area", list_areas, 0, top_window());
+    auto area       = dlg::select_choice("Select Area", list_areas, 0, top_window());
 
     if (area < 0 || area > static_cast<int>(ChartArea::AREA::LAST)) {
         return;
@@ -3307,7 +3314,7 @@ void Chart::setup_show_or_hide_lines() {
     }
 
     auto list = _label_array(*_area, Chart::LABELTYPE::VISIBLE);
-    list = dlg::check("Show Or Hide Lines", list, top_window());
+    list = dlg::select_checkboxes("Show Or Hide Lines", list, top_window());
 
     if (list.size() == 0) {
         return;

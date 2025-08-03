@@ -379,6 +379,7 @@ public:
     Fl_Input*                   _label;
     GridGroup*                  _grid;
     bool                        _ret;
+    bool                        _run;
 
 public:
     //--------------------------------------------------------------------------
@@ -387,8 +388,6 @@ public:
     _line(line) {
         end();
 
-        _line   = line;
-        _ret    = false;
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
@@ -396,6 +395,9 @@ public:
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
+        _line   = line;
+        _ret    = false;
+        _run    = false;
 
         _grid->add(_label,     12,   1,  -1,  4);
         _grid->add(_type,      12,   6,  -1,  4);
@@ -444,7 +446,10 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<PlotLineSetup*>(o);
 
-        if (w == self || w == self->_cancel) {
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_color) {
@@ -457,6 +462,7 @@ public:
         }
         else if (w == self->_close) {
             self->_ret = true;
+            self->_run = false;
             self->update_line();
             self->hide();
         }
@@ -464,9 +470,10 @@ public:
 
     //--------------------------------------------------------------------------
     bool run() {
+        _run = true;
         show();
 
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -650,6 +657,7 @@ Fl_Group(X, Y, W, H, l),
 _CH(14), _CW(14) {
     end();
     clip_children(1);
+
     resizable(nullptr);
     color(FL_BACKGROUND2_COLOR);
     labelcolor(FL_FOREGROUND_COLOR);
@@ -798,7 +806,7 @@ bool Plot::create_line(PlotData::FORMULAS formula) {
 
     if (formula == PlotData::FORMULAS::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::choice("Select Modification", list, 0, top_window());
+        auto ans  = dlg::select_choice("Select Modification", list, 0, top_window());
 
         if (ans < 0 || ans > static_cast<int>(PlotData::MODIFY::LAST)) {
             return false;
@@ -816,7 +824,7 @@ bool Plot::create_line(PlotData::FORMULAS formula) {
         }
 
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
-        ans    = dlg::choice("Select Target", list, 0, top_window());
+        ans    = dlg::select_choice("Select Target", list, 0, top_window());
         vec1   = PlotData::Modify(line0.data(), modify, (ans == 0 ? PlotData::TARGET::X : ans == 1 ? PlotData::TARGET::Y : PlotData::TARGET::X_AND_Y), value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
@@ -1775,7 +1783,7 @@ void Plot::setup_add_line() {
         "Swap values",
     };
 
-    switch (dlg::choice("Select Formula", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Formula", list, 0, top_window())) {
     case 0:
         create_line(PlotData::FORMULAS::MODIFY);
         break;
@@ -1845,7 +1853,7 @@ void Plot::setup_delete_lines() {
     }
 
     auto list = _create_check_labels(false);
-    list = dlg::check("Delete Lines", list, top_window());
+    list = dlg::select_checkboxes("Delete Lines", list, top_window());
 
     if (list.size() == 0) {
         return;
@@ -1917,7 +1925,7 @@ void Plot::setup_show_or_hide_lines() {
     }
 
     auto list = _create_check_labels(true);
-    list = dlg::check("Show Or Hide Lines", list, top_window());
+    list = dlg::select_checkboxes("Show Or Hide Lines", list, top_window());
 
     if (list.size() == 0) {
         return;

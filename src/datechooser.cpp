@@ -14,7 +14,7 @@
 
 namespace flw {
 
-/***
+/*
  *           _____        _        _____ _                                _____
  *          |  __ \      | |      / ____| |                              / ____|
  *          | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __| |     __ _ _ ____   ____ _ ___
@@ -199,7 +199,7 @@ public:
     }
 };
 
-/***
+/*
  *      _____        _        _____ _
  *     |  __ \      | |      / ____| |
  *     | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __
@@ -398,7 +398,7 @@ void flw::DateChooser::_set_label() {
     _month_label->copy_label(string.c_str());
 }
 
-/***
+/*
  *           _____        _        _____ _                               _____  _
  *          |  __ \      | |      / ____| |                             |  __ \| |
  *          | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __| |  | | | __ _
@@ -409,27 +409,35 @@ void flw::DateChooser::_set_label() {
  *     |______|                                                                   |___/
  */
 
-//------------------------------------------------------------------------------
+/** @brief An date chooser dialog.
+* @private.
+*/
 class _DateChooserDlg : public Fl_Double_Window {
-    gnu::Date&                  _value;
-    DateChooser*                _date_chooser;
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _ok;
-    GridGroup*                  _grid;
-    bool                        _res;
+    gnu::Date&                  _value;         // In/out date value.
+    DateChooser*                _date_chooser;  // Date widget.
+    Fl_Button*                  _cancel;        // Cancel button.
+    Fl_Button*                  _ok;            // Ok button.
+    GridGroup*                  _grid;          // Layout widget.
+    bool                        _res;           // Return value.
+    bool                        _run;           // Run flag.
 
 public:
-    //------------------------------------------------------------------------------
-    _DateChooserDlg(const char* title, gnu::Date& date) :
-    Fl_Double_Window(0, 0, 0, 0),
+    /** @brief Create window.
+    *
+    * @param[in]      title   Dialog title.
+    * @param[in,out]  date    Date value.
+    */
+    _DateChooserDlg(const std::string& title, gnu::Date& date) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21),
     _value(date) {
         end();
 
         _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
-        _grid         = new GridGroup();
+        _grid         = new GridGroup(0, 0, w(), h());
         _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _res          = false;
+        _run          = false;
 
         _grid->add(_date_chooser,   0,   0,   0,  -6);
         _grid->add(_cancel,       -34,  -5,  16,   4);
@@ -439,45 +447,45 @@ public:
         _cancel->callback(Callback, this);
         _date_chooser->focus();
         _date_chooser->set(_value);
+        _grid->do_layout();
         _ok->callback(Callback, this);
-
+        
         util::labelfont(this);
         callback(Callback, this);
-        copy_label(title);
-        resizable(this);
-        size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
+        copy_label(title.c_str());
+        resizable(_grid);
         size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
         set_modal();
     }
 
-    //------------------------------------------------------------------------------
+    /** @brief Callback for all widgets.
+    *
+    */
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DateChooserDlg*>(o);
 
         if (w == self) {
-            ;
         }
         else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_ok) {
-            self->hide();
             self->_res = true;
+            self->_run = false;
+            self->hide();
         }
     }
 
-    //------------------------------------------------------------------------------
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
-
-    //------------------------------------------------------------------------------
+    /** @brief Run dialog.
+    *
+    */
     bool run(Fl_Window* parent) {
+        _run = true;
         util::center_window(this, parent);
         show();
 
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -490,7 +498,7 @@ public:
     }
 };
 
-/***
+/*
  *       __                  _   _
  *      / _|                | | (_)
  *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
@@ -501,9 +509,19 @@ public:
  *
  */
 
-//------------------------------------------------------------------------------
+/** @brief Show an date chooser dialog.
+*
+* @param[in]     title   Dialog title.
+* @param[in,out] date    Input and output date.
+* @param[in]     parent  Center dialog on this window or use NULL to center on screen.
+*
+* @return True if ok has been pressed and date has been updated.
+*
+* @snippet dialog.cpp flw::dlg::date example
+* @image html date_dialog.png
+*/
 bool dlg::date(const std::string& title, gnu::Date& date, Fl_Window* parent) {
-    flw::_DateChooserDlg dlg(title.c_str(), date);
+    flw::_DateChooserDlg dlg(title, date);
     return dlg.run(parent);
 }
 

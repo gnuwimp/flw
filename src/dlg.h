@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief Assorted dialog functions and classes.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #ifndef FLW_DLG_H
 #define FLW_DLG_H
@@ -19,9 +24,12 @@
 #include <FL/Fl_Toggle_Button.H>
 
 namespace flw {
+
+/** @brief Assorted dialog functions.
+*/
 namespace dlg {
 
-/***
+/*
  *       __                  _   _
  *      / _|                | | (_)
  *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
@@ -36,72 +44,29 @@ extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
 
 void                            center_message_dialog();
-StringVector                    check(std::string title, const StringVector& list, Fl_Window* parent = nullptr);
-int                             choice(std::string title, const StringVector& list, int selected = 0, Fl_Window* parent = nullptr);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
-void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            panic(std::string message);
-bool                            password(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password_check(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-bool                            password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-void                            print(std::string title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
-bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
-bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
-int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-bool                            slider(std::string title, double min, double max, double& value, double step = 1.0, Fl_Window* parent = nullptr);
-void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list_file(const std::string& title, const std::string& file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            panic(const std::string& message);
+bool                            password(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_confirm(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_confirm_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+void                            print(const std::string& title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
+bool                            print_text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr);
+bool                            print_text(const std::string& title, const StringVector& text, Fl_Window* parent = nullptr);
+StringVector                    select_checkboxes(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr);
+int                             select_choice(const std::string& title, const StringVector& list, int selected = 0, Fl_Window* parent = nullptr);
+int                             select_string(const std::string& title, const StringVector& list, int select_row, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+int                             select_string(const std::string& title, const StringVector& list, const std::string& select_row, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+bool                            slider(const std::string& title, double min, double max, double& value, double step = 1.0, Fl_Window* parent = nullptr);
+void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+bool                            text_edit(const std::string& title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
 
-/***
- *               _                _   _____  _       _
- *         /\   | |              | | |  __ \(_)     | |
- *        /  \  | |__   ___  _ __| |_| |  | |_  __ _| | ___   __ _
- *       / /\ \ | '_ \ / _ \| '__| __| |  | | |/ _` | |/ _ \ / _` |
- *      / ____ \| |_) | (_) | |  | |_| |__| | | (_| | | (_) | (_| |
- *     /_/    \_\_.__/ \___/|_|   \__|_____/|_|\__,_|_|\___/ \__, |
- *                                                            __/ |
- *                                                           |___/
- */
-
-//------------------------------------------------------------------------------
-class AbortDialog : public Fl_Double_Window {
-    using Fl_Double_Window::show;
-
-public:
-                                AbortDialog(const AbortDialog&) = delete;
-                                AbortDialog(AbortDialog&&) = delete;
-    AbortDialog&                operator=(const AbortDialog&) = delete;
-    AbortDialog&                operator=(AbortDialog&&) = delete;
-
-    explicit                    AbortDialog(std::string label = "", double min = 0.0, double max = 0.0);
-    bool                        check(int milliseconds = 200);
-    bool                        check(double value, double min, double max, int milliseconds = 200);
-    bool                        aborted()
-                                    { return _abort; }
-    void                        range(double min, double max);
-    void                        resize(int X, int Y, int W, int H) override
-                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
-    void                        show(const std::string& label, Fl_Window* parent = nullptr);
-    void                        value(double value);
-
-
-    static void                 Callback(Fl_Widget* w, void* o);
-
-private:
-    Fl_Button*                  _button;
-    Fl_Hor_Fill_Slider*         _progress;
-    GridGroup*                  _grid;
-    bool                        _abort;
-    int64_t                     _last;
-};
-
-/***
+/*
  *      ______          _   _____  _       _
  *     |  ____|        | | |  __ \(_)     | |
  *     | |__ ___  _ __ | |_| |  | |_  __ _| | ___   __ _
@@ -112,12 +77,15 @@ private:
  *                                                 |___/
  */
 
-//------------------------------------------------------------------------------
-// Dialog for selecting font and font size.
-// FontDialog::LoadFonts() will be called automatically (or do it manually).
-// It is only needed once.
-// Call FontDialog::DeleteFonts() before app exit (this is unnecessarily, only for keeping memory sanitizers satisfied).
-//
+/** @brief A dialog for selecting font and font size.
+*
+* FontDialog::LoadFonts() will be called automatically (or do it manually).\n
+* It is only needed once.\n
+* Call FontDialog::DeleteFonts() before app exit (this is unnecessary, only for keeping memory sanitizers satisfied).\n
+*
+* @snippet dialog.cpp flw::dlg::FontDialog example
+* @image html font_dialog.png
+*/
 class FontDialog : public Fl_Double_Window {
 public:
                                 FontDialog(const FontDialog&) = delete;
@@ -125,44 +93,45 @@ public:
     FontDialog&                 operator=(const FontDialog&) = delete;
     FontDialog&                 operator=(FontDialog&&) = delete;
 
-                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default = false);
-                                FontDialog(std::string font, Fl_Fontsize fontsize, std::string label, bool limit_to_default = false);
+                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
+                                FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
     void                        activate_font()
-                                    { static_cast<Fl_Widget*>(_fonts)->activate(); }
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font list, active by default.
+    void                        activate_font_size()
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font size list, active by default.
     void                        deactivate_font()
-                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); }
+                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); } ///< @brief Turn of font list.
     void                        deactivate_fontsize()
-                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); }
+                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); } ///< @brief Turn of font size list.
     int                         font()
-                                    { return _font; }
+                                    { return _font; } ///< @brief Return selected font.
     std::string                 fontname()
-                                    { return _fontname; }
+                                    { return _fontname; } ///< @brief Return selected font name.
     int                         fontsize()
-                                    { return _fontsize; }
-    void                        resize(int X, int Y, int W, int H) override
-                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
+                                    { return _fontsize; } ///< @brief Return selected font size.
     bool                        run(Fl_Window* parent = nullptr);
-
-    static void                 Callback(Fl_Widget* w, void* o);
 
 private:
     void                        _activate();
-    void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label, bool limit_to_default);
-    void                        _select_name(std::string font_name);
+    void                        _create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default);
+    void                        _select_name(const std::string& font_name);
 
-    Fl_Box*                     _label;
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _select;
-    GridGroup*                  _grid;
-    ScrollBrowser*              _fonts;
-    ScrollBrowser*              _sizes;
-    bool                        _ret;
-    int                         _font;
-    int                         _fontsize;
-    std::string                 _fontname;
+    static void                 Callback(Fl_Widget* w, void* o);
+
+    Fl_Box*                     _label;     // Sample text label.
+    Fl_Button*                  _cancel;    // Cancel button.
+    Fl_Button*                  _select;    // Select and close dialog button.
+    GridGroup*                  _grid;      // Layout manager.
+    ScrollBrowser*              _fonts;     // Font list.
+    ScrollBrowser*              _sizes;     // Font size list.
+    bool                        _ret;       // Return value.
+    bool                        _run;       // Run flag.
+    int                         _font;      // Selected font.
+    int                         _fontsize;  // Selected font size.
+    std::string                 _fontname;  // Selected font name.
 };
 
-/***
+/*
  *     __          __        _    _____  _       _
  *     \ \        / /       | |  |  __ \(_)     | |
  *      \ \  /\  / /__  _ __| | _| |  | |_  __ _| | ___   __ _
@@ -173,25 +142,37 @@ private:
  *                                                       |___/
  */
 
-//------------------------------------------------------------------------------
+/** @brief A dialog with a message list and a progress bar for time consuming work.
+*
+* Progress bar is optional.\n
+* It has a pause button and an cancel button that can be disabled.\n
+*
+* @snippet dialog.cpp flw::dlg::WorkDialog example
+* @image html work_dialog.png
+*/
 class WorkDialog : public Fl_Double_Window {
 public:
-                                WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-    void                        resize(int X, int Y, int W, int H) override
-                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
-    bool                        run(double update_time, const StringVector& messages);
-    bool                        run(double update_time, const std::string& message);
-
+                                WorkDialog(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
+    void                        range(double min, double max);
+    void                        start(Fl_Window* parent = nullptr);
+    bool                        update(const StringVector& messages, unsigned milli = 100);
+    bool                        update(double value, const StringVector& messages, unsigned milli = 100);
+    bool                        update(const std::string& message, unsigned milli = 100);
+    bool                        update(double value, const std::string& message, unsigned milli = 100);
+    double                      value() const
+                                    { return _progress->value(); } ///< @brief Return progress bar value.
+    void                        value(double value);
+    
+private:
     static void                 Callback(Fl_Widget* w, void* o);
 
-private:
-    Fl_Button*                  _cancel;
-    Fl_Hold_Browser*            _label;
-    Fl_Toggle_Button*           _pause;
-    GridGroup*                  _grid;
-    bool                        _ret;
-    double                      _last;
-    std::string                 _message;
+    Fl_Button*                  _cancel;    // Cancel work button.
+    Fl_Hold_Browser*            _label;     // Message label.
+    Fl_Hor_Fill_Slider*         _progress;  // Optional pprogress bar.
+    Fl_Toggle_Button*           _pause;     // Pause button.
+    GridGroup*                  _grid;      // Layout manager.
+    bool                        _ret;       // Return value from update().
+    unsigned                    _last;      // Last refresh window time.
 };
 
 } // dlg
