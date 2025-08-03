@@ -714,7 +714,7 @@ static bool                 _open_redirect(int type);
 static unsigned             _rand();
 static void                 _read(const std::string& path, Buf& buf);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _read_dir_rec(std::vector<File>& res, std::vector<File>& files);
+static void                 _read_dir_rec(Files& res, Files& files);
 static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
 static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
 static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
@@ -822,7 +822,7 @@ static void _read(const std::string& path, Buf& buf) {
     fclose(handle);
     buf.grab(out, file.size());
 }
-static void _read_dir_rec(std::vector<File>& res, std::vector<File>& files) {
+static void _read_dir_rec(Files& res, Files& files) {
     for (auto& file : files) {
         res.push_back(file);
         if (file.type() == file::TYPE::DIR && file.is_link() == false) {
@@ -1282,9 +1282,9 @@ Buf* read2(const std::string& path) {
     file::_read(path, *buf);
     return buf;
 }
-std::vector<File> read_dir(const std::string& path) {
+Files read_dir(const std::string& path) {
     auto file = File(path, false);
-    auto res  = std::vector<File>();
+    auto res  = Files();
     if (file.type() != TYPE::DIR || file::is_circular(path) == true) {
         return res;
     }
@@ -1326,8 +1326,8 @@ std::vector<File> read_dir(const std::string& path) {
     std::sort(res.begin(), res.end());
     return res;
 }
-std::vector<File> read_dir_rec(const std::string& path) {
-    auto res   = std::vector<File>();
+Files read_dir_rec(const std::string& path) {
+    auto res   = Files();
     auto files = file::read_dir(path);
     file::_read_dir_rec(res, files);
     return res;
@@ -3673,13 +3673,12 @@ public:
     Fl_Input*                   _label;
     GridGroup*                  _grid;
     bool                        _ret;
+    bool                        _run;
 public:
     ChartLineSetup(Fl_Window* parent, ChartLine& line) :
     Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
     _line(line) {
         end();
-        _line   = line;
-        _ret    = false;
         _align  = new Fl_Choice(0, 0, 0, 0, "Align");
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
@@ -3688,6 +3687,9 @@ public:
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
+        _line   = line;
+        _ret    = false;
+        _run    = false;
         _grid->add(_label,     12,   1,  -1,  4);
         _grid->add(_type,      12,   6,  -1,  4);
         _grid->add(_align,     12,  11,  -1,  4);
@@ -3735,7 +3737,10 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<ChartLineSetup*>(o);
-        if (w == self || w == self->_cancel) {
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_color) {
@@ -3748,13 +3753,15 @@ public:
         }
         else if (w == self->_close) {
             self->_ret = true;
+            self->_run = false;
             self->update_line();
             self->hide();
         }
     }
     bool run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -4231,7 +4238,7 @@ bool Chart::create_line(ChartData::FORMULAS formula, bool support) {
     }
     else if (formula == ChartData::FORMULAS::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::choice("Select Modification", list, 0, top_window());
+        auto ans  = dlg::select_choice("Select Modification", list, 0, top_window());
         if (ans < 0 || ans > static_cast<int>(ChartData::MODIFY::LAST)) {
             return false;
         }
@@ -5350,7 +5357,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 }
 void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
-    switch (dlg::choice("Select Number Of Chart Areas", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Number Of Chart Areas", list, 0, top_window())) {
         case 0:
             set_area_size(100);
             break;
@@ -5426,7 +5433,7 @@ void Chart::setup_create_line() {
         "Modify",
         "Horizontal fixed line"
     };
-    switch (dlg::choice("Select Formula", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Formula", list, 0, top_window())) {
         case 0:
             create_line(ChartData::FORMULAS::MOVING_AVERAGE);
             break;
@@ -5475,7 +5482,7 @@ void Chart::setup_create_line() {
 }
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
+    auto sel  = dlg::select_choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
     if (sel == -1) {
         return;
     }
@@ -5486,7 +5493,7 @@ void Chart::setup_delete_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
-    auto list_labels = dlg::check("Delete Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
+    auto list_labels = dlg::select_checkboxes("Delete Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
     if (list_labels.size() == 0) {
         return;
     }
@@ -5521,12 +5528,12 @@ void Chart::setup_move_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
-    auto list_labels = dlg::check("Move Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
+    auto list_labels = dlg::select_checkboxes("Move Lines", _label_array(*_area, Chart::LABELTYPE::OFF), top_window());
     if (list_labels.size() == 0) {
         return;
     }
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::choice("Select Area", list_areas, 0, top_window());
+    auto area       = dlg::select_choice("Select Area", list_areas, 0, top_window());
     if (area < 0 || area > static_cast<int>(ChartArea::AREA::LAST)) {
         return;
     }
@@ -5544,7 +5551,7 @@ void Chart::setup_show_or_hide_lines() {
         return;
     }
     auto list = _label_array(*_area, Chart::LABELTYPE::VISIBLE);
-    list = dlg::check("Show Or Hide Lines", list, top_window());
+    list = dlg::select_checkboxes("Show Or Hide Lines", list, top_window());
     if (list.size() == 0) {
         return;
     }
@@ -5909,16 +5916,18 @@ class _DateChooserDlg : public Fl_Double_Window {
     Fl_Button*                  _ok;
     GridGroup*                  _grid;
     bool                        _res;
+    bool                        _run;
 public:
-    _DateChooserDlg(const char* title, gnu::Date& date) :
-    Fl_Double_Window(0, 0, 0, 0),
+    _DateChooserDlg(const std::string& title, gnu::Date& date) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21),
     _value(date) {
         end();
         _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
-        _grid         = new GridGroup();
+        _grid         = new GridGroup(0, 0, w(), h());
         _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _res          = false;
+        _run          = false;
         _grid->add(_date_chooser,   0,   0,   0,  -6);
         _grid->add(_cancel,       -34,  -5,  16,   4);
         _grid->add(_ok,           -17,  -5,  16,   4);
@@ -5926,36 +5935,34 @@ public:
         _cancel->callback(Callback, this);
         _date_chooser->focus();
         _date_chooser->set(_value);
+        _grid->do_layout();
         _ok->callback(Callback, this);
         util::labelfont(this);
         callback(Callback, this);
-        copy_label(title);
-        resizable(this);
-        size(flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21);
+        copy_label(title.c_str());
+        resizable(_grid);
         size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
         set_modal();
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DateChooserDlg*>(o);
         if (w == self) {
-            ;
         }
         else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_ok) {
-            self->hide();
             self->_res = true;
+            self->_run = false;
+            self->hide();
         }
     }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-    }
     bool run(Fl_Window* parent) {
+        _run = true;
         util::center_window(this, parent);
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -5966,7 +5973,7 @@ public:
     }
 };
 bool dlg::date(const std::string& title, gnu::Date& date, Fl_Window* parent) {
-    flw::_DateChooserDlg dlg(title.c_str(), date);
+    flw::_DateChooserDlg dlg(title, date);
     return dlg.run(parent);
 }
 }
@@ -6043,194 +6050,23 @@ void center_message_dialog() {
     Fl::screen_xywh(X, Y, W, H);
     fl_message_position(W / 2, H / 2, 1);
 }
-bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
-    auto dlg = dlg::FontDialog(font, fontsize, "Select Font", limit_to_default);
-    if (dlg.run() == false) {
-        return false;
-    }
-    font     = dlg.font();
-    fontsize = dlg.fontsize();
-    fontname = dlg.fontname();
-    return true;
-}
-void panic(std::string message) {
+void panic(const std::string& message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
-}
-class _DlgCheck : public Fl_Double_Window {
-    Fl_Button*                  _all;
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _close;
-    Fl_Button*                  _invert;
-    Fl_Button*                  _none;
-    Fl_Scroll*                  _scroll;
-    GridGroup*                  _grid;
-    const StringVector&         _labels;
-    WidgetVector                _checkbuttons;
-    bool                        _ret;
-public:
-    _DlgCheck(const char* title, Fl_Window* parent, const StringVector& strings) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 20),
-    _labels(strings) {
-        end();
-        _ret    = false;
-        _all    = new Fl_Button(0, 0, 0, 0, "All on");
-        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-        _grid   = new GridGroup(0, 0, w(), h());
-        _invert = new Fl_Button(0, 0, 0, 0, "Invert");
-        _none   = new Fl_Button(0, 0, 0, 0, "All off");
-        _scroll = new Fl_Scroll(0, 0, 0, 0);
-        _grid->add(_scroll,   1,  1, -1, -7);
-        _grid->add(_invert, -67, -5, 10,  4);
-        _grid->add(_none,   -56, -5, 10,  4);
-        _grid->add(_all,    -45, -5, 10,  4);
-        _grid->add(_cancel, -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
-        add(_grid);
-        for (auto& l : _labels) {
-            auto b = new Fl_Check_Button(0, 0, 0, 0, l.c_str() + 1);
-            b->value(*l.c_str() == '1');
-            _checkbuttons.push_back(b);
-            _scroll->add(b);
-        }
-        _all->callback(_DlgCheck::Callback, this);
-        _cancel->callback(_DlgCheck::Callback, this);
-        _close->callback(_DlgCheck::Callback, this);
-        _invert->callback(_DlgCheck::Callback, this);
-        _none->callback(_DlgCheck::Callback, this);
-        _scroll->box(FL_BORDER_BOX);
-        util::labelfont(this);
-        callback(_DlgCheck::Callback, this);
-        copy_label(title);
-        set_modal();
-        resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 12);
-        util::center_window(this, parent);
-    }
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgCheck*>(o);
-        if (w == self || w == self->_cancel) {
-            self->hide();
-        }
-        else if (w == self->_close) {
-            self->_ret = true;
-            self->hide();
-        }
-        else if (w == self->_all) {
-            for (auto b : self->_checkbuttons) {
-                static_cast<Fl_Check_Button*>(b)->value(1);
-            }
-        }
-        else if (w == self->_none) {
-            for (auto b : self->_checkbuttons) {
-                static_cast<Fl_Check_Button*>(b)->value(0);
-            }
-        }
-        else if (w == self->_invert) {
-            for (auto b : self->_checkbuttons) {
-                static_cast<Fl_Check_Button*>(b)->value(static_cast<Fl_Check_Button*>(b)->value() ? 0 : 1);
-            }
-        }
-    }
-    void resize(int X, int Y, int W, int H) override {
-        Fl_Double_Window::resize(X, Y, W, H);
-        _grid->resize(0, 0, W, H);
-        auto y = _scroll->y() + 4;
-        for (auto b : _checkbuttons) {
-            b->resize(_scroll->x() + 4, y, _scroll->w() - Fl::scrollbar_size() - 8, flw::PREF_FONTSIZE * 2);
-            y += flw::PREF_FONTSIZE * 2;
-        }
-    }
-    StringVector run() {
-        StringVector res;
-        show();
-        while (visible() != 0) {
-            Fl::wait();
-            Fl::flush();
-        }
-        if (_ret == true) {
-            for (auto b : _checkbuttons) {
-                res.push_back(std::string((static_cast<Fl_Check_Button*>(b)->value() == 0) ? "0" : "1") + b->label());
-            }
-        }
-        return res;
-    }
-};
-StringVector check(std::string title, const StringVector& list, Fl_Window* parent) {
-    _DlgCheck dlg(title.c_str(), parent, list);
-    return dlg.run();
-}
-class _DlgChoice : public Fl_Double_Window {
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _close;
-    Fl_Choice*                  _choice;
-    GridGroup*                  _grid;
-    int                         _ret;
-public:
-    _DlgChoice(const char* title, Fl_Window* parent, const StringVector& strings, int selected) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6) {
-        end();
-        _ret    = -1;
-        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _choice = new Fl_Choice(0, 0, 0, 0);
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-        _grid   = new GridGroup(0, 0, w(), h());
-        _grid->add(_choice,   1,  1, -1,  4);
-        _grid->add(_cancel, -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
-        add(_grid);
-        for (const auto& string : strings) {
-            _choice->add(string.c_str());
-        }
-        _cancel->callback(_DlgChoice::Callback, this);
-        _choice->textfont(flw::PREF_FONT);
-        _choice->textsize(flw::PREF_FONTSIZE);
-        _choice->value(selected);
-        _close->callback(_DlgChoice::Callback, this);
-        util::labelfont(this);
-        callback(_DlgChoice::Callback, this);
-        copy_label(title);
-        set_modal();
-        resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6);
-        util::center_window(this, parent);
-        _grid->do_layout();
-    }
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgChoice*>(o);
-        if (w == self || w == self->_cancel) {
-            self->hide();
-        }
-        else if (w == self->_close) {
-            self->_ret = self->_choice->value();
-            self->hide();
-        }
-    }
-    int run() {
-        show();
-        while (visible() != 0) {
-            Fl::wait();
-            Fl::flush();
-        }
-        return _ret;
-    }
-};
-int choice(std::string title, const StringVector& list, int selected, Fl_Window* parent) {
-    _DlgChoice dlg(title.c_str(), parent, list, selected);
-    return dlg.run();
 }
 class _DlgHtml  : public Fl_Double_Window {
     Fl_Help_View*               _html;
     Fl_Return_Button*           _close;
     GridGroup*                  _grid;
+    bool                        _run;
 public:
-    _DlgHtml(const char* title, const char* text, Fl_Window* parent, int W, int H) :
+    _DlgHtml(const std::string& title, const std::string& text, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
         _grid  = new GridGroup(0, 0, w(), h());
         _html  = new Fl_Help_View(0, 0, 0, 0);
+        _run   = false;
         _grid->add(_html,    1,  1, -1, -6);
         _grid->add(_close, -17, -5, 16,  4);
         add(_grid);
@@ -6239,9 +6075,9 @@ public:
         _close->labelsize(flw::PREF_FONTSIZE);
         _html->textfont(flw::PREF_FONT);
         _html->textsize(flw::PREF_FONTSIZE);
-        _html->value(text);
+        _html->value(text.c_str());
         callback(_DlgHtml::Callback, this);
-        copy_label(title);
+        copy_label(title.c_str());
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
@@ -6250,33 +6086,39 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
-        if (w == self || w == self->_close) {
+        if (w == self) {
+        }
+        else if (w == self->_close) {
+            self->_run = false;
             self->hide();
         }
     }
     void run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
     }
 };
-void html(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
-    _DlgHtml dlg(title.c_str(), text.c_str(), parent, W, H);
+void html(const std::string& title, const std::string& text, Fl_Window* parent, int W, int H) {
+    _DlgHtml dlg(title, text, parent, W, H);
     dlg.run();
 }
 class _DlgList : public Fl_Double_Window {
     Fl_Return_Button*           _close;
     GridGroup*                  _grid;
     ScrollBrowser*              _list;
+    bool                        _run;
 public:
-    _DlgList(const char* title, const StringVector& list, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 50, int H = 20) :
+    _DlgList(const std::string& title, const StringVector& list, const std::string& file, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 50, int H = 20) :
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
         _close = new Fl_Return_Button(0, 0, 0, 0, "&Close");
         _grid  = new GridGroup(0, 0, w(), h());
         _list  = new ScrollBrowser();
+        _run   = false;
         _grid->add(_list,     1,   1,  -1,  -6);
         _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
@@ -6293,7 +6135,7 @@ public:
             _list->textsize(flw::PREF_FONTSIZE);
         }
         callback(_DlgList::Callback, this);
-        copy_label(title);
+        copy_label(title.c_str());
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
@@ -6310,29 +6152,33 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgList*>(o);
-        if (w == self || w == self->_close) {
+        if (w == self) {
+        }
+        else if (w == self->_close) {
+            self->_run = false;
             self->hide();
         }
     }
     void run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
     }
 };
-void list(std::string title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgList dlg(title.c_str(), list, "", parent, fixed_font, W, H);
+void list(const std::string& title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgList dlg(title, list, "", fixed_font, parent, W, H);
     dlg.run();
 }
-void list(std::string title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(const std::string& title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
     auto list2 = util::split_string( list, "\n");
-    _DlgList dlg(title.c_str(), list2, "", parent, fixed_font, W, H);
+    _DlgList dlg(title, list2, "", fixed_font, parent, W, H);
     dlg.run();
 }
-void list_file(std::string title, std::string file, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgList dlg(title.c_str(), flw::StringVector(), file, parent, fixed_font, W, H);
+void list_file(const std::string& title, const std::string& file, Fl_Window* parent, bool fixed_font, int W, int H) {
+    _DlgList dlg(title, flw::StringVector(), file, fixed_font, parent, W, H);
     dlg.run();
 }
 const char* PASSWORD_CANCEL = "&Cancel";
@@ -6341,8 +6187,8 @@ class _DlgPassword : public Fl_Double_Window {
 public:
     enum class TYPE {
                                 PASSWORD,
-                                PASSWORD_CHECK,
-                                PASSWORD_CHECK_WITH_FILE,
+                                PASSWORD_CONFIRM,
+                                PASSWORD_CONFIRM_WITH_FILE,
                                 PASSWORD_WITH_FILE,
     };
 private:
@@ -6355,8 +6201,9 @@ private:
     GridGroup*                  _grid;
     _DlgPassword::TYPE          _mode;
     bool                        _ret;
+    bool                        _run;
 public:
-    _DlgPassword(const char* title, Fl_Window* parent, _DlgPassword::TYPE mode) :
+    _DlgPassword(const std::string& title, _DlgPassword::TYPE mode, Fl_Window* parent) :
     Fl_Double_Window(0, 0, 10, 10) {
         end();
         _browse    = new Fl_Button(0, 0, 0, 0, "&Browse");
@@ -6368,6 +6215,7 @@ public:
         _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
         _mode      = mode;
         _ret       = false;
+        _run       = false;
         _grid->add(_password1,  1,   3,  -1,  4);
         _grid->add(_password2,  1,  10,  -1,  4);
         _grid->add(_file,       1,  17,  -1,  4);
@@ -6393,7 +6241,7 @@ public:
         _password2->textfont(flw::PREF_FIXED_FONT);
         _password2->textsize(flw::PREF_FONTSIZE);
         _password2->when(FL_WHEN_CHANGED);
-        auto W = flw::PREF_FONTSIZE * 35;
+        auto W = flw::PREF_FONTSIZE * 40;
         auto H = flw::PREF_FONTSIZE * 13.5;
         if (_mode == _DlgPassword::TYPE::PASSWORD) {
             _password2->hide();
@@ -6401,7 +6249,7 @@ public:
             _file->hide();
             H = flw::PREF_FONTSIZE * 6.5;
         }
-        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CONFIRM) {
             _browse->hide();
             _file->hide();
             H = flw::PREF_FONTSIZE * 10;
@@ -6414,7 +6262,7 @@ public:
         resizable(_grid);
         util::labelfont(this);
         callback(_DlgPassword::Callback, this);
-        label(title);
+        copy_label(title.c_str());
         size(W, H);
         size_range(W, H);
         set_modal();
@@ -6424,7 +6272,6 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPassword*>(o);
         if (w == self) {
-            ;
         }
         else if (w == self->_password1) {
             self->check();
@@ -6444,10 +6291,12 @@ public:
         }
         else if (w == self->_cancel) {
             self->_ret = false;
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_close) {
             self->_ret = true;
+            self->_run = false;
             self->hide();
         }
     }
@@ -6463,7 +6312,7 @@ public:
                 _close->deactivate();
             }
         }
-        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CONFIRM) {
             if (strlen(p1) > 0 && strcmp(p1, p2) == 0) {
                 _close->activate();
             }
@@ -6471,7 +6320,7 @@ public:
                 _close->deactivate();
             }
         }
-        else if (_mode == _DlgPassword::TYPE::PASSWORD_CHECK_WITH_FILE) {
+        else if (_mode == _DlgPassword::TYPE::PASSWORD_CONFIRM_WITH_FILE) {
             if (strlen(p1) > 0 && strcmp(p1, p2) == 0) {
                 _close->activate();
             }
@@ -6495,12 +6344,13 @@ public:
         }
     }
     bool run(std::string& password, std::string& file) {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
-        if (_ret) {
+        if (_ret == true) {
             file = _file->value();
             password = _password1->value();
         }
@@ -6510,22 +6360,22 @@ public:
         return _ret;
     }
 };
-bool password(std::string title, std::string& password, Fl_Window* parent) {
+bool password(const std::string& title, std::string& password, Fl_Window* parent) {
     std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD);
+    _DlgPassword dlg(title.c_str(), _DlgPassword::TYPE::PASSWORD, parent);
     return dlg.run(password, file);
 }
-bool password_check(std::string title, std::string& password, Fl_Window* parent) {
+bool password_confirm(const std::string& title, std::string& password, Fl_Window* parent) {
     std::string file;
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_CHECK);
+    _DlgPassword dlg(title.c_str(), _DlgPassword::TYPE::PASSWORD_CONFIRM, parent);
     return dlg.run(password, file);
 }
-bool password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_CHECK_WITH_FILE);
+bool password_confirm_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), _DlgPassword::TYPE::PASSWORD_CONFIRM_WITH_FILE, parent);
     return dlg.run(password, file);
 }
-bool password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent) {
-    _DlgPassword dlg(title.c_str(), parent, _DlgPassword::TYPE::PASSWORD_WITH_FILE);
+bool password_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent) {
+    _DlgPassword dlg(title.c_str(), _DlgPassword::TYPE::PASSWORD_WITH_FILE, parent);
     return dlg.run(password, file);
 }
 class _DlgPrint : public Fl_Double_Window {
@@ -6538,9 +6388,10 @@ class _DlgPrint : public Fl_Double_Window {
     Fl_Hor_Slider*              _to;
     GridGroup*                  _grid;
     PrintCallback               _cb;
+    bool                        _run;
     void*                       _data;
 public:
-    _DlgPrint(std::string title, Fl_Window* parent, PrintCallback cb, void* data, int from, int to) :
+    _DlgPrint(const std::string& title, PrintCallback cb, void* data, int from, int to, Fl_Window* parent) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18) {
         end();
         _close  = new Fl_Button(0, 0, 0, 0, "&Close");
@@ -6553,6 +6404,7 @@ public:
         _to     = new Fl_Hor_Slider(0, 0, 0, 0);
         _cb     = cb;
         _data   = data;
+        _run    = false;
         _grid->add(_from,     1,   3,  -1,   4);
         _grid->add(_to,       1,  10,  -1,   4);
         _grid->add(_format,   1,  15,  -1,   4);
@@ -6611,9 +6463,9 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrint*>(o);
         if (w == self) {
-            self->hide();
         }
         else if (w == self->_close) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_file) {
@@ -6642,18 +6494,20 @@ public:
             fl_alert("Printing failed!\n%s", err.c_str());
             return;
         }
+        _run = false;
         hide();
     }
     void run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
     }
 };
-void print(std::string title, PrintCallback cb, void* data, int from, int to, Fl_Window* parent) {
-    _DlgPrint dlg(title, parent, cb, data, from, to);
+void print(const std::string& title, PrintCallback cb, void* data, int from, int to, Fl_Window* parent) {
+    _DlgPrint dlg(title, cb, data, from, to, parent);
     dlg.run();
 }
 class _DlgPrintText : public Fl_Double_Window {
@@ -6673,10 +6527,11 @@ class _DlgPrintText : public Fl_Double_Window {
     Fl_Hor_Slider*              _tab;
     GridGroup*                  _grid;
     bool                        _ret;
+    bool                        _run;
     const StringVector&         _text;
     std::string                 _label2;
 public:
-    _DlgPrintText(std::string title, Fl_Window* parent, const StringVector& text) :
+    _DlgPrintText(const std::string& title, const StringVector& text, Fl_Window* parent) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35),
     _text(text) {
         end();
@@ -6694,6 +6549,7 @@ public:
         _tab      = new Fl_Hor_Slider(0, 0, 0, 0);
         _wrap     = new Fl_Check_Button(0, 0, 0, 0, "Wrap lines");
         _ret      = false;
+        _run      = false;
         _font     = FL_COURIER;
         _fontsize = 14;
         _grid->add(_border,   1,   1,  -1,   4);
@@ -6763,9 +6619,9 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrintText*>(o);
         if (w == self) {
-            self->hide();
         }
-        else if (w == self->_close) {
+        else if ( w == self->_close) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_file) {
@@ -6823,8 +6679,9 @@ public:
         redraw();
     }
     bool run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -6842,24 +6699,202 @@ public:
         _label->copy_label(_label2.c_str());
     }
 };
-bool print_text(std::string title, const std::string& text, Fl_Window* parent) {
+bool print_text(const std::string& title, const std::string& text, Fl_Window* parent) {
     auto lines = util::split_string(text, "\n");
-    _DlgPrintText dlg(title, parent, lines);
+    _DlgPrintText dlg(title, lines, parent);
     return dlg.run();
 }
-bool print_text(std::string title, const StringVector& text, Fl_Window* parent) {
-    _DlgPrintText dlg(title, parent, text);
+bool print_text(const std::string& title, const StringVector& text, Fl_Window* parent) {
+    _DlgPrintText dlg(title, text, parent);
     return dlg.run();
 }
-class _DlgSelect : public Fl_Double_Window {
+class _DlgSelectCheckBoxes : public Fl_Double_Window {
+    Fl_Button*                  _all;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Button*                  _invert;
+    Fl_Button*                  _none;
+    Fl_Scroll*                  _scroll;
+    GridGroup*                  _grid;
+    const StringVector&         _labels;
+    WidgetVector                _checkbuttons;
+    bool                        _ret;
+    bool                        _run;
+public:
+    _DlgSelectCheckBoxes(const std::string& title, const StringVector& strings, Fl_Window* parent) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 20),
+    _labels(strings) {
+        end();
+        _all    = new Fl_Button(0, 0, 0, 0, "All on");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _invert = new Fl_Button(0, 0, 0, 0, "Invert");
+        _none   = new Fl_Button(0, 0, 0, 0, "All off");
+        _scroll = new Fl_Scroll(0, 0, 0, 0);
+        _ret    = false;
+        _run    = false;
+        _grid->add(_scroll,   1,  1, -1, -7);
+        _grid->add(_invert, -67, -5, 10,  4);
+        _grid->add(_none,   -56, -5, 10,  4);
+        _grid->add(_all,    -45, -5, 10,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+        for (auto& l : _labels) {
+            auto b = new Fl_Check_Button(0, 0, 0, 0, l.c_str() + 1);
+            b->value(*l.c_str() == '1');
+            _checkbuttons.push_back(b);
+            _scroll->add(b);
+        }
+        _all->callback(_DlgSelectCheckBoxes::Callback, this);
+        _cancel->callback(_DlgSelectCheckBoxes::Callback, this);
+        _close->callback(_DlgSelectCheckBoxes::Callback, this);
+        _invert->callback(_DlgSelectCheckBoxes::Callback, this);
+        _none->callback(_DlgSelectCheckBoxes::Callback, this);
+        _scroll->box(FL_BORDER_BOX);
+        util::labelfont(this);
+        callback(_DlgSelectCheckBoxes::Callback, this);
+        copy_label(title.c_str());
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 12);
+        util::center_window(this, parent);
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgSelectCheckBoxes*>(o);
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_all) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(1);
+            }
+        }
+        else if (w == self->_none) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(0);
+            }
+        }
+        else if (w == self->_invert) {
+            for (auto b : self->_checkbuttons) {
+                static_cast<Fl_Check_Button*>(b)->value(static_cast<Fl_Check_Button*>(b)->value() ? 0 : 1);
+            }
+        }
+    }
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Double_Window::resize(X, Y, W, H);
+        _grid->resize(0, 0, W, H);
+        auto y = _scroll->y() + 4;
+        for (auto b : _checkbuttons) {
+            b->resize(_scroll->x() + 4, y, _scroll->w() - Fl::scrollbar_size() - 8, flw::PREF_FONTSIZE * 2);
+            y += flw::PREF_FONTSIZE * 2;
+        }
+    }
+    StringVector run() {
+        StringVector res;
+        _run = true;
+        show();
+        while (_run == true) {
+            Fl::wait();
+            Fl::flush();
+        }
+        if (_ret == true) {
+            for (auto b : _checkbuttons) {
+                res.push_back(std::string((static_cast<Fl_Check_Button*>(b)->value() == 0) ? "0" : "1") + b->label());
+            }
+        }
+        return res;
+    }
+};
+StringVector select_checkboxes(const std::string& title, const StringVector& list, Fl_Window* parent) {
+    _DlgSelectCheckBoxes dlg(title, list, parent);
+    return dlg.run();
+}
+class _DlgSelectChoice : public Fl_Double_Window {
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Choice*                  _choice;
+    GridGroup*                  _grid;
+    bool                        _run;
+    int                         _ret;
+public:
+    _DlgSelectChoice(const std::string& title, const StringVector& strings, int selected, Fl_Window* parent) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6) {
+        end();
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _choice = new Fl_Choice(0, 0, 0, 0);
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _ret    = -1;
+        _run    = false;
+        _grid->add(_choice,   1,  1, -1,  4);
+        _grid->add(_cancel, -34, -5, 16,  4);
+        _grid->add(_close,  -17, -5, 16,  4);
+        add(_grid);
+        for (const auto& string : strings) {
+            _choice->add(string.c_str());
+        }
+        _cancel->callback(_DlgSelectChoice::Callback, this);
+        _choice->textfont(flw::PREF_FONT);
+        _choice->textsize(flw::PREF_FONTSIZE);
+        _choice->value(selected);
+        _close->callback(_DlgSelectChoice::Callback, this);
+        util::labelfont(this);
+        callback(_DlgSelectChoice::Callback, this);
+        copy_label(title.c_str());
+        set_modal();
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6);
+        util::center_window(this, parent);
+        _grid->do_layout();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DlgSelectChoice*>(o);
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_ret = self->_choice->value();
+            self->_run = false;
+            self->hide();
+        }
+    }
+    int run() {
+        _run = true;
+        show();
+        while (_run == true) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _ret;
+    }
+};
+int select_choice(const std::string& title, const StringVector& list, int selected, Fl_Window* parent) {
+    _DlgSelectChoice dlg(title, list, selected, parent);
+    return dlg.run();
+}
+class _DlgSelectString : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Button*                  _close;
     Fl_Input*                   _filter;
     GridGroup*                  _grid;
     ScrollBrowser*              _list;
     const StringVector&         _strings;
+    bool                        _run;
 public:
-    _DlgSelect(const char* title, Fl_Window* parent, const StringVector& strings, int selected_string_index, std::string selected_string, bool fixed_font, int W, int H) :
+    _DlgSelectString(const std::string& title, const StringVector& strings, int selected_string_index, const std::string& selected_string, bool fixed_font, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, ((fixed_font == true) ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H),
     _strings(strings) {
         end();
@@ -6868,17 +6903,18 @@ public:
         _filter = new Fl_Input(0, 0, 0, 0);
         _grid   = new GridGroup(0, 0, w(), h());
         _list   = new ScrollBrowser(0, 0, 0, 0);
+        _run    = false;
         _grid->add(_filter,   1,  1, -1,  4);
         _grid->add(_list,     1,  6, -1, -6);
         _grid->add(_cancel, -34, -5, 16,  4);
         _grid->add(_close,  -17, -5, 16,  4);
         add(_grid);
-        _cancel->callback(_DlgSelect::Callback, this);
-        _close->callback(_DlgSelect::Callback, this);
-        _filter->callback(_DlgSelect::Callback, this);
+        _cancel->callback(_DlgSelectString::Callback, this);
+        _close->callback(_DlgSelectString::Callback, this);
+        _filter->callback(_DlgSelectString::Callback, this);
         _filter->tooltip("Enter text to filter rows that macthes the text.\nPress tab to switch focus between input and list widget.");
         _filter->when(FL_WHEN_CHANGED);
-        _list->callback(_DlgSelect::Callback, this);
+        _list->callback(_DlgSelectString::Callback, this);
         _list->tooltip("Use Page Up or Page Down in list to scroll faster,");
         if (fixed_font == true) {
             _filter->textfont(flw::PREF_FIXED_FONT);
@@ -6916,8 +6952,8 @@ public:
         }
         _filter->take_focus();
         util::labelfont(this);
-        callback(_DlgSelect::Callback, this);
-        copy_label(title);
+        callback(_DlgSelectString::Callback, this);
+        copy_label(title.c_str());
         activate_button();
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
@@ -6934,9 +6970,16 @@ public:
         }
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgSelect*>(o);
-        if (w == self || w == self->_cancel) {
+        auto self = static_cast<_DlgSelectString*>(o);
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
             self->_list->deselect();
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_close) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_filter) {
@@ -6947,20 +6990,18 @@ public:
             self->activate_button();
             if (Fl::event_clicks() > 0 && self->_close->active()) {
                 Fl::event_clicks(0);
+                self->_run = false;
                 self->hide();
             }
         }
-        else if (w == self->_close) {
-            self->hide();
-        }
     }
-    void filter(const char* filter) {
+    void filter(const std::string& filter) {
         _list->clear();
         for (const auto& string : _strings) {
-            if (*filter == 0) {
+            if (filter == "") {
                 _list->add(string.c_str());
             }
-            else if (strstr(string.c_str(), filter) != nullptr) {
+            else if (string.find(filter) != std::string::npos) {
                 _list->add(string.c_str());
             }
         }
@@ -6970,6 +7011,7 @@ public:
         if (event == FL_KEYDOWN) {
             if (Fl::event_key() == FL_Enter) {
                 if (_list->value() > 0) {
+                    _run = false;
                     hide();
                 }
                 return 1;
@@ -6987,30 +7029,31 @@ public:
         return Fl_Double_Window::handle(event);
     }
     int run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
         auto row = _list->value();
         if (row > 0) {
             auto selected = _list->text(row);
-            for (int f = 0; f < (int) _strings.size(); f++) {
+            for (int f = 0; f < static_cast<int>(_strings.size()); f++) {
                 const auto& string = _strings[f];
                 if (string == selected) {
-                    return f + 1;
+                    return f;
                 }
             }
         }
-        return 0;
+        return -1;
     }
 };
-int select(std::string title, const StringVector& list, int selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgSelect dlg(title.c_str(), parent, list, selected_row, "", fixed_font, W, H);
+int select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, Fl_Window* parent, int W, int H) {
+    _DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, parent, W, H);
     return dlg.run();
 }
-int select(std::string title, const StringVector& list, const std::string& selected_row, Fl_Window* parent, bool fixed_font, int W, int H) {
-    _DlgSelect dlg(title.c_str(), parent, list, 0, selected_row, fixed_font, W, H);
+int select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, Fl_Window* parent, int W, int H) {
+    _DlgSelectString dlg(title.c_str(), list, 0, selected_row, fixed_font, parent, W, H);
     return dlg.run();
 }
 class _DlgSlider : public Fl_Double_Window {
@@ -7019,17 +7062,19 @@ class _DlgSlider : public Fl_Double_Window {
     Fl_Hor_Value_Slider*        _slider;
     GridGroup*                  _grid;
     bool                        _ret;
+    bool                        _run;
     double&                     _value;
 public:
-    _DlgSlider(const char* title, Fl_Window* parent, double min, double max, double& value, double step) :
+    _DlgSlider(const std::string& title, double min, double max, double& value, double step, Fl_Window* parent) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6),
     _value(value) {
         end();
-        _ret    = false;
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _slider = new Fl_Hor_Value_Slider(0, 0, 0, 0);
         _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _grid   = new GridGroup(0, 0, w(), h());
+        _ret    = false;
+        _run    = false;
         _grid->add(_slider,   1,  1, -1,  4);
         _grid->add(_cancel, -34, -5, 16,  4);
         _grid->add(_close,  -17, -5, 16,  4);
@@ -7045,7 +7090,7 @@ public:
         _close->callback(_DlgSlider::Callback, this);
         util::labelfont(this);
         callback(_DlgSlider::Callback, this);
-        copy_label(title);
+        copy_label(title.c_str());
         set_modal();
         resizable(_grid);
         size_range(flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6);
@@ -7055,26 +7100,31 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSlider*>(o);
-        if (w == self || w == self->_cancel) {
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_close) {
             self->_ret = true;
+            self->_run = false;
             self->_value = self->_slider->value();
             self->hide();
         }
     }
     int run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
         return _ret;
     }
 };
-bool slider(std::string title, double min, double max, double& value, double step, Fl_Window* parent) {
-    _DlgSlider dlg(title.c_str(), parent, min, max, value, step);
+bool slider(const std::string& title, double min, double max, double& value, double step, Fl_Window* parent) {
+    _DlgSlider dlg(title.c_str(), min, max, value, step, parent);
     return dlg.run();
 }
 class _DlgText : public Fl_Double_Window {
@@ -7085,23 +7135,33 @@ class _DlgText : public Fl_Double_Window {
     Fl_Text_Display*            _text;
     GridGroup*                  _grid;
     bool                        _edit;
+    bool                        _run;
     char*                       _res;
 public:
-    _DlgText(const char* title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
+    _DlgText(const std::string& title, const char* text, bool edit, Fl_Window* parent, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
         end();
         _buffer = new Fl_Text_Buffer();
-        _cancel = new Fl_Button(0, 0, 0, 0, "C&ancel");
-        _close  = (edit == false) ? new Fl_Return_Button(0, 0, 0, 0, "&Close") : new Fl_Button(0, 0, 0, 0, "&Update");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Close");
         _grid   = new GridGroup(0, 0, w(), h());
         _save   = new Fl_Button(0, 0, 0, 0, "&Save");
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
         _edit   = edit;
         _res    = nullptr;
-        _grid->add(_text,     1,   1,  -1,  -6);
-        _grid->add(_cancel, -51,  -5,  16,   4);
-        _grid->add(_save,   -34,  -5,  16,   4);
-        _grid->add(_close,  -17,  -5,  16,   4);
+        _run    = false;
+        if (edit == false) {
+            _cancel->hide();
+            _grid->add(_text,     1,   1,  -1,  -6);
+            _grid->add(_save,   -34,  -5,  16,   4);
+            _grid->add(_close,  -17,  -5,  16,   4);
+        }
+        else {
+            _grid->add(_text,     1,   1,  -1,  -6);
+            _grid->add(_save,   -51,  -5,  16,   4);
+            _grid->add(_cancel, -34,  -5,  16,   4);
+            _grid->add(_close,  -17,  -5,  16,   4);
+        }
         add(_grid);
         _buffer->text(text);
         _cancel->callback(_DlgText::Callback, this);
@@ -7121,11 +7181,8 @@ public:
         _text->textfont(flw::PREF_FIXED_FONT);
         _text->textsize(flw::PREF_FIXED_FONTSIZE);
         util::labelfont(this);
-        if (edit == false) {
-            _cancel->hide();
-        }
         callback(_DlgText::Callback, this);
-        copy_label(title);
+        copy_label(title.c_str());
         size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
@@ -7138,7 +7195,10 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgText*>(o);
-        if (w == self || w == self->_cancel) {
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_save) {
@@ -7151,23 +7211,25 @@ public:
             if (self->_edit == true) {
                 self->_res = self->_buffer->text();
             }
+            self->_run = false;
             self->hide();
         }
     }
     char* run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
         return _res;
     }
 };
-void text(std::string title, const std::string& text, Fl_Window* parent, int W, int H) {
+void text(const std::string& title, const std::string& text, Fl_Window* parent, int W, int H) {
     _DlgText dlg(title.c_str(), text.c_str(), false, parent, W, H);
     dlg.run();
 }
-bool text_edit(std::string title, std::string& text, Fl_Window* parent, int W, int H) {
+bool text_edit(const std::string& title, std::string& text, Fl_Window* parent, int W, int H) {
     auto dlg = _DlgText(title.c_str(), text.c_str(), true, parent, W, H);
     auto res = dlg.run();
     if (res == nullptr) {
@@ -7186,6 +7248,7 @@ class _DlgTheme : public Fl_Double_Window {
     Fl_Button*                  _font;
     Fl_Check_Button*            _scale;
     GridGroup*                  _grid;
+    bool                        _run;
     int                         _theme_row;
 public:
     _DlgTheme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) :
@@ -7200,6 +7263,7 @@ public:
         _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use Scaling");
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
+        _run         = false;
         _grid->add(_theme,         1,   1,  -1, -21);
         _grid->add(_font_label,    1, -20,  -1,   4);
         _grid->add(_fixed_label,   1, -15,  -1,   4);
@@ -7262,6 +7326,9 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgTheme*>(o);
         if (w == self) {
+        }
+        else if (w == self->_close) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_fixedfont) {
@@ -7348,13 +7415,11 @@ public:
             }
             self->update_pref();
         }
-        else if (w == self->_close) {
-            self->hide();
-        }
     }
     void run() {
+        _run = true;
         show();
-        while (visible()) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -7367,6 +7432,7 @@ public:
         _fixed_label->copy_label(util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
         _fixed_label->labelfont(flw::PREF_FIXED_FONT);
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
+        _theme->textfont(flw::PREF_FONT);
         _theme->textsize(flw::PREF_FONTSIZE);
         size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
         size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
@@ -7384,77 +7450,6 @@ public:
 void theme(bool enable_font, bool enable_fixedfont, Fl_Window* parent) {
     auto dlg = _DlgTheme(enable_font, enable_fixedfont, parent);
     dlg.run();
-}
-AbortDialog::AbortDialog(std::string label, double min, double max) :
-Fl_Double_Window(0, 0, 0, 0, "Working...") {
-    _button   = new Fl_Button(0, 0, 0, 0, "Press to abort");
-    _grid     = new GridGroup();
-    _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
-    _abort    = false;
-    _last     = 0;
-    _grid->add(_button,     1,   1,   -1,  -6);
-    _grid->add(_progress,   1,  -5,   -1,   4);
-    add(_grid);
-    auto W = flw::PREF_FONTSIZE * 32;
-    auto H = flw::PREF_FONTSIZE * 12;
-    if (min < max && fabs(max - min) > 0.001) {
-        _progress->range(min, max);
-        _progress->value(min);
-    }
-    else {
-        _progress->hide();
-        _grid->resize(_button, 1, 1, -1, -1);
-    }
-    _button->callback(AbortDialog::Callback, this);
-    _button->labelfont(flw::PREF_FONT);
-    _button->labelsize(flw::PREF_FONTSIZE);
-    _progress->color(FL_SELECTION_COLOR);
-    if (label != "") {
-        copy_label(label.c_str());
-    }
-    resizable(this);
-    size(W, H);
-    size_range(W, H);
-    callback(AbortDialog::Callback, this);
-    set_modal();
-}
-void AbortDialog::Callback(Fl_Widget* w, void* o) {
-    auto self = static_cast<AbortDialog*>(o);
-    if (w == self->_button) {
-        self->_abort = true;
-    }
-}
-bool AbortDialog::check(int milliseconds) {
-    auto now = util::milliseconds();
-    if (now - _last > milliseconds) {
-        _last = now;
-        Fl::check();
-    }
-    return _abort;
-}
-bool AbortDialog::check(double value, double min, double max, int milliseconds) {
-    auto now = util::milliseconds();
-    if (now - _last > milliseconds) {
-        _progress->value(value);
-        _progress->range(min, max);
-        _last = now;
-        Fl::check();
-    }
-    return _abort;
-}
-void AbortDialog::range(double min, double max) {
-    _progress->range(min, max);
-}
-void AbortDialog::show(const std::string& label, Fl_Window* parent) {
-    _abort = false;
-    _last  = 0;
-    _button->copy_label(label.c_str());
-    util::center_window(this, parent);
-    Fl_Double_Window::show();
-    Fl::flush();
-}
-void AbortDialog::value(double value) {
-    _progress->value(value);
 }
 static const std::string _FONTDIALOG_LABEL = R"(
 ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
@@ -7501,13 +7496,13 @@ public:
         fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
     }
 };
-FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default) :
+FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
-    _create(font, "", fontsize, label, limit_to_default);
+    _create(font, "", fontsize, title, limit_to_default);
 }
-FontDialog::FontDialog(std::string font, Fl_Fontsize fontsize, std::string label, bool limit_to_default) :
+FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
-    _create(0, font, fontsize, label, limit_to_default);
+    _create(0, font, fontsize, title, limit_to_default);
 }
 void FontDialog::_activate() {
     if (_fonts->value() == 0 || _sizes->value() == 0 || (_fonts->active() == 0 && _sizes->active() == 0)) {
@@ -7520,9 +7515,9 @@ void FontDialog::_activate() {
 void FontDialog::Callback(Fl_Widget* w, void* o) {
     auto self = static_cast<FontDialog*>(o);
     if (w == self) {
-        self->hide();
     }
     else if (w == self->_cancel) {
+        self->_run = false;
         self->hide();
     }
     else if (w == self->_fonts) {
@@ -7542,6 +7537,7 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
             self->_font     = row1;
             self->_fontsize = row2 + 5;
             self->_ret      = true;
+            self->_run      = false;
             self->hide();
         }
     }
@@ -7554,7 +7550,7 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
         Fl::redraw();
     }
 }
-void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label, bool limit_to_default) {
+void FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) {
     end();
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
     _fonts    = new ScrollBrowser(12);
@@ -7565,6 +7561,7 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
     _font     = -1;
     _fontsize = -1;
     _ret      = false;
+    _run      = false;
     _grid->add(_fonts,    1,   1,  50,  -6);
     _grid->add(_sizes,   52,   1,  12,  -6);
     _grid->add(_label,   65,   1,  -1,  -6);
@@ -7623,26 +7620,27 @@ void FontDialog::_create(Fl_Font font, std::string fontname, Fl_Fontsize fontsiz
         _fonts->value(1);
         _fonts->middleline(1);
     }
-    resizable(this);
-    copy_label(label.c_str());
+    resizable(_grid);
+    copy_label(title.c_str());
     callback(FontDialog::Callback, this);
     size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
-    _grid->do_layout();
+    _grid->resize(0, 0, w(), h());
 }
 bool FontDialog::run(Fl_Window* parent) {
     _ret = false;
+    _run = true;
     _activate();
     util::center_window(this, parent);
     show();
-    while (visible() != 0) {
+    while (_run == true) {
         Fl::wait();
         Fl::flush();
     }
     return _ret;
 }
-void FontDialog::_select_name(std::string fontname) {
+void FontDialog::_select_name(const std::string& fontname) {
     auto count = 1;
     for (auto f : flw::PREF_FONTNAMES) {
         auto font_without_style = util::remove_browser_format(f);
@@ -7657,19 +7655,32 @@ void FontDialog::_select_name(std::string fontname) {
     _fonts->value(1);
     static_cast<_FontDialogLabel*>(_label)->font = 0;
 }
-WorkDialog::WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W, int H) :
-Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
+bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
+    auto dlg = dlg::FontDialog(font, fontsize, "Select Font", limit_to_default);
+    if (dlg.run() == false) {
+        return false;
+    }
+    font     = dlg.font();
+    fontsize = dlg.fontsize();
+    fontname = dlg.fontname();
+    return true;
+}
+WorkDialog::WorkDialog(const std::string& title, bool cancel, bool pause, double min, double max) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
     end();
-    _cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
-    _grid   = new GridGroup();
-    _label  = new Fl_Hold_Browser(0, 0, 0, 0);
-    _pause  = new Fl_Toggle_Button(0, 0, 0, 0, "Pause");
-    _ret    = true;
-    _last   = 0.0;
-    _grid->add(_label,    1,   1,  -1,  -6);
-    _grid->add(_pause,  -34,  -5,  16,   4);
-    _grid->add(_cancel, -17,  -5,  16,   4);
+    _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
+    _grid     = new GridGroup(0, 0, w(), h());
+    _label    = new Fl_Hold_Browser(0, 0, 0, 0);
+    _pause    = new Fl_Toggle_Button(0, 0, 0, 0, "&Pause");
+    _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
+    _ret      = true;
+    _last     = 0;
+    _grid->add(_label,     1,   1,  -1, -11);
+    _grid->add(_progress,  1, -10,  -1,   4);
+    _grid->add(_pause,   -34,  -5,  16,   4);
+    _grid->add(_cancel,  -17,  -5,  16,   4);
     add(_grid);
+    range(min, max);
     _cancel->callback(WorkDialog::Callback, this);
     _label->box(FL_BORDER_BOX);
     _label->textfont(flw::PREF_FONT);
@@ -7683,12 +7694,11 @@ Fl_Double_Window(0, 0, W * flw::PREF_FONTSIZE, H * flw::PREF_FONTSIZE) {
     }
     util::labelfont(this);
     callback(WorkDialog::Callback, this);
-    copy_label(title);
+    copy_label(title.c_str());
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
-    resizable(this);
-    util::center_window(this, parent);
-    show();
+    resizable(_grid);
+    _grid->resize(0, 0, w(), h());
 }
 void WorkDialog::Callback(Fl_Widget* w, void* o) {
     auto self = static_cast<WorkDialog*>(o);
@@ -7700,20 +7710,35 @@ void WorkDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == self->_pause) {
         bool cancel = self->_cancel->active();
         self->_cancel->deactivate();
-        self->_pause->label("C&ontinue");
         while (self->_pause->value() != 0) {
-            util::sleep(10);
+            util::sleep(20);
             Fl::check();
         }
-        self->_pause->label("&Pause");
-        if (cancel) {
+        if (cancel == true) {
             self->_cancel->activate();
         }
     }
 }
-bool WorkDialog::run(double update_time, const StringVector& messages) {
-    auto now = util::clock();
-    if ((now - _last) > update_time) {
+void WorkDialog::range(double min, double max) {
+    if (min < max && fabs(max - min) > 0.001) {
+        _progress->show();
+        _progress->range(min, max);
+        _progress->value(min);
+        _grid->resize(_label, 1, 1, -1, -11);
+    }
+    else {
+        _progress->hide();
+        _grid->resize(_label, 1, 1, -1, -6);
+    }
+}
+void WorkDialog::start(Fl_Window* parent) {
+    util::center_window(this, parent);
+    Fl_Double_Window::show();
+}
+bool WorkDialog::update(double value, const StringVector& messages, unsigned milli) {
+    auto now = static_cast<unsigned>(util::milliseconds());
+    if (now - _last > milli) {
+        _progress->value(value);
         _label->clear();
         for (const auto& s : messages) {
             _label->add(s.c_str());
@@ -7724,16 +7749,27 @@ bool WorkDialog::run(double update_time, const StringVector& messages) {
     }
     return _ret;
 }
-bool WorkDialog::run(double update_time, const std::string& message) {
-    auto now = util::clock();
-    if ((now - _last) > update_time) {
-        _label->clear();
-        _label->add(message.c_str());
-        _last = now;
-        Fl::check();
-        Fl::flush();
+bool WorkDialog::update(const StringVector& messages, unsigned milli) {
+    return update(0.0, messages, milli);
+}
+bool WorkDialog::update(double value, const std::string& message, unsigned milli) {
+    auto messages = std::vector<std::string>();
+    messages.push_back(message);
+    return update(value, messages, milli);
+}
+bool WorkDialog::update(const std::string& message, unsigned milli) {
+    return update(0.0, message, milli);
+}
+void WorkDialog::value(double value) {
+    if (value < _progress->minimum()) {
+        _progress->value(_progress->minimum());
     }
-    return _ret;
+    else if (value > _progress->maximum()) {
+        _progress->value(_progress->maximum());
+    }
+    else {
+        _progress->value(value);
+    }
 }
 }
 }
@@ -7840,18 +7876,18 @@ ERR:
     fclose(file);
     return res;
 }
-void debug::print(const Fl_Widget* widget) {
+void debug::print(const Fl_Widget* widget, bool recursive) {
     std::string indent;
-    debug::print(widget, indent);
+    debug::print(widget, indent, recursive);
 }
-void debug::print(const Fl_Widget* widget, std::string& indent) {
+void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) {
     if (widget == nullptr) {
         puts("flw::debug::print() => null widget");
     }
     else {
         printf("%sx=%4d, y=%4d, w=%4d, h=%4d, %c, \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->visible() ? 'V' : 'H', widget->label() ? widget->label() : "NULL");
         auto group = widget->as_group();
-        if (group != nullptr) {
+        if (group != nullptr && recursive == true) {
             indent += "\t";
             for (int f = 0; f < group->children(); f++) {
                 debug::print(group->child(f), indent);
@@ -8294,6 +8330,12 @@ std::string util::substr(std::string in, std::string::size_type pos, std::string
     catch(...) {
         return "";
     }
+}
+void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
+    auto r1 = Fl_Rect(w1);
+    auto r2 = Fl_Rect(w2);
+    w1->resize(r2.x(), r2.y(), r2.w(), r2.h());
+    w2->resize(r1.x(), r1.y(), r1.w(), r1.h());
 }
 double util::to_double(std::string num, double def) {
     try {
@@ -10625,13 +10667,12 @@ public:
     Fl_Input*                   _label;
     GridGroup*                  _grid;
     bool                        _ret;
+    bool                        _run;
 public:
     PlotLineSetup(Fl_Window* parent, PlotLine& line) :
     Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
     _line(line) {
         end();
-        _line   = line;
-        _ret    = false;
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
         _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
@@ -10639,6 +10680,9 @@ public:
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
+        _line   = line;
+        _ret    = false;
+        _run    = false;
         _grid->add(_label,     12,   1,  -1,  4);
         _grid->add(_type,      12,   6,  -1,  4);
         _grid->add(_color,     12,  11,  -1,  4);
@@ -10681,7 +10725,10 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<PlotLineSetup*>(o);
-        if (w == self || w == self->_cancel) {
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
             self->hide();
         }
         else if (w == self->_color) {
@@ -10694,13 +10741,15 @@ public:
         }
         else if (w == self->_close) {
             self->_ret = true;
+            self->_run = false;
             self->update_line();
             self->hide();
         }
     }
     bool run() {
+        _run = true;
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -10947,7 +10996,7 @@ bool Plot::create_line(PlotData::FORMULAS formula) {
     std::string    label1;
     if (formula == PlotData::FORMULAS::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::choice("Select Modification", list, 0, top_window());
+        auto ans  = dlg::select_choice("Select Modification", list, 0, top_window());
         if (ans < 0 || ans > static_cast<int>(PlotData::MODIFY::LAST)) {
             return false;
         }
@@ -10961,7 +11010,7 @@ bool Plot::create_line(PlotData::FORMULAS formula) {
             return false;
         }
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
-        ans    = dlg::choice("Select Target", list, 0, top_window());
+        ans    = dlg::select_choice("Select Target", list, 0, top_window());
         vec1   = PlotData::Modify(line0.data(), modify, (ans == 0 ? PlotData::TARGET::X : ans == 1 ? PlotData::TARGET::Y : PlotData::TARGET::X_AND_Y), value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
@@ -11722,7 +11771,7 @@ void Plot::setup_add_line() {
         "Modify",
         "Swap values",
     };
-    switch (dlg::choice("Select Formula", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Formula", list, 0, top_window())) {
     case 0:
         create_line(PlotData::FORMULAS::MODIFY);
         break;
@@ -11781,7 +11830,7 @@ void Plot::setup_delete_lines() {
         return;
     }
     auto list = _create_check_labels(false);
-    list = dlg::check("Delete Lines", list, top_window());
+    list = dlg::select_checkboxes("Delete Lines", list, top_window());
     if (list.size() == 0) {
         return;
     }
@@ -11837,7 +11886,7 @@ void Plot::setup_show_or_hide_lines() {
         return;
     }
     auto list = _create_check_labels(true);
-    list = dlg::check("Show Or Hide Lines", list, top_window());
+    list = dlg::select_checkboxes("Show Or Hide Lines", list, top_window());
     if (list.size() == 0) {
         return;
     }
@@ -12288,6 +12337,7 @@ class _TableDisplayCellDialog : public Fl_Double_Window {
     Fl_Int_Input*                   _col;
     GridGroup*                      _grid;
     bool                            _ret;
+    bool                            _run;
 public:
     _TableDisplayCellDialog(int row, int col) :
     Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
@@ -12296,6 +12346,7 @@ public:
         _grid = new GridGroup(0, 0, w(), h());
         _row  = new Fl_Int_Input(0, 0, 0, 0, "Row:");
         _ret  = false;
+        _run  = false;
         _grid->add(_row,   1,  3,  -1,   4);
         _grid->add(_col,   1, 10,  -1,   4);
         add(_grid);
@@ -12322,17 +12373,15 @@ public:
         resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto dlg = static_cast<_TableDisplayCellDialog*>(o);
-        if (w == dlg) {
-            dlg->hide();
+        auto self = static_cast<_TableDisplayCellDialog*>(o);
+        if (w == self) {
+            self->_run = false;
+            self->hide();
         }
-        else if (w == dlg->_row) {
-            dlg->_ret = true;
-            dlg->hide();
-        }
-        else if (w == dlg->_col) {
-            dlg->_ret = true;
-            dlg->hide();
+        else if (w == self->_row || w == self->_col) {
+            self->_ret = true;
+            self->_run = false;
+            self->hide();
         }
     }
     int col() const {
@@ -12342,9 +12391,10 @@ public:
         return (*_row->value() >= '0' && *_row->value() <= '9') ? atoi(_row->value()) : 0;
     }
     bool run(Fl_Window* parent) {
+        _run = true;
         flw::util::center_window(this, parent);
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -12359,6 +12409,7 @@ class _TableDisplayFindDialog : public Fl_Double_Window {
     GridGroup*                  _grid;
     TableDisplay*               _table;
     bool                        _repeat;
+    bool                        _run;
 public:
     explicit _TableDisplayFindDialog(TableDisplay* table) :
     Fl_Double_Window(0, 0, 10, 10, "Find Text In Table Cells") {
@@ -12370,6 +12421,7 @@ public:
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
+        _run    = false;
         _grid->add(_find,     8,  1,  -1,   4);
         _grid->add(_prev,   -51, -5,  16,   4);
         _grid->add(_next,   -34, -5,  16,   4);
@@ -12394,22 +12446,24 @@ public:
         resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 6);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto dlg = static_cast<_TableDisplayFindDialog*>(o);
-        if (w == dlg) {
-            dlg->hide();
+        auto self = static_cast<_TableDisplayFindDialog*>(o);
+        if (w == self) {
+            self->_run = false;
+            self->hide();
         }
-        else if (w == dlg->_close) {
-            dlg->_table->_find = dlg->_find->value();
-            dlg->hide();
+        else if (w == self->_close) {
+            self->_table->_find = self->_find->value();
+            self->_run = false;
+            self->hide();
         }
-        else if (w == dlg->_next) {
-            dlg->find(true);
+        else if (w == self->_next) {
+            self->find(true);
         }
-        else if (w == dlg->_prev) {
-            dlg->find(false);
+        else if (w == self->_prev) {
+            self->find(false);
         }
-        else if (w == dlg->_find) {
-            dlg->find(dlg->_repeat);
+        else if (w == self->_find) {
+            self->find(self->_repeat);
         }
     }
     void find(bool next) {
@@ -12477,9 +12531,10 @@ public:
         }
     }
     void run(Fl_Window* parent) {
+        _run = true;
         flw::util::center_window(this, parent);
         show();
-        while (visible() != 0) {
+        while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
@@ -13809,9 +13864,9 @@ void TableEditor::_edit_show() {
     else if (rend == TableEditor::REND::DLG_LIST) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
-            auto row = dlg::select(TableEditor::SELECT_LIST, choices, val);
-            if (row > 0) {
-                const auto& string = choices[row - 1];
+            auto row = dlg::select_string(TableEditor::SELECT_LIST, choices, val);
+            if (row >= 0) {
+                const auto& string = choices[row];
                 if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
                     _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
                     do_callback();
@@ -14172,32 +14227,90 @@ public:
     }
 };
 int TabsGroup::MIN_WIDTH_NORTH_SOUTH = 4;
-int TabsGroup::MIN_WIDTH_EAST_WEST = 4;
+int TabsGroup::MIN_WIDTH_EAST_WEST   = 4;
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
-    tooltip(TabsGroup::Help());
-    _scroll = new Fl_Scroll(X, Y, W, H);
-    _pack   = new Fl_Pack(X, Y, W, H);
-    _active = -1;
-    _n      = 0;
-    _s      = 0;
-    _w      = 0;
-    _e      = 0;
-    _align  = 0;
+    _scroll    = new Fl_Scroll(X, Y, W, H);
+    _pack      = new Fl_Pack(X, Y, W, H);
+    _active1   = -1;
+    _active2   = -1;
+    _n         = 0;
+    _s         = 0;
+    _w         = 0;
+    _e         = 0;
+    _align     = 0;
+    _disable_k = false;
     _pack->end();
+    _scroll->tooltip(TabsGroup::Help());
     _scroll->box(FL_NO_BOX);
     _scroll->add(_pack);
     Fl_Group::add(_scroll);
     tabs(TABS::NORTH);
     update_pref();
 }
+void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
+    if (kludge == false) {
+        auto count   = 0;
+        auto current = _active1;
+        _active1 = -1;
+        for (auto button : _widgets) {
+            auto b = static_cast<_TabsGroupButton*>(button);
+            if (b == widget || b->widget == widget) {
+                _active1 = count;
+                _active2 = (current != _active1) ? current : _active2;
+                b->value(1);
+                b->widget->show();
+                b->widget->take_focus();
+            }
+            else {
+                b->value(0);
+                b->widget->hide();
+            }
+            count++;
+        }
+    }
+    auto but = _active_button();
+    if (but == nullptr) {
+        return;
+    }
+    if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
+        if (but->x() < _scroll->x()) {
+            _scroll->scroll_to(_scroll->xposition() + but->x() - _scroll->x(), _scroll->yposition());
+        }
+        else if (but->x() + but->w() > _scroll->x() + _scroll->w()) {
+            _scroll->scroll_to(_pack->w() - _scroll->w(), _scroll->yposition());
+            if (kludge == false) {
+                Fl::flush();
+                _activate(widget, true);
+            }
+        }
+    }
+    else {
+        if (but->y() < _scroll->y()) {
+            _scroll->scroll_to(_scroll->xposition(), _scroll->yposition() + but->y() - _scroll->y());
+        }
+        else if (but->y() + but->h() > _scroll->y() + _scroll->h() || but->h() == 0) {
+            _scroll->scroll_to(_scroll->xposition(), _pack->h() - _scroll->h());
+            if (kludge == false) {
+                Fl::flush();
+                _activate(widget, true);
+            }
+        }
+    }
+    _resize_active_widget();
+}
+Fl_Widget* TabsGroup::_active_button() {
+    return (_active1 >= 0 && _active1 < static_cast<int>(_widgets.size())) ? _widgets[_active1] : nullptr;
+}
 void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after) {
-    assert(widget);
+    if (find(widget) != -1) {
+        return;
+    }
     auto button = new _TabsGroupButton(_align, label, widget, this);
-    auto idx    = (after != nullptr) ? find(after) : (int) _widgets.size();
-    if (idx < 0 || idx >= (int) _widgets.size() - 1) {
+    auto idx    = (after != nullptr) ? find(after) : static_cast<int>(_widgets.size());
+    if (idx < 0 || idx >= static_cast<int>(_widgets.size()) - 1) {
         Fl_Group::add(widget);
         _pack->add(button);
         _widgets.push_back(button);
@@ -14210,35 +14323,16 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget
         _widgets.insert(_widgets.begin() + idx, button);
     }
     TabsGroup::Callback(button, this);
-    do_layout();
-}
-Fl_Widget* TabsGroup::_active_button() {
-    return (_active >= 0 && _active < (int) _widgets.size()) ? _widgets[_active] : nullptr;
 }
 void TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    auto self   = static_cast<TabsGroup*>(object);
-    auto count  = 0;
-    self->_active = -1;
-    for (auto widget : self->_widgets) {
-        auto b = static_cast<_TabsGroupButton*>(widget);
-        if (b == sender) {
-            self->_active = count;
-            b->value(1);
-            b->widget->show();
-            b->widget->take_focus();
-        }
-        else {
-            b->value(0);
-            b->widget->hide();
-        }
-        count++;
-    }
-    self->_resize_widgets();
+    static_cast<TabsGroup*>(object)->_activate(sender, false);
 }
 Fl_Widget* TabsGroup::child(int index) const {
-    return (index >= 0 && index < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[index])->widget : nullptr;
+    return (index >= 0 && index < static_cast<int>(_widgets.size())) ? static_cast<_TabsGroupButton*>(_widgets[index])->widget : nullptr;
 }
 void TabsGroup::clear() {
+    _active1 = -1;
+    _active2 = -1;
     _scroll->remove(_pack);
     _scroll->clear();
     _pack->clear();
@@ -14247,29 +14341,28 @@ void TabsGroup::clear() {
     Fl_Group::add(_scroll);
     _widgets.clear();
     _scroll->add(_pack);
-    _active = -1;
     update_pref();
     Fl::redraw();
 }
-void TabsGroup::debug() const {
+void TabsGroup::debug(bool all) const {
 #ifdef DEBUG
     printf("TabsGroup ==>\n");
-    printf("    _active  = %d\n", _active);
-    printf("    _drag    = %d\n", _drag);
-    printf("    _pos     = %d\n", _pos);
-    printf("    _widgets = %d\n", (int) _widgets.size());
-    printf("    tabs     = %s\n", _scroll->visible() ? "visible" : "hidden");
-    printf("    children = %d\n", children());
-    printf("    scroll   = %d\n", _scroll->children());
+    printf("    _active1   = %d\n", _active1);
+    printf("    _active2   = %d\n", _active2);
+    printf("    _drag      = %d\n", _drag);
+    printf("    _pos       = %d\n", _pos);
+    printf("    _disable_k = %d\n", _disable_k);
+    printf("    _widgets   = %d\n", static_cast<int>(_widgets.size()));
+    printf("    visible    = %s\n", _scroll->visible() ? "visible" : "hidden");
+    printf("    children   = %d\n", children());
     printf("\n");
-    auto count = 0;
-    for (auto b : _widgets) {
-        printf("    widget[%02d] = %s\n", count++, b->label());
+    if (all == true) {
+        flw::debug::print(this);
+        printf("\n");
     }
-    printf("\n");
-    flw::debug::print(this);
-    printf("TabsGroup <==\n");
     fflush(stdout);
+#else
+    (void) all;
 #endif
 }
 void TabsGroup::draw() {
@@ -14290,9 +14383,6 @@ int TabsGroup::find(const Fl_Widget* widget) const {
     return -1;
 }
 int TabsGroup::handle(int event) {
-    if (_widgets.size() == 0) {
-        return Fl_Group::handle(event);
-    }
     if (_tabs == TABS::WEST || _tabs == TABS::EAST) {
         if (event == FL_DRAG) {
             if (_drag == true) {
@@ -14347,43 +14437,60 @@ int TabsGroup::handle(int event) {
             }
         }
     }
-    if (_widgets.size() > 1) {
-        if (event == FL_KEYBOARD) {
-            auto key   = Fl::event_key();
-            auto alt   = Fl::event_alt() != 0;
-            auto alt2  = alt;
-            auto shift = Fl::event_shift() != 0;
+    if (event == FL_KEYBOARD && _disable_k == false) {
+        auto key   = Fl::event_key();
+        auto alt   = Fl::event_alt() != 0;
+        auto alt2  = alt;
+        auto shift = Fl::event_shift() != 0;
 #ifdef __APPLE__
-            alt2 = Fl::event_command() != 0;
+        alt2 = Fl::event_command() != 0;
 #endif
-            if (alt2 == true && key >= '0' && key <= '9') {
-                auto tab = key - '0';
-                tab = (tab == 0) ? 9 : tab - 1;
-                if (tab < (int) _widgets.size()) {
-                    TabsGroup::Callback(_widgets[tab], this);
-                }
-                return 1;
+        if (_widgets.size() < 2) {
+        }
+        else if (alt2 == true && key >= '0' && key <= '9') {
+            auto tab = key - '0';
+            tab = (tab == 0) ? 9 : tab - 1;
+            if (tab < static_cast<int>(_widgets.size())) {
+                TabsGroup::Callback(_widgets[tab], this);
             }
-            else if (alt == true && shift == true && key == FL_Left) {
-                swap(_active, _active - 1);
-                TabsGroup::Callback(_active_button(), this);
-                return 1;
+            return 1;
+        }
+        else if (alt == true && shift == true && (key == FL_Left || key == FL_Up)) {
+            if (_active1 - 1 == _active2) {
+                _active2 = _active1;
             }
-            else if (alt == true && shift == true && key == FL_Right) {
-                swap(_active, _active + 1);
-                TabsGroup::Callback(_active_button(), this);
-                return 1;
+            else if (_active1 == 0 && _widgets.size() > 1) {
+                _active2--;
             }
-            else if (alt == true && key == FL_Left) {
-                _active = _active == 0 ? (int) _widgets.size() - 1 : _active - 1;
-                TabsGroup::Callback(_active_button(), this);
-                return 1;
+            auto tab = swap(_active1, _active1 - 1);
+            TabsGroup::Callback(_widgets[tab], this);
+            return 1;
+        }
+        else if (alt == true && shift == true && (key == FL_Right || key == FL_Down)) {
+            if (_active1 + 1 == _active2) {
+                _active2 = _active1;
             }
-            else if (alt == true && key == FL_Right) {
-                _active = _active == (int) _widgets.size() - 1 ? 0 : _active + 1;
-                TabsGroup::Callback(_active_button(), this);
-                return 1;
+            else if (_active1 == static_cast<int>(_widgets.size()) - 1 && _widgets.size() > 1) {
+                _active2++;
             }
+            auto tab = swap(_active1, _active1 + 1);
+            TabsGroup::Callback(_widgets[tab], this);
+            return 1;
+        }
+        else if (alt == true && key == FL_Left) {
+            auto tab = (_active1 == 0) ? static_cast<int>(_widgets.size()) - 1 : _active1 - 1;
+            TabsGroup::Callback(_widgets[tab], this);
+            return 1;
+        }
+        else if (alt == true && key == FL_Right) {
+            auto tab = (_active1 == static_cast<int>(_widgets.size()) - 1) ? 0 : _active1 + 1;
+            TabsGroup::Callback(_widgets[tab], this);
+            return 1;
+        }
+        else if (alt == true && (key == FL_Up || key == FL_Down)) {
+            auto tab = (_active2 == -1) ? _active1 : _active2;
+            TabsGroup::Callback(_widgets[tab], this);
+            return 1;
         }
     }
     if (event == FL_FOCUS) {
@@ -14398,7 +14505,8 @@ int TabsGroup::handle(int event) {
 const char* TabsGroup::Help() {
     static const char* const HELP =
     "Use alt + left/right to move between tabs.\n"
-    "Or alt (command key) + [1 - 9] to select tab.\n"
+    "Use alt + up/down to jump between two last widgets.\n"
+    "Or alt + [1 - 9, 0] to select tab from 1 - 10.\n"
     "And alt + shift + left/right to move tabs.\n"
     "Tabs on the left/right side can have its width changed by dragging the mouse.";
     return HELP;
@@ -14408,9 +14516,12 @@ void TabsGroup::hide_tabs() {
     do_layout();
 }
 void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before) {
+    if (find(widget) != -1) {
+        return;
+    }
     auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
-    if (idx >= (int) _widgets.size()) {
+    if (idx >= static_cast<int>(_widgets.size())) {
         Fl_Group::add(widget);
         _pack->add(button);
         _widgets.push_back(button);
@@ -14439,7 +14550,7 @@ void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
     _widgets[num]->copy_label(label.c_str());
 }
 Fl_Widget* TabsGroup::remove(int index) {
-    if (index < 0 || index >= (int) _widgets.size()) {
+    if (index < 0 || index >= static_cast<int>(_widgets.size())) {
         return nullptr;
     }
     auto button = static_cast<_TabsGroupButton*>(_widgets[index]);
@@ -14448,11 +14559,11 @@ Fl_Widget* TabsGroup::remove(int index) {
     remove(res);
     _scroll->remove(button);
     delete button;
-    if (index < _active) {
-        _active--;
+    if (index < _active1) {
+        _active1--;
     }
-    else if (_active == (int) _widgets.size()) {
-        _active = (int) _widgets.size() - 1;
+    else if (_active1 == static_cast<int>(_widgets.size())) {
+        _active1 = static_cast<int>(_widgets.size()) - 1;
     }
     do_layout();
     TabsGroup::Callback(_active_button(), this);
@@ -14475,11 +14586,20 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
             _resize_east_west(X, Y, W, H);
         }
     }
-    _resize_widgets();
+    _resize_active_widget();
+}
+void TabsGroup::_resize_active_widget() {
+    for (auto w : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(w);
+        if (b->widget->visible() != 0) {
+            b->widget->resize(_area.x(), _area.y(), _area.w(), _area.h());
+        }
+    }
+    Fl::redraw();
 }
 void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     auto height = flw::PREF_FONTSIZE + 8;
-    auto pack_h = (height + _space) * (int) _widgets.size() - _space;
+    auto pack_h = (height + _space) * static_cast<int>(_widgets.size()) - _space;
     auto scroll = 0;
     if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
         _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
@@ -14537,15 +14657,6 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - height - scroll - _n - _s);
     }
 }
-void TabsGroup::_resize_widgets() {
-    for (auto w : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(w);
-        if (b->widget->visible() != 0) {
-            b->widget->resize(_area.x(), _area.y(), _area.w(), _area.h());
-        }
-    }
-    Fl::redraw();
-}
 void TabsGroup::show_tabs() {
     _scroll->show();
     do_layout();
@@ -14568,17 +14679,17 @@ void TabsGroup::sort(bool ascending, bool casecompare) {
     for (int f = 0; f < _pack->children(); f++) {
         pack[f] = _widgets[f];
         if (_widgets[f] == butt) {
-            _active = f;
+            _active1 = f;
         }
     }
     do_layout();
 }
-void TabsGroup::swap(int from, int to) {
-    auto last = (int) _widgets.size() - 1;
-    if (_widgets.size() < 2 || to < -1 || to > (int) _widgets.size()) {
-        return;
+int TabsGroup::swap(int from, int to) {
+    auto last = static_cast<int>(_widgets.size()) - 1;
+    if (_widgets.size() < 2 || to < -1 || to > static_cast<int>(_widgets.size())) {
+        return _active1;
     }
-    auto active = (_active == from);
+    auto active = (_active1 == from);
     auto pack   = const_cast<Fl_Widget**>(_pack->array());
     if (from == 0 && to == -1) {
         auto widget = _widgets[0];
@@ -14586,19 +14697,25 @@ void TabsGroup::swap(int from, int to) {
             _widgets[f - 1] = _widgets[f];
             pack[f - 1]     = pack[f];
         }
-        from           = last;
-        pack[from]     = widget;
-        _widgets[from] = widget;
+        pack[last]     = widget;
+        _widgets[last] = widget;
+        if (active == true) {
+            _active1 = last;
+        }
+        util::swap_rect(_widgets[last - 1], _widgets[last]);
     }
-    else if (from == last && to == (int) _widgets.size()) {
+    else if (from == last && to == static_cast<int>(_widgets.size())) {
         auto widget = _widgets[last];
         for (int f = last - 1; f >= 0; f--) {
             _widgets[f + 1] = _widgets[f];
             pack[f + 1]     = pack[f];
         }
-        from           = 0;
-        pack[from]     = widget;
-        _widgets[from] = widget;
+        pack[0]     = widget;
+        _widgets[0] = widget;
+        if (active == true) {
+            _active1 = 0;
+        }
+        util::swap_rect(_widgets[0], _widgets[1]);
     }
     else {
         auto widget = _widgets[from];
@@ -14606,12 +14723,12 @@ void TabsGroup::swap(int from, int to) {
         pack[to]       = widget;
         _widgets[from] = _widgets[to];
         _widgets[to]   = widget;
-        from           = to;
+        if (active == true) {
+            _active1 = to;
+        }
+        util::swap_rect(_widgets[from], _widgets[to]);
     }
-    if (active == true) {
-        _active = from;
-    }
-    do_layout();
+    return _active1;
 }
 void TabsGroup::tabs(TABS tabs, int space_max_20) {
     _tabs  = tabs;
@@ -14636,6 +14753,13 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
         w->take_focus();
     }
 }
+void TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
+    auto num = find(widget);
+    if (num == -1) {
+        return;
+    }
+    _widgets[num]->copy_tooltip(tooltip.c_str());
+}
 void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
     _pos  = fontsize * characters;
@@ -14645,10 +14769,10 @@ void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fonts
     }
 }
 Fl_Widget* TabsGroup::value() const {
-    return (_active >= 0 && _active < (int) _widgets.size()) ? static_cast<_TabsGroupButton*>(_widgets[_active])->widget : nullptr;
+    return (_active1 >= 0 && _active1 < static_cast<int>(_widgets.size())) ? static_cast<_TabsGroupButton*>(_widgets[_active1])->widget : nullptr;
 }
 void TabsGroup::value(int num) {
-    if (num >= 0 && num < (int) _widgets.size()) {
+    if (num >= 0 && num < static_cast<int>(_widgets.size())) {
         TabsGroup::Callback(_widgets[num], this);
     }
 }

@@ -142,12 +142,13 @@ namespace gnu {
 namespace file {
 class File;
 class Buf;
-typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
+typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data); ///< @brief Callback for file copy.
+typedef std::vector<File> Files;
 enum class TYPE {
-                                MISSING,
-                                DIR,
-                                FILE,
-                                OTHER,
+                                MISSING,    ///< @brief File does not exist.
+                                DIR,        ///< @brief It is a directory.
+                                FILE,       ///< @brief A regular file.
+                                OTHER,      ///< @brief Something else (not used in windows),
 };
 #ifdef _WIN32
     static const int            DEFAULT_DIR_MODE  = 0x00000080;
@@ -176,8 +177,8 @@ std::string                     os();
 FILE*                           popen(const std::string& cmd, bool write = false);
 Buf                             read(const std::string& path);
 Buf*                            read2(const std::string& path);
-std::vector<File>               read_dir(const std::string& path);
-std::vector<File>               read_dir_rec(const std::string& path);
+Files                           read_dir(const std::string& path);
+Files                           read_dir_rec(const std::string& path);
 bool                            redirect_stderr();
 bool                            redirect_stdout();
 bool                            remove(const std::string& path);
@@ -192,63 +193,63 @@ bool                            write(const std::string& path, const Buf& buf, b
 class Buf {
 public:
                                 Buf()
-                                    { _str = nullptr; _size = 0; }
+                                    { _str = nullptr; _size = 0; } ///< @brief Create empty buffer with NULL data.
     explicit                    Buf(size_t size);
                                 Buf(const char* buffer, size_t size);
                                 Buf(const Buf& b);
                                 Buf(Buf&& b)
-                                    { _str = b._str; _size = b._size; b._str = nullptr; }
+                                    { _str = b._str; _size = b._size; b._str = nullptr; } ///< @brief Move buffer.
                                 Buf(const std::string& string)
-                                    { _str = nullptr; add(string.c_str(), string.length()); }
+                                    { _str = nullptr; add(string.c_str(), string.length()); } ///< @brief Copy input string.
     virtual                     ~Buf()
-                                    { free(_str); }
+                                    { free(_str); } ///< @brief Free memory.
     unsigned char&              operator[](size_t index)
-                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; }
+                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; } ///< @brief Return byte. @throws std::string exception on error.
     unsigned char               operator[](size_t index) const
-                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; }
+                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; } ///< @brief Return byte. @throws std::string exception on error.
     Buf&                        operator=(const Buf& b)
-                                    { return set(b._str, b._size); }
+                                    { return set(b._str, b._size); } ///< @brief Copy other buffer.
     Buf&                        operator=(Buf&& b)
-                                    { free(_str); _str = b._str; _size = b._size; b._str = nullptr; return *this; }
+                                    { free(_str); _str = b._str; _size = b._size; b._str = nullptr; return *this; } ///< @brief Move data to this object.
     Buf&                        operator=(const std::string& string)
-                                    { free(_str); _str = nullptr; add(string.c_str(), string.length()); return *this; }
+                                    { free(_str); _str = nullptr; add(string.c_str(), string.length()); return *this; } ///< @brief Copy string.
     Buf&                        operator+=(const Buf& b)
-                                    { return add(b._str, b._size); }
+                                    { return add(b._str, b._size); } ///< @brief Add buffer. @throws std::string exception on error.
     bool                        operator==(const Buf& other) const;
     bool                        operator!=(const Buf& other) const
-                                    { return (*this == other) == false; }
+                                    { return (*this == other) == false; } ///< @brief Compare buffer objects.
     Buf&                        add(const char* buffer, size_t size);
     const char*                 c_str() const
-                                    { return _str; }
+                                    { return _str; } ///< @brief Return buffer data, can be NULL.
     void                        clear()
-                                    { free(_str); _str = nullptr; _size = 0; }
+                                    { free(_str); _str = nullptr; _size = 0; } ///< @brief Delete memory and set internal buffer to NULL.
     std::array<size_t, 257>     count() const
-                                    { return Buf::Count(_str, _size); }
+                                    { return Buf::Count(_str, _size); } ///< @brief Count bytes and longest text line.
     void                        debug() const
-                                    { printf("gnu::Buf(0x%p, %llu)\n", _str, (long long unsigned) _size); }
+                                    { printf("gnu::Buf(0x%p, %llu)\n", _str, (long long unsigned) _size); } ///< @brief Print debug info.
     uint64_t                    fletcher64() const
-                                    { return file::fletcher64(_str, _size); }
+                                    { return file::fletcher64(_str, _size); } ///< @brief Return checksum for this object.
     Buf&                        grab(char* buffer, size_t size)
-                                    { free(_str); _str = buffer; _size = size; return *this; }
+                                    { free(_str); _str = buffer; _size = size; return *this; } ///< @brief Delete internal memory and take control of input buffer.
     Buf                         insert_cr(bool dos = true, bool trailing = false) const
-                                    { return Buf::InsertCR(_str, _size, dos, trailing); }
+                                    { return Buf::InsertCR(_str, _size, dos, trailing); } ///< @brief Insert "\r" and remove trailing whitespace. @throws std::string exception on error.
     char*                       release()
-                                    { auto res = _str; _str = nullptr; _size = 0; return res; }
+                                    { auto res = _str; _str = nullptr; _size = 0; return res; } ///< @brief Release control of internal buffer and return memory (internal memory will be set to NULL).
     Buf                         remove_cr() const
-                                    { return Buf::RemoveCR(_str, _size); }
+                                    { return Buf::RemoveCR(_str, _size); } ///< @brief Remove "\r" from buffer. @throws std::string exception on error.
     Buf&                        set(const char* buffer, size_t size);
     size_t                      size() const
-                                    { return _size; }
+                                    { return _size; } ///< @brief Return size in bytes.
     void                        size(size_t size)
-                                    {  if (size >= _size) throw std::string("error: gnu::file::Buf::size(): size is out of range"); _size = size; }
+                                    {  if (size >= _size) throw std::string("error: gnu::file::Buf::size(): size is out of range"); _size = size; } ///< @brief Set new size, must be less or equal than current size. @throws std::string exception on error.
     char*                       str()
-                                    { return _str; }
+                                    { return _str; } ///< @brief Return buffer data, can be NULL.
     bool                        write(const std::string& path, bool flush = true) const;
     static std::array<size_t, 257> Count(const char* buffer, size_t size);
     static inline Buf           Grab(char* string)
-                                    { auto res = Buf(); res._str = string; res._size = strlen(string); return res; }
+                                    { auto res = Buf(); res._str = string; res._size = strlen(string); return res; } ///< @brief Create new object that takes control of input string.
     static inline Buf           Grab(char* buffer, size_t size)
-                                    { auto res = Buf(); res._str = buffer; res._size = size; return res; }
+                                    { auto res = Buf(); res._str = buffer; res._size = size; return res; } ///< @brief Create new object that takes control of input buffer.
     static Buf                  InsertCR(const char* buffer, size_t size, bool dos, bool trailing = false);
     static Buf                  RemoveCR(const char* buffer, size_t size);
 private:
@@ -259,55 +260,55 @@ class File {
 public:
     explicit                    File(const std::string& path = "", bool realpath = false);
     bool                        operator==(const File& other) const
-                                    { return _filename == other._filename; }
+                                    { return _filename == other._filename; } ///< @brief Compare filenames.
     bool                        operator<(const File& other) const
-                                    { return _filename < other._filename; }
+                                    { return _filename < other._filename; } ///< @brief Compare filenames.
     bool                        operator<=(const File& other) const
-                                    { return _filename <= other._filename; }
+                                    { return _filename <= other._filename; } ///< @brief Compare filenames.
     const char*                 c_str() const
-                                    { return _filename.c_str(); }
+                                    { return _filename.c_str(); } ///< @brief Return filename.
     File                        canonical() const
-                                    { return file::canonical(_filename); }
+                                    { return file::canonical(_filename); } ///< @brief Return canonical file name.
     int64_t                     ctime() const
-                                    { return _ctime; }
+                                    { return _ctime; } ///< @brief Return created file time.
     void                        debug(bool short_version = true) const
-                                    { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); }
+                                    { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); } ///< @brief Print file info to stdout.
     bool                        exist() const
-                                    { return _type != TYPE::MISSING; }
+                                    { return _type != TYPE::MISSING; } ///< @brief Does file exist?
     const std::string&          ext() const
-                                    { return _ext; }
+                                    { return _ext; } ///< @brief Return file extension, not for directories.
     const std::string&          filename() const
-                                    { return _filename; }
+                                    { return _filename; } ///< @brief Return full filename.
     bool                        is_circular() const
-                                    { return file::is_circular(_filename); }
+                                    { return file::is_circular(_filename); } ///< @brief Is link to a directory a circular one?
     bool                        is_dir() const
-                                    { return _type == TYPE::DIR; }
+                                    { return _type == TYPE::DIR; } ///< @brief Is file a directory?
     bool                        is_file() const
-                                    { return _type == TYPE::FILE; }
+                                    { return _type == TYPE::FILE; } ///< @brief Is file a plain file?
     bool                        is_link() const
-                                    { return _link; }
+                                    { return _link; } ///< @brief Is file a link?
     bool                        is_missing() const
-                                    { return _type == TYPE::MISSING; }
+                                    { return _type == TYPE::MISSING; }  ///< @brief Is file missing?
     bool                        is_other() const
-                                    { return _type == TYPE::OTHER; }
+                                    { return _type == TYPE::OTHER; }  ///< @brief Is file something else?
     File                        linkname() const
-                                    { return file::linkname(_filename); }
+                                    { return file::linkname(_filename); } ///< @brief Read link name.
     int                         mode() const
-                                    { return _mode; }
+                                    { return _mode; } ///< @brief Return file mode.
     int64_t                     mtime() const
-                                    { return _mtime; }
+                                    { return _mtime; } ///< @brief Return file modified time.
     const std::string&          name() const
-                                    { return _name; }
+                                    { return _name; } ///< @brief Return name without path.
     std::string                 name_without_ext() const;
     const std::string&          parent() const
-                                    { return _path; }
+                                    { return _path; } ///< @brief Return parent path.
     const std::string&          path() const
-                                    { return _path; }
+                                    { return _path; } ///< @brief Same as parent(), return parent path.
     int64_t                     size() const
-                                    { return _size; }
+                                    { return _size; } ///< @brief Return size in bytes.
     std::string                 to_string(bool short_version = true) const;
     TYPE                        type() const
-                                    { return _type; }
+                                    { return _type; } ///< @brief Return file type.
     std::string                 type_name() const;
 private:
     TYPE                        _type;
@@ -332,18 +333,18 @@ private:
 namespace gnu {
 namespace json {
 enum class TYPE : uint8_t {
-                                OBJECT,
-                                ARRAY,
-                                STRING,
-                                NUMBER,
-                                BOOL,
-                                NIL,
-                                ERR,
+                                OBJECT,     ///< @brief Object node.
+                                ARRAY,      ///< @brief Array node
+                                STRING,     ///< @brief Plain string.
+                                NUMBER,     ///< @brief Number.
+                                BOOL,       ///< @brief Boolean true or false.
+                                NIL,        ///< @brief NULL data.
+                                ERR,        ///< @brief Error value.
 };
 enum class ENCODE : uint8_t {
-                                DEFAULT,
-                                TRIM,
-                                FLAT,
+                                DEFAULT,    ///< @brief Indentation.
+                                TRIM,       ///< @brief No indentation.
+                                FLAT,       ///< @brief No indentation and no newlines.
 };
 static const size_t             MAX_DEPTH = 32;
 class JS;
@@ -368,77 +369,77 @@ public:
                                 ~JS();
     JS&                         operator=(JS&&);
     bool                        operator==(TYPE type) const
-                                    { return _type == type; }
+                                    { return _type == type; } ///< @brief Compare type.
     bool                        operator!=(TYPE type) const
-                                    { return _type != type; }
+                                    { return _type != type; } ///< @brief Compare type.
     const JS*                   operator[](const std::string& name) const
-                                    { return _get_value(name.c_str(), true); }
+                                    { return _get_value(name.c_str(), true); } ///< @brief Get named child value from object. @param[in] name  Object name.
     const JS*                   operator[](size_t index) const
-                                    { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
+                                    { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; } ///< @brief Get child value from array. @param[in] index  Array index.
     void                        debug() const;
     std::string                 err() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; }
+                                    { return (_type == TYPE::ERR) ? _vs : ""; } ///< @brief Error string.
     const char*                 err_c() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; }
+                                    { return (_type == TYPE::ERR) ? _vs : ""; } ///< @brief Error string.
     const JS*                   find(const std::string& name, bool rec = false) const;
     const JS*                   get(const std::string& name, bool escape_name = true) const
-                                    { return _get_value(name.c_str(), escape_name); }
+                                    { return _get_value(name.c_str(), escape_name); } ///< @brief Get named child value from object.
     const JS*                   get(size_t index) const
-                                    { return (*this) [index]; }
+                                    { return (*this) [index]; } ///< @brief Get child value from array.
     bool                        has_err() const
-                                    { return _type == TYPE::ERR; }
+                                    { return _type == TYPE::ERR; } ///< @brief Has node error?
     bool                        has_inline() const
-                                    { return _inl; }
+                                    { return _inl; } ///< @brief Is inline on?
     bool                        is_array() const
-                                    { return _type == TYPE::ARRAY; }
+                                    { return _type == TYPE::ARRAY; } ///< @brief Is value an array?
     bool                        is_bool() const
-                                    { return _type == TYPE::BOOL; }
+                                    { return _type == TYPE::BOOL; } ///< @brief Is value a bool?
     bool                        is_null() const
-                                    { return _type == TYPE::NIL; }
+                                    { return _type == TYPE::NIL; } ///< @brief Is value a null?
     bool                        is_number() const
-                                    { return _type == TYPE::NUMBER; }
+                                    { return _type == TYPE::NUMBER; } ///< @brief Is value a number?
     bool                        is_object() const
-                                    { return _type == TYPE::OBJECT; }
+                                    { return _type == TYPE::OBJECT; } ///< @brief Is value an object?
     bool                        is_string() const
-                                    { return _type == TYPE::STRING; }
+                                    { return _type == TYPE::STRING; } ///< @brief Is value a a string?
     std::string                 name() const
-                                    { return (_name != nullptr) ? _name : ""; }
+                                    { return (_name != nullptr) ? _name : ""; } ///< @brief Name of value.
     const char*                 name_c() const
-                                    { return (_name != nullptr) ? _name : ""; }
+                                    { return (_name != nullptr) ? _name : ""; } ///< @brief Name of value.
     std::string                 name_u() const
-                                    { return (_name != nullptr) ? json::unescape(_name) : ""; }
+                                    { return (_name != nullptr) ? json::unescape(_name) : ""; } ///< @brief Unescaped name of value.
     JS*                         parent() const
-                                    { return _parent; }
+                                    { return _parent; } ///< @brief Parent object.
     unsigned                    pos() const
-                                    { return _pos; }
+                                    { return _pos; } ///< @brief Position in json buffer.
     size_t                      size() const
-                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
+                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; } ///< @brief Size of array or object.
     std::string                 to_string() const;
     TYPE                        type() const
-                                    { return _type; }
+                                    { return _type; } ///< @brief Type of value.
     std::string                 type_name() const
-                                    { return TYPE_NAMES[static_cast<unsigned>(_type)]; }
+                                    { return TYPE_NAMES[static_cast<unsigned>(_type)]; } ///< @brief Type name for this value.
     const JSArray*              va() const
-                                    { return (_type == TYPE::ARRAY) ? _va : nullptr; }
+                                    { return (_type == TYPE::ARRAY) ? _va : nullptr; } ///< @brief Array node or NULL.
     bool                        vb() const
-                                    { assert(_type == TYPE::BOOL); return (_type == TYPE::BOOL) ? _vb : false; }
+                                    { assert(_type == TYPE::BOOL); return (_type == TYPE::BOOL) ? _vb : false; } ///< @brief Bool value or false.
     double                      vn() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? _vn : 0.0; }
+                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? _vn : 0.0; } ///< @brief Number value or 0.0.
     long long int               vn_i() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? (long long int) _vn : 0; }
+                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? (long long int) _vn : 0; } ///< @brief Number value as integer or 0.
     const JSObject*             vo() const
-                                    { return (_type == TYPE::OBJECT) ? _vo : nullptr; }
+                                    { return (_type == TYPE::OBJECT) ? _vo : nullptr; } ///< @brief Object value or NULL.
     const JSArray               vo_to_va() const;
     std::string                 vs() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; }
+                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; } ///< @brief String value or "".
     const char*                 vs_c() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; }
+                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; } ///< @brief String value or "".
     std::string                 vs_u() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? json::unescape(_vs) : ""; }
+                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? json::unescape(_vs) : ""; } ///< @brief Unescaped string value or "".
     static inline ssize_t       Count()
-                                    { return JS::COUNT; }
+                                    { return JS::COUNT; } ///< @brief Number of allocated values
     static inline ssize_t       Max()
-                                    { return JS::MAX; }
+                                    { return JS::MAX; } ///< @brief Maximum number of allocated values during runtime.
 private:
                                 JS(const char* name, JS* parent = nullptr, unsigned pos = 0);
     bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
@@ -475,18 +476,18 @@ private:
 class Builder {
 public:
                                 Builder()
-                                    { _root = _current = nullptr; }
+                                    { _root = _current = nullptr; } ///< @brief Create new empty builder.
     virtual                     ~Builder()
-                                    { delete _root; }
+                                    { delete _root; } ///< @brief Delete all values.
     Builder&                    operator<<(JS* json)
-                                    { return add(json); }
+                                    { return add(json); } ///< @brief Add json value to current parent.
     Builder&                    add(JS* json);
     void                        clear()
-                                    { delete _root; _root = _current = nullptr; _name = ""; }
+                                    { delete _root; _root = _current = nullptr; _name = ""; } ///< @brief Delete all values.
     std::string                 encode(ENCODE option = ENCODE::DEFAULT) const;
     Builder&                    end();
     const JS*                   root() const
-                                    { return _root; }
+                                    { return _root; } ///< @brief Get root value.
     static JS*                  MakeArray(const char* name = "", bool escape = true);
     static JS*                  MakeArrayInline(const char* name = "", bool escape = true);
     static JS*                  MakeBool(bool vb, const char* name = "", bool escape = true);
@@ -568,24 +569,24 @@ private:
 #define FLW_TEST_TRUE(X)
 #endif
 namespace flw {
-extern int                      PREF_FIXED_FONT;
-extern std::string              PREF_FIXED_FONTNAME;
-extern int                      PREF_FIXED_FONTSIZE;
-extern Fl_Font                  PREF_FONT;
-extern int                      PREF_FONTSIZE;
-extern std::string              PREF_FONTNAME;
-extern std::vector<char*>       PREF_FONTNAMES;
-extern double                   PREF_SCALE_VAL;
-extern bool                     PREF_SCALE_ON;
-extern std::string              PREF_THEME;
-extern const char* const        PREF_THEMES[];
-typedef std::vector<std::string> StringVector;
-typedef std::vector<void*>       VoidVector;
-typedef std::vector<Fl_Widget*>  WidgetVector;
-typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
+extern int                      PREF_FIXED_FONT;                        ///< @brief Fixed font - default FL_COURIER.
+extern std::string              PREF_FIXED_FONTNAME;                    ///< @brief Fixed font name - default "FL_COURIER".
+extern int                      PREF_FIXED_FONTSIZE;                    ///< @brief Fixed font size - default 14.
+extern Fl_Font                  PREF_FONT;                              ///< @brief Default font - default FL_HELVETICA.
+extern int                      PREF_FONTSIZE;                          ///< @brief Default font size - default 14.
+extern std::string              PREF_FONTNAME;                          ///< @brief Default font name - default "FL_HELVETICA".
+extern std::vector<char*>       PREF_FONTNAMES;                         ///< @brief List of font names - used internally - load with flw::theme::load_fonts().
+extern double                   PREF_SCALE_VAL;                         ///< @brief Scale value.
+extern bool                     PREF_SCALE_ON;                          ///< @brief Scale on or off.
+extern std::string              PREF_THEME;                             ///< @brief Name of theme - default "default".
+extern const char* const        PREF_THEMES[];                          ///< @brief Name of themes.
+typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
+typedef std::vector<void*>       VoidVector;                            ///< @brief Vector with void pointers
+typedef std::vector<Fl_Widget*>  WidgetVector;                          ///< @brief Vector with widget pointers.
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);    ///< @brief A drawing callback for printing to postscript.
 namespace debug {
-    void                        print(const Fl_Widget* widget);
-    void                        print(const Fl_Widget* widget, std::string& indent);
+    void                        print(const Fl_Widget* widget, bool recursive = true);
+    void                        print(const Fl_Widget* widget, std::string& indent, bool recursive = true);
     bool                        test(bool val, int line, const char* func);
     bool                        test(const char* ref, const char* val, int line, const char* func);
     bool                        test(int64_t ref, int64_t val, int line, const char* func);
@@ -620,6 +621,7 @@ namespace util {
     void                        sleep(int milli);
     StringVector                split_string(const std::string& string, std::string split);
     std::string                 substr(std::string in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+    void                        swap_rect(Fl_Widget* w1, Fl_Widget* w2);
     double                      to_double(std::string s, double def = INFINITY);
     long long                   to_long(std::string s, long long def = 0);
     static inline std::string   to_string(const char* text)
@@ -1095,15 +1097,15 @@ public:
     void                        adjust(Fl_Widget* widget, int L = 0, int R = 0, int T = 0, int B = 0);
     void                        clear();
     void                        do_layout()
-                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
+                                    { resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all child widgets.
     int                         handle(int event) override;
     Fl_Widget*                  remove(Fl_Widget* widget);
     void                        resize(int X, int Y, int W, int H) override;
     void                        resize(Fl_Widget* widget, int X, int Y, int W, int H);
     int                         size() const
-                                    { return _size; }
+                                    { return _size; } ///< @brief Get grid size. @return Size in pixels.
     void                        size(int size)
-                                    { _size = (size >= 4 && size <= 72) ? size : 0; }
+                                    { _size = (size >= 4 && size <= 72) ? size : 0; } ///< @brief Set grid size. @param[in] size  From 4 to 72 pixel.
 private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
     VoidVector                  _widgets;
@@ -1218,80 +1220,55 @@ namespace dlg {
 extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
 void                            center_message_dialog();
-StringVector                    check(std::string title, const StringVector& list, Fl_Window* parent = nullptr);
-int                             choice(std::string title, const StringVector& list, int selected = 0, Fl_Window* parent = nullptr);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
-void                            html(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list(std::string title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list(std::string title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list_file(std::string title, std::string file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            panic(std::string message);
-bool                            password(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password_check(std::string title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password_check_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-bool                            password_with_file(std::string title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-void                            print(std::string title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
-bool                            print_text(std::string title, const std::string& text, Fl_Window* parent = nullptr);
-bool                            print_text(std::string title, const StringVector& text, Fl_Window* parent = nullptr);
-int                             select(std::string title, const StringVector& list, int select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-int                             select(std::string title, const StringVector& list, const std::string& select_row, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-bool                            slider(std::string title, double min, double max, double& value, double step = 1.0, Fl_Window* parent = nullptr);
-void                            text(std::string title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-bool                            text_edit(std::string title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list_file(const std::string& title, const std::string& file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            panic(const std::string& message);
+bool                            password(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_confirm(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
+bool                            password_confirm_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+bool                            password_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
+void                            print(const std::string& title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
+bool                            print_text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr);
+bool                            print_text(const std::string& title, const StringVector& text, Fl_Window* parent = nullptr);
+StringVector                    select_checkboxes(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr);
+int                             select_choice(const std::string& title, const StringVector& list, int selected = 0, Fl_Window* parent = nullptr);
+int                             select_string(const std::string& title, const StringVector& list, int select_row, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+int                             select_string(const std::string& title, const StringVector& list, const std::string& select_row, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+bool                            slider(const std::string& title, double min, double max, double& value, double step = 1.0, Fl_Window* parent = nullptr);
+void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+bool                            text_edit(const std::string& title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
-class AbortDialog : public Fl_Double_Window {
-    using Fl_Double_Window::show;
-public:
-                                AbortDialog(const AbortDialog&) = delete;
-                                AbortDialog(AbortDialog&&) = delete;
-    AbortDialog&                operator=(const AbortDialog&) = delete;
-    AbortDialog&                operator=(AbortDialog&&) = delete;
-    explicit                    AbortDialog(std::string label = "", double min = 0.0, double max = 0.0);
-    bool                        check(int milliseconds = 200);
-    bool                        check(double value, double min, double max, int milliseconds = 200);
-    bool                        aborted()
-                                    { return _abort; }
-    void                        range(double min, double max);
-    void                        resize(int X, int Y, int W, int H) override
-                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
-    void                        show(const std::string& label, Fl_Window* parent = nullptr);
-    void                        value(double value);
-    static void                 Callback(Fl_Widget* w, void* o);
-private:
-    Fl_Button*                  _button;
-    Fl_Hor_Fill_Slider*         _progress;
-    GridGroup*                  _grid;
-    bool                        _abort;
-    int64_t                     _last;
-};
 class FontDialog : public Fl_Double_Window {
 public:
                                 FontDialog(const FontDialog&) = delete;
                                 FontDialog(FontDialog&&) = delete;
     FontDialog&                 operator=(const FontDialog&) = delete;
     FontDialog&                 operator=(FontDialog&&) = delete;
-                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default = false);
-                                FontDialog(std::string font, Fl_Fontsize fontsize, std::string label, bool limit_to_default = false);
+                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
+                                FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
     void                        activate_font()
-                                    { static_cast<Fl_Widget*>(_fonts)->activate(); }
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font list, active by default.
+    void                        activate_font_size()
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font size list, active by default.
     void                        deactivate_font()
-                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); }
+                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); } ///< @brief Turn of font list.
     void                        deactivate_fontsize()
-                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); }
+                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); } ///< @brief Turn of font size list.
     int                         font()
-                                    { return _font; }
+                                    { return _font; } ///< @brief Return selected font.
     std::string                 fontname()
-                                    { return _fontname; }
+                                    { return _fontname; } ///< @brief Return selected font name.
     int                         fontsize()
-                                    { return _fontsize; }
-    void                        resize(int X, int Y, int W, int H) override
-                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
+                                    { return _fontsize; } ///< @brief Return selected font size.
     bool                        run(Fl_Window* parent = nullptr);
-    static void                 Callback(Fl_Widget* w, void* o);
 private:
     void                        _activate();
-    void                        _create(Fl_Font font, std::string fontname, Fl_Fontsize fontsize, std::string label, bool limit_to_default);
-    void                        _select_name(std::string font_name);
+    void                        _create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& label, bool limit_to_default);
+    void                        _select_name(const std::string& font_name);
+    static void                 Callback(Fl_Widget* w, void* o);
     Fl_Box*                     _label;
     Fl_Button*                  _cancel;
     Fl_Button*                  _select;
@@ -1299,26 +1276,32 @@ private:
     ScrollBrowser*              _fonts;
     ScrollBrowser*              _sizes;
     bool                        _ret;
+    bool                        _run;
     int                         _font;
     int                         _fontsize;
     std::string                 _fontname;
 };
 class WorkDialog : public Fl_Double_Window {
 public:
-                                WorkDialog(const char* title, Fl_Window* parent, bool cancel, bool pause, int W = 40, int H = 10);
-    void                        resize(int X, int Y, int W, int H) override
-                                    { Fl_Double_Window::resize(X, Y, W, H); _grid->resize(0, 0, W, H); }
-    bool                        run(double update_time, const StringVector& messages);
-    bool                        run(double update_time, const std::string& message);
-    static void                 Callback(Fl_Widget* w, void* o);
+                                WorkDialog(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
+    void                        range(double min, double max);
+    void                        start(Fl_Window* parent = nullptr);
+    bool                        update(const StringVector& messages, unsigned milli = 100);
+    bool                        update(double value, const StringVector& messages, unsigned milli = 100);
+    bool                        update(const std::string& message, unsigned milli = 100);
+    bool                        update(double value, const std::string& message, unsigned milli = 100);
+    double                      value() const
+                                    { return _progress->value(); } ///< @brief Return progress bar value.
+    void                        value(double value);
 private:
+    static void                 Callback(Fl_Widget* w, void* o);
     Fl_Button*                  _cancel;
     Fl_Hold_Browser*            _label;
+    Fl_Hor_Fill_Slider*         _progress;
     Fl_Toggle_Button*           _pause;
     GridGroup*                  _grid;
     bool                        _ret;
-    double                      _last;
-    std::string                 _message;
+    unsigned                    _last;
 };
 }
 }
@@ -1773,23 +1756,23 @@ class RecentMenu {
 public:
                                     RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
     void                            append(const std::string& item)
-                                        { return _add(item, true); }
+                                        { return _add(item, true); } ///< @brief Append item last in menu. @param[in] item  Menu label.
     void                            insert(const std::string& item)
-                                        { return _add(item, false); }
+                                        { return _add(item, false); } ///< @brief Insert item first in menu. @param[in] item  Menu label.
     StringVector                    items() const
-                                        { return _items; }
+                                        { return _items; } ///< @brief Number of items.
     size_t                          max_items() const
-                                        { return _max; }
+                                        { return _max; } ///< @brief Get max number of items.
     void                            max_items(size_t max)
-                                        { if (max > 0 && max <= 100) _max = max; }
+                                        { if (max > 0 && max <= 100) _max = max; } ///< @brief Set max number of items. @param[in] max  From 1 to 100.
     Fl_Menu_*                       menu()
-                                        { return _menu; }
+                                        { return _menu; } ///< @brief Get menu object.
     void                            load_pref(Fl_Preferences& pref, const std::string& base_name = "files");
     void                            save_pref(Fl_Preferences& pref, const std::string& base_name = "files");
     void*                           user_data()
-                                        { return _user; }
+                                        { return _user; } ///< @brief Get user data.
     void                            user_data(void* data)
-                                        { _user = data; }
+                                        { _user = data; } ///< @brief Set user data.
     static void                     CallbackClear(Fl_Widget*, void* o);
 private:
     void                            _add(const std::string& item, bool append);
@@ -2131,61 +2114,69 @@ namespace flw {
 namespace flw {
 class TabsGroup : public Fl_Group {
 public:
-    static const int            DEFAULT_SPACE_PX = 2;
-    static int                  MIN_WIDTH_NORTH_SOUTH;
-    static int                  MIN_WIDTH_EAST_WEST;
+    static const int            DEFAULT_SPACE_PX = 2;   ///< @brief Default space between buttons.
+    static int                  MIN_WIDTH_NORTH_SOUTH;  ///< @brief Minimum width of top/bottom buttons, default 4 (4 * flw::PREF_FONTSIZE).
+    static int                  MIN_WIDTH_EAST_WEST;    ///< @brief Minimum width of left/right buttons, default 4 (4 * flw::PREF_FONTSIZE).
     enum class TABS {
-                                NORTH,
-                                TOP = NORTH,
-                                SOUTH,
-                                BOTTOM = SOUTH,
-                                WEST,
-                                LEFT = WEST,
-                                EAST,
-                                RIGHT = EAST,
+                                NORTH,          ///< @brief Top of container.
+                                TOP = NORTH,    ///< @brief Top of container.
+                                SOUTH,          ///< @brief Bottom of container.
+                                BOTTOM = SOUTH, ///< @brief Bottom of container.
+                                WEST,           ///< @brief On the left side of container.
+                                LEFT = WEST,    ///< @brief On the left side of container.
+                                EAST,           ///< @brief On the right side of the container.
+                                RIGHT = EAST,   ///< @brief On the right side of the container.
     };
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    void                        activate(Fl_Widget* widget)
+                                    { _activate(widget, false); } ///< @brief Activate and show button and child widget.
     void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
-                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); }
+                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); } ///< @brief Set border around active child widget.
     Fl_Widget*                  child(int index) const;
     int                         children() const
-                                    { return (int) _widgets.size(); }
+                                    { return (int) _widgets.size(); } ///< @brief Return number of child widgets (tab buttons are not included).
     void                        clear();
-    void                        debug() const;
+    void                        debug(bool all = true) const;
+    void                        disable_keyboard()
+                                    { _disable_k = true; } ///< @brief Disable all keyboard shortcuts.
     void                        do_layout()
-                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all widgets.
     void                        draw() override;
+    void                        enable_keyboard()
+                                    { _disable_k = false; } ///< @brief Enable all keyboard shortcuts.
     int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs();
     void                        insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
     bool                        is_tabs_visible() const
-                                    { return _scroll->visible(); }
+                                    { return _scroll->visible(); } ///< @brief Is tab buttons visible?
     std::string                 label(Fl_Widget* widget);
     void                        label(const std::string& label, Fl_Widget* widget);
     Fl_Widget*                  remove(int index);
     Fl_Widget*                  remove(Fl_Widget* widget)
-                                    { return TabsGroup::remove(find(widget)); }
+                                    { return TabsGroup::remove(find(widget)); } ///< @brief Remove widget and return it.
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
-    void                        swap(int from, int to);
+    int                         swap(int from, int to);
     TABS                        tabs() const
-                                    { return _tabs; }
+                                    { return _tabs; } ///< @brief Pos of the tab buttons (TABS::NORTH, TABS::SOUTH, TABS::EAST, TABS::WEST).
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
+    void                        tooltip(const std::string& label, Fl_Widget* widget);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
-                                    { value(find(widget)); }
+                                    { value(find(widget)); } ///< @brief Set active child widget.
     static void                 Callback(Fl_Widget* sender, void* object);
     static const char*          Help();
 private:
+    void                        _activate(Fl_Widget* widget, bool kludge);
     Fl_Widget*                  _active_button();
+    void                        _resize_active_widget();
     void                        _resize_east_west(int X, int Y, int W, int H);
     void                        _resize_north_south(int X, int Y, int W, int H);
-    void                        _resize_widgets();
     Fl_Align                    _align;
     Fl_Pack*                    _pack;
     Fl_Rect                     _area;
@@ -2193,7 +2184,9 @@ private:
     TABS                        _tabs;
     WidgetVector                _widgets;
     bool                        _drag;
-    int                         _active;
+    bool                        _disable_k;
+    int                         _active1;
+    int                         _active2;
     int                         _e;
     int                         _n;
     int                         _pos;
