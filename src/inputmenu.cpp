@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief An input widget with an attached menu button to select input string from.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "inputmenu.h"
 
@@ -9,34 +14,44 @@
 
 namespace flw {
 
-/***
- *           _____                   _   __  __                  
- *          |_   _|                 | | |  \/  |                 
- *            | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
+namespace inputmenu {
+    static constexpr const char* TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
+}
+
+/*
+ *           _____                   _   __  __
+ *          |_   _|                 | | |  \/  |
+ *            | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _
  *            | | | '_ \| '_ \| | | | __| |\/| |/ _ \ '_ \| | | |
  *           _| |_| | | | |_) | |_| | |_| |  | |  __/ | | | |_| |
  *          |_____|_| |_| .__/ \__,_|\__|_|  |_|\___|_| |_|\__,_|
- *      ______          | |                                      
- *     |______|         |_|                                      
+ *      ______          | |
+ *     |______|         |_|
  */
 
-static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
 
-//------------------------------------------------------------------------------
+/** @brief Input widget with extended keyboard handling.
+* @private.
+*/
 class _InputMenu : public Fl_Input {
 public:
+    bool            show_menu;  // If true the open menu button.
+    int             index;      // Index in string vextor.
+    StringVector    history;    // String list.
 
-    bool            show_menu;
-    int             index;
-    StringVector    history;
-
-    //--------------------------------------------------------------------------
+    /** @brief Create widget.
+    *
+    */
     _InputMenu() : Fl_Input(0, 0, 0, 0) {
         index     = -1;
         show_menu = false;
     }
 
-    //--------------------------------------------------------------------------
+    /** @brief Handle events.
+    *
+    * Open menu button with ctrl + space.\n
+    * Or use up/down arrows to shift through available items.\n
+    */
     int handle(int event) override {
         if (event == FL_KEYBOARD) {
             auto key = Fl::event_key();
@@ -78,18 +93,28 @@ public:
     }
 };
 
-/***
- *      _____                   _   __  __                  
- *     |_   _|                 | | |  \/  |                 
- *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
+/*
+ *      _____                   _   __  __
+ *     |_   _|                 | | |  \/  |
+ *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _
  *       | | | '_ \| '_ \| | | | __| |\/| |/ _ \ '_ \| | | |
  *      _| |_| | | | |_) | |_| | |_| |  | |  __/ | | | |_| |
  *     |_____|_| |_| .__/ \__,_|\__|_|  |_|\___|_| |_|\__,_|
- *                 | |                                      
- *                 |_|                                      
+ *                 | |
+ *                 |_|
  */
 
-//------------------------------------------------------------------------------
+/** @brief Create new InputMenu widget.
+*
+* Menu button is empty.\n
+* Text field is empty.\n
+*
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+* @param[in] l  Optional label.
+*/
 InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
 
@@ -99,53 +124,71 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     Fl_Group::add(_input);
     Fl_Group::add(_menu);
 
-    _input->callback(InputMenu::Callback, this);
+    _input->callback(InputMenu::_CallbackInput, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
-    _menu->callback(InputMenu::Callback, this);
-    _menu->tooltip(_INPUTMENU_TOOLTIP.c_str());
+    _menu->callback(InputMenu::_CallbackMenu, this);
+    _menu->tooltip(inputmenu::TOOLTIP);
+    tooltip(inputmenu::TOOLTIP);
     update_pref();
+    resize(X, Y, W, H);
 }
 
-//------------------------------------------------------------------------------
-void InputMenu::Callback(Fl_Widget* w, void* o) {
+/** @brief Popup menu buttom or do an callback.
+*
+*/
+void InputMenu::_CallbackInput(Fl_Widget*, void* o) {
     auto self = static_cast<InputMenu*>(o);
 
-    if (w == self->_input) {
-        if (self->_input->show_menu) {
-            if (self->_menu->visible()) {
-                self->_menu->popup();
-            }
-        }
-        else {
-            self->do_callback();
+    if (self->_input->show_menu == true) {
+        if (self->_menu->visible() != 0) {
+            self->_menu->popup();
         }
     }
-    else if (w == self->_menu) {
-        auto index = self->_menu->find_index(self->_menu->text());
-
-        if (index >= 0 && index < (int) self->_input->history.size()) {
-            self->_input->value(self->_input->history[index].c_str());
-            self->_input->index = index;
-        }
-
-        self->_input->take_focus();
+    else {
+        self->do_callback();
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Menu has been selected so copy value from menu to input.
+*
+*/
+void InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
+    auto self  = static_cast<InputMenu*>(o);
+    auto index = self->_menu->find_index(self->_menu->text());
+
+    if (index >= 0 && index < (int) self->_input->history.size()) {
+        self->_input->value(self->_input->history[index].c_str());
+        self->_input->index = index;
+    }
+
+    self->_input->take_focus();
+}
+
+/** @brief Clear all data.
+*
+*/
 void InputMenu::clear() {
     _menu->clear();
     _input->history.clear();
     _input->index = -1;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get current list of string.
+*
+* @return String vector.
+*/
 flw::StringVector InputMenu::get_history() const {
     return _input->history;
 }
 
-//------------------------------------------------------------------------------
-void InputMenu::insert(std::string string, int max_list_len) {
+/** @brief Insert string into menu.
+*
+* If list is too large the oldest items are removed.
+*
+* @param[in] string        String to insert.
+* @param[in] max_list_len  Max number of strings in menu.
+*/
+void InputMenu::insert(const std::string& string, unsigned max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);
@@ -155,7 +198,7 @@ void InputMenu::insert(std::string string, int max_list_len) {
 
     _input->history.insert(_input->history.begin(), string);
 
-    while ((int) _input->history.size() > max_list_len) {
+    while (static_cast<unsigned>(_input->history.size()) > max_list_len) {
         _input->history.pop_back();
     }
 
@@ -170,7 +213,13 @@ void InputMenu::insert(std::string string, int max_list_len) {
     _input->insert_position(string.length(), 0);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Resize widget
+*
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+*/
 void InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
@@ -184,44 +233,53 @@ void InputMenu::resize(int X, int Y, int W, int H) {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Update font properties of input and menu widgets.
+*
+* Label font are using values from flw::PREF_FONT.
+*
+* @param[in] text_font  New font for text input and menu.
+* @param[in] text_size  New font size text input and menu.
+*/
 void InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
-    _input->labelfont(text_font);
-    _input->labelsize(text_font);
     _input->textfont(text_font);
     _input->textsize(text_size);
-    _menu->labelfont(text_font);
-    _menu->labelsize(text_size);
     _menu->textfont(text_font);
     _menu->textsize(text_size);
 }
 
-//------------------------------------------------------------------------------
-const char* InputMenu::value() const {
-    return _input->value();
+/** @brief Get input value.
+*
+* @return Input string.
+*/
+std::string InputMenu::value() const {
+    return flw::util::to_string(_input->value());
 }
 
-//------------------------------------------------------------------------------
-void InputMenu::value(const char* string) {
-    _input->value(string ? string : "");
+/** @brief Set input value.
+*
+* @param[in] string  String value.
+*/
+void InputMenu::value(const std::string& string) {
+    _input->value(string.c_str());
 }
 
-//------------------------------------------------------------------------------
-void InputMenu::values(const StringVector& list, bool copy_first_to_input) {
+/** @brief Set new menu list and optional input string.
+*
+* @param[in] menu_list    List of strings for the menu.
+* @param[in] input_value  Text input value.
+*/
+void InputMenu::_values(const StringVector& menu_list, const std::string& input_value) {
     clear();
-    _input->history = list;
+    _input->history = menu_list;
 
     for (const auto& s : _input->history) {
         _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
     }
 
-    if (list.size() > 0 && copy_first_to_input == true) {
-        auto s = list.front();
-        _input->value(s.c_str());
-        _input->insert_position(s.length(), 0);
-    }
+    _input->value(input_value.c_str());
+    _input->insert_position(input_value.length(), 0);
 }
 
 } // flw

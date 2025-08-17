@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief An input widget with an attached menu button to select input string from.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #ifndef FLW_INPUTMENU_H
 #define FLW_INPUTMENU_H
@@ -14,7 +19,7 @@
 
 namespace flw {
 
-/***
+/*
  *      _____                   _   __  __                  
  *     |_   _|                 | | |  \/  |                 
  *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
@@ -27,9 +32,16 @@ namespace flw {
 
 class _InputMenu;
 
-//------------------------------------------------------------------------------
-// First string in the vector for InputMenu::values() is the latest pushed in.
-//
+/** @brief Text input widget with a menu button with a history of values.
+*
+* Use up/down arrow keys in the input widget to switch between current list of strings.\n
+* Use ctrl + space to popup menu.\n
+* Set a callback function to receive message when string input has changed.\n
+* No string is automatically added, that is up to caller.\n
+*
+* @snippet inputmenu.cpp flw::InputMenu example
+* @image html inputmenu.png
+*/
 class InputMenu : public Fl_Group {
 public:
                                 InputMenu(const InputMenu&) = delete;
@@ -39,30 +51,36 @@ public:
 
     explicit                    InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        clear();
-    bool                        enable_menu() const
-                                    { return _menu->visible() != 0; }
-    void                        enable_menu(bool value)
-                                    { if (value == true) _menu->show(); else _menu->hide(); resize(x(), y(), w(), h()); }
-    StringVector                get_history() const;
-    Fl_Input*                   input()
+    Fl_Input*                   input() ///< @brief Get input widget.
                                     { return reinterpret_cast<Fl_Input*>(_input); }
-    void                        insert(std::string string, int max_list_len);
+    void                        insert(const std::string& string, unsigned max_list_len);
     Fl_Menu_Button*             menu()
-                                    { return _menu; }
+                                    { return _menu; } ///< @brief Get menu widget.
+    bool                        menu_visible() const
+                                    { return _menu->visible() != 0; } ///< @brief Is menu button visible?
+    void                        menu_visible(bool value)
+                                    { if (value == true) _menu->show(); else _menu->hide(); resize(x(), y(), w(), h()); } ///< @brief Hide or show menu button.
+    StringVector                get_history() const;
     void                        resize(int X, int Y, int W, int H) override;
     void                        update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
-    const char*                 value() const;
-    void                        value(const char* string);
-    void                        values(const StringVector& list, bool copy_first_to_input = true);
-
-    static void                 Callback(Fl_Widget*, void*);
+    std::string                 value() const;
+    void                        value(const std::string& string);
+    void                        values(const StringVector& list, const std::string& input_value)
+                                    { _values(list, input_value); } ///< @brief Set a list of string and input value. @param[in] list  List of strings. @param[in]  input_value Optional input string.
+    void                        values(const StringVector& list, size_t list_index = -1)
+                                    { _values(list, list.size() > list_index ? list[list_index] : ""); } ///< @brief Set a list of string and an optional input value. @param[in] list  List of strings. @param[in] list_index  Optional input string.
 
 private:
     void                        _add(bool insert, const std::string& string, int max_list_len);
     void                        _add(bool insert, const StringVector& list);
 
-    _InputMenu*                 _input;
-    Fl_Menu_Button*             _menu;
+    void                        _values(const StringVector& list, const std::string& value);
+
+    static void                 _CallbackInput(Fl_Widget*, void*);
+    static void                 _CallbackMenu(Fl_Widget*, void*);
+
+    _InputMenu*                 _input; // Input widget.
+    Fl_Menu_Button*             _menu;  // Menu button with a list of values to select from.
 };
 
 } // flw
