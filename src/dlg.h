@@ -44,11 +44,12 @@ extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
 
 void                            center_message_dialog();
+bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent = nullptr, int W = 33, int H = 21);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
 void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list_file(const std::string& title, const std::string& file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list(const std::string& title, const std::string& list, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            panic(const std::string& message);
 bool                            password(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
 bool                            password_confirm(const std::string& title, std::string& password, Fl_Window* parent = nullptr);

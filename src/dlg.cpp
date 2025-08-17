@@ -111,6 +111,124 @@ void panic(const std::string& message) {
 }
 
 /*
+ *           _____        _        _____ _                               _____  _
+ *          |  __ \      | |      / ____| |                             |  __ \| |
+ *          | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __| |  | | | __ _
+ *          | |  | |/ _` | __/ _ \ |    | '_ \ / _ \ / _ \/ __|/ _ \ '__| |  | | |/ _` |
+ *          | |__| | (_| | ||  __/ |____| | | | (_) | (_) \__ \  __/ |  | |__| | | (_| |
+ *          |_____/ \__,_|\__\___|\_____|_| |_|\___/ \___/|___/\___|_|  |_____/|_|\__, |
+ *      ______                                                                     __/ |
+ *     |______|                                                                   |___/
+ */
+
+/** @brief An date chooser dialog.
+* @private.
+*/
+class _DateChooserDlg : public Fl_Double_Window {
+    gnu::Date&                  _value;         // In/out date value.
+    DateChooser*                _date_chooser;  // Date widget.
+    Fl_Button*                  _cancel;        // Cancel button.
+    Fl_Button*                  _ok;            // Ok button.
+    GridGroup*                  _grid;          // Layout widget.
+    bool                        _res;           // Return value.
+    bool                        _run;           // Run flag.
+
+public:
+    /** @brief Create window.
+    *
+    * @param[in]      title   Dialog title.
+    * @param[in,out]  date    Date value.
+    */
+    _DateChooserDlg(const std::string& title, gnu::Date& date, int W, int H) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H),
+    _value(date) {
+        end();
+
+        _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
+        _grid         = new GridGroup(0, 0, w(), h());
+        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _res          = false;
+        _run          = false;
+
+        _grid->add(_date_chooser,   0,   0,   0,  -6);
+        _grid->add(_cancel,       -34,  -5,  16,   4);
+        _grid->add(_ok,           -17,  -5,  16,   4);
+        add(_grid);
+
+        _cancel->callback(Callback, this);
+        _date_chooser->focus();
+        _date_chooser->set(_value);
+        _grid->do_layout();
+        _ok->callback(Callback, this);
+        
+        util::labelfont(this);
+        callback(Callback, this);
+        copy_label(title.c_str());
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
+        set_modal();
+    }
+
+    /** @brief Callback for all widgets.
+    *
+    */
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DateChooserDlg*>(o);
+
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_ok) {
+            self->_res = true;
+            self->_run = false;
+            self->hide();
+        }
+    }
+
+    /** @brief Run dialog.
+    *
+    */
+    bool run(Fl_Window* parent) {
+        _run = true;
+        util::center_window(this, parent);
+        show();
+
+        while (_run == true) {
+            Fl::wait();
+            Fl::flush();
+        }
+
+        if (_res == true) {
+            _value = _date_chooser->get();
+        }
+
+        return _res;
+    }
+};
+
+/** @brief Show an date chooser dialog.
+*
+* @param[in]     title   Dialog title.
+* @param[in,out] date    Input and output date.
+* @param[in]     parent  Center dialog on this window or use NULL to center on screen.
+* @param[in]     W       Width in characters.
+* @param[in]     H       Height in characters.
+*
+* @return True if ok has been pressed and date has been updated.
+*
+* @snippet dialog.cpp flw::dlg::date example
+* @image html date_dialog.png
+*/
+bool date(const std::string& title, gnu::Date& date, Fl_Window* parent, int W, int H) {
+    _DateChooserDlg dlg(title, date, W, H);
+    return dlg.run(parent);
+}
+
+/*
  *           _____  _       _    _ _             _
  *          |  __ \| |     | |  | | |           | |
  *          | |  | | | __ _| |__| | |_ _ __ ___ | |
@@ -325,15 +443,15 @@ public:
 *
 * @param[in] title       Dialog title.
 * @param[in] list        List of strings.
-* @param[in] parent      Center dialog on this window or use NULL to center on screen.
 * @param[in] fixed_font  True to use a fixed font.
+* @param[in] parent      Center dialog on this window or use NULL to center on screen.
 * @param[in] W           Width in characters.
 * @param[in] H           Height in characters.
 *
 * @snippet dialog.cpp flw::dlg::list example
 * @image html list_dialog.png
 */
-void list(const std::string& title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(const std::string& title, const StringVector& list, bool fixed_font, Fl_Window* parent, int W, int H) {
     _DlgList dlg(title, list, "", fixed_font, parent, W, H);
     dlg.run();
 }
@@ -345,12 +463,12 @@ void list(const std::string& title, const StringVector& list, Fl_Window* parent,
 *
 * @param[in] title       Dialog title.
 * @param[in] list        String list.
-* @param[in] parent      Center dialog on this window or use NULL to center on screen.
 * @param[in] fixed_font  True to use a fixed font.
+* @param[in] parent      Center dialog on this window or use NULL to center on screen.
 * @param[in] W           Width in characters.
 * @param[in] H           Height in characters.
 */
-void list(const std::string& title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(const std::string& title, const std::string& list, bool fixed_font, Fl_Window* parent, int W, int H) {
     auto list2 = util::split_string( list, "\n");
     _DlgList dlg(title, list2, "", fixed_font, parent, W, H);
     dlg.run();
@@ -363,12 +481,12 @@ void list(const std::string& title, const std::string& list, Fl_Window* parent, 
 *
 * @param[in] title       Dialog title.
 * @param[in] file        Filename to load.
-* @param[in] parent      Center dialog on this window or use NULL to center on screen.
 * @param[in] fixed_font  True to use a fixed font.
+* @param[in] parent      Center dialog on this window or use NULL to center on screen.
 * @param[in] W           Width in characters.
 * @param[in] H           Height in characters.
 */
-void list_file(const std::string& title, const std::string& file, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list_file(const std::string& title, const std::string& file, bool fixed_font, Fl_Window* parent, int W, int H) {
     _DlgList dlg(title, flw::StringVector(), file, fixed_font, parent, W, H);
     dlg.run();
 }

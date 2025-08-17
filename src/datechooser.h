@@ -16,7 +16,7 @@
 
 namespace flw {
 
-/***
+/*
  *      _____        _        _____ _
  *     |  __ \      | |      / ____| |
  *     | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __
@@ -27,11 +27,13 @@ namespace flw {
  *
  */
 
-//------------------------------------------------------------------------------
-// An date chooser widget
-// User can navigate with mouse or arrow keys within a month
-// Or use buttons to jump 1 month/1 year/10 years
-//
+/** @brief An date chooser widget.
+*
+* User can navigate with mouse or arrow keys within a month.\n
+* Or use buttons to jump 1 month/1 year/10 years forward or backward in time.\n
+*
+* @image html date_dialog.png
+*/
 class DateChooser : public GridGroup {
 public:
     explicit                    DateChooser(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -39,42 +41,26 @@ public:
     void                        focus();
     gnu::Date                   get() const;
     int                         handle(int event) override;
-    void                        set(gnu::Date date);
+    void                        set(const gnu::Date& date);
 
 
 private:
     static void                 _Callback(Fl_Widget* w, void* o);
     void                        _set_label();
 
-    Fl_Box*                     _month_label;
-    Fl_Button*                  _b1;
-    Fl_Button*                  _b2;
-    Fl_Button*                  _b3;
-    Fl_Button*                  _b4;
-    Fl_Button*                  _b5;
-    Fl_Button*                  _b6;
-    Fl_Button*                  _b7;
-    Fl_Widget*                  _canvas;
-    ToolGroup*                  _buttons;
+    Fl_Box*                     _month_label;   // Date label "dayname DD monthname YYYY".
+    Fl_Button*                  _b1;            // Jump one year back.
+    Fl_Button*                  _b2;            // One month back.
+    Fl_Button*                  _b3;            // Next month.
+    Fl_Button*                  _b4;            // Next year.
+    Fl_Button*                  _b5;            // Goto todays date.
+    Fl_Button*                  _b6;            // 10 years back.
+    Fl_Button*                  _b7;            // 10 years forward.
+    Fl_Widget*                  _canvas;        // _DateChooserCanvas (month view).
+    ToolGroup*                  _buttons;       // Toolbar for the buttobs.
 };
 
-namespace dlg {
-
-/***
- *       __                  _   _
- *      / _|                | | (_)
- *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
- *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
- *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
- *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
- *
- *
- */
-
-bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent);
-
-} // dlg
-} // flw
+}
 
 // MKALGAM_OFF
 

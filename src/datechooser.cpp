@@ -25,31 +25,37 @@ namespace flw {
  *     |______|
  */
 
-//------------------------------------------------------------------------------
+/** @brief Date panel for DateChooser.
+* @private
+*/
 class _DateChooserCanvas : public Fl_Widget {
-    gnu::Date                   _date[7][8];
-    char                        _text[7][8][30];
-    int                         _col;
-    int                         _row;
+    gnu::Date                   _date[7][8];        // One date object for every cell.
+    std::string                 _text[7][8];        // Date string for every cell.
+    int                         _col;               // Current cell column.
+    int                         _row;               // Current cell row.
 
 public:
-    //------------------------------------------------------------------------------
+    /** @brief Create and initiate object.
+    *
+    */
     _DateChooserCanvas() :
     Fl_Widget(0, 0, 0, 0, 0) {
         _row   = 1;
         _col   = 1;
 
-        strncpy(_text[0][0], "Week", 20);
-        strncpy(_text[0][1], "Mon", 20);
-        strncpy(_text[0][2], "Tue", 20);
-        strncpy(_text[0][3], "Wed", 20);
-        strncpy(_text[0][4], "Thu", 20);
-        strncpy(_text[0][5], "Fri", 20);
-        strncpy(_text[0][6], "Sat", 20);
-        strncpy(_text[0][7], "Sun", 20);
+        _text[0][0] = "Week";
+        _text[0][1] = "Mon";
+        _text[0][2] = "Tue";
+        _text[0][3] = "Wed";
+        _text[0][4] = "Thu";
+        _text[0][5] = "Fri";
+        _text[0][6] = "Sat";
+        _text[0][7] = "Sun";
     }
 
-    //------------------------------------------------------------------------------
+    /** @brief Draw all cells.
+    *
+    */
     void draw() override {
         int cw  = w() / 8;
         int ch  = h() / 7;
@@ -69,10 +75,9 @@ public:
                 auto fg = FL_FOREGROUND_COLOR;
 
                 if (r == 0 || c == 0) {
-                    ;
                 }
                 else {
-                    int v = atoi(t);
+                    int v = atoi(t.c_str());
 
                     if (v <= d && col < 3) {
                         d = v;
@@ -94,18 +99,24 @@ public:
                 fl_rectf(x1, y1, w1, h1, bg);
                 fl_color(fg);
                 fl_font(r == 0 || c == 0 ? FL_HELVETICA_BOLD : FL_HELVETICA, flw::PREF_FONTSIZE);
-                fl_draw(t, x1, y1, w1, h1, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+                fl_draw(t.c_str(), x1, y1, w1, h1, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
                 fl_rect(x1, y1, w1, h1, FL_DARK3);
             }
         }
     }
 
-    //------------------------------------------------------------------------------
+    /** @brief Get date object from current cell.
+    *
+    */
     gnu::Date get() {
         return _date[_row][_col];
     }
 
-    //------------------------------------------------------------------------------
+    /** @brief Select current cell/date.
+    *
+    * Either with a with a mouse click.\n
+    * Or arrow keys.\n
+    */
     int handle(int event) override {
         if (event == FL_PUSH) {
             take_focus();
@@ -179,7 +190,9 @@ public:
         return Fl_Widget::handle(event);
     }
 
-    //------------------------------------------------------------------------------
+    /** @brief Set current cell and do callback.
+    *
+    */
     void set_current(int row, int col) {
         if (row != _row || col != _col) {
             _row = row;
@@ -188,14 +201,18 @@ public:
         }
     }
 
-    //------------------------------------------------------------------------------
+    /** @brief Set date object.
+    *
+    */
     void set_date(int row, int col, const gnu::Date& date) {
         _date[row][col] = date;
     }
 
-    //------------------------------------------------------------------------------
-    void set_text(int row, int col, const char* text) {
-        strncpy(_text[row][col], text, 30);
+    /** @brief Set Date text.
+    *
+    */
+    void set_text(int row, int col, const std::string& text) {
+        _text[row][col] = text;
     }
 };
 
@@ -210,7 +227,14 @@ public:
  *
  */
 
-//------------------------------------------------------------------------------
+/** @brief Create date chooser widget.
+*
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+* @param[in] l  Label.
+*/
 flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) :
 GridGroup(X, Y, W, H, l) {
     end();
@@ -265,7 +289,13 @@ GridGroup(X, Y, W, H, l) {
     do_layout();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Callback for all widgets.
+*
+* Select new date cell.
+*
+* @param[in] w  Widget.
+* @param[in] o  DateChooser widget..
+*/
 void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
     auto dc = static_cast<DateChooser*>(o);
     auto dt = dc->get();
@@ -306,23 +336,32 @@ void flw::DateChooser::_Callback(Fl_Widget* w, void* o) {
     dc->_canvas->take_focus();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Draw cells.
+*
+*/
 void flw::DateChooser::draw() {
     _month_label->labelfont(FL_HELVETICA_BOLD);
     Fl_Group::draw();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Take focus.
+*
+*/
 void flw::DateChooser::focus() {
     _canvas->take_focus();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Get current date.
+*
+* @return Date object.
+*/
 gnu::Date flw::DateChooser::get() const {
     return static_cast<flw::_DateChooserCanvas*>(_canvas)->get();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Change current cell by keyboard.
+*
+*/
 int flw::DateChooser::handle(int event) {
     if (event == FL_KEYDOWN) {
         if (Fl::event_command()) {
@@ -344,19 +383,23 @@ int flw::DateChooser::handle(int event) {
     return Fl_Group::handle(event);
 }
 
-//------------------------------------------------------------------------------
-void flw::DateChooser::set(gnu::Date date) {
+/** @brief Set current date.
+*
+* @param[in] date  Date object.
+*/
+void flw::DateChooser::set(const gnu::Date& date) {
+    auto arg    = date;
     auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
 
-    if (date.is_invalid() == true) {
-        date = gnu::Date();
+    if (arg.is_invalid() == true) {
+        arg = gnu::Date();
     }
-    else if (date.year() < 2 && date.month() < 2) {
-        date.set_month(2);
+    else if (arg.year() < 2 && arg.month() < 2) {
+        arg.set_month(2);
     }
 
     auto start_cell   = 0;
-    auto first_date   = gnu::Date(date.year(), date.month(), 1);
+    auto first_date   = gnu::Date(arg.year(), arg.month(), 1);
     auto current_date = gnu::Date();
     char tmp[30];
 
@@ -377,7 +420,7 @@ void flw::DateChooser::set(gnu::Date date) {
             canvas->set_text(r, c, tmp);
             canvas->set_date(r, c, current_date);
 
-            if (current_date.month() == date.month() && current_date.day() == date.day()) {
+            if (current_date.month() == arg.month() && current_date.day() == arg.day()) {
                 canvas->set_current(r, c);
             }
 
@@ -389,140 +432,15 @@ void flw::DateChooser::set(gnu::Date date) {
     redraw();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set month label.
+*
+*/
 void flw::DateChooser::_set_label() {
-    auto canvas = (flw::_DateChooserCanvas*) _canvas;
+    auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
     auto date   = canvas->get();
     auto string = date.format(gnu::Date::FORMAT::WEEKDAY_MONTH_YEAR);
 
     _month_label->copy_label(string.c_str());
-}
-
-/*
- *           _____        _        _____ _                               _____  _
- *          |  __ \      | |      / ____| |                             |  __ \| |
- *          | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __| |  | | | __ _
- *          | |  | |/ _` | __/ _ \ |    | '_ \ / _ \ / _ \/ __|/ _ \ '__| |  | | |/ _` |
- *          | |__| | (_| | ||  __/ |____| | | | (_) | (_) \__ \  __/ |  | |__| | | (_| |
- *          |_____/ \__,_|\__\___|\_____|_| |_|\___/ \___/|___/\___|_|  |_____/|_|\__, |
- *      ______                                                                     __/ |
- *     |______|                                                                   |___/
- */
-
-/** @brief An date chooser dialog.
-* @private.
-*/
-class _DateChooserDlg : public Fl_Double_Window {
-    gnu::Date&                  _value;         // In/out date value.
-    DateChooser*                _date_chooser;  // Date widget.
-    Fl_Button*                  _cancel;        // Cancel button.
-    Fl_Button*                  _ok;            // Ok button.
-    GridGroup*                  _grid;          // Layout widget.
-    bool                        _res;           // Return value.
-    bool                        _run;           // Run flag.
-
-public:
-    /** @brief Create window.
-    *
-    * @param[in]      title   Dialog title.
-    * @param[in,out]  date    Date value.
-    */
-    _DateChooserDlg(const std::string& title, gnu::Date& date) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21),
-    _value(date) {
-        end();
-
-        _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
-        _grid         = new GridGroup(0, 0, w(), h());
-        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-        _res          = false;
-        _run          = false;
-
-        _grid->add(_date_chooser,   0,   0,   0,  -6);
-        _grid->add(_cancel,       -34,  -5,  16,   4);
-        _grid->add(_ok,           -17,  -5,  16,   4);
-        add(_grid);
-
-        _cancel->callback(Callback, this);
-        _date_chooser->focus();
-        _date_chooser->set(_value);
-        _grid->do_layout();
-        _ok->callback(Callback, this);
-        
-        util::labelfont(this);
-        callback(Callback, this);
-        copy_label(title.c_str());
-        resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
-        set_modal();
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DateChooserDlg*>(o);
-
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_ok) {
-            self->_res = true;
-            self->_run = false;
-            self->hide();
-        }
-    }
-
-    /** @brief Run dialog.
-    *
-    */
-    bool run(Fl_Window* parent) {
-        _run = true;
-        util::center_window(this, parent);
-        show();
-
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-
-        if (_res == true) {
-            _value = _date_chooser->get();
-        }
-
-        return _res;
-    }
-};
-
-/*
- *       __                  _   _
- *      / _|                | | (_)
- *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
- *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
- *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
- *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
- *
- *
- */
-
-/** @brief Show an date chooser dialog.
-*
-* @param[in]     title   Dialog title.
-* @param[in,out] date    Input and output date.
-* @param[in]     parent  Center dialog on this window or use NULL to center on screen.
-*
-* @return True if ok has been pressed and date has been updated.
-*
-* @snippet dialog.cpp flw::dlg::date example
-* @image html date_dialog.png
-*/
-bool dlg::date(const std::string& title, gnu::Date& date, Fl_Window* parent) {
-    flw::_DateChooserDlg dlg(title, date);
-    return dlg.run(parent);
 }
 
 } // flw
