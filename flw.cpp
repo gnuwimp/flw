@@ -5619,7 +5619,7 @@ void Chart::update_pref() {
 namespace flw {
 class _DateChooserCanvas : public Fl_Widget {
     gnu::Date                   _date[7][8];
-    char                        _text[7][8][30];
+    std::string                 _text[7][8];
     int                         _col;
     int                         _row;
 public:
@@ -5627,14 +5627,14 @@ public:
     Fl_Widget(0, 0, 0, 0, 0) {
         _row   = 1;
         _col   = 1;
-        strncpy(_text[0][0], "Week", 20);
-        strncpy(_text[0][1], "Mon", 20);
-        strncpy(_text[0][2], "Tue", 20);
-        strncpy(_text[0][3], "Wed", 20);
-        strncpy(_text[0][4], "Thu", 20);
-        strncpy(_text[0][5], "Fri", 20);
-        strncpy(_text[0][6], "Sat", 20);
-        strncpy(_text[0][7], "Sun", 20);
+        _text[0][0] = "Week";
+        _text[0][1] = "Mon";
+        _text[0][2] = "Tue";
+        _text[0][3] = "Wed";
+        _text[0][4] = "Thu";
+        _text[0][5] = "Fri";
+        _text[0][6] = "Sat";
+        _text[0][7] = "Sun";
     }
     void draw() override {
         int cw  = w() / 8;
@@ -5652,10 +5652,9 @@ public:
                 auto bg = FL_BACKGROUND_COLOR;
                 auto fg = FL_FOREGROUND_COLOR;
                 if (r == 0 || c == 0) {
-                    ;
                 }
                 else {
-                    int v = atoi(t);
+                    int v = atoi(t.c_str());
                     if (v <= d && col < 3) {
                         d = v;
                         col++;
@@ -5674,7 +5673,7 @@ public:
                 fl_rectf(x1, y1, w1, h1, bg);
                 fl_color(fg);
                 fl_font(r == 0 || c == 0 ? FL_HELVETICA_BOLD : FL_HELVETICA, flw::PREF_FONTSIZE);
-                fl_draw(t, x1, y1, w1, h1, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+                fl_draw(t.c_str(), x1, y1, w1, h1, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
                 fl_rect(x1, y1, w1, h1, FL_DARK3);
             }
         }
@@ -5754,8 +5753,8 @@ public:
     void set_date(int row, int col, const gnu::Date& date) {
         _date[row][col] = date;
     }
-    void set_text(int row, int col, const char* text) {
-        strncpy(_text[row][col], text, 30);
+    void set_text(int row, int col, const std::string& text) {
+        _text[row][col] = text;
     }
 };
 flw::DateChooser::DateChooser(int X, int Y, int W, int H, const char* l) :
@@ -5871,16 +5870,17 @@ int flw::DateChooser::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::DateChooser::set(gnu::Date date) {
+void flw::DateChooser::set(const gnu::Date& date) {
+    auto arg    = date;
     auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
-    if (date.is_invalid() == true) {
-        date = gnu::Date();
+    if (arg.is_invalid() == true) {
+        arg = gnu::Date();
     }
-    else if (date.year() < 2 && date.month() < 2) {
-        date.set_month(2);
+    else if (arg.year() < 2 && arg.month() < 2) {
+        arg.set_month(2);
     }
     auto start_cell   = 0;
-    auto first_date   = gnu::Date(date.year(), date.month(), 1);
+    auto first_date   = gnu::Date(arg.year(), arg.month(), 1);
     auto current_date = gnu::Date();
     char tmp[30];
     start_cell    = static_cast<int>(first_date.weekday()) - 1;
@@ -5894,7 +5894,7 @@ void flw::DateChooser::set(gnu::Date date) {
             snprintf(tmp, 30, "%02d", current_date.day());
             canvas->set_text(r, c, tmp);
             canvas->set_date(r, c, current_date);
-            if (current_date.month() == date.month() && current_date.day() == date.day()) {
+            if (current_date.month() == arg.month() && current_date.day() == arg.day()) {
                 canvas->set_current(r, c);
             }
             current_date.add_days(1);
@@ -5904,77 +5904,10 @@ void flw::DateChooser::set(gnu::Date date) {
     redraw();
 }
 void flw::DateChooser::_set_label() {
-    auto canvas = (flw::_DateChooserCanvas*) _canvas;
+    auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
     auto date   = canvas->get();
     auto string = date.format(gnu::Date::FORMAT::WEEKDAY_MONTH_YEAR);
     _month_label->copy_label(string.c_str());
-}
-class _DateChooserDlg : public Fl_Double_Window {
-    gnu::Date&                  _value;
-    DateChooser*                _date_chooser;
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _ok;
-    GridGroup*                  _grid;
-    bool                        _res;
-    bool                        _run;
-public:
-    _DateChooserDlg(const std::string& title, gnu::Date& date) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 33, flw::PREF_FONTSIZE * 21),
-    _value(date) {
-        end();
-        _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
-        _grid         = new GridGroup(0, 0, w(), h());
-        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-        _res          = false;
-        _run          = false;
-        _grid->add(_date_chooser,   0,   0,   0,  -6);
-        _grid->add(_cancel,       -34,  -5,  16,   4);
-        _grid->add(_ok,           -17,  -5,  16,   4);
-        add(_grid);
-        _cancel->callback(Callback, this);
-        _date_chooser->focus();
-        _date_chooser->set(_value);
-        _grid->do_layout();
-        _ok->callback(Callback, this);
-        util::labelfont(this);
-        callback(Callback, this);
-        copy_label(title.c_str());
-        resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
-        set_modal();
-    }
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DateChooserDlg*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_ok) {
-            self->_res = true;
-            self->_run = false;
-            self->hide();
-        }
-    }
-    bool run(Fl_Window* parent) {
-        _run = true;
-        util::center_window(this, parent);
-        show();
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-        if (_res == true) {
-            _value = _date_chooser->get();
-        }
-        return _res;
-    }
-};
-bool dlg::date(const std::string& title, gnu::Date& date, Fl_Window* parent) {
-    flw::_DateChooserDlg dlg(title, date);
-    return dlg.run(parent);
 }
 }
 #ifdef _WIN32
@@ -6053,6 +5986,73 @@ void center_message_dialog() {
 void panic(const std::string& message) {
     fl_alert("panic! I have to quit\n%s", message.c_str());
     exit(1);
+}
+class _DateChooserDlg : public Fl_Double_Window {
+    gnu::Date&                  _value;
+    DateChooser*                _date_chooser;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _ok;
+    GridGroup*                  _grid;
+    bool                        _res;
+    bool                        _run;
+public:
+    _DateChooserDlg(const std::string& title, gnu::Date& date, int W, int H) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H),
+    _value(date) {
+        end();
+        _cancel       = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _date_chooser = new DateChooser(0, 0, 0, 0, "DateCHooser");
+        _grid         = new GridGroup(0, 0, w(), h());
+        _ok           = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _res          = false;
+        _run          = false;
+        _grid->add(_date_chooser,   0,   0,   0,  -6);
+        _grid->add(_cancel,       -34,  -5,  16,   4);
+        _grid->add(_ok,           -17,  -5,  16,   4);
+        add(_grid);
+        _cancel->callback(Callback, this);
+        _date_chooser->focus();
+        _date_chooser->set(_value);
+        _grid->do_layout();
+        _ok->callback(Callback, this);
+        util::labelfont(this);
+        callback(Callback, this);
+        copy_label(title.c_str());
+        resizable(_grid);
+        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
+        set_modal();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DateChooserDlg*>(o);
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_ok) {
+            self->_res = true;
+            self->_run = false;
+            self->hide();
+        }
+    }
+    bool run(Fl_Window* parent) {
+        _run = true;
+        util::center_window(this, parent);
+        show();
+        while (_run == true) {
+            Fl::wait();
+            Fl::flush();
+        }
+        if (_res == true) {
+            _value = _date_chooser->get();
+        }
+        return _res;
+    }
+};
+bool date(const std::string& title, gnu::Date& date, Fl_Window* parent, int W, int H) {
+    _DateChooserDlg dlg(title, date, W, H);
+    return dlg.run(parent);
 }
 class _DlgHtml  : public Fl_Double_Window {
     Fl_Help_View*               _html;
@@ -6168,16 +6168,16 @@ public:
         }
     }
 };
-void list(const std::string& title, const StringVector& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(const std::string& title, const StringVector& list, bool fixed_font, Fl_Window* parent, int W, int H) {
     _DlgList dlg(title, list, "", fixed_font, parent, W, H);
     dlg.run();
 }
-void list(const std::string& title, const std::string& list, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list(const std::string& title, const std::string& list, bool fixed_font, Fl_Window* parent, int W, int H) {
     auto list2 = util::split_string( list, "\n");
     _DlgList dlg(title, list2, "", fixed_font, parent, W, H);
     dlg.run();
 }
-void list_file(const std::string& title, const std::string& file, Fl_Window* parent, bool fixed_font, int W, int H) {
+void list_file(const std::string& title, const std::string& file, bool fixed_font, Fl_Window* parent, int W, int H) {
     _DlgList dlg(title, flw::StringVector(), file, fixed_font, parent, W, H);
     dlg.run();
 }
@@ -9415,7 +9415,9 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
 }
 #include <algorithm>
 namespace flw {
-static const std::string _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values\nPress ctrl + space to open menu button (if visible)";
+namespace inputmenu {
+    static constexpr const char* TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
+}
 class _InputMenu : public Fl_Input {
 public:
     bool            show_menu;
@@ -9466,32 +9468,33 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _menu  = new Fl_Menu_Button(0, 0, 0, 0);
     Fl_Group::add(_input);
     Fl_Group::add(_menu);
-    _input->callback(InputMenu::Callback, this);
+    _input->callback(InputMenu::_CallbackInput, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
-    _menu->callback(InputMenu::Callback, this);
-    _menu->tooltip(_INPUTMENU_TOOLTIP.c_str());
+    _menu->callback(InputMenu::_CallbackMenu, this);
+    _menu->tooltip(inputmenu::TOOLTIP);
+    tooltip(inputmenu::TOOLTIP);
     update_pref();
+    resize(X, Y, W, H);
 }
-void InputMenu::Callback(Fl_Widget* w, void* o) {
+void InputMenu::_CallbackInput(Fl_Widget*, void* o) {
     auto self = static_cast<InputMenu*>(o);
-    if (w == self->_input) {
-        if (self->_input->show_menu) {
-            if (self->_menu->visible()) {
-                self->_menu->popup();
-            }
-        }
-        else {
-            self->do_callback();
+    if (self->_input->show_menu == true) {
+        if (self->_menu->visible() != 0) {
+            self->_menu->popup();
         }
     }
-    else if (w == self->_menu) {
-        auto index = self->_menu->find_index(self->_menu->text());
-        if (index >= 0 && index < (int) self->_input->history.size()) {
-            self->_input->value(self->_input->history[index].c_str());
-            self->_input->index = index;
-        }
-        self->_input->take_focus();
+    else {
+        self->do_callback();
     }
+}
+void InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
+    auto self  = static_cast<InputMenu*>(o);
+    auto index = self->_menu->find_index(self->_menu->text());
+    if (index >= 0 && index < (int) self->_input->history.size()) {
+        self->_input->value(self->_input->history[index].c_str());
+        self->_input->index = index;
+    }
+    self->_input->take_focus();
 }
 void InputMenu::clear() {
     _menu->clear();
@@ -9501,7 +9504,7 @@ void InputMenu::clear() {
 flw::StringVector InputMenu::get_history() const {
     return _input->history;
 }
-void InputMenu::insert(std::string string, int max_list_len) {
+void InputMenu::insert(const std::string& string, unsigned max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);
@@ -9509,7 +9512,7 @@ void InputMenu::insert(std::string string, int max_list_len) {
         }
     }
     _input->history.insert(_input->history.begin(), string);
-    while ((int) _input->history.size() > max_list_len) {
+    while (static_cast<unsigned>(_input->history.size()) > max_list_len) {
         _input->history.pop_back();
     }
     _menu->clear();
@@ -9534,32 +9537,25 @@ void InputMenu::resize(int X, int Y, int W, int H) {
 void InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
-    _input->labelfont(text_font);
-    _input->labelsize(text_font);
     _input->textfont(text_font);
     _input->textsize(text_size);
-    _menu->labelfont(text_font);
-    _menu->labelsize(text_size);
     _menu->textfont(text_font);
     _menu->textsize(text_size);
 }
-const char* InputMenu::value() const {
-    return _input->value();
+std::string InputMenu::value() const {
+    return flw::util::to_string(_input->value());
 }
-void InputMenu::value(const char* string) {
-    _input->value(string ? string : "");
+void InputMenu::value(const std::string& string) {
+    _input->value(string.c_str());
 }
-void InputMenu::values(const StringVector& list, bool copy_first_to_input) {
+void InputMenu::_values(const StringVector& menu_list, const std::string& input_value) {
     clear();
-    _input->history = list;
+    _input->history = menu_list;
     for (const auto& s : _input->history) {
         _menu->add(flw::util::fix_menu_string(s.c_str()).c_str());
     }
-    if (list.size() > 0 && copy_first_to_input == true) {
-        auto s = list.front();
-        _input->value(s.c_str());
-        _input->insert_position(s.length(), 0);
-    }
+    _input->value(input_value.c_str());
+    _input->insert_position(input_value.length(), 0);
 }
 }
 #include <FL/fl_draw.H>
@@ -10207,7 +10203,7 @@ int LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("Style Help", _LOGDISPLAY_HELP, top_window(), false, 40, 30);
+                dlg::list("Style Help", _LOGDISPLAY_HELP, false, top_window(), 40, 30);
                 return 1;
             }
         }

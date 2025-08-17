@@ -4,6 +4,25 @@
 #include "flw.h"
 
 //------------------------------------------------------------------------------
+void date_example() {
+    // [flw::dlg::date example]
+
+    gnu::Date date = gnu::Date("31/12/1999");
+
+    if (flw::dlg::date("flw::dlg::date()", date) == true) {
+        printf("flw::dlg::date = %s\n", date.format(gnu::Date::FORMAT::ISO_LONG).c_str());
+    }
+    else {
+        printf("No date was selected\n");
+    }
+/*
+flw::dlg::date = 1999-12-31
+*/
+
+    // [flw::dlg::date example]
+}
+
+//------------------------------------------------------------------------------
 void font_example1() {
     // [flw::dlg::FontDialog example]
 
@@ -57,8 +76,15 @@ void list_example() {
     // [flw::dlg::list example]
 
     flw::StringVector list = {"@LHello", "World", "How", "Are", "You?"};
-    flw::dlg::list("flw::dlg::list()", "@LHello\nWorld\nHow\nAre\nYou?\n");
+    
+    // Use fixed font for the items and split input string on newline.
+    flw::dlg::list("flw::dlg::list()", "@LHello\nWorld\nHow\nAre\nYou?\n", true);
+    
+    // Use a vector of std::string objects.
     flw::dlg::list("flw::dlg::list()", list);
+
+    // Load a text file.
+    flw::dlg::list_file("flw::dlg::list_file()", "Makefile");
 
     // [flw::dlg::list example]
 }
@@ -268,6 +294,7 @@ int main() {
     Fl::screen_scale(0, 1.0);
 
     theme_example();
+    date_example();
     font_example1();
     font_example2();
     html_example();

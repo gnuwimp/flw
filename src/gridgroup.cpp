@@ -12,7 +12,7 @@
 
 namespace flw {
 
-/***
+/*
  *           _____      _     _  _____                        _____ _     _ _     _
  *          / ____|    (_)   | |/ ____|                      / ____| |   (_) |   | |
  *         | |  __ _ __ _  __| | |  __ _ __ ___  _   _ _ __ | |    | |__  _| | __| |
@@ -27,15 +27,15 @@ namespace flw {
 * @private
 */
 struct _GridGroupChild {
-    Fl_Widget*                  widget;
-    short                       x;
-    short                       y;
-    short                       w;
-    short                       h;
-    short                       l;
-    short                       r;
-    short                       t;
-    short                       b;
+    Fl_Widget*                  widget; // Child widget.
+    short                       x;      // X pos.
+    short                       y;      // Y pos.
+    short                       w;      // Width.
+    short                       h;      // Height.
+    short                       l;      // Adjust left side.
+    short                       r;      // Adjust right side.
+    short                       t;      // Adjust top side.
+    short                       b;      // Adjust bottom side.
 
     /** @brief Create new child.
     *
@@ -59,7 +59,7 @@ struct _GridGroupChild {
         b = B;
     }
 
-    /** @brief Replace child data/widget.
+    /** @brief Replace child widget.
     *
     */
     void set(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
@@ -71,7 +71,7 @@ struct _GridGroupChild {
     }
 };
 
-/***
+/*
  *       _____      _     _  _____
  *      / ____|    (_)   | |/ ____|
  *     | |  __ _ __ _  __| | |  __ _ __ ___  _   _ _ __
@@ -114,11 +114,9 @@ GridGroup::~GridGroup() {
 * X and Y can use negative values.\n
 * Then it will calculate positions from right side or from the bottom.\n
 * With default values GridGroup::add(WIDGET, 1, 1, 10, 4) will resize widget to (14/2, 14/2, 14 / 2 * 10, 14 / 2 * 4)\n
-*
+* \n
 * W and H can use negative values.\n
 * Then it will adjust width or height from right side or from the bottom.\n
-*
-* GridGroup::add(WIDGET, 1, 1, )
 *
 * @param[in] widget  Widget to add.
 * @param[in] X       X pos using grid coordinates .
@@ -131,13 +129,13 @@ void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H) {
     Fl_Group::add(widget);
 }
 
-    /** @brief Adjust size and position of a child widget.
-    *
-    * @param[in] widget  Child widget.
-    * @param[in] L       Left side.
-    * @param[in] R       Right side.
-    * @param[in] T       Top side.
-    * @param[in] B       Bottom side.
+/** @brief Adjust size and position of a child widget.
+*
+* @param[in] widget  Child widget.
+* @param[in] L       Left side.
+* @param[in] R       Right side.
+* @param[in] T       Top side.
+* @param[in] B       Bottom side.
     */
 void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     for (auto& v : _widgets) {
@@ -163,7 +161,6 @@ void GridGroup::clear() {
     Fl_Group::clear();
 }
 
-//------------------------------------------------------------------------------
 /** @brief Handle message.
 *
 * Take care of moving from widget to widget with tab key.
@@ -205,7 +202,6 @@ int GridGroup::handle(int event) {
     return Fl_Group::handle(event);
 }
 
-//------------------------------------------------------------------------------
 /** @brief Set first and last active widget.
 *
 * @param[out] first  Set last active widget.
@@ -228,7 +224,6 @@ void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
     }
 }
 
-//------------------------------------------------------------------------------
 /** @brief Remove widget from group.
 *
 * @param[in] widget  Widget to remove.
@@ -256,6 +251,10 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
 
 /** @brief Resize widget and all child widgets,
 *
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
 */
 void GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);

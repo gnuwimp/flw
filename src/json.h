@@ -68,7 +68,7 @@ std::string                     escape(const char* string);
 std::string                     format_number(double f, bool E = false);
 std::string                     unescape(const char* string);
 
-/***
+/*
  *           _  _____
  *          | |/ ____|
  *          | | (___
@@ -211,7 +211,7 @@ private:
     };
 };
 
-/***
+/*
  *      ____        _ _     _
  *     |  _ \      (_) |   | |
  *     | |_) |_   _ _| | __| | ___ _ __

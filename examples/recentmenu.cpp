@@ -5,17 +5,18 @@
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_File_Chooser.H>
 
-#define CALLBACK(X) [](Fl_Widget*, void* o) { X; }
-
 int main() {
     Fl::scheme("oxy");
     Fl::screen_scale(0, 1.0);
 
     // [flw::RecentMenu example]
 
-    auto win = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::RecentMenu");
-    auto menu = new Fl_Menu_Bar(0, 0, 640, 24);
-    auto recent = new flw::RecentMenu(menu, CALLBACK( // Callback for an item in recent menu.
+    #define CALLBACK(X) [](Fl_Widget*, void* o) { X; }
+
+    Fl_Preferences   pref   = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "example_recentmenu");
+    Fl_Window*       win    = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::RecentMenu");
+    Fl_Menu_Bar*     menu   = new Fl_Menu_Bar(0, 0, 640, 28);
+    flw::RecentMenu* recent = new flw::RecentMenu(menu, CALLBACK( // Callback for an item in recent menu.
         puts(static_cast<Fl_Menu_Bar*>(o)->text())
     ), menu);
 
@@ -29,15 +30,21 @@ int main() {
 
     // After 5 items the oldest will be deleted.
     recent->max_items(5);
-    recent->insert("gridgroup.cpp");
-    recent->insert("recentmenu.cpp");
+    
+    // Load menu items from preference file.
+    recent->load_pref(pref);
+    
+    // Add two items if nothing are stored in preference file.
+    if (recent->items().size() == 0) {
+        recent->insert("gridgroup.cpp");
+        recent->insert("recentmenu.cpp");
+    }
 
     win->resizable(win);
     win->show();
     Fl::run();
 
-    // Save items to preference file, load with flw::RecentMenu::load_pref().
-    auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "example_recentmenu");
+    // Save items to preference file.
     pref.clear();
     recent->save_pref(pref);
 

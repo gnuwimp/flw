@@ -9,8 +9,8 @@ int main() {
 
     // [flw::TabsGroup example]
 
-    auto win = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::TabsGroup");
-    auto tabs = new flw::TabsGroup(0, 0, 640, 480);
+    Fl_Window*      win  = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::TabsGroup");
+    flw::TabsGroup* tabs = new flw::TabsGroup(0, 0, 640, 480);
 
     // Add child widgets.
     tabs->add("Hello", new Fl_Button(0, 0, 0, 0, "Hello World 1"));

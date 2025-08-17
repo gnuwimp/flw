@@ -13,6 +13,7 @@ all: flw.o \
 	json.exe \
 	dialog.exe \
 	gridgroup.exe \
+	inputmenu.exe \
 	recentmenu.exe \
 	tabsgroup.exe \
 
@@ -34,6 +35,9 @@ fontdialog.exe: fontdialog.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 gridgroup.exe: gridgroup.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+inputmenu.exe: inputmenu.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 recentmenu.exe: recentmenu.cpp flw.o
@@ -63,6 +67,9 @@ run_dialog: dialog.exe
 
 run_gridgroup: gridgroup.exe
 	./gridgroup.exe
+
+run_inputmenu: inputmenu.exe
+	./inputmenu.exe
 
 run_recentmenu: recentmenu.exe
 	./recentmenu.exe

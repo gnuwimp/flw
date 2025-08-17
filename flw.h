@@ -1154,7 +1154,7 @@ public:
     void                        focus();
     gnu::Date                   get() const;
     int                         handle(int event) override;
-    void                        set(gnu::Date date);
+    void                        set(const gnu::Date& date);
 private:
     static void                 _Callback(Fl_Widget* w, void* o);
     void                        _set_label();
@@ -1169,9 +1169,6 @@ private:
     Fl_Widget*                  _canvas;
     ToolGroup*                  _buttons;
 };
-namespace dlg {
-bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent);
-}
 }
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Menu_Button.H>
@@ -1220,11 +1217,12 @@ namespace dlg {
 extern const char*              PASSWORD_CANCEL;
 extern const char*              PASSWORD_OK;
 void                            center_message_dialog();
+bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent = nullptr, int W = 33, int H = 21);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
 void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list(const std::string& title, const std::string& list, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
-void                            list_file(const std::string& title, const std::string& file, Fl_Window* parent = nullptr, bool fixed_font = false, int W = 40, int H = 23);
+void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list(const std::string& title, const std::string& list, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            panic(const std::string& message);
 bool                            password(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
 bool                            password_confirm(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
@@ -1318,25 +1316,30 @@ public:
     InputMenu&                  operator=(InputMenu&&) = delete;
     explicit                    InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        clear();
-    bool                        enable_menu() const
-                                    { return _menu->visible() != 0; }
-    void                        enable_menu(bool value)
-                                    { if (value == true) _menu->show(); else _menu->hide(); resize(x(), y(), w(), h()); }
-    StringVector                get_history() const;
-    Fl_Input*                   input()
+    Fl_Input*                   input() ///< @brief Get input widget.
                                     { return reinterpret_cast<Fl_Input*>(_input); }
-    void                        insert(std::string string, int max_list_len);
+    void                        insert(const std::string& string, unsigned max_list_len);
     Fl_Menu_Button*             menu()
-                                    { return _menu; }
+                                    { return _menu; } ///< @brief Get menu widget.
+    bool                        menu_visible() const
+                                    { return _menu->visible() != 0; } ///< @brief Is menu button visible?
+    void                        menu_visible(bool value)
+                                    { if (value == true) _menu->show(); else _menu->hide(); resize(x(), y(), w(), h()); } ///< @brief Hide or show menu button.
+    StringVector                get_history() const;
     void                        resize(int X, int Y, int W, int H) override;
     void                        update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
-    const char*                 value() const;
-    void                        value(const char* string);
-    void                        values(const StringVector& list, bool copy_first_to_input = true);
-    static void                 Callback(Fl_Widget*, void*);
+    std::string                 value() const;
+    void                        value(const std::string& string);
+    void                        values(const StringVector& list, const std::string& input_value)
+                                    { _values(list, input_value); } ///< @brief Set a list of string and input value. @param[in] list  List of strings. @param[in]  input_value Optional input string.
+    void                        values(const StringVector& list, size_t list_index = -1)
+                                    { _values(list, list.size() > list_index ? list[list_index] : ""); } ///< @brief Set a list of string and an optional input value. @param[in] list  List of strings. @param[in] list_index  Optional input string.
 private:
     void                        _add(bool insert, const std::string& string, int max_list_len);
     void                        _add(bool insert, const StringVector& list);
+    void                        _values(const StringVector& list, const std::string& value);
+    static void                 _CallbackInput(Fl_Widget*, void*);
+    static void                 _CallbackMenu(Fl_Widget*, void*);
     _InputMenu*                 _input;
     Fl_Menu_Button*             _menu;
 };

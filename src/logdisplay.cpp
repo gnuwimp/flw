@@ -526,7 +526,7 @@ int LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("Style Help", _LOGDISPLAY_HELP, top_window(), false, 40, 30);
+                dlg::list("Style Help", _LOGDISPLAY_HELP, false, top_window(), 40, 30);
                 return 1;
             }
         }

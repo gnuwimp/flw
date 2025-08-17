@@ -22,7 +22,7 @@
 namespace gnu {
 namespace json {
 
-/***
+/*
  *                 _            _
  *                (_)          | |
  *      _ __  _ __ ___   ____ _| |_ ___
@@ -447,7 +447,7 @@ static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, s
 
 } // json
 
-/***
+/*
  *        _
  *       (_)
  *        _ ___  ___  _ __
@@ -1019,7 +1019,7 @@ std::string json::unescape(const char* string) {
     return res;
 }
 
-/***
+/*
  *           _  _____
  *          | |/ ____|
  *          | | (___
@@ -1564,7 +1564,7 @@ const json::JSArray json::JS::vo_to_va() const {
     return res;
 }
 
-/***
+/*
  *      ____        _ _     _
  *     |  _ \      (_) |   | |
  *     | |_) |_   _ _| | __| | ___ _ __

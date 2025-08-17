@@ -108,7 +108,7 @@ obj/json.o: src/json.cpp src/json.h
 obj/lcdnumber.o: src/lcdnumber.cpp src/lcdnumber.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/flw.h
+obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/dlg.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/plot.o: src/plot.cpp src/plot.h src/flw.h

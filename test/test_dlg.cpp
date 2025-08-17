@@ -44,7 +44,7 @@ void test_choice() {
 void test_date() {
     gnu::Date date = gnu::Date("31/12/1999");
 
-    if (dlg::date("dlg::date", date, nullptr)) {
+    if (dlg::date("dlg::date", date)) {
         printf("dlg::date=%s\n", date.format().c_str());
     }
     else {
@@ -148,8 +148,8 @@ void test_html() {
 //------------------------------------------------------------------------------
 void test_list() {
     dlg::list("dlg::list", HAMLET_LIST);
-    dlg::list("dlg::list - Fixed Font", HAMLET_LIST, nullptr, true);
-    dlg::list_file("dlg::list_file - File", "test/browser.txt", nullptr, true);
+    dlg::list("dlg::list - Fixed Font", HAMLET_LIST, true);
+    dlg::list_file("dlg::list_file - File", "test/browser.txt", true);
 }
 
 //------------------------------------------------------------------------------

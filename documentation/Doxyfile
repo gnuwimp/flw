@@ -945,6 +945,8 @@ WARN_LOGFILE           =
 
 #INPUT                  = 
 INPUT                  = \
+../src/datechooser.h \
+../src/datechooser.cpp \
 ../src/dlg.h \
 ../src/dlg.cpp \
 ../src/file.h \
@@ -955,6 +957,8 @@ INPUT                  = \
 ../src/json.cpp \
 ../src/gridgroup.h \
 ../src/gridgroup.cpp \
+../src/inputmenu.h \
+../src/inputmenu.cpp \
 ../src/recentmenu.h \
 ../src/recentmenu.cpp \
 ../src/tabsgroup.h \
