@@ -36,7 +36,7 @@ void test_check() {
 void test_choice() {
     StringVector v = {"Hello", "World", "How", "Are", "You?"};
 
-    printf("line %d was selected\n", dlg::select_choice("dlg::select_choice", v, 1));
+    printf("line %d was selected\n", dlg::select_choice("flw::dlg::select_choice", v, 1));
     fflush(stdout);
 }
 
@@ -44,8 +44,8 @@ void test_choice() {
 void test_date() {
     gnu::Date date = gnu::Date("31/12/1999");
 
-    if (dlg::date("dlg::date", date)) {
-        printf("dlg::date=%s\n", date.format().c_str());
+    if (dlg::date("flw::dlg::date", date)) {
+        printf("flw::dlg::date=%s\n", date.format().c_str());
     }
     else {
         printf("No date was selected\n");
@@ -57,9 +57,9 @@ void test_date() {
 //------------------------------------------------------------------------------
 void test_font() {
 #ifdef _WIN32
-    auto dlg = dlg::FontDialog("Candara", 15, "dlg::FontDialog");
+    auto dlg = dlg::FontDialog("Candara", 15, "flw::dlg::FontDialog");
 #else
-    auto dlg = dlg::FontDialog("Nimbus Sans", 15, "dlg::FontDialog");
+    auto dlg = dlg::FontDialog("Nimbus Sans", 15, "flw::dlg::FontDialog");
 #endif
 //            dlg.deactivate_font();
 //            dlg.deactivate_fontsize();
@@ -92,23 +92,23 @@ void test_font2() {
 //------------------------------------------------------------------------------
 void test_font_big() {
 #ifdef _WIN32
-    auto font = theme::load_font("Calibri italic");
+    auto font = theme::load_font("Calibri italic", FL_HELVETICA);
 #else
-    auto font = theme::load_font("Kinnari bold italic");
+    auto font = theme::load_font("Kinnari bold italic", FL_HELVETICA);
 #endif
 
-    if (font != -1) {
+    if (font != FL_HELVETICA) {
         flw::PREF_FONT     = font;
         flw::PREF_FONTSIZE = 20;
     }
 
 #ifdef _WIN32
-    font = theme::load_font("Lucida Console");
+    font = theme::load_font("Lucida Console", FL_COURIER);
 #else
-    font = theme::load_font("mono bold italic");
+    font = theme::load_font("mono bold italic", FL_COURIER);
 #endif
 
-    if (font != -1) {
+    if (font != FL_COURIER) {
         flw::PREF_FIXED_FONT     = font;
         flw::PREF_FIXED_FONTSIZE = 20;
     }
@@ -117,23 +117,23 @@ void test_font_big() {
 //------------------------------------------------------------------------------
 void test_font_small() {
 #ifdef _WIN32
-    auto font = theme::load_font("MS Serif bold");
+    auto font = theme::load_font("MS Serif bold", FL_HELVETICA);
 #else
-    auto font = theme::load_font("Kinnari bold italic");
+    auto font = theme::load_font("Kinnari bold italic", FL_HELVETICA);
 #endif
 
-    if (font != -1) {
+    if (font != FL_HELVETICA) {
         flw::PREF_FONT     = font;
         flw::PREF_FONTSIZE = 12;
     }
 
 #ifdef _WIN32
-    font = theme::load_font("Fira Code bold");
+    font = theme::load_font("Fira Code bold", FL_COURIER);
 #else
-    font = theme::load_font("mono bold italic");
+    font = theme::load_font("mono bold italic", FL_COURIER);
 #endif
 
-    if (font != -1) {
+    if (font != FL_COURIER) {
         flw::PREF_FIXED_FONT     = font;
         flw::PREF_FIXED_FONTSIZE = 12;
     }
@@ -142,14 +142,14 @@ void test_font_small() {
 //------------------------------------------------------------------------------
 void test_html() {
     auto html = "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text";
-    dlg::html("dlg::html", html);
+    dlg::html("flw::dlg::html", html);
 }
 
 //------------------------------------------------------------------------------
 void test_list() {
-    dlg::list("dlg::list", HAMLET_LIST);
-    dlg::list("dlg::list - Fixed Font", HAMLET_LIST, true);
-    dlg::list_file("dlg::list_file - File", "test/browser.txt", true);
+    dlg::list("flw::dlg::list", HAMLET_LIST);
+    dlg::list("flw::dlg::list - Fixed Font", HAMLET_LIST, true);
+    dlg::list_file("flw::dlg::list_file - File", "test/browser.txt", true);
 }
 
 //------------------------------------------------------------------------------
@@ -212,10 +212,10 @@ bool test_printd(void*, int pw, int ph, int page) {
 //------------------------------------------------------------------------------
 void test_print() {
     int b = 33;
-    dlg::print("dlg::print - Pages Between From And To", test_printa, nullptr, 5, 10);
-    dlg::print("dlg::print - Many Pages", test_printb, &b);
-    dlg::print("dlg::print - One Page", test_printc);
-    dlg::print("dlg::print - Stop On Page 6", test_printd, nullptr, 1, 11);
+    dlg::print("flw::dlg::print - Pages Between From And To", test_printa, nullptr, 5, 10);
+    dlg::print("flw::dlg::print - Many Pages", test_printb, &b);
+    dlg::print("flw::dlg::print - One Page", test_printc);
+    dlg::print("flw::dlg::print - Stop On Page 6", test_printd, nullptr, 1, 11);
 }
 
 //------------------------------------------------------------------------------
@@ -227,9 +227,9 @@ void test_print_text1() {
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "Print Long Lines", "Print Hamlet", "Print UTF8", "Print some test texts.\nSome fonts might have issues.");
 
-        if (r == 0) dlg::print_text("dlg::print_text", LONG_TEXT);
-        else if (r == 1) dlg::print_text("dlg::print_text", HAMLET_TEXT);
-        else if (r == 2) dlg::print_text("dlg::print_text", UTF8_TEXT);
+        if (r == 0) dlg::print_text("flw::dlg::print_text", LONG_TEXT);
+        else if (r == 1) dlg::print_text("flw::dlg::print_text", HAMLET_TEXT);
+        else if (r == 2) dlg::print_text("flw::dlg::print_text", UTF8_TEXT);
     #else
         std::string ps = "output.ps";
         auto p = false;
@@ -237,9 +237,9 @@ void test_print_text1() {
         dlg::center_message_dialog();
         r = fl_choice_n("Print to the default %s file.\nIt will be opened with system default program.\nThere are font issues if you use any other than the normal fltk fonts.\nAnd lot of the utf8 characters does not print well.", "Print Long Lines", "Print Hamlet", "Print UTF8", ps.c_str());
 
-        if (r == 0) p = dlg::print_text("dlg::print_text", LONG_TEXT);
-        else if (r == 1) p = dlg::print_text("dlg::print_text", HAMLET_TEXT);
-        else if (r == 2) p = dlg::print_text("dlg::print_text", UTF8_TEXT);
+        if (r == 0) p = dlg::print_text("flw::dlg::print_text", LONG_TEXT);
+        else if (r == 1) p = dlg::print_text("flw::dlg::print_text", HAMLET_TEXT);
+        else if (r == 2) p = dlg::print_text("flw::dlg::print_text", UTF8_TEXT);
 
         if (p == true && r >= 0 && gnu::file::File(ps).size() > 0) {
             auto f = system((std::string("evince ") + ps).c_str());
@@ -343,8 +343,8 @@ void test_print_text3() {
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
-        if (r == 0) dlg::print_text("dlg::print_text", b1.c_str());
-        else if (r == 1) dlg::print_text("dlg::print_text", b2.c_str());
+        if (r == 0) dlg::print_text("flw::dlg::print_text", b1.c_str());
+        else if (r == 1) dlg::print_text("flw::dlg::print_text", b2.c_str());
     #else
         std::string ps = "output.ps";
         auto p = false;
@@ -352,8 +352,8 @@ void test_print_text3() {
         dlg::center_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
-        if (r == 0) p = dlg::print_text("dlg::print_text", b1.c_str());
-        else if (r == 1) p = dlg::print_text("dlg::print_text", b2.c_str());
+        if (r == 0) p = dlg::print_text("flw::dlg::print_text", b1.c_str());
+        else if (r == 1) p = dlg::print_text("flw::dlg::print_text", b2.c_str());
 
         if (p == true && r >= 0 && gnu::file::File(ps).size() > 0) {
             auto f = system((std::string("evince ") + ps).c_str());
@@ -368,17 +368,17 @@ void test_pwd() {
     std::string password, file;
     bool ret;
 
-    ret = dlg::password("dlg::password", password);
-    printf("dlg::password = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
+    ret = dlg::password("flw::dlg::password", password);
+    printf("flw::dlg::password = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
 
-    ret = dlg::password_confirm("dlg::password_check", password);
-    printf("dlg::password_confirm = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
+    ret = dlg::password_confirm("flw::dlg::password_check", password);
+    printf("flw::dlg::password_confirm = %s, '%s'\n", ret ? "TRUE" : "FALSE", password.c_str());
 
-    ret = dlg::password_and_file("dlg::password_with_file", password, file);
-    printf("dlg::password_and_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
+    ret = dlg::password_and_file("flw::dlg::password_with_file", password, file);
+    printf("flw::dlg::password_and_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
 
-    ret = dlg::password_confirm_and_file("dlg::password_check_with_file", password, file);
-    printf("dlg::password_confirm_and_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
+    ret = dlg::password_confirm_and_file("flw::dlg::password_check_with_file", password, file);
+    printf("flw::dlg::password_confirm_and_file = %s, '%s', '%s'\n", ret ? "TRUE" : "FALSE", password.c_str(), file.c_str());
 
     fflush(stdout);
 }
@@ -393,37 +393,37 @@ void test_select_string() {
         v.push_back(std::string(c));
     }
 
-    printf("line %d was selected\n", (int) dlg::select_string("dlg::select_string", v, 66));
-    printf("line %d was selected\n", (int) dlg::select_string("dlg::select_string", v, "Hello World 00044"));
+    printf("line %d was selected\n", (int) dlg::select_string("flw::dlg::select_string", v, 66));
+    printf("line %d was selected\n", (int) dlg::select_string("flw::dlg::select_string", v, "Hello World 00044"));
     fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
 void test_slider() {
     auto v = 12345.0;
-    auto r = dlg::slider("dlg::slider", 1, 20'000, v, 0.1);
+    auto r = dlg::slider("flw::dlg::slider", 1, 20'000, v, 0.1);
     printf("ok=%d\nv=%f\n", r, v);
     fflush(stdout);
 
     v = 66;
-    r = dlg::slider("dlg::slider", 6, 666, v);
+    r = dlg::slider("flw::dlg::slider", 6, 666, v);
     printf("ok=%d\nv=%f\n", r, v);
 
     v = 10'000'000;
-    r = dlg::slider("dlg::slider", 0, 1'000'000'000, v, 1'000'000);
+    r = dlg::slider("flw::dlg::slider", 0, 1'000'000'000, v, 1'000'000);
     printf("ok=%d\nv=%f\n", r, v);
 
     v = 10'000'000;
-    r = dlg::slider("dlg::slider", 10'000'000, 10'000'001, v, 0.01);
+    r = dlg::slider("flw::dlg::slider", 10'000'000, 10'000'001, v, 0.01);
     printf("ok=%d\nv=%f\n", r, v);
 }
 
 //------------------------------------------------------------------------------
 void test_text() {
-    dlg::text("dlg::text", HAMLET_TEXT);
+    dlg::text("flw::dlg::text", HAMLET_TEXT);
 
     std::string t = HAMLET_TEXT;
-    printf("dlg::text_edit: %d\n", dlg::text_edit("dlg::text_edit", t, nullptr, 70, 50));
+    printf("flw::dlg::text_edit: %d\n", dlg::text_edit("flw::dlg::text_edit", t, nullptr, 70, 50));
     if (t != HAMLET_TEXT) printf("text changed!\n%s\n", t.c_str());
     else printf("text NOT changed!\n");
 }
@@ -435,7 +435,7 @@ void test_theme() {
 
 //------------------------------------------------------------------------------
 void test_wait() {
-    auto w = Fl_Double_Window(100, 100, 480, 240, "WaitCursor - Press Escape to quit");
+    auto w = Fl_Double_Window(100, 100, 480, 240, "flw::WaitCursor - Press Escape to quit");
     w.show();
     util::center_window(&w);
     WaitCursor wc1;
@@ -447,7 +447,7 @@ void test_wait() {
 //------------------------------------------------------------------------------
 void test_work() {
     {
-        auto work  = dlg::WorkDialog("dlg::WorkDialog with a single string message", true, true);
+        auto work  = dlg::WorkDialog("flw::dlg::WorkDialog with a single string message", true, true);
         auto start = util::clock();
         
         work.start();
@@ -464,7 +464,7 @@ void test_work() {
     }
 
     {
-        auto work = dlg::WorkDialog("dlg::WorkDialog with progress bar", true, true, 0.0, 0.0);
+        auto work = dlg::WorkDialog("flw::dlg::WorkDialog with progress bar", true, true, 0.0, 0.0);
         auto val  = 0.0;
 
         work.range(0.0, 100.0);

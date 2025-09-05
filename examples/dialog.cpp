@@ -76,10 +76,10 @@ void list_example() {
     // [flw::dlg::list example]
 
     flw::StringVector list = {"@LHello", "World", "How", "Are", "You?"};
-    
+
     // Use fixed font for the items and split input string on newline.
     flw::dlg::list("flw::dlg::list()", "@LHello\nWorld\nHow\nAre\nYou?\n", true);
-    
+
     // Use a vector of std::string objects.
     flw::dlg::list("flw::dlg::list()", list);
 
@@ -148,6 +148,38 @@ And by opposing end them? To die: to sleep;
     flw::dlg::print_text("flw::dlg::print_text()", TEXT);
 
     // [flw::dlg::print_text example]
+}
+
+//------------------------------------------------------------------------------
+void print_example3() {
+    // [flw::PrintText example]
+
+const std::string TEXT = R"(To be, or not to be: that is the question:
+Whether 'tis nobler in the mind to suffer
+The slings and arrows of outrageous fortune,
+Or to take arms against a sea of troubles,
+And by opposing end them? To die: to sleep;
+
+- William Shakespeare, Hamlet
+)";
+
+    // Create printer object.
+    flw::PrintText printer = flw::PrintText(
+        "text.ps",                                  // Output file.
+        Fl_Paged_Device::Page_Format::A4,           // A4 page format.
+        Fl_Paged_Device::Page_Layout::PORTRAIT,     // Portrait format.
+        FL_COURIER,                                 // Font to use.
+        14,                                         // Font size.
+        FL_ALIGN_LEFT,                              // Align text to the left.
+        false,                                      // Do not wrap text.
+        true,                                       // Print a border.
+        2                                           // Print line number with a width of 2.
+    );
+
+    // Now print to file.
+    printer.print(TEXT);
+
+    // [flw::PrintText example]
 }
 
 //------------------------------------------------------------------------------
@@ -302,6 +334,7 @@ int main() {
     password_example();
     print_example1();
     print_example2();
+    print_example3();
     select_checkboxes_example();
     select_choice_example();
     select_string_example();

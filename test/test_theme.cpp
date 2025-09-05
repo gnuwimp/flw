@@ -532,14 +532,14 @@ int main(int argc, const char** argv) {
     auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_theme");
     flw::theme::parse(argc, argv);
     flw::theme::load_icon(&win, 666, icon_xpm, "Test Theme");
-    flw::theme::load_theme_pref(pref);
-    flw::theme::load_win_pref(pref, &win, true);
+    flw::theme::load_theme_from_pref(pref);
+    flw::theme::load_win_from_pref(pref, "gui.", &win, true);
     win.create();
     win.update_pref();
     Fl::run();
     pref.clear();
-    flw::theme::save_theme_pref(pref);
-    flw::theme::save_win_pref(pref, &win);
+    flw::theme::save_theme_to_pref(pref);
+    flw::theme::save_win_to_pref(pref, "gui.", &win);
 
     return 0;
 }

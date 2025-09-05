@@ -1489,7 +1489,7 @@ bool Plot::load_csv() {
 
     auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
 
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
 
@@ -1511,7 +1511,7 @@ bool Plot::load_csv() {
 bool Plot::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
 
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
 
@@ -1675,7 +1675,7 @@ bool Plot::save_csv() {
 
     auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
 
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
 
@@ -1686,7 +1686,7 @@ bool Plot::save_csv() {
 bool Plot::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
 
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
 

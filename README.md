@@ -1,7 +1,7 @@
 # flw (fast light widgets)
 
-flw is an collection of widgets for the [FLTK](http://www.fltk.org) gui library.
-The flw library has been tested on Windows 10 using msys2 compiler tools and Xubuntu 24.04.
+flw is an collection of widgets for the [FLTK](http://www.fltk.org) version 1.4 GUI library.
+The flw library has been tested on Windows 10 using msys2 compiler tools and Kubuntu 25.04.
 Earlier versions have been compiled successfully on a Raspberry Pi 4.
 It might work on macOS with some tweaks.
 
@@ -14,8 +14,8 @@ None gui classes are in namespace gnu (Date, File, JS).
 
 Use the amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
 The source files in the src/ directory are intended for development of flw. 
-Although date.h, date.cpp, file.h, file.cpp json.h, json.cpp are completely independent of flw and FLTK 
-and can be used stand-alone.
+Although date.h, date.cpp, file.h, file.cpp json.h, json.cpp are completely 
+independent of flw and FLTK and can be used stand-alone.
 
 All files (except lcdnumber.h, lcdnumber.cpp) are released under the [GNU General Public License v3.0](LICENSE).
 

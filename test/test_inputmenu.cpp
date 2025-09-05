@@ -12,6 +12,7 @@
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Button.H>
+#include <FL/platform.H>
 
 using namespace flw;
 
@@ -109,6 +110,7 @@ int main(int argc, const char** argv) {
         flw::theme::load("oxy");
     }
 
+    fl_open_display();
     Test win(800, 400);
     win.show();
     return Fl::run();

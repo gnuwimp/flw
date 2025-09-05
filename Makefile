@@ -191,6 +191,9 @@ test_inputmenu.exe: obj/test_inputmenu.o $(OBJ)
 run_inputmenu: test_inputmenu.exe
 	./test_inputmenu.exe $(arg)
 
+debug_inputmenu: test_inputmenu.exe
+	gdb ./test_inputmenu.exe
+
 obj/test_lcdnumber.o: test/test_lcdnumber.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 

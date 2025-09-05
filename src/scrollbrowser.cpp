@@ -39,12 +39,12 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
 
     if (label == _SCROLLBROWSER_MENU_LINE) {
         if (self->value() != 0) {
-            clip = util::remove_browser_format(self->text(self->value()));
+            clip = util::remove_browser_format(util::to_string(self->text(self->value())));
         }
     }
     else if (label == _SCROLLBROWSER_MENU_ALL) {
         for (auto f = 1; f <= self->size(); f++) {
-            auto s = util::remove_browser_format(self->text(f));
+            auto s = util::remove_browser_format(util::to_string(self->text(f)));
             clip += s;
             clip += "\n";
         }

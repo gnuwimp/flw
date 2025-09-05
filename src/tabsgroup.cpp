@@ -90,7 +90,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     resizable(nullptr);
 
     _scroll    = new Fl_Scroll(X, Y, W, H);
-    _pack      = new Fl_Pack(X, Y, W, H);
+    _pack      = new Fl_Flex(X, Y, W, H);
     _active1   = -1;
     _active2   = -1;
     _n         = 0;
@@ -831,10 +831,10 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
     if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
         _align = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
         _scroll->type(Fl_Scroll::HORIZONTAL);
-        _pack->type(Fl_Pack::HORIZONTAL);
+        _pack->type(Fl_Flex::HORIZONTAL);
     }
     else {
-        _pack->type(Fl_Pack::VERTICAL);
+        _pack->type(Fl_Flex::VERTICAL);
         _scroll->type(Fl_Scroll::VERTICAL);
     }
 

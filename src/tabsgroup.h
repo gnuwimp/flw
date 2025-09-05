@@ -13,7 +13,7 @@
 
 // MKALGAM_ON
 
-#include <FL/Fl_Pack.H>
+#include <FL/Fl_Flex.H>
 #include <FL/Fl_Scroll.H>
 
 namespace flw {
@@ -119,7 +119,7 @@ private:
     void                        _resize_north_south(int X, int Y, int W, int H);
 
     Fl_Align                    _align;     // Align value for tab button labels.
-    Fl_Pack*                    _pack;      // Tab button container.
+    Fl_Flex*                    _pack;      // Tab button container.
     Fl_Rect                     _area;      // Area for tab buttons.
     Fl_Scroll*                  _scroll;    // Scroll container for the pack widget.
     TABS                        _tabs;      // Tab placement.

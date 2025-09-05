@@ -32,21 +32,23 @@
 namespace flw {
 
 namespace theme { // Duplicated from flw.cpp so it can compile.
-void _load_default();
-void _load_gleam();
-void _load_gleam_blue();
-void _load_gleam_dark();
-void _load_gleam_tan();
-void _load_gtk();
-void _load_gtk_blue();
-void _load_gtk_dark();
-void _load_gtk_tan();
-void _load_oxy();
-void _load_oxy_blue();
-void _load_oxy_tan();
-void _load_plastic();
-void _load_plastic_tan();
-void _scrollbar();
+
+/** @private */ void _load_default();
+/** @private */ void _load_gleam();
+/** @private */ void _load_gleam_blue();
+/** @private */ void _load_gleam_dark();
+/** @private */ void _load_gleam_tan();
+/** @private */ void _load_gtk();
+/** @private */ void _load_gtk_blue();
+/** @private */ void _load_gtk_dark();
+/** @private */ void _load_gtk_tan();
+/** @private */ void _load_oxy();
+/** @private */ void _load_oxy_blue();
+/** @private */ void _load_oxy_tan();
+/** @private */ void _load_plastic();
+/** @private */ void _load_plastic_tan();
+/** @private */ void _scrollbar();
+
 }
 
 namespace dlg {
@@ -2177,7 +2179,7 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use Scaling");
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use scaling");
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
         _run         = false;
@@ -2213,24 +2215,21 @@ public:
         _font_label->color(FL_BACKGROUND2_COLOR);
         _font_label->tooltip("Default font.");
         _scale->callback(Callback, this);
-        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.");
+        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nMight not work as expected in some desktop environments!");
         _scale->value(flw::PREF_SCALE_ON);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
 
-        for (size_t f = 0; f < 100; f++) {
-            auto t = flw::PREF_THEMES[f];
-
-            if (t != nullptr) {
-                _theme->add(t);
-            }
-            else {
-                break;
-            }
+        for (auto& name : flw::PREF_THEMES) {
+            _theme->add(name.c_str());
         }
 
-        if (flw::PREF_SCALE_VAL < 0.1) {
+        if (Fl::screen_scaling_supported() == 0) {
+            _scale->value(0);
+            _scale->deactivate();
+        }
+        else if (flw::PREF_SCALE_VAL < 0.1) {
             if (parent != nullptr) {
                 flw::PREF_SCALE_VAL = Fl::screen_scale(parent->screen_num());
             }
@@ -2442,6 +2441,7 @@ abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
 
 japanese: こんにちは世界
 korean: 안녕하세요 세계
+tibetan: ཨོཾ་མ་ཎི་པདྨེ་ཧཱུྃ
 greek: Γειά σου Κόσμε
 ukrainian: Привіт Світ
 thai: สวัสดีชาวโลก
@@ -2569,7 +2569,7 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
         if (row1 > 0 && row2 > 0) {
             row1--;
 
-            self->_fontname = util::remove_browser_format(flw::PREF_FONTNAMES[row1]);
+            self->_fontname = util::remove_browser_format(util::to_string(flw::PREF_FONTNAMES[row1]));
             self->_font     = row1;
             self->_fontsize = row2 + 5;
             self->_ret      = true;
@@ -2720,7 +2720,7 @@ void FontDialog::_select_name(const std::string& fontname) {
     auto count = 1;
 
     for (auto f : flw::PREF_FONTNAMES) {
-        auto font_without_style = util::remove_browser_format(f);
+        auto font_without_style = util::remove_browser_format(util::to_string(f));
 
         if (fontname == font_without_style) {
             _fonts->value(count);

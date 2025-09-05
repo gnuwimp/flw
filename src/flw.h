@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief Assorted utility stuff.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #ifndef FLW_H
 #define FLW_H
@@ -79,6 +84,11 @@
 
 namespace flw {
 
+typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
+typedef std::vector<void*>       VoidVector;                            ///< @brief Vector with void pointers
+typedef std::vector<Fl_Widget*>  WidgetVector;                          ///< @brief Vector with widget pointers.
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);    ///< @brief A drawing callback for printing to postscript.
+
 extern int                      PREF_FIXED_FONT;                        ///< @brief Fixed font - default FL_COURIER.
 extern std::string              PREF_FIXED_FONTNAME;                    ///< @brief Fixed font name - default "FL_COURIER".
 extern int                      PREF_FIXED_FONTSIZE;                    ///< @brief Fixed font size - default 14.
@@ -89,14 +99,10 @@ extern std::vector<char*>       PREF_FONTNAMES;                         ///< @br
 extern double                   PREF_SCALE_VAL;                         ///< @brief Scale value.
 extern bool                     PREF_SCALE_ON;                          ///< @brief Scale on or off.
 extern std::string              PREF_THEME;                             ///< @brief Name of theme - default "default".
-extern const char* const        PREF_THEMES[];                          ///< @brief Name of themes.
+extern const StringVector       PREF_THEMES;                            ///< @brief Name of themes.
 
-typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
-typedef std::vector<void*>       VoidVector;                            ///< @brief Vector with void pointers
-typedef std::vector<Fl_Widget*>  WidgetVector;                          ///< @brief Vector with widget pointers.
-typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);    ///< @brief A drawing callback for printing to postscript.
-
-//------------------------------------------------------------------------------
+/** @brief Debug functions.
+*/
 namespace debug {
     void                        print(const Fl_Widget* widget, bool recursive = true);
     void                        print(const Fl_Widget* widget, std::string& indent, bool recursive = true);
@@ -106,9 +112,8 @@ namespace debug {
     bool                        test(double ref, double val, double diff, int line, const char* func);
 }
 
-//------------------------------------------------------------------------------
-// Menu item functions
-//
+/** @brief Menu item functions.
+*/
 namespace menu {
     void                        enable_item(Fl_Menu_* menu, const char* text, bool value);
     Fl_Menu_Item*               get_item(Fl_Menu_* menu, const char* text);
@@ -118,58 +123,56 @@ namespace menu {
     void                        setonly_item(Fl_Menu_* menu, const char* text);
 }
 
-//------------------------------------------------------------------------------
-// Assorted utility functions
-//
+/** @brief Utility functions.
+*/
 namespace util {
     void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
     double                      clock();
     int                         count_decimals(double number);
-    Fl_Widget*                  find_widget(Fl_Group* group, std::string label);
-    std::string                 fix_menu_string(std::string in);
-    std::string                 format(const char* format, ...);
+    Fl_Widget*                  find_widget(Fl_Group* group, const std::string& label);
+    std::string                 fix_menu_string(const std::string& label);
+    std::string                 format(const std::string& format, ...);
     std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
-    bool                        is_whitespace_or_empty(const char* str);
-    void                        labelfont(Fl_Widget* widget, Fl_Font fn = flw::PREF_FONT, int fs = flw::PREF_FONTSIZE);
+    bool                        is_empty(const std::string& string);
+    void                        labelfont(Fl_Widget* widget, Fl_Font font = flw::PREF_FONT, int size = flw::PREF_FONTSIZE);
     int64_t                     microseconds();
     int32_t                     milliseconds();
-    bool                        png_save(std::string opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
-    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
-    std::string                 print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
-    std::string                 remove_browser_format(const char* text);
-    std::string&                replace_string(std::string& string, std::string find, std::string replace);
-    void                        sleep(int milli);
-    StringVector                split_string(const std::string& string, std::string split);
-    std::string                 substr(std::string in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+    bool                        png_save(const std::string& opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    std::string                 print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
+    std::string                 print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
+    std::string                 remove_browser_format(const std::string& text);
+    std::string&                replace_string(std::string& string, const std::string& find, const std::string& replace);
+    void                        sleep(unsigned milli);
+    StringVector                split_string(const std::string& string, const std::string& split);
+    std::string                 substr(const std::string& string, std::string::size_type pos, std::string::size_type size = std::string::npos);
     void                        swap_rect(Fl_Widget* w1, Fl_Widget* w2);
-    double                      to_double(std::string s, double def = INFINITY);
-    long long                   to_long(std::string s, long long def = 0);
+    double                      to_double(const std::string& string, double def = INFINITY);
+    long long                   to_long(const std::string& string, long long def = 0);
     static inline std::string   to_string(const char* text)
                                     { return text != nullptr ? text : ""; }
     void*                       zero_memory(char* mem, size_t size);
 }
 
-//------------------------------------------------------------------------------
-// Load different themes and save/load window preferences
-//
+/** @brief Load different themes and save/load window preferences.
+*/
 namespace theme {
     bool                        is_dark();
     bool                        load(const std::string& name);
-    int                         load_font(const std::string& requested_font);
+    Fl_Font                     load_font(const std::string& requested_font, Fl_Font def);
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
-    void                        load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, const std::string& basename);
-    void                        load_theme_pref(Fl_Preferences& pref);
-    double                      load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show = true, int defw = 800, int defh = 600, const std::string& basename = "gui.");
+    Fl_Rect                     load_rect_from_pref(Fl_Preferences& pref, const std::string& basename);
+    void                        load_theme_from_pref(Fl_Preferences& pref);
+    double                      load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show = true, int defw = 800, int defh = 600);
     bool                        parse(int argc, const char** argv);
-    void                        save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, const std::string& basename);
-    void                        save_theme_pref(Fl_Preferences& pref);
-    void                        save_win_pref(Fl_Preferences& pref, Fl_Window* window, const std::string& basename = "gui.");
+    void                        save_rect_to_pref(Fl_Preferences& pref, const std::string& basename, const Fl_Rect& rect);
+    void                        save_theme_to_pref(Fl_Preferences& pref);
+    void                        save_win_to_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window);
 
-    //--------------------------------------------------------------------------
-    // Internal usage only
-    //
+    /** @brief Theme values, internal usage only.
+    * @private
+    */
     enum {
                                 THEME_DEFAULT,
                                 THEME_GLEAM,
@@ -188,9 +191,26 @@ namespace theme {
     };
 }
 
-//------------------------------------------------------------------------------
-// Drawing colors
-//
+/** @brief Color values.
+    Fl_Color BEIGE\n
+    Fl_Color CHOCOLATE\n
+    Fl_Color CRIMSON\n
+    Fl_Color DARKOLIVEGREEN\n
+    Fl_Color DODGERBLUE\n
+    Fl_Color FORESTGREEN\n
+    Fl_Color GOLD\n
+    Fl_Color GRAY\n
+    Fl_Color INDIGO\n
+    Fl_Color OLIVE\n
+    Fl_Color PINK\n
+    Fl_Color ROYALBLUE\n
+    Fl_Color SIENNA\n
+    Fl_Color SILVER\n
+    Fl_Color SLATEGRAY\n
+    Fl_Color TEAL\n
+    Fl_Color TURQUOISE\n
+    Fl_Color VIOLET\n
+*/
 namespace color {
     extern Fl_Color             BEIGE;
     extern Fl_Color             CHOCOLATE;
@@ -212,7 +232,7 @@ namespace color {
     extern Fl_Color             VIOLET;
 }
 
-/***
+/*
  *      _____      _       _ _______        _
  *     |  __ \    (_)     | |__   __|      | |
  *     | |__) | __ _ _ __ | |_ | | _____  _| |_
@@ -223,12 +243,14 @@ namespace color {
  *
  */
 
-//------------------------------------------------------------------------------
-// Line numbers are only used with FL_ALIGN_LEFT.
-//
+/** @brief Printing text to postscript file.
+*
+* @snippet dialog.cpp flw::PrintText example
+* @image html print_text.png
+*/
 class PrintText {
 public:
-                                PrintText(std::string filename,
+                                PrintText(const std::string& filename,
                                     Fl_Paged_Device::Page_Format format = Fl_Paged_Device::Page_Format::A4,
                                     Fl_Paged_Device::Page_Layout layout = Fl_Paged_Device::Page_Layout::PORTRAIT,
                                     Fl_Font font = FL_COURIER,
@@ -240,41 +262,41 @@ public:
                                 ~PrintText();
 
     Fl_Fontsize                 fontsize() const
-                                    { return _fontsize; }
+                                    { return _fontsize; } ///< @brief Return font size
     int                         page_count() const
-                                    { return _page_count; }
+                                    { return _page_count; } ///< @brief Return page count.
     std::string                 print(const char* text, unsigned replace_tab_with_space = 0);
     std::string                 print(const std::string& text, unsigned replace_tab_with_space = 0);
     std::string                 print(const StringVector& lines, unsigned replace_tab_with_space = 0);
 
 private:
-    void                        check_for_new_page();
-    void                        measure_lw_lh(const std::string& text);
-    void                        print_line(const std::string& line);
-    void                        print_wrapped_line(const std::string& line);
-    std::string                 start();
-    std::string                 stop();
+    void                        _check_for_new_page();
+    void                        _measure_lw_lh(const std::string& text);
+    void                        _print_line(const std::string& line);
+    void                        _print_wrapped_line(const std::string& line);
+    std::string                 _start();
+    std::string                 _stop();
 
-    Fl_Align                    _align;
-    Fl_Font                     _font;
-    Fl_Fontsize                 _fontsize;
-    Fl_PostScript_File_Device*  _printer;
-    Fl_Paged_Device::Page_Format _page_format;
-    Fl_Paged_Device::Page_Layout _page_layout;
-    FILE*                       _file;
-    bool                        _border;
-    bool                        _wrap;
-    int                         _lh;
-    int                         _line_count;
-    int                         _line_num;
-    int                         _lw;
-    int                         _nw;
-    int                         _page_count;
-    int                         _ph;
-    int                         _pw;
-    int                         _px;
-    int                         _py;
-    std::string                 _filename;
+    Fl_Align                    _align;             // Text align.
+    Fl_Font                     _font;              // Text font.
+    Fl_Fontsize                 _fontsize;          // Text size.
+    Fl_PostScript_File_Device*  _printer;           // Printer device.
+    Fl_Paged_Device::Page_Format _page_format;      // Page format.
+    Fl_Paged_Device::Page_Layout _page_layout;      // Page layout.
+    FILE*                       _file;              // Postscript file handle.
+    bool                        _border;            // Border property.
+    bool                        _wrap;              // Wrap property.
+    int                         _lh;                // Current line height.
+    int                         _line_count;        // Line counter.
+    int                         _line_num;          // Line number width.
+    int                         _lw;                // Current line width.
+    int                         _nw;                // Line width if line number is used.
+    int                         _page_count;        // Page counter.
+    int                         _ph;                // Page height.
+    int                         _pw;                // Page width.
+    int                         _px;                // Page x pos.
+    int                         _py;                // Page y pos.
+    std::string                 _filename;          // Postscript filename.
 };
 
 } // flw

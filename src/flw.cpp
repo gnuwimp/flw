@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief Assorted utility stuff.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "flw.h"
 #include "waitcursor.h"
@@ -30,7 +35,7 @@
     #include <FL/fl_draw.H>
 #endif
 
-/***
+/*
  *       __ _
  *      / _| |
  *     | |_| |_      __
@@ -53,42 +58,60 @@ std::string                 PREF_FONTNAME           = "FL_HELVETICA";
 double                      PREF_SCALE_VAL          = 0.0;
 bool                        PREF_SCALE_ON           = true;
 std::string                 PREF_THEME              = "default";
-const char* const           PREF_THEMES[]           = {
-                                "default",
-                                "gleam",
-                                "blue gleam",
-                                "dark gleam",
-                                "tan gleam",
-                                "gtk",
-                                "blue gtk",
-                                "dark gtk",
-                                "tan gtk",
-                                "oxy",
-                                "tan oxy",
-                                "plastic",
-                                "tan plastic",
-                                nullptr,
+
+const StringVector PREF_THEMES = {
+    "default",
+    "gleam",
+    "blue gleam",
+    "dark gleam",
+    "tan gleam",
+    "gtk",
+    "blue gtk",
+    "dark gtk",
+    "tan gtk",
+    "oxy",
+    "tan oxy",
+    "plastic",
+    "tan plastic",
 };
 
-const char* const           PREF_THEMES2[]           = {
-                                "default",
-                                "gleam",
-                                "blue_gleam",
-                                "dark_gleam",
-                                "tan_gleam",
-                                "gtk",
-                                "blue_gtk",
-                                "dark_gtk",
-                                "tan_gtk",
-                                "oxy",
-                                "tan_oxy",
-                                "plastic",
-                                "tan_plastic",
-                                nullptr,
+const StringVector PREF_THEMES2 = {
+    "default",
+    "gleam",
+    "blue_gleam",
+    "dark_gleam",
+    "tan_gleam",
+    "gtk",
+    "blue_gtk",
+    "dark_gtk",
+    "tan_gtk",
+    "oxy",
+    "tan_oxy",
+    "plastic",
+    "tan_plastic",
 };
 
-//------------------------------------------------------------------------------
-static std::string _flw_print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+/** @brief Print to postscript file.
+*
+* @param[in] ps_filename  Filename.
+* @param[in] format       Page format.
+* @param[in] layout       Layout.
+* @param[in] cb           User callback that draws stuff.
+* @param[in] data         User data.
+* @param[in] from         From page.
+* @param[in] to           To Page.
+*
+* @return Error string or empty string.
+*/
+static std::string _flw_print(
+    const std::string& ps_filename,
+    Fl_Paged_Device::Page_Format format,
+    Fl_Paged_Device::Page_Layout layout,
+    PrintCallback cb,
+    void* data,
+    int from,
+    int to) {
+
     bool                      cont = true;
     FILE*                     file = nullptr;
     Fl_PostScript_File_Device printer;
@@ -137,7 +160,7 @@ ERR:
     return res;
 }
 
-/***
+/*
  *          _      _
  *         | |    | |
  *       __| | ___| |__  _   _  __ _
@@ -148,13 +171,24 @@ ERR:
  *                             |___/
  */
 
-//------------------------------------------------------------------------------
+/** @brief Print widget sizes and labels.
+*
+* @param[in] widget     Valid widget.
+* @param[in] recursive  True to print recursive if input widget is a group widget.
+*
+*/
 void debug::print(const Fl_Widget* widget, bool recursive) {
     std::string indent;
     debug::print(widget, indent, recursive);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Print widget sizes and labels.
+*
+* @param[in] widget     Widget pointer, can be NULL.
+* @param[in] indent     Indentation string.
+* @param[in] recursive  True to print recursive if input widget is a group widget.
+*
+*/
 void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) {
     if (widget == nullptr) {
         puts("flw::debug::print() => null widget");
@@ -177,7 +211,14 @@ void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) 
     fflush(stdout);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Test value and print to stderr for error.
+*
+* @param[in] val   Test that value is true.
+* @param[in] line  Line number.
+* @param[in] func  Function name.
+*
+* @return Return true if ok.
+*/
 bool debug::test(bool val, int line, const char* func) {
     if (val == false) {
         fprintf(stderr, "error: test failed at line %d in %s\n", line, func);
@@ -188,7 +229,15 @@ bool debug::test(bool val, int line, const char* func) {
     return true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Test value and print to stderr for error.
+*
+* @param[in] ref   Reference string, can be NULL.
+* @param[in] val   Test string, can be NULL.
+* @param[in] line  Line number.
+* @param[in] func  Function name.
+*
+* @return Return true if ok.
+*/
 bool debug::test(const char* ref, const char* val, int line, const char* func) {
     if (ref == nullptr && val == nullptr) {
         return true;
@@ -202,7 +251,15 @@ bool debug::test(const char* ref, const char* val, int line, const char* func) {
     return true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Test value and print to stderr for error.
+*
+* @param[in] ref   Reference number.
+* @param[in] val   Test number.
+* @param[in] line  Line number.
+* @param[in] func  Function name.
+*
+* @return Return true if ok.
+*/
 bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
     if (ref != val) {
         fprintf(stderr, "error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
@@ -213,7 +270,16 @@ bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
     return true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Test value and print to stderr for error.
+*
+* @param[in] ref   Reference number.
+* @param[in] val   Test number.
+* @param[in] diff  Number range to compare as equal.
+* @param[in] line  Line number.
+* @param[in] func  Function name.
+*
+* @return Return true if ok.
+*/
 bool debug::test(double ref, double val, double diff, int line, const char* func) {
     if (fabs(ref - val) > diff) {
         fprintf(stderr, "error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
@@ -224,7 +290,7 @@ bool debug::test(double ref, double val, double diff, int line, const char* func
     return true;
 }
 
-/***
+/*
  *
  *
  *      _ __ ___   ___ _ __  _   _
@@ -237,7 +303,16 @@ bool debug::test(double ref, double val, double diff, int line, const char* func
 
 namespace menu {
 
-//----------------------------------------------------------------------
+/** @brief Find menu item.
+*
+* Either by searching for label or data.
+*
+* @param[in] menu  Menu item owner.
+* @param[in] text  Menu item label.
+* @param[in] v     Menu item data.
+*
+* @return Menu item or NULL.
+*/
 static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
     const Fl_Menu_Item* item;
 
@@ -256,47 +331,105 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) 
 
 } // menu
 
-//----------------------------------------------------------------------
+/** @brief Enable or disable menu item.
+*
+* Either by searching for label or data.
+*
+* @param[in] menu   Menu item owner.
+* @param[in] text   Menu item label.
+* @param[in] value  On or off.
+*/
 void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
     auto item = _item(menu, text);
-    if (item == nullptr) return;
-    if (value == true) item->activate();
-    else item->deactivate();
+
+    if (item == nullptr) {
+        return;
+    }
+
+    if (value == true) {
+        item->activate();
+    }
+    else {
+        item->deactivate();
+    }
 }
 
-//----------------------------------------------------------------------
+/** @brief Get menu item.
+*
+* @param[in] menu  Menu item owner.
+* @param[in] text  Menu item label.
+*
+* @return Item or NULL.
+*/
 Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, const char* text) {
     return _item(menu, text);
 }
 
-//----------------------------------------------------------------------
+/** @brief Get menu item.
+*
+* @param[in] menu  Menu item owner.
+* @param[in] v     Menu item data.
+*
+* @return Item or NULL.
+*/
 Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, void* v) {
     return _item(menu, nullptr, v);
 }
 
-//----------------------------------------------------------------------
+/** @brief Get checked menu value.
+*
+* @param[in] menu  Menu item owner.
+* @param[in] text  Menu item label.
+*
+* @return True or false.
+*/
 bool menu::item_value(Fl_Menu_* menu, const char* text) {
     auto item = _item(menu, text);
-    if (item == nullptr) return false;
+
+    if (item == nullptr) {
+        return false;
+    }
+
     return item->value();
 }
 
-//----------------------------------------------------------------------
+/** @brief Set checked menu value.
+*
+* @param[in] menu   Menu item owner.
+* @param[in] text   Menu item label.
+* @param[in] value  On or off.
+*/
 void menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
     auto item = _item(menu, text);
-    if (item == nullptr) return;
-    if (value == true) item->set();
-    else item->clear();
+
+    if (item == nullptr) {
+        return;
+    }
+
+    if (value == true) {
+        item->set();
+    }
+    else {
+        item->clear();
+    }
 }
 
-//----------------------------------------------------------------------
+/** @brief Turn on item for one and of for all other in a group.
+*
+* @param[in] menu   Menu item owner.
+* @param[in] text   Menu item label.
+*/
 void menu::setonly_item(Fl_Menu_* menu, const char* text) {
     auto item = _item(menu, text);
-    if (item == nullptr) return;
+
+    if (item == nullptr) {
+        return;
+    }
+
     menu->setonly(item);
 }
 
-/***
+/*
  *            _   _ _
  *           | | (_) |
  *      _   _| |_ _| |
@@ -307,11 +440,16 @@ void menu::setonly_item(Fl_Menu_* menu, const char* text) {
  *
  */
 
-//------------------------------------------------------------------------------
+/** @brief Center window on screen or parent.
+*
+* @param[in] window  Valid window.
+* @param[in] parent  Valid parent or NULL.
+*/
 void util::center_window(Fl_Window* window, Fl_Window* parent) {
     if (parent != nullptr) {
         int x = parent->x() + parent->w() / 2;
         int y = parent->y() + parent->h() / 2;
+
         window->resize(x - window->w() / 2, y - window->h() / 2, window->w(), window->h());
     }
     else {
@@ -319,8 +457,10 @@ void util::center_window(Fl_Window* window, Fl_Window* parent) {
     }
 }
 
-//------------------------------------------------------------------------------
-// Return time as seconds since 1970
+/** @brief Return time as seconds since 1970.
+*
+* @return Seconds as a double number.
+*/
 //
 double util::clock() {
 #ifdef _WIN32
@@ -334,7 +474,12 @@ double util::clock() {
 #endif
 }
 
-//------------------------------------------------------------------------------
+/** @brief Try to count decimals in a number
+*
+* @param[in] num  Number value.
+*
+* @return 0 - 8?.
+*/
 int util::count_decimals(double num) {
     num = fabs(num);
 
@@ -382,11 +527,21 @@ int util::count_decimals(double num) {
     }
 
     res = strlen(buffer) - 2;
+
     return res;
 }
 
-//------------------------------------------------------------------------------
-Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
+/** @brief Find widget by using the label.
+*
+* Widgets are searched recursive.\n
+* First found widget label is returned.\n
+*
+* @param[in] group  Group widget.
+* @param[in] label  Child label.
+*
+* @return Widget or NULL.
+*/
+Fl_Widget* util::find_widget(Fl_Group* group, const std::string& label) {
     for (int f = 0; f < group->children(); f++) {
         auto w = group->child(f);
 
@@ -411,9 +566,14 @@ Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
     return nullptr;
 }
 
-//------------------------------------------------------------------------------
-std::string util::fix_menu_string(std::string in) {
-    std::string res = in;
+/** @brief Escape '\', '_', '/', '&' characters.
+*
+* @param[in] label  Input label.
+*
+* @return Escaped input string.
+*/
+std::string util::fix_menu_string(const std::string& label) {
+    std::string res = label;
 
     util::replace_string(res, "\\", "\\\\");
     util::replace_string(res, "_", "\\_");
@@ -423,9 +583,17 @@ std::string util::fix_menu_string(std::string in) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-std::string util::format(const char* format, ...) {
-    if (format == nullptr || *format == 0) return "";
+/** @brief Format a string.
+*
+* @param[in] format  Valid format string, see sprintf() for formatting values.
+* @param[in] ...     Additional arguments.
+*
+* @return Formatted string or empty for any error.
+*/
+std::string util::format(const std::string& format, ...) {
+    if (format == "") {
+        return "";
+    }
 
     int         l   = 128;
     int         n   = 0;
@@ -434,17 +602,19 @@ std::string util::format(const char* format, ...) {
     va_list     args;
 
     va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
+    n = vsnprintf(buf, l, format.c_str(), args);
     va_end(args);
 
     if (n < 0) {
         free(buf);
+
         return res;
     }
 
     if (n < l) {
         res = buf;
         free(buf);
+
         return res;
     }
 
@@ -454,14 +624,24 @@ std::string util::format(const char* format, ...) {
     if (buf == nullptr) return res;
 
     va_start(args, format);
-    vsnprintf(buf, l, format, args);
+    vsnprintf(buf, l, format.c_str(), args);
     va_end(args);
     res = buf;
     free(buf);
+
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Format a decimal number by inserting a thousand delimiter.
+*
+* Only none decimal numbers are separated.
+*
+* @param[in] num       Number to format.
+* @param[in] decimals  Number of decimals, use -1 to try to count decimals.
+* @param[in] del       Thousand separator, default space.
+*
+* @return Formatted number string.
+*/
 std::string util::format_double(double num, int decimals, char del) {
     if (num > 9'007'199'254'740'992.0) {
         return "";
@@ -496,7 +676,13 @@ std::string util::format_double(double num, int decimals, char del) {
     return res;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Format an integer by inserting a thousand delimiter.
+*
+* @param[in] num       Integer to format.
+* @param[in] del       Thousand separator, default space.
+*
+* @return Formatted number string.
+*/
 std::string util::format_int(int64_t num, char del) {
     auto pos = 0;
     char tmp1[32];
@@ -524,39 +710,72 @@ std::string util::format_int(int64_t num, char del) {
     return r;
 }
 
-//------------------------------------------------------------------------------
-bool util::is_whitespace_or_empty(const char* str) {
-    while (*str != 0) {
-        if (*str != 9 && *str != 32) {
-            return false;
-        }
+/** @brief Check if string contains any letter but not control character.
+*
+* If the string contains at least one control character (1 - 31) it will always return true.\n
+* If the string is empty or only whitespaces it will return true.\n
+* If the string has whitespaces but at least one letter it will return false.\n
+*
+* @param[in] string  Input string.
+*
+* @return True for valid string.
+*/
+bool util::is_empty(const std::string& string) {
+    bool ctrl   = false;
+    bool space  = false;
+    bool letter = false;
 
-        str++;
+    for (auto c : string) {
+        if (c > 0 && c < 32) {
+            ctrl = true;
+        }
+        else if (c == 32) {
+            space = true;
+        }
+        else if (c < 0 || c > 32) {
+            letter = true;
+        }
     }
 
-    return true;
+    if (ctrl == true) {
+        return true;
+    }
+    else if (space == true && letter == false) {
+        return true;
+    }
+    else if (letter == true) {
+        return false;
+    }
+    else {
+        return true;
+    }
 }
 
-//------------------------------------------------------------------------------
-// Set label font properties for widget
-// If widget is an group widget set also the font for child widgets (recursive)
-//
-void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
-    widget->labelfont(fn);
-    widget->labelsize(fs);
+/** @brief Set label font properties for a widget.
+*
+* If it is an group widget it will set properties for all child widgets also (recursive).
+*
+* @param[in] widget  Valid widget.
+* @param[in] font    Font to use.
+* @param[in] size    Font size.
+*/
+void util::labelfont(Fl_Widget* widget, Fl_Font font, int size) {
+    widget->labelfont(font);
+    widget->labelsize(size);
 
     auto group = widget->as_group();
 
     if (group != nullptr) {
         for (auto f = 0; f < group->children(); f++) {
-            util::labelfont(group->child(f), fn, fs);
+            util::labelfont(group->child(f), font, size);
         }
     }
 }
 
-//------------------------------------------------------------------------------
-// Return time stamp.
-//
+/** @brief Return time stamp.
+*
+* @return Time in microseconds.
+*/
 int64_t util::microseconds() {
 #if defined(_WIN32)
     LARGE_INTEGER StartingTime;
@@ -575,9 +794,10 @@ int64_t util::microseconds() {
 #endif
 }
 
-//------------------------------------------------------------------------------
-// Return time stamp.
-//
+/** @brief Return time stamp.
+*
+* @return Time in milliseconds.
+*/
 int32_t util::milliseconds() {
 #if defined(_WIN32)
     LARGE_INTEGER StartingTime;
@@ -596,11 +816,23 @@ int32_t util::milliseconds() {
 #endif
 }
 
-//------------------------------------------------------------------------------
-// Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images)
-// If filename is empty you will be asked for the name
-//
-bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+/** @brief
+*
+* Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images).\n
+* If filename is empty, user will be asked for the name.\n
+* If coordinates are 0 it will use all widget.\n
+* Might look fuzzy if FLTK scaling is turned on.\
+*
+* @param[in] opt_name  Optional filename.
+* @param[in] window    Window to save.
+* @param[in] X         X pos in window.
+* @param[in] Y         X pos in window.
+* @param[in] W         Window width.
+* @param[in] H         Window height.
+*
+* @return True if an image has been saved.
+*/
+bool util::png_save(const std::string& opt_name, Fl_Window* window, int X, int Y, int W, int H) {
     auto res = false;
 
 #ifdef FLW_USE_PNG
@@ -618,7 +850,6 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
 
         auto image = fl_read_image(nullptr, X, Y, W, H);
 
-
         if (image != nullptr) {
             auto ret = fl_write_png(filename, image, W, H);
 
@@ -626,16 +857,16 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
                 res = true;
             }
             else if (ret == -1) {
-                fl_alert("%s", "error: missing libraries");
+                fl_alert("%s", "error: missing libraries!");
             }
             else if (ret == -2) {
-                fl_alert("error: failed to save image to %s", filename);
+                fl_alert("error: failed to save image to %s!", filename);
             }
 
             delete []image;
         }
         else {
-            fl_alert("%s", "error: failed to grab image");
+            fl_alert("%s", "error: failed to grab image!");
         }
     }
 #else
@@ -651,17 +882,37 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
     return res;
 }
 
-//------------------------------------------------------------------------------
-// Callback must return false to abort printing.
-//
-std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
+/** @brief Print user drawing to postscript file.
+*
+* Callback must return false to abort printing.
+*
+* @param[in] ps_filename  Filename.
+* @param[in] format       Page format.
+* @param[in] layout       Layout.
+* @param[in] cb           User callback that draws stuff.
+* @param[in] data         User data.
+*
+* @return Error string or empty string.
+*/
+std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
     return flw::_flw_print(ps_filename, format, layout, cb, data, 0, 0);
 }
 
-//------------------------------------------------------------------------------
-// All pages between from and to will be printed but if callback returns false it will be stopped.
-//
-std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+/** @brief Print user drawing to postscript file.
+*
+* All pages between from and to will be printed but if callback returns false it will be stopped.
+*
+* @param[in] ps_filename  Filename.
+* @param[in] format       Page format.
+* @param[in] layout       Layout.
+* @param[in] cb           User callback that draws stuff.
+* @param[in] data         User data.
+* @param[in] from         From page.
+* @param[in] to           To Page.
+*
+* @return Error string or empty string.
+*/
+std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     if (from < 1 || from > to) {
         return "error: invalid from/to range";
     }
@@ -669,46 +920,66 @@ std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format fo
     return flw::_flw_print(ps_filename, format, layout, cb, data, from, to);
 }
 
-//------------------------------------------------------------------------------
-std::string util::remove_browser_format(const char* text) {
-    auto res = std::string((text != nullptr) ? text : "");
+/** @brief Remove formatting from a browser text line.
+*
+* Read Fl_Browser::format_char() for browser formatting.\n
+* Returns an empty string if exception has been thrown.\n
+*
+* @param[in] text  Input text.
+*
+* @return String without control characters.
+*/
+std::string util::remove_browser_format(const std::string& text) {
+    auto res = text;
     auto f   = res.find_last_of("@");
 
     if (f != std::string::npos) {
-        auto tmp = res.substr(f + 1);
+        try {
+            auto tmp = res.substr(f + 1);
 
-        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
-            res = tmp.substr(1);
-        }
-        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
-            auto s = std::string();
-            auto e = false;
-
-            tmp = tmp.substr(f + 1);
-
-            for (auto c : tmp) {
-                if (e == false && c >= '0' && c <= '9') {
-                }
-                else {
-                    e = true;
-                    s += c;
-                }
+            if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
+                res = tmp.substr(1);
             }
+            else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
+                auto s = std::string();
+                auto e = false;
 
-            res = s;
+                tmp = tmp.substr(f + 1);
+
+                for (auto c : tmp) {
+                    if (e == false && c >= '0' && c <= '9') {
+                    }
+                    else {
+                        e = true;
+                        s += c;
+                    }
+                }
+
+                res = s;
+            }
+            else {
+                res = res.substr(f);
+            }
         }
-        else {
-            res = res.substr(f);
+        catch (...) {
+            res = "";
         }
     }
 
     return res;
 }
 
-//------------------------------------------------------------------------------
-// Replace string and return number of replacements or -1 for error
-//
-std::string& util::replace_string(std::string& string, std::string find, std::string replace) {
+/** @brief Replace all found strings in input string.
+*
+* Returns an empty string if exception has been thrown.
+*
+* @param[in,out] string   Input string.
+* @param[in]     find     Find string.
+* @param[in]     replace  Replace string.
+*
+* @return Input string or empty for error.
+*/
+std::string& util::replace_string(std::string& string, const std::string& find, const std::string& replace) {
     if (find == "") {
         return string;
     }
@@ -729,16 +1000,19 @@ std::string& util::replace_string(std::string& string, std::string find, std::st
 
         res += string.substr(start);
         string.swap(res);
-        return string;
     }
     catch(...) {
         string = "";
-        return string;
     }
+
+    return string;
 }
 
-//------------------------------------------------------------------------------
-void util::sleep(int milli) {
+/** @brief Sleep for a while.
+*
+* @param[in] milli  Number of milliseconds.
+*/
+void util::sleep(unsigned milli) {
 #ifdef _WIN32
     Sleep(milli);
 #else
@@ -746,11 +1020,14 @@ void util::sleep(int milli) {
 #endif
 }
 
-
-//------------------------------------------------------------------------------
-// Split string and return an vector with splitted strings
-//
-flw::StringVector util::split_string(const std::string& string, std::string split) {
+/** @brief Split a string and return an vector with strings.
+*
+* @param[in] string  Input string.
+* @param[in] split   Split input string on this string.
+*
+* @return Result vector, empty for error.
+*/
+flw::StringVector util::split_string(const std::string& string, const std::string& split) {
     auto res = StringVector();
 
     try {
@@ -776,10 +1053,19 @@ flw::StringVector util::split_string(const std::string& string, std::string spli
     return res;
 }
 
-//------------------------------------------------------------------------------
-std::string util::substr(std::string in, std::string::size_type pos, std::string::size_type size) {
+/** @brief Return sub string.
+*
+* Returns an empty string if exception has been thrown.
+*
+* @param[in] string  Input string.
+* @param[in] pos     Start position.
+* @param[in] size    Number of bytes, std::string::npos for all bytes form pos.
+*
+* @return Sub string.
+*/
+std::string util::substr(const std::string& string, std::string::size_type pos, std::string::size_type size) {
     try {
-        return in.substr(pos, size);
+        return string.substr(pos, size);
     }
     catch(...) {
         return "";
@@ -788,38 +1074,56 @@ std::string util::substr(std::string in, std::string::size_type pos, std::string
 
 /** @brief Swap rectangles.
 *
-* @param[in] w1  Widget 1.
-* @param[in] w2  Widget 2.
+* @param[in,out] w1  Widget 1.
+* @param[in,out] w2  Widget 2.
 */
 void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
     auto r1 = Fl_Rect(w1);
     auto r2 = Fl_Rect(w2);
-    
+
     w1->resize(r2.x(), r2.y(), r2.w(), r2.h());
     w2->resize(r1.x(), r1.y(), r1.w(), r1.h());
 }
 
-//------------------------------------------------------------------------------
-double util::to_double(std::string num, double def) {
+/** @brief Convert string to number.
+*
+* @param[in] string  String to convert.
+* @param[in] def     Default number if exception is thrown.
+*
+* @return Converted number or default number.
+*/
+double util::to_double(const std::string& string, double def) {
     try {
-        return std::stod(num);
+        return std::stod(string);
     }
     catch(...) {
         return def;
     }
 }
 
-//------------------------------------------------------------------------------
-long long util::to_long(std::string num, long long def) {
+/** @brief Convert string to integer.
+*
+* @param[in] string  String to convert.
+* @param[in] def     Default number if exception is thrown.
+*
+* @return Converted integer or default integer.
+*/
+long long util::to_long(const std::string& string, long long def) {
     try {
-        return std::stoll(num);
+        return std::stoll(string);
     }
     catch(...) {
         return def;
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Zero buffer bytes.
+*
+* @param[in,out]   mem  Memory to zero.
+* @param[in] size  Number of bytes.
+*
+* @return Input pointer.
+*/
 void* util::zero_memory(char* mem, size_t size) {
     if (mem == nullptr || size == 0) return mem;
 #ifdef _WIN32
@@ -836,7 +1140,7 @@ void* util::zero_memory(char* mem, size_t size) {
     return mem;
 }
 
-/***
+/*
  *                _
  *               | |
  *       ___ ___ | | ___  _ __
@@ -847,7 +1151,8 @@ void* util::zero_memory(char* mem, size_t size) {
  *
  */
 
-Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
+///< @brief Bige color.
+Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);     
 Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
 Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
 Fl_Color color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
@@ -866,7 +1171,7 @@ Fl_Color color::TEAL             = fl_rgb_color(  0, 128, 128);
 Fl_Color color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
 Fl_Color color::VIOLET           = fl_rgb_color(238, 130, 238);
 
-/***
+/*
  *      _   _
  *     | | | |
  *     | |_| |__   ___ _ __ ___   ___
@@ -886,9 +1191,12 @@ static bool          _IS_DARK     = false;
 static bool          _SAVED_COLOR = false;
 static int           _SCROLLSIZE  = Fl::scrollbar_size();
 
-//----------------------------------------------------------------------
-// Colors are reset every time a new theme has been selected
-//
+/** @brief Create additional colors.
+*
+* Colors are reset every time a new theme has been selected
+*
+* @param[in] dark  True if a dark theme has been requested.
+*/
 static void _additional_colors(bool dark) {
     color::BEIGE            = fl_rgb_color(245, 245, 220);
     color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
@@ -931,7 +1239,8 @@ static void _additional_colors(bool dark) {
     }
 }
 
-//----------------------------------------------------------------------
+/** @brief Set blue colors.
+*/
 static void _blue_colors() {
     Fl::set_color(0,   228, 228, 228); // FL_FOREGROUND_COLOR
     Fl::set_color(7,    79,  86,  94); // FL_BACKGROUND2_COLOR
@@ -961,7 +1270,8 @@ static void _blue_colors() {
     }
 }
 
-//----------------------------------------------------------------------
+/** @brief Set dark colors.
+*/
 static void _dark_colors() {
     Fl::set_color(0,   200, 200, 200); // FL_FOREGROUND_COLOR
     Fl::set_color(7,    64,  64,  64); // FL_BACKGROUND2_COLOR
@@ -980,7 +1290,8 @@ static void _dark_colors() {
     }
 }
 
-//----------------------------------------------------------------------
+/** @brief Make default colors darker (for dark themes).
+*/
 static void _make_default_colors_darker() {
     Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
     Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
@@ -996,7 +1307,8 @@ static void _make_default_colors_darker() {
     Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
 }
 
-//----------------------------------------------------------------------
+/** @brief Restore original colors.
+*/
 static void _restore_colors() {
     if (_SAVED_COLOR == true) {
         for (int f = 0; f < 256; f++) {
@@ -1005,7 +1317,8 @@ static void _restore_colors() {
     }
 }
 
-//----------------------------------------------------------------------
+/** @brief Set colors so they can be restored later.
+*/
 static void _save_colors() {
     if (_SAVED_COLOR == false) {
         for (int f = 0; f < 256; f++) {
@@ -1020,7 +1333,8 @@ static void _save_colors() {
     }
 }
 
-//----------------------------------------------------------------------
+/** @brief Set tan colors.
+*/
 static void _tan_colors() {
     Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
     Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
@@ -1029,7 +1343,8 @@ static void _tan_colors() {
     Fl::background(206, 202, 187);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load default theme.
+*/
 void _load_default() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1040,7 +1355,8 @@ void _load_default() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load gleam theme.
+*/
 void _load_gleam() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1051,7 +1367,8 @@ void _load_gleam() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load blue gleam theme.
+*/
 void _load_gleam_blue() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1065,7 +1382,8 @@ void _load_gleam_blue() {
     _IS_DARK = true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load dark gleam theme.
+*/
 void _load_gleam_dark() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1079,7 +1397,8 @@ void _load_gleam_dark() {
     _IS_DARK = true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load tan gleam theme.
+*/
 void _load_gleam_tan() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1091,7 +1410,8 @@ void _load_gleam_tan() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load gtk theme.
+*/
 void _load_gtk() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1102,7 +1422,8 @@ void _load_gtk() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load blue gtk theme.
+*/
 void _load_gtk_blue() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1116,7 +1437,8 @@ void _load_gtk_blue() {
     _IS_DARK = true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load dark gtk theme.
+*/
 void _load_gtk_dark() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1130,7 +1452,8 @@ void _load_gtk_dark() {
     _IS_DARK = true;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load tan gtk theme.
+*/
 void _load_gtk_tan() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1142,7 +1465,8 @@ void _load_gtk_tan() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load oxy theme.
+*/
 void _load_oxy() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1153,7 +1477,8 @@ void _load_oxy() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load tan oxy theme.
+*/
 void _load_oxy_tan() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1165,7 +1490,8 @@ void _load_oxy_tan() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load plastic theme.
+*/
 void _load_plastic() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1176,7 +1502,8 @@ void _load_plastic() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load tan plastic theme.
+*/
 void _load_plastic_tan() {
     theme::_save_colors();
     theme::_restore_colors();
@@ -1188,7 +1515,8 @@ void _load_plastic_tan() {
     _IS_DARK = false;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set scrollbar size.
+*/
 void _scrollbar() {
     if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
         auto f = (double) flw::PREF_FONTSIZE / 14.0;
@@ -1202,7 +1530,10 @@ void _scrollbar() {
 
 } // theme
 
-//------------------------------------------------------------------------------
+/** @brief Check if a dark theme has been loaded
+*
+* @return True for dark theme.
+*/
 bool theme::is_dark() {
     if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE] ||
         flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] ||
@@ -1215,7 +1546,35 @@ bool theme::is_dark() {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Load a theme.
+*
+* Valid theme names are:\n
+*   "default"\n
+*    "gleam"\n
+*    "blue gleam"\n
+*    "blue_gleam"\n
+*    "dark gleam"\n
+*    "dark_gleam"\n
+*    "tan gleam"\n
+*    "tan_gleam"\n
+*    "gtk"\n
+*    "blue gtk"\n
+*    "blue_gtk"\n
+*    "dark gtk"\n
+*    "dark_gtk"\n
+*    "tan gtk"\n
+*    "tan_gtk"\n
+*    "oxy"\n
+*    "tan oxy"\n
+*    "tan_oxy"\n
+*    "plastic"\n
+*    "tan plastic"\n
+*    "tan_plastic"\n
+
+* @param[in] name  Theme name.
+*
+* @return True if theme has been loaded.
+*/
 bool theme::load(const std::string& name) {
     if (theme::_SCROLLSIZE == 0) {
         theme::_SCROLLSIZE = Fl::scrollbar_size();
@@ -1268,8 +1627,16 @@ bool theme::load(const std::string& name) {
     return true;
 }
 
-//------------------------------------------------------------------------------
-int theme::load_font(const std::string& requested_font) {
+/** @brief Get font value.
+*
+* First time it is called it will load all available fonts from the system.
+*
+* @param[in] requested_font  Font name.
+* @param[in] def             Default font if name can't be found.
+*
+* @return Found font value or default value.
+*/
+Fl_Font theme::load_font(const std::string& requested_font, Fl_Font def) {
     theme::load_fonts();
 
     auto count = 0;
@@ -1284,19 +1651,22 @@ int theme::load_font(const std::string& requested_font) {
         count++;
     }
 
-    return -1;
+    return def;
 }
 
-//------------------------------------------------------------------------------
-// Load fonts only once in the program
-//
+/** @brief Load fonts to flw font list.
+*
+* But do it only the first time.
+*
+* @param[in] iso8859_only  True to only use fonts with ISO8859-1 character set.
+*/
 void theme::load_fonts(bool iso8859_only) {
     if (flw::PREF_FONTNAMES.size() == 0) {
         auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
 
         for (int f = 0; f < fonts; f++) {
             auto attr  = 0;
-            auto name1 = Fl::get_font_name((Fl_Font) f, &attr);
+            auto name1 = Fl::get_font_name(static_cast<Fl_Font>(f), &attr);
             auto name2 = std::string();
 
             if (attr & FL_BOLD) {
@@ -1310,14 +1680,20 @@ void theme::load_fonts(bool iso8859_only) {
             name2 += std::string("@.");
             name2 += name1;
             flw::PREF_FONTNAMES.push_back(strdup(name2.c_str()));
-//             printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
+            //printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
         }
     }
 }
 
-//------------------------------------------------------------------------------
-// Load icon before showing window
-//
+/** @brief Load icon before showing window.
+*
+* Use only windows or linux arguments.
+*
+* @param[in] win           Window object.
+* @param[in] win_resource  Win32 resource (Windows 10/11 only).
+* @param[in] xpm_resource  Xpm icon (Linux only).
+* @param[in] name          Application name (Linux only).
+*/
 void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
     assert(win);
 
@@ -1347,10 +1723,16 @@ void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resourc
 #endif
 }
 
-//------------------------------------------------------------------------------
-// Load window size.
-//
-void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, const std::string& basename) {
+/** @brief Load window rectangle from preference.
+*
+* Some size checks are done to assure that the rectangle can be shown on the desktop.
+*
+* @param[in] pref      Loaded preference object.
+* @param[in] basename  Basename for window size.
+*
+* @return Rectangle with coordinates or empty.
+*/
+Fl_Rect theme::load_rect_from_pref(Fl_Preferences& pref, const std::string& basename) {
     int  x, y, w, h;
 
     pref.get((basename + "x").c_str(), x, 0);
@@ -1376,24 +1758,26 @@ void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, const std::strin
         h = Fl::h();
     }
 
-    rect = Fl_Rect(x, y, w, h);
+    return Fl_Rect(x, y, w, h);
 }
 
-//------------------------------------------------------------------------------
-// Load theme and font data
-//
-void theme::load_theme_pref(Fl_Preferences& pref) {
+/** @brief Load theme and font data.
+*
+* @param[in] pref  Loaded preference object.
+*/
+void theme::load_theme_from_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
 
     pref.get("regular_name", buffer, "", 4000);
+    std::string name = buffer;
+    
+    if (name != "" && name != "FL_HELVETICA") {
+        auto font = theme::load_font(name, FL_HELVETICA);
 
-    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
-        auto font = theme::load_font(buffer);
-
-        if (font != -1) {
+        if (font != FL_HELVETICA) {
             flw::PREF_FONT     = font;
-            flw::PREF_FONTNAME = buffer;
+            flw::PREF_FONTNAME = name;
         }
     }
 
@@ -1404,13 +1788,14 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
     }
 
     pref.get("mono_name", buffer, "", 1000);
+    name = buffer;
+    
+    if (name != "" && name != "FL_COURIER") {
+        auto font = theme::load_font(name, FL_COURIER);
 
-    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
-        auto font = theme::load_font(buffer);
-
-        if (font != -1) {
+        if (font != FL_COURIER) {
             flw::PREF_FIXED_FONT     = font;
-            flw::PREF_FIXED_FONTNAME = buffer;
+            flw::PREF_FIXED_FONTNAME = name;
         }
     }
 
@@ -1427,10 +1812,20 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
     _scrollbar();
 }
 
-//------------------------------------------------------------------------------
-// Load window size.
-//
-double theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, const std::string& basename) {
+/** @brief Load window size and optional scaling.
+*
+* Scaling might not work width some desktops.
+*
+* @param[in] pref      Loaded preference object.
+* @param[in] basename  Base name in preference file.
+* @param[in] window    Window to use.
+* @param[in] show      True to show window.
+* @param[in] defw      Default width if no width is found.
+* @param[in] defh      Default height if no height is found.
+*
+* @return Current window scale value.
+*/
+double theme::load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show, int defw, int defh) {
     assert(window);
 
     int  x, y, w, h, s;
@@ -1450,7 +1845,7 @@ double theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, 
     }
 
 #ifdef _WIN32
-    if (show == true && window->shown() == 0) { // Show before resize in windows
+    if (show == true && window->shown() == 0) { // Show before resize in windows.
         window->show();
     }
 
@@ -1473,7 +1868,13 @@ double theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, 
     return flw::PREF_SCALE_VAL;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Parse command line arguments for theme and font values.
+*
+* @param[in] argc  Number of arguments.
+* @param[in] argv  Arguments.
+*
+* @return True if a theme has been set.
+*/
 bool theme::parse(int argc, const char** argv) {
     auto res = false;
 
@@ -1505,23 +1906,28 @@ bool theme::parse(int argc, const char** argv) {
     flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
     Fl_Tooltip::font(flw::PREF_FONT);
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
+
     return res;
 }
 
-//------------------------------------------------------------------------------
-// Save window size
-//
-void theme::save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, const std::string& basename) {
+/** @brief Save window size.
+*
+* @param[in] pref      Preference object.
+* @param[in] basename  Basename for this rectangle (x, y, w, h are added to basename).
+* @param[in] rect      Rectangle to save.
+*/
+void theme::save_rect_to_pref(Fl_Preferences& pref, const std::string& basename, const Fl_Rect& rect) {
     pref.set((basename + "x").c_str(), rect.x());
     pref.set((basename + "y").c_str(), rect.y());
     pref.set((basename + "w").c_str(), rect.w());
     pref.set((basename + "h").c_str(), rect.h());
 }
 
-//------------------------------------------------------------------------------
-// Save theme and font data
-//
-void theme::save_theme_pref(Fl_Preferences& pref) {
+/** @brief Save theme and font data.
+*
+* @param[in] pref  Preference object..
+*/
+void theme::save_theme_to_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
     pref.set("regular_name", flw::PREF_FONTNAME.c_str());
     pref.set("regular_size", flw::PREF_FONTSIZE);
@@ -1529,12 +1935,13 @@ void theme::save_theme_pref(Fl_Preferences& pref) {
     pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
 }
 
-//------------------------------------------------------------------------------
-// Save window size
-//
-void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, const std::string& basename) {
-    assert(window);
-
+/** @brief Save window size.
+*
+* @param[in] pref      Preference object..
+* @param[in] basename  Base name in preference file.
+* @param[in] window    Window to use.
+*/
+void theme::save_win_to_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window) {
     pref.set((basename + "x").c_str(), window->x());
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
@@ -1542,7 +1949,7 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, const std::st
     pref.set((basename + "s").c_str(), flw::PREF_SCALE_ON);
 }
 
-/***
+/*
  *      _____      _       _ _______        _
  *     |  __ \    (_)     | |__   __|      | |
  *     | |__) | __ _ _ __ | |_ | | _____  _| |_
@@ -1553,8 +1960,21 @@ void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, const std::st
  *
  */
 
-//------------------------------------------------------------------------------
-PrintText::PrintText(std::string filename,
+/** @brief Create object.
+*
+* Line numbers are only used with FL_ALIGN_LEFT.\n
+*
+* @param[in] filename     Postscript filename.
+* @param[in] page_format  Page format.
+* @param[in] page_layout  Page layout.
+* @param[in] font         Text font.
+* @param[in] fontsize     Text size.
+* @param[in] align        Alignment for the lines.
+* @param[in] wrap         Wrap text or let it be cut if it is to long.
+* @param[in] border       Draw a border around page.
+* @param[in] line_num     Width of line numbers, 0 to disable (0 - 8).
+*/
+PrintText::PrintText(const std::string& filename,
     Fl_Paged_Device::Page_Format page_format,
     Fl_Paged_Device::Page_Layout page_layout,
     Fl_Font font,
@@ -1571,20 +1991,24 @@ PrintText::PrintText(std::string filename,
     _filename    = filename;
     _font        = font;
     _fontsize    = fontsize;
-    _line_num    = (align == FL_ALIGN_LEFT) ? line_num : 0;
+    _line_num    = (align == FL_ALIGN_LEFT && line_num > 0 && line_num < 9) ? line_num : 0;
     _page_format = page_format;
     _page_layout = page_layout;
     _printer     = nullptr;
     _wrap        = wrap;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Stop printing.
+*
+*/
 PrintText::~PrintText() {
-    stop();
+    _stop();
 }
 
-//------------------------------------------------------------------------------
-void PrintText::check_for_new_page() {
+/** @brief Check and create new page if needed.
+*
+*/
+void PrintText::_check_for_new_page() {
     if (_py + _lh > _ph || _page_count == 0) {
         if (_page_count > 0) {
             fl_pop_clip();
@@ -1613,7 +2037,7 @@ void PrintText::check_for_new_page() {
         }
         else {
             fl_rect(0, 0, _pw, _ph);
-            measure_lw_lh("M");
+            _measure_lw_lh("M");
 
             _px  = _lw;
             _py  = _lh;
@@ -1625,23 +2049,44 @@ void PrintText::check_for_new_page() {
     }
 }
 
-//------------------------------------------------------------------------------
-void PrintText::measure_lw_lh(const std::string& text) {
+/** @brief Measure width of text and height of text.
+*
+* @param[in] text  Line of text.
+*/
+void PrintText::_measure_lw_lh(const std::string& text) {
     _lw = _lh = 0;
     fl_measure(text.c_str(), _lw, _lh, 0);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Print text to file.
+*
+* @param[in] text                    Text to print, use only \n for newlines.
+* @param[in] replace_tab_with_space  Replace spaces with tab (1 - 16) or 0 to print as it is.
+*
+* @return Error string or empty string.
+*/
 std::string PrintText::print(const char* text, unsigned replace_tab_with_space) {
     return print(util::split_string(text, "\n"), replace_tab_with_space);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Print text to file.
+*
+* @param[in] text                    Text to print, use only \n for newlines.
+* @param[in] replace_tab_with_space  Replace spaces with tab (1 - 16) or 0 to print as it is.
+*
+* @return Error string or empty string.
+*/
 std::string PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
     return print(util::split_string(text.c_str(), "\n"), replace_tab_with_space);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Print text to file.
+*
+* @param[in] lines                   Text lines to print.
+* @param[in] replace_tab_with_space  Replace spaces with tab (1 - 16) or 0 to print as it is.
+*
+* @return Error string or empty string.
+*/
 std::string PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
     std::string res;
     std::string tab;
@@ -1654,21 +2099,21 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
     try {
         auto wc = WaitCursor();
 
-        res = start();
+        res = _start();
 
         if (res == "") {
             for (auto& line : lines) {
                 if (tab != "") {
                     auto l = line;
                     util::replace_string(l, "\t", "    ");
-                    print_line(l == "" ? " " : l);
+                    _print_line(l == "" ? " " : l);
                 }
                 else {
-                    print_line(line == "" ? " " : line);
+                    _print_line(line == "" ? " " : line);
                 }
             }
 
-            res = stop();
+            res = _stop();
         }
     }
     catch (const char* ex) {
@@ -1681,22 +2126,25 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
     return res;
 }
 
-//------------------------------------------------------------------------------
-void PrintText::print_line(const std::string& line) {
+/** @brief Print one line.
+*
+* @param[in] line  Text line.
+*/
+void PrintText::_print_line(const std::string& line) {
     _line_count++;
-    check_for_new_page();
+    _check_for_new_page();
 
     if (_line_num > 0) {
         auto num = util::format("%*d: ", _line_num, _line_count);
-        measure_lw_lh(num);
+        _measure_lw_lh(num);
         fl_draw(num.c_str(), _px, _py, _pw, _lh, _align, nullptr, 0);
         _nw = _lw;
     }
 
-    measure_lw_lh(line);
+    _measure_lw_lh(line);
 
     if (_wrap == true && _lw > _pw - _nw) {
-        print_wrapped_line(line);
+        _print_wrapped_line(line);
     }
     else {
         fl_draw(line.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
@@ -1704,8 +2152,11 @@ void PrintText::print_line(const std::string& line) {
     }
 }
 
-//------------------------------------------------------------------------------
-void PrintText::print_wrapped_line(const std::string& line) {
+/** @brief Print wrapped line.
+*
+* @param[in] line  Text line.
+*/
+void PrintText::_print_wrapped_line(const std::string& line) {
     auto p1 = line.c_str();
     auto s1 = std::string();
     auto s2 = std::string();
@@ -1730,10 +2181,10 @@ void PrintText::print_wrapped_line(const std::string& line) {
             s2 = s1;
         }
 
-        measure_lw_lh(s1);
+        _measure_lw_lh(s1);
 
         if (_lw >= _pw - _nw) {
-            check_for_new_page();
+            _check_for_new_page();
 
             if (s2 != "") { // Last word delimiter string, s1 will contain the leftover.
                 fl_draw(s2.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
@@ -1757,16 +2208,16 @@ void PrintText::print_wrapped_line(const std::string& line) {
     }
 
     if (s1 != "") { // Leftover string.
-        check_for_new_page();
+        _check_for_new_page();
         fl_draw(s1.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
         _py += _lh;
     }
 }
 
-//------------------------------------------------------------------------------
-// Create printer object.
-//
-std::string PrintText::start() {
+/** @brief Create printer object.
+*
+*/
+std::string PrintText::_start() {
     if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
         return "error: could not open file!";
     }
@@ -1783,13 +2234,15 @@ std::string PrintText::start() {
     _printer    = new Fl_PostScript_File_Device();
 
     _printer->begin_job(_file, 0, _page_format, _page_layout);
+
     return "";
 }
 
-//------------------------------------------------------------------------------
-// End job and delete printer.
-//
-std::string PrintText::stop() {
+/** @brief End job and delete printer.
+*
+* @return Error string or empty string.
+*/
+std::string PrintText::_stop() {
     std::string res = "";
 
     if (_printer != nullptr) {

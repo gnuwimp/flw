@@ -46,9 +46,9 @@ public:
     Fl_Menu_Button*             menu()
                                     { return _menu; }
     std::string                 text2() const
-                                    { return util::remove_browser_format(text(value())); }
+                                    { return util::remove_browser_format(util::to_string(text(value()))); }
     std::string                 text2(int line) const
-                                    { return util::remove_browser_format(text(line)); }
+                                    { return util::remove_browser_format(util::to_string(text(line))); }
     void                        update_pref()
                                     { update_pref(flw::PREF_FONT, flw::PREF_FONTSIZE); }
     void                        update_pref(Fl_Font text_font, Fl_Fontsize text_size);

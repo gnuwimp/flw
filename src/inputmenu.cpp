@@ -14,9 +14,7 @@
 
 namespace flw {
 
-namespace inputmenu {
-    static constexpr const char* TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
-}
+static constexpr const char* _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
 
 /*
  *           _____                   _   __  __
@@ -77,7 +75,7 @@ public:
 
                 return 1;
             }
-            else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
+            else if (key == FL_Down && history.size() > 0 && index < static_cast<int>(history.size()) - 1) {
                 index++;
 
                 value(history[index].c_str());
@@ -127,8 +125,8 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _input->callback(InputMenu::_CallbackInput, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
     _menu->callback(InputMenu::_CallbackMenu, this);
-    _menu->tooltip(inputmenu::TOOLTIP);
-    tooltip(inputmenu::TOOLTIP);
+    _menu->tooltip(_INPUTMENU_TOOLTIP);
+    tooltip(_INPUTMENU_TOOLTIP);
     update_pref();
     resize(X, Y, W, H);
 }
@@ -156,7 +154,7 @@ void InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
     auto self  = static_cast<InputMenu*>(o);
     auto index = self->_menu->find_index(self->_menu->text());
 
-    if (index >= 0 && index < (int) self->_input->history.size()) {
+    if (index >= 0 && index < static_cast<int>(self->_input->history.size())) {
         self->_input->value(self->_input->history[index].c_str());
         self->_input->index = index;
     }
@@ -224,7 +222,7 @@ void InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (_menu->visible() != 0) {
-        auto mw = (int) flw::PREF_FONTSIZE;
+        auto mw = flw::PREF_FONTSIZE;
         _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
         _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y, flw::PREF_FONTSIZE + mw, H);
     }
