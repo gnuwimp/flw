@@ -5044,7 +5044,7 @@ bool Chart::load_csv() {
         return false;
     }
     auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     auto vec = ChartData::LoadCSV(filename);
@@ -5061,7 +5061,7 @@ bool Chart::load_csv() {
 }
 bool Chart::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     return load_json(filename);
@@ -5244,7 +5244,7 @@ bool Chart::save_csv() {
         return false;
     }
     auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     const auto* line = _area->selected_line();
@@ -5252,7 +5252,7 @@ bool Chart::save_csv() {
 }
 bool Chart::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     return save_json(filename);
@@ -5927,21 +5927,21 @@ void flw::DateChooser::_set_label() {
 #include <FL/Fl_Tooltip.H>
 namespace flw {
 namespace theme {
-void _load_default();
-void _load_gleam();
-void _load_gleam_blue();
-void _load_gleam_dark();
-void _load_gleam_tan();
-void _load_gtk();
-void _load_gtk_blue();
-void _load_gtk_dark();
-void _load_gtk_tan();
-void _load_oxy();
-void _load_oxy_blue();
-void _load_oxy_tan();
-void _load_plastic();
-void _load_plastic_tan();
-void _scrollbar();
+ void _load_default();
+ void _load_gleam();
+ void _load_gleam_blue();
+ void _load_gleam_dark();
+ void _load_gleam_tan();
+ void _load_gtk();
+ void _load_gtk_blue();
+ void _load_gtk_dark();
+ void _load_gtk_tan();
+ void _load_oxy();
+ void _load_oxy_blue();
+ void _load_oxy_tan();
+ void _load_plastic();
+ void _load_plastic_tan();
+ void _scrollbar();
 }
 namespace dlg {
 static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
@@ -7260,7 +7260,7 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use Scaling");
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use scaling");
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
         _run         = false;
@@ -7292,21 +7292,19 @@ public:
         _font_label->color(FL_BACKGROUND2_COLOR);
         _font_label->tooltip("Default font.");
         _scale->callback(Callback, this);
-        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.");
+        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nMight not work as expected in some desktop environments!");
         _scale->value(flw::PREF_SCALE_ON);
         _theme->box(FL_BORDER_BOX);
         _theme->callback(Callback, this);
         _theme->textfont(flw::PREF_FONT);
-        for (size_t f = 0; f < 100; f++) {
-            auto t = flw::PREF_THEMES[f];
-            if (t != nullptr) {
-                _theme->add(t);
-            }
-            else {
-                break;
-            }
+        for (auto& name : flw::PREF_THEMES) {
+            _theme->add(name.c_str());
         }
-        if (flw::PREF_SCALE_VAL < 0.1) {
+        if (Fl::screen_scaling_supported() == 0) {
+            _scale->value(0);
+            _scale->deactivate();
+        }
+        else if (flw::PREF_SCALE_VAL < 0.1) {
             if (parent != nullptr) {
                 flw::PREF_SCALE_VAL = Fl::screen_scale(parent->screen_num());
             }
@@ -7459,6 +7457,7 @@ abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
 
 japanese: こんにちは世界
 korean: 안녕하세요 세계
+tibetan: ཨོཾ་མ་ཎི་པདྨེ་ཧཱུྃ
 greek: Γειά σου Κόσμε
 ukrainian: Привіт Світ
 thai: สวัสดีชาวโลก
@@ -7533,7 +7532,7 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row2 = self->_sizes->value();
         if (row1 > 0 && row2 > 0) {
             row1--;
-            self->_fontname = util::remove_browser_format(flw::PREF_FONTNAMES[row1]);
+            self->_fontname = util::remove_browser_format(util::to_string(flw::PREF_FONTNAMES[row1]));
             self->_font     = row1;
             self->_fontsize = row2 + 5;
             self->_ret      = true;
@@ -7643,7 +7642,7 @@ bool FontDialog::run(Fl_Window* parent) {
 void FontDialog::_select_name(const std::string& fontname) {
     auto count = 1;
     for (auto f : flw::PREF_FONTNAMES) {
-        auto font_without_style = util::remove_browser_format(f);
+        auto font_without_style = util::remove_browser_format(util::to_string(f));
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
@@ -7805,39 +7804,44 @@ std::string                 PREF_FONTNAME           = "FL_HELVETICA";
 double                      PREF_SCALE_VAL          = 0.0;
 bool                        PREF_SCALE_ON           = true;
 std::string                 PREF_THEME              = "default";
-const char* const           PREF_THEMES[]           = {
-                                "default",
-                                "gleam",
-                                "blue gleam",
-                                "dark gleam",
-                                "tan gleam",
-                                "gtk",
-                                "blue gtk",
-                                "dark gtk",
-                                "tan gtk",
-                                "oxy",
-                                "tan oxy",
-                                "plastic",
-                                "tan plastic",
-                                nullptr,
+const StringVector PREF_THEMES = {
+    "default",
+    "gleam",
+    "blue gleam",
+    "dark gleam",
+    "tan gleam",
+    "gtk",
+    "blue gtk",
+    "dark gtk",
+    "tan gtk",
+    "oxy",
+    "tan oxy",
+    "plastic",
+    "tan plastic",
 };
-const char* const           PREF_THEMES2[]           = {
-                                "default",
-                                "gleam",
-                                "blue_gleam",
-                                "dark_gleam",
-                                "tan_gleam",
-                                "gtk",
-                                "blue_gtk",
-                                "dark_gtk",
-                                "tan_gtk",
-                                "oxy",
-                                "tan_oxy",
-                                "plastic",
-                                "tan_plastic",
-                                nullptr,
+const StringVector PREF_THEMES2 = {
+    "default",
+    "gleam",
+    "blue_gleam",
+    "dark_gleam",
+    "tan_gleam",
+    "gtk",
+    "blue_gtk",
+    "dark_gtk",
+    "tan_gtk",
+    "oxy",
+    "tan_oxy",
+    "plastic",
+    "tan_plastic",
 };
-static std::string _flw_print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+static std::string _flw_print(
+    const std::string& ps_filename,
+    Fl_Paged_Device::Page_Format format,
+    Fl_Paged_Device::Page_Layout layout,
+    PrintCallback cb,
+    void* data,
+    int from,
+    int to) {
     bool                      cont = true;
     FILE*                     file = nullptr;
     Fl_PostScript_File_Device printer;
@@ -7950,9 +7954,15 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) 
 }
 void menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
     auto item = _item(menu, text);
-    if (item == nullptr) return;
-    if (value == true) item->activate();
-    else item->deactivate();
+    if (item == nullptr) {
+        return;
+    }
+    if (value == true) {
+        item->activate();
+    }
+    else {
+        item->deactivate();
+    }
 }
 Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, const char* text) {
     return _item(menu, text);
@@ -7962,18 +7972,28 @@ Fl_Menu_Item* menu::get_item(Fl_Menu_* menu, void* v) {
 }
 bool menu::item_value(Fl_Menu_* menu, const char* text) {
     auto item = _item(menu, text);
-    if (item == nullptr) return false;
+    if (item == nullptr) {
+        return false;
+    }
     return item->value();
 }
 void menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
     auto item = _item(menu, text);
-    if (item == nullptr) return;
-    if (value == true) item->set();
-    else item->clear();
+    if (item == nullptr) {
+        return;
+    }
+    if (value == true) {
+        item->set();
+    }
+    else {
+        item->clear();
+    }
 }
 void menu::setonly_item(Fl_Menu_* menu, const char* text) {
     auto item = _item(menu, text);
-    if (item == nullptr) return;
+    if (item == nullptr) {
+        return;
+    }
     menu->setonly(item);
 }
 void util::center_window(Fl_Window* window, Fl_Window* parent) {
@@ -8040,7 +8060,7 @@ int util::count_decimals(double num) {
     res = strlen(buffer) - 2;
     return res;
 }
-Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
+Fl_Widget* util::find_widget(Fl_Group* group, const std::string& label) {
     for (int f = 0; f < group->children(); f++) {
         auto w = group->child(f);
         if (w->label() != nullptr && label == w->label()) {
@@ -8059,23 +8079,25 @@ Fl_Widget* util::find_widget(Fl_Group* group, std::string label) {
     }
     return nullptr;
 }
-std::string util::fix_menu_string(std::string in) {
-    std::string res = in;
+std::string util::fix_menu_string(const std::string& label) {
+    std::string res = label;
     util::replace_string(res, "\\", "\\\\");
     util::replace_string(res, "_", "\\_");
     util::replace_string(res, "/", "\\/");
     util::replace_string(res, "&", "&&");
     return res;
 }
-std::string util::format(const char* format, ...) {
-    if (format == nullptr || *format == 0) return "";
+std::string util::format(const std::string& format, ...) {
+    if (format == "") {
+        return "";
+    }
     int         l   = 128;
     int         n   = 0;
     char*       buf = static_cast<char*>(calloc(l, 1));
     std::string res;
     va_list     args;
     va_start(args, format);
-    n = vsnprintf(buf, l, format, args);
+    n = vsnprintf(buf, l, format.c_str(), args);
     va_end(args);
     if (n < 0) {
         free(buf);
@@ -8091,7 +8113,7 @@ std::string util::format(const char* format, ...) {
     buf = static_cast<char*>(calloc(l, 1));
     if (buf == nullptr) return res;
     va_start(args, format);
-    vsnprintf(buf, l, format, args);
+    vsnprintf(buf, l, format.c_str(), args);
     va_end(args);
     res = buf;
     free(buf);
@@ -8144,22 +8166,41 @@ std::string util::format_int(int64_t num, char del) {
     std::reverse(r.begin(), r.end());
     return r;
 }
-bool util::is_whitespace_or_empty(const char* str) {
-    while (*str != 0) {
-        if (*str != 9 && *str != 32) {
-            return false;
+bool util::is_empty(const std::string& string) {
+    bool ctrl   = false;
+    bool space  = false;
+    bool letter = false;
+    for (auto c : string) {
+        if (c > 0 && c < 32) {
+            ctrl = true;
         }
-        str++;
+        else if (c == 32) {
+            space = true;
+        }
+        else if (c < 0 || c > 32) {
+            letter = true;
+        }
     }
-    return true;
+    if (ctrl == true) {
+        return true;
+    }
+    else if (space == true && letter == false) {
+        return true;
+    }
+    else if (letter == true) {
+        return false;
+    }
+    else {
+        return true;
+    }
 }
-void util::labelfont(Fl_Widget* widget, Fl_Font fn, int fs) {
-    widget->labelfont(fn);
-    widget->labelsize(fs);
+void util::labelfont(Fl_Widget* widget, Fl_Font font, int size) {
+    widget->labelfont(font);
+    widget->labelsize(size);
     auto group = widget->as_group();
     if (group != nullptr) {
         for (auto f = 0; f < group->children(); f++) {
-            util::labelfont(group->child(f), fn, fs);
+            util::labelfont(group->child(f), font, size);
         }
     }
 }
@@ -8193,7 +8234,7 @@ int32_t util::milliseconds() {
     return (t.tv_sec * 1000000 + t.tv_nsec / 1000) / 1000;
 #endif
 }
-bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+bool util::png_save(const std::string& opt_name, Fl_Window* window, int X, int Y, int W, int H) {
     auto res = false;
 #ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
@@ -8212,15 +8253,15 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
                 res = true;
             }
             else if (ret == -1) {
-                fl_alert("%s", "error: missing libraries");
+                fl_alert("%s", "error: missing libraries!");
             }
             else if (ret == -2) {
-                fl_alert("error: failed to save image to %s", filename);
+                fl_alert("error: failed to save image to %s!", filename);
             }
             delete []image;
         }
         else {
-            fl_alert("%s", "error: failed to grab image");
+            fl_alert("%s", "error: failed to grab image!");
         }
     }
 #else
@@ -8234,44 +8275,49 @@ bool util::png_save(std::string opt_name, Fl_Window* window, int X, int Y, int W
 #endif
     return res;
 }
-std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
+std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
     return flw::_flw_print(ps_filename, format, layout, cb, data, 0, 0);
 }
-std::string util::print(std::string ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
+std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     if (from < 1 || from > to) {
         return "error: invalid from/to range";
     }
     return flw::_flw_print(ps_filename, format, layout, cb, data, from, to);
 }
-std::string util::remove_browser_format(const char* text) {
-    auto res = std::string((text != nullptr) ? text : "");
+std::string util::remove_browser_format(const std::string& text) {
+    auto res = text;
     auto f   = res.find_last_of("@");
     if (f != std::string::npos) {
-        auto tmp = res.substr(f + 1);
-        if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
-            res = tmp.substr(1);
-        }
-        else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
-            auto s = std::string();
-            auto e = false;
-            tmp = tmp.substr(f + 1);
-            for (auto c : tmp) {
-                if (e == false && c >= '0' && c <= '9') {
-                }
-                else {
-                    e = true;
-                    s += c;
-                }
+        try {
+            auto tmp = res.substr(f + 1);
+            if (tmp[0] == '.' || tmp[0] == 'l' || tmp[0] == 'm' || tmp[0] == 's' || tmp[0] == 'b' || tmp[0] == 'i' || tmp[0] == 'f' || tmp[0] == 'c' || tmp[0] == 'r' || tmp[0] == 'u' || tmp[0] == '-') {
+                res = tmp.substr(1);
             }
-            res = s;
+            else if (tmp[0] == 'B' || tmp[0] == 'C' || tmp[0] == 'F' || tmp[0] == 'S') {
+                auto s = std::string();
+                auto e = false;
+                tmp = tmp.substr(f + 1);
+                for (auto c : tmp) {
+                    if (e == false && c >= '0' && c <= '9') {
+                    }
+                    else {
+                        e = true;
+                        s += c;
+                    }
+                }
+                res = s;
+            }
+            else {
+                res = res.substr(f);
+            }
         }
-        else {
-            res = res.substr(f);
+        catch (...) {
+            res = "";
         }
     }
     return res;
 }
-std::string& util::replace_string(std::string& string, std::string find, std::string replace) {
+std::string& util::replace_string(std::string& string, const std::string& find, const std::string& replace) {
     if (find == "") {
         return string;
     }
@@ -8288,21 +8334,20 @@ std::string& util::replace_string(std::string& string, std::string find, std::st
         }
         res += string.substr(start);
         string.swap(res);
-        return string;
     }
     catch(...) {
         string = "";
-        return string;
     }
+    return string;
 }
-void util::sleep(int milli) {
+void util::sleep(unsigned milli) {
 #ifdef _WIN32
     Sleep(milli);
 #else
     usleep(milli * 1000);
 #endif
 }
-flw::StringVector util::split_string(const std::string& string, std::string split) {
+flw::StringVector util::split_string(const std::string& string, const std::string& split) {
     auto res = StringVector();
     try {
         if (split != "") {
@@ -8323,9 +8368,9 @@ flw::StringVector util::split_string(const std::string& string, std::string spli
     }
     return res;
 }
-std::string util::substr(std::string in, std::string::size_type pos, std::string::size_type size) {
+std::string util::substr(const std::string& string, std::string::size_type pos, std::string::size_type size) {
     try {
-        return in.substr(pos, size);
+        return string.substr(pos, size);
     }
     catch(...) {
         return "";
@@ -8337,17 +8382,17 @@ void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
     w1->resize(r2.x(), r2.y(), r2.w(), r2.h());
     w2->resize(r1.x(), r1.y(), r1.w(), r1.h());
 }
-double util::to_double(std::string num, double def) {
+double util::to_double(const std::string& string, double def) {
     try {
-        return std::stod(num);
+        return std::stod(string);
     }
     catch(...) {
         return def;
     }
 }
-long long util::to_long(std::string num, long long def) {
+long long util::to_long(const std::string& string, long long def) {
     try {
-        return std::stoll(num);
+        return std::stoll(string);
     }
     catch(...) {
         return def;
@@ -8366,6 +8411,7 @@ void* util::zero_memory(char* mem, size_t size) {
 #endif
     return mem;
 }
+///< @brief Bige color.
 Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
 Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
 Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
@@ -8714,7 +8760,7 @@ bool theme::load(const std::string& name) {
     theme::_scrollbar();
     return true;
 }
-int theme::load_font(const std::string& requested_font) {
+Fl_Font theme::load_font(const std::string& requested_font, Fl_Font def) {
     theme::load_fonts();
     auto count = 0;
     for (auto font : flw::PREF_FONTNAMES) {
@@ -8724,14 +8770,14 @@ int theme::load_font(const std::string& requested_font) {
         }
         count++;
     }
-    return -1;
+    return def;
 }
 void theme::load_fonts(bool iso8859_only) {
     if (flw::PREF_FONTNAMES.size() == 0) {
         auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
         for (int f = 0; f < fonts; f++) {
             auto attr  = 0;
-            auto name1 = Fl::get_font_name((Fl_Font) f, &attr);
+            auto name1 = Fl::get_font_name(static_cast<Fl_Font>(f), &attr);
             auto name2 = std::string();
             if (attr & FL_BOLD) {
                 name2 = std::string("@b");
@@ -8769,7 +8815,7 @@ void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resourc
     (void) name;
 #endif
 }
-void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, const std::string& basename) {
+Fl_Rect theme::load_rect_from_pref(Fl_Preferences& pref, const std::string& basename) {
     int  x, y, w, h;
     pref.get((basename + "x").c_str(), x, 0);
     pref.get((basename + "y").c_str(), y, 0);
@@ -8789,17 +8835,18 @@ void theme::load_rect_pref(Fl_Preferences& pref, Fl_Rect& rect, const std::strin
         y = 0;
         h = Fl::h();
     }
-    rect = Fl_Rect(x, y, w, h);
+    return Fl_Rect(x, y, w, h);
 }
-void theme::load_theme_pref(Fl_Preferences& pref) {
+void theme::load_theme_from_pref(Fl_Preferences& pref) {
     auto val = 0;
     char buffer[4000];
     pref.get("regular_name", buffer, "", 4000);
-    if (*buffer != 0 && strcmp("FL_HELVETICA", buffer) != 0) {
-        auto font = theme::load_font(buffer);
-        if (font != -1) {
+    std::string name = buffer;
+    if (name != "" && name != "FL_HELVETICA") {
+        auto font = theme::load_font(name, FL_HELVETICA);
+        if (font != FL_HELVETICA) {
             flw::PREF_FONT     = font;
-            flw::PREF_FONTNAME = buffer;
+            flw::PREF_FONTNAME = name;
         }
     }
     pref.get("regular_size", val, flw::PREF_FONTSIZE);
@@ -8807,11 +8854,12 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
         flw::PREF_FONTSIZE = val;
     }
     pref.get("mono_name", buffer, "", 1000);
-    if (*buffer != 0 && strcmp("FL_COURIER", buffer) != 0) {
-        auto font = theme::load_font(buffer);
-        if (font != -1) {
+    name = buffer;
+    if (name != "" && name != "FL_COURIER") {
+        auto font = theme::load_font(name, FL_COURIER);
+        if (font != FL_COURIER) {
             flw::PREF_FIXED_FONT     = font;
-            flw::PREF_FIXED_FONTNAME = buffer;
+            flw::PREF_FIXED_FONTNAME = name;
         }
     }
     pref.get("mono_size", val, flw::PREF_FIXED_FONTSIZE);
@@ -8824,7 +8872,7 @@ void theme::load_theme_pref(Fl_Preferences& pref) {
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     _scrollbar();
 }
-double theme::load_win_pref(Fl_Preferences& pref, Fl_Window* window, bool show, int defw, int defh, const std::string& basename) {
+double theme::load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show, int defw, int defh) {
     assert(window);
     int  x, y, w, h, s;
     pref.get((basename + "x").c_str(), x, 80);
@@ -8883,28 +8931,27 @@ bool theme::parse(int argc, const char** argv) {
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
     return res;
 }
-void theme::save_rect_pref(Fl_Preferences& pref, const Fl_Rect& rect, const std::string& basename) {
+void theme::save_rect_to_pref(Fl_Preferences& pref, const std::string& basename, const Fl_Rect& rect) {
     pref.set((basename + "x").c_str(), rect.x());
     pref.set((basename + "y").c_str(), rect.y());
     pref.set((basename + "w").c_str(), rect.w());
     pref.set((basename + "h").c_str(), rect.h());
 }
-void theme::save_theme_pref(Fl_Preferences& pref) {
+void theme::save_theme_to_pref(Fl_Preferences& pref) {
     pref.set("theme", flw::PREF_THEME.c_str());
     pref.set("regular_name", flw::PREF_FONTNAME.c_str());
     pref.set("regular_size", flw::PREF_FONTSIZE);
     pref.set("mono_name", flw::PREF_FIXED_FONTNAME.c_str());
     pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
 }
-void theme::save_win_pref(Fl_Preferences& pref, Fl_Window* window, const std::string& basename) {
-    assert(window);
+void theme::save_win_to_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window) {
     pref.set((basename + "x").c_str(), window->x());
     pref.set((basename + "y").c_str(), window->y());
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "s").c_str(), flw::PREF_SCALE_ON);
 }
-PrintText::PrintText(std::string filename,
+PrintText::PrintText(const std::string& filename,
     Fl_Paged_Device::Page_Format page_format,
     Fl_Paged_Device::Page_Layout page_layout,
     Fl_Font font,
@@ -8920,16 +8967,16 @@ PrintText::PrintText(std::string filename,
     _filename    = filename;
     _font        = font;
     _fontsize    = fontsize;
-    _line_num    = (align == FL_ALIGN_LEFT) ? line_num : 0;
+    _line_num    = (align == FL_ALIGN_LEFT && line_num > 0 && line_num < 9) ? line_num : 0;
     _page_format = page_format;
     _page_layout = page_layout;
     _printer     = nullptr;
     _wrap        = wrap;
 }
 PrintText::~PrintText() {
-    stop();
+    _stop();
 }
-void PrintText::check_for_new_page() {
+void PrintText::_check_for_new_page() {
     if (_py + _lh > _ph || _page_count == 0) {
         if (_page_count > 0) {
             fl_pop_clip();
@@ -8953,7 +9000,7 @@ void PrintText::check_for_new_page() {
         }
         else {
             fl_rect(0, 0, _pw, _ph);
-            measure_lw_lh("M");
+            _measure_lw_lh("M");
             _px  = _lw;
             _py  = _lh;
             _pw -= _lw * 2;
@@ -8962,7 +9009,7 @@ void PrintText::check_for_new_page() {
         _page_count++;
     }
 }
-void PrintText::measure_lw_lh(const std::string& text) {
+void PrintText::_measure_lw_lh(const std::string& text) {
     _lw = _lh = 0;
     fl_measure(text.c_str(), _lw, _lh, 0);
 }
@@ -8981,19 +9028,19 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
     }
     try {
         auto wc = WaitCursor();
-        res = start();
+        res = _start();
         if (res == "") {
             for (auto& line : lines) {
                 if (tab != "") {
                     auto l = line;
                     util::replace_string(l, "\t", "    ");
-                    print_line(l == "" ? " " : l);
+                    _print_line(l == "" ? " " : l);
                 }
                 else {
-                    print_line(line == "" ? " " : line);
+                    _print_line(line == "" ? " " : line);
                 }
             }
-            res = stop();
+            res = _stop();
         }
     }
     catch (const char* ex) {
@@ -9004,25 +9051,25 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
     }
     return res;
 }
-void PrintText::print_line(const std::string& line) {
+void PrintText::_print_line(const std::string& line) {
     _line_count++;
-    check_for_new_page();
+    _check_for_new_page();
     if (_line_num > 0) {
         auto num = util::format("%*d: ", _line_num, _line_count);
-        measure_lw_lh(num);
+        _measure_lw_lh(num);
         fl_draw(num.c_str(), _px, _py, _pw, _lh, _align, nullptr, 0);
         _nw = _lw;
     }
-    measure_lw_lh(line);
+    _measure_lw_lh(line);
     if (_wrap == true && _lw > _pw - _nw) {
-        print_wrapped_line(line);
+        _print_wrapped_line(line);
     }
     else {
         fl_draw(line.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
         _py += _lh;
     }
 }
-void PrintText::print_wrapped_line(const std::string& line) {
+void PrintText::_print_wrapped_line(const std::string& line) {
     auto p1 = line.c_str();
     auto s1 = std::string();
     auto s2 = std::string();
@@ -9042,9 +9089,9 @@ void PrintText::print_wrapped_line(const std::string& line) {
         if (c == ' ' || c == '\t' || c == ',' || c == ';' || c == '.') {
             s2 = s1;
         }
-        measure_lw_lh(s1);
+        _measure_lw_lh(s1);
         if (_lw >= _pw - _nw) {
-            check_for_new_page();
+            _check_for_new_page();
             if (s2 != "") {
                 fl_draw(s2.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
                 s1 = (s2.length() < s1.length()) ? s1.substr(s2.length()) : "";
@@ -9063,12 +9110,12 @@ void PrintText::print_wrapped_line(const std::string& line) {
         }
     }
     if (s1 != "") {
-        check_for_new_page();
+        _check_for_new_page();
         fl_draw(s1.c_str(), _px + _nw, _py, _pw - _nw, _lh, _align, nullptr, 0);
         _py += _lh;
     }
 }
-std::string PrintText::start() {
+std::string PrintText::_start() {
     if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
         return "error: could not open file!";
     }
@@ -9085,7 +9132,7 @@ std::string PrintText::start() {
     _printer->begin_job(_file, 0, _page_format, _page_layout);
     return "";
 }
-std::string PrintText::stop() {
+std::string PrintText::_stop() {
     std::string res = "";
     if (_printer != nullptr) {
         if (_page_count > 0) {
@@ -9415,9 +9462,7 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
 }
 #include <algorithm>
 namespace flw {
-namespace inputmenu {
-    static constexpr const char* TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
-}
+static constexpr const char* _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
 class _InputMenu : public Fl_Input {
 public:
     bool            show_menu;
@@ -9449,7 +9494,7 @@ public:
                 }
                 return 1;
             }
-            else if (key == FL_Down && history.size() > 0 && index < (int) history.size() - 1) {
+            else if (key == FL_Down && history.size() > 0 && index < static_cast<int>(history.size()) - 1) {
                 index++;
                 value(history[index].c_str());
                 show_menu = false;
@@ -9471,8 +9516,8 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _input->callback(InputMenu::_CallbackInput, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
     _menu->callback(InputMenu::_CallbackMenu, this);
-    _menu->tooltip(inputmenu::TOOLTIP);
-    tooltip(inputmenu::TOOLTIP);
+    _menu->tooltip(_INPUTMENU_TOOLTIP);
+    tooltip(_INPUTMENU_TOOLTIP);
     update_pref();
     resize(X, Y, W, H);
 }
@@ -9490,7 +9535,7 @@ void InputMenu::_CallbackInput(Fl_Widget*, void* o) {
 void InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
     auto self  = static_cast<InputMenu*>(o);
     auto index = self->_menu->find_index(self->_menu->text());
-    if (index >= 0 && index < (int) self->_input->history.size()) {
+    if (index >= 0 && index < static_cast<int>(self->_input->history.size())) {
         self->_input->value(self->_input->history[index].c_str());
         self->_input->index = index;
     }
@@ -9526,7 +9571,7 @@ void InputMenu::insert(const std::string& string, unsigned max_list_len) {
 void InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
     if (_menu->visible() != 0) {
-        auto mw = (int) flw::PREF_FONTSIZE;
+        auto mw = flw::PREF_FONTSIZE;
         _input->resize(X, Y, W - flw::PREF_FONTSIZE - mw, H);
         _menu->resize(X + W - flw::PREF_FONTSIZE - mw, Y, flw::PREF_FONTSIZE + mw, H);
     }
@@ -11525,7 +11570,7 @@ bool Plot::load_csv() {
         return false;
     }
     auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     auto vec = PlotData::LoadCSV(filename);
@@ -11541,7 +11586,7 @@ bool Plot::load_csv() {
 }
 bool Plot::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     return load_json(filename);
@@ -11678,14 +11723,14 @@ bool Plot::save_csv() {
         return false;
     }
     auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     return PlotData::SaveCSV(_lines[_selected_line].data(), filename);
 }
 bool Plot::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
-    if (util::is_whitespace_or_empty(filename.c_str()) == true) {
+    if (util::is_empty(filename) == true) {
         return false;
     }
     return save_json(filename);
@@ -12038,12 +12083,12 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     clip.reserve(self->size() * 40 + 100);
     if (label == _SCROLLBROWSER_MENU_LINE) {
         if (self->value() != 0) {
-            clip = util::remove_browser_format(self->text(self->value()));
+            clip = util::remove_browser_format(util::to_string(self->text(self->value())));
         }
     }
     else if (label == _SCROLLBROWSER_MENU_ALL) {
         for (auto f = 1; f <= self->size(); f++) {
-            auto s = util::remove_browser_format(self->text(f));
+            auto s = util::remove_browser_format(util::to_string(self->text(f)));
             clip += s;
             clip += "\n";
         }
@@ -14229,7 +14274,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     clip_children(1);
     resizable(nullptr);
     _scroll    = new Fl_Scroll(X, Y, W, H);
-    _pack      = new Fl_Pack(X, Y, W, H);
+    _pack      = new Fl_Flex(X, Y, W, H);
     _active1   = -1;
     _active2   = -1;
     _n         = 0;
@@ -14733,10 +14778,10 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
     if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
         _align = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
         _scroll->type(Fl_Scroll::HORIZONTAL);
-        _pack->type(Fl_Pack::HORIZONTAL);
+        _pack->type(Fl_Flex::HORIZONTAL);
     }
     else {
-        _pack->type(Fl_Pack::VERTICAL);
+        _pack->type(Fl_Flex::VERTICAL);
         _scroll->type(Fl_Scroll::VERTICAL);
     }
     for (auto widget : _widgets) {
