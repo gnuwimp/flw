@@ -1151,7 +1151,6 @@ void* util::zero_memory(char* mem, size_t size) {
  *
  */
 
-///< @brief Bige color.
 Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);     
 Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
 Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
@@ -1632,11 +1631,10 @@ bool theme::load(const std::string& name) {
 * First time it is called it will load all available fonts from the system.
 *
 * @param[in] requested_font  Font name.
-* @param[in] def             Default font if name can't be found.
 *
-* @return Found font value or default value.
+* @return Found font value or -1.
 */
-Fl_Font theme::load_font(const std::string& requested_font, Fl_Font def) {
+Fl_Font theme::load_font(const std::string& requested_font) {
     theme::load_fonts();
 
     auto count = 0;
@@ -1651,7 +1649,7 @@ Fl_Font theme::load_font(const std::string& requested_font, Fl_Font def) {
         count++;
     }
 
-    return def;
+    return -1;
 }
 
 /** @brief Load fonts to flw font list.
@@ -1773,9 +1771,9 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
     std::string name = buffer;
     
     if (name != "" && name != "FL_HELVETICA") {
-        auto font = theme::load_font(name, FL_HELVETICA);
+        auto font = theme::load_font(name);
 
-        if (font != FL_HELVETICA) {
+        if (font != -1) {
             flw::PREF_FONT     = font;
             flw::PREF_FONTNAME = name;
         }
@@ -1791,9 +1789,9 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
     name = buffer;
     
     if (name != "" && name != "FL_COURIER") {
-        auto font = theme::load_font(name, FL_COURIER);
+        auto font = theme::load_font(name);
 
-        if (font != FL_COURIER) {
+        if (font != -1) {
             flw::PREF_FIXED_FONT     = font;
             flw::PREF_FIXED_FONTNAME = name;
         }

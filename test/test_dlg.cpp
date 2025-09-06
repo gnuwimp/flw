@@ -92,23 +92,23 @@ void test_font2() {
 //------------------------------------------------------------------------------
 void test_font_big() {
 #ifdef _WIN32
-    auto font = theme::load_font("Calibri italic", FL_HELVETICA);
+    auto font = theme::load_font("Calibri italic");
 #else
-    auto font = theme::load_font("Kinnari bold italic", FL_HELVETICA);
+    auto font = theme::load_font("Kinnari bold italic");
 #endif
 
-    if (font != FL_HELVETICA) {
+    if (font != -1) {
         flw::PREF_FONT     = font;
         flw::PREF_FONTSIZE = 20;
     }
 
 #ifdef _WIN32
-    font = theme::load_font("Lucida Console", FL_COURIER);
+    font = theme::load_font("Lucida Console");
 #else
-    font = theme::load_font("mono bold italic", FL_COURIER);
+    font = theme::load_font("mono bold italic");
 #endif
 
-    if (font != FL_COURIER) {
+    if (font != -1) {
         flw::PREF_FIXED_FONT     = font;
         flw::PREF_FIXED_FONTSIZE = 20;
     }
@@ -117,23 +117,23 @@ void test_font_big() {
 //------------------------------------------------------------------------------
 void test_font_small() {
 #ifdef _WIN32
-    auto font = theme::load_font("MS Serif bold", FL_HELVETICA);
+    auto font = theme::load_font("MS Serif bold");
 #else
-    auto font = theme::load_font("Kinnari bold italic", FL_HELVETICA);
+    auto font = theme::load_font("Kinnari bold italic");
 #endif
 
-    if (font != FL_HELVETICA) {
+    if (font != -1) {
         flw::PREF_FONT     = font;
         flw::PREF_FONTSIZE = 12;
     }
 
 #ifdef _WIN32
-    font = theme::load_font("Fira Code bold", FL_COURIER);
+    font = theme::load_font("Fira Code bold");
 #else
-    font = theme::load_font("mono bold italic", FL_COURIER);
+    font = theme::load_font("mono bold italic");
 #endif
 
-    if (font != FL_COURIER) {
+    if (font != -1) {
         flw::PREF_FIXED_FONT     = font;
         flw::PREF_FIXED_FONTSIZE = 12;
     }

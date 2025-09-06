@@ -159,7 +159,7 @@ namespace util {
 namespace theme {
     bool                        is_dark();
     bool                        load(const std::string& name);
-    Fl_Font                     load_font(const std::string& requested_font, Fl_Font def);
+    Fl_Font                     load_font(const std::string& requested_font);
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
     Fl_Rect                     load_rect_from_pref(Fl_Preferences& pref, const std::string& basename);
