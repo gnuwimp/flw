@@ -241,15 +241,18 @@ Fl_Widget* TabsGroup::child(int index) const {
 void TabsGroup::clear() {
     _active1 = -1;
     _active2 = -1;
+
+    _widgets.clear();
     _scroll->remove(_pack);
     _scroll->clear();
     _pack->clear();
     Fl_Group::remove(_scroll);
     Fl_Group::clear();
     Fl_Group::add(_scroll);
-    _widgets.clear();
     _scroll->add(_pack);
     update_pref();
+    _pack->need_layout(1);
+    do_layout();
     Fl::redraw();
 }
 
@@ -813,6 +816,8 @@ int TabsGroup::swap(int from, int to) {
 
         util::swap_rect(_widgets[from], _widgets[to]);
     }
+
+    _pack->need_layout(1);
 
     return _active1;
 }

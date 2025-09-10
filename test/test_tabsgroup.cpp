@@ -274,6 +274,7 @@ public:
 
     static void Callback(Fl_Widget* w, void*) {
         if (w == TEST->b1) {
+            //TEST->create(256, "add last", true);
             TEST->create(32, "add last", true);
             //TEST->create(4, "add last", true);
         }
