@@ -163,7 +163,7 @@ public:
         _date_chooser->set(_value);
         _grid->do_layout();
         _ok->callback(Callback, this);
-        
+
         util::labelfont(this);
         callback(Callback, this);
         copy_label(title.c_str());
@@ -2158,6 +2158,8 @@ class _DlgTheme : public Fl_Double_Window {
     Fl_Button*                  _fixedfont;     // Select fixed font.
     Fl_Button*                  _font;          // Select regular font.
     Fl_Check_Button*            _scale;         // Turn on/off FLTK scaling.
+    Fl_Slider*                  _scale_val;     // Scale value.
+    Fl_Window*                  _parent;        // Parent window or top window.
     GridGroup*                  _grid;          // Layout widget.
     bool                        _run;           // Run flag.
     int                         _theme_row;     // Row index in theme list.
@@ -2180,14 +2182,17 @@ public:
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
         _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use scaling");
+        _scale_val   = new Fl_Slider(0, 0, 0, 0);
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
+        _parent      = (parent != nullptr) ? parent : top_window();
         _theme_row   = 0;
         _run         = false;
 
         _grid->add(_theme,         1,   1,  -1, -21);
         _grid->add(_font_label,    1, -20,  -1,   4);
         _grid->add(_fixed_label,   1, -15,  -1,   4);
-        _grid->add(_scale,         1, -10,  -1,   4);
+        _grid->add(_scale,         1, -10,  19,   4);
+        _grid->add(_scale_val,    25, -10,  -1,   4);
         _grid->add(_font,        -51,  -5,  16,   4);
         _grid->add(_fixedfont,   -34,  -5,  16,   4);
         _grid->add(_close,       -17,  -5,  16,   4);
@@ -2201,24 +2206,31 @@ public:
           _fixedfont->deactivate();
         }
 
-        _close->callback(Callback, this);
+        _close->callback(_DlgTheme::Callback, this);
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
         _fixed_label->color(FL_BACKGROUND2_COLOR);
         _fixed_label->tooltip("Default fixed font");
-        _fixedfont->callback(Callback, this);
+        _fixedfont->callback(_DlgTheme::Callback, this);
         _fixedfont->tooltip("Set default fixed font.");
-        _font->callback(Callback, this);
+        _font->callback(_DlgTheme::Callback, this);
         _font->tooltip("Set default font.");
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _font_label->box(FL_BORDER_BOX);
         _font_label->color(FL_BACKGROUND2_COLOR);
         _font_label->tooltip("Default font.");
-        _scale->callback(Callback, this);
-        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nMight not work as expected in some desktop environments!");
+        _scale->callback(_DlgTheme::Callback, this);
+        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nSave settings and restart application.");
         _scale->value(flw::PREF_SCALE_ON);
+        _scale_val->range(0.5, 2.0);
+        _scale_val->step(0.05);
+        _scale_val->value(flw::PREF_SCALE_VAL);
+        _scale_val->type(FL_HORIZONTAL);
+        _scale_val->callback(_DlgTheme::Callback, this);
+        _scale_val->align(FL_ALIGN_LEFT);
+        _scale_val->tooltip("Set scaling factor.");
         _theme->box(FL_BORDER_BOX);
-        _theme->callback(Callback, this);
+        _theme->callback(_DlgTheme::Callback, this);
         _theme->textfont(flw::PREF_FONT);
 
         for (auto& name : flw::PREF_THEMES) {
@@ -2228,21 +2240,12 @@ public:
         if (Fl::screen_scaling_supported() == 0) {
             _scale->value(0);
             _scale->deactivate();
-        }
-        else if (flw::PREF_SCALE_VAL < 0.1) {
-            if (parent != nullptr) {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(parent->screen_num());
-            }
-            else if (Fl::first_window() != nullptr) {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(Fl::first_window()->screen_num());
-            }
-            else {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(0);
-            }
+            _scale_val->deactivate();
         }
 
+        _DlgTheme::Callback(_scale_val, this);
         resizable(_grid);
-        callback(Callback, this);
+        callback(_DlgTheme::Callback, this);
         set_modal();
         update_pref();
         util::center_window(this, parent);
@@ -2290,6 +2293,11 @@ public:
                 }
 
                 self->update_pref();
+                
+                #if defined(__linux__)
+                    self->hide(); // !!! Wayland/KDE ignores resizing of window unless the windows does a hide and show, no idea why.
+                    self->show();
+                #endif
             }
         }
         else if (w == self->_theme) {
@@ -2339,20 +2347,10 @@ public:
         }
         else if (w == self->_scale) {
             flw::PREF_SCALE_ON = self->_scale->value();
-
-            if (flw::PREF_SCALE_ON == true) {
-                if (flw::PREF_SCALE_VAL > 0.5 && flw::PREF_SCALE_ON < 4.0) {
-                    Fl::screen_scale(self->top_window()->screen_num(), flw::PREF_SCALE_VAL);
-                }
-                else {
-                    Fl::screen_scale(self->top_window()->screen_num(), 1.0);
-                }
-            }
-            else {
-                Fl::screen_scale(self->top_window()->screen_num(), 1.0);
-            }
-
-            self->update_pref();
+        }
+        else if (w == self->_scale_val) {
+            flw::PREF_SCALE_VAL = self->_scale_val->value();
+            self->_scale_val->copy_label(util::format("%.2f", flw::PREF_SCALE_VAL).c_str());
         }
     }
 
@@ -2373,6 +2371,9 @@ public:
     *
     */
     void update_pref() {
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
+        _grid->resize(0, 0, w(), h());
+
         Fl_Tooltip::font(flw::PREF_FONT);
         Fl_Tooltip::size(flw::PREF_FONTSIZE);
         util::labelfont(this);
@@ -2382,9 +2383,6 @@ public:
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textfont(flw::PREF_FONT);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
-        size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
-        _grid->resize(0, 0, w(), h());
         theme::_scrollbar();
 
         for (int f = 0; f < theme::THEME_NIL; f++) {
@@ -2392,7 +2390,6 @@ public:
                 _theme->value(f + 1);
                 break;
             }
-
         }
 
         Fl::redraw();
@@ -2409,6 +2406,8 @@ public:
 * flw::PREF_FIXED_FONT.\n
 * flw::PREF_FIXED_FONTSIZE.\n
 * flw::PREF_FIXED_FONTNAME.\n
+* flw::PREF_SCALE_ON.\n
+* flw::PREF_SCALE_VAL.\n
 *
 * @param[in] enable_font       Enable selecting regular font.
 * @param[in] enable_fixedfont  Enable selecting fixed font.

@@ -3,6 +3,8 @@
 
 #include "flw.h"
 
+FL_EXPORT bool fl_disable_wayland = false;
+
 #ifndef FLW_AMALGAM
     #include "datechooser.h"
     #include "dlg.h"
