@@ -290,6 +290,9 @@ test_theme.exe: obj/test_theme.o $(OBJ) $(THEME_RESOURCE)
 run_theme: test_theme.exe
 	./test_theme.exe $(arg)
 
+debug_theme: test_theme.exe
+	gdb ./test_theme.exe
+
 #-------------------------------------------------------------------------------
 
 clean:

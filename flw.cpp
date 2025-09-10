@@ -7247,6 +7247,8 @@ class _DlgTheme : public Fl_Double_Window {
     Fl_Button*                  _fixedfont;
     Fl_Button*                  _font;
     Fl_Check_Button*            _scale;
+    Fl_Slider*                  _scale_val;
+    Fl_Window*                  _parent;
     GridGroup*                  _grid;
     bool                        _run;
     int                         _theme_row;
@@ -7261,13 +7263,16 @@ public:
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
         _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use scaling");
+        _scale_val   = new Fl_Slider(0, 0, 0, 0);
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
+        _parent      = (parent != nullptr) ? parent : top_window();
         _theme_row   = 0;
         _run         = false;
         _grid->add(_theme,         1,   1,  -1, -21);
         _grid->add(_font_label,    1, -20,  -1,   4);
         _grid->add(_fixed_label,   1, -15,  -1,   4);
-        _grid->add(_scale,         1, -10,  -1,   4);
+        _grid->add(_scale,         1, -10,  19,   4);
+        _grid->add(_scale_val,    25, -10,  -1,   4);
         _grid->add(_font,        -51,  -5,  16,   4);
         _grid->add(_fixedfont,   -34,  -5,  16,   4);
         _grid->add(_close,       -17,  -5,  16,   4);
@@ -7278,24 +7283,31 @@ public:
         if (enable_fixedfont == false) {
           _fixedfont->deactivate();
         }
-        _close->callback(Callback, this);
+        _close->callback(_DlgTheme::Callback, this);
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
         _fixed_label->color(FL_BACKGROUND2_COLOR);
         _fixed_label->tooltip("Default fixed font");
-        _fixedfont->callback(Callback, this);
+        _fixedfont->callback(_DlgTheme::Callback, this);
         _fixedfont->tooltip("Set default fixed font.");
-        _font->callback(Callback, this);
+        _font->callback(_DlgTheme::Callback, this);
         _font->tooltip("Set default font.");
         _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _font_label->box(FL_BORDER_BOX);
         _font_label->color(FL_BACKGROUND2_COLOR);
         _font_label->tooltip("Default font.");
-        _scale->callback(Callback, this);
-        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nMight not work as expected in some desktop environments!");
+        _scale->callback(_DlgTheme::Callback, this);
+        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nSave settings and restart application.");
         _scale->value(flw::PREF_SCALE_ON);
+        _scale_val->range(0.5, 2.0);
+        _scale_val->step(0.05);
+        _scale_val->value(flw::PREF_SCALE_VAL);
+        _scale_val->type(FL_HORIZONTAL);
+        _scale_val->callback(_DlgTheme::Callback, this);
+        _scale_val->align(FL_ALIGN_LEFT);
+        _scale_val->tooltip("Set scaling factor.");
         _theme->box(FL_BORDER_BOX);
-        _theme->callback(Callback, this);
+        _theme->callback(_DlgTheme::Callback, this);
         _theme->textfont(flw::PREF_FONT);
         for (auto& name : flw::PREF_THEMES) {
             _theme->add(name.c_str());
@@ -7303,20 +7315,11 @@ public:
         if (Fl::screen_scaling_supported() == 0) {
             _scale->value(0);
             _scale->deactivate();
+            _scale_val->deactivate();
         }
-        else if (flw::PREF_SCALE_VAL < 0.1) {
-            if (parent != nullptr) {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(parent->screen_num());
-            }
-            else if (Fl::first_window() != nullptr) {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(Fl::first_window()->screen_num());
-            }
-            else {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(0);
-            }
-        }
+        _DlgTheme::Callback(_scale_val, this);
         resizable(_grid);
-        callback(Callback, this);
+        callback(_DlgTheme::Callback, this);
         set_modal();
         update_pref();
         util::center_window(this, parent);
@@ -7353,6 +7356,10 @@ public:
                     flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
                 }
                 self->update_pref();
+                #if defined(__linux__)
+                    self->hide();
+                    self->show();
+                #endif
             }
         }
         else if (w == self->_theme) {
@@ -7400,18 +7407,10 @@ public:
         }
         else if (w == self->_scale) {
             flw::PREF_SCALE_ON = self->_scale->value();
-            if (flw::PREF_SCALE_ON == true) {
-                if (flw::PREF_SCALE_VAL > 0.5 && flw::PREF_SCALE_ON < 4.0) {
-                    Fl::screen_scale(self->top_window()->screen_num(), flw::PREF_SCALE_VAL);
-                }
-                else {
-                    Fl::screen_scale(self->top_window()->screen_num(), 1.0);
-                }
-            }
-            else {
-                Fl::screen_scale(self->top_window()->screen_num(), 1.0);
-            }
-            self->update_pref();
+        }
+        else if (w == self->_scale_val) {
+            flw::PREF_SCALE_VAL = self->_scale_val->value();
+            self->_scale_val->copy_label(util::format("%.2f", flw::PREF_SCALE_VAL).c_str());
         }
     }
     void run() {
@@ -7423,6 +7422,8 @@ public:
         }
     }
     void update_pref() {
+        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
+        _grid->resize(0, 0, w(), h());
         Fl_Tooltip::font(flw::PREF_FONT);
         Fl_Tooltip::size(flw::PREF_FONTSIZE);
         util::labelfont(this);
@@ -7432,9 +7433,6 @@ public:
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textfont(flw::PREF_FONT);
         _theme->textsize(flw::PREF_FONTSIZE);
-        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
-        size_range(flw::PREF_FONTSIZE * 20, flw::PREF_FONTSIZE * 14);
-        _grid->resize(0, 0, w(), h());
         theme::_scrollbar();
         for (int f = 0; f < theme::THEME_NIL; f++) {
             if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
@@ -8411,7 +8409,6 @@ void* util::zero_memory(char* mem, size_t size) {
 #endif
     return mem;
 }
-///< @brief Bige color.
 Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
 Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
 Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
@@ -8760,7 +8757,7 @@ bool theme::load(const std::string& name) {
     theme::_scrollbar();
     return true;
 }
-Fl_Font theme::load_font(const std::string& requested_font, Fl_Font def) {
+Fl_Font theme::load_font(const std::string& requested_font) {
     theme::load_fonts();
     auto count = 0;
     for (auto font : flw::PREF_FONTNAMES) {
@@ -8770,7 +8767,7 @@ Fl_Font theme::load_font(const std::string& requested_font, Fl_Font def) {
         }
         count++;
     }
-    return def;
+    return -1;
 }
 void theme::load_fonts(bool iso8859_only) {
     if (flw::PREF_FONTNAMES.size() == 0) {
@@ -8843,8 +8840,8 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
     pref.get("regular_name", buffer, "", 4000);
     std::string name = buffer;
     if (name != "" && name != "FL_HELVETICA") {
-        auto font = theme::load_font(name, FL_HELVETICA);
-        if (font != FL_HELVETICA) {
+        auto font = theme::load_font(name);
+        if (font != -1) {
             flw::PREF_FONT     = font;
             flw::PREF_FONTNAME = name;
         }
@@ -8856,8 +8853,8 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
     pref.get("mono_name", buffer, "", 1000);
     name = buffer;
     if (name != "" && name != "FL_COURIER") {
-        auto font = theme::load_font(name, FL_COURIER);
-        if (font != FL_COURIER) {
+        auto font = theme::load_font(name);
+        if (font != -1) {
             flw::PREF_FIXED_FONT     = font;
             flw::PREF_FIXED_FONTNAME = name;
         }
@@ -14374,15 +14371,17 @@ Fl_Widget* TabsGroup::child(int index) const {
 void TabsGroup::clear() {
     _active1 = -1;
     _active2 = -1;
+    _widgets.clear();
     _scroll->remove(_pack);
     _scroll->clear();
     _pack->clear();
     Fl_Group::remove(_scroll);
     Fl_Group::clear();
     Fl_Group::add(_scroll);
-    _widgets.clear();
     _scroll->add(_pack);
     update_pref();
+    _pack->need_layout(1);
+    do_layout();
     Fl::redraw();
 }
 void TabsGroup::debug(bool all) const {
@@ -14769,6 +14768,7 @@ int TabsGroup::swap(int from, int to) {
         }
         util::swap_rect(_widgets[from], _widgets[to]);
     }
+    _pack->need_layout(1);
     return _active1;
 }
 void TabsGroup::tabs(TABS tabs, int space_max_20) {
