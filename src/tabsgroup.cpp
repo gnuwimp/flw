@@ -188,17 +188,20 @@ Fl_Widget* TabsGroup::_active_button() {
 *
 * If no after widget is used it will be added last.
 *
-* @param[in] label   Label for this widget.
-* @param[in] widget  Child widget.
-* @param[in] after   Add widget after this, optional.
+* @param[in] label    Label for this widget.
+* @param[in] widget   Child widget.
+* @param[in] after    Add widget after this, optional.
+* @param[in] tooltip  Tooltip, optional.
 */
-void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after) {
+void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after, const std::string& tooltip) {
     if (find(widget) != -1) {
         return;
     }
 
     auto button = new _TabsGroupButton(_align, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : static_cast<int>(_widgets.size());
+
+    button->copy_tooltip(tooltip.c_str());
 
     if (idx < 0 || idx >= static_cast<int>(_widgets.size()) - 1) {
         Fl_Group::add(widget);
@@ -855,6 +858,22 @@ void TabsGroup::tabs(TABS tabs, int space_max_20) {
     if (w != nullptr) {
         w->take_focus();
     }
+}
+
+/** @brief Get tab button tooltip.
+*
+* @param[in] widget  Child widget to get tooltip for.
+*
+* @return Tooltip label.
+*/
+std::string TabsGroup::tooltip(Fl_Widget* widget) const {
+    auto num = find(widget);
+
+    if (num == -1) {
+        return "";
+    }
+
+    return flw::util::to_string(_widgets[num]->tooltip());
 }
 
 /** @brief Set tab button tooltip.

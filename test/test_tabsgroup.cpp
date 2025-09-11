@@ -64,7 +64,7 @@ public:
 
         add(tabs);
 
-        tabs->add("Delete", b1);
+        tabs->add("Delete", b1, nullptr, "Testing tooltip in TabsGroup::add()");
         tabs->add("Hide/Show", b2);
         tabs->add("Delete", b3);
         tabs->add("Border", b4);
@@ -78,6 +78,7 @@ public:
         tabs->add("START", new Fl_Button(0, 0, 0, 0, TabsGroup::Help()));
         tabs->box(FL_BORDER_BOX);
         tabs->do_layout();
+        tabs->tooltip("Testing tooltip in TabsGroup::tooltip()", b2);
 
         resizable(tabs);
         size_range(64, 48);
@@ -207,7 +208,7 @@ public:
         TEST   = this;
         shrink = false;
         tabs   = new TabsGroup(0, 0, W, H);
-        b1     = new Fl_Button(0, 0, 0, 0, "Make");
+        b1     = new Fl_Button(0, 0, 0, 0, "Add");
         b2     = new Fl_Button(0, 0, 0, 0, "Insert first");
         b11    = new Fl_Button(0, 0, 0, 0, "Insert before");
         b3     = new Fl_Button(0, 0, 0, 0, "Add last");
@@ -269,13 +270,12 @@ public:
         resizable(tabs);
         size_range(64, 48);
         flw::util::labelfont(this);
-        Test2::Callback(b1, this);
+        create(16, "add last", true);
     }
 
     static void Callback(Fl_Widget* w, void*) {
         if (w == TEST->b1) {
-            //TEST->create(256, "add last", true);
-            TEST->create(32, "add last", true);
+            TEST->create(32, "add last", false);
             //TEST->create(4, "add last", true);
         }
         else if (w == TEST->b2) {

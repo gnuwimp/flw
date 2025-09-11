@@ -68,7 +68,7 @@ public:
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        activate(Fl_Widget* widget)
                                     { _activate(widget, false); } ///< @brief Activate and show button and child widget.
-    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
+    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr, const std::string& tooltip = "");
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; do_layout(); } ///< @brief Set border around active child widget.
     Fl_Widget*                  child(int index) const;
@@ -101,6 +101,7 @@ public:
     TABS                        tabs() const
                                     { return _tabs; } ///< @brief Pos of the tab buttons (TABS::NORTH, TABS::SOUTH, TABS::EAST, TABS::WEST).
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
+    std::string                 tooltip(Fl_Widget* widget) const;
     void                        tooltip(const std::string& label, Fl_Widget* widget);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
