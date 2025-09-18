@@ -149,6 +149,9 @@ test_chart.exe: obj/test_chart.o $(OBJ)
 run_chart: test_chart.exe
 	./test_chart.exe $(arg)
 
+debug_chart: test_chart.exe
+	gdb ./test_chart.exe
+
 obj/test_datechooser.o: test/test_datechooser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 

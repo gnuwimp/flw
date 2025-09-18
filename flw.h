@@ -734,149 +734,158 @@ private:
 #include <optional>
 #include <vector>
 namespace flw {
-class  ChartArea;
-struct ChartData;
-class  ChartLine;
-typedef std::vector<ChartData>  ChartDataVector;
-typedef std::vector<ChartLine>  ChartLineVector;
-typedef std::vector<ChartArea>  ChartAreaVector;
-struct ChartData {
+namespace chart {
+class  Area;
+struct Point;
+class  Line;
+typedef std::vector<Point> PointVector;
+typedef std::vector<Line>  LineVector;
+typedef std::vector<Area>  AreaVector;
+enum class DateRange {
+    DAY,            ///< @brief All days.
+    WEEKDAY,        ///< @brief Weekdays (mon - fri).
+    FRIDAY,         ///< @brief Only fridays.
+    SUNDAY,         ///< @brief Only sundays.
+    MONTH,          ///< @brief Last day in month.
+    HOUR,           ///< @brief Every hour.
+    MIN,            ///< @brief Every minute.
+    SEC,            ///< @brief Every second.
+    LAST = SEC,     ///< @brief Same as SEC.
+};
+enum class Algorithm {
+    ATR,                    ///< @brief ATR.
+    DAY_TO_MONTH,           ///< @brief Convert day to month.
+    DAY_TO_WEEK,            ///< @brief Convert day to week.
+    EXP_MOVING_AVERAGE,     ///< @brief Exponential moving average.
+    FIXED,                  ///< @brief Fixed Y value.
+    MODIFY,                 ///< @brief Modify data serie.
+    MOMENTUM,               ///< @brief Momentum algorithm.
+    MOVING_AVERAGE,         ///< @brief Moving average algorithm.
+    RSI,                    ///< @brief RSI algorithm.
+    STD_DEV,                ///< @brief Standard deviation.
+    STOCHASTICS,            ///< @brief Stochastic algorithm.
+    LAST = STOCHASTICS,     ///< @brief Same as STOCHASTICS.
+};
+enum class Modifier {
+    ADDITION,               ///< @brief Add to values.
+    DIVISION,               ///< @brief Divide values.
+    MULTIPLICATION,         ///< @brief Multiply values.
+    SUBTRACTION,            ///< @brief Subtract values.
+    LAST = SUBTRACTION,     ///< @brief Same as SUBTRACTION.
+};
+enum class LineType {
+    LINE,                               ///< @brief Simple line.
+    LINE_DOT,                           ///< @brief Dotted line
+    BAR,                                ///< @brief Vertical bar chart using high and low values.
+    BAR_CLAMP,                          ///< @brief Vertical bar chart with forced minimum value.
+    BAR_HLC,                            ///< @brief Vertical bar chart using high, low and close values.
+    HORIZONTAL,                         ///< @brief A horisontal line for close value.
+    EXPAND_VERTICAL,                    ///< @brief A vertical line using full chart area height.
+    EXPAND_HORIZONTAL_ALL,              ///< @brief Expand all points ro full chart area width.
+    EXPAND_HORIZONTAL_FIRST,            ///< @brief Expand first point to full chart area width.
+    LAST = EXPAND_HORIZONTAL_FIRST,     ///< @brief Same as EXPAND_HORIZONTAL_FIRST.
+};
+enum class AreaNum {
+    ONE,             ///< @brief Area 1.
+    TWO,             ///< @brief Area 2.
+    THREE,           ///< @brief Area 3.
+    FOUR,            ///< @brief Area 4.
+    FIVE,            ///< @brief Area 5.
+    LAST = FIVE,     ///< @brief Same as FIVE.
+};
+struct Point {
     static constexpr const double MAX_VALUE = 9223372036854775807.0;
     static constexpr const double MIN_VALUE = 0.0000001;
-    enum class RANGE {
-                                DAY,
-                                WEEKDAY,
-                                FRIDAY,
-                                SUNDAY,
-                                MONTH,
-                                HOUR,
-                                MIN,
-                                SEC,
-                                LAST = SEC,
-    };
-    enum class FORMULAS {
-                                ATR,
-                                DAY_TO_MONTH,
-                                DAY_TO_WEEK,
-                                EXP_MOVING_AVERAGE,
-                                FIXED,
-                                MODIFY,
-                                MOMENTUM,
-                                MOVING_AVERAGE,
-                                RSI,
-                                STD_DEV,
-                                STOCHASTICS,
-                                LAST = STOCHASTICS,
-    };
-    enum class MODIFY {
-                                ADDITION,
-                                DIVISION,
-                                MULTIPLICATION,
-                                SUBTRACTION,
-                                LAST = SUBTRACTION,
-    };
     std::string                 date;
     double                      close;
     double                      high;
     double                      low;
-    explicit                    ChartData();
-    explicit                    ChartData(std::string date_value, double value = 0.0);
-    explicit                    ChartData(std::string date, double high, double low, double close);
+    explicit                    Point();
+    explicit                    Point(const std::string& date, double value = 0.0);
+    explicit                    Point(const std::string& date, double high, double low, double close);
     void                        debug() const;
-    bool                        operator<(const ChartData& other) const { return date < other.date; }
-    bool                        operator<=(const ChartData& other) const { return date <= other.date; }
-    bool                        operator==(const ChartData& other) const { return date == other.date; }
-    bool                        operator!=(const ChartData& other) const { return date != other.date; }
-    static ChartDataVector      ATR(const ChartDataVector& in, size_t days);
-    static size_t               BinarySearch(const ChartDataVector& in, const ChartData& key);
-    static ChartDataVector      DateSerie(std::string start_date, std::string stop_date, ChartData::RANGE range, const ChartDataVector& block = ChartDataVector());
-    static ChartDataVector      DayToMonth(const ChartDataVector& in, bool sum = false);
-    static ChartDataVector      DayToWeek(const ChartDataVector& in, gnu::Date::DAY weekday, bool sum = false);
-    static void                 Debug(const ChartDataVector& in);
-    static ChartDataVector      ExponentialMovingAverage(const ChartDataVector& in, size_t days);
-    static ChartDataVector      Fixed(const ChartDataVector& in, double value);
-    static ChartDataVector      LoadCSV(std::string filename, std::string sep = ",");
-    static ChartDataVector      Modify(const ChartDataVector& in, ChartData::MODIFY modify, double value);
-    static ChartDataVector      Momentum(const ChartDataVector& in, size_t days);
-    static ChartDataVector      MovingAverage(const ChartDataVector& in, size_t days);
-    static std::string          RangeToString(ChartData::RANGE range);
-    static ChartDataVector      RSI(const ChartDataVector& in, size_t days);
-    static bool                 SaveCSV(const ChartDataVector& in, std::string filename, std::string sep = ",");
-    static ChartDataVector      StdDev(const ChartDataVector& in, size_t days);
-    static ChartDataVector      Stochastics(const ChartDataVector& in, size_t days);
-    static ChartData::RANGE     StringToRange(std::string range);
+    bool                        operator<(const Point& other) const { return date < other.date; } ///< @brief Compare date.
+    bool                        operator<=(const Point& other) const { return date <= other.date; } ///< @brief Compare date.
+    bool                        operator==(const Point& other) const { return date == other.date; } ///< @brief Compare date.
+    bool                        operator!=(const Point& other) const { return date != other.date; } ///< @brief Compare date.
+    static PointVector          ATR(const PointVector& in, size_t days);
+    static size_t               BinarySearch(const PointVector& in, const Point& key);
+    static PointVector          DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block = PointVector());
+    static PointVector          DayToMonth(const PointVector& in, bool sum = false);
+    static PointVector          DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum = false);
+    static void                 Debug(const PointVector& in);
+    static PointVector          ExponentialMovingAverage(const PointVector& in, size_t days);
+    static PointVector          Fixed(const PointVector& in, double value);
+    static PointVector          LoadCSV(const std::string& filename, const std::string& sep = ",");
+    static PointVector          Modify(const PointVector& in, Modifier modify, double value);
+    static PointVector          Momentum(const PointVector& in, size_t days);
+    static PointVector          MovingAverage(const PointVector& in, size_t days);
+    static std::string          RangeToString(DateRange range);
+    static PointVector          RSI(const PointVector& in, size_t days);
+    static bool                 SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep = ",");
+    static PointVector          StdDev(const PointVector& in, size_t days);
+    static PointVector          Stochastics(const PointVector& in, size_t days);
+    static DateRange            StringToRange(const std::string& range);
 };
-class ChartLine {
+class Line {
 public:
     static const int            MAX_WIDTH = 14;
-    enum class TYPE {
-                                LINE,
-                                LINE_DOT,
-                                BAR,
-                                BAR_CLAMP,
-                                BAR_HLC,
-                                HORIZONTAL,
-                                EXPAND_VERTICAL,
-                                EXPAND_HORIZONTAL_ALL,
-                                EXPAND_HORIZONTAL_FIRST,
-                                LAST = EXPAND_HORIZONTAL_FIRST,
-    };
-    explicit                    ChartLine()
-                                    { reset(); }
-    explicit                    ChartLine(const ChartDataVector& data, std::string label = "", TYPE type = ChartLine::TYPE::LINE);
+    explicit                    Line()
+                                    { reset(); } ///< @brief Create empty chart line.
+    explicit                    Line(const PointVector& data, const std::string& label = "", LineType type = LineType::LINE);
     Fl_Align                    align() const
-                                    { return _align; }
+                                    { return _align; } ///< @brief Return what side its y scale is on.
     Fl_Color                    color() const
-                                    { return _color; }
-    const ChartDataVector&      data() const
-                                    { return _data; }
+                                    { return _color; } ///< @brief Get line color.
+    const PointVector&          data() const
+                                    { return _data; } ///< @brief Get chart data.
     void                        debug(size_t num) const;
     bool                        is_visible() const
-                                    { return _visible; }
+                                    { return _visible; } ///< @brief Is line visible?
     std::string                 label() const
-                                    { return _label; }
+                                    { return _label; } ///< @brief Get line label.
     const Fl_Rect&              label_rect() const
-                                    { return _rect; }
+                                    { return _rect; } ///< @brief Get line label rectangle.
     void                        reset();
-    ChartLine&                  set_align(Fl_Align val)
-                                    { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; }
-    ChartLine&                  set_color(Fl_Color val)
-                                    { _color = val; return *this; }
-    ChartLine&                  set_data(const ChartDataVector& val)
-                                    { _data = val; return *this; }
-    ChartLine&                  set_label(std::string val)
-                                    { _label = val; return *this; }
-    ChartLine&                  set_label_rect(int x, int y, int w, int h)
-                                    { _rect = Fl_Rect(x, y, w, h); return *this; }
-    ChartLine&                  set_type(TYPE val)
+    Line&                       set_align(Fl_Align val)
+                                    { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; } ///< @brief Set scale side (only FL_ALIGN_LEFT or FL_ALIGN_RIGHT).
+    Line&                       set_color(Fl_Color val)
+                                    { _color = val; return *this; } ///< @brief Set line color.
+    Line&                       set_data(const PointVector& val)
+                                    { _data = val; return *this; } ///< @brief Set chart data.
+    Line&                       set_label(const std::string& val)
+                                    { _label = val; return *this; } ///< @brief Set line label.
+    Line&                       set_label_rect(int x, int y, int w, int h)
+                                    { _rect = Fl_Rect(x, y, w, h); return *this; } ///< @brief Set line label rectangle.
+    Line&                       set_type(LineType val)
                                     { _type = val; return *this; }
-    ChartLine&                  set_type_from_string(std::string val);
-    ChartLine&                  set_visible(bool val)
-                                    { _visible = val; return *this; }
-    ChartLine&                  set_width(unsigned val = 1)
-                                    { if (val > 0 && val <= ChartLine::MAX_WIDTH) _width = val; return *this; }
+    Line&                       set_type_from_string(const std::string& val);
+    Line&                       set_visible(bool val)
+                                    { _visible = val; return *this; } ///< @brief Set visibilty.
+    Line&                       set_width(unsigned val = 1)
+                                    { if (val > 0 && val <= Line::MAX_WIDTH) _width = val; return *this; } ///< @brief Set line size.
     size_t                      size() const
-                                    { return _data.size(); }
-    TYPE                        type() const
-                                    { return _type; }
-    bool                        type_has_hlc() const
-                                    { return _type == TYPE::BAR || _type == TYPE::BAR_CLAMP || _type == ChartLine::TYPE::BAR_HLC; }
+                                    { return _data.size(); } ///< @brief Get number of data points.
+    LineType                    type() const
+                                    { return _type; } ///< @brief Get line type.
+    bool                        type_has_high_and_low() const
+                                    { return _type == LineType::BAR || _type == LineType::BAR_CLAMP || _type == LineType::BAR_HLC; } ///< @brief Check if line type are using high and low values.
     std::string                 type_to_string() const;
     unsigned                    width() const
-                                    { return _width; }
+                                    { return _width; } ///< @brief Get line width.
 private:
-    ChartDataVector             _data;
+    PointVector                 _data;
     Fl_Align                    _align;
     Fl_Color                    _color;
     Fl_Rect                     _rect;
-    TYPE                        _type;
+    LineType                    _type;
     bool                        _visible;
     std::string                 _label;
     unsigned                    _width;
 };
-class ChartScale {
+class Scale {
 public:
-                                ChartScale();
+                                Scale();
     int                         calc_margin();
     void                        calc_tick(int height);
     void                        debug(const char* name) const;
@@ -885,71 +894,63 @@ public:
     std::optional<double>       max() const;
     std::optional<double>       min() const;
     double                      pixel() const
-                                    { return _pixel; }
+                                    { return _pixel; } ///< @brief Get y value for one pixel.
     void                        reset();
     void                        set_max(double val)
-                                    { _max = val; }
+                                    { _max = val; } ///< @brief Set max y value.
     void                        set_min(double val)
-                                    { _min = val; }
+                                    { _min = val; } ///< @brief Set min y value.
     double                      tick() const
-                                    { return _tick; }
+                                    { return _tick; } ///< @brief Get y value between every y tick.
 private:
     double                      _max;
     double                      _min;
     double                      _pixel;
     double                      _tick;
 };
-class ChartArea {
+class Area {
 public:
     static const size_t         MAX_LINES = 10;
-    enum class AREA {
-                                ONE,
-                                TWO,
-                                THREE,
-                                FOUR,
-                                FIVE,
-                                LAST = FIVE,
-    };
-    explicit                    ChartArea(ChartArea::AREA area)
-                                    { _area = area; reset(); }
-    bool                        add_line(const ChartLine& chart_line);
-    AREA                        area() const
-                                    { return _area; }
+    explicit                    Area(AreaNum area)
+                                    { _area = area; reset(); } ///< @brief Create chart area. @param[in] area  Area index.
+    bool                        add_line(const Line& chart_line);
+    AreaNum                     area() const
+                                    { return _area; } ///< @brief Get area index.
     std::optional<double>       clamp_max() const;
     std::optional<double>       clamp_min() const;
     void                        debug() const;
     void                        delete_line(size_t index);
-    ChartScale&                 left_scale()
-                                    { return _left; }
-    ChartLine*                  line(size_t index)
-                                    { return (index < _lines.size()) ? &_lines[index] : nullptr; }
-    const ChartLineVector&      lines() const
-                                    { return _lines; }
+    Scale&                      left_scale()
+                                    { return _left; } ///< @brief Get left scale.
+    Line*                       line(size_t index)
+                                    { return (index < _lines.size()) ? &_lines[index] : nullptr; } ///< @brief Get chart line.
+    const LineVector&           lines() const
+                                    { return _lines; } ///< @brief Get all chart lines.
     int                         percent() const
-                                    { return _percent; }
+                                    { return _percent; } ///< @brief Get size as a percent value.
     Fl_Rect&                    rect()
-                                    { return _rect; }
+                                    { return _rect; } ///< @brief Get area rectangle.
     void                        reset();
-    ChartScale&                 right_scale()
-                                    { return _right; }
+    Scale&                      right_scale()
+                                    { return _right; } ///< @brief Get right scale.
     size_t                      selected() const
-                                    { return _selected; }
-    ChartLine*                  selected_line();
+                                    { return _selected; } ///< @brief Return which line is selected.
+    Line*                       selected_line();
     void                        set_max_clamp(double val = INFINITY)
-                                    { _clamp_max = val; }
+                                    { _clamp_max = val; } ///< @brief Set max clamp value.
     void                        set_min_clamp(double val = INFINITY)
-                                    { _clamp_min = val; }
+                                    { _clamp_min = val; } ///< @brief Set min clamp value.
     void                        set_percent(int val)
-                                    { _percent = val; }
+                                    { _percent = val; } ///< @brief Set size as a percent value. @param[in] val  From 10 to 100.
     void                        set_selected(size_t val)
-                                    { _selected = val; }
+                                    { _selected = val; } ///< @brief Set which line should be selected.
     size_t                      size() const
-                                    { return _lines.size(); }
+                                    { return _lines.size(); } ///< @brief Get number of chart lines.
 private:
-    AREA                        _area;
-    ChartLineVector             _lines;
-    ChartScale                  _left;
-    ChartScale                  _right;
+    AreaNum                     _area;
+    LineVector                  _lines;
+    Scale                       _left;
+    Scale                       _right;
     Fl_Rect                     _rect;
     double                      _clamp_max;
     double                      _clamp_min;
@@ -957,66 +958,66 @@ private:
     size_t                      _selected;
 };
 class Chart : public Fl_Group {
-    static const size_t         MAX_VLINES = 1400;
+    static const size_t         MAX_VLINES = 1600;
 public:
-    static const int            VERSION  =    5;
-    static const int            MIN_TICK =    3;
-    static const int            MAX_TICK = ChartLine::MAX_WIDTH * 5;
+    static const int            VERSION  = 5;
+    static const int            MIN_TICK = 3;
+    static const int            MAX_TICK = Line::MAX_WIDTH * 5;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     double                      alt_size() const
-                                    { return _alt_size; }
-    ChartArea&                  area(ChartArea::AREA area)
-                                    { return _areas[static_cast<size_t>(area)]; }
-    bool                        create_line(ChartData::FORMULAS formula, bool support = false);
+                                    { return _alt_size; } ///< @brief Get tweaked x label font size (for days and time).
+    Area&                       area(AreaNum area)
+                                    { return _areas[static_cast<size_t>(area)]; } ///< @brief Get chart area object.
+    bool                        create_line(Algorithm formula, bool support = false);
     void                        debug() const;
     void                        debug_line() const;
     void                        disable_menu()
-                                    { _disable_menu = true; }
+                                    { _disable_menu = true; } ///< @brief Disable popup menu.
     void                        do_layout()
-                                    { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); }
+                                    { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); } ///< @brief Resize widget.
     void                        draw() override;
     void                        enable_menu()
-                                    { _disable_menu = false; }
+                                    { _disable_menu = false; } ///< @brief Enable popup menu.
     std::string                 filename() const
-                                    { return _filename; }
+                                    { return _filename; } ///< @brief Return latest  json filename.
     int                         handle(int event) override;
     bool                        hor_lines() const
-                                    { return _horizontal; }
+                                    { return _horizontal; } ///< @brief Are horisontal lines shown?
     void                        init()
-                                    { _init(false); }
+                                    { _init(false); } ///< @brief Initiate chart but dont create new date serie.
     void                        init_new_data()
-                                    { _init(true); }
+                                    { _init(true); } ///< @brief Initiate chart and create new date serie.
     bool                        line_labels() const
-                                    { return _labels; }
+                                    { return _labels; } ///< @brief Are labels shown?.
     bool                        load_csv();
     bool                        load_json();
-    bool                        load_json(std::string filename);
+    bool                        load_json(const std::string& filename);
     std::string                 main_label() const
-                                    { return _label; }
+                                    { return _label; } ///< @brief Get main label.
     void                        print_to_postscript();
     void                        reset();
     void                        resize(int X, int Y, int W, int H) override;
     bool                        save_csv();
     bool                        save_json();
-    bool                        save_json(std::string filename, double max_diff_high_low = 0.001) const;
+    bool                        save_json(const std::string& filename, double max_diff_high_low = 0.001);
     bool                        save_png();
     void                        set_alt_size(double val = 0.8)
-                                    { if (val >= 0.6 && val <= 1.2) _alt_size = val; }
+                                    { if (val >= 0.6 && val <= 1.2) _alt_size = val; } ///< @brief Tweak fontsize for x labels  (for days and time). @param[in] val  Valid number is 0.6 to 1.2 (default 0.8).
     bool                        set_area_size(unsigned area1 = 100, unsigned area2 = 0, unsigned area3 = 0, unsigned area4 = 0, unsigned area5 = 0);
-    void                        set_block_dates(const ChartDataVector& block_dates)
-                                    { _block_dates = block_dates; }
-    void                        set_date_range(ChartData::RANGE range = ChartData::RANGE::DAY)
-                                    { _date_range  = range; }
+    void                        set_block_dates(const PointVector& block_dates)
+                                    { _block_dates = block_dates; } ///< @brief Set block date list.
+    void                        set_date_range(DateRange range = DateRange::DAY)
+                                    { _date_range  = range; } ///< @brief Set date range.
     void                        set_hor_lines(bool val = true)
-                                    { _horizontal = val; }
+                                    { _horizontal = val; } ///< @brief Show/hide horisontal lines.
     void                        set_line_labels(bool val = true)
-                                    { _labels = val; }
+                                    { _labels = val; } ///< @brief Show/hide line labels.
     void                        set_main_label(std::string label = "")
-                                    { _label = label; }
+                                    { _label = label; } ///< @brief Set main chart label.
     void                        set_tick_width(int val = Chart::MIN_TICK)
-                                    { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; }
+                                    { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; } ///< @brief Set tich width. @param[in] val  Tick value from MIN_TICK to MAX_TICK.
     void                        set_ver_lines(bool val = true)
-                                    { _vertical = val; }
+                                    { _vertical = val; } ///< @brief Show/hide vertical lines.
     void                        setup_area();
     void                        setup_clamp(bool min = true);
     void                        setup_create_line();
@@ -1029,13 +1030,13 @@ public:
     void                        setup_view_options();
     void                        update_pref();
     bool                        ver_lines() const
-                                    { return _vertical; }
+                                    { return _vertical; } ///< @brief Are vertical lines visible?
 private:
-    enum class LABELTYPE {
-                                OFF,
-                                ON,
-                                VISIBLE,
-                                LAST = VISIBLE,
+    enum class LabelType {
+                                OFF,                ///< @brief All checkboxes are off.
+                                ON,                 ///< @brief All checkboxes are on.
+                                VISIBLE,            ///< @brief Visible lines are on.
+                                LAST = VISIBLE,     ///< @brief Same as VISIBLE.
     };
     void                        _calc_area_height();
     void                        _calc_area_width();
@@ -1045,24 +1046,24 @@ private:
     void                        _calc_yscale();
     void                        _create_tooltip(bool ctrl);
     void                        _draw_label();
-    void                        _draw_lines(ChartArea& area);
-    void                        _draw_line_labels(ChartArea& area);
+    void                        _draw_lines(Area& area);
+    void                        _draw_line_labels(Area& area);
     void                        _draw_tooltip();
-    void                        _draw_ver_lines(ChartArea& area);
+    void                        _draw_ver_lines(Area& area);
     void                        _draw_xlabels();
-    void                        _draw_ylabels(ChartArea& area, Fl_Align align);
-    ChartArea*                  _get_active_area(int X, int Y);
+    void                        _draw_ylabels(Area& area, Fl_Align align);
+    Area*                       _get_active_area(int X, int Y);
     void                        _init(bool calc_dates);
-    StringVector                _label_array(const ChartArea& area, Chart::LABELTYPE labeltype) const;
-    bool                        _move_or_delete_line(ChartArea* area, size_t index, bool move, ChartArea::AREA destination = ChartArea::AREA::ONE);
+    StringVector                _label_array(const Area& area, LabelType labeltype) const;
+    bool                        _move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination = AreaNum::ONE);
     void                        _show_menu();
     static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
     static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
-    ChartArea*                  _area;
-    ChartAreaVector             _areas;
-    ChartData::RANGE            _date_range;
-    ChartDataVector             _block_dates;
-    ChartDataVector             _dates;
+    Area*                       _area;
+    AreaVector                  _areas;
+    DateRange                   _date_range;
+    PointVector                 _block_dates;
+    PointVector                 _dates;
     Fl_Menu_Button*             _menu;
     Fl_Rect                     _old;
     Fl_Scrollbar*               _scroll;
@@ -1086,6 +1087,7 @@ private:
     std::string                 _label;
     std::string                 _tooltip;
 };
+}
 }
 #include <FL/Fl_Group.H>
 namespace flw {
@@ -2133,7 +2135,7 @@ public:
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        activate(Fl_Widget* widget)
                                     { _activate(widget, false); } ///< @brief Activate and show button and child widget.
-    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr);
+    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr, const std::string& tooltip = "");
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
                                     { _n = n; _s = s; _w = w; _e = e; do_layout(); } ///< @brief Set border around active child widget.
     Fl_Widget*                  child(int index) const;
@@ -2166,6 +2168,7 @@ public:
     TABS                        tabs() const
                                     { return _tabs; } ///< @brief Pos of the tab buttons (TABS::NORTH, TABS::SOUTH, TABS::EAST, TABS::WEST).
     void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
+    std::string                 tooltip(Fl_Widget* widget) const;
     void                        tooltip(const std::string& label, Fl_Widget* widget);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;

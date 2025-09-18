@@ -3,6 +3,8 @@
 
 #include "flw.h"
 
+FL_EXPORT bool fl_disable_wayland = false;
+
 #ifndef FLW_AMALGAM
     #include "chart.h"
     #include "dlg.h"
@@ -19,14 +21,14 @@
 
 using namespace flw;
 
-#define TEST_RANGE_DAY          "All days (Range::DAY)"
+#define TEST_RANGE_DAY          "All days (DateRange::DAY)"
 #define TEST_RANGE_WEEKDAY      "Weekdays (RANGE::WEEKDAY)"
 #define TEST_RANGE_FRIDAY       "Fridays (RANGE::FRIDAY)"
 #define TEST_RANGE_SUNDAY       "Sundays (RANGE::SUNDAY)"
 #define TEST_RANGE_MONTH        "Months (RANGE::MONTH)"
-#define TEST_RANGE_HOUR         "Hour (Range::HOUR)"
-#define TEST_RANGE_MIN          "Minutes (Range::MIN)"
-#define TEST_RANGE_SEC          "Seconds (Range::SEC)"
+#define TEST_RANGE_HOUR         "Hour (DateRange::HOUR)"
+#define TEST_RANGE_MIN          "Minutes (DateRange::MIN)"
+#define TEST_RANGE_SEC          "Seconds (DateRange::SEC)"
 
 #define TEST_SMALL_VALUE1       "Small values 1"
 #define TEST_SMALL_VALUE2       "Small values 2"
@@ -61,12 +63,12 @@ std::string TEST = TEST_FIRST;
 int         RAND = 0;
 
 //------------------------------------------------------------------------------
-ChartDataVector create_serie1(const char* start, const char* stop, double value, double change, const ChartData::RANGE range, double divide = 0.0) {
+chart::PointVector create_serie1(const char* start, const char* stop, double value, double change, const chart::DateRange range, double divide = 0.0) {
     auto close = value;
     auto ch    = 0.0;
     auto date1 = gnu::Date(start);
     auto date2 = gnu::Date(stop);
-    auto res   = ChartDataVector();
+    auto res   = chart::PointVector();
 
     while (date1 <= date2) {
         double high = close * 1.02;
@@ -88,19 +90,19 @@ ChartDataVector create_serie1(const char* start, const char* stop, double value,
         }
 
         if (divide > 1.0) {
-            res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), high / divide, low / divide, close / divide));
+            res.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO_TIME), high / divide, low / divide, close / divide));
         }
         else {
-            res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), high, low, close));
+            res.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO_TIME), high, low, close));
         }
 
-        if (range == ChartData::RANGE::HOUR) {
+        if (range == chart::DateRange::HOUR) {
             date1.add_seconds(gnu::Date::SECS_PER_HOUR);
         }
-        else if (range == ChartData::RANGE::MIN) {
+        else if (range == chart::DateRange::MIN) {
             date1.add_seconds(60);
         }
-        else if (range == ChartData::RANGE::SEC) {
+        else if (range == chart::DateRange::SEC) {
             date1.add_seconds(1);
         }
         else {
@@ -122,14 +124,14 @@ ChartDataVector create_serie1(const char* start, const char* stop, double value,
 }
 
 //------------------------------------------------------------------------------
-ChartDataVector create_serie2(const char* start, const char* stop, double num = 1.0, double add = 0.0) {
-    auto res   = ChartDataVector();
+chart::PointVector create_serie2(const char* start, const char* stop, double num = 1.0, double add = 0.0) {
+    auto res   = chart::PointVector();
     auto f     = 1.0;
     auto date1 = gnu::Date(start);
     auto date2 = gnu::Date(stop);
 
     while (date1 <= date2) {
-        res.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO_TIME), sinl(f) + num));
+        res.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO_TIME), sinl(f) + num));
         f += num;
         num += add;
         date1.add_days(1);
@@ -139,14 +141,28 @@ ChartDataVector create_serie2(const char* start, const char* stop, double num = 
 }
 
 //------------------------------------------------------------------------------
-void test1(Chart* chart, std::string main_label, std::string label, const double start, const double change, const ChartData::RANGE range, const ChartLine::TYPE type, Fl_Align align, const int tick, const int width, double min = INFINITY, double max = INFINITY, double divide = 0.0) {
+void test1(
+    chart::Chart* chart, 
+    std::string main_label, 
+    std::string label, 
+    const double start, 
+    const double change, 
+    const chart::DateRange range, 
+    const chart::LineType type, 
+    Fl_Align align, 
+    const int tick, 
+    const int width, 
+    double min = INFINITY, 
+    double max = INFINITY, 
+    double divide = 0.0) {
+    
     auto vec1  = create_serie1("20010101", "20191231", start, change, range, divide);
-    auto line1 = ChartLine(vec1, label, type);
+    auto line1 = chart::Line(vec1, label, type);
 
     line1.set_align(align).set_color(color::ROYALBLUE).set_width(width);
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->area(ChartArea::AREA::ONE).set_min_clamp(min);
-    chart->area(ChartArea::AREA::ONE).set_max_clamp(max);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->area(chart::AreaNum::ONE).set_min_clamp(min);
+    chart->area(chart::AreaNum::ONE).set_max_clamp(max);
     chart->set_date_range(range);
     chart->set_tick_width(tick);
     chart->set_main_label(main_label);
@@ -154,113 +170,113 @@ void test1(Chart* chart, std::string main_label, std::string label, const double
 }
 
 //------------------------------------------------------------------------------
-void test2(Chart* chart) {
-    auto vec1  = create_serie1("20010101", "20091231", -2000, 3, ChartData::RANGE::DAY);
-    auto vec2  = create_serie1("20010201", "20091130", -4000, 5, ChartData::RANGE::DAY);
-    auto vec3  = ChartData::Fixed(vec1, 0);
-    vec1 = ChartData::Modify(vec1, ChartData::MODIFY::ADDITION, 1000);
-    vec2 = ChartData::Modify(vec2, ChartData::MODIFY::ADDITION, 2000);
-    auto line1 = ChartLine(vec1, "ChartLine::TYPE::LINE");
-    auto line2 = ChartLine(vec2, "ChartLine::TYPE::BAR_HLC", ChartLine::TYPE::BAR_HLC);
-    auto line3 = ChartLine(vec3, "ChartLine::TYPE::EXPAND_HORIZONTAL_FIRST", ChartLine::TYPE::EXPAND_HORIZONTAL_FIRST);
+void test2(chart::Chart* chart) {
+    auto vec1  = create_serie1("20010101", "20091231", -2000, 3, chart::DateRange::DAY);
+    auto vec2  = create_serie1("20010201", "20091130", -4000, 5, chart::DateRange::DAY);
+    auto vec3  = chart::Point::Fixed(vec1, 0);
+    vec1 = chart::Point::Modify(vec1, chart::Modifier::ADDITION, 1000);
+    vec2 = chart::Point::Modify(vec2, chart::Modifier::ADDITION, 2000);
+    auto line1 = chart::Line(vec1, "LineType::LINE");
+    auto line2 = chart::Line(vec2, "LineType::BAR_HLC", chart::LineType::BAR_HLC);
+    auto line3 = chart::Line(vec3, "LineType::EXPAND_HORIZONTAL_FIRST", chart::LineType::EXPAND_HORIZONTAL_FIRST);
 
 
     line1.set_color(color::ROYALBLUE).set_width(2);
     line2.set_align(FL_ALIGN_RIGHT).set_color(color::CRIMSON).set_width(2);
     line3.set_color(FL_DARK_GREEN).set_width(3);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->area(ChartArea::AREA::ONE).add_line(line2);
-    chart->area(ChartArea::AREA::ONE).add_line(line3);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->area(chart::AreaNum::ONE).add_line(line2);
+    chart->area(chart::AreaNum::ONE).add_line(line3);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_hor_lines(false);
     chart->set_tick_width(10);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test3(Chart* chart, std::string label, const ChartData::RANGE range, bool block = false) {
-    auto vec1 = ChartDataVector();
-    auto vec2 = ChartDataVector();
-    auto vec3 = ChartDataVector();
+void test3(chart::Chart* chart, std::string label, const chart::DateRange range, bool block = false) {
+    auto vec1 = chart::PointVector();
+    auto vec2 = chart::PointVector();
+    auto vec3 = chart::PointVector();
 
-    vec1.push_back(ChartData("20140102", 10)); // Thu    *
-    vec1.push_back(ChartData("20140105", 15)); // Sun    *
-    vec1.push_back(ChartData("20140111", 20)); // Sat    *
-    vec1.push_back(ChartData("20140113", 30)); // Mon |  *
-    vec1.push_back(ChartData("20140116", 25)); // Thu |  *
-    vec1.push_back(ChartData("20140124", 35)); // Fri |  *
-    vec1.push_back(ChartData("20140126", 40)); // Sun    *
-    vec1.push_back(ChartData("20140204", 45)); // Tue
-    vec1.push_back(ChartData("20140318", 50)); // Tue |  *
-    vec1.push_back(ChartData("20140319", 55)); // Wen |  *
-    vec1.push_back(ChartData("20140505", 60)); // Mon
-    vec1.push_back(ChartData("20140510", 30)); // Sat
+    vec1.push_back(chart::Point("20140102", 10)); // Thu    *
+    vec1.push_back(chart::Point("20140105", 15)); // Sun    *
+    vec1.push_back(chart::Point("20140111", 20)); // Sat    *
+    vec1.push_back(chart::Point("20140113", 30)); // Mon |  *
+    vec1.push_back(chart::Point("20140116", 25)); // Thu |  *
+    vec1.push_back(chart::Point("20140124", 35)); // Fri |  *
+    vec1.push_back(chart::Point("20140126", 40)); // Sun    *
+    vec1.push_back(chart::Point("20140204", 45)); // Tue
+    vec1.push_back(chart::Point("20140318", 50)); // Tue |  *
+    vec1.push_back(chart::Point("20140319", 55)); // Wen |  *
+    vec1.push_back(chart::Point("20140505", 60)); // Mon
+    vec1.push_back(chart::Point("20140510", 30)); // Sat
 
     if (block == true) {
-        vec3.push_back(ChartData("20140105"));
-        vec3.push_back(ChartData("20140111"));
-        vec3.push_back(ChartData("20140319"));
+        vec3.push_back(chart::Point("20140105"));
+        vec3.push_back(chart::Point("20140111"));
+        vec3.push_back(chart::Point("20140319"));
         chart->set_main_label("Dates 01/05, 01/11, 03/19 has been blocked");
     }
 
-    if (range == ChartData::RANGE::FRIDAY) {
-        vec2 = ChartData::DayToWeek(vec1, gnu::Date::DAY::FRIDAY);
+    if (range == chart::DateRange::FRIDAY) {
+        vec2 = chart::Point::DayToWeek(vec1, gnu::Date::DAY::FRIDAY);
         chart->set_tick_width(25);
     }
-    else if (range == ChartData::RANGE::SUNDAY) {
-        vec2 = ChartData::DayToWeek(vec1, gnu::Date::DAY::SUNDAY);
+    else if (range == chart::DateRange::SUNDAY) {
+        vec2 = chart::Point::DayToWeek(vec1, gnu::Date::DAY::SUNDAY);
         chart->set_tick_width(25);
     }
-    else if (range == ChartData::RANGE::MONTH) {
-        vec2 = ChartData::DayToMonth(vec1);
-        chart->set_tick_width(Chart::MAX_TICK);
+    else if (range == chart::DateRange::MONTH) {
+        vec2 = chart::Point::DayToMonth(vec1);
+        chart->set_tick_width(chart::Chart::MAX_TICK);
     }
     else {
         vec2 = vec1;
         chart->set_tick_width(8);
     }
 
-    auto line1 = ChartLine(vec2, label, ChartLine::TYPE::HORIZONTAL);
+    auto line1 = chart::Line(vec2, label, chart::LineType::HORIZONTAL);
     line1.set_color(color::ROYALBLUE).set_width(8);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
     chart->set_date_range(range);
     chart->set_block_dates(vec3);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test4(Chart* chart) {
-    auto vec1  = create_serie1("18000101", "20191231", 1000.0, 0.5, ChartData::RANGE::DAY);
-    auto vec2  = create_serie1("18100101", "20291231", 1000.0, 0.5, ChartData::RANGE::DAY);
-    auto vec3  = create_serie1("18200101", "19991231", 1000.0, 0.5, ChartData::RANGE::DAY);
-    auto line1 = ChartLine(vec1);
-    auto line2 = ChartLine(vec2);
-    auto line3 = ChartLine(vec3);
+void test4(chart::Chart* chart) {
+    auto vec1  = create_serie1("18000101", "20191231", 1000.0, 0.5, chart::DateRange::DAY);
+    auto vec2  = create_serie1("18100101", "20291231", 1000.0, 0.5, chart::DateRange::DAY);
+    auto vec3  = create_serie1("18200101", "19991231", 1000.0, 0.5, chart::DateRange::DAY);
+    auto line1 = chart::Line(vec1);
+    auto line2 = chart::Line(vec2);
+    auto line3 = chart::Line(vec3);
 
-    line1.set_label("18000101 - 20191231").set_type(ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(1);
-    line2.set_label("18100101 - 20291231").set_type(ChartLine::TYPE::LINE).set_color(FL_GREEN).set_width(1);
-    line3.set_label("18200101 - 19991231").set_type(ChartLine::TYPE::LINE).set_color(color::CRIMSON).set_width(1);
+    line1.set_label("18000101 - 20191231").set_type(chart::LineType::LINE).set_color(color::ROYALBLUE).set_width(1);
+    line2.set_label("18100101 - 20291231").set_type(chart::LineType::LINE).set_color(FL_GREEN).set_width(1);
+    line3.set_label("18200101 - 19991231").set_type(chart::LineType::LINE).set_color(color::CRIMSON).set_width(1);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->area(ChartArea::AREA::ONE).add_line(line2);
-    chart->area(ChartArea::AREA::ONE).add_line(line3);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->area(chart::AreaNum::ONE).add_line(line2);
+    chart->area(chart::AreaNum::ONE).add_line(line3);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_tick_width(3);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test5(Chart* chart, std::string main_label, const int count) {
-    auto vec1  = create_serie1("20010101", "20091231", 1000.0, 2.0, ChartData::RANGE::DAY);
-    auto vec2  = create_serie1("20010201", "20091130", 1500000.0, 2.0, ChartData::RANGE::DAY);
-    auto vec3  = create_serie1("20010101", "20091231", 3000000, 5.0, ChartData::RANGE::DAY);
-    auto vec4  = ChartData::MovingAverage(vec3, 20);
-    auto line1 = ChartLine(vec1, "ChartLine::TYPE::BAR_HLC", ChartLine::TYPE::BAR_HLC);
-    auto line2 = ChartLine(vec2, "ChartLine::TYPE::LINE");
-    auto line3 = ChartLine(vec3, "ChartLine::TYPE::BAR_CLAMP", ChartLine::TYPE::BAR_CLAMP);
-    auto line4 = ChartLine(vec4, "Moving Average");
+void test5(chart::Chart* chart, std::string main_label, const int count) {
+    auto vec1  = create_serie1("20010101", "20091231", 1000.0, 2.0, chart::DateRange::DAY);
+    auto vec2  = create_serie1("20010201", "20091130", 1500000.0, 2.0, chart::DateRange::DAY);
+    auto vec3  = create_serie1("20010101", "20091231", 3000000, 5.0, chart::DateRange::DAY);
+    auto vec4  = chart::Point::MovingAverage(vec3, 20);
+    auto line1 = chart::Line(vec1, "LineType::BAR_HLC", chart::LineType::BAR_HLC);
+    auto line2 = chart::Line(vec2, "LineType::LINE");
+    auto line3 = chart::Line(vec3, "LineType::BAR_CLAMP", chart::LineType::BAR_CLAMP);
+    auto line4 = chart::Line(vec4, "Moving Average");
 
     line1.set_color(color::ROYALBLUE).set_width(3);
     line2.set_color(color::CRIMSON).set_width(3);
@@ -272,78 +288,78 @@ void test5(Chart* chart, std::string main_label, const int count) {
         line3.set_width(0);
 
         chart->set_area_size(70, 30, 0, 0, 0);
-        chart->area(ChartArea::AREA::ONE).add_line(line1);
-        chart->area(ChartArea::AREA::ONE).add_line(line2);
-        chart->area(ChartArea::AREA::TWO).add_line(line3);
-        chart->area(ChartArea::AREA::TWO).add_line(line4);
-        chart->area(ChartArea::AREA::TWO).set_min_clamp(0);
+        chart->area(chart::AreaNum::ONE).add_line(line1);
+        chart->area(chart::AreaNum::ONE).add_line(line2);
+        chart->area(chart::AreaNum::TWO).add_line(line3);
+        chart->area(chart::AreaNum::TWO).add_line(line4);
+        chart->area(chart::AreaNum::TWO).set_min_clamp(0);
     }
     else if (count == 3) {
         chart->set_area_size(40, 40, 20);
-        chart->area(ChartArea::AREA::ONE).add_line(line1);
-        chart->area(ChartArea::AREA::TWO).add_line(line2);
-        chart->area(ChartArea::AREA::THREE).add_line(line3);
-        chart->area(ChartArea::AREA::THREE).add_line(line4);
-        chart->area(ChartArea::AREA::THREE).set_min_clamp(0);
+        chart->area(chart::AreaNum::ONE).add_line(line1);
+        chart->area(chart::AreaNum::TWO).add_line(line2);
+        chart->area(chart::AreaNum::THREE).add_line(line3);
+        chart->area(chart::AreaNum::THREE).add_line(line4);
+        chart->area(chart::AreaNum::THREE).set_min_clamp(0);
     }
     else if (count == 4) {
         chart->set_area_size(30, 30, 20, 20);
-        chart->area(ChartArea::AREA::ONE).add_line(line1);
-        chart->area(ChartArea::AREA::TWO).add_line(line2);
-        chart->area(ChartArea::AREA::THREE).add_line(line3);
-        chart->area(ChartArea::AREA::FOUR).add_line(line4);
-        chart->area(ChartArea::AREA::FOUR).set_min_clamp(0);
+        chart->area(chart::AreaNum::ONE).add_line(line1);
+        chart->area(chart::AreaNum::TWO).add_line(line2);
+        chart->area(chart::AreaNum::THREE).add_line(line3);
+        chart->area(chart::AreaNum::FOUR).add_line(line4);
+        chart->area(chart::AreaNum::FOUR).set_min_clamp(0);
     }
     else if (count == 5) {
         line4.set_align(FL_ALIGN_RIGHT);
         chart->set_area_size(20, 20, 20, 20, 20);
-        chart->area(ChartArea::AREA::ONE).add_line(line1);
-        chart->area(ChartArea::AREA::TWO).add_line(line2);
-        chart->area(ChartArea::AREA::THREE).add_line(line3);
-        chart->area(ChartArea::AREA::FOUR).add_line(line1);
-        chart->area(ChartArea::AREA::FIVE).add_line(line4);
-        chart->area(ChartArea::AREA::FIVE).set_min_clamp(0);
+        chart->area(chart::AreaNum::ONE).add_line(line1);
+        chart->area(chart::AreaNum::TWO).add_line(line2);
+        chart->area(chart::AreaNum::THREE).add_line(line3);
+        chart->area(chart::AreaNum::FOUR).add_line(line1);
+        chart->area(chart::AreaNum::FIVE).add_line(line4);
+        chart->area(chart::AreaNum::FIVE).set_min_clamp(0);
     }
 
     chart->set_hor_lines(false);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_tick_width(4);
     chart->set_main_label(main_label);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test6(Chart* chart, const ChartData::RANGE range) {
+void test6(chart::Chart* chart, const chart::DateRange range) {
     auto vec1  = create_serie1("20200912 000000", "20200916 230000", 100.0, 0.5, range);
-    auto line1 = ChartLine(vec1);
+    auto line1 = chart::Line(vec1);
 
-    if (range == ChartData::RANGE::HOUR) {
-        line1.set_label("ChartData::RANGE::HOUR");
+    if (range == chart::DateRange::HOUR) {
+        line1.set_label("DateRange::HOUR");
     }
-    else if (range == ChartData::RANGE::MIN) {
-        line1.set_label("ChartData::RANGE::MIN");
+    else if (range == chart::DateRange::MIN) {
+        line1.set_label("DateRange::MIN");
     }
-    else if (range == ChartData::RANGE::SEC) {
-        line1.set_label("ChartData::RANGE::SEC");
+    else if (range == chart::DateRange::SEC) {
+        line1.set_label("DateRange::SEC");
     }
 
-    line1.set_type(ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(4);
+    line1.set_type(chart::LineType::LINE).set_color(color::ROYALBLUE).set_width(4);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
     chart->set_date_range(range);
     chart->set_tick_width(25);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test7(Chart* chart) {
-    auto vec1  = ChartDataVector();
+void test7(chart::Chart* chart) {
+    auto vec1  = chart::PointVector();
     auto date1 = gnu::Date("20010101");
     auto date2 = gnu::Date("20021231");
     auto p     = -3.5;
 
     while (date1 <= date2) {
-        vec1.push_back(ChartData(date1.format(gnu::Date::FORMAT::ISO).c_str(), p));
+        vec1.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO).c_str(), p));
         date1.add_days(1);
 
         if (rand() % 3 == 1) {
@@ -354,18 +370,18 @@ void test7(Chart* chart) {
         }
     }
 
-    auto line1 = ChartLine(vec1, "ChartLine::TYPE::LINE_DOT)", ChartLine::TYPE::LINE_DOT);
+    auto line1 = chart::Line(vec1, "LineType::LINE_DOT)", chart::LineType::LINE_DOT);
     line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(2);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_tick_width(6);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test8(Chart* chart) {
-    auto vec1  = create_serie1("20010101", "20011231", 10.0, 1.0, ChartData::RANGE::DAY);
+void test8(chart::Chart* chart) {
+    auto vec1  = create_serie1("20010101", "20011231", 10.0, 1.0, chart::DateRange::DAY);
     auto start = 1.0;
     auto even  = 0;
 
@@ -386,25 +402,25 @@ void test8(Chart* chart) {
         even++;
     }
 
-    auto line1 = ChartLine(vec1, "ChartLine::TYPE::LINE + blocked dates", ChartLine::TYPE::LINE).set_color(color::ROYALBLUE).set_width(4).set_align(FL_ALIGN_RIGHT);
-    auto vec2  = ChartDataVector();
+    auto line1 = chart::Line(vec1, "LineType::LINE + blocked dates", chart::LineType::LINE).set_color(color::ROYALBLUE).set_width(4).set_align(FL_ALIGN_RIGHT);
+    auto vec2  = chart::PointVector();
 
-    vec2.push_back(ChartData("20010128"));
-    vec2.push_back(ChartData("20010129"));
-    vec2.push_back(ChartData("20010201"));
-    vec2.push_back(ChartData("20010202"));
-    vec2.push_back(ChartData("20010205"));
-    vec2.push_back(ChartData("20010206"));
+    vec2.push_back(chart::Point("20010128"));
+    vec2.push_back(chart::Point("20010129"));
+    vec2.push_back(chart::Point("20010201"));
+    vec2.push_back(chart::Point("20010202"));
+    vec2.push_back(chart::Point("20010205"));
+    vec2.push_back(chart::Point("20010206"));
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_tick_width(25);
     chart->set_block_dates(vec2);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test9(Chart* chart) {
+void test9(chart::Chart* chart) {
     auto vec1   = create_serie2("20010101", "20021231");
     auto vec2   = create_serie2("20010101", "20021231", 2.0);
     auto vec3   = create_serie2("20010101", "20021231", 3.0);
@@ -415,17 +431,17 @@ void test9(Chart* chart) {
     auto vec8   = create_serie2("20010101", "20021231", 8.0);
     auto vec9   = create_serie2("20010101", "20021231", 9.0);
     auto vec10  = create_serie2("20010101", "20021231", 10.0);
-    auto line1  = ChartLine(vec1, "One", ChartLine::TYPE::LINE_DOT);
-    auto line2  = ChartLine(vec2, "Two");
-    auto line3  = ChartLine(vec3, "Three");
-    auto line4  = ChartLine(vec4, "Four", ChartLine::TYPE::LINE_DOT);
-    auto line5  = ChartLine(vec5, "Five");
-    auto line6  = ChartLine(vec6, "Six");
-    auto line7  = ChartLine(vec7, "Seven");
-    auto line8  = ChartLine(vec8, "Eight", ChartLine::TYPE::LINE_DOT);
-    auto line9  = ChartLine(vec9, "Nine");
-    auto line10 = ChartLine(vec10, "Ten");
-    auto line11 = ChartLine(ChartLine(ChartDataVector(), "Empty"));
+    auto line1  = chart::Line(vec1, "One", chart::LineType::LINE_DOT);
+    auto line2  = chart::Line(vec2, "Two");
+    auto line3  = chart::Line(vec3, "Three");
+    auto line4  = chart::Line(vec4, "Four", chart::LineType::LINE_DOT);
+    auto line5  = chart::Line(vec5, "Five");
+    auto line6  = chart::Line(vec6, "Six");
+    auto line7  = chart::Line(vec7, "Seven");
+    auto line8  = chart::Line(vec8, "Eight", chart::LineType::LINE_DOT);
+    auto line9  = chart::Line(vec9, "Nine");
+    auto line10 = chart::Line(vec10, "Ten");
+    auto line11 = chart::Line(chart::Line(chart::PointVector(), "Empty"));
 
     line1.set_align(FL_ALIGN_RIGHT).set_color(color::ROYALBLUE).set_width(4);
     line2.set_align(FL_ALIGN_RIGHT).set_color(color::CRIMSON).set_width(4);
@@ -439,34 +455,34 @@ void test9(Chart* chart) {
     line10.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
     line11.set_align(FL_ALIGN_RIGHT).set_color(color::TEAL).set_width(4);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->area(ChartArea::AREA::ONE).add_line(line2);
-    chart->area(ChartArea::AREA::ONE).add_line(line3);
-    chart->area(ChartArea::AREA::ONE).add_line(line4);
-    chart->area(ChartArea::AREA::ONE).add_line(line5);
-    chart->area(ChartArea::AREA::ONE).add_line(line6);
-    chart->area(ChartArea::AREA::ONE).add_line(line7);
-    chart->area(ChartArea::AREA::ONE).add_line(line8);
-    chart->area(ChartArea::AREA::ONE).add_line(line9);
-    assert(chart->area(ChartArea::AREA::ONE).add_line(line10) == true);
-    assert(chart->area(ChartArea::AREA::ONE).add_line(line10) == false);
-    chart->area(ChartArea::AREA::ONE).add_line(line11);
-    chart->area(ChartArea::AREA::ONE).set_min_clamp(-1);
-    chart->area(ChartArea::AREA::ONE).set_max_clamp(12);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->area(chart::AreaNum::ONE).add_line(line2);
+    chart->area(chart::AreaNum::ONE).add_line(line3);
+    chart->area(chart::AreaNum::ONE).add_line(line4);
+    chart->area(chart::AreaNum::ONE).add_line(line5);
+    chart->area(chart::AreaNum::ONE).add_line(line6);
+    chart->area(chart::AreaNum::ONE).add_line(line7);
+    chart->area(chart::AreaNum::ONE).add_line(line8);
+    chart->area(chart::AreaNum::ONE).add_line(line9);
+    assert(chart->area(chart::AreaNum::ONE).add_line(line10) == true);
+    assert(chart->area(chart::AreaNum::ONE).add_line(line10) == false);
+    chart->area(chart::AreaNum::ONE).add_line(line11);
+    chart->area(chart::AreaNum::ONE).set_min_clamp(-1);
+    chart->area(chart::AreaNum::ONE).set_max_clamp(12);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_tick_width(30);
     chart->init_new_data();
 }
 
 //------------------------------------------------------------------------------
-void test10(Chart* chart) {
+void test10(chart::Chart* chart) {
     auto vec1   = create_serie2("20010101", "20041231", 321'000'000'000, 0.01);
-    auto line1  = ChartLine(vec1, "ChartLine::TYPE::LINE_DOT", ChartLine::TYPE::LINE_DOT);
+    auto line1  = chart::Line(vec1, "LineType::LINE_DOT", chart::LineType::LINE_DOT);
 
     line1.set_align(FL_ALIGN_RIGHT).set_color(FL_BLUE).set_width(4);
 
-    chart->area(ChartArea::AREA::ONE).add_line(line1);
-    chart->set_date_range(ChartData::RANGE::DAY);
+    chart->area(chart::AreaNum::ONE).add_line(line1);
+    chart->set_date_range(chart::DateRange::DAY);
     chart->set_tick_width(10);
     chart->init_new_data();
 }
@@ -485,15 +501,19 @@ void test10(Chart* chart) {
 //------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
 public:
-    Fl_Menu_Bar* menu;
-    Chart*       chart;
+    Fl_Menu_Bar*  menu;
+    chart::Chart* chart;
 
     //--------------------------------------------------------------------------
     Test(int W, int H) : Fl_Double_Window(W, H, "test_chart.cpp") {
         end();
 
         menu  = new Fl_Menu_Bar(0, 0, 0, 0);
-        chart = new Chart();
+        chart = new chart::Chart();
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
 
         add(menu);
         add(chart);
@@ -555,8 +575,17 @@ public:
         resizable(this);
         size_range(64, 48);
         show();
+        
+        flw::util::labelfont(this);
     }
 
+    //--------------------------------------------------------------------------
+    ~Test() {
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
+        flw::theme::save_theme_to_pref(pref);
+        flw::theme::save_win_to_pref(pref, "gui.", this);
+    }
+    
     //--------------------------------------------------------------------------
     static void Callback10(Fl_Widget*, void* v) {
         auto self = static_cast<Test*>(v);
@@ -724,34 +753,34 @@ public:
         chart->reset();
 
 
-        if (TEST == TEST_RANGE_DAY)             test1(chart, TEST, "ChartLine::TYPE::LINE", 100.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 3, 2);
-        else if (TEST == TEST_RANGE_WEEKDAY)    test1(chart, TEST, "ChartLine::TYPE::BAR", 100.0, 2.0, ChartData::RANGE::WEEKDAY, ChartLine::TYPE::BAR, FL_ALIGN_LEFT, 25, 6);
-        else if (TEST == TEST_RANGE_FRIDAY)     test1(chart, TEST, "ChartLine::TYPE::BAR_CLAMP", 100.0, 1.0, ChartData::RANGE::FRIDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 25, 6, -50.0, 200.0);
-        else if (TEST == TEST_RANGE_SUNDAY)     test1(chart, TEST, "ChartLine::TYPE::BAR_CLAMP", 100.0, 2.0, ChartData::RANGE::SUNDAY, ChartLine::TYPE::BAR_CLAMP, FL_ALIGN_LEFT, 25, 6);
-        else if (TEST == TEST_RANGE_MONTH)      test1(chart, TEST, "ChartLine::TYPE::BAR_HLC", 100.0, 2.0, ChartData::RANGE::MONTH, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 40, 6);
-        else if (TEST == TEST_RANGE_HOUR)       test6(chart, ChartData::RANGE::HOUR);
-        else if (TEST == TEST_RANGE_MIN)        test6(chart, ChartData::RANGE::MIN);
-        else if (TEST == TEST_RANGE_SEC)        test6(chart, ChartData::RANGE::SEC);
+        if (TEST == TEST_RANGE_DAY)             test1(chart, TEST, "LineType::LINE", 100.0, 2.0, chart::DateRange::DAY, chart::LineType::LINE, FL_ALIGN_LEFT, 3, 2);
+        else if (TEST == TEST_RANGE_WEEKDAY)    test1(chart, TEST, "LineType::BAR", 100.0, 2.0, chart::DateRange::WEEKDAY, chart::LineType::BAR, FL_ALIGN_LEFT, 25, 6);
+        else if (TEST == TEST_RANGE_FRIDAY)     test1(chart, TEST, "LineType::BAR_CLAMP", 100.0, 1.0, chart::DateRange::FRIDAY, chart::LineType::BAR_CLAMP, FL_ALIGN_LEFT, 25, 6, -50.0, 200.0);
+        else if (TEST == TEST_RANGE_SUNDAY)     test1(chart, TEST, "LineType::BAR_CLAMP", 100.0, 2.0, chart::DateRange::SUNDAY, chart::LineType::BAR_CLAMP, FL_ALIGN_LEFT, 25, 6);
+        else if (TEST == TEST_RANGE_MONTH)      test1(chart, TEST, "LineType::BAR_HLC", 100.0, 2.0, chart::DateRange::MONTH, chart::LineType::BAR_HLC, FL_ALIGN_LEFT, 40, 6);
+        else if (TEST == TEST_RANGE_HOUR)       test6(chart, chart::DateRange::HOUR);
+        else if (TEST == TEST_RANGE_MIN)        test6(chart, chart::DateRange::MIN);
+        else if (TEST == TEST_RANGE_SEC)        test6(chart, chart::DateRange::SEC);
 
-        else if (TEST == TEST_SMALL_VALUE1)     test1(chart, TEST, "ChartLine::TYPE::LINE", 100.0, 2.5, ChartData::RANGE::DAY, ChartLine::TYPE::LINE, FL_ALIGN_LEFT, 5, 4, INFINITY, INFINITY, 10000000.0);
-        else if (TEST == TEST_SMALL_VALUE2)     test1(chart, TEST, "ChartLine::TYPE::BAR_HLC", 0.1, 1.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 15, 4);
-        else if (TEST == TEST_SMALL_VALUE3)     test1(chart, TEST, "ChartLine::TYPE::HORIZONTAL", 0.1, 1.0, ChartData::RANGE::DAY, ChartLine::TYPE::HORIZONTAL, FL_ALIGN_LEFT, 15, 2);
+        else if (TEST == TEST_SMALL_VALUE1)     test1(chart, TEST, "LineType::LINE", 100.0, 2.5, chart::DateRange::DAY, chart::LineType::LINE, FL_ALIGN_LEFT, 5, 4, INFINITY, INFINITY, 10000000.0);
+        else if (TEST == TEST_SMALL_VALUE2)     test1(chart, TEST, "LineType::BAR_HLC", 0.1, 1.0, chart::DateRange::DAY, chart::LineType::BAR_HLC, FL_ALIGN_LEFT, 15, 4);
+        else if (TEST == TEST_SMALL_VALUE3)     test1(chart, TEST, "LineType::HORIZONTAL", 0.1, 1.0, chart::DateRange::DAY, chart::LineType::HORIZONTAL, FL_ALIGN_LEFT, 15, 2);
 
-        else if (TEST == TEST_LARGE_VALUE1)     test1(chart, TEST, "ChartLine::TYPE::BAR_HLC", 1000000000.0, 3.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR_HLC, FL_ALIGN_LEFT, 10, 6);
+        else if (TEST == TEST_LARGE_VALUE1)     test1(chart, TEST, "LineType::BAR_HLC", 1000000000.0, 3.0, chart::DateRange::DAY, chart::LineType::BAR_HLC, FL_ALIGN_LEFT, 10, 6);
         else if (TEST == TEST_LARGE_VALUE2)     test10(chart);
         else if (TEST == TEST_LARGE_VALUE3)     test4(chart);
 
         else if (TEST == TEST_RIGHT_10)         test9(chart);
-        else if (TEST == TEST_RIGHT_NEG)        test1(chart, TEST, "ChartLine::TYPE::BAR", -50000.0, 2.0, ChartData::RANGE::DAY, ChartLine::TYPE::BAR, FL_ALIGN_RIGHT, 3, 1);
+        else if (TEST == TEST_RIGHT_NEG)        test1(chart, TEST, "LineType::BAR", -50000.0, 2.0, chart::DateRange::DAY, chart::LineType::BAR, FL_ALIGN_RIGHT, 3, 1);
         else if (TEST == TEST_RIGHT_SMALL)      test7(chart);
         else if (TEST == TEST_RIGHT_STEP)       test8(chart);
         else if (TEST == TEST_RIGHT_LEFT)       test2(chart);
 
-        else if (TEST == TEST_REF_ALL)          test3(chart, "Ref All", ChartData::RANGE::DAY);
-        else if (TEST == TEST_REF_ALL_BLOCK)    test3(chart, "Ref All + Block", ChartData::RANGE::DAY, true);
-        else if (TEST == TEST_REF_FRIDAY)       test3(chart, "Ref Friday", ChartData::RANGE::FRIDAY);
-        else if (TEST == TEST_REF_SUNDAY)       test3(chart, "Ref Sunday", ChartData::RANGE::SUNDAY);
-        else if (TEST == TEST_REF_MONTH)        test3(chart, "Ref Month", ChartData::RANGE::MONTH);
+        else if (TEST == TEST_REF_ALL)          test3(chart, "Ref All", chart::DateRange::DAY);
+        else if (TEST == TEST_REF_ALL_BLOCK)    test3(chart, "Ref All + Block", chart::DateRange::DAY, true);
+        else if (TEST == TEST_REF_FRIDAY)       test3(chart, "Ref Friday", chart::DateRange::FRIDAY);
+        else if (TEST == TEST_REF_SUNDAY)       test3(chart, "Ref Sunday", chart::DateRange::SUNDAY);
+        else if (TEST == TEST_REF_MONTH)        test3(chart, "Ref Month", chart::DateRange::MONTH);
 
         else if (TEST == TEST_AREA2)            test5(chart, "Two Chart Areas", 2);
         else if (TEST == TEST_AREA3)            test5(chart, "Three Chart Areas", 3);
@@ -788,6 +817,8 @@ int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
     }
+
+    //Fl::screen_scale(0, 1.0);
 
     {
         Test win(1200, 800);
