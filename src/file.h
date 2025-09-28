@@ -2,9 +2,9 @@
 * @file
 * @brief File and directory functions.
 *
-* gnu::file namespace has assorted functions for files and directories.\n
-* gnu::file::File class has common file info data such as name, size, type.\n
+* gnu::file namespace has general functions for files and directories.\n
 * gnu::file::Buf class is a simple buffer container.\n
+* gnu::file::File class has common file info data such as name, size, type.\n
 *
 * @author gnuwimp@gmail.com
 * @copyright Released under the GNU General Public License v3.0
@@ -24,7 +24,7 @@
 
 namespace gnu {
 
-/** @brief Collection of file related functions.
+/** @brief File related functions.
 *
 * All functions are portable between linux and windows.
 */
@@ -50,7 +50,7 @@ typedef std::vector<File> Files;
 /** @brief File type.
 *
 */
-enum class TYPE {
+enum class Type {
     MISSING,    ///< @brief File does not exist.
     DIR,        ///< @brief It is a directory.
     FILE,       ///< @brief A regular file.
@@ -181,8 +181,8 @@ public:
     static Buf                  RemoveCR(const char* buffer, size_t size);
 
 private:
-    char*                       _str;
-    size_t                      _size;
+    char*                       _str;   // Buffer memory.
+    size_t                      _size;  // Number of bytes.
 
 };
 
@@ -221,7 +221,7 @@ public:
     void                        debug(bool short_version = true) const
                                     { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); } ///< @brief Print file info to stdout.
     bool                        exist() const
-                                    { return _type != TYPE::MISSING; } ///< @brief Does file exist?
+                                    { return _type != Type::MISSING; } ///< @brief Does file exist?
     const std::string&          ext() const
                                     { return _ext; } ///< @brief Return file extension, not for directories.
     const std::string&          filename() const
@@ -229,15 +229,15 @@ public:
     bool                        is_circular() const
                                     { return file::is_circular(_filename); } ///< @brief Is link to a directory a circular one?
     bool                        is_dir() const
-                                    { return _type == TYPE::DIR; } ///< @brief Is file a directory?
+                                    { return _type == Type::DIR; } ///< @brief Is file a directory?
     bool                        is_file() const
-                                    { return _type == TYPE::FILE; } ///< @brief Is file a plain file?
+                                    { return _type == Type::FILE; } ///< @brief Is file a plain file?
     bool                        is_link() const
                                     { return _link; } ///< @brief Is file a link?
     bool                        is_missing() const
-                                    { return _type == TYPE::MISSING; }  ///< @brief Is file missing?
+                                    { return _type == Type::MISSING; }  ///< @brief Is file missing?
     bool                        is_other() const
-                                    { return _type == TYPE::OTHER; }  ///< @brief Is file something else?
+                                    { return _type == Type::OTHER; }  ///< @brief Is file something else?
     File                        linkname() const
                                     { return file::linkname(_filename); } ///< @brief Read link name.
     int                         mode() const
@@ -254,21 +254,21 @@ public:
     int64_t                     size() const
                                     { return _size; } ///< @brief Return size in bytes.
     std::string                 to_string(bool short_version = true) const;
-    TYPE                        type() const
+    Type                        type() const
                                     { return _type; } ///< @brief Return file type.
     std::string                 type_name() const;
 
 private:
-    TYPE                        _type;
-    bool                        _link;
-    int                         _mode;
-    int64_t                     _ctime;
-    int64_t                     _mtime;
-    int64_t                     _size;
-    std::string                 _ext;
-    std::string                 _filename;
-    std::string                 _name;
-    std::string                 _path;
+    Type                        _type;          // File type.
+    bool                        _link;          // Is it an soft link?
+    int                         _mode;          // File mode, different values on unix/windows.
+    int64_t                     _ctime;         // Created time.
+    int64_t                     _mtime;         // Modified time.
+    int64_t                     _size;          // Size in bytes.
+    std::string                 _ext;           // File extension.
+    std::string                 _filename;      // Full filename.
+    std::string                 _name;          // Only the filename and extension.
+    std::string                 _path;          // Path to file, empty if root.
 };
 
 } // file

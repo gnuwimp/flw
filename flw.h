@@ -144,7 +144,7 @@ class File;
 class Buf;
 typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
 typedef std::vector<File> Files;
-enum class TYPE {
+enum class Type {
     MISSING,
     DIR,
     FILE,
@@ -274,7 +274,7 @@ public:
     void                        debug(bool short_version = true) const
                                     { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); }
     bool                        exist() const
-                                    { return _type != TYPE::MISSING; }
+                                    { return _type != Type::MISSING; }
     const std::string&          ext() const
                                     { return _ext; }
     const std::string&          filename() const
@@ -282,15 +282,15 @@ public:
     bool                        is_circular() const
                                     { return file::is_circular(_filename); }
     bool                        is_dir() const
-                                    { return _type == TYPE::DIR; }
+                                    { return _type == Type::DIR; }
     bool                        is_file() const
-                                    { return _type == TYPE::FILE; }
+                                    { return _type == Type::FILE; }
     bool                        is_link() const
                                     { return _link; }
     bool                        is_missing() const
-                                    { return _type == TYPE::MISSING; }
+                                    { return _type == Type::MISSING; }
     bool                        is_other() const
-                                    { return _type == TYPE::OTHER; }
+                                    { return _type == Type::OTHER; }
     File                        linkname() const
                                     { return file::linkname(_filename); }
     int                         mode() const
@@ -307,11 +307,11 @@ public:
     int64_t                     size() const
                                     { return _size; }
     std::string                 to_string(bool short_version = true) const;
-    TYPE                        type() const
+    Type                        type() const
                                     { return _type; }
     std::string                 type_name() const;
 private:
-    TYPE                        _type;
+    Type                        _type;
     bool                        _link;
     int                         _mode;
     int64_t                     _ctime;

@@ -2,9 +2,9 @@
 * @file
 * @brief File and directory functions.
 *
-* gnu::file namespace has assorted functions for files and directories.\n
-* gnu::file::File class has common file info data such as name, size, type.\n
+* gnu::file namespace has general functions for files and directories.\n
 * gnu::file::Buf class is a simple buffer container.\n
+* gnu::file::File class has common file info data such as name, size, type.\n
 *
 * @author gnuwimp@gmail.com
 * @copyright Released under the GNU General Public License v3.0
@@ -823,7 +823,7 @@ File home_dir() {
 bool is_circular(const std::string& path) {
     auto file = File(path, false);
 
-    if (file.type() != TYPE::DIR || file.is_link() == false) {
+    if (file.type() != Type::DIR || file.is_link() == false) {
         return false;
     }
 
@@ -1019,7 +1019,7 @@ Files read_dir(const std::string& path) {
     auto file = File(path, false);
     auto res  = Files();
 
-    if (file.type() != TYPE::DIR || file::is_circular(path) == true) {
+    if (file.type() != Type::DIR || file::is_circular(path) == true) {
         return res;
     }
 
@@ -1113,7 +1113,7 @@ bool redirect_stdout() {
 bool remove(const std::string& path) {
     auto f = File(path);
 
-    if (f.type() == TYPE::MISSING && f.is_link() == false) {
+    if (f.type() == Type::MISSING && f.is_link() == false) {
         return false;
     }
 
@@ -1122,19 +1122,19 @@ bool remove(const std::string& path) {
 #ifdef _WIN32
     auto wpath = file::_to_wide(path.c_str());
 
-    if (f.type() == TYPE::DIR) {
+    if (f.type() == Type::DIR) {
         res = RemoveDirectoryW(wpath);
     }
     else {
         res = DeleteFileW(wpath);
     }
 
-    if (res == false && f.type() == TYPE::MISSING && f.is_link() == true) {
+    if (res == false && f.type() == Type::MISSING && f.is_link() == true) {
         res = RemoveDirectoryW(wpath);
     }
-    
+
     if (res == false) {
-        if (f.type() == TYPE::DIR) {
+        if (f.type() == Type::DIR) {
             file::chmod(path, file::DEFAULT_DIR_MODE);
             res = RemoveDirectoryW(wpath);
         }
@@ -1146,7 +1146,7 @@ bool remove(const std::string& path) {
 
     free(wpath);
 #else
-    if (f.type() == TYPE::DIR && f.is_link() == false) {
+    if (f.type() == Type::DIR && f.is_link() == false) {
         res = ::rmdir(path.c_str()) == 0;
     }
     else {
@@ -1203,11 +1203,11 @@ bool rename(const std::string& from, const std::string& to) {
     auto wfrom = file::_to_wide(from_f.filename().c_str());
     auto wto   = file::_to_wide(to_f.filename().c_str());
 
-    if (to_f.type() == TYPE::DIR) {
+    if (to_f.type() == Type::DIR) {
         file::remove_rec(to_f.filename());
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
     }
-    else if (to_f.type() == TYPE::MISSING) {
+    else if (to_f.type() == Type::MISSING) {
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
     }
     else {
@@ -1217,7 +1217,7 @@ bool rename(const std::string& from, const std::string& to) {
     free(wfrom);
     free(wto);
 #else
-    if (to_f.type() == TYPE::DIR) {
+    if (to_f.type() == Type::DIR) {
         file::remove_rec(to_f.filename());
     }
 
@@ -1355,7 +1355,7 @@ File work_dir() {
 * @return True if ok.
 */
 bool write(const std::string& path, const char* buffer, size_t size, bool flush) {
-    if (File(path).type() == TYPE::DIR) {
+    if (File(path).type() == Type::DIR) {
         return false;
     }
 
@@ -1733,7 +1733,7 @@ File::File(const std::string& path, bool realpath) {
     _mode  = -1;
     _mtime = -1;
     _size  = -1;
-    _type  = TYPE::MISSING;
+    _type  = Type::MISSING;
 
     if (path != "") {
         _filename = file::_to_absolute_path(path, realpath);
@@ -1750,11 +1750,11 @@ File::File(const std::string& path, bool realpath) {
 
     if (GetFileAttributesExW(wpath, GetFileExInfoStandard, &attr) != 0) {
         if (attr.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            _type = TYPE::DIR;
+            _type = Type::DIR;
             _size = 0;
         }
         else {
-            _type = TYPE::FILE;
+            _type = Type::FILE;
             _size = (attr.nFileSizeHigh * 4294967296) + attr.nFileSizeLow;
         }
 
@@ -1780,14 +1780,14 @@ File::File(const std::string& path, bool realpath) {
 
                 CloseHandle(handle);
 
-                if (realpath == true) { // Not needed on linux.
+                if (realpath == true) {
                     _filename = file::linkname(_filename).filename();
                     file::_split_paths(_filename, _path, _name, _ext);
                 }
             }
             else {
                 _size = -1;
-                _type = TYPE::MISSING;
+                _type = Type::MISSING;
             }
         }
     }
@@ -1803,13 +1803,13 @@ File::File(const std::string& path, bool realpath) {
         _mtime = st.st_mtime;
 
         if (S_ISDIR(st.st_mode)) {
-            _type = TYPE::DIR;
+            _type = Type::DIR;
         }
         else if (S_ISREG(st.st_mode)) {
-            _type = TYPE::FILE;
+            _type = Type::FILE;
         }
         else {
-            _type = TYPE::OTHER;
+            _type = Type::OTHER;
         }
 
         snprintf(tmp, PATH_MAX, "%o", st.st_mode);
@@ -1832,7 +1832,7 @@ File::File(const std::string& path, bool realpath) {
     }
 #endif
 
-    if (_type == TYPE::DIR) {
+    if (_type == Type::DIR) {
         _ext = "";
     }
 }
@@ -1843,11 +1843,16 @@ File::File(const std::string& path, bool realpath) {
 * @return Name without extension.
 */
 std::string File::name_without_ext() const {
-    if (_type != TYPE::DIR) {
-        auto dot = _name.find_last_of(".");
-        return (dot == std::string::npos) ? _name : _name.substr(0, dot);
+    try {
+        if (_type != Type::DIR) {
+            auto dot = _name.find_last_of(".");
+            return (dot == std::string::npos) ? _name : _name.substr(0, dot);
+        }
+        else {
+            return _name;
+        }
     }
-    else {
+    catch(...) {
         return _name;
     }
 }
@@ -1893,7 +1898,7 @@ std::string File::to_string(bool short_version) const {
 * @return "Missing", Directory", "File" or "Other".
 */
 std::string File::type_name() const {
-    static const char* NAMES[] = { "Missing", "Directory", "File", "Other", "", };
+    static std::string NAMES[] = { "Missing", "Directory", "File", "Other", "", };
     return NAMES[static_cast<size_t>(_type)];
 }
 
