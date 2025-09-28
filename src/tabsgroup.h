@@ -37,8 +37,8 @@ namespace flw {
 * Or use a shortcut key for the first 10 tabs (alt + 1-9/0).\n
 * Move tabs around by using alt + shift + left/right.\n
 *\n
-* By default tabs are on the TABS::NORTH side and tabs size is font size * 10.\n
-* If tabs are on the TABS::EAST or TABS::WEST side you can change the width by using the mouse.\n
+* By default tabs are on the Pos::NORTH side and tabs size is font size * 10.\n
+* If tabs are on the Pos::EAST or Pos::WEST side you can change the width by using the mouse.\n
 *\n
 * Do a resize after adding widgets by calling do_layout().\n
 *
@@ -54,7 +54,7 @@ public:
     /** @brief Positions of tab buttons.
     *
     */
-    enum class TABS {
+    enum class Pos {
                                 NORTH,          ///< @brief Top of container.
                                 TOP = NORTH,    ///< @brief Top of container.
                                 SOUTH,          ///< @brief Bottom of container.
@@ -97,10 +97,10 @@ public:
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
+    Pos                         tab_pos() const
+                                    { return _tab_pos; } ///< @brief Pos of the tab buttons (Pos::NORTH, Pos::SOUTH, Pos::EAST, Pos::WEST).
+    void                        tab_pos(Pos pos, int space = TabsGroup::DEFAULT_SPACE_PX);
     int                         swap(int from, int to);
-    TABS                        tabs() const
-                                    { return _tabs; } ///< @brief Pos of the tab buttons (TABS::NORTH, TABS::SOUTH, TABS::EAST, TABS::WEST).
-    void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
     std::string                 tooltip(Fl_Widget* widget) const;
     void                        tooltip(const std::string& label, Fl_Widget* widget);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
@@ -123,7 +123,7 @@ private:
     Fl_Flex*                    _pack;      // Tab button container.
     Fl_Rect                     _area;      // Area for tab buttons.
     Fl_Scroll*                  _scroll;    // Scroll container for the pack widget.
-    TABS                        _tabs;      // Tab placement.
+    Pos                         _tab_pos;   // Tab placement.
     WidgetVector                _widgets;   // Vector with _TabsGroupButton objects.
     bool                        _drag;      // True if drag event.
     bool                        _disable_k; // True to disable keyboard shortcuts.
@@ -131,7 +131,7 @@ private:
     int                         _active2;   // Previous active widget.
     int                         _e;         // East border around child widget.
     int                         _n;         // North border around child widget.
-    int                         _pos;       // Position or width of east/west tab buttons.
+    int                         _xpos;      // Width of east/west tab buttons.
     int                         _s;         // South border around child widget.
     int                         _space;     // Space between tab buttons.
     int                         _w;         // West border around child widget.

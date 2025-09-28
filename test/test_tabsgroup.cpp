@@ -38,10 +38,10 @@ public:
 //        tabs = new TabsGroup(50, 50, W - 100, H - 100);
         tabs = new TabsGroup(0, 0, W, H);
 
-        n  = new Fl_Button(0, 0, 0, 0, "TABS::NORTH");
-        s  = new Fl_Button(0, 0, 0, 0, "TABS::SOUTH");
-        w  = new Fl_Button(0, 0, 0, 0, "TABS::WEST");
-        e  = new Fl_Button(0, 0, 0, 0, "TABS::EAST");
+        n  = new Fl_Button(0, 0, 0, 0, "Pos::NORTH");
+        s  = new Fl_Button(0, 0, 0, 0, "Pos::SOUTH");
+        w  = new Fl_Button(0, 0, 0, 0, "Pos::WEST");
+        e  = new Fl_Button(0, 0, 0, 0, "Pos::EAST");
         b1 = new Fl_Button(0, 0, 0, 0, "Delete Me");
         b2 = new Fl_Button(0, 0, 0, 0, "Hide/Show");
         b3 = new Fl_Button(0, 0, 0, 0, "Delete Border");
@@ -91,19 +91,19 @@ public:
 
     static void Callback(Fl_Widget* w, void*) {
         if (w == TEST->e) {
-            TEST->tabs->tabs(TabsGroup::TABS::RIGHT, 8);
+            TEST->tabs->tab_pos(TabsGroup::Pos::RIGHT, 8);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->n) {
-            TEST->tabs->tabs(TabsGroup::TABS::TOP);
+            TEST->tabs->tab_pos(TabsGroup::Pos::TOP);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->s) {
-            TEST->tabs->tabs(TabsGroup::TABS::BOTTOM, 8);
+            TEST->tabs->tab_pos(TabsGroup::Pos::BOTTOM, 8);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->w) {
-            TEST->tabs->tabs(TabsGroup::TABS::LEFT);
+            TEST->tabs->tab_pos(TabsGroup::Pos::LEFT);
             TEST->tabs->do_layout();
         }
         else if (w == TEST->b1) {
@@ -262,10 +262,10 @@ public:
         b15->callback(Test2::Callback, this);
         b16->callback(Test2::Callback, this);
         b17->callback(Test2::Callback, this);
-        tabs->tabs(TabsGroup::TABS::WEST);
+        tabs->tab_pos(TabsGroup::Pos::WEST);
         tabs->disable_keyboard();
         tabs->enable_keyboard();
-        //tabs->tabs(TabsGroup::TABS::NORTH);
+        //tabs->tabs(TabsGroup::Pos::NORTH);
 
         resizable(tabs);
         size_range(64, 48);
@@ -303,16 +303,16 @@ public:
             TEST->tabs->sort(false, false);
         }
         else if (w == TEST->b5) {
-            TEST->tabs->tabs(TabsGroup::TABS::NORTH);
+            TEST->tabs->tab_pos(TabsGroup::Pos::NORTH);
         }
         else if (w == TEST->b6) {
-            TEST->tabs->tabs(TabsGroup::TABS::SOUTH);
+            TEST->tabs->tab_pos(TabsGroup::Pos::SOUTH);
         }
         else if (w == TEST->b7) {
-            TEST->tabs->tabs(TabsGroup::TABS::WEST);
+            TEST->tabs->tab_pos(TabsGroup::Pos::WEST);
         }
         else if (w == TEST->b8) {
-            TEST->tabs->tabs(TabsGroup::TABS::EAST);
+            TEST->tabs->tab_pos(TabsGroup::Pos::EAST);
         }
         else if (w == TEST->b9) {
 //            flw::debug::print(TEST);

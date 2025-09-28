@@ -142,13 +142,13 @@ namespace gnu {
 namespace file {
 class File;
 class Buf;
-typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data); ///< @brief Callback for file copy.
+typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
 typedef std::vector<File> Files;
 enum class TYPE {
-                                MISSING,    ///< @brief File does not exist.
-                                DIR,        ///< @brief It is a directory.
-                                FILE,       ///< @brief A regular file.
-                                OTHER,      ///< @brief Something else (not used in windows),
+                                MISSING,
+                                DIR,
+                                FILE,
+                                OTHER,
 };
 #ifdef _WIN32
     static const int            DEFAULT_DIR_MODE  = 0x00000080;
@@ -193,63 +193,63 @@ bool                            write(const std::string& path, const Buf& buf, b
 class Buf {
 public:
                                 Buf()
-                                    { _str = nullptr; _size = 0; } ///< @brief Create empty buffer with NULL data.
+                                    { _str = nullptr; _size = 0; }
     explicit                    Buf(size_t size);
                                 Buf(const char* buffer, size_t size);
                                 Buf(const Buf& b);
                                 Buf(Buf&& b)
-                                    { _str = b._str; _size = b._size; b._str = nullptr; } ///< @brief Move buffer.
+                                    { _str = b._str; _size = b._size; b._str = nullptr; }
                                 Buf(const std::string& string)
-                                    { _str = nullptr; add(string.c_str(), string.length()); } ///< @brief Copy input string.
+                                    { _str = nullptr; add(string.c_str(), string.length()); }
     virtual                     ~Buf()
-                                    { free(_str); } ///< @brief Free memory.
+                                    { free(_str); }
     unsigned char&              operator[](size_t index)
-                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; } ///< @brief Return byte. @throws std::string exception on error.
+                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; }
     unsigned char               operator[](size_t index) const
-                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; } ///< @brief Return byte. @throws std::string exception on error.
+                                    { if (index >= _size || _str == nullptr) throw std::string("error: gnu::file::Buf::[]: index is out of range"); return ((unsigned char*) _str)[index]; }
     Buf&                        operator=(const Buf& b)
-                                    { return set(b._str, b._size); } ///< @brief Copy other buffer.
+                                    { return set(b._str, b._size); }
     Buf&                        operator=(Buf&& b)
-                                    { free(_str); _str = b._str; _size = b._size; b._str = nullptr; return *this; } ///< @brief Move data to this object.
+                                    { free(_str); _str = b._str; _size = b._size; b._str = nullptr; return *this; }
     Buf&                        operator=(const std::string& string)
-                                    { free(_str); _str = nullptr; add(string.c_str(), string.length()); return *this; } ///< @brief Copy string.
+                                    { free(_str); _str = nullptr; add(string.c_str(), string.length()); return *this; }
     Buf&                        operator+=(const Buf& b)
-                                    { return add(b._str, b._size); } ///< @brief Add buffer. @throws std::string exception on error.
+                                    { return add(b._str, b._size); }
     bool                        operator==(const Buf& other) const;
     bool                        operator!=(const Buf& other) const
-                                    { return (*this == other) == false; } ///< @brief Compare buffer objects.
+                                    { return (*this == other) == false; }
     Buf&                        add(const char* buffer, size_t size);
     const char*                 c_str() const
-                                    { return _str; } ///< @brief Return buffer data, can be NULL.
+                                    { return _str; }
     void                        clear()
-                                    { free(_str); _str = nullptr; _size = 0; } ///< @brief Delete memory and set internal buffer to NULL.
+                                    { free(_str); _str = nullptr; _size = 0; }
     std::array<size_t, 257>     count() const
-                                    { return Buf::Count(_str, _size); } ///< @brief Count bytes and longest text line.
+                                    { return Buf::Count(_str, _size); }
     void                        debug() const
-                                    { printf("gnu::Buf(0x%p, %llu)\n", _str, (long long unsigned) _size); } ///< @brief Print debug info.
+                                    { printf("gnu::Buf(0x%p, %llu)\n", _str, (long long unsigned) _size); }
     uint64_t                    fletcher64() const
-                                    { return file::fletcher64(_str, _size); } ///< @brief Return checksum for this object.
+                                    { return file::fletcher64(_str, _size); }
     Buf&                        grab(char* buffer, size_t size)
-                                    { free(_str); _str = buffer; _size = size; return *this; } ///< @brief Delete internal memory and take control of input buffer.
+                                    { free(_str); _str = buffer; _size = size; return *this; }
     Buf                         insert_cr(bool dos = true, bool trailing = false) const
-                                    { return Buf::InsertCR(_str, _size, dos, trailing); } ///< @brief Insert "\r" and remove trailing whitespace. @throws std::string exception on error.
+                                    { return Buf::InsertCR(_str, _size, dos, trailing); }
     char*                       release()
-                                    { auto res = _str; _str = nullptr; _size = 0; return res; } ///< @brief Release control of internal buffer and return memory (internal memory will be set to NULL).
+                                    { auto res = _str; _str = nullptr; _size = 0; return res; }
     Buf                         remove_cr() const
-                                    { return Buf::RemoveCR(_str, _size); } ///< @brief Remove "\r" from buffer. @throws std::string exception on error.
+                                    { return Buf::RemoveCR(_str, _size); }
     Buf&                        set(const char* buffer, size_t size);
     size_t                      size() const
-                                    { return _size; } ///< @brief Return size in bytes.
+                                    { return _size; }
     void                        size(size_t size)
-                                    {  if (size >= _size) throw std::string("error: gnu::file::Buf::size(): size is out of range"); _size = size; } ///< @brief Set new size, must be less or equal than current size. @throws std::string exception on error.
+                                    {  if (size >= _size) throw std::string("error: gnu::file::Buf::size(): size is out of range"); _size = size; }
     char*                       str()
-                                    { return _str; } ///< @brief Return buffer data, can be NULL.
+                                    { return _str; }
     bool                        write(const std::string& path, bool flush = true) const;
     static std::array<size_t, 257> Count(const char* buffer, size_t size);
     static inline Buf           Grab(char* string)
-                                    { auto res = Buf(); res._str = string; res._size = strlen(string); return res; } ///< @brief Create new object that takes control of input string.
+                                    { auto res = Buf(); res._str = string; res._size = strlen(string); return res; }
     static inline Buf           Grab(char* buffer, size_t size)
-                                    { auto res = Buf(); res._str = buffer; res._size = size; return res; } ///< @brief Create new object that takes control of input buffer.
+                                    { auto res = Buf(); res._str = buffer; res._size = size; return res; }
     static Buf                  InsertCR(const char* buffer, size_t size, bool dos, bool trailing = false);
     static Buf                  RemoveCR(const char* buffer, size_t size);
 private:
@@ -260,55 +260,55 @@ class File {
 public:
     explicit                    File(const std::string& path = "", bool realpath = false);
     bool                        operator==(const File& other) const
-                                    { return _filename == other._filename; } ///< @brief Compare filenames.
+                                    { return _filename == other._filename; }
     bool                        operator<(const File& other) const
-                                    { return _filename < other._filename; } ///< @brief Compare filenames.
+                                    { return _filename < other._filename; }
     bool                        operator<=(const File& other) const
-                                    { return _filename <= other._filename; } ///< @brief Compare filenames.
+                                    { return _filename <= other._filename; }
     const char*                 c_str() const
-                                    { return _filename.c_str(); } ///< @brief Return filename.
+                                    { return _filename.c_str(); }
     File                        canonical() const
-                                    { return file::canonical(_filename); } ///< @brief Return canonical file name.
+                                    { return file::canonical(_filename); }
     int64_t                     ctime() const
-                                    { return _ctime; } ///< @brief Return created file time.
+                                    { return _ctime; }
     void                        debug(bool short_version = true) const
-                                    { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); } ///< @brief Print file info to stdout.
+                                    { printf("%s\n", to_string(short_version).c_str()); fflush(stdout); }
     bool                        exist() const
-                                    { return _type != TYPE::MISSING; } ///< @brief Does file exist?
+                                    { return _type != TYPE::MISSING; }
     const std::string&          ext() const
-                                    { return _ext; } ///< @brief Return file extension, not for directories.
+                                    { return _ext; }
     const std::string&          filename() const
-                                    { return _filename; } ///< @brief Return full filename.
+                                    { return _filename; }
     bool                        is_circular() const
-                                    { return file::is_circular(_filename); } ///< @brief Is link to a directory a circular one?
+                                    { return file::is_circular(_filename); }
     bool                        is_dir() const
-                                    { return _type == TYPE::DIR; } ///< @brief Is file a directory?
+                                    { return _type == TYPE::DIR; }
     bool                        is_file() const
-                                    { return _type == TYPE::FILE; } ///< @brief Is file a plain file?
+                                    { return _type == TYPE::FILE; }
     bool                        is_link() const
-                                    { return _link; } ///< @brief Is file a link?
+                                    { return _link; }
     bool                        is_missing() const
-                                    { return _type == TYPE::MISSING; }  ///< @brief Is file missing?
+                                    { return _type == TYPE::MISSING; }
     bool                        is_other() const
-                                    { return _type == TYPE::OTHER; }  ///< @brief Is file something else?
+                                    { return _type == TYPE::OTHER; }
     File                        linkname() const
-                                    { return file::linkname(_filename); } ///< @brief Read link name.
+                                    { return file::linkname(_filename); }
     int                         mode() const
-                                    { return _mode; } ///< @brief Return file mode.
+                                    { return _mode; }
     int64_t                     mtime() const
-                                    { return _mtime; } ///< @brief Return file modified time.
+                                    { return _mtime; }
     const std::string&          name() const
-                                    { return _name; } ///< @brief Return name without path.
+                                    { return _name; }
     std::string                 name_without_ext() const;
     const std::string&          parent() const
-                                    { return _path; } ///< @brief Return parent path.
+                                    { return _path; }
     const std::string&          path() const
-                                    { return _path; } ///< @brief Same as parent(), return parent path.
+                                    { return _path; }
     int64_t                     size() const
-                                    { return _size; } ///< @brief Return size in bytes.
+                                    { return _size; }
     std::string                 to_string(bool short_version = true) const;
     TYPE                        type() const
-                                    { return _type; } ///< @brief Return file type.
+                                    { return _type; }
     std::string                 type_name() const;
 private:
     TYPE                        _type;
@@ -333,18 +333,18 @@ private:
 namespace gnu {
 namespace json {
 enum class TYPE : uint8_t {
-                                OBJECT,     ///< @brief Object node.
-                                ARRAY,      ///< @brief Array node
-                                STRING,     ///< @brief Plain string.
-                                NUMBER,     ///< @brief Number.
-                                BOOL,       ///< @brief Boolean true or false.
-                                NIL,        ///< @brief NULL data.
-                                ERR,        ///< @brief Error value.
+                                OBJECT,
+                                ARRAY,
+                                STRING,
+                                NUMBER,
+                                BOOL,
+                                NIL,
+                                ERR,
 };
 enum class ENCODE : uint8_t {
-                                DEFAULT,    ///< @brief Indentation.
-                                TRIM,       ///< @brief No indentation.
-                                FLAT,       ///< @brief No indentation and no newlines.
+                                DEFAULT,
+                                TRIM,
+                                FLAT,
 };
 static const size_t             MAX_DEPTH = 32;
 class JS;
@@ -369,77 +369,77 @@ public:
                                 ~JS();
     JS&                         operator=(JS&&);
     bool                        operator==(TYPE type) const
-                                    { return _type == type; } ///< @brief Compare type.
+                                    { return _type == type; }
     bool                        operator!=(TYPE type) const
-                                    { return _type != type; } ///< @brief Compare type.
+                                    { return _type != type; }
     const JS*                   operator[](const std::string& name) const
-                                    { return _get_value(name.c_str(), true); } ///< @brief Get named child value from object. @param[in] name  Object name.
+                                    { return _get_value(name.c_str(), true); }
     const JS*                   operator[](size_t index) const
-                                    { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; } ///< @brief Get child value from array. @param[in] index  Array index.
+                                    { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
     void                        debug() const;
     std::string                 err() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; } ///< @brief Error string.
+                                    { return (_type == TYPE::ERR) ? _vs : ""; }
     const char*                 err_c() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; } ///< @brief Error string.
+                                    { return (_type == TYPE::ERR) ? _vs : ""; }
     const JS*                   find(const std::string& name, bool rec = false) const;
     const JS*                   get(const std::string& name, bool escape_name = true) const
-                                    { return _get_value(name.c_str(), escape_name); } ///< @brief Get named child value from object.
+                                    { return _get_value(name.c_str(), escape_name); }
     const JS*                   get(size_t index) const
-                                    { return (*this) [index]; } ///< @brief Get child value from array.
+                                    { return (*this) [index]; }
     bool                        has_err() const
-                                    { return _type == TYPE::ERR; } ///< @brief Has node error?
+                                    { return _type == TYPE::ERR; }
     bool                        has_inline() const
-                                    { return _inl; } ///< @brief Is inline on?
+                                    { return _inl; }
     bool                        is_array() const
-                                    { return _type == TYPE::ARRAY; } ///< @brief Is value an array?
+                                    { return _type == TYPE::ARRAY; }
     bool                        is_bool() const
-                                    { return _type == TYPE::BOOL; } ///< @brief Is value a bool?
+                                    { return _type == TYPE::BOOL; }
     bool                        is_null() const
-                                    { return _type == TYPE::NIL; } ///< @brief Is value a null?
+                                    { return _type == TYPE::NIL; }
     bool                        is_number() const
-                                    { return _type == TYPE::NUMBER; } ///< @brief Is value a number?
+                                    { return _type == TYPE::NUMBER; }
     bool                        is_object() const
-                                    { return _type == TYPE::OBJECT; } ///< @brief Is value an object?
+                                    { return _type == TYPE::OBJECT; }
     bool                        is_string() const
-                                    { return _type == TYPE::STRING; } ///< @brief Is value a a string?
+                                    { return _type == TYPE::STRING; }
     std::string                 name() const
-                                    { return (_name != nullptr) ? _name : ""; } ///< @brief Name of value.
+                                    { return (_name != nullptr) ? _name : ""; }
     const char*                 name_c() const
-                                    { return (_name != nullptr) ? _name : ""; } ///< @brief Name of value.
+                                    { return (_name != nullptr) ? _name : ""; }
     std::string                 name_u() const
-                                    { return (_name != nullptr) ? json::unescape(_name) : ""; } ///< @brief Unescaped name of value.
+                                    { return (_name != nullptr) ? json::unescape(_name) : ""; }
     JS*                         parent() const
-                                    { return _parent; } ///< @brief Parent object.
+                                    { return _parent; }
     unsigned                    pos() const
-                                    { return _pos; } ///< @brief Position in json buffer.
+                                    { return _pos; }
     size_t                      size() const
-                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; } ///< @brief Size of array or object.
+                                    { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
     std::string                 to_string() const;
     TYPE                        type() const
-                                    { return _type; } ///< @brief Type of value.
+                                    { return _type; }
     std::string                 type_name() const
-                                    { return TYPE_NAMES[static_cast<unsigned>(_type)]; } ///< @brief Type name for this value.
+                                    { return TYPE_NAMES[static_cast<unsigned>(_type)]; }
     const JSArray*              va() const
-                                    { return (_type == TYPE::ARRAY) ? _va : nullptr; } ///< @brief Array node or NULL.
+                                    { return (_type == TYPE::ARRAY) ? _va : nullptr; }
     bool                        vb() const
-                                    { assert(_type == TYPE::BOOL); return (_type == TYPE::BOOL) ? _vb : false; } ///< @brief Bool value or false.
+                                    { assert(_type == TYPE::BOOL); return (_type == TYPE::BOOL) ? _vb : false; }
     double                      vn() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? _vn : 0.0; } ///< @brief Number value or 0.0.
+                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? _vn : 0.0; }
     long long int               vn_i() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? (long long int) _vn : 0; } ///< @brief Number value as integer or 0.
+                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? (long long int) _vn : 0; }
     const JSObject*             vo() const
-                                    { return (_type == TYPE::OBJECT) ? _vo : nullptr; } ///< @brief Object value or NULL.
+                                    { return (_type == TYPE::OBJECT) ? _vo : nullptr; }
     const JSArray               vo_to_va() const;
     std::string                 vs() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; } ///< @brief String value or "".
+                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; }
     const char*                 vs_c() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; } ///< @brief String value or "".
+                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; }
     std::string                 vs_u() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? json::unescape(_vs) : ""; } ///< @brief Unescaped string value or "".
+                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? json::unescape(_vs) : ""; }
     static inline ssize_t       Count()
-                                    { return JS::COUNT; } ///< @brief Number of allocated values
+                                    { return JS::COUNT; }
     static inline ssize_t       Max()
-                                    { return JS::MAX; } ///< @brief Maximum number of allocated values during runtime.
+                                    { return JS::MAX; }
 private:
                                 JS(const char* name, JS* parent = nullptr, unsigned pos = 0);
     bool                        _add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos);
@@ -476,18 +476,18 @@ private:
 class Builder {
 public:
                                 Builder()
-                                    { _root = _current = nullptr; } ///< @brief Create new empty builder.
+                                    { _root = _current = nullptr; }
     virtual                     ~Builder()
-                                    { delete _root; } ///< @brief Delete all values.
+                                    { delete _root; }
     Builder&                    operator<<(JS* json)
-                                    { return add(json); } ///< @brief Add json value to current parent.
+                                    { return add(json); }
     Builder&                    add(JS* json);
     void                        clear()
-                                    { delete _root; _root = _current = nullptr; _name = ""; } ///< @brief Delete all values.
+                                    { delete _root; _root = _current = nullptr; _name = ""; }
     std::string                 encode(ENCODE option = ENCODE::DEFAULT) const;
     Builder&                    end();
     const JS*                   root() const
-                                    { return _root; } ///< @brief Get root value.
+                                    { return _root; }
     static JS*                  MakeArray(const char* name = "", bool escape = true);
     static JS*                  MakeArrayInline(const char* name = "", bool escape = true);
     static JS*                  MakeBool(bool vb, const char* name = "", bool escape = true);
@@ -569,21 +569,21 @@ private:
 #define FLW_TEST_TRUE(X)
 #endif
 namespace flw {
-typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
-typedef std::vector<void*>       VoidVector;                            ///< @brief Vector with void pointers
-typedef std::vector<Fl_Widget*>  WidgetVector;                          ///< @brief Vector with widget pointers.
-typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);    ///< @brief A drawing callback for printing to postscript.
-extern int                      PREF_FIXED_FONT;                        ///< @brief Fixed font - default FL_COURIER.
-extern std::string              PREF_FIXED_FONTNAME;                    ///< @brief Fixed font name - default "FL_COURIER".
-extern int                      PREF_FIXED_FONTSIZE;                    ///< @brief Fixed font size - default 14.
-extern Fl_Font                  PREF_FONT;                              ///< @brief Default font - default FL_HELVETICA.
-extern int                      PREF_FONTSIZE;                          ///< @brief Default font size - default 14.
-extern std::string              PREF_FONTNAME;                          ///< @brief Default font name - default "FL_HELVETICA".
-extern std::vector<char*>       PREF_FONTNAMES;                         ///< @brief List of font names - used internally - load with flw::theme::load_fonts().
-extern double                   PREF_SCALE_VAL;                         ///< @brief Scale value.
-extern bool                     PREF_SCALE_ON;                          ///< @brief Scale on or off.
-extern std::string              PREF_THEME;                             ///< @brief Name of theme - default "default".
-extern const StringVector       PREF_THEMES;                            ///< @brief Name of themes.
+typedef std::vector<std::string> StringVector;
+typedef std::vector<void*>       VoidVector;
+typedef std::vector<Fl_Widget*>  WidgetVector;
+typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);
+extern int                      PREF_FIXED_FONT;
+extern std::string              PREF_FIXED_FONTNAME;
+extern int                      PREF_FIXED_FONTSIZE;
+extern Fl_Font                  PREF_FONT;
+extern int                      PREF_FONTSIZE;
+extern std::string              PREF_FONTNAME;
+extern std::vector<char*>       PREF_FONTNAMES;
+extern double                   PREF_SCALE_VAL;
+extern bool                     PREF_SCALE_ON;
+extern std::string              PREF_THEME;
+extern const StringVector       PREF_THEMES;
 namespace debug {
     void                        print(const Fl_Widget* widget, bool recursive = true);
     void                        print(const Fl_Widget* widget, std::string& indent, bool recursive = true);
@@ -691,9 +691,9 @@ public:
                                     int line_num = 0);
                                 ~PrintText();
     Fl_Fontsize                 fontsize() const
-                                    { return _fontsize; } ///< @brief Return font size
+                                    { return _fontsize; }
     int                         page_count() const
-                                    { return _page_count; } ///< @brief Return page count.
+                                    { return _page_count; }
     std::string                 print(const char* text, unsigned replace_tab_with_space = 0);
     std::string                 print(const std::string& text, unsigned replace_tab_with_space = 0);
     std::string                 print(const StringVector& lines, unsigned replace_tab_with_space = 0);
@@ -742,56 +742,56 @@ typedef std::vector<Point> PointVector;
 typedef std::vector<Line>  LineVector;
 typedef std::vector<Area>  AreaVector;
 enum class DateRange {
-    DAY,            ///< @brief All days.
-    WEEKDAY,        ///< @brief Weekdays (mon - fri).
-    FRIDAY,         ///< @brief Only fridays.
-    SUNDAY,         ///< @brief Only sundays.
-    MONTH,          ///< @brief Last day in month.
-    HOUR,           ///< @brief Every hour.
-    MIN,            ///< @brief Every minute.
-    SEC,            ///< @brief Every second.
-    LAST = SEC,     ///< @brief Same as SEC.
+    DAY,
+    WEEKDAY,
+    FRIDAY,
+    SUNDAY,
+    MONTH,
+    HOUR,
+    MIN,
+    SEC,
+    LAST = SEC,
 };
 enum class Algorithm {
-    ATR,                    ///< @brief ATR.
-    DAY_TO_MONTH,           ///< @brief Convert day to month.
-    DAY_TO_WEEK,            ///< @brief Convert day to week.
-    EXP_MOVING_AVERAGE,     ///< @brief Exponential moving average.
-    FIXED,                  ///< @brief Fixed Y value.
-    MODIFY,                 ///< @brief Modify data serie.
-    MOMENTUM,               ///< @brief Momentum algorithm.
-    MOVING_AVERAGE,         ///< @brief Moving average algorithm.
-    RSI,                    ///< @brief RSI algorithm.
-    STD_DEV,                ///< @brief Standard deviation.
-    STOCHASTICS,            ///< @brief Stochastic algorithm.
-    LAST = STOCHASTICS,     ///< @brief Same as STOCHASTICS.
+    ATR,
+    DAY_TO_MONTH,
+    DAY_TO_WEEK,
+    EXP_MOVING_AVERAGE,
+    FIXED,
+    MODIFY,
+    MOMENTUM,
+    MOVING_AVERAGE,
+    RSI,
+    STD_DEV,
+    STOCHASTICS,
+    LAST = STOCHASTICS,
 };
 enum class Modifier {
-    ADDITION,               ///< @brief Add to values.
-    DIVISION,               ///< @brief Divide values.
-    MULTIPLICATION,         ///< @brief Multiply values.
-    SUBTRACTION,            ///< @brief Subtract values.
-    LAST = SUBTRACTION,     ///< @brief Same as SUBTRACTION.
+    ADDITION,
+    DIVISION,
+    MULTIPLICATION,
+    SUBTRACTION,
+    LAST = SUBTRACTION,
 };
 enum class LineType {
-    LINE,                               ///< @brief Simple line.
-    LINE_DOT,                           ///< @brief Dotted line
-    BAR,                                ///< @brief Vertical bar chart using high and low values.
-    BAR_CLAMP,                          ///< @brief Vertical bar chart with forced minimum value.
-    BAR_HLC,                            ///< @brief Vertical bar chart using high, low and close values.
-    HORIZONTAL,                         ///< @brief A horisontal line for close value.
-    EXPAND_VERTICAL,                    ///< @brief A vertical line using full chart area height.
-    EXPAND_HORIZONTAL_ALL,              ///< @brief Expand all points ro full chart area width.
-    EXPAND_HORIZONTAL_FIRST,            ///< @brief Expand first point to full chart area width.
-    LAST = EXPAND_HORIZONTAL_FIRST,     ///< @brief Same as EXPAND_HORIZONTAL_FIRST.
+    LINE,
+    LINE_DOT,
+    BAR,
+    BAR_CLAMP,
+    BAR_HLC,
+    HORIZONTAL,
+    EXPAND_VERTICAL,
+    EXPAND_HORIZONTAL_ALL,
+    EXPAND_HORIZONTAL_FIRST,
+    LAST = EXPAND_HORIZONTAL_FIRST,
 };
 enum class AreaNum {
-    ONE,             ///< @brief Area 1.
-    TWO,             ///< @brief Area 2.
-    THREE,           ///< @brief Area 3.
-    FOUR,            ///< @brief Area 4.
-    FIVE,            ///< @brief Area 5.
-    LAST = FIVE,     ///< @brief Same as FIVE.
+    ONE,
+    TWO,
+    THREE,
+    FOUR,
+    FIVE,
+    LAST = FIVE,
 };
 struct Point {
     static constexpr const double MAX_VALUE = 9223372036854775807.0;
@@ -804,10 +804,10 @@ struct Point {
     explicit                    Point(const std::string& date, double value = 0.0);
     explicit                    Point(const std::string& date, double high, double low, double close);
     void                        debug() const;
-    bool                        operator<(const Point& other) const { return date < other.date; } ///< @brief Compare date.
-    bool                        operator<=(const Point& other) const { return date <= other.date; } ///< @brief Compare date.
-    bool                        operator==(const Point& other) const { return date == other.date; } ///< @brief Compare date.
-    bool                        operator!=(const Point& other) const { return date != other.date; } ///< @brief Compare date.
+    bool                        operator<(const Point& other) const { return date < other.date; }
+    bool                        operator<=(const Point& other) const { return date <= other.date; }
+    bool                        operator==(const Point& other) const { return date == other.date; }
+    bool                        operator!=(const Point& other) const { return date != other.date; }
     static PointVector          ATR(const PointVector& in, size_t days);
     static size_t               BinarySearch(const PointVector& in, const Point& key);
     static PointVector          DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block = PointVector());
@@ -831,48 +831,48 @@ class Line {
 public:
     static const int            MAX_WIDTH = 14;
     explicit                    Line()
-                                    { reset(); } ///< @brief Create empty chart line.
+                                    { reset(); }
     explicit                    Line(const PointVector& data, const std::string& label = "", LineType type = LineType::LINE);
     Fl_Align                    align() const
-                                    { return _align; } ///< @brief Return what side its y scale is on.
+                                    { return _align; }
     Fl_Color                    color() const
-                                    { return _color; } ///< @brief Get line color.
+                                    { return _color; }
     const PointVector&          data() const
-                                    { return _data; } ///< @brief Get chart data.
+                                    { return _data; }
     void                        debug(size_t num) const;
     bool                        is_visible() const
-                                    { return _visible; } ///< @brief Is line visible?
+                                    { return _visible; }
     std::string                 label() const
-                                    { return _label; } ///< @brief Get line label.
+                                    { return _label; }
     const Fl_Rect&              label_rect() const
-                                    { return _rect; } ///< @brief Get line label rectangle.
+                                    { return _rect; }
     void                        reset();
     Line&                       set_align(Fl_Align val)
-                                    { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; } ///< @brief Set scale side (only FL_ALIGN_LEFT or FL_ALIGN_RIGHT).
+                                    { if (val == FL_ALIGN_LEFT || val == FL_ALIGN_RIGHT) _align = val; return *this; }
     Line&                       set_color(Fl_Color val)
-                                    { _color = val; return *this; } ///< @brief Set line color.
+                                    { _color = val; return *this; }
     Line&                       set_data(const PointVector& val)
-                                    { _data = val; return *this; } ///< @brief Set chart data.
+                                    { _data = val; return *this; }
     Line&                       set_label(const std::string& val)
-                                    { _label = val; return *this; } ///< @brief Set line label.
+                                    { _label = val; return *this; }
     Line&                       set_label_rect(int x, int y, int w, int h)
-                                    { _rect = Fl_Rect(x, y, w, h); return *this; } ///< @brief Set line label rectangle.
+                                    { _rect = Fl_Rect(x, y, w, h); return *this; }
     Line&                       set_type(LineType val)
                                     { _type = val; return *this; }
     Line&                       set_type_from_string(const std::string& val);
     Line&                       set_visible(bool val)
-                                    { _visible = val; return *this; } ///< @brief Set visibilty.
+                                    { _visible = val; return *this; }
     Line&                       set_width(unsigned val = 1)
-                                    { if (val > 0 && val <= Line::MAX_WIDTH) _width = val; return *this; } ///< @brief Set line size.
+                                    { if (val > 0 && val <= Line::MAX_WIDTH) _width = val; return *this; }
     size_t                      size() const
-                                    { return _data.size(); } ///< @brief Get number of data points.
+                                    { return _data.size(); }
     LineType                    type() const
-                                    { return _type; } ///< @brief Get line type.
+                                    { return _type; }
     bool                        type_has_high_and_low() const
-                                    { return _type == LineType::BAR || _type == LineType::BAR_CLAMP || _type == LineType::BAR_HLC; } ///< @brief Check if line type are using high and low values.
+                                    { return _type == LineType::BAR || _type == LineType::BAR_CLAMP || _type == LineType::BAR_HLC; }
     std::string                 type_to_string() const;
     unsigned                    width() const
-                                    { return _width; } ///< @brief Get line width.
+                                    { return _width; }
 private:
     PointVector                 _data;
     Fl_Align                    _align;
@@ -894,14 +894,14 @@ public:
     std::optional<double>       max() const;
     std::optional<double>       min() const;
     double                      pixel() const
-                                    { return _pixel; } ///< @brief Get y value for one pixel.
+                                    { return _pixel; }
     void                        reset();
     void                        set_max(double val)
-                                    { _max = val; } ///< @brief Set max y value.
+                                    { _max = val; }
     void                        set_min(double val)
-                                    { _min = val; } ///< @brief Set min y value.
+                                    { _min = val; }
     double                      tick() const
-                                    { return _tick; } ///< @brief Get y value between every y tick.
+                                    { return _tick; }
 private:
     double                      _max;
     double                      _min;
@@ -912,40 +912,40 @@ class Area {
 public:
     static const size_t         MAX_LINES = 10;
     explicit                    Area(AreaNum area)
-                                    { _area = area; reset(); } ///< @brief Create chart area. @param[in] area  Area index.
+                                    { _area = area; reset(); }
     bool                        add_line(const Line& chart_line);
     AreaNum                     area() const
-                                    { return _area; } ///< @brief Get area index.
+                                    { return _area; }
     std::optional<double>       clamp_max() const;
     std::optional<double>       clamp_min() const;
     void                        debug() const;
     void                        delete_line(size_t index);
     Scale&                      left_scale()
-                                    { return _left; } ///< @brief Get left scale.
+                                    { return _left; }
     Line*                       line(size_t index)
-                                    { return (index < _lines.size()) ? &_lines[index] : nullptr; } ///< @brief Get chart line.
+                                    { return (index < _lines.size()) ? &_lines[index] : nullptr; }
     const LineVector&           lines() const
-                                    { return _lines; } ///< @brief Get all chart lines.
+                                    { return _lines; }
     int                         percent() const
-                                    { return _percent; } ///< @brief Get size as a percent value.
+                                    { return _percent; }
     Fl_Rect&                    rect()
-                                    { return _rect; } ///< @brief Get area rectangle.
+                                    { return _rect; }
     void                        reset();
     Scale&                      right_scale()
-                                    { return _right; } ///< @brief Get right scale.
+                                    { return _right; }
     size_t                      selected() const
-                                    { return _selected; } ///< @brief Return which line is selected.
+                                    { return _selected; }
     Line*                       selected_line();
     void                        set_max_clamp(double val = INFINITY)
-                                    { _clamp_max = val; } ///< @brief Set max clamp value.
+                                    { _clamp_max = val; }
     void                        set_min_clamp(double val = INFINITY)
-                                    { _clamp_min = val; } ///< @brief Set min clamp value.
+                                    { _clamp_min = val; }
     void                        set_percent(int val)
-                                    { _percent = val; } ///< @brief Set size as a percent value. @param[in] val  From 10 to 100.
+                                    { _percent = val; }
     void                        set_selected(size_t val)
-                                    { _selected = val; } ///< @brief Set which line should be selected.
+                                    { _selected = val; }
     size_t                      size() const
-                                    { return _lines.size(); } ///< @brief Get number of chart lines.
+                                    { return _lines.size(); }
 private:
     AreaNum                     _area;
     LineVector                  _lines;
@@ -965,35 +965,35 @@ public:
     static const int            MAX_TICK = Line::MAX_WIDTH * 5;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     double                      alt_size() const
-                                    { return _alt_size; } ///< @brief Get tweaked x label font size (for days and time).
+                                    { return _alt_size; }
     Area&                       area(AreaNum area)
-                                    { return _areas[static_cast<size_t>(area)]; } ///< @brief Get chart area object.
+                                    { return _areas[static_cast<size_t>(area)]; }
     bool                        create_line(Algorithm formula, bool support = false);
     void                        debug() const;
     void                        debug_line() const;
     void                        disable_menu()
-                                    { _disable_menu = true; } ///< @brief Disable popup menu.
+                                    { _disable_menu = true; }
     void                        do_layout()
-                                    { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); } ///< @brief Resize widget.
+                                    { _old = Fl_Rect(); resize(x(), y(), w(), h()); redraw(); }
     void                        draw() override;
     void                        enable_menu()
-                                    { _disable_menu = false; } ///< @brief Enable popup menu.
+                                    { _disable_menu = false; }
     std::string                 filename() const
-                                    { return _filename; } ///< @brief Return latest  json filename.
+                                    { return _filename; }
     int                         handle(int event) override;
     bool                        hor_lines() const
-                                    { return _horizontal; } ///< @brief Are horisontal lines shown?
+                                    { return _horizontal; }
     void                        init()
-                                    { _init(false); } ///< @brief Initiate chart but dont create new date serie.
+                                    { _init(false); }
     void                        init_new_data()
-                                    { _init(true); } ///< @brief Initiate chart and create new date serie.
+                                    { _init(true); }
     bool                        line_labels() const
-                                    { return _labels; } ///< @brief Are labels shown?.
+                                    { return _labels; }
     bool                        load_csv();
     bool                        load_json();
     bool                        load_json(const std::string& filename);
     std::string                 main_label() const
-                                    { return _label; } ///< @brief Get main label.
+                                    { return _label; }
     void                        print_to_postscript();
     void                        reset();
     void                        resize(int X, int Y, int W, int H) override;
@@ -1002,22 +1002,22 @@ public:
     bool                        save_json(const std::string& filename, double max_diff_high_low = 0.001);
     bool                        save_png();
     void                        set_alt_size(double val = 0.8)
-                                    { if (val >= 0.6 && val <= 1.2) _alt_size = val; } ///< @brief Tweak fontsize for x labels  (for days and time). @param[in] val  Valid number is 0.6 to 1.2 (default 0.8).
+                                    { if (val >= 0.6 && val <= 1.2) _alt_size = val; }
     bool                        set_area_size(unsigned area1 = 100, unsigned area2 = 0, unsigned area3 = 0, unsigned area4 = 0, unsigned area5 = 0);
     void                        set_block_dates(const PointVector& block_dates)
-                                    { _block_dates = block_dates; } ///< @brief Set block date list.
+                                    { _block_dates = block_dates; }
     void                        set_date_range(DateRange range = DateRange::DAY)
-                                    { _date_range  = range; } ///< @brief Set date range.
+                                    { _date_range  = range; }
     void                        set_hor_lines(bool val = true)
-                                    { _horizontal = val; } ///< @brief Show/hide horisontal lines.
+                                    { _horizontal = val; }
     void                        set_line_labels(bool val = true)
-                                    { _labels = val; } ///< @brief Show/hide line labels.
+                                    { _labels = val; }
     void                        set_main_label(std::string label = "")
-                                    { _label = label; } ///< @brief Set main chart label.
+                                    { _label = label; }
     void                        set_tick_width(int val = Chart::MIN_TICK)
-                                    { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; } ///< @brief Set tich width. @param[in] val  Tick value from MIN_TICK to MAX_TICK.
+                                    { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; }
     void                        set_ver_lines(bool val = true)
-                                    { _vertical = val; } ///< @brief Show/hide vertical lines.
+                                    { _vertical = val; }
     void                        setup_area();
     void                        setup_clamp(bool min = true);
     void                        setup_create_line();
@@ -1030,13 +1030,13 @@ public:
     void                        setup_view_options();
     void                        update_pref();
     bool                        ver_lines() const
-                                    { return _vertical; } ///< @brief Are vertical lines visible?
+                                    { return _vertical; }
 private:
     enum class LabelType {
-                                OFF,                ///< @brief All checkboxes are off.
-                                ON,                 ///< @brief All checkboxes are on.
-                                VISIBLE,            ///< @brief Visible lines are on.
-                                LAST = VISIBLE,     ///< @brief Same as VISIBLE.
+                                OFF,
+                                ON,
+                                VISIBLE,
+                                LAST = VISIBLE,
     };
     void                        _calc_area_height();
     void                        _calc_area_width();
@@ -1099,15 +1099,15 @@ public:
     void                        adjust(Fl_Widget* widget, int L = 0, int R = 0, int T = 0, int B = 0);
     void                        clear();
     void                        do_layout()
-                                    { resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all child widgets.
+                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
     int                         handle(int event) override;
     Fl_Widget*                  remove(Fl_Widget* widget);
     void                        resize(int X, int Y, int W, int H) override;
     void                        resize(Fl_Widget* widget, int X, int Y, int W, int H);
     int                         size() const
-                                    { return _size; } ///< @brief Get grid size. @return Size in pixels.
+                                    { return _size; }
     void                        size(int size)
-                                    { _size = (size >= 4 && size <= 72) ? size : 0; } ///< @brief Set grid size. @param[in] size  From 4 to 72 pixel.
+                                    { _size = (size >= 4 && size <= 72) ? size : 0; }
 private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
     VoidVector                  _widgets;
@@ -1250,19 +1250,19 @@ public:
                                 FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
                                 FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
     void                        activate_font()
-                                    { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font list, active by default.
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); }
     void                        activate_font_size()
-                                    { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font size list, active by default.
+                                    { static_cast<Fl_Widget*>(_fonts)->activate(); }
     void                        deactivate_font()
-                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); } ///< @brief Turn of font list.
+                                    { static_cast<Fl_Widget*>(_fonts)->deactivate(); }
     void                        deactivate_fontsize()
-                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); } ///< @brief Turn of font size list.
+                                    { static_cast<Fl_Widget*>(_sizes)->deactivate(); }
     int                         font()
-                                    { return _font; } ///< @brief Return selected font.
+                                    { return _font; }
     std::string                 fontname()
-                                    { return _fontname; } ///< @brief Return selected font name.
+                                    { return _fontname; }
     int                         fontsize()
-                                    { return _fontsize; } ///< @brief Return selected font size.
+                                    { return _fontsize; }
     bool                        run(Fl_Window* parent = nullptr);
 private:
     void                        _activate();
@@ -1291,7 +1291,7 @@ public:
     bool                        update(const std::string& message, unsigned milli = 100);
     bool                        update(double value, const std::string& message, unsigned milli = 100);
     double                      value() const
-                                    { return _progress->value(); } ///< @brief Return progress bar value.
+                                    { return _progress->value(); }
     void                        value(double value);
 private:
     static void                 Callback(Fl_Widget* w, void* o);
@@ -1318,24 +1318,24 @@ public:
     InputMenu&                  operator=(InputMenu&&) = delete;
     explicit                    InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        clear();
-    Fl_Input*                   input() ///< @brief Get input widget.
+    Fl_Input*                   input()
                                     { return reinterpret_cast<Fl_Input*>(_input); }
     void                        insert(const std::string& string, unsigned max_list_len);
     Fl_Menu_Button*             menu()
-                                    { return _menu; } ///< @brief Get menu widget.
+                                    { return _menu; }
     bool                        menu_visible() const
-                                    { return _menu->visible() != 0; } ///< @brief Is menu button visible?
+                                    { return _menu->visible() != 0; }
     void                        menu_visible(bool value)
-                                    { if (value == true) _menu->show(); else _menu->hide(); resize(x(), y(), w(), h()); } ///< @brief Hide or show menu button.
+                                    { if (value == true) _menu->show(); else _menu->hide(); resize(x(), y(), w(), h()); }
     StringVector                get_history() const;
     void                        resize(int X, int Y, int W, int H) override;
     void                        update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
     std::string                 value() const;
     void                        value(const std::string& string);
     void                        values(const StringVector& list, const std::string& input_value)
-                                    { _values(list, input_value); } ///< @brief Set a list of string and input value. @param[in] list  List of strings. @param[in]  input_value Optional input string.
+                                    { _values(list, input_value); }
     void                        values(const StringVector& list, size_t list_index = -1)
-                                    { _values(list, list.size() > list_index ? list[list_index] : ""); } ///< @brief Set a list of string and an optional input value. @param[in] list  List of strings. @param[in] list_index  Optional input string.
+                                    { _values(list, list.size() > list_index ? list[list_index] : ""); }
 private:
     void                        _add(bool insert, const std::string& string, int max_list_len);
     void                        _add(bool insert, const StringVector& list);
@@ -1761,23 +1761,23 @@ class RecentMenu {
 public:
                                     RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
     void                            append(const std::string& item)
-                                        { return _add(item, true); } ///< @brief Append item last in menu. @param[in] item  Menu label.
+                                        { return _add(item, true); }
     void                            insert(const std::string& item)
-                                        { return _add(item, false); } ///< @brief Insert item first in menu. @param[in] item  Menu label.
+                                        { return _add(item, false); }
     StringVector                    items() const
-                                        { return _items; } ///< @brief Number of items.
+                                        { return _items; }
     size_t                          max_items() const
-                                        { return _max; } ///< @brief Get max number of items.
+                                        { return _max; }
     void                            max_items(size_t max)
-                                        { if (max > 0 && max <= 100) _max = max; } ///< @brief Set max number of items. @param[in] max  From 1 to 100.
+                                        { if (max > 0 && max <= 100) _max = max; }
     Fl_Menu_*                       menu()
-                                        { return _menu; } ///< @brief Get menu object.
+                                        { return _menu; }
     void                            load_pref(Fl_Preferences& pref, const std::string& base_name = "files");
     void                            save_pref(Fl_Preferences& pref, const std::string& base_name = "files");
     void*                           user_data()
-                                        { return _user; } ///< @brief Get user data.
+                                        { return _user; }
     void                            user_data(void* data)
-                                        { _user = data; } ///< @brief Set user data.
+                                        { _user = data; }
     static void                     CallbackClear(Fl_Widget*, void* o);
 private:
     void                            _add(const std::string& item, bool append);
@@ -2119,62 +2119,62 @@ namespace flw {
 namespace flw {
 class TabsGroup : public Fl_Group {
 public:
-    static const int            DEFAULT_SPACE_PX = 2;   ///< @brief Default space between buttons.
-    static int                  MIN_WIDTH_NORTH_SOUTH;  ///< @brief Minimum width of top/bottom buttons, default 4 (4 * flw::PREF_FONTSIZE).
-    static int                  MIN_WIDTH_EAST_WEST;    ///< @brief Minimum width of left/right buttons, default 4 (4 * flw::PREF_FONTSIZE).
-    enum class TABS {
-                                NORTH,          ///< @brief Top of container.
-                                TOP = NORTH,    ///< @brief Top of container.
-                                SOUTH,          ///< @brief Bottom of container.
-                                BOTTOM = SOUTH, ///< @brief Bottom of container.
-                                WEST,           ///< @brief On the left side of container.
-                                LEFT = WEST,    ///< @brief On the left side of container.
-                                EAST,           ///< @brief On the right side of the container.
-                                RIGHT = EAST,   ///< @brief On the right side of the container.
+    static const int            DEFAULT_SPACE_PX = 2;
+    static int                  MIN_WIDTH_NORTH_SOUTH;
+    static int                  MIN_WIDTH_EAST_WEST;
+    enum class Pos {
+                                NORTH,
+                                TOP = NORTH,
+                                SOUTH,
+                                BOTTOM = SOUTH,
+                                WEST,
+                                LEFT = WEST,
+                                EAST,
+                                RIGHT = EAST,
     };
     explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        activate(Fl_Widget* widget)
-                                    { _activate(widget, false); } ///< @brief Activate and show button and child widget.
+                                    { _activate(widget, false); }
     void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr, const std::string& tooltip = "");
     void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
-                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); } ///< @brief Set border around active child widget.
+                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); }
     Fl_Widget*                  child(int index) const;
     int                         children() const
-                                    { return (int) _widgets.size(); } ///< @brief Return number of child widgets (tab buttons are not included).
+                                    { return (int) _widgets.size(); }
     void                        clear();
     void                        debug(bool all = true) const;
     void                        disable_keyboard()
-                                    { _disable_k = true; } ///< @brief Disable all keyboard shortcuts.
+                                    { _disable_k = true; }
     void                        do_layout()
-                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all widgets.
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
     void                        draw() override;
     void                        enable_keyboard()
-                                    { _disable_k = false; } ///< @brief Enable all keyboard shortcuts.
+                                    { _disable_k = false; }
     int                         find(const Fl_Widget* widget) const;
     int                         handle(int event) override;
     void                        hide_tabs();
     void                        insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before = nullptr);
     bool                        is_tabs_visible() const
-                                    { return _scroll->visible(); } ///< @brief Is tab buttons visible?
+                                    { return _scroll->visible(); }
     std::string                 label(Fl_Widget* widget);
     void                        label(const std::string& label, Fl_Widget* widget);
     Fl_Widget*                  remove(int index);
     Fl_Widget*                  remove(Fl_Widget* widget)
-                                    { return TabsGroup::remove(find(widget)); } ///< @brief Remove widget and return it.
+                                    { return TabsGroup::remove(find(widget)); }
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
+    Pos                         tab_pos() const
+                                    { return _tab_pos; }
+    void                        tab_pos(Pos pos, int space = TabsGroup::DEFAULT_SPACE_PX);
     int                         swap(int from, int to);
-    TABS                        tabs() const
-                                    { return _tabs; } ///< @brief Pos of the tab buttons (TABS::NORTH, TABS::SOUTH, TABS::EAST, TABS::WEST).
-    void                        tabs(TABS value, int space_max_20 = TabsGroup::DEFAULT_SPACE_PX);
     std::string                 tooltip(Fl_Widget* widget) const;
     void                        tooltip(const std::string& label, Fl_Widget* widget);
     void                        update_pref(unsigned characters = 10, Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
-                                    { value(find(widget)); } ///< @brief Set active child widget.
+                                    { value(find(widget)); }
     static void                 Callback(Fl_Widget* sender, void* object);
     static const char*          Help();
 private:
@@ -2187,7 +2187,7 @@ private:
     Fl_Flex*                    _pack;
     Fl_Rect                     _area;
     Fl_Scroll*                  _scroll;
-    TABS                        _tabs;
+    Pos                         _tab_pos;
     WidgetVector                _widgets;
     bool                        _drag;
     bool                        _disable_k;
@@ -2195,7 +2195,7 @@ private:
     int                         _active2;
     int                         _e;
     int                         _n;
-    int                         _pos;
+    int                         _xpos;
     int                         _s;
     int                         _space;
     int                         _w;

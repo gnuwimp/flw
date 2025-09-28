@@ -14333,7 +14333,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _scroll->box(FL_NO_BOX);
     _scroll->add(_pack);
     Fl_Group::add(_scroll);
-    tabs(TABS::NORTH);
+    tab_pos(Pos::NORTH);
     update_pref();
 }
 void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
@@ -14361,7 +14361,7 @@ void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
     if (but == nullptr) {
         return;
     }
-    if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
+    if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
         if (but->x() < _scroll->x()) {
             _scroll->scroll_to(_scroll->xposition() + but->x() - _scroll->x(), _scroll->yposition());
         }
@@ -14439,7 +14439,7 @@ void TabsGroup::debug(bool all) const {
     printf("    _active1   = %d\n", _active1);
     printf("    _active2   = %d\n", _active2);
     printf("    _drag      = %d\n", _drag);
-    printf("    _pos       = %d\n", _pos);
+    printf("    _xpos      = %d\n", _xpos);
     printf("    _disable_k = %d\n", _disable_k);
     printf("    _widgets   = %d\n", static_cast<int>(_widgets.size()));
     printf("    visible    = %s\n", _scroll->visible() ? "visible" : "hidden");
@@ -14472,18 +14472,18 @@ int TabsGroup::find(const Fl_Widget* widget) const {
     return -1;
 }
 int TabsGroup::handle(int event) {
-    if (_tabs == TABS::WEST || _tabs == TABS::EAST) {
+    if (_tab_pos == Pos::WEST || _tab_pos == Pos::EAST) {
         if (event == FL_DRAG) {
             if (_drag == true) {
                 auto pos = 0;
-                if (_tabs == TABS::WEST) {
+                if (_tab_pos == Pos::WEST) {
                     pos = Fl::event_x() - x();
                 }
                 else {
                     pos = x() + w() - Fl::event_x();
                 }
-                if (pos != _pos) {
-                    _pos = pos;
+                if (pos != _xpos) {
+                    _xpos = pos;
                     do_layout();
                 }
                 return 1;
@@ -14495,8 +14495,8 @@ int TabsGroup::handle(int event) {
         }
         else if (event == FL_MOVE) {
             auto event_x = Fl::event_x();
-            if (_tabs == TABS::WEST) {
-                auto pos = x() + _pos;
+            if (_tab_pos == Pos::WEST) {
+                auto pos = x() + _xpos;
                 if (event_x > (pos - 3) && event_x <= (pos + 3)) {
                     if (_drag == false) {
                         _drag = true;
@@ -14506,7 +14506,7 @@ int TabsGroup::handle(int event) {
                 }
             }
             else {
-                auto pos = x() + w() - _pos;
+                auto pos = x() + w() - _xpos;
                 if (event_x > (pos - 3) && event_x <= (pos + 3)) {
                     if (_drag == false) {
                         _drag = true;
@@ -14668,7 +14668,7 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     }
     else {
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
+        if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
             _resize_north_south(X, Y, W, H);
         }
         else {
@@ -14690,11 +14690,11 @@ void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     auto height = flw::PREF_FONTSIZE + 8;
     auto pack_h = (height + _space) * static_cast<int>(_widgets.size()) - _space;
     auto scroll = 0;
-    if (_pos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
-        _pos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
+    if (_xpos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
+        _xpos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
     }
-    else if (_pos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
-        _pos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
+    else if (_xpos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
+        _xpos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
     }
     if (pack_h > H) {
         scroll = (_scroll->scrollbar_size() == 0) ? Fl::scrollbar_size() : _scroll->scrollbar_size();
@@ -14702,15 +14702,15 @@ void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
     for (auto b : _widgets) {
         b->size(0, height);
     }
-    if (_tabs == TABS::WEST) {
-        _scroll->resize(X, Y, _pos, H);
-        _pack->resize(X, Y, _pos - scroll, pack_h);
-        _area = Fl_Rect(X + _pos + _w, Y + _n, W - _pos - _w - _e, H - _n - _s);
+    if (_tab_pos == Pos::WEST) {
+        _scroll->resize(X, Y, _xpos, H);
+        _pack->resize(X, Y, _xpos - scroll, pack_h);
+        _area = Fl_Rect(X + _xpos + _w, Y + _n, W - _xpos - _w - _e, H - _n - _s);
     }
     else {
-        _scroll->resize(X + W - _pos, Y, _pos, H);
-        _pack->resize(X + W - _pos, Y, _pos - scroll, pack_h);
-        _area = Fl_Rect(X + _w, Y + _n, W - _pos - _w - _e, H - _n - _s);
+        _scroll->resize(X + W - _xpos, Y, _xpos, H);
+        _pack->resize(X + W - _xpos, Y, _xpos - scroll, pack_h);
+        _area = Fl_Rect(X + _w, Y + _n, W - _xpos - _w - _e, H - _n - _s);
     }
 }
 void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
@@ -14735,7 +14735,7 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
         auto b  = static_cast<_TabsGroupButton*>(widget);
         b->size(b->tw, 0);
     }
-    if (_tabs == TABS::NORTH) {
+    if (_tab_pos == Pos::NORTH) {
         _scroll->resize(X, Y, W, height + scroll);
         _pack->resize(X, Y, pack_w, height);
         _area = Fl_Rect(X + _w, Y + height + scroll + _n, W - _w - _e, H - height - scroll - _n - _s);
@@ -14820,11 +14820,11 @@ int TabsGroup::swap(int from, int to) {
     _pack->need_layout(1);
     return _active1;
 }
-void TabsGroup::tabs(TABS tabs, int space_max_20) {
-    _tabs  = tabs;
-    _space = (space_max_20 >= 0 && space_max_20 <= 20) ? space_max_20 : TabsGroup::DEFAULT_SPACE_PX;
-    _align = FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
-    if (_tabs == TABS::NORTH || _tabs == TABS::SOUTH) {
+void TabsGroup::tab_pos(Pos pos, int space) {
+    _tab_pos = pos;
+    _space   = (space >= 0 && space <= 20) ? space : TabsGroup::DEFAULT_SPACE_PX;
+    _align   = FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
+    if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
         _align = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
         _scroll->type(Fl_Scroll::HORIZONTAL);
         _pack->type(Fl_Flex::HORIZONTAL);
@@ -14859,7 +14859,7 @@ void TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
 }
 void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
-    _pos  = fontsize * characters;
+    _xpos = fontsize * characters;
     for (auto widget : _widgets) {
         widget->labelfont(font);
         widget->labelsize(fontsize);
