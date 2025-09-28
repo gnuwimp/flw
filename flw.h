@@ -145,10 +145,10 @@ class Buf;
 typedef bool (*CallbackCopy)(int64_t size, int64_t copied, void* data);
 typedef std::vector<File> Files;
 enum class TYPE {
-                                MISSING,
-                                DIR,
-                                FILE,
-                                OTHER,
+    MISSING,
+    DIR,
+    FILE,
+    OTHER,
 };
 #ifdef _WIN32
     static const int            DEFAULT_DIR_MODE  = 0x00000080;

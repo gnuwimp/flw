@@ -55,7 +55,7 @@ int                         PREF_FIXED_FONTSIZE     = 14;
 int                         PREF_FONT               = FL_HELVETICA;
 int                         PREF_FONTSIZE           = 14;
 std::string                 PREF_FONTNAME           = "FL_HELVETICA";
-double                      PREF_SCALE_VAL          = 0.0;
+double                      PREF_SCALE_VAL          = 1.0;
 bool                        PREF_SCALE_ON           = true;
 std::string                 PREF_THEME              = "default";
 
@@ -643,6 +643,8 @@ std::string util::format(const std::string& format, ...) {
 * @return Formatted number string.
 */
 std::string util::format_double(double num, int decimals, char del) {
+    char fr_str[100];
+
     if (num > 9'007'199'254'740'992.0) {
         return "";
     }
@@ -659,11 +661,16 @@ std::string util::format_double(double num, int decimals, char del) {
         return util::format_int(static_cast<int64_t>(num), del);
     }
 
-    char fr_str[100];
-    auto int_num    = static_cast<int64_t>(fabs(num));
-    auto double_num = static_cast<double>(fabs(num) - int_num);
-    auto res        = util::format_int(int_num, del);
-    auto n          = snprintf(fr_str, 100, "%.*f", decimals, double_num);
+    auto fabs_num   = fabs(num + 0.00000001);
+    auto int_num    = static_cast<int64_t>(fabs_num);
+    auto double_num = static_cast<double>(fabs_num - int_num);
+
+    if (double_num < 0.0000001) {
+        double_num = 0.0;
+    }
+
+    auto res = util::format_int(int_num, del);
+    auto n   = snprintf(fr_str, 100, "%.*f", decimals, double_num);
 
     if (num < 0.0) {
         res = "-" + res;
@@ -678,8 +685,8 @@ std::string util::format_double(double num, int decimals, char del) {
 
 /** @brief Format an integer by inserting a thousand delimiter.
 *
-* @param[in] num       Integer to format.
-* @param[in] del       Thousand separator, default space.
+* @param[in] num  Integer to format.
+* @param[in] del  Thousand separator, default space.
 *
 * @return Formatted number string.
 */
@@ -1151,7 +1158,7 @@ void* util::zero_memory(char* mem, size_t size) {
  *
  */
 
-Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);     
+Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
 Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
 Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
 Fl_Color color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
@@ -1769,7 +1776,7 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
 
     pref.get("regular_name", buffer, "", 4000);
     std::string name = buffer;
-    
+
     if (name != "" && name != "FL_HELVETICA") {
         auto font = theme::load_font(name);
 
@@ -1787,7 +1794,7 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
 
     pref.get("mono_name", buffer, "", 1000);
     name = buffer;
-    
+
     if (name != "" && name != "FL_COURIER") {
         auto font = theme::load_font(name);
 
@@ -1826,13 +1833,20 @@ void theme::load_theme_from_pref(Fl_Preferences& pref) {
 double theme::load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show, int defw, int defh) {
     assert(window);
 
-    int  x, y, w, h, s;
+    int  x           = 0;
+    int  y           = 0;
+    int  w           = 0;
+    int  h           = 0;
+    int  s           = 0;
+    auto sv          = 0.0;
+    auto def_scaling = Fl::screen_scale(window->screen_num());
 
     pref.get((basename + "x").c_str(), x, 80);
     pref.get((basename + "y").c_str(), y, 60);
     pref.get((basename + "w").c_str(), w, defw);
     pref.get((basename + "h").c_str(), h, defh);
     pref.get((basename + "s").c_str(), s, 1);
+    pref.get((basename + "sv").c_str(), sv, def_scaling);
 
     if (x < 0 || x > Fl::w()) {
         x = 0;
@@ -1856,11 +1870,18 @@ double theme::load_win_from_pref(Fl_Preferences& pref, const std::string& basena
     }
 #endif
 
+    if (sv < 0.5 || sv > 2.0) {
+        sv = def_scaling;
+    }
+
     flw::PREF_SCALE_ON  = s;
-    flw::PREF_SCALE_VAL = Fl::screen_scale(window->screen_num());
+    flw::PREF_SCALE_VAL = sv;
 
     if (flw::PREF_SCALE_ON == false) {
         Fl::screen_scale(window->screen_num(), 1.0);
+    }
+    else {
+        Fl::screen_scale(window->screen_num(), sv);
     }
 
     return flw::PREF_SCALE_VAL;
@@ -1945,6 +1966,7 @@ void theme::save_win_to_pref(Fl_Preferences& pref, const std::string& basename, 
     pref.set((basename + "w").c_str(), window->w());
     pref.set((basename + "h").c_str(), window->h());
     pref.set((basename + "s").c_str(), flw::PREF_SCALE_ON);
+    pref.set((basename + "sv").c_str(), flw::PREF_SCALE_VAL);
 }
 
 /*

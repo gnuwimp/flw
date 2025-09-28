@@ -235,7 +235,7 @@ static void _read_dir_rec(Files& res, Files& files) {
     for (auto& file : files) {
         res.push_back(file);
 
-        if (file.type() == file::TYPE::DIR && file.is_link() == false) {
+        if (file.is_dir() == true && file.is_link() == false) {
             auto v = file::read_dir(file.filename());
             file::_read_dir_rec(res, v);
         }

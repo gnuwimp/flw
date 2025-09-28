@@ -51,10 +51,10 @@ typedef std::vector<File> Files;
 *
 */
 enum class TYPE {
-                                MISSING,    ///< @brief File does not exist.
-                                DIR,        ///< @brief It is a directory.
-                                FILE,       ///< @brief A regular file.
-                                OTHER,      ///< @brief Something else (not used in windows),
+    MISSING,    ///< @brief File does not exist.
+    DIR,        ///< @brief It is a directory.
+    FILE,       ///< @brief A regular file.
+    OTHER,      ///< @brief Something else (not used in windows),
 };
 
 #ifdef _WIN32
