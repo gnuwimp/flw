@@ -3028,6 +3028,143 @@ static const std::string _LABEL_SYMBOL          = "@-> ";
 static const char* const _LABEL_DEBUG           = "Debug chart";
 static const char* const _LABEL_DEBUG_LINE      = "Print visible values";
 #endif
+class _LineSetup : public Fl_Double_Window {
+public:
+    Line&                       _line;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _close;
+    Fl_Button*                  _color;
+    Fl_Choice*                  _align;
+    Fl_Choice*                  _type;
+    Fl_Hor_Slider*              _width;
+    Fl_Input*                   _label;
+    GridGroup*                  _grid;
+    bool                        _ret;
+    bool                        _run;
+public:
+    _LineSetup(Fl_Window* parent, Line& line) :
+    Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
+    _line(line) {
+        end();
+        _align  = new Fl_Choice(0, 0, 0, 0, "Align");
+        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _color  = new Fl_Button(0, 0, 0, 0, "Color");
+        _grid   = new GridGroup(0, 0, w(), h());
+        _label  = new Fl_Input(0, 0, 0, 0, "Label");
+        _type   = new Fl_Choice(0, 0, 0, 0, "Type");
+        _width  = new Fl_Hor_Slider(0, 0, 0, 0);
+        _line   = line;
+        _ret    = false;
+        _run    = false;
+        _grid->add(_label,     12,   1,  -1,  4);
+        _grid->add(_type,      12,   6,  -1,  4);
+        _grid->add(_align,     12,  11,  -1,  4);
+        _grid->add(_color,     12,  16,  -1,  4);
+        _grid->add(_width,     12,  21,  -1,  4);
+        _grid->add(_cancel,   -34,  -5,  16,  4);
+        _grid->add(_close,    -17,  -5,  16,  4);
+        add(_grid);
+        _align->add("Left");
+        _align->add("Right");
+        _align->textfont(flw::PREF_FONT);
+        _align->textsize(flw::PREF_FONTSIZE);
+        _cancel->callback(_LineSetup::Callback, this);
+        _close->callback(_LineSetup::Callback, this);
+        _color->align(FL_ALIGN_LEFT);
+        _color->callback(_LineSetup::Callback, this);
+        _label->textfont(flw::PREF_FONT);
+        _label->textsize(flw::PREF_FONTSIZE);
+        _type->add("Line");
+        _type->add("Dotted Line");
+        _type->add("Bar");
+        _type->add("Bar clamp");
+        _type->add("Bar hlc");
+        _type->add("Horizontal");
+        _type->add("Expand all horizontal points");
+        _type->add("Expand first horizontal point");
+        _type->textfont(flw::PREF_FONT);
+        _type->textsize(flw::PREF_FONTSIZE);
+        _width->align(FL_ALIGN_LEFT);
+        _width->callback(_LineSetup::Callback, this);
+        _width->precision(0);
+        _width->range(1, chart::MAX_LINE_WIDTH);
+        _width->value(_line.width());
+        _width->tooltip("Max line width.");
+        resizable(_grid);
+        util::labelfont(this);
+        callback(_LineSetup::Callback, this);
+        size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
+        size_range(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
+        set_modal();
+        util::center_window(this, parent);
+        _grid->do_layout();
+        _LineSetup::Callback(_width, this);
+        update_widgets();
+    }
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_LineSetup*>(o);
+        if (w == self) {
+        }
+        else if (w == self->_cancel) {
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_color) {
+            self->_color->color(fl_show_colormap(self->_line.color()));
+        }
+        else if (w == self->_width) {
+            auto l = util::format("Width %u", static_cast<unsigned>(static_cast<Fl_Hor_Slider*>(w)->value()));
+            w->copy_label(l.c_str());
+            self->redraw();
+        }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->_run = false;
+            self->update_line();
+            self->hide();
+        }
+    }
+    bool run() {
+        _run = true;
+        show();
+        while (_run == true) {
+            Fl::wait();
+            Fl::flush();
+        }
+        return _ret;
+    }
+    void update_line() {
+        _line.set_label(_label->value());
+        _line.set_width(_width->value());
+        _line.set_color(_color->color());
+        if (_type->value() == 0)      _line.set_type(LineType::LINE);
+        else if (_type->value() == 1) _line.set_type(LineType::LINE_DOT);
+        else if (_type->value() == 2) _line.set_type(LineType::BAR);
+        else if (_type->value() == 3) _line.set_type(LineType::BAR_CLAMP);
+        else if (_type->value() == 4) _line.set_type(LineType::BAR_HLC);
+        else if (_type->value() == 5) _line.set_type(LineType::HORIZONTAL);
+        else if (_type->value() == 6) _line.set_type(LineType::EXPAND_HORIZONTAL_ALL);
+        else if (_type->value() == 7) _line.set_type(LineType::EXPAND_HORIZONTAL_FIRST);
+        if (_align->value() == 0) _line.set_align(FL_ALIGN_LEFT);
+        else                      _line.set_align(FL_ALIGN_RIGHT);
+    }
+    void update_widgets() {
+        _label->value(_line.label().c_str());
+        _color->color(_line.color());
+        _LineSetup::Callback(_width, this);
+        if (_line.type() == LineType::LINE)                         _type->value(0);
+        else if (_line.type() == LineType::LINE_DOT)                _type->value(1);
+        else if (_line.type() == LineType::BAR)                     _type->value(2);
+        else if (_line.type() == LineType::BAR_CLAMP)               _type->value(3);
+        else if (_line.type() == LineType::BAR_HLC)                 _type->value(4);
+        else if (_line.type() == LineType::HORIZONTAL)              _type->value(5);
+        else if (_line.type() == LineType::EXPAND_HORIZONTAL_ALL)   _type->value(6);
+        else if (_line.type() == LineType::EXPAND_HORIZONTAL_FIRST) _type->value(7);
+        if (_line.align() == FL_ALIGN_LEFT) _align->value(0);
+        else                                _align->value(1);
+    }
+};
 bool Area::add_line(const Line& chart_line) {
     if (_lines.size() >= Area::MAX_LINES) {
         return false;
@@ -3108,7 +3245,7 @@ Point::Point() {
 Point::Point(const std::string& date, double value) {
     auto valid_date = gnu::Date(date.c_str());
     if (std::isfinite(value) == true &&
-        fabs(value) < Point::MAX_VALUE &&
+        fabs(value) < chart::MAX_VALUE &&
         valid_date.is_invalid() == false) {
         this->date = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
         this->high = this->low = this->close = value;
@@ -3122,9 +3259,9 @@ Point::Point(const std::string& date, double high, double low, double close) {
     if (std::isfinite(high) == true &&
         std::isfinite(low) == true &&
         std::isfinite(close) == true &&
-        fabs(high) < Point::MAX_VALUE &&
-        fabs(low) < Point::MAX_VALUE &&
-        fabs(close) < Point::MAX_VALUE &&
+        fabs(high) < chart::MAX_VALUE &&
+        fabs(low) < chart::MAX_VALUE &&
+        fabs(close) < chart::MAX_VALUE &&
         valid_date.is_invalid() == false) {
         if (low > high) {
             auto tmp = low;
@@ -3412,9 +3549,9 @@ PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) 
     if (buf.size() < 10) {
         return PointVector();
     }
-    std::string     str   = buf.c_str();
-    StringVector    lines = util::split_string(str, "\n");
-    PointVector res;
+    std::string  str   = buf.c_str();
+    StringVector lines = util::split_string(str, "\n");
+    PointVector  res;
     for (const auto& l : lines) {
         StringVector line = util::split_string(l, sep);
         Point    data;
@@ -3432,7 +3569,7 @@ PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) 
 }
 PointVector Point::Modify(const PointVector& in, Modifier modify, double value) {
     PointVector res;
-    if (fabs(value) < Point::MIN_VALUE) {
+    if (fabs(value) < chart::MIN_VALUE) {
         return res;
     }
     for (const auto& data : in) {
@@ -3589,7 +3726,7 @@ PointVector Point::Stochastics(const PointVector& in, size_t days) {
                 }
                 double diff1 = data.close - low;
                 double diff2 = high - low;
-                if (diff2 > Point::MIN_VALUE) {
+                if (diff2 > chart::MIN_VALUE) {
                     double kval  = 100.0 * (diff1 / diff2);
                     res.push_back(Point(data.date, kval));
                 }
@@ -3662,148 +3799,11 @@ std::string Line::type_to_string() const {
     static const std::string NAMES[] = { "LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST", "", };
     return NAMES[static_cast<unsigned>(_type)];
 }
-class _LineSetup : public Fl_Double_Window {
-public:
-    Line&                  _line;
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _close;
-    Fl_Button*                  _color;
-    Fl_Choice*                  _align;
-    Fl_Choice*                  _type;
-    Fl_Hor_Slider*              _width;
-    Fl_Input*                   _label;
-    GridGroup*                  _grid;
-    bool                        _ret;
-    bool                        _run;
-public:
-    _LineSetup(Fl_Window* parent, Line& line) :
-    Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
-    _line(line) {
-        end();
-        _align  = new Fl_Choice(0, 0, 0, 0, "Align");
-        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
-        _color  = new Fl_Button(0, 0, 0, 0, "Color");
-        _grid   = new GridGroup(0, 0, w(), h());
-        _label  = new Fl_Input(0, 0, 0, 0, "Label");
-        _type   = new Fl_Choice(0, 0, 0, 0, "Type");
-        _width  = new Fl_Hor_Slider(0, 0, 0, 0);
-        _line   = line;
-        _ret    = false;
-        _run    = false;
-        _grid->add(_label,     12,   1,  -1,  4);
-        _grid->add(_type,      12,   6,  -1,  4);
-        _grid->add(_align,     12,  11,  -1,  4);
-        _grid->add(_color,     12,  16,  -1,  4);
-        _grid->add(_width,     12,  21,  -1,  4);
-        _grid->add(_cancel,   -34,  -5,  16,  4);
-        _grid->add(_close,    -17,  -5,  16,  4);
-        add(_grid);
-        _align->add("Left");
-        _align->add("Right");
-        _align->textfont(flw::PREF_FONT);
-        _align->textsize(flw::PREF_FONTSIZE);
-        _cancel->callback(_LineSetup::Callback, this);
-        _close->callback(_LineSetup::Callback, this);
-        _color->align(FL_ALIGN_LEFT);
-        _color->callback(_LineSetup::Callback, this);
-        _label->textfont(flw::PREF_FONT);
-        _label->textsize(flw::PREF_FONTSIZE);
-        _type->add("Line");
-        _type->add("Dotted Line");
-        _type->add("Bar");
-        _type->add("Bar clamp");
-        _type->add("Bar hlc");
-        _type->add("Horizontal");
-        _type->add("Expand all horizontal points");
-        _type->add("Expand first horizontal point");
-        _type->textfont(flw::PREF_FONT);
-        _type->textsize(flw::PREF_FONTSIZE);
-        _width->align(FL_ALIGN_LEFT);
-        _width->callback(_LineSetup::Callback, this);
-        _width->precision(0);
-        _width->range(1, Line::MAX_WIDTH);
-        _width->value(_line.width());
-        _width->tooltip("Max line width.");
-        resizable(_grid);
-        util::labelfont(this);
-        callback(_LineSetup::Callback, this);
-        size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
-        size_range(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
-        set_modal();
-        util::center_window(this, parent);
-        _grid->do_layout();
-        _LineSetup::Callback(_width, this);
-        update_widgets();
-    }
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_LineSetup*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_color) {
-            self->_color->color(fl_show_colormap(self->_line.color()));
-        }
-        else if (w == self->_width) {
-            auto l = util::format("Width %u", static_cast<unsigned>(static_cast<Fl_Hor_Slider*>(w)->value()));
-            w->copy_label(l.c_str());
-            self->redraw();
-        }
-        else if (w == self->_close) {
-            self->_ret = true;
-            self->_run = false;
-            self->update_line();
-            self->hide();
-        }
-    }
-    bool run() {
-        _run = true;
-        show();
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-        return _ret;
-    }
-    void update_line() {
-        _line.set_label(_label->value());
-        _line.set_width(_width->value());
-        _line.set_color(_color->color());
-        if (_type->value() == 0)      _line.set_type(LineType::LINE);
-        else if (_type->value() == 1) _line.set_type(LineType::LINE_DOT);
-        else if (_type->value() == 2) _line.set_type(LineType::BAR);
-        else if (_type->value() == 3) _line.set_type(LineType::BAR_CLAMP);
-        else if (_type->value() == 4) _line.set_type(LineType::BAR_HLC);
-        else if (_type->value() == 5) _line.set_type(LineType::HORIZONTAL);
-        else if (_type->value() == 6) _line.set_type(LineType::EXPAND_HORIZONTAL_ALL);
-        else if (_type->value() == 7) _line.set_type(LineType::EXPAND_HORIZONTAL_FIRST);
-        if (_align->value() == 0) _line.set_align(FL_ALIGN_LEFT);
-        else                      _line.set_align(FL_ALIGN_RIGHT);
-    }
-    void update_widgets() {
-        _label->value(_line.label().c_str());
-        _color->color(_line.color());
-        _LineSetup::Callback(_width, this);
-        if (_line.type() == LineType::LINE)                         _type->value(0);
-        else if (_line.type() == LineType::LINE_DOT)                _type->value(1);
-        else if (_line.type() == LineType::BAR)                     _type->value(2);
-        else if (_line.type() == LineType::BAR_CLAMP)               _type->value(3);
-        else if (_line.type() == LineType::BAR_HLC)                 _type->value(4);
-        else if (_line.type() == LineType::HORIZONTAL)              _type->value(5);
-        else if (_line.type() == LineType::EXPAND_HORIZONTAL_ALL)   _type->value(6);
-        else if (_line.type() == LineType::EXPAND_HORIZONTAL_FIRST) _type->value(7);
-        if (_line.align() == FL_ALIGN_LEFT) _align->value(0);
-        else                                _align->value(1);
-    }
-};
 Scale::Scale() {
     reset();
 }
 int Scale::calc_margin() {
-    if (diff() < Point::MIN_VALUE) {
+    if (diff() < chart::MIN_VALUE) {
         return 0;
     }
     const double fr  = util::count_decimals(tick());
@@ -3816,7 +3816,7 @@ void Scale::calc_tick(int height) {
     int          kludge = 0;
     _tick  = 0.0;
     _pixel = 0.0;
-    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && RANGE > Point::MIN_VALUE) {
+    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && RANGE > chart::MIN_VALUE) {
         double test_inc = 0.0;
         double test_min = 0.0;
         double test_max = 0.0;
@@ -3843,7 +3843,7 @@ void Scale::calc_tick(int height) {
         _min  = test_min;
         _max  = test_max;
         _tick = test_inc;
-        if (_tick >= Point::MIN_VALUE / 10.0 && kludge < 100) {
+        if (_tick >= chart::MIN_VALUE / 10.0 && kludge < 100) {
             _pixel = height / diff();
         }
         else {
@@ -3874,7 +3874,7 @@ double Scale::diff() const {
     return _max - _min;
 }
 void Scale::fix_height() {
-    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < Point::MIN_VALUE) {
+    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < chart::MIN_VALUE) {
         if (_min >= 0.0) {
             _min *= 0.9;
         }
@@ -3943,8 +3943,8 @@ _CW(14) {
     _menu->add(_LABEL_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()), FL_MENU_DIVIDER);
     _menu->add(_LABEL_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
     _menu->add(_LABEL_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
-    _menu->add(_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_csv()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_csv()));
+    _menu->add(_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_line_to_csv()), FL_MENU_DIVIDER);
+    _menu->add(_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_line_from_csv()));
     _menu->add(_LABEL_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
     _menu->add(_LABEL_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
     _menu->add(_LABEL_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
@@ -4248,7 +4248,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         if (std::isinf(value) == true) {
             return false;
         }
-        else if (fabs(value) < Point::MIN_VALUE) {
+        else if (fabs(value) < chart::MIN_VALUE) {
             fl_alert("Error: to small value for division!");
             return false;
         }
@@ -4539,7 +4539,7 @@ void Chart::_draw_label() {
 void Chart::_draw_lines(Area& area) {
     for (const auto& line : area.lines()) {
         const auto& scale = (line.align() == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale();
-        if (line.size() > 0 && line.is_visible() == true && scale.diff() >= Point::MIN_VALUE) {
+        if (line.size() > 0 && line.is_visible() == true && scale.diff() >= chart::MIN_VALUE) {
             const double SCALE_MIN   = scale.min().value();
             const double SCALE_PIXEL = scale.pixel();
             int          x1          = area.rect().x();
@@ -5048,27 +5048,6 @@ StringVector Chart::_label_array(const Area& area, LabelType labeltype) const {
     }
     return res;
 }
-bool Chart::load_csv() {
-    if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
-        fl_alert("Error: max line count reached!");
-        return false;
-    }
-    auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-    if (util::is_empty(filename) == true) {
-        return false;
-    }
-    auto vec = Point::LoadCSV(filename);
-    if (vec.size() == 0) {
-        fl_alert("Error: no data!");
-        return false;
-    }
-    auto line = Line(vec, filename);
-    line.set_color(FL_BLUE);
-    _LineSetup(top_window(), line).run();
-    _area->add_line(line);
-    init_new_data();
-    return true;
-}
 bool Chart::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
     if (util::is_empty(filename) == true) {
@@ -5182,6 +5161,27 @@ bool Chart::load_json(const std::string& filename) {
     _filename = filename;
     return true;
 }
+bool Chart::load_line_from_csv() {
+    if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
+        fl_alert("Error: max line count reached!");
+        return false;
+    }
+    auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+    if (util::is_empty(filename) == true) {
+        return false;
+    }
+    auto vec = Point::LoadCSV(filename);
+    if (vec.size() == 0) {
+        fl_alert("Error: no data!");
+        return false;
+    }
+    auto line = Line(vec, filename);
+    line.set_color(FL_BLUE);
+    _LineSetup(top_window(), line).run();
+    _area->add_line(line);
+    init_new_data();
+    return true;
+}
 bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination) {
     if (area == nullptr || index >= area->size()) {
         return false;
@@ -5249,41 +5249,6 @@ void Chart::resize(int X, int Y, int W, int H) {
     _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
     _old = Fl_Rect(this);
     init();
-}
-bool Chart::save_csv() {
-    if (_area == nullptr || _area->selected_line() == nullptr) {
-        return false;
-    }
-    auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-    if (util::is_empty(filename) == true) {
-        return false;
-    }
-    const auto* line   = _area->selected_line();
-    const auto  answer = fl_choice("Save all data or only those in view?", nullptr, "All", "View");
-    auto        data   = PointVector();
-    const auto& ldata  = line->data();
-    if (answer == 2) {
-        auto curr = _date_start;
-        auto stop = _date_start + _ticks;
-        while (curr <= stop && curr < static_cast<int>(_dates.size())) {
-            auto& date  = _dates[curr];
-            auto  index = Point::BinarySearch(ldata, date);
-            if (index != static_cast<size_t>(-1)) {
-                data.push_back(ldata[index]);
-            }
-            curr++;
-        }
-    }
-    else {
-        data = ldata;
-    }
-    if (data.size() == 0) {
-        fl_alert("Error: no data!");
-        return false;
-    }
-    else {
-        return Point::SaveCSV(data, filename);
-    }
 }
 bool Chart::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
@@ -5363,6 +5328,41 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
     catch(const std::string& e) {
         fl_alert("Error: failed to encode json\n%s", e.c_str());
         return false;
+    }
+}
+bool Chart::save_line_to_csv() {
+    if (_area == nullptr || _area->selected_line() == nullptr) {
+        return false;
+    }
+    auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+    if (util::is_empty(filename) == true) {
+        return false;
+    }
+    const auto* line   = _area->selected_line();
+    const auto  answer = fl_choice("Save all data or only those in view?", nullptr, "All", "View");
+    auto        data   = PointVector();
+    const auto& ldata  = line->data();
+    if (answer == 2) {
+        auto curr = _date_start;
+        auto stop = _date_start + _ticks;
+        while (curr <= stop && curr < static_cast<int>(_dates.size())) {
+            auto& date  = _dates[curr];
+            auto  index = Point::BinarySearch(ldata, date);
+            if (index != static_cast<size_t>(-1)) {
+                data.push_back(ldata[index]);
+            }
+            curr++;
+        }
+    }
+    else {
+        data = ldata;
+    }
+    if (data.size() == 0) {
+        fl_alert("Error: no data!");
+        return false;
+    }
+    else {
+        return Point::SaveCSV(data, filename);
     }
 }
 bool Chart::save_png() {

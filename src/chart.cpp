@@ -75,1035 +75,23 @@ static const char* const _LABEL_DEBUG_LINE      = "Print visible values";
 #endif
 
 /*
- *                              
- *         /\                   
- *        /  \   _ __ ___  __ _ 
- *       / /\ \ | '__/ _ \/ _` |
- *      / ____ \| | |  __/ (_| |
- *     /_/    \_\_|  \___|\__,_|
- *                              
- *                              
- */
-
-/** @brief Add one chart line.
-*
-* Max Area::MAX_LINES lines.
-*
-* @param[in] chart_line  Line object.
-*
-* @return True if added. false if there are to many already.
-*/
-bool Area::add_line(const Line& chart_line) {
-    if (_lines.size() >= Area::MAX_LINES) {
-        return false;
-    }
-
-    _lines.push_back(chart_line);
-    Fl::redraw();
-
-    return true;
-}
-
-/** @brief Return max clamp value.
-*
-* @return Value or nullopt.
-*/
-std::optional<double> Area::clamp_max() const {
-    if (std::isfinite(_clamp_max) == true) {
-        return _clamp_max;
-    }
-
-    return std::nullopt;
-}
-
-/** @brief Return min clamp value.
-*
-* @return Value or nullopt.
-*/
-std::optional<double> Area::clamp_min() const {
-    if (std::isfinite(_clamp_min) == true) {
-        return _clamp_min;
-    }
-
-    return std::nullopt;
-}
-
-/** @brief Print debug info to terminal.
-*/
-void Area::debug() const {
-#ifdef DEBUG
-    printf("\t--------------------------------------\n");
-    printf("\tArea: %d\n", static_cast<int>(_area));
-
-    if (_percent >= chart::_MIN_AREA_SIZE) {
-        printf("\t\tx, y:       %12d, %4d\n", _rect.x(), _rect.y());
-        printf("\t\tw, h:       %12d, %4d\n", _rect.w(), _rect.h());
-        printf("\t\tclamp_max:  %18.4f\n", _clamp_max);
-        printf("\t\tclamp_min:  %18.4f\n", _clamp_min);
-        printf("\t\tpercent:    %18d\n", _percent);
-        printf("\t\tlines:      %18d\n", static_cast<int>(_lines.size()));
-        printf("\t\tselected:   %18d\n", static_cast<int>(_selected));
-
-        _left.debug("left");
-        _right.debug("right");
-        auto c = 0;
-
-        for (const auto& l : _lines) {
-            l.debug(c++);
-        }
-
-        fflush(stdout);
-    }
-#endif
-}
-
-/** @brief Delete chart line
-*
-* @param[in] index  Line index.
-*/
-void Area::delete_line(size_t index) {
-    size_t count = 0;
-
-    for (auto it = _lines.begin(); it != _lines.end(); ++it) {
-        if (index == count) {
-            _lines.erase(it);
-
-            if (_lines.size() == 0) {
-                _selected = 0;
-            }
-            else if (_selected >= _lines.size()) {
-                _selected = _lines.size() - 1;
-            }
-
-            break;
-        }
-
-        count++;
-    }
-}
-
-/** @brief Reset all data and values to default value.
-*/
-void Area::reset() {
-    _clamp_max = INFINITY;
-    _clamp_min = INFINITY;
-    _percent   = 0;
-    _rect      = Fl_Rect();
-    _selected  = 0;
-
-    _left.reset();
-    _right.reset();
-    _lines.clear();
-}
-
-/** @brief Return current selected line.
-*
-* @return Line or NULL.
-*/
-Line* Area::selected_line() {
-    if (_selected >= _lines.size()) {
-        return nullptr;
-    }
-
-    return &_lines[_selected];
-}
-
-/*
- *      _____      _       _   
- *     |  __ \    (_)     | |  
- *     | |__) |__  _ _ __ | |_ 
- *     |  ___/ _ \| | '_ \| __|
- *     | |  | (_) | | | | | |_ 
- *     |_|   \___/|_|_| |_|\__|
- *                             
- *                             
- */
-
-/** @brief Create empty point.
-*/
-Point::Point() {
-    high = low = close = 0.0;
-}
-
-/** @brief Create point.
-*
-* @param[in] date   Valid date.
-* @param[in] value  Y value for high, low and close.
-*/
-Point::Point(const std::string& date, double value) {
-    auto valid_date = gnu::Date(date.c_str());
-
-    if (std::isfinite(value) == true &&
-        fabs(value) < Point::MAX_VALUE &&
-        valid_date.is_invalid() == false) {
-
-        this->date = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
-        this->high = this->low = this->close = value;
-    }
-    else {
-        high = low = close = 0.0;
-    }
-}
-
-/** @brief Create point.
-*
-* Values are moved if they are out of size order.\n
-* Invalid date sets all values to 0.0.\n
-*
-* @param[in] date   Valid date.
-* @param[in] high   High Y value.
-* @param[in] low    Low Y value.
-* @param[in] close  Close Y value.
-*/
-Point::Point(const std::string& date, double high, double low, double close) {
-    auto valid_date = gnu::Date(date.c_str());
-
-    if (std::isfinite(high) == true &&
-        std::isfinite(low) == true &&
-        std::isfinite(close) == true &&
-        fabs(high) < Point::MAX_VALUE &&
-        fabs(low) < Point::MAX_VALUE &&
-        fabs(close) < Point::MAX_VALUE &&
-        valid_date.is_invalid() == false) {
-
-        if (low > high) {
-            auto tmp = low;
-            low = high;
-            high = tmp;
-        }
-
-        if (close > high) {
-            auto tmp = high;
-            high = close;
-            close = tmp;
-        }
-
-        if (close < low) {
-            auto tmp = low;
-            low = close;
-            close = tmp;
-        }
-
-        this->date  = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
-        this->high  = high;
-        this->low   = low;
-        this->close = close;
-    }
-    else {
-        this->high = this->low = this->close = 0.0;
-    }
-}
-
-/** @brief Convert data serie using ATR algorithm.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::ATR(const PointVector& in, size_t days) {
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        double tot        = 0.0;
-        double prev_close = 0.0;
-        double prev_range = 0.0;
-        size_t f          = 0;
-
-        days--;
-
-        for (const auto& data : in) {
-            if (f == 0) {
-                tot += data.high - data.low;
-            }
-            else {
-                double t1 = data.high - data.low;
-                double t2 = fabs(data.high - prev_close);
-                double t3 = fabs(data.low - prev_close);
-                double ra = 0.0;
-
-                if (t1 > t2 && t1 > t3) {
-                    ra = t1;
-                }
-                else if (t2 > t1 && t2 > t3) {
-                    ra = t2;
-                }
-                else {
-                    ra = t3;
-                }
-
-                tot += ra;
-
-                if (f == days) {
-                    prev_range = tot / (days + 1);
-                    res.push_back(Point(data.date, prev_range));
-                }
-                else if (f > days) {
-                    prev_range = ((prev_range * days) + ra) / (days + 1);
-                    res.push_back(Point(data.date, prev_range));
-                }
-            }
-
-            prev_close = data.close;
-            f++;
-        }
-    }
-
-    return res;
-}
-
-/** @brief Do a binary search for a date/time.
-*
-* @param[in] in   Vector with data.
-* @param[in] key  Date to search for.
-*
-* @return Vector with Point objects.
-*/
-size_t Point::BinarySearch(const PointVector& in, const Point& key) {
-    auto it = std::lower_bound(in.begin(), in.end(), key);
-
-    if (it == in.end() || *it != key) {
-        return static_cast<size_t>(-1);
-    }
-    else {
-        return std::distance(in.begin(), it);
-    }
-}
-
-/** @brief Create date serie.
-*
-* @param[in] start_date  Start date.
-* @param[in] stop_date   Stop date.
-* @param[in] range       Date range.
-* @param[in] block       Optional list of dates to remove from reference date serie.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block) {
-    auto       month   = -1;
-    auto       current = gnu::Date(start_date.c_str());
-    auto const stop    = gnu::Date(stop_date.c_str());
-    auto       res     = PointVector();
-
-    if (range == DateRange::FRIDAY) {
-        while (current.weekday() != gnu::Date::DAY::FRIDAY)
-            current.add_days(1);
-    }
-    else if (range == DateRange::SUNDAY) {
-        while (current.weekday() != gnu::Date::DAY::SUNDAY) {
-            current.add_days(1);
-        }
-    }
-
-    while (current <= stop) {
-        gnu::Date date(1, 1, 1);
-
-        if (range == DateRange::DAY) {
-            date = gnu::Date(current);
-            current.add_days(1);
-        }
-        else if (range == DateRange::WEEKDAY) {
-            gnu::Date::DAY weekday = current.weekday();
-
-            if (weekday >= gnu::Date::DAY::MONDAY && weekday <= gnu::Date::DAY::FRIDAY) {
-                date = gnu::Date(current);
-            }
-
-            current.add_days(1);
-        }
-        else if (range == DateRange::FRIDAY || range == DateRange::SUNDAY) {
-            date = gnu::Date(current);
-            current.add_days(7);
-        }
-        else if (range == DateRange::MONTH) {
-            if (current.month() != month) {
-                current.set_day_to_last_in_month();
-                date = gnu::Date(current);
-                month = current.month();
-            }
-
-            current.add_months(1);
-        }
-        else if (range == DateRange::HOUR) {
-            date = gnu::Date(current);
-            current.add_seconds(3600);
-        }
-        else if (range == DateRange::MIN) {
-            date = gnu::Date(current);
-            current.add_seconds(60);
-        }
-        else if (range == DateRange::SEC) {
-            date = gnu::Date(current);
-            current.add_seconds(1);
-        }
-
-        if (date.year() > 1) {
-            Point price(date.format(gnu::Date::FORMAT::ISO_TIME_LONG));
-
-            if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
-                res.push_back(price);
-            }
-        }
-    }
-
-    return res;
-}
-
-/** @brief Convert data serie to monthly data.
-*
-* @param[in] in   Vector with data.
-* @param[in] sum  True to add values for a month, false to use highest/lowest and last close data.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::DayToMonth(const PointVector& in, bool sum) {
-    size_t          f = 0;
-    PointVector res;
-    Point       current;
-    gnu::Date       stop;
-    gnu::Date       pdate;
-
-    for (const auto& data : in) {
-        if (f == 0) {
-            current = data;
-            stop = gnu::Date(current.date.c_str());
-            stop.set_day_to_last_in_month();
-        }
-        else {
-            pdate = gnu::Date(data.date.c_str());
-
-            if (stop < pdate) {
-                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
-                res.push_back(current);
-                current = data;
-                stop = gnu::Date(current.date.c_str());
-                stop.set_day_to_last_in_month();
-            }
-            else if (sum == true) {
-                current.high  += data.high;
-                current.low   += data.low;
-                current.close += data.close;
-            }
-            else {
-                if (data.high > current.high) {
-                    current.high = data.high;
-                }
-
-                if (data.low < current.low) {
-                    current.low = data.low;
-                }
-
-                current.close  = data.close;
-            }
-        }
-
-        if (f + 1 == in.size()) {
-            auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
-            stop.set_day_to_last_in_month();
-            current.date = s;
-            res.push_back(current);
-        }
-
-        f++;
-    }
-
-    return res;
-}
-
-/** @brief Convert data serie to weekly data.
-*
-* @param[in] in       Vector with data.
-* @param[in] weekday  What day to use in week.
-* @param[in] sum      True to add values for a week, false to use highest/lowest and last close data.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum) {
-    size_t          f = 0;
-    PointVector res;
-    Point       current;
-    gnu::Date       stop;
-    gnu::Date       pdate;
-
-    for (const auto& data : in) {
-        if (f == 0) {
-            stop = gnu::Date(data.date.c_str());
-
-            if (weekday > stop.weekday()) {
-                stop.set_weekday(weekday);
-            }
-            else if (weekday < stop.weekday()) {
-                stop.set_weekday(weekday);
-                stop.add_days(7);
-            }
-
-            current = data;
-        }
-        else {
-            pdate = gnu::Date(data.date.c_str());
-
-            if (stop < pdate) {
-                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
-                res.push_back(current);
-                current = data;
-            }
-            else if (sum == true) {
-                current.high  += data.high;
-                current.low   += data.low;
-                current.close += data.close;
-            }
-            else {
-                if (data.high > current.high) {
-                    current.high = data.high;
-                }
-
-                if (data.low < current.low) {
-                    current.low = data.low;
-                }
-
-                current.close  = data.close;
-            }
-
-            while (stop < pdate) {
-                stop.add_days(7);
-            }
-
-            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
-        }
-
-        if (f + 1 == in.size()) {
-            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
-            res.push_back(current);
-        }
-
-        f++;
-    }
-
-    return res;
-}
-
-/** @brief Print value.
-*/
-void Point::debug() const {
-#ifdef DEBUG
-    printf("%s, %20.8f, %20.8f, %20.8f\n", date.c_str(), high, low, close);
-#endif
-}
-
-/** @brief Print values.
-*
-* @param[in] in  Vector with data.
-*/
-void Point::Debug(const PointVector& in) {
-#ifdef DEBUG
-    printf("\nPointVector(%u)\n", static_cast<unsigned>(in.size()));
-
-    for (const auto& data : in) {
-        data.debug();
-    }
-
-    fflush(stdout);
-#else
-    (void) in;
-#endif
-}
-
-/** @brief Convert data serie using exponential moving average algorithm.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::ExponentialMovingAverage(const PointVector& in, size_t days) {
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        double sma   = 0.0;
-        double prev  = 0.0;
-        double multi = 2.0 / static_cast<double>(days + 1.0);
-        size_t f     = 0;
-
-        for (const auto& data : in) {
-            if (f < (days - 1)) {
-                sma += data.close;
-            }
-            else if (f == (days - 1)) {
-                sma += data.close;
-                prev = sma / days;
-                res.push_back(Point(data.date, prev));
-            }
-            else {
-                prev = ((data.close - prev) * multi) + prev;
-                res.push_back(Point(data.date, prev));
-            }
-
-            f++;
-        }
-    }
-
-    return res;
-}
-
-/** @brief Create a data serie with fixed Y value.
-*
-* @param[in] in     Vector with date data.
-* @param[in] value  Y values.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::Fixed(const PointVector& in, double value) {
-    PointVector res;
-
-    for (const auto& data : in) {
-        res.push_back(Point(data.date, value));
-    }
-
-    return res;
-}
-
-/** @brief Load data from csv file.
-*
-* @param[in] filename  Valid text file name.
-* @param[in] sep       Column separator.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) {
-    auto buf = gnu::file::read(filename);
-
-    if (buf.size() < 10) {
-        return PointVector();
-    }
-
-    std::string     str   = buf.c_str();
-    StringVector    lines = util::split_string(str, "\n");
-    PointVector res;
-
-    for (const auto& l : lines) {
-        StringVector line = util::split_string(l, sep);
-        Point    data;
-
-        if (line.size() == 2) {
-            data = Point(line[0], util::to_double(line[1]));
-        }
-        else if (line.size() > 3) {
-            data = Point(line[0], util::to_double(line[1]), util::to_double(line[2]), util::to_double(line[3]));
-        }
-
-        if (data.date != "") {
-            res.push_back(data);
-        }
-    }
-
-    return res;
-}
-
-/** @brief Modify chart data.
-*
-* @param[in] in      Vector with chart data.
-* @param[in] modify  Type of modify.
-* @param[in] value   Value to use.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::Modify(const PointVector& in, Modifier modify, double value) {
-    PointVector res;
-
-    if (fabs(value) < Point::MIN_VALUE) {
-        return res;
-    }
-
-    for (const auto& data : in) {
-        switch (modify) {
-            case Modifier::ADDITION:
-                res.push_back(Point(data.date, data.high + value, data.low + value, data.close + value));
-                break;
-            case Modifier::DIVISION:
-                res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
-                break;
-            case Modifier::MULTIPLICATION:
-                res.push_back(Point(data.date, data.high * value, data.low * value, data.close * value));
-                break;
-            case Modifier::SUBTRACTION:
-                res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
-                break;
-        }
-    }
-
-    return res;
-}
-
-/** @brief Convert data serie using momentum algorithm.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::Momentum(const PointVector& in, size_t days) {
-    size_t          start = days - 1;
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        for (auto f = start; f < in.size(); f++) {
-            const auto& data1 = in[f];
-            const auto& data2 = in[f - start];
-
-            res.push_back(Point(data1.date, data1.close - data2.close));
-        }
-
-    }
-
-    return res;
-}
-
-/** @brief Convert data serie using moving average algorithm.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::MovingAverage(const PointVector& in, size_t days) {
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        size_t count = 0;
-        double sum   = 0.0;
-        auto   tmp   = new double[in.size() + 1];
-
-        for (const auto& data : in) {
-            count++;
-
-            if (count < days) { //  Add data until the first moving average price can be calculated.
-                tmp[count - 1] = data.close;
-                sum += data.close;
-            }
-            else if (count == days) { //  This is the first point.
-                tmp[count - 1] = data.close;
-                sum += data.close;
-                res.push_back(Point(data.date, sum / days));
-            }
-            else { //  Remove oldest data in range and add current to sum.
-                tmp[count - 1] = data.close;
-                sum -= tmp[count - (days + 1)];
-                sum += data.close;
-                res.push_back(Point(data.date, sum / days));
-            }
-        }
-
-        delete []tmp;
-    }
-
-    return res;
-}
-
-/** @brief Conmvert range value to a string.
-*
-* @param[in] range  Range value.
-*
-* @return String value, one of ("DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC").
-*/
-std::string Point::RangeToString(DateRange range) {
-    static const std::string NAMES[] = { "DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC", "", };
-    return NAMES[static_cast<unsigned>(range)];
-}
-
-/** @brief Convert data serie using rsi algorithm.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::RSI(const PointVector& in, size_t days) {
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        double avg_gain = 0.0;
-        double avg_loss = 0.0;
-
-        for (size_t f = 1; f < in.size(); f++) {
-            double      diff = 0.0;
-            const auto& data = in[f];
-            const auto& prev = in[f - 1];
-
-            diff = data.close - prev.close;
-
-            if (f <= days) {
-                if (diff > 0) {
-                    avg_gain += diff;
-                }
-                else {
-                    avg_loss += fabs(diff);
-                }
-            }
-
-            if (f == days) {
-                avg_gain = avg_gain / days;
-                avg_loss = avg_loss / days;
-                res.push_back(Point(data.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
-            }
-            else if (f > days) {
-                avg_gain = ((avg_gain * (days - 1)) + ((diff > 0) ? fabs(diff) : 0)) / days;
-                avg_loss = ((avg_loss * (days - 1)) + ((diff < 0) ? fabs(diff) : 0)) / days;
-                res.push_back(Point(data.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
-            }
-        }
-    }
-
-    return res;
-}
-
-/** @brief Save points to an csv file.
-*
-* @param[in] in        Data serie.
-* @param[in] filename  Result file name.
-* @param[in] sep       Column separator.
-*
-* @return True if ok.
-*/
-bool Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
-    std::string csv;
-
-    csv.reserve(in.size() * 40 + 256);
-
-    for (const auto& data : in) {
-        char buffer[256];
-        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
-        csv += buffer;
-    }
-
-    return gnu::file::write(filename, csv.c_str(), csv.size());
-}
-
-/** @brief Convert data serie using standard deviation.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::StdDev(const PointVector& in, size_t days) {
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        size_t    count = 0;
-        double    sum   = 0.0;
-        Point data2;
-
-        for (const auto& data : in) {
-            count++;
-            sum += data.close;
-
-            if (count >= days) {
-                double mean = sum / days;
-                double dev  = 0.0;
-
-                for (size_t j = count - days; j < count; j++) {
-                    data2 = in[j];
-                    auto tmp = data2.close - mean;
-
-                    tmp *= tmp;
-                    dev  += tmp;
-                }
-
-                dev /= days;
-                dev = sqrt(dev);
-
-                data2 = in[count - days];
-                sum -= data2.close;
-
-                data2 = in[count - 1];
-                res.push_back(Point(data2.date, dev));
-            }
-        }
-    }
-
-    return res;
-}
-
-/** @brief Convert data serie using stochastics algorithm.
-*
-* @param[in] in    Vector with data.
-* @param[in] days  Number of days.
-*
-* @return Vector with Point objects.
-*/
-PointVector Point::Stochastics(const PointVector& in, size_t days) {
-    double          high = 0.0;
-    double          low  = 0.0;
-    PointVector res;
-
-    if (days > 1 && days < in.size()) {
-        for (size_t f = 0; f < in.size(); f++) {
-            const auto& data = in[f];
-
-            if ((f + 1) >= days) {
-                high = data.high;
-                low  = data.low;
-
-                for (size_t j = (f + 1) - days; j < (f + 1) - 1; j++) { //  Get max/min in for current range.
-                    const auto& data2 = in[j];
-
-                    if (data2.high > high) {
-                        high = data2.high;
-                    }
-
-                    if (data2.low < low) {
-                        low = data2.low;
-                    }
-                }
-
-                double diff1 = data.close - low;
-                double diff2 = high - low;
-
-                if (diff2 > Point::MIN_VALUE) {
-                    double kval  = 100.0 * (diff1 / diff2);
-                    res.push_back(Point(data.date, kval));
-                }
-            }
-        }
-    }
-
-    return res;
-}
-
-/** @brief Convert string to range.
-*
-* @param[in] range  Range string.
-*
-* @return Range value or DateRange::DAY for invalid input string.
-*/
-DateRange  Point::StringToRange(const std::string& range) {
-    if (range == "WEEKDAY")     return DateRange::WEEKDAY;
-    else if (range == "FRIDAY") return DateRange::FRIDAY;
-    else if (range == "SUNDAY") return DateRange::SUNDAY;
-    else if (range == "MONTH")  return DateRange::MONTH;
-    else if (range == "HOUR")   return DateRange::HOUR;
-    else if (range == "MIN")    return DateRange::MIN;
-    else if (range == "SEC")    return DateRange::SEC;
-    else                        return DateRange::DAY;
-}
-
-/*
- *      _      _            
- *     | |    (_)           
- *     | |     _ _ __   ___ 
- *     | |    | | '_ \ / _ \
- *     | |____| | | | |  __/
- *     |______|_|_| |_|\___|
- *                          
- *                          
- */
-
-/** @brief Create a chart line.
-*
-* @param[in] data   Chart data.
-* @param[in] label  Line label.
-* @param[in] type   Line type.
-*/
-Line::Line(const PointVector& data, const std::string& label, LineType type) {
-    reset();
-    set_data(data);
-    set_label(label);
-    set_type(type);
-}
-
-/** @brief Print debug info to stdout.
-*
-* @param[in] num  Line index.
-*/
-void Line::debug(size_t num) const {
-#ifdef DEBUG
-    printf("\t\t---------------------------------------------\n");
-    printf("\t\tLine: %u\n", static_cast<unsigned>(num));
-    printf("\t\t\ttype:  %30s\n", type_to_string().c_str());
-    printf("\t\t\twidth:      %25u\n", _width);
-    printf("\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
-    printf("\t\t\tlabel: %30s\n", _label.c_str());
-    printf("\t\t\trect:          %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
-    printf("\t\t\tvisible:    %25s\n", _visible ? "YES" : "NO");
-    printf("\t\t\tprices:     %25d\n", static_cast<int>(size()));
-
-    if (size() > 1) {
-        printf("\t\t\tfirst:      %25s\n", _data.front().date.c_str());
-        printf("\t\t\tfirst:      %25f\n", _data.front().close);
-        printf("\t\t\tlast:       %25s\n", _data.back().date.c_str());
-        printf("\t\t\tlast:       %25f\n", _data.back().close);
-    }
-
-    fflush(stdout);
-#else
-    (void) num;
-#endif
-}
-
-/** @brief Clear all data.
-*
-*/
-void Line::reset() {
-    _data.clear();
-
-    _align   = FL_ALIGN_LEFT;
-    _color   = FL_FOREGROUND_COLOR;
-    _label   = "";
-    _rect    = Fl_Rect();
-    _type    = LineType::LINE;
-    _visible = true;
-    _width   = 1;
-}
-
-/** @brief Set line type from string.
-*
-* If input name is invalid it will set type to LineType::LINE.
-*
-* @param[in] val  Line type name, one of ("LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST").
-*
-* @return Input chart line.
-*/
-Line&  Line::set_type_from_string(const std::string&  val) {
-    if (val == "LINE_DOT")                     _type = LineType::LINE_DOT;
-    else if (val == "BAR")                     _type = LineType::BAR;
-    else if (val == "BAR_CLAMP")               _type = LineType::BAR_CLAMP;
-    else if (val == "BAR_HLC")                 _type = LineType::BAR_HLC;
-    else if (val == "HORIZONTAL")              _type = LineType::HORIZONTAL;
-    else if (val == "EXPAND_VERTICAL")         _type = LineType::EXPAND_VERTICAL;
-    else if (val == "EXPAND_HORIZONTAL_ALL")   _type = LineType::EXPAND_HORIZONTAL_ALL;
-    else if (val == "EXPAND_HORIZONTAL_FIRST") _type = LineType::EXPAND_HORIZONTAL_FIRST;
-    else                                       _type = LineType::LINE;
-
-    return *this;
-}
-
-/** @brief Return line type string.
-*
-*
-* @return Line type name, one of ("LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST").
-*/
-std::string Line::type_to_string() const {
-    static const std::string NAMES[] = { "LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST", "", };
-    return NAMES[static_cast<unsigned>(_type)];
-}
-
-/*
- *           _      _             _____      _               
- *          | |    (_)           / ____|    | |              
- *          | |     _ _ __   ___| (___   ___| |_ _   _ _ __  
- *          | |    | | '_ \ / _ \\___ \ / _ \ __| | | | '_ \ 
+ *           _      _             _____      _
+ *          | |    (_)           / ____|    | |
+ *          | |     _ _ __   ___| (___   ___| |_ _   _ _ __
+ *          | |    | | '_ \ / _ \\___ \ / _ \ __| | | | '_ \
  *          | |____| | | | |  __/____) |  __/ |_| |_| | |_) |
- *          |______|_|_| |_|\___|_____/ \___|\__|\__,_| .__/ 
- *      ______                                        | |    
- *     |______|                                       |_|    
+ *          |______|_|_| |_|\___|_____/ \___|\__|\__,_| .__/
+ *      ______                                        | |
+ *     |______|                                       |_|
  */
 
 /** @brief Chart line settings dialog.
+*
 * @private
 */
 class _LineSetup : public Fl_Double_Window {
 public:
-    Line&                  _line;
+    Line&                       _line;
     Fl_Button*                  _cancel;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
@@ -1168,7 +156,7 @@ public:
         _width->align(FL_ALIGN_LEFT);
         _width->callback(_LineSetup::Callback, this);
         _width->precision(0);
-        _width->range(1, Line::MAX_WIDTH);
+        _width->range(1, chart::MAX_LINE_WIDTH);
         _width->value(_line.width());
         _width->tooltip("Max line width.");
 
@@ -1272,14 +260,1029 @@ public:
 };
 
 /*
- *       _____           _      
- *      / ____|         | |     
- *     | (___   ___ __ _| | ___ 
+ *
+ *         /\
+ *        /  \   _ __ ___  __ _
+ *       / /\ \ | '__/ _ \/ _` |
+ *      / ____ \| | |  __/ (_| |
+ *     /_/    \_\_|  \___|\__,_|
+ *
+ *
+ */
+
+/** @brief Add one chart line.
+*
+* Max Area::MAX_LINES lines.
+*
+* @param[in] chart_line  Line object.
+*
+* @return True if added. false if there are to many already.
+*/
+bool Area::add_line(const Line& chart_line) {
+    if (_lines.size() >= Area::MAX_LINES) {
+        return false;
+    }
+
+    _lines.push_back(chart_line);
+    Fl::redraw();
+
+    return true;
+}
+
+/** @brief Return max clamp value.
+*
+* @return Value or nullopt.
+*/
+std::optional<double> Area::clamp_max() const {
+    if (std::isfinite(_clamp_max) == true) {
+        return _clamp_max;
+    }
+
+    return std::nullopt;
+}
+
+/** @brief Return min clamp value.
+*
+* @return Value or nullopt.
+*/
+std::optional<double> Area::clamp_min() const {
+    if (std::isfinite(_clamp_min) == true) {
+        return _clamp_min;
+    }
+
+    return std::nullopt;
+}
+
+/** @brief Print debug info to terminal.
+*/
+void Area::debug() const {
+#ifdef DEBUG
+    printf("\t--------------------------------------\n");
+    printf("\tArea: %d\n", static_cast<int>(_area));
+
+    if (_percent >= chart::_MIN_AREA_SIZE) {
+        printf("\t\tx, y:       %12d, %4d\n", _rect.x(), _rect.y());
+        printf("\t\tw, h:       %12d, %4d\n", _rect.w(), _rect.h());
+        printf("\t\tclamp_max:  %18.4f\n", _clamp_max);
+        printf("\t\tclamp_min:  %18.4f\n", _clamp_min);
+        printf("\t\tpercent:    %18d\n", _percent);
+        printf("\t\tlines:      %18d\n", static_cast<int>(_lines.size()));
+        printf("\t\tselected:   %18d\n", static_cast<int>(_selected));
+
+        _left.debug("left");
+        _right.debug("right");
+        auto c = 0;
+
+        for (const auto& l : _lines) {
+            l.debug(c++);
+        }
+
+        fflush(stdout);
+    }
+#endif
+}
+
+/** @brief Delete chart line
+*
+* @param[in] index  Line index.
+*/
+void Area::delete_line(size_t index) {
+    size_t count = 0;
+
+    for (auto it = _lines.begin(); it != _lines.end(); ++it) {
+        if (index == count) {
+            _lines.erase(it);
+
+            if (_lines.size() == 0) {
+                _selected = 0;
+            }
+            else if (_selected >= _lines.size()) {
+                _selected = _lines.size() - 1;
+            }
+
+            break;
+        }
+
+        count++;
+    }
+}
+
+/** @brief Reset all data and values to default value.
+*
+*/
+void Area::reset() {
+    _clamp_max = INFINITY;
+    _clamp_min = INFINITY;
+    _percent   = 0;
+    _rect      = Fl_Rect();
+    _selected  = 0;
+
+    _left.reset();
+    _right.reset();
+    _lines.clear();
+}
+
+/** @brief Return current selected line.
+*
+* @return Line or NULL.
+*/
+Line* Area::selected_line() {
+    if (_selected >= _lines.size()) {
+        return nullptr;
+    }
+
+    return &_lines[_selected];
+}
+
+/*
+ *      _____      _       _
+ *     |  __ \    (_)     | |
+ *     | |__) |__  _ _ __ | |_
+ *     |  ___/ _ \| | '_ \| __|
+ *     | |  | (_) | | | | | |_
+ *     |_|   \___/|_|_| |_|\__|
+ *
+ *
+ */
+
+/** @brief Create empty point.
+*
+*/
+Point::Point() {
+    high = low = close = 0.0;
+}
+
+/** @brief Create point.
+*
+* @param[in] date   Valid date.
+* @param[in] value  Y value for high, low and close.
+*/
+Point::Point(const std::string& date, double value) {
+    auto valid_date = gnu::Date(date.c_str());
+
+    if (std::isfinite(value) == true &&
+        fabs(value) < chart::MAX_VALUE &&
+        valid_date.is_invalid() == false) {
+
+        this->date = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
+        this->high = this->low = this->close = value;
+    }
+    else {
+        high = low = close = 0.0;
+    }
+}
+
+/** @brief Create point.
+*
+* Values are moved if they are out of size order.\n
+* Invalid date sets all values to 0.0.\n
+*
+* @param[in] date   Valid date.
+* @param[in] high   High Y value.
+* @param[in] low    Low Y value.
+* @param[in] close  Close Y value.
+*/
+Point::Point(const std::string& date, double high, double low, double close) {
+    auto valid_date = gnu::Date(date.c_str());
+
+    if (std::isfinite(high) == true &&
+        std::isfinite(low) == true &&
+        std::isfinite(close) == true &&
+        fabs(high) < chart::MAX_VALUE &&
+        fabs(low) < chart::MAX_VALUE &&
+        fabs(close) < chart::MAX_VALUE &&
+        valid_date.is_invalid() == false) {
+
+        if (low > high) {
+            auto tmp = low;
+            low = high;
+            high = tmp;
+        }
+
+        if (close > high) {
+            auto tmp = high;
+            high = close;
+            close = tmp;
+        }
+
+        if (close < low) {
+            auto tmp = low;
+            low = close;
+            close = tmp;
+        }
+
+        this->date  = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
+        this->high  = high;
+        this->low   = low;
+        this->close = close;
+    }
+    else {
+        this->high = this->low = this->close = 0.0;
+    }
+}
+
+/** @brief Convert data serie using ATR algorithm.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::ATR(const PointVector& in, size_t days) {
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        double tot        = 0.0;
+        double prev_close = 0.0;
+        double prev_range = 0.0;
+        size_t f          = 0;
+
+        days--;
+
+        for (const auto& data : in) {
+            if (f == 0) {
+                tot += data.high - data.low;
+            }
+            else {
+                double t1 = data.high - data.low;
+                double t2 = fabs(data.high - prev_close);
+                double t3 = fabs(data.low - prev_close);
+                double ra = 0.0;
+
+                if (t1 > t2 && t1 > t3) {
+                    ra = t1;
+                }
+                else if (t2 > t1 && t2 > t3) {
+                    ra = t2;
+                }
+                else {
+                    ra = t3;
+                }
+
+                tot += ra;
+
+                if (f == days) {
+                    prev_range = tot / (days + 1);
+                    res.push_back(Point(data.date, prev_range));
+                }
+                else if (f > days) {
+                    prev_range = ((prev_range * days) + ra) / (days + 1);
+                    res.push_back(Point(data.date, prev_range));
+                }
+            }
+
+            prev_close = data.close;
+            f++;
+        }
+    }
+
+    return res;
+}
+
+/** @brief Do a binary search for a date/time.
+*
+* @param[in] in   Vector with Point objects.
+* @param[in] key  Date to search for.
+*
+* @return Result vector with Point objects.
+*/
+size_t Point::BinarySearch(const PointVector& in, const Point& key) {
+    auto it = std::lower_bound(in.begin(), in.end(), key);
+
+    if (it == in.end() || *it != key) {
+        return static_cast<size_t>(-1);
+    }
+    else {
+        return std::distance(in.begin(), it);
+    }
+}
+
+/** @brief Create date serie.
+*
+* @param[in] start_date  Start date.
+* @param[in] stop_date   Stop date.
+* @param[in] range       Date range.
+* @param[in] block       Optional list of dates to remove from reference date serie.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block) {
+    auto       month   = -1;
+    auto       current = gnu::Date(start_date.c_str());
+    auto const stop    = gnu::Date(stop_date.c_str());
+    auto       res     = PointVector();
+
+    if (range == DateRange::FRIDAY) {
+        while (current.weekday() != gnu::Date::DAY::FRIDAY)
+            current.add_days(1);
+    }
+    else if (range == DateRange::SUNDAY) {
+        while (current.weekday() != gnu::Date::DAY::SUNDAY) {
+            current.add_days(1);
+        }
+    }
+
+    while (current <= stop) {
+        gnu::Date date(1, 1, 1);
+
+        if (range == DateRange::DAY) {
+            date = gnu::Date(current);
+            current.add_days(1);
+        }
+        else if (range == DateRange::WEEKDAY) {
+            gnu::Date::DAY weekday = current.weekday();
+
+            if (weekday >= gnu::Date::DAY::MONDAY && weekday <= gnu::Date::DAY::FRIDAY) {
+                date = gnu::Date(current);
+            }
+
+            current.add_days(1);
+        }
+        else if (range == DateRange::FRIDAY || range == DateRange::SUNDAY) {
+            date = gnu::Date(current);
+            current.add_days(7);
+        }
+        else if (range == DateRange::MONTH) {
+            if (current.month() != month) {
+                current.set_day_to_last_in_month();
+                date = gnu::Date(current);
+                month = current.month();
+            }
+
+            current.add_months(1);
+        }
+        else if (range == DateRange::HOUR) {
+            date = gnu::Date(current);
+            current.add_seconds(3600);
+        }
+        else if (range == DateRange::MIN) {
+            date = gnu::Date(current);
+            current.add_seconds(60);
+        }
+        else if (range == DateRange::SEC) {
+            date = gnu::Date(current);
+            current.add_seconds(1);
+        }
+
+        if (date.year() > 1) {
+            Point price(date.format(gnu::Date::FORMAT::ISO_TIME_LONG));
+
+            if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
+                res.push_back(price);
+            }
+        }
+    }
+
+    return res;
+}
+
+/** @brief Convert data serie to monthly data.
+*
+* @param[in] in   Vector with Point objects.
+* @param[in] sum  True to add values for a month, false to use highest/lowest and last close data.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::DayToMonth(const PointVector& in, bool sum) {
+    size_t          f = 0;
+    PointVector res;
+    Point       current;
+    gnu::Date       stop;
+    gnu::Date       pdate;
+
+    for (const auto& data : in) {
+        if (f == 0) {
+            current = data;
+            stop = gnu::Date(current.date.c_str());
+            stop.set_day_to_last_in_month();
+        }
+        else {
+            pdate = gnu::Date(data.date.c_str());
+
+            if (stop < pdate) {
+                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+                res.push_back(current);
+                current = data;
+                stop = gnu::Date(current.date.c_str());
+                stop.set_day_to_last_in_month();
+            }
+            else if (sum == true) {
+                current.high  += data.high;
+                current.low   += data.low;
+                current.close += data.close;
+            }
+            else {
+                if (data.high > current.high) {
+                    current.high = data.high;
+                }
+
+                if (data.low < current.low) {
+                    current.low = data.low;
+                }
+
+                current.close  = data.close;
+            }
+        }
+
+        if (f + 1 == in.size()) {
+            auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            stop.set_day_to_last_in_month();
+            current.date = s;
+            res.push_back(current);
+        }
+
+        f++;
+    }
+
+    return res;
+}
+
+/** @brief Convert data serie to weekly data.
+*
+* @param[in] in       Vector with Point objects.
+* @param[in] weekday  What day to use in week.
+* @param[in] sum      True to add values for a week, false to use highest/lowest and last close data.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum) {
+    size_t          f = 0;
+    PointVector res;
+    Point       current;
+    gnu::Date       stop;
+    gnu::Date       pdate;
+
+    for (const auto& data : in) {
+        if (f == 0) {
+            stop = gnu::Date(data.date.c_str());
+
+            if (weekday > stop.weekday()) {
+                stop.set_weekday(weekday);
+            }
+            else if (weekday < stop.weekday()) {
+                stop.set_weekday(weekday);
+                stop.add_days(7);
+            }
+
+            current = data;
+        }
+        else {
+            pdate = gnu::Date(data.date.c_str());
+
+            if (stop < pdate) {
+                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+                res.push_back(current);
+                current = data;
+            }
+            else if (sum == true) {
+                current.high  += data.high;
+                current.low   += data.low;
+                current.close += data.close;
+            }
+            else {
+                if (data.high > current.high) {
+                    current.high = data.high;
+                }
+
+                if (data.low < current.low) {
+                    current.low = data.low;
+                }
+
+                current.close  = data.close;
+            }
+
+            while (stop < pdate) {
+                stop.add_days(7);
+            }
+
+            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+        }
+
+        if (f + 1 == in.size()) {
+            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            res.push_back(current);
+        }
+
+        f++;
+    }
+
+    return res;
+}
+
+/** @brief Print value.
+*
+*/
+void Point::debug() const {
+#ifdef DEBUG
+    printf("%s, %20.8f, %20.8f, %20.8f\n", date.c_str(), high, low, close);
+#endif
+}
+
+/** @brief Print values.
+*
+* @param[in] in  Vector with Point objects.
+*/
+void Point::Debug(const PointVector& in) {
+#ifdef DEBUG
+    printf("\nPointVector(%u)\n", static_cast<unsigned>(in.size()));
+
+    for (const auto& data : in) {
+        data.debug();
+    }
+
+    fflush(stdout);
+#else
+    (void) in;
+#endif
+}
+
+/** @brief Convert data serie using exponential moving average algorithm.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::ExponentialMovingAverage(const PointVector& in, size_t days) {
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        double sma   = 0.0;
+        double prev  = 0.0;
+        double multi = 2.0 / static_cast<double>(days + 1.0);
+        size_t f     = 0;
+
+        for (const auto& data : in) {
+            if (f < (days - 1)) {
+                sma += data.close;
+            }
+            else if (f == (days - 1)) {
+                sma += data.close;
+                prev = sma / days;
+                res.push_back(Point(data.date, prev));
+            }
+            else {
+                prev = ((data.close - prev) * multi) + prev;
+                res.push_back(Point(data.date, prev));
+            }
+
+            f++;
+        }
+    }
+
+    return res;
+}
+
+/** @brief Create a data serie with fixed Y value.
+*
+* @param[in] in     Vector with Point objects (only date is used).
+* @param[in] value  Y values.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::Fixed(const PointVector& in, double value) {
+    PointVector res;
+
+    for (const auto& data : in) {
+        res.push_back(Point(data.date, value));
+    }
+
+    return res;
+}
+
+/** @brief Load data from csv file.
+*
+* @param[in] filename  Valid text file name.
+* @param[in] sep       Column separator.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) {
+    auto buf = gnu::file::read(filename);
+
+    if (buf.size() < 10) {
+        return PointVector();
+    }
+
+    std::string  str   = buf.c_str();
+    StringVector lines = util::split_string(str, "\n");
+    PointVector  res;
+
+    for (const auto& l : lines) {
+        StringVector line = util::split_string(l, sep);
+        Point    data;
+
+        if (line.size() == 2) {
+            data = Point(line[0], util::to_double(line[1]));
+        }
+        else if (line.size() > 3) {
+            data = Point(line[0], util::to_double(line[1]), util::to_double(line[2]), util::to_double(line[3]));
+        }
+
+        if (data.date != "") {
+            res.push_back(data);
+        }
+    }
+
+    return res;
+}
+
+/** @brief Modify chart data.
+*
+* @param[in] in      Vector with Point objects.
+* @param[in] modify  Type of modify.
+* @param[in] value   Value to use.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::Modify(const PointVector& in, Modifier modify, double value) {
+    PointVector res;
+
+    if (fabs(value) < chart::MIN_VALUE) {
+        return res;
+    }
+
+    for (const auto& data : in) {
+        switch (modify) {
+            case Modifier::ADDITION:
+                res.push_back(Point(data.date, data.high + value, data.low + value, data.close + value));
+                break;
+            case Modifier::DIVISION:
+                res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
+                break;
+            case Modifier::MULTIPLICATION:
+                res.push_back(Point(data.date, data.high * value, data.low * value, data.close * value));
+                break;
+            case Modifier::SUBTRACTION:
+                res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
+                break;
+        }
+    }
+
+    return res;
+}
+
+/** @brief Convert data serie using momentum algorithm.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::Momentum(const PointVector& in, size_t days) {
+    size_t          start = days - 1;
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        for (auto f = start; f < in.size(); f++) {
+            const auto& data1 = in[f];
+            const auto& data2 = in[f - start];
+
+            res.push_back(Point(data1.date, data1.close - data2.close));
+        }
+
+    }
+
+    return res;
+}
+
+/** @brief Convert data serie using moving average algorithm.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::MovingAverage(const PointVector& in, size_t days) {
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        size_t count = 0;
+        double sum   = 0.0;
+        auto   tmp   = new double[in.size() + 1];
+
+        for (const auto& data : in) {
+            count++;
+
+            if (count < days) { //  Add data until the first moving average price can be calculated.
+                tmp[count - 1] = data.close;
+                sum += data.close;
+            }
+            else if (count == days) { //  This is the first point.
+                tmp[count - 1] = data.close;
+                sum += data.close;
+                res.push_back(Point(data.date, sum / days));
+            }
+            else { //  Remove oldest data in range and add current to sum.
+                tmp[count - 1] = data.close;
+                sum -= tmp[count - (days + 1)];
+                sum += data.close;
+                res.push_back(Point(data.date, sum / days));
+            }
+        }
+
+        delete []tmp;
+    }
+
+    return res;
+}
+
+/** @brief Conmvert range value to a string.
+*
+* @param[in] range  Range value.
+*
+* @return String value, one of ("DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC").
+*/
+std::string Point::RangeToString(DateRange range) {
+    static const std::string NAMES[] = { "DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC", "", };
+    return NAMES[static_cast<unsigned>(range)];
+}
+
+/** @brief Convert data serie using rsi algorithm.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::RSI(const PointVector& in, size_t days) {
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        double avg_gain = 0.0;
+        double avg_loss = 0.0;
+
+        for (size_t f = 1; f < in.size(); f++) {
+            double      diff = 0.0;
+            const auto& data = in[f];
+            const auto& prev = in[f - 1];
+
+            diff = data.close - prev.close;
+
+            if (f <= days) {
+                if (diff > 0) {
+                    avg_gain += diff;
+                }
+                else {
+                    avg_loss += fabs(diff);
+                }
+            }
+
+            if (f == days) {
+                avg_gain = avg_gain / days;
+                avg_loss = avg_loss / days;
+                res.push_back(Point(data.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
+            }
+            else if (f > days) {
+                avg_gain = ((avg_gain * (days - 1)) + ((diff > 0) ? fabs(diff) : 0)) / days;
+                avg_loss = ((avg_loss * (days - 1)) + ((diff < 0) ? fabs(diff) : 0)) / days;
+                res.push_back(Point(data.date, 100 - (100 / (1 + (avg_gain / avg_loss)))));
+            }
+        }
+    }
+
+    return res;
+}
+
+/** @brief Save points to an csv file.
+*
+* @param[in] in        Vector with Point objects.
+* @param[in] filename  Result file name.
+* @param[in] sep       Column separator.
+*
+* @return True if ok.
+*/
+bool Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
+    std::string csv;
+
+    csv.reserve(in.size() * 40 + 256);
+
+    for (const auto& data : in) {
+        char buffer[256];
+        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
+        csv += buffer;
+    }
+
+    return gnu::file::write(filename, csv.c_str(), csv.size());
+}
+
+/** @brief Convert data serie using standard deviation.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::StdDev(const PointVector& in, size_t days) {
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        size_t    count = 0;
+        double    sum   = 0.0;
+        Point data2;
+
+        for (const auto& data : in) {
+            count++;
+            sum += data.close;
+
+            if (count >= days) {
+                double mean = sum / days;
+                double dev  = 0.0;
+
+                for (size_t j = count - days; j < count; j++) {
+                    data2 = in[j];
+                    auto tmp = data2.close - mean;
+
+                    tmp *= tmp;
+                    dev  += tmp;
+                }
+
+                dev /= days;
+                dev = sqrt(dev);
+
+                data2 = in[count - days];
+                sum -= data2.close;
+
+                data2 = in[count - 1];
+                res.push_back(Point(data2.date, dev));
+            }
+        }
+    }
+
+    return res;
+}
+
+/** @brief Convert data serie using stochastics algorithm.
+*
+* @param[in] in    Vector with Point objects.
+* @param[in] days  Number of days.
+*
+* @return Result vector with Point objects.
+*/
+PointVector Point::Stochastics(const PointVector& in, size_t days) {
+    double          high = 0.0;
+    double          low  = 0.0;
+    PointVector res;
+
+    if (days > 1 && days < in.size()) {
+        for (size_t f = 0; f < in.size(); f++) {
+            const auto& data = in[f];
+
+            if ((f + 1) >= days) {
+                high = data.high;
+                low  = data.low;
+
+                for (size_t j = (f + 1) - days; j < (f + 1) - 1; j++) { //  Get max/min in for current range.
+                    const auto& data2 = in[j];
+
+                    if (data2.high > high) {
+                        high = data2.high;
+                    }
+
+                    if (data2.low < low) {
+                        low = data2.low;
+                    }
+                }
+
+                double diff1 = data.close - low;
+                double diff2 = high - low;
+
+                if (diff2 > chart::MIN_VALUE) {
+                    double kval  = 100.0 * (diff1 / diff2);
+                    res.push_back(Point(data.date, kval));
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+/** @brief Convert string to range.
+*
+* @param[in] range  Range string.
+*
+* @return Range value or DateRange::DAY for invalid input string.
+*/
+DateRange  Point::StringToRange(const std::string& range) {
+    if (range == "WEEKDAY")     return DateRange::WEEKDAY;
+    else if (range == "FRIDAY") return DateRange::FRIDAY;
+    else if (range == "SUNDAY") return DateRange::SUNDAY;
+    else if (range == "MONTH")  return DateRange::MONTH;
+    else if (range == "HOUR")   return DateRange::HOUR;
+    else if (range == "MIN")    return DateRange::MIN;
+    else if (range == "SEC")    return DateRange::SEC;
+    else                        return DateRange::DAY;
+}
+
+/*
+ *      _      _
+ *     | |    (_)
+ *     | |     _ _ __   ___
+ *     | |    | | '_ \ / _ \
+ *     | |____| | | | |  __/
+ *     |______|_|_| |_|\___|
+ *
+ *
+ */
+
+/** @brief Create a chart line.
+*
+* @param[in] data   Vector with Point objects.
+* @param[in] label  Line label.
+* @param[in] type   Line type.
+*/
+Line::Line(const PointVector& data, const std::string& label, LineType type) {
+    reset();
+    set_data(data);
+    set_label(label);
+    set_type(type);
+}
+
+/** @brief Print debug info to stdout.
+*
+* @param[in] num  Line index.
+*/
+void Line::debug(size_t num) const {
+#ifdef DEBUG
+    printf("\t\t---------------------------------------------\n");
+    printf("\t\tLine: %u\n", static_cast<unsigned>(num));
+    printf("\t\t\ttype:  %30s\n", type_to_string().c_str());
+    printf("\t\t\twidth:      %25u\n", _width);
+    printf("\t\t\talign:      %25s\n", (_align == FL_ALIGN_LEFT) ? "LEFT" : "RIGHT");
+    printf("\t\t\tlabel: %30s\n", _label.c_str());
+    printf("\t\t\trect:          %04d, %04d, %04d, %04d\n", _rect.x(), _rect.y(), _rect.w(), _rect.h());
+    printf("\t\t\tvisible:    %25s\n", _visible ? "YES" : "NO");
+    printf("\t\t\tprices:     %25d\n", static_cast<int>(size()));
+
+    if (size() > 1) {
+        printf("\t\t\tfirst:      %25s\n", _data.front().date.c_str());
+        printf("\t\t\tfirst:      %25f\n", _data.front().close);
+        printf("\t\t\tlast:       %25s\n", _data.back().date.c_str());
+        printf("\t\t\tlast:       %25f\n", _data.back().close);
+    }
+
+    fflush(stdout);
+#else
+    (void) num;
+#endif
+}
+
+/** @brief Clear all data.
+*
+*/
+void Line::reset() {
+    _data.clear();
+
+    _align   = FL_ALIGN_LEFT;
+    _color   = FL_FOREGROUND_COLOR;
+    _label   = "";
+    _rect    = Fl_Rect();
+    _type    = LineType::LINE;
+    _visible = true;
+    _width   = 1;
+}
+
+/** @brief Set line type from string.
+*
+* If input name is invalid it will set type to LineType::LINE.
+*
+* @param[in] val  Line type name, one of ("LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST").
+*
+* @return Input chart line.
+*/
+Line&  Line::set_type_from_string(const std::string&  val) {
+    if (val == "LINE_DOT")                     _type = LineType::LINE_DOT;
+    else if (val == "BAR")                     _type = LineType::BAR;
+    else if (val == "BAR_CLAMP")               _type = LineType::BAR_CLAMP;
+    else if (val == "BAR_HLC")                 _type = LineType::BAR_HLC;
+    else if (val == "HORIZONTAL")              _type = LineType::HORIZONTAL;
+    else if (val == "EXPAND_VERTICAL")         _type = LineType::EXPAND_VERTICAL;
+    else if (val == "EXPAND_HORIZONTAL_ALL")   _type = LineType::EXPAND_HORIZONTAL_ALL;
+    else if (val == "EXPAND_HORIZONTAL_FIRST") _type = LineType::EXPAND_HORIZONTAL_FIRST;
+    else                                       _type = LineType::LINE;
+
+    return *this;
+}
+
+/** @brief Return line type as a string.
+*
+* @return Line type name, one of ("LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST").
+*/
+std::string Line::type_to_string() const {
+    static const std::string NAMES[] = { "LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST", "", };
+    return NAMES[static_cast<unsigned>(_type)];
+}
+
+/*
+ *       _____           _
+ *      / ____|         | |
+ *     | (___   ___ __ _| | ___
  *      \___ \ / __/ _` | |/ _ \
  *      ____) | (_| (_| | |  __/
  *     |_____/ \___\__,_|_|\___|
- *                              
- *                              
+ *
+ *
  */
 
 /** @brief Create a chart scale.
@@ -1296,7 +1299,7 @@ Scale::Scale() {
 * @return Width in pixels.
 */
 int Scale::calc_margin() {
-    if (diff() < Point::MIN_VALUE) {
+    if (diff() < chart::MIN_VALUE) {
         return 0;
     }
 
@@ -1322,7 +1325,7 @@ void Scale::calc_tick(int height) {
     _tick  = 0.0;
     _pixel = 0.0;
 
-    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && RANGE > Point::MIN_VALUE) {
+    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && RANGE > chart::MIN_VALUE) {
         double test_inc = 0.0;
         double test_min = 0.0;
         double test_max = 0.0;
@@ -1359,7 +1362,7 @@ void Scale::calc_tick(int height) {
         _max  = test_max;
         _tick = test_inc;
 
-        if (_tick >= Point::MIN_VALUE / 10.0 && kludge < 100) {
+        if (_tick >= chart::MIN_VALUE / 10.0 && kludge < 100) {
             _pixel = height / diff();
         }
         else {
@@ -1405,7 +1408,7 @@ double Scale::diff() const {
 *
 */
 void Scale::fix_height() {
-    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < Point::MIN_VALUE) {
+    if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < chart::MIN_VALUE) {
         if (_min >= 0.0) {
             _min *= 0.9;
         }
@@ -1515,8 +1518,8 @@ _CW(14) {
     _menu->add(_LABEL_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()), FL_MENU_DIVIDER);
     _menu->add(_LABEL_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
     _menu->add(_LABEL_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
-    _menu->add(_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_csv()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_csv()));
+    _menu->add(_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_line_to_csv()), FL_MENU_DIVIDER);
+    _menu->add(_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_line_from_csv()));
     _menu->add(_LABEL_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
     _menu->add(_LABEL_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
     _menu->add(_LABEL_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
@@ -1935,7 +1938,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         if (std::isinf(value) == true) {
             return false;
         }
-        else if (fabs(value) < Point::MIN_VALUE) {
+        else if (fabs(value) < chart::MIN_VALUE) {
             fl_alert("Error: to small value for division!");
             return false;
         }
@@ -2320,7 +2323,7 @@ void Chart::_draw_lines(Area& area) {
     for (const auto& line : area.lines()) {
         const auto& scale = (line.align() == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale();
 
-        if (line.size() > 0 && line.is_visible() == true && scale.diff() >= Point::MIN_VALUE) {
+        if (line.size() > 0 && line.is_visible() == true && scale.diff() >= chart::MIN_VALUE) {
             const double SCALE_MIN   = scale.min().value();
             const double SCALE_PIXEL = scale.pixel();
             int          x1          = area.rect().x();
@@ -2995,39 +2998,6 @@ StringVector Chart::_label_array(const Area& area, LabelType labeltype) const {
     return res;
 }
 
-/** @brief Load csv data from file and add a new chart line.
-*
-* @return True if a line has been added to current area.
-*/
-bool Chart::load_csv() {
-    if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
-        fl_alert("Error: max line count reached!");
-        return false;
-    }
-
-    auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-
-    if (util::is_empty(filename) == true) {
-        return false;
-    }
-
-    auto vec = Point::LoadCSV(filename);
-
-    if (vec.size() == 0) {
-        fl_alert("Error: no data!");
-        return false;
-    }
-
-    auto line = Line(vec, filename);
-
-    line.set_color(FL_BLUE);
-    _LineSetup(top_window(), line).run();
-    _area->add_line(line);
-    init_new_data();
-
-    return true;
-}
-
 /** @brief Show file dialog and select a json file.
 *
 * @return False for no file or return value from Chart::load_json(std::string).
@@ -3171,6 +3141,39 @@ bool Chart::load_json(const std::string& filename) {
     return true;
 }
 
+/** @brief Load csv data from file and add a new chart line.
+*
+* @return True if a line has been added to current area.
+*/
+bool Chart::load_line_from_csv() {
+    if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
+        fl_alert("Error: max line count reached!");
+        return false;
+    }
+
+    auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+
+    if (util::is_empty(filename) == true) {
+        return false;
+    }
+
+    auto vec = Point::LoadCSV(filename);
+
+    if (vec.size() == 0) {
+        fl_alert("Error: no data!");
+        return false;
+    }
+
+    auto line = Line(vec, filename);
+
+    line.set_color(FL_BLUE);
+    _LineSetup(top_window(), line).run();
+    _area->add_line(line);
+    init_new_data();
+
+    return true;
+}
+
 /** @brief Move line between two chart areas or delete line.
 *
 * @param[in] area          Current area.
@@ -3261,10 +3264,10 @@ void Chart::reset() {
 
 /** @brief Resize widget.
 *
-* @param[in] X  X.
-* @param[in] Y  Y.
-* @param[in] W  W.
-* @param[in] H  H.
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
 */
 void Chart::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {
@@ -3275,54 +3278,6 @@ void Chart::resize(int X, int Y, int W, int H) {
     _scroll->resize(X, Y + H - Fl::scrollbar_size(), W, Fl::scrollbar_size());
     _old = Fl_Rect(this);
     init();
-}
-
-/** @brief Save chart line values to csv file.
-*
-* @return True if a file was saved.
-*/
-bool Chart::save_csv() {
-    if (_area == nullptr || _area->selected_line() == nullptr) {
-        return false;
-    }
-
-    auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
-
-    if (util::is_empty(filename) == true) {
-        return false;
-    }
-
-    const auto* line   = _area->selected_line();
-    const auto  answer = fl_choice("Save all data or only those in view?", nullptr, "All", "View");
-    auto        data   = PointVector();
-    const auto& ldata  = line->data();
-
-    if (answer == 2) {
-        auto curr = _date_start;
-        auto stop = _date_start + _ticks;
-
-        while (curr <= stop && curr < static_cast<int>(_dates.size())) {
-            auto& date  = _dates[curr];
-            auto  index = Point::BinarySearch(ldata, date);
-
-            if (index != static_cast<size_t>(-1)) {
-                data.push_back(ldata[index]);
-            }
-
-            curr++;
-        }
-    }
-    else {
-        data = ldata;
-    }
-
-    if (data.size() == 0) {
-        fl_alert("Error: no data!");
-        return false;
-    }
-    else {
-        return Point::SaveCSV(data, filename);
-    }
 }
 
 /** @brief Ask for filename and save complete chart to json file.
@@ -3339,7 +3294,7 @@ bool Chart::save_json() {
     return save_json(filename);
 }
 
-/** @brief Save complete chart to json file.
+/** @brief Save complete chart view to json file.
 *
 * @param[in] filename           Destination filename.
 * @param[in] max_diff_high_low  If difference bwteen high, low and close are less than this value only close value are saved.
@@ -3428,7 +3383,55 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
     }
 }
 
-/** @brief Save view to an png file
+/** @brief Save chart line values to csv file.
+*
+* @return True if a file was saved.
+*/
+bool Chart::save_line_to_csv() {
+    if (_area == nullptr || _area->selected_line() == nullptr) {
+        return false;
+    }
+
+    auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+
+    if (util::is_empty(filename) == true) {
+        return false;
+    }
+
+    const auto* line   = _area->selected_line();
+    const auto  answer = fl_choice("Save all data or only those in view?", nullptr, "All", "View");
+    auto        data   = PointVector();
+    const auto& ldata  = line->data();
+
+    if (answer == 2) {
+        auto curr = _date_start;
+        auto stop = _date_start + _ticks;
+
+        while (curr <= stop && curr < static_cast<int>(_dates.size())) {
+            auto& date  = _dates[curr];
+            auto  index = Point::BinarySearch(ldata, date);
+
+            if (index != static_cast<size_t>(-1)) {
+                data.push_back(ldata[index]);
+            }
+
+            curr++;
+        }
+    }
+    else {
+        data = ldata;
+    }
+
+    if (data.size() == 0) {
+        fl_alert("Error: no data!");
+        return false;
+    }
+    else {
+        return Point::SaveCSV(data, filename);
+    }
+}
+
+/** @brief Save view to an png file.
 *
 * @return True if ok.
 */
@@ -3679,7 +3682,7 @@ void Chart::setup_delete_lines() {
     init_new_data();
 }
 
-/** @brief Ask user for chart label.
+/** @brief Ask user for main chart label.
 *
 */
 void Chart::setup_label() {
@@ -3691,7 +3694,7 @@ void Chart::setup_label() {
     }
 }
 
-/** @brief Show and property dialog fro current line in current area.
+/** @brief Show property dialog for current line in current area.
 *
 */
 void Chart::setup_line() {
@@ -3765,7 +3768,7 @@ void Chart::setup_show_or_hide_lines() {
     init_new_data();
 }
 
-/** @brief Configure some view options.
+/** @brief Configure some view options from menu checkboxes.
 *
 * Show/hide labels.
 * Show/hide vertical lines.

@@ -23,6 +23,10 @@
 #include <vector>
 
 namespace flw {
+
+/** @brief Chart widget and related classes.
+*
+*/
 namespace chart {
 
 class  Area;
@@ -33,20 +37,9 @@ typedef std::vector<Point> PointVector;
 typedef std::vector<Line>  LineVector;
 typedef std::vector<Area>  AreaVector;
 
-/** @brief Different date series for the x scale.
-*
-*/
-enum class DateRange {
-    DAY,            ///< @brief All days.
-    WEEKDAY,        ///< @brief Weekdays (mon - fri).
-    FRIDAY,         ///< @brief Only fridays.
-    SUNDAY,         ///< @brief Only sundays.
-    MONTH,          ///< @brief Last day in month.
-    HOUR,           ///< @brief Every hour.
-    MIN,            ///< @brief Every minute.
-    SEC,            ///< @brief Every second.
-    LAST = SEC,     ///< @brief Same as SEC.
-};
+static constexpr const double MAX_VALUE      = 9223372036854775807.0;   ///< @brief Max number value.
+static constexpr const double MIN_VALUE      = 0.0000001;               ///< @brief Min (abs) number value.
+static constexpr const int    MAX_LINE_WIDTH = 14;                      ///< @brief Max line width (pixels).
 
 /** @brief Algorithms that can be used to generate new data series.
 *
@@ -66,15 +59,19 @@ enum class Algorithm {
     LAST = STOCHASTICS,     ///< @brief Same as STOCHASTICS.
 };
 
-/** @brief Modify a data serie.
+/** @brief Different date series for the x scale.
 *
 */
-enum class Modifier {
-    ADDITION,               ///< @brief Add to values.
-    DIVISION,               ///< @brief Divide values.
-    MULTIPLICATION,         ///< @brief Multiply values.
-    SUBTRACTION,            ///< @brief Subtract values.
-    LAST = SUBTRACTION,     ///< @brief Same as SUBTRACTION.
+enum class DateRange {
+    DAY,            ///< @brief All days.
+    WEEKDAY,        ///< @brief Weekdays (mon - fri).
+    FRIDAY,         ///< @brief Only fridays.
+    SUNDAY,         ///< @brief Only sundays.
+    MONTH,          ///< @brief Last day in month.
+    HOUR,           ///< @brief Every hour.
+    MIN,            ///< @brief Every minute.
+    SEC,            ///< @brief Every second.
+    LAST = SEC,     ///< @brief Same as SEC.
 };
 
 /** @brief Chart line types.
@@ -93,6 +90,17 @@ enum class LineType {
     LAST = EXPAND_HORIZONTAL_FIRST,     ///< @brief Same as EXPAND_HORIZONTAL_FIRST.
 };
 
+/** @brief Modify a data serie.
+*
+*/
+enum class Modifier {
+    ADDITION,               ///< @brief Add to values.
+    DIVISION,               ///< @brief Divide values.
+    MULTIPLICATION,         ///< @brief Multiply values.
+    SUBTRACTION,            ///< @brief Subtract values.
+    LAST = SUBTRACTION,     ///< @brief Same as SUBTRACTION.
+};
+
 /** @brief Chart area index.
 *
 * Up to 5 areas can be used.
@@ -107,14 +115,14 @@ enum class AreaNum {
 };
 
 /*
- *      _____      _       _   
- *     |  __ \    (_)     | |  
- *     | |__) |__  _ _ __ | |_ 
+ *      _____      _       _
+ *     |  __ \    (_)     | |
+ *     | |__) |__  _ _ __ | |_
  *     |  ___/ _ \| | '_ \| __|
- *     | |  | (_) | | | | | |_ 
+ *     | |  | (_) | | | | | |_
  *     |_|   \___/|_|_| |_|\__|
- *                             
- *                             
+ *
+ *
  */
 
 /** @brief Point class represent one data point with date and one or more y values.
@@ -123,9 +131,6 @@ enum class AreaNum {
 * Use the constructor so the date will be converted to "YYYYMMMMDD HHMMSS" (Date::FORMAT::ISO_TIME).\n
 */
 struct Point {
-    static constexpr const double MAX_VALUE = 9223372036854775807.0;
-    static constexpr const double MIN_VALUE = 0.0000001;
-
     std::string                 date;       // Date value that should be in the format of "YYYYMMDD HH:MM:SS".
     double                      close;      // Close value, should be within max/min range.
     double                      high;       // Largest value.
@@ -161,22 +166,20 @@ struct Point {
 };
 
 /*
- *      _      _            
- *     | |    (_)           
- *     | |     _ _ __   ___ 
+ *      _      _
+ *     | |    (_)
+ *     | |     _ _ __   ___
  *     | |    | | '_ \ / _ \
  *     | |____| | | | |  __/
  *     |______|_|_| |_|\___|
- *                          
- *                          
+ *
+ *
  */
 
 /** @brief Data for one chart line.
 */
 class Line {
 public:
-    static const int            MAX_WIDTH = 14;
-
     explicit                    Line()
                                     { reset(); } ///< @brief Create empty chart line.
     explicit                    Line(const PointVector& data, const std::string& label = "", LineType type = LineType::LINE);
@@ -210,7 +213,7 @@ public:
     Line&                       set_visible(bool val)
                                     { _visible = val; return *this; } ///< @brief Set visibilty.
     Line&                       set_width(unsigned val = 1)
-                                    { if (val > 0 && val <= Line::MAX_WIDTH) _width = val; return *this; } ///< @brief Set line size.
+                                    { if (val > 0 && val <= chart::MAX_LINE_WIDTH) _width = val; return *this; } ///< @brief Set line size.
     size_t                      size() const
                                     { return _data.size(); } ///< @brief Get number of data points.
     LineType                    type() const
@@ -233,14 +236,14 @@ private:
 };
 
 /*
- *       _____           _      
- *      / ____|         | |     
- *     | (___   ___ __ _| | ___ 
+ *       _____           _
+ *      / ____|         | |
+ *     | (___   ___ __ _| | ___
  *      \___ \ / __/ _` | |/ _ \
  *      ____) | (_| (_| | |  __/
  *     |_____/ \___\__,_|_|\___|
- *                              
- *                              
+ *
+ *
  */
 
 /** @brief Chart scale object.
@@ -275,14 +278,14 @@ private:
 };
 
 /*
- *                              
- *         /\                   
- *        /  \   _ __ ___  __ _ 
+ *
+ *         /\
+ *        /  \   _ __ ___  __ _
  *       / /\ \ | '__/ _ \/ _` |
  *      / ____ \| | |  __/ (_| |
  *     /_/    \_\_|  \___|\__,_|
- *                              
- *                              
+ *
+ *
  */
 
 /** @brief Data for one chart area.
@@ -373,7 +376,7 @@ class Chart : public Fl_Group {
 public:
     static const int            VERSION  = 5;
     static const int            MIN_TICK = 3;
-    static const int            MAX_TICK = Line::MAX_WIDTH * 5;
+    static const int            MAX_TICK = chart::MAX_LINE_WIDTH * 5;
 
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     double                      alt_size() const
@@ -401,17 +404,17 @@ public:
                                     { _init(true); } ///< @brief Initiate chart and create new date serie.
     bool                        line_labels() const
                                     { return _labels; } ///< @brief Are labels shown?.
-    bool                        load_csv();
     bool                        load_json();
     bool                        load_json(const std::string& filename);
+    bool                        load_line_from_csv();
     std::string                 main_label() const
                                     { return _label; } ///< @brief Get main label.
     void                        print_to_postscript();
     void                        reset();
     void                        resize(int X, int Y, int W, int H) override;
-    bool                        save_csv();
     bool                        save_json();
     bool                        save_json(const std::string& filename, double max_diff_high_low = 0.001);
+    bool                        save_line_to_csv();
     bool                        save_png();
     void                        set_alt_size(double val = 0.8)
                                     { if (val >= 0.6 && val <= 1.2) _alt_size = val; } ///< @brief Tweak fontsize for x labels  (for days and time). @param[in] val  Valid number is 0.6 to 1.2 (default 0.8).

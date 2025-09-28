@@ -741,17 +741,9 @@ class  Line;
 typedef std::vector<Point> PointVector;
 typedef std::vector<Line>  LineVector;
 typedef std::vector<Area>  AreaVector;
-enum class DateRange {
-    DAY,
-    WEEKDAY,
-    FRIDAY,
-    SUNDAY,
-    MONTH,
-    HOUR,
-    MIN,
-    SEC,
-    LAST = SEC,
-};
+static constexpr const double MAX_VALUE      = 9223372036854775807.0;
+static constexpr const double MIN_VALUE      = 0.0000001;
+static constexpr const int    MAX_LINE_WIDTH = 14;
 enum class Algorithm {
     ATR,
     DAY_TO_MONTH,
@@ -766,12 +758,16 @@ enum class Algorithm {
     STOCHASTICS,
     LAST = STOCHASTICS,
 };
-enum class Modifier {
-    ADDITION,
-    DIVISION,
-    MULTIPLICATION,
-    SUBTRACTION,
-    LAST = SUBTRACTION,
+enum class DateRange {
+    DAY,
+    WEEKDAY,
+    FRIDAY,
+    SUNDAY,
+    MONTH,
+    HOUR,
+    MIN,
+    SEC,
+    LAST = SEC,
 };
 enum class LineType {
     LINE,
@@ -785,6 +781,13 @@ enum class LineType {
     EXPAND_HORIZONTAL_FIRST,
     LAST = EXPAND_HORIZONTAL_FIRST,
 };
+enum class Modifier {
+    ADDITION,
+    DIVISION,
+    MULTIPLICATION,
+    SUBTRACTION,
+    LAST = SUBTRACTION,
+};
 enum class AreaNum {
     ONE,
     TWO,
@@ -794,8 +797,6 @@ enum class AreaNum {
     LAST = FIVE,
 };
 struct Point {
-    static constexpr const double MAX_VALUE = 9223372036854775807.0;
-    static constexpr const double MIN_VALUE = 0.0000001;
     std::string                 date;
     double                      close;
     double                      high;
@@ -829,7 +830,6 @@ struct Point {
 };
 class Line {
 public:
-    static const int            MAX_WIDTH = 14;
     explicit                    Line()
                                     { reset(); }
     explicit                    Line(const PointVector& data, const std::string& label = "", LineType type = LineType::LINE);
@@ -863,7 +863,7 @@ public:
     Line&                       set_visible(bool val)
                                     { _visible = val; return *this; }
     Line&                       set_width(unsigned val = 1)
-                                    { if (val > 0 && val <= Line::MAX_WIDTH) _width = val; return *this; }
+                                    { if (val > 0 && val <= chart::MAX_LINE_WIDTH) _width = val; return *this; }
     size_t                      size() const
                                     { return _data.size(); }
     LineType                    type() const
@@ -962,7 +962,7 @@ class Chart : public Fl_Group {
 public:
     static const int            VERSION  = 5;
     static const int            MIN_TICK = 3;
-    static const int            MAX_TICK = Line::MAX_WIDTH * 5;
+    static const int            MAX_TICK = chart::MAX_LINE_WIDTH * 5;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     double                      alt_size() const
                                     { return _alt_size; }
@@ -989,17 +989,17 @@ public:
                                     { _init(true); }
     bool                        line_labels() const
                                     { return _labels; }
-    bool                        load_csv();
     bool                        load_json();
     bool                        load_json(const std::string& filename);
+    bool                        load_line_from_csv();
     std::string                 main_label() const
                                     { return _label; }
     void                        print_to_postscript();
     void                        reset();
     void                        resize(int X, int Y, int W, int H) override;
-    bool                        save_csv();
     bool                        save_json();
     bool                        save_json(const std::string& filename, double max_diff_high_low = 0.001);
+    bool                        save_line_to_csv();
     bool                        save_png();
     void                        set_alt_size(double val = 0.8)
                                     { if (val >= 0.6 && val <= 1.2) _alt_size = val; }
