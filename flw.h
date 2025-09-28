@@ -1485,68 +1485,85 @@ private:
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Button.H>
 namespace flw {
-struct PlotData;
-typedef std::vector<PlotData> PlotDataVector;
-struct PlotData {
-    static constexpr const double MAX_VALUE = 9223372036854775807.0;
-    static constexpr const double MIN_VALUE = 0.0000001;
-    enum class FORMULAS {
-                                MODIFY,
-                                SWAP,
-                                LAST = SWAP,
-    };
-    enum class MODIFY {
-                                ADDITION,
-                                DIVISION,
-                                MULTIPLICATION,
-                                SUBTRACTION,
-                                LAST = SUBTRACTION,
-    };
-    enum class TARGET {
-                                X,
-                                Y,
-                                X_AND_Y,
-    };
+namespace plot {
+static constexpr const double MAX_VALUE      = 9223372036854775807.0;
+static constexpr const double MIN_VALUE      = 0.0000001;
+static constexpr const size_t MAX_LINES      = 10;
+static constexpr const int    MAX_LINE_WIDTH = 30;
+static constexpr const int    VERSION        =  3;
+enum class Algorithm {
+    MODIFY,
+    SWAP,
+    LAST = SWAP,
+};
+enum class Clamp {
+    MINX,
+    MAXX,
+    MINY,
+    MAXY,
+    LAST = MAXY,
+};
+enum class Label {
+    MAIN,
+    X,
+    Y,
+    LAST = Y,
+};
+enum class LineType {
+    LINE,
+    LINE_DASH,
+    LINE_DOT,
+    LINE_WITH_SQUARE,
+    VECTOR,
+    CIRCLE,
+    FILLED_CIRCLE,
+    SQUARE,
+    LAST = SQUARE,
+};
+enum class Modifier {
+    ADDITION,
+    DIVISION,
+    MULTIPLICATION,
+    SUBTRACTION,
+    LAST = SUBTRACTION,
+};
+enum class Value {
+    X,
+    Y,
+    X_AND_Y,
+    LAST = X_AND_Y,
+};
+struct Point;
+typedef std::vector<Point> PointVector;
+struct Point {
     double                      x;
     double                      y;
-    explicit                    PlotData(double X = 0.0, double Y = 0.0);
+    explicit                    Point(double X = 0.0, double Y = 0.0);
     void                        debug(int i = -1) const;
     bool                        is_valid() const
-                                    { return std::isfinite(x) == true && std::isfinite(y) == true && fabs(x) < PlotData::MAX_VALUE && fabs(y) < PlotData::MAX_VALUE; }
-    static void                 Debug(const PlotDataVector& in);
-    static PlotDataVector       LoadCSV(std::string filename, std::string sep = ",");
-    static bool                 MinMax(const PlotDataVector& in, double& min_x, double& max_x, double& min_y, double& max_y);
-    static PlotDataVector       Modify(const PlotDataVector& in, PlotData::MODIFY modify, PlotData::TARGET target, double value);
-    static bool                 SaveCSV(const PlotDataVector& in, std::string filename, std::string sep = ",");
-    static PlotDataVector       Swap(const PlotDataVector& in);
+                                    { return std::isfinite(x) == true && std::isfinite(y) == true && fabs(x) < plot::MAX_VALUE && fabs(y) < plot::MAX_VALUE; }
+    static void                 Debug(const PointVector& in);
+    static PointVector          LoadCSV(const std::string& filename, const std::string& sep = ",");
+    static bool                 MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y);
+    static PointVector          Modify(const PointVector& in, plot::Modifier modify, plot::Value target, double value);
+    static bool                 SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep = ",");
+    static PointVector          Swap(const PointVector& in);
 };
-class PlotLine {
+class Line {
 public:
-    static const int            MAX_WIDTH = 30;
-    enum class TYPE {
-                                LINE,
-                                LINE_DASH,
-                                LINE_DOT,
-                                LINE_WITH_SQUARE,
-                                VECTOR,
-                                CIRCLE,
-                                FILLED_CIRCLE,
-                                SQUARE,
-                                LAST = SQUARE,
-    };
-                                PlotLine();
-                                PlotLine(const PlotDataVector& data, std::string label, PlotLine::TYPE type = PlotLine::TYPE::LINE, Fl_Color color = FL_BLUE, unsigned width = 1);
+                                Line();
+                                Line(const PointVector& data, const std::string& label, LineType type = LineType::LINE, Fl_Color color = FL_BLUE, unsigned width = 1);
     Fl_Color                    color() const
                                     { return _color; }
-    const PlotDataVector&       data() const
+    const PointVector&          data() const
                                     { return _data; }
     void                        debug() const;
     bool                        has_line_type() const
-                                    { return _type == TYPE::LINE || _type == TYPE::LINE_DASH || _type == TYPE::LINE_DOT || _type == TYPE::LINE_WITH_SQUARE; }
+                                    { return _type == LineType::LINE || _type == LineType::LINE_DASH || _type == LineType::LINE_DOT || _type == LineType::LINE_WITH_SQUARE; }
     bool                        has_radius() const
-                                    { return _type == TYPE::CIRCLE || _type == TYPE::FILLED_CIRCLE || _type == TYPE::SQUARE; }
+                                    { return _type == LineType::CIRCLE || _type == LineType::FILLED_CIRCLE || _type == LineType::SQUARE; }
     bool                        is_vector() const
-                                    { return _type == TYPE::VECTOR; }
+                                    { return _type == LineType::VECTOR; }
     bool                        is_visible() const
                                     { return _visible; }
     std::string                 label() const
@@ -1554,41 +1571,41 @@ public:
     const Fl_Rect&              label_rect() const
                                     { return _rect; }
     void                        reset();
-    PlotLine&                   set_color(Fl_Color val)
+    Line&                       set_color(Fl_Color val)
                                     { _color = val; return *this; }
-    PlotLine&                   set_data(const PlotDataVector& val)
+    Line&                       set_data(const PointVector& val)
                                     { _data = val;  return *this; }
-    PlotLine&                   set_label(std::string val)
+    Line&                       set_label(const std::string& val)
                                     { _label = val; return *this; }
-    PlotLine&                   set_label_rect(int x, int y, int w, int h)
+    Line&                       set_label_rect(int x, int y, int w, int h)
                                     { _rect = Fl_Rect(x, y, w, h); return *this; }
-    PlotLine&                   set_type(PlotLine::TYPE val)
+    Line&                       set_type(LineType val)
                                     { _type = val; return *this; }
-    PlotLine&                   set_type_from_string(std::string val);
-    PlotLine&                   set_visible(bool val)
+    Line&                       set_type_from_string(const std::string& val);
+    Line&                       set_visible(bool val)
                                     { _visible = val; return *this; }
-    PlotLine&                   set_width(unsigned val)
-                                    { if (val <= PlotLine::MAX_WIDTH) _width = val; return *this; }
-    PlotLine::TYPE              type() const
+    Line&                       set_width(unsigned val)
+                                    { if (val > 0 && val <= plot::MAX_LINE_WIDTH) _width = val; return *this; }
+    LineType                    type() const
                                     { return _type; }
     std::string                 type_to_string() const;
     unsigned                    width() const
                                     { return _width; }
 private:
+    bool                        _visible;
     Fl_Color                    _color;
     Fl_Rect                     _rect;
-    PlotDataVector              _data;
-    TYPE                        _type;
-    bool                        _visible;
+    LineType                    _type;
+    PointVector                 _data;
     std::string                 _label;
     unsigned                    _width;
 };
-typedef std::vector<PlotLine> PlotLineVector;
-class PlotScale {
+typedef std::vector<Line> LineVector;
+class Scale {
 public:
-                                PlotScale()
+                                Scale()
                                     { reset(); }
-    void                        calc_tick(double height);
+    void                        calc_tick(double pixels);
     Fl_Color                    color() const
                                     { return _color; }
     const StringVector&         custom_labels() const
@@ -1602,6 +1619,8 @@ public:
                                     { return std::isfinite(_min); }
     std::string                 label() const
                                     { return _label; }
+    int                         label_width() const
+                                    { return static_cast<int>(_lwidth); }
     double                      max() const
                                     { return _max; }
     void                        measure_labels(int cw, bool custom);
@@ -1616,45 +1635,30 @@ public:
                                     { _color = val; }
     void                        set_custom_labels(StringVector val)
                                     { _labels = val; }
-    void                        set_label(std::string val)
+    void                        set_label(const std::string& val)
                                     { _label = val; }
     void                        set_max(double val)
                                     { _max = val; }
     void                        set_min(double val)
                                     { _min = val; }
-    int                         text() const
-                                    { return static_cast<int>(_text); }
     double                      tick() const
                                     { return _tick; }
 private:
     Fl_Color                    _color;
-    int                         _fr;
-    std::string                 _label;
     StringVector                _labels;
     double                      _max;
     double                      _min;
     double                      _pixel;
     double                      _tick;
-    size_t                      _text;
+    int                         _fr;
+    size_t                      _lwidth;
+    std::string                 _label;
 };
 class Plot : public Fl_Group {
 public:
-    static const size_t         MAX_LINES = 10;
-    static const int            VERSION   =  3;
-    enum class CLAMP {
-                                MINX,
-                                MAXX,
-                                MINY,
-                                MAXY,
-    };
-    enum class LABEL {
-                                MAIN,
-                                X,
-                                Y,
-    };
     explicit                    Plot(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    bool                        add_line(const PlotLine& line);
-    bool                        create_line(PlotData::FORMULAS formula);
+    bool                        add_line(const Line& line);
+    bool                        create_line(Algorithm alg);
     void                        debug() const;
     void                        debug_line() const;
     void                        delete_line(size_t index);
@@ -1672,21 +1676,19 @@ public:
                                     { _init(false); }
     void                        init_new_data()
                                     { _init(true); }
-    bool                        load_csv();
     bool                        load_json();
-    bool                        load_json(std::string filename);
-    void                        print();
+    bool                        load_json(const std::string& filename);
+    bool                        load_line_from_csv();
+    void                        print_to_postscript();
     void                        reset();
-    void                        resize()
-                                    { size(w(), h()); }
     void                        resize(int X, int Y, int W, int H) override;
-    bool                        save_csv();
     bool                        save_json();
-    bool                        save_json(std::string filename);
+    bool                        save_json(const std::string& filename);
+    bool                        save_line_to_csv();
     bool                        save_png();
     void                        set_hor_lines(bool val = true)
                                     { _horizontal = val; }
-    void                        set_label(std::string label = "")
+    void                        set_label(const std::string& label = "")
                                     { _label = label; }
     void                        set_line_labels(bool val = true)
                                     { _labels = val; }
@@ -1700,17 +1702,17 @@ public:
                                     { _min_y = val; }
     void                        set_ver_lines(bool val = true)
                                     { _vertical = val; }
-    void                        setup_add_line();
-    void                        setup_clamp(Plot::CLAMP clamp);
+    void                        setup_create_line();
+    void                        setup_clamp(Clamp clamp);
     void                        setup_delete_lines();
-    void                        setup_label(Plot::LABEL val);
+    void                        setup_label(Label val);
     void                        setup_line();
     void                        setup_show_or_hide_lines();
     void                        setup_view_options();
     void                        update_pref();
-    PlotScale&                  xscale()
+    Scale&                      xscale()
                                     { return _x; }
-    PlotScale&                  yscale()
+    Scale&                      yscale()
                                     { return _y; }
 private:
     void                        _calc_min_max();
@@ -1729,14 +1731,12 @@ private:
     static void                 _CallbackDebug(Fl_Widget*, void* widget);
     static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
     static void                 _CallbackToggle(Fl_Widget*, void* widget);
-    struct {
-    }                           _view;
     Fl_Menu_Button*             _menu;
     Fl_Rect                     _area;
     Fl_Rect                     _old;
-    PlotLineVector              _lines;
-    PlotScale                   _x;
-    PlotScale                   _y;
+    LineVector                  _lines;
+    Scale                       _x;
+    Scale                       _y;
     bool                        _disable_menu;
     bool                        _horizontal;
     bool                        _labels;
@@ -1753,6 +1753,7 @@ private:
     std::string                 _label;
     std::string                 _tooltip;
 };
+}
 }
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
