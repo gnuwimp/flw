@@ -2890,7 +2890,7 @@ int Chart::handle(int event) {
         else if (Fl::event_ctrl() > 0) {
             const int width = (adj > 0.0) ? _tick_width + 1 : _tick_width - 1;
 
-            if (width >= Chart::MIN_TICK && width <= Chart::MAX_TICK) {
+            if (width >= chart::MIN_TICK && width <= chart::MAX_TICK) {
                 set_tick_width(width);
                 init();
             }
@@ -3047,7 +3047,7 @@ bool Chart::load_json(const std::string& filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != Chart::VERSION) { fl_alert("Error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), Chart::VERSION); reset(); return false; }
+                    if (j2->vn_i() != chart::VERSION) { fl_alert("Error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -3060,7 +3060,7 @@ bool Chart::load_json(const std::string& filename) {
                 else _FLW_CHART_ERROR(j2)
             }
         }
-        else if (j->name() == "flw::chart_areas" && j->is_object() == true) {
+        else if (j->name() == "flw::chart::areas" && j->is_object() == true) {
             long long int area[6] = { 0 };
 
             for (const auto j2 : j->vo_to_va()) {
@@ -3085,7 +3085,7 @@ bool Chart::load_json(const std::string& filename) {
             area[0] += set_area_size(area[1], area[2], area[3], area[4], area[5]) == false;
             if (area[0] != 0) _FLW_CHART_ERROR(j)
         }
-        else if (j->name() == "flw::chart_lines" && j->is_array() == true) {
+        else if (j->name() == "flw::chart::lines" && j->is_array() == true) {
             for (const auto j2 : *j->va()) {
                 int             line[5]  = { 0, 0, 0, 0, 1 };
                 std::string     label;
@@ -3122,7 +3122,7 @@ bool Chart::load_json(const std::string& filename) {
                 area(a).add_line(l);
             }
         }
-        else if (j->name() == "flw::chart_block" && j->is_array() == true) {
+        else if (j->name() == "flw::chart::block" && j->is_array() == true) {
             PointVector dates;
 
             for (const auto d : *j->va()) {
@@ -3308,7 +3308,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
     try {
         jsb << gnu::json::Builder::MakeObject();
             jsb << gnu::json::Builder::MakeObject("flw::chart");
-                jsb << gnu::json::Builder::MakeNumber(Chart::VERSION, "version");
+                jsb << gnu::json::Builder::MakeNumber(chart::VERSION, "version");
                 jsb << gnu::json::Builder::MakeString(_label.c_str(), "label");
                 jsb << gnu::json::Builder::MakeNumber(_tick_width, "tick_width");
                 jsb << gnu::json::Builder::MakeString(Point::RangeToString(_date_range), "date_range");
@@ -3317,7 +3317,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
                 jsb << gnu::json::Builder::MakeBool(_vertical, "vertical");
             jsb.end();
 
-            jsb << gnu::json::Builder::MakeObject("flw::chart_areas");
+            jsb << gnu::json::Builder::MakeObject("flw::chart::areas");
             for (size_t f = 0; f <= static_cast<int>(AreaNum::LAST); f++) {
                 auto  perc_str = util::format("area%u", static_cast<unsigned>(f));
                 auto  min_str  = util::format("min%u", static_cast<unsigned>(f));
@@ -3332,7 +3332,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
             }
             jsb.end();
 
-            jsb << gnu::json::Builder::MakeArray("flw::chart_lines");
+            jsb << gnu::json::Builder::MakeArray("flw::chart::lines");
                 for (auto& area : _areas) {
                     for (auto& line : area.lines()) {
                         if (line.size() > 0) {
@@ -3362,7 +3362,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
                 }
             jsb.end();
 
-            jsb << gnu::json::Builder::MakeArray("flw::chart_block");
+            jsb << gnu::json::Builder::MakeArray("flw::chart::block");
                 for (const auto& data : _block_dates) {
                     jsb << gnu::json::Builder::MakeString(data.date);
                 }

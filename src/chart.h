@@ -40,6 +40,9 @@ typedef std::vector<Area>  AreaVector;
 static constexpr const double MAX_VALUE      = 9223372036854775807.0;   ///< @brief Max number value.
 static constexpr const double MIN_VALUE      = 0.0000001;               ///< @brief Min (abs) number value.
 static constexpr const int    MAX_LINE_WIDTH = 14;                      ///< @brief Max line width (pixels).
+static constexpr const int    VERSION        = 6;                       ///< @brief JSON version.
+static constexpr const int    MIN_TICK       = 3;                       ///< @brief Min tick size.
+static constexpr const int    MAX_TICK       = MAX_LINE_WIDTH * 5;      ///< @brief Max tick size.
 
 /** @brief Algorithms that can be used to generate new data series.
 *
@@ -374,10 +377,6 @@ class Chart : public Fl_Group {
     static const size_t         MAX_VLINES = 1600;
 
 public:
-    static const int            VERSION  = 5;
-    static const int            MIN_TICK = 3;
-    static const int            MAX_TICK = chart::MAX_LINE_WIDTH * 5;
-
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     double                      alt_size() const
                                     { return _alt_size; } ///< @brief Get tweaked x label font size (for days and time).
@@ -429,7 +428,7 @@ public:
                                     { _labels = val; } ///< @brief Show/hide line labels.
     void                        set_main_label(std::string label = "")
                                     { _label = label; } ///< @brief Set main chart label.
-    void                        set_tick_width(int val = Chart::MIN_TICK)
+    void                        set_tick_width(int val = chart::MIN_TICK)
                                     { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; } ///< @brief Set tich width. @param[in] val  Tick value from MIN_TICK to MAX_TICK.
     void                        set_ver_lines(bool val = true)
                                     { _vertical = val; } ///< @brief Show/hide vertical lines.
