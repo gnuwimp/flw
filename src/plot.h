@@ -376,6 +376,7 @@ private:
     bool                        _disable_menu;          // True to disable popup menu.
     bool                        _horizontal;            // True to show horizontal lines
     bool                        _labels;                // True to draw line labels.
+    bool                        _printing;              // Used when printing.
     bool                        _vertical;              // True to show vertical lines.
     const int                   _CH;                    // Character height in pixels.
     const int                   _CW;                    // Character width in pixels.
