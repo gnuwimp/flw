@@ -53,55 +53,38 @@ Dialogs:
 
 ## Screenshots of some of the widgets
 
-Chart widget (flw::chart::Chart)<br>
-<img src="images/chart.png"/>
+Date dialog<br>
+<img src="documentation/images/date_dialog.png"/>
 
-Date chooser widget (flw::DateChooser)<br>
-<img src="images/datechooser.png"/>
+Font dialog<br>
+<img src="documentation/images/font_dialog.png"/>
 
-Font dialog (flw::dlg::Font)<br>
-<img src="images/font_dialog.png"/>
+Password dialog<br>
+<img src="documentation/images/password_dialog.png"/>
 
-Input menu (flw::InputMenu)<br>
-<img src="images/inputmenu.png"/>
+List dialog<br>
+<img src="documentation/images/list_dialog.png"/>
 
-List selection dialog (flw::dlg::select())<br>
-<img src="images/list_dialog.png"/>
+Select string dialog<br>
+<img src="documentation/images/select_string_dialog.png"/>
 
-Password dialog (flw::dlg::password_confirm_and_file())<br>
-<img src="images/password_dialog.png"/>
+Checkbox dialog<br>
+<img src="documentation/images/select_checkboxes_dialog.png"/>
 
-Print text dialog (flw::dlg::print_text())<br>
-<img src="images/print_text_dialog.png"/>
+Theme dialog<br>
+<img src="documentation/images/theme_dialog.png"/>
 
-Checkbox dialog (flw::dlg::check())<br>
-<img src="images/check_dialog.png"/>
+Grid layout widget<br>
+<img src="documentation/images/gridgroup.png"/>
 
-Plot widget (flw::plot::Plot)<br>
-<img src="images/plot.png"/>
+Tab layout widget<br>
+<img src="documentation/images/tabsgroup.png"/>
 
-Table editor widget (flw::TableDisplay and flw::TableEditor)<br>
-<img src="images/tableeditor.png"/>
+Table widget<br>
+<img src="documentation/images/tableeditor.png"/>
 
-Grid layout widget (flw::GridGroup)<br>
-<img src="images/gridgroup.png"/>
+Chart widget<br>
+<img src="documentation/images/chart.png"/>
 
-Tab layout widget (flw::TabsGroup)<br>
-<img src="images/tabsgroup.png"/>
-
-Toolbar layout widget (flw::ToolGroup)<br>
-<img src="images/toolgroup.png"/>
-
-Theme dialog (flw::dlg::theme())<br>
-<img src="images/theme_dialog.png"/>
-
-## Theme examples
-
-Tan gleam theme<br>
-<img src="images/tan_gleam.png"/>
-
-Blue gtk theme<br>
-<img src="images/blue_gtk.png"/>
-
-Dark gleam theme<br>
-<img src="images/dark_gleam.png"/>
+Plot widget<br>
+<img src="documentation/images/plot.png"/>
