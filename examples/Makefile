@@ -11,9 +11,11 @@ INC       = -Isrc
 all: flw.o \
 	file.exe \
 	json.exe \
+	chart.exe \
 	dialog.exe \
 	gridgroup.exe \
 	inputmenu.exe \
+	plot.exe \
 	recentmenu.exe \
 	tabsgroup.exe \
 
@@ -28,6 +30,9 @@ file.exe: file.cpp flw.o
 json.exe: json.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
+chart.exe: chart.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
 dialog.exe: dialog.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
@@ -38,6 +43,9 @@ gridgroup.exe: gridgroup.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 inputmenu.exe: inputmenu.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+plot.exe: plot.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 recentmenu.exe: recentmenu.cpp flw.o
@@ -62,6 +70,9 @@ run_file: file.exe
 run_json: json.exe
 	./json.exe
 
+run_chart: chart.exe
+	./chart.exe
+
 run_dialog: dialog.exe
 	./dialog.exe
 
@@ -70,6 +81,9 @@ run_gridgroup: gridgroup.exe
 
 run_inputmenu: inputmenu.exe
 	./inputmenu.exe
+
+run_plot: plot.exe
+	./plot.exe
 
 run_recentmenu: recentmenu.exe
 	./recentmenu.exe

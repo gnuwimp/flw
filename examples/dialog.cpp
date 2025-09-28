@@ -7,7 +7,7 @@
 void date_example() {
     // [flw::dlg::date example]
 
-    gnu::Date date = gnu::Date("31/12/1999");
+    auto date = gnu::Date("31/12/1999");
 
     if (flw::dlg::date("flw::dlg::date()", date) == true) {
         printf("flw::dlg::date = %s\n", date.format(gnu::Date::FORMAT::ISO_LONG).c_str());
@@ -24,38 +24,38 @@ flw::dlg::date = 1999-12-31
 
 //------------------------------------------------------------------------------
 void font_example1() {
-    // [flw::dlg::FontDialog example]
+    // [flw::dlg::Font example]
 
     // Create and run font dialog.
-    auto fontdialog = flw::dlg::FontDialog(FL_HELVETICA, 14);
+    auto font = flw::dlg::Font(FL_HELVETICA, 14);
 
-    if (fontdialog.run() == true) {
-        printf("font=%d, fontsize=%d, fontname=%s\n", fontdialog.font(),  fontdialog.fontsize(), fontdialog.fontname().c_str());
+    if (font.run() == true) {
+        printf("font=%d, fontsize=%d, fontname=%s\n", font.font(),  font.fontsize(), font.fontname().c_str());
 
         // Set global regular font.
-        flw::PREF_FONT = fontdialog.font();
-        flw::PREF_FONTSIZE = fontdialog.fontsize();
+        flw::PREF_FONT     = font.font();
+        flw::PREF_FONTSIZE = font.fontsize();
     }
     else {
         printf("no font selected\n");
     }
 
-    // [flw::dlg::FontDialog example]
+    // [flw::dlg::Font example]
 }
 
 //------------------------------------------------------------------------------
 void font_example2() {
     // [flw::dlg::font example]
 
-    Fl_Font font = FL_HELVETICA;
-    Fl_Fontsize fontsize = 14;
-    std::string fontname;
+    auto font     = FL_HELVETICA;
+    auto fontsize = 14;
+    auto fontname = std::string();
 
     if (flw::dlg::font(font, fontsize, fontname) == true) {
         printf("font=%d, fontsize=%d, fontname=%s\n", font,  fontsize, fontname.c_str());
 
         // Set global regular font.
-        flw::PREF_FONT = font;
+        flw::PREF_FONT     = font;
         flw::PREF_FONTSIZE = fontsize;
     }
 
@@ -183,16 +183,47 @@ And by opposing end them? To die: to sleep;
 }
 
 //------------------------------------------------------------------------------
+void progress_example() {
+    // [flw::dlg::Progress example]
+
+    auto progress = flw::dlg::Progress("flw::dlg::Progress Example", true, true, 0.0, 100.0);
+    auto count    = 0.0;
+
+    progress.start();
+
+    while (count <= 100.0) {
+        char buf[200];
+
+        flw::util::sleep(10);
+        count += 0.1;
+        sprintf(buf, "Counting 0 to 100\nCurrent value is %.1f\nPress button to interrupt", count);
+
+        if (progress.update(count, buf) == false) {
+            break;
+        }
+    }
+
+    if (count >= 100.0) {
+        puts("done");
+    }
+    else {
+        printf("aborted at %.1f\n", progress.value());
+    }
+
+    // [flw::dlg::Progress example]
+}
+
+//------------------------------------------------------------------------------
 void select_checkboxes_example() {
     // [flw::dlg::select_checkboxes example]
 
-    flw::StringVector checks = { "1Hello", "1World", "0End", };
+    flw::StringVector checkboxes = { "1Hello", "1World", "0End", };
 
     // Show dialog with three check buttons.
-    checks = flw::dlg::select_checkboxes("flw::dlg::select_checkboxes()", checks);
+    checkboxes = flw::dlg::select_checkboxes("flw::dlg::select_checkboxes()", checkboxes);
 
     // If user has pressed ok 'checks' will contain the updated values.
-    for (auto& s : checks) {
+    for (auto& s : checkboxes) {
         printf("%s\n", s.c_str());
     }
 /*
@@ -231,40 +262,17 @@ void select_string_example() {
 void slider_example() {
     // [flw::dlg::slider example]
 
-    auto input_output_value = 666.66;
-    auto ok = flw::dlg::slider("flw::dlg::slider()", 600, 700, input_output_value, 0.01);
+    auto value = 666.66;
+    auto res   = flw::dlg::slider("flw::dlg::slider()", 600, 700, value, 0.01);
 
-    if (ok == true) {
-        printf("new value=%.2f\n", input_output_value);
+    if (res == true) {
+        printf("new value=%.2f\n", value);
     }
     else {
-        printf("unchanged value=%.2f\n", input_output_value);
+        printf("unchanged value=%.2f\n", value);
     }
 
     // [flw::dlg::slider example]
-}
-
-//------------------------------------------------------------------------------
-void theme_example() {
-    // [flw::dlg::theme example]
-
-    flw::dlg::theme(true, true);
-
-    printf("Font          = %3d\n", flw::PREF_FONT);
-    printf("Fontsize      = %3d\n", flw::PREF_FONTSIZE);
-    printf("Fontname      = %s\n", flw::PREF_FONTNAME.c_str());
-    printf("FixedFont     = %3d\n", flw::PREF_FIXED_FONT);
-    printf("FixedFontsize = %3d\n", flw::PREF_FIXED_FONTSIZE);
-    printf("FixedFontname = %s\n", flw::PREF_FIXED_FONTNAME.c_str());
-/*
-Font          =  10
-Fontsize      =  14
-Fontname      = serif italic
-FixedFont     = 178
-FixedFontsize =  13
-FixedFontname = Lucida Console
-*/
-    // [flw::dlg::theme example]
 }
 
 //------------------------------------------------------------------------------
@@ -290,34 +298,26 @@ World
 }
 
 //------------------------------------------------------------------------------
-void work_example() {
-    // [flw::dlg::WorkDialog example]
+void theme_example() {
+    // [flw::dlg::theme example]
 
-    auto workdialog = flw::dlg::WorkDialog("flw::dlg::WorkDialog Example", true, true, 0.0, 100.0);
-    auto count  = 0.0;
+    flw::dlg::theme(true, true);
 
-    workdialog.start();
-
-    while (count <= 100.0) {
-        char buf[200];
-
-        flw::util::sleep(10);
-        count += 0.1;
-        sprintf(buf, "Counting 0 to 100\nCurrent value is %.1f\nPress button to interrupt", count);
-
-        if (workdialog.update(count, buf) == false) {
-            break;
-        }
-    }
-
-    if (count >= 100.0) {
-        puts("done");
-    }
-    else {
-        printf("aborted at %.1f\n", workdialog.value());
-    }
-
-    // [flw::dlg::WorkDialog example]
+    printf("Font          = %3d\n", flw::PREF_FONT);
+    printf("Fontsize      = %3d\n", flw::PREF_FONTSIZE);
+    printf("Fontname      = %s\n", flw::PREF_FONTNAME.c_str());
+    printf("FixedFont     = %3d\n", flw::PREF_FIXED_FONT);
+    printf("FixedFontsize = %3d\n", flw::PREF_FIXED_FONTSIZE);
+    printf("FixedFontname = %s\n", flw::PREF_FIXED_FONTNAME.c_str());
+/*
+Font          =   0
+Fontsize      =  14
+Fontname      = sans
+FixedFont     =   4
+FixedFontsize =  14
+FixedFontname = mono
+*/
+    // [flw::dlg::theme example]
 }
 
 //------------------------------------------------------------------------------
@@ -335,10 +335,10 @@ int main() {
     print_example1();
     print_example2();
     print_example3();
+    progress_example();
     select_checkboxes_example();
     select_choice_example();
     select_string_example();
     slider_example();
     text_example();
-    work_example();
 }

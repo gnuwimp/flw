@@ -230,7 +230,7 @@ void test3(chart::Chart* chart, std::string label, const chart::DateRange range,
     }
     else if (range == chart::DateRange::MONTH) {
         vec2 = chart::Point::DayToMonth(vec1);
-        chart->set_tick_width(chart::Chart::MAX_TICK);
+        chart->set_tick_width(chart::MAX_TICK);
     }
     else {
         vec2 = vec1;

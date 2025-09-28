@@ -17,7 +17,7 @@ int main() {
     tabs->add("XXXXX", new Fl_Button(0, 0, 0, 0, "Hello World 2"));
 
     // Move tabs from top side to left side.
-    tabs->tabs(flw::TabsGroup::TABS::WEST);
+    tabs->tab_pos(flw::TabsGroup::Pos::WEST);
 
     // Change tab button label from "XXXXX" to "World".
     auto x = tabs->child(1);

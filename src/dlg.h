@@ -67,15 +67,15 @@ void                            text(const std::string& title, const std::string
 bool                            text_edit(const std::string& title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
 
-/*
- *      ______          _   _____  _       _
- *     |  ____|        | | |  __ \(_)     | |
- *     | |__ ___  _ __ | |_| |  | |_  __ _| | ___   __ _
- *     |  __/ _ \| '_ \| __| |  | | |/ _` | |/ _ \ / _` |
- *     | | | (_) | | | | |_| |__| | | (_| | | (_) | (_| |
- *     |_|  \___/|_| |_|\__|_____/|_|\__,_|_|\___/ \__, |
- *                                                  __/ |
- *                                                 |___/
+/**
+ *      ______          _   
+ *     |  ____|        | |  
+ *     | |__ ___  _ __ | |_ 
+ *     |  __/ _ \| '_ \| __|
+ *     | | | (_) | | | | |_ 
+ *     |_|  \___/|_| |_|\__|
+ *                          
+ *                          
  */
 
 /** @brief A dialog for selecting font and font size.
@@ -144,7 +144,7 @@ private:
 * It has a pause button and an cancel button that can be disabled.\n
 *
 * @snippet dialog.cpp flw::dlg::Progress example
-* @image html work_dialog.png
+* @image html progress_dialog.png
 */
 class Progress : public Fl_Double_Window {
 public:

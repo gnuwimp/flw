@@ -744,6 +744,9 @@ typedef std::vector<Area>  AreaVector;
 static constexpr const double MAX_VALUE      = 9223372036854775807.0;
 static constexpr const double MIN_VALUE      = 0.0000001;
 static constexpr const int    MAX_LINE_WIDTH = 14;
+static constexpr const int    VERSION        = 6;
+static constexpr const int    MIN_TICK       = 3;
+static constexpr const int    MAX_TICK       = MAX_LINE_WIDTH * 5;
 enum class Algorithm {
     ATR,
     DAY_TO_MONTH,
@@ -960,9 +963,6 @@ private:
 class Chart : public Fl_Group {
     static const size_t         MAX_VLINES = 1600;
 public:
-    static const int            VERSION  = 5;
-    static const int            MIN_TICK = 3;
-    static const int            MAX_TICK = chart::MAX_LINE_WIDTH * 5;
     explicit                    Chart(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     double                      alt_size() const
                                     { return _alt_size; }
@@ -1014,7 +1014,7 @@ public:
                                     { _labels = val; }
     void                        set_main_label(std::string label = "")
                                     { _label = label; }
-    void                        set_tick_width(int val = Chart::MIN_TICK)
+    void                        set_tick_width(int val = chart::MIN_TICK)
                                     { if (val >= MIN_TICK && val <= MAX_TICK) _tick_width = val; }
     void                        set_ver_lines(bool val = true)
                                     { _vertical = val; }
@@ -1486,7 +1486,7 @@ static constexpr const double MAX_VALUE      = 9223372036854775807.0;
 static constexpr const double MIN_VALUE      = 0.0000001;
 static constexpr const size_t MAX_LINES      = 10;
 static constexpr const int    MAX_LINE_WIDTH = 30;
-static constexpr const int    VERSION        =  3;
+static constexpr const int    VERSION        =  4;
 enum class Algorithm {
     MODIFY,
     SWAP,

@@ -943,8 +943,9 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-#INPUT                  = 
-INPUT                  = \
+INPUT = \
+../src/chart.h \
+../src/chart.cpp \
 ../src/datechooser.h \
 ../src/datechooser.cpp \
 ../src/dlg.h \
@@ -959,6 +960,8 @@ INPUT                  = \
 ../src/gridgroup.cpp \
 ../src/inputmenu.h \
 ../src/inputmenu.cpp \
+../src/plot.h \
+../src/plot.cpp \
 ../src/recentmenu.h \
 ../src/recentmenu.cpp \
 ../src/tabsgroup.h \
