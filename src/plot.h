@@ -27,7 +27,7 @@ static constexpr const double MAX_VALUE      = 9223372036854775807.0;   ///< @br
 static constexpr const double MIN_VALUE      = 0.0000001;               ///< @brief Min (abs) number value.
 static constexpr const size_t MAX_LINES      = 10;                      ///< @brief Max number of plot lines.
 static constexpr const int    MAX_LINE_WIDTH = 30;                      ///< @brief Max line width (pixels).
-static constexpr const int    VERSION        =  3;                      ///< @brief JSON version.
+static constexpr const int    VERSION        =  4;                      ///< @brief JSON version.
 
 /** @brief Algorithms that can be used to generate new data series.
 *

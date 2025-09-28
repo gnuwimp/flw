@@ -1702,7 +1702,7 @@ bool Plot::load_json(const std::string& filename) {
     if (js.is_object() == false) _FLW_PLOT_ERROR(&js);
 
     for (auto j : js.vo_to_va()) {
-        if (j->name() == "Plot" && j->is_object() == true) {
+        if (j->name() == "flw::plot" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
                     if (j2->vn_i() != plot::VERSION) _FLW_PLOT_ERROR(j2)
@@ -1718,7 +1718,7 @@ bool Plot::load_json(const std::string& filename) {
                 else _FLW_PLOT_ERROR(j2)
             }
         }
-        else if ((j->name() == "Scale::x" || j->name() == "Scale::y") && j->is_object() == true) {
+        else if ((j->name() == "flw::plot::scale::x" || j->name() == "flw::plot::scale::y") && j->is_object() == true) {
             auto& scale = (j->name() == "Scale::x") ? x : y;
             StringVector labels;
 
@@ -1735,7 +1735,7 @@ bool Plot::load_json(const std::string& filename) {
             }
             scale.set_custom_labels(labels);
         }
-        else if (j->name() == "Line" && j->is_array() == true) {
+        else if (j->name() == "flw::plot::line" && j->is_array() == true) {
             for (const auto j2 : *j->va()) {
                 if (j2->is_object() == true) {
                     Line line;
@@ -1763,8 +1763,8 @@ bool Plot::load_json(const std::string& filename) {
                 }
             }
         }
+        else _FLW_PLOT_ERROR(j)
     }
-
     xscale().set_label(x.label());
     yscale().set_label(y.label());
     xscale().set_color(x.color());
@@ -1892,7 +1892,7 @@ bool Plot::save_json(const std::string& filename) {
 
     try {
         jsb << gnu::json::Builder::MakeObject();
-            jsb << gnu::json::Builder::MakeObject("Plot");
+            jsb << gnu::json::Builder::MakeObject("flw::plot");
                 jsb << gnu::json::Builder::MakeNumber(plot::VERSION, "version");
                 jsb << gnu::json::Builder::MakeString(_label, "label");
                 jsb << gnu::json::Builder::MakeBool(_labels, "labels");
@@ -1904,7 +1904,7 @@ bool Plot::save_json(const std::string& filename) {
                 if (std::isfinite(_max_y) == true) jsb << gnu::json::Builder::MakeNumber(_max_y, "maxy");
             jsb.end();
 
-            jsb << gnu::json::Builder::MakeObject("Scale::x");
+            jsb << gnu::json::Builder::MakeObject("flw::plot::scale::x");
                 jsb << gnu::json::Builder::MakeString(_x.label().c_str(), "label");
                 jsb << gnu::json::Builder::MakeNumber(_x.color(), "color");
                 jsb << gnu::json::Builder::MakeArrayInline("labels");
@@ -1912,7 +1912,7 @@ bool Plot::save_json(const std::string& filename) {
                 jsb.end();
             jsb.end();
 
-            jsb << gnu::json::Builder::MakeObject("Scale::y");
+            jsb << gnu::json::Builder::MakeObject("flw::plot::scale::y");
                 jsb << gnu::json::Builder::MakeString(_y.label().c_str(), "label");
                 jsb << gnu::json::Builder::MakeNumber(_y.color(), "color");
                 jsb << gnu::json::Builder::MakeArrayInline("labels");
@@ -1920,7 +1920,7 @@ bool Plot::save_json(const std::string& filename) {
                 jsb.end();
             jsb.end();
 
-            jsb << gnu::json::Builder::MakeArray("Line");
+            jsb << gnu::json::Builder::MakeArray("flw::plot::line");
 
             for (const auto& line : _lines) {
                 if (line.data().size() > 0) {
