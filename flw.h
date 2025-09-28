@@ -1736,6 +1736,7 @@ private:
     bool                        _disable_menu;
     bool                        _horizontal;
     bool                        _labels;
+    bool                        _printing;
     bool                        _vertical;
     const int                   _CH;
     const int                   _CW;

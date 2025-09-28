@@ -11239,7 +11239,13 @@ void Plot::delete_line(size_t index) {
 void Plot::draw() {
 #ifdef DEBUG
 #endif
-    fl_rectf(x(), y(), w(), h(), FL_BACKGROUND2_COLOR);
+    if (_printing == true) {
+        fl_line_style(FL_SOLID, 1);
+        fl_rectf(x(), y(), w(), h(), FL_BACKGROUND2_COLOR);
+    }
+    else {
+        Fl_Group::draw();
+    }
     if (_area.w() < 75 || _area.h() < 50 || _x.min() >= _x.max() || _x.pixel() * _x.tick() < 1.0 || _y.min() >= _y.max() || _y.pixel() * _y.tick() < 1.0) {
         goto DRAW_RECTANGLE;
     }
@@ -11753,7 +11759,9 @@ bool Plot::load_line_from_csv() {
     return true;
 }
 void Plot::print_to_postscript() {
+    _printing = true;
     dlg::print("Print Plot", Plot::_CallbackPrinter, this, 1, 1, top_window());
+    _printing = false;
     redraw();
 }
 void Plot::reset() {
