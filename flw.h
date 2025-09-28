@@ -1241,14 +1241,10 @@ bool                            slider(const std::string& title, double min, dou
 void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 bool                            text_edit(const std::string& title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
-class FontDialog : public Fl_Double_Window {
+class Font : public Fl_Double_Window {
 public:
-                                FontDialog(const FontDialog&) = delete;
-                                FontDialog(FontDialog&&) = delete;
-    FontDialog&                 operator=(const FontDialog&) = delete;
-    FontDialog&                 operator=(FontDialog&&) = delete;
-                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
-                                FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
+                                Font(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
+                                Font(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
     void                        activate_font()
                                     { static_cast<Fl_Widget*>(_fonts)->activate(); }
     void                        activate_font_size()
@@ -1281,9 +1277,9 @@ private:
     int                         _fontsize;
     std::string                 _fontname;
 };
-class WorkDialog : public Fl_Double_Window {
+class Progress : public Fl_Double_Window {
 public:
-                                WorkDialog(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
+                                Progress(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
     void                        range(double min, double max);
     void                        start(Fl_Window* parent = nullptr);
     bool                        update(const StringVector& messages, unsigned milli = 100);

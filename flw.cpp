@@ -6679,7 +6679,7 @@ public:
             }
         }
         else if (w == self->_fonts) {
-            auto dlg = FontDialog(self->_font, self->_fontsize, "Select Print Font", true);
+            auto dlg = Font(self->_font, self->_fontsize, "Select Print Font", true);
             if (dlg.run() == true) {
                 auto l = util::format("%s - %d", dlg.fontname().c_str(), dlg.fontsize());
                 self->_fonts->copy_label(l.c_str());
@@ -7381,7 +7381,7 @@ public:
             self->hide();
         }
         else if (w == self->_fixedfont) {
-            FontDialog fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
+            Font fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
             if (fd.run(Fl::first_window()) == true) {
                 flw::PREF_FIXED_FONT     = fd.font();
                 flw::PREF_FIXED_FONTSIZE = fd.fontsize();
@@ -7393,7 +7393,7 @@ public:
             }
         }
         else if (w == self->_font) {
-            FontDialog fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Regular Font");
+            Font fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Regular Font");
             if (fd.run(Fl::first_window()) == true) {
                 flw::PREF_FONT     = fd.font();
                 flw::PREF_FONTSIZE = fd.fontsize();
@@ -7523,11 +7523,11 @@ you will have a good life.
 A good life is not measured by any biblical span.”
 ― Ernest Hemingway, For Whom the Bell Tolls
 )";
-class _FontDialogLabel : public Fl_Box {
+class _FontLabel : public Fl_Box {
 public:
     int font;
     int size;
-    _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
+    _FontLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
         font = FL_HELVETICA;
         size = 14;
         align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
@@ -7541,15 +7541,15 @@ public:
         fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
     }
 };
-FontDialog::FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
+Font::Font(Fl_Font font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
     _create(font, "", fontsize, title, limit_to_default);
 }
-FontDialog::FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
+Font::Font(const std::string& font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
     _create(0, font, fontsize, title, limit_to_default);
 }
-void FontDialog::_activate() {
+void Font::_activate() {
     if (_fonts->value() == 0 || _sizes->value() == 0 || (_fonts->active() == 0 && _sizes->active() == 0)) {
         _select->deactivate();
     }
@@ -7557,8 +7557,8 @@ void FontDialog::_activate() {
         _select->activate();
     }
 }
-void FontDialog::Callback(Fl_Widget* w, void* o) {
-    auto self = static_cast<FontDialog*>(o);
+void Font::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<Font*>(o);
     if (w == self) {
     }
     else if (w == self->_cancel) {
@@ -7568,7 +7568,7 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == self->_fonts) {
         auto row = self->_fonts->value();
         if (row > 0) {
-            static_cast<_FontDialogLabel*>(self->_label)->font = row - 1;
+            static_cast<_FontLabel*>(self->_label)->font = row - 1;
         }
         self->_activate();
         Fl::redraw();
@@ -7589,18 +7589,18 @@ void FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == self->_sizes) {
         auto row = self->_sizes->value();
         if (row > 0) {
-            static_cast<_FontDialogLabel*>(self->_label)->size = row + 5;
+            static_cast<_FontLabel*>(self->_label)->size = row + 5;
         }
         self->_activate();
         Fl::redraw();
     }
 }
-void FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) {
+void Font::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) {
     end();
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
     _fonts    = new ScrollBrowser(12);
     _grid     = new GridGroup();
-    _label    = new _FontDialogLabel(0, 0, 0, 0);
+    _label    = new _FontLabel(0, 0, 0, 0);
     _select   = new Fl_Button(0, 0, 0, 0, "&Select");
     _sizes    = new ScrollBrowser(6);
     _font     = -1;
@@ -7613,20 +7613,20 @@ void FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize 
     _grid->add(_cancel, -34,  -5,  16,   4);
     _grid->add(_select, -17,  -5,  16,   4);
     add(_grid);
-    _cancel->callback(FontDialog::Callback, this);
+    _cancel->callback(Font::Callback, this);
     _cancel->labelfont(flw::PREF_FONT);
     _cancel->labelsize(flw::PREF_FONTSIZE);
     _fonts->box(FL_BORDER_BOX);
-    _fonts->callback(FontDialog::Callback, this);
+    _fonts->callback(Font::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
-    static_cast<_FontDialogLabel*>(_label)->font = font;
-    static_cast<_FontDialogLabel*>(_label)->size = fontsize;
-    _select->callback(FontDialog::Callback, this);
+    static_cast<_FontLabel*>(_label)->font = font;
+    static_cast<_FontLabel*>(_label)->size = fontsize;
+    _select->callback(Font::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
     _sizes->box(FL_BORDER_BOX);
-    _sizes->callback(FontDialog::Callback, this);
+    _sizes->callback(Font::Callback, this);
     _sizes->textsize(flw::PREF_FONTSIZE);
     _sizes->when(FL_WHEN_CHANGED);
     theme::load_fonts();
@@ -7646,12 +7646,12 @@ void FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize 
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
         _sizes->middleline(fontsize - 5);
-        static_cast<_FontDialogLabel*>(_label)->font = fontsize;
+        static_cast<_FontLabel*>(_label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
         _sizes->middleline(14 - 5);
-        static_cast<_FontDialogLabel*>(_label)->font = 14;
+        static_cast<_FontLabel*>(_label)->font = 14;
     }
     if (fontname != "") {
         _select_name(fontname);
@@ -7659,7 +7659,7 @@ void FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize 
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
         _fonts->middleline(font + 1);
-        static_cast<_FontDialogLabel*>(_label)->font = font;
+        static_cast<_FontLabel*>(_label)->font = font;
     }
     else {
         _fonts->value(1);
@@ -7667,13 +7667,13 @@ void FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize 
     }
     resizable(_grid);
     copy_label(title.c_str());
-    callback(FontDialog::Callback, this);
+    callback(Font::Callback, this);
     size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
     _grid->resize(0, 0, w(), h());
 }
-bool FontDialog::run(Fl_Window* parent) {
+bool Font::run(Fl_Window* parent) {
     _ret = false;
     _run = true;
     _activate();
@@ -7685,23 +7685,23 @@ bool FontDialog::run(Fl_Window* parent) {
     }
     return _ret;
 }
-void FontDialog::_select_name(const std::string& fontname) {
+void Font::_select_name(const std::string& fontname) {
     auto count = 1;
     for (auto f : flw::PREF_FONTNAMES) {
         auto font_without_style = util::remove_browser_format(util::to_string(f));
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
-            static_cast<_FontDialogLabel*>(_label)->font = count - 1;
+            static_cast<_FontLabel*>(_label)->font = count - 1;
             return;
         }
         count++;
     }
     _fonts->value(1);
-    static_cast<_FontDialogLabel*>(_label)->font = 0;
+    static_cast<_FontLabel*>(_label)->font = 0;
 }
 bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
-    auto dlg = dlg::FontDialog(font, fontsize, "Select Font", limit_to_default);
+    auto dlg = dlg::Font(font, fontsize, "Select Font", limit_to_default);
     if (dlg.run() == false) {
         return false;
     }
@@ -7710,7 +7710,7 @@ bool font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limi
     fontname = dlg.fontname();
     return true;
 }
-WorkDialog::WorkDialog(const std::string& title, bool cancel, bool pause, double min, double max) :
+Progress::Progress(const std::string& title, bool cancel, bool pause, double min, double max) :
 Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
     end();
     _cancel   = new Fl_Button(0, 0, 0, 0, "&Cancel");
@@ -7726,11 +7726,11 @@ Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
     _grid->add(_cancel,  -17,  -5,  16,   4);
     add(_grid);
     range(min, max);
-    _cancel->callback(WorkDialog::Callback, this);
+    _cancel->callback(Progress::Callback, this);
     _label->box(FL_BORDER_BOX);
     _label->textfont(flw::PREF_FONT);
     _label->textsize(flw::PREF_FONTSIZE);
-    _pause->callback(WorkDialog::Callback, this);
+    _pause->callback(Progress::Callback, this);
     if (cancel == false) {
         _cancel->deactivate();
     }
@@ -7738,15 +7738,15 @@ Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
         _pause->deactivate();
     }
     util::labelfont(this);
-    callback(WorkDialog::Callback, this);
+    callback(Progress::Callback, this);
     copy_label(title.c_str());
     size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(_grid);
     _grid->resize(0, 0, w(), h());
 }
-void WorkDialog::Callback(Fl_Widget* w, void* o) {
-    auto self = static_cast<WorkDialog*>(o);
+void Progress::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<Progress*>(o);
     if (w == self) {
     }
     else if (w == self->_cancel) {
@@ -7764,7 +7764,7 @@ void WorkDialog::Callback(Fl_Widget* w, void* o) {
         }
     }
 }
-void WorkDialog::range(double min, double max) {
+void Progress::range(double min, double max) {
     if (min < max && fabs(max - min) > 0.001) {
         _progress->show();
         _progress->range(min, max);
@@ -7776,11 +7776,11 @@ void WorkDialog::range(double min, double max) {
         _grid->resize(_label, 1, 1, -1, -6);
     }
 }
-void WorkDialog::start(Fl_Window* parent) {
+void Progress::start(Fl_Window* parent) {
     util::center_window(this, parent);
     Fl_Double_Window::show();
 }
-bool WorkDialog::update(double value, const StringVector& messages, unsigned milli) {
+bool Progress::update(double value, const StringVector& messages, unsigned milli) {
     auto now = static_cast<unsigned>(util::milliseconds());
     if (now - _last > milli) {
         _progress->value(value);
@@ -7794,18 +7794,18 @@ bool WorkDialog::update(double value, const StringVector& messages, unsigned mil
     }
     return _ret;
 }
-bool WorkDialog::update(const StringVector& messages, unsigned milli) {
+bool Progress::update(const StringVector& messages, unsigned milli) {
     return update(0.0, messages, milli);
 }
-bool WorkDialog::update(double value, const std::string& message, unsigned milli) {
+bool Progress::update(double value, const std::string& message, unsigned milli) {
     auto messages = std::vector<std::string>();
     messages.push_back(message);
     return update(value, messages, milli);
 }
-bool WorkDialog::update(const std::string& message, unsigned milli) {
+bool Progress::update(const std::string& message, unsigned milli) {
     return update(0.0, message, milli);
 }
-void WorkDialog::value(double value) {
+void Progress::value(double value) {
     if (value < _progress->minimum()) {
         _progress->value(_progress->minimum());
     }

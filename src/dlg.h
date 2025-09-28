@@ -25,7 +25,7 @@
 
 namespace flw {
 
-/** @brief Assorted dialog functions.
+/** @brief Assorted dialog functions and classes.
 */
 namespace dlg {
 
@@ -80,22 +80,17 @@ void                            theme(bool enable_font = false, bool enable_fixe
 
 /** @brief A dialog for selecting font and font size.
 *
-* FontDialog::LoadFonts() will be called automatically (or do it manually).\n
+* Font::LoadFonts() will be called automatically (or do it manually).\n
 * It is only needed once.\n
-* Call FontDialog::DeleteFonts() before app exit (this is unnecessary, only for keeping memory sanitizers satisfied).\n
+* Call Font::DeleteFonts() before app exit (this is unnecessary, only for keeping memory sanitizers satisfied).\n
 *
-* @snippet dialog.cpp flw::dlg::FontDialog example
+* @snippet dialog.cpp flw::dlg::Font example
 * @image html font_dialog.png
 */
-class FontDialog : public Fl_Double_Window {
+class Font : public Fl_Double_Window {
 public:
-                                FontDialog(const FontDialog&) = delete;
-                                FontDialog(FontDialog&&) = delete;
-    FontDialog&                 operator=(const FontDialog&) = delete;
-    FontDialog&                 operator=(FontDialog&&) = delete;
-
-                                FontDialog(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
-                                FontDialog(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
+                                Font(Fl_Font font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
+                                Font(const std::string& font, Fl_Fontsize fontsize, const std::string& title = "Select Font", bool limit_to_default = false);
     void                        activate_font()
                                     { static_cast<Fl_Widget*>(_fonts)->activate(); } ///< @brief Turn on font list, active by default.
     void                        activate_font_size()
@@ -132,15 +127,15 @@ private:
     std::string                 _fontname;  // Selected font name.
 };
 
-/*
- *     __          __        _    _____  _       _
- *     \ \        / /       | |  |  __ \(_)     | |
- *      \ \  /\  / /__  _ __| | _| |  | |_  __ _| | ___   __ _
- *       \ \/  \/ / _ \| '__| |/ / |  | | |/ _` | |/ _ \ / _` |
- *        \  /\  / (_) | |  |   <| |__| | | (_| | | (_) | (_| |
- *         \/  \/ \___/|_|  |_|\_\_____/|_|\__,_|_|\___/ \__, |
- *                                                        __/ |
- *                                                       |___/
+/**
+ *      _____
+ *     |  __ \
+ *     | |__) | __ ___   __ _ _ __ ___  ___ ___
+ *     |  ___/ '__/ _ \ / _` | '__/ _ \/ __/ __|
+ *     | |   | | | (_) | (_| | | |  __/\__ \__ \
+ *     |_|   |_|  \___/ \__, |_|  \___||___/___/
+ *                       __/ |
+ *                      |___/
  */
 
 /** @brief A dialog with a message list and a progress bar for time consuming work.
@@ -148,12 +143,12 @@ private:
 * Progress bar is optional.\n
 * It has a pause button and an cancel button that can be disabled.\n
 *
-* @snippet dialog.cpp flw::dlg::WorkDialog example
+* @snippet dialog.cpp flw::dlg::Progress example
 * @image html work_dialog.png
 */
-class WorkDialog : public Fl_Double_Window {
+class Progress : public Fl_Double_Window {
 public:
-                                WorkDialog(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
+                                Progress(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
     void                        range(double min, double max);
     void                        start(Fl_Window* parent = nullptr);
     bool                        update(const StringVector& messages, unsigned milli = 100);
@@ -163,7 +158,7 @@ public:
     double                      value() const
                                     { return _progress->value(); } ///< @brief Return progress bar value.
     void                        value(double value);
-    
+
 private:
     static void                 Callback(Fl_Widget* w, void* o);
 

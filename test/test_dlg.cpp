@@ -20,9 +20,9 @@ using namespace flw;
 //------------------------------------------------------------------------------
 void test_check() {
     size_t       c = 0;
-    StringVector v = { "1Whether", "0tis nobler", "1in the", "0mind to suffer", "1The slings", 
-                       "0and arrows", "1of outrageous", "0fortune", "1Or to", "0take arms", 
-                       "1against", "0a sea", "1of troubles", "0And by", "1opposing", "0end them?", 
+    StringVector v = { "1Whether", "0tis nobler", "1in the", "0mind to suffer", "1The slings",
+                       "0and arrows", "1of outrageous", "0fortune", "1Or to", "0take arms",
+                       "1against", "0a sea", "1of troubles", "0And by", "1opposing", "0end them?",
                        "1To die", "0to sleep", "1No more", "0and by a", "1sleep to say", "0we end" };
 
     for (auto s : dlg::select_checkboxes("flw::dlg::select_checkboxes", v)) {
@@ -57,12 +57,12 @@ void test_date() {
 //------------------------------------------------------------------------------
 void test_font() {
 #ifdef _WIN32
-    auto dlg = dlg::FontDialog("Candara", 15, "flw::dlg::FontDialog");
+    auto dlg = dlg::Font("Candara", 15, "flw::dlg::Font");
 #else
-    auto dlg = dlg::FontDialog("Nimbus Sans", 15, "flw::dlg::FontDialog");
+    auto dlg = dlg::Font("Nimbus Sans", 15, "flw::dlg::Font");
 #endif
-//            dlg.deactivate_font();
-//            dlg.deactivate_fontsize();
+    //dlg.deactivate_font();
+    //dlg.deactivate_fontsize();
 
     if (dlg.run() == true) {
         printf("font set=%s, %d\n", dlg.fontname().c_str(),  dlg.fontsize());
@@ -364,6 +364,49 @@ void test_print_text3() {
 }
 
 //------------------------------------------------------------------------------
+void test_progress() {
+    {
+        auto work  = dlg::Progress("flw::dlg::Progress with a single string message", true, true);
+        auto start = util::clock();
+
+        work.start();
+
+        while (true) {
+            auto s = util::format("@lRunning forever %.1f sec", util::clock() - start);
+
+            if (work.update(s) == false) {
+                break;
+            }
+
+            util::sleep(20);
+        }
+    }
+
+    {
+        auto work = dlg::Progress("flw::dlg::Progress with progress bar", true, true, 0.0, 0.0);
+        auto val  = 0.0;
+
+        work.range(0.0, 100.0);
+        work.resize(0, 0, 640, 480);
+        work.start();
+
+        while (true) {
+            auto m = std::vector<std::string>();
+
+            m.push_back(util::format("@bWorking from 0.0 to 100.0"));
+            m.push_back(util::format("@B95Current value is %.1f", val));
+
+            if (work.update(val, m, 50) == false || work.value() >= 100.0) {
+                break;
+            }
+
+            util::sleep(20);
+            val += 0.2;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 void test_pwd() {
     std::string password, file;
     bool ret;
@@ -445,49 +488,6 @@ void test_wait() {
 }
 
 //------------------------------------------------------------------------------
-void test_work() {
-    {
-        auto work  = dlg::WorkDialog("flw::dlg::WorkDialog with a single string message", true, true);
-        auto start = util::clock();
-        
-        work.start();
-        
-        while (true) {
-            auto s = util::format("@lRunning forever %.1f sec", util::clock() - start);
-
-            if (work.update(s) == false) {
-                break;
-            }
-
-            util::sleep(20);
-        }
-    }
-
-    {
-        auto work = dlg::WorkDialog("flw::dlg::WorkDialog with progress bar", true, true, 0.0, 0.0);
-        auto val  = 0.0;
-
-        work.range(0.0, 100.0);
-        work.resize(0, 0, 640, 480);
-        work.start();
-        
-        while (true) {
-            auto m = std::vector<std::string>();
-
-            m.push_back(util::format("@bWorking from 0.0 to 100.0"));
-            m.push_back(util::format("@B95Current value is %.1f", val));
-
-            if (work.update(val, m, 50) == false || work.value() >= 100.0) {
-                break;
-            }
-
-            util::sleep(20);
-            val += 0.2;
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
     theme::parse(argc, argv);
 
@@ -503,13 +503,13 @@ int main(int argc, const char** argv) {
     puts("    print_text1");
     puts("    print_text2");
     puts("    print_text3");
+    puts("    progress");
     puts("    pwd");
     puts("    select");
     puts("    slider");
     puts("    text");
     puts("    theme");
     puts("    wait");
-    puts("    work");
     fflush(stdout);
 
     for (int f = 0; f < argc; f++) {
@@ -523,15 +523,15 @@ int main(int argc, const char** argv) {
                 run = argv[f];
             }
         }
-        
+
         if (run == "all") {
             run = "";
         }
-                
+
         if (run != "") {
             printf("Current: %s\n", run.c_str());
         }
-        
+
         if (run == "loadsmall") {
             test_font_small();
             run = "";
@@ -589,6 +589,14 @@ int main(int argc, const char** argv) {
             test_print_text3();
         }
 
+        if (run == "" || run == "progress")  {
+            test_progress();
+        }
+
+        if (run == "" || run == "pwd")  {
+            test_pwd();
+        }
+
         if (run == "" || run == "select") {
             test_select_string();
         }
@@ -597,20 +605,12 @@ int main(int argc, const char** argv) {
             test_slider();
         }
 
-        if (run == "" || run == "pwd")  {
-            test_pwd();
-        }
-
         if (run == "" || run == "text") {
             test_text();
         }
 
         if (run == "" || run == "wait") {
             test_wait();
-        }
-
-        if (run == "" || run == "work")  {
-            test_work();
         }
     }
 
