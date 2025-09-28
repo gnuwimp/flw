@@ -35,17 +35,17 @@ Widgets:
 * TabsGroup - A tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
 
 Dialogs:
-* FontDialog - A dialog for selecting font and font size.
-* WorkDialog - A dialog with a message list and a progress bar for time consuming work.
+* dlg::Font - A dialog for selecting font and font size.
+* dlg::Progress - A dialog with a message list and a progress bar for time consuming work.
 * dlg::date - Show a date selection dialog.
 * dlg::html - Show text in a html view.
-* dlg::list - Show a list of strings.
-* dlg::password - Ask user for password and optional password confirmation.
+* dlg::list* - Show a list of strings.
+* dlg::password* - Ask user for password and optional password confirmation.
 * dlg::print - Print drawing from a user callback.
-* dlg::print_text - Print plain text to postscript.
+* dlg::print_text* - Print plain text to postscript.
 * dlg::select_checkboxes - Show a dialog with a list of checkboxes.
 * dlg::select_choice - Show a string selection dialog with Fl_Choice.
-* dlg::select_string - Let user select a string from a list and also to filter shown strings.
+* dlg::select_string* - Let user select a string from a list and also to filter shown strings.
 * dlg::slider - Show a number input dialog that uses a Fl_Hor_Value_Slider widget.
 * dlg::text - Show text in an editor widget.
 * dlg::text_edit - Show and edit a text in an editor widget.
@@ -53,13 +53,13 @@ Dialogs:
 
 ## Screenshots of some of the widgets
 
-Chart widget (flw::Chart)<br>
+Chart widget (flw::chart::Chart)<br>
 <img src="images/chart.png"/>
 
 Date chooser widget (flw::DateChooser)<br>
 <img src="images/datechooser.png"/>
 
-Font dialog (flw::dlg::FontDialog)<br>
+Font dialog (flw::dlg::Font)<br>
 <img src="images/font_dialog.png"/>
 
 Input menu (flw::InputMenu)<br>
@@ -68,7 +68,7 @@ Input menu (flw::InputMenu)<br>
 List selection dialog (flw::dlg::select())<br>
 <img src="images/list_dialog.png"/>
 
-Password dialog (flw::dlg::password4())<br>
+Password dialog (flw::dlg::password_confirm_and_file())<br>
 <img src="images/password_dialog.png"/>
 
 Print text dialog (flw::dlg::print_text())<br>
@@ -77,7 +77,7 @@ Print text dialog (flw::dlg::print_text())<br>
 Checkbox dialog (flw::dlg::check())<br>
 <img src="images/check_dialog.png"/>
 
-Plot widget (flw::Plot)<br>
+Plot widget (flw::plot::Plot)<br>
 <img src="images/plot.png"/>
 
 Table editor widget (flw::TableDisplay and flw::TableEditor)<br>
