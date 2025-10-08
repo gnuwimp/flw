@@ -5,11 +5,13 @@
 
 #ifndef FLW_AMALGAM
     #include "gridgroup.h"
+    #include "inputmenu.h"
 #endif
 
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Input.H>
 #include <FL/Fl_Double_Window.H>
 
 using namespace flw;
@@ -139,7 +141,7 @@ public:
         
         grid   = new GridGroup(0, 0, W, H, "GRID");
         toggle = true;
-//                                                         X    Y    W    H
+
         grid->add(new Button(0, 0, 0, 0, "&TOP"),       0,   0,   0,   4);
         grid->add(new Button(0, 0, 0, 0, DEACT),        0,   4,  16,   0);
         grid->add(new Button(0, 0, 0, 0, ADJUST),      16, -16,   0,   0);
@@ -154,17 +156,22 @@ public:
         util::find_widget(grid, DEACT)->callback(Callback3, this);
         util::find_widget(grid, "&TOP")->callback(Callback2, this);
         util::find_widget(grid, "&TOP")->take_focus();
-//        util::find_widget(grid, "&TOP")->deactivate();
+        //util::find_widget(grid, "&TOP")->deactivate();
         util::labelfont(grid);
         
         grid2  = new GridGroup(0, 0, 0, 0, "GRID2");
-        auto box1 = new Button(0, 0, 0, 0, "b1");
+        //auto box1 = new Button(0, 0, 0, 0, "b1");
+        auto box1 = new flw::InputMenu(0, 0, 0, 0, "i1");
+        box1->insert("History a", 10);
+        box1->insert("History b", 10);
+        box1->input()->label("INPUT");
+
         auto box2 = new Button(0, 0, 0, 0, "&b2");
         auto box3 = new Button(0, 0, 0, 0, "b3");
         auto box4 = new Button(0, 0, 0, 0, "b4");
-        box1->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-        box1->box(FL_BORDER_BOX);
-        box1->tooltip("not adjusted\nb1, b2, b3, b4 are slight overlapping");
+        //box1->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        //box1->box(FL_BORDER_BOX);
+        //box1->tooltip("not adjusted\nb1, b2, b3, b4 are slight overlapping");
         box2->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
         box2->box(FL_BORDER_BOX);
         box2->tooltip("adjusted 1 pixel left and right\nb1, b2, b3, b4 are slight overlapping");
@@ -174,13 +181,16 @@ public:
         box4->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
         box4->box(FL_BORDER_BOX);
         box4->tooltip("adjusted 1 pixel left and right and top and bottom\nb1, b2, b3, b4 are slight overlapping");
-        grid2->add(box1,  0,   0,  40,  30);
+        
+        grid2->add(box1,  0,   0,  40,  30, box1->input());
         grid2->add(box2, 40,   0,   0,  30);
         grid2->add(box3,  0,  30,  40,   0);
         grid2->add(box4, 40,  30,   0,   0);
+        
         grid2->adjust(box2, -1, 1,  0, 0);
         grid2->adjust(box3,  0, 0, -1, 1);
         grid2->adjust(box4, -1, 1, -1, 1);
+        
         util::labelfont(grid2);
         box1->callback(Callback2, this);
         box2->callback(Callback2, this);

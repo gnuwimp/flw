@@ -28,6 +28,8 @@ namespace flw {
 */
 struct _GridGroupChild {
     Fl_Widget*                  widget; // Child widget.
+    Fl_Widget*                  focus;  // Focus on this widget.
+    bool                        g;      // If g is false treat is an normal widget.
     short                       x;      // X pos.
     short                       y;      // Y pos.
     short                       w;      // Width.
@@ -40,8 +42,10 @@ struct _GridGroupChild {
     /** @brief Create new child.
     *
     */
-    _GridGroupChild(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
-        set(WIDGET, X, Y, W, H);
+    _GridGroupChild(Fl_Widget* WIDGET, Fl_Widget* F, int X, int Y, int W, int H) {
+        widget = WIDGET;
+        focus = F;
+        set(X, Y, W, H);
         adjust();
     }
 
@@ -62,12 +66,11 @@ struct _GridGroupChild {
     /** @brief Replace child widget.
     *
     */
-    void set(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
-        widget = WIDGET;
-        x      = X;
-        y      = Y;
-        w      = W;
-        h      = H;
+    void set(int X, int Y, int W, int H) {
+        x = X;
+        y = Y;
+        w = W;
+        h = H;
     }
 };
 
@@ -122,10 +125,11 @@ GridGroup::~GridGroup() {
 * @param[in] X       X pos using grid coordinates .
 * @param[in] Y       Y pos using grid coordinates.
 * @param[in] W       Width in grid coordinates.
-* @param[in] H       height in grid coordinates.
+* @param[in] H       Height in grid coordinates.
+* @param[in] F       Use this widget for focus (this was added so InputMenu::input() would get focus).
 */
-void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H) {
-    _widgets.push_back(new _GridGroupChild(widget, X, Y, W, H));
+void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
+    _widgets.push_back(new _GridGroupChild(widget, F, X, Y, W, H));
     Fl_Group::add(widget);
 }
 
@@ -182,20 +186,18 @@ int GridGroup::handle(int event) {
             //printf("FIRST: %p: %s\n", first ? first : 0, first && first->label() ? first->label() : "NULL");
             //printf("LAST:  %p: %s\n", last ? last : 0, last && last->label() ? last->label() : "NULL");
 
-            if (Fl::event_shift() == 0) {
-                if (first != nullptr && current != nullptr && current == last) {
-                    Fl::focus(first);
-                    first->redraw();
-                    return 1;
-                }
+            if (Fl::event_shift() == 0 && first != nullptr && current != nullptr && current == last) {
+                Fl::focus(first);
+                redraw();
+                return 1;
             }
-            else {
-                if (first != nullptr && current != nullptr && current == first) {
-                    Fl::focus(last);
-                    last->redraw();
-                    return 1;
-                }
+            else if (Fl::event_shift() != 0 && first != nullptr && current != nullptr && current == first) {
+                Fl::focus(last);
+                redraw();
+                return 1;
             }
+            
+            //printf("FOCUS:  %p: %s\n", Fl::focus() ? Fl::focus() : 0, Fl::focus() && Fl::focus()->label() ? Fl::focus()->label() : "NULL");
         }
     }
 
@@ -208,17 +210,23 @@ int GridGroup::handle(int event) {
 * @param[out] last   Set first active widget.
 */
 void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
-    for (int f = 0; f < children(); f++) {
-        auto c = child(f);
-        auto g = c->as_group();
+    for (auto& v : _widgets) {
+        auto child = static_cast<_GridGroupChild*>(v);
+        auto g = child->widget->as_group();
 
-        if (g == nullptr) {
-            if (c->active() != 0) {
-                *last = c;
+        if (g == nullptr || child->focus != nullptr) {
+            if (child->widget->active() != 0 && child->focus != nullptr) {
+                *last = child->focus;
+            }
+            else if (child->widget->active() != 0) {
+                *last = child->widget;
             }
 
-            if (*first == nullptr && c->active() != 0) {
-                *first = c;
+            if (*first == nullptr && child->widget->active() != 0 && child->focus != nullptr) {
+                *first = child->focus;
+            }
+            else if (*first == nullptr && child->widget->active() != 0) {
+                *first = child->widget;
             }
         }
     }
@@ -336,7 +344,7 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
         auto child = static_cast<_GridGroupChild*>(v);
 
         if (child->widget == widget) {
-            child->set(widget, X, Y, W, H);
+            child->set(X, Y, W, H);
             return;
         }
     }

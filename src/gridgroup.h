@@ -40,7 +40,7 @@ class GridGroup : public Fl_Group {
 public:
     explicit                    GridGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                 ~GridGroup();
-    void                        add(Fl_Widget* widget, int X, int Y, int W, int H);
+    void                        add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F = nullptr);
     void                        adjust(Fl_Widget* widget, int L = 0, int R = 0, int T = 0, int B = 0);
     void                        clear();
     void                        do_layout()
