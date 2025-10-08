@@ -1,113 +1,138 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief Table editor widget.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
-#ifndef FLW_TABLEEDITOR_H
-#define FLW_TABLEEDITOR_H
+#ifndef FLW_TABLE_EDITOR_H
+#define FLW_TABLE_EDITOR_H
 
 #include "tabledisplay.h"
 
 // MKALGAM_ON
 
 namespace flw {
+namespace table {
 
-/***
- *      _______    _     _      ______    _ _ _
- *     |__   __|  | |   | |    |  ____|  | (_) |
- *        | | __ _| |__ | | ___| |__   __| |_| |_ ___  _ __
- *        | |/ _` | '_ \| |/ _ \  __| / _` | | __/ _ \| '__|
- *        | | (_| | |_) | |  __/ |___| (_| | | || (_) | |
- *        |_|\__,_|_.__/|_|\___|______\__,_|_|\__\___/|_|
+/** @brief Format flags for displaying values.
+*
+*/
+enum class Format {
+    DEFAULT,        ///< @brief Use default format for current type.
+    INT_DEF,        ///< @brief Default integer.
+    INT_SEP,        ///< @brief Integer separator.
+    DEC_DEF,        ///< @brief Default number.
+    DEC_0,          ///< @brief 0 decimals.
+    DEC_1,          ///< @brief 1 decimals.
+    DEC_2,          ///< @brief 2 decimals.
+    DEC_3,          ///< @brief 3 decimals.
+    DEC_4,          ///< @brief 4 decimals.
+    DEC_5,          ///< @brief 5 decimals.
+    DEC_6,          ///< @brief 6 decimals.
+    DEC_7,          ///< @brief 7 decimals.
+    DEC_8,          ///< @brief 8 decimals.
+    DATE_DEF,       ///< @brief Default date, "YYYY-MM-DD".
+    DATE_WORLD,     ///< @brief World date, "DD/MM/YYYY".
+    DATE_US,        ///< @brief US date, "MM/DD/YYYY".
+    SECRET_DEF,     ///< @brief Password with stars.
+    SECRET_DOT,     ///< @brief Password with dots.
+};
+
+/** @brief All data types.
+*
+* All values are strings.\n
+* Numbers are converted from/to strings.\n
+*/
+enum class Type {
+    TEXT,           ///< @brief Normal text.
+    INTEGER,        ///< @brief Integer number.
+    NUMBER,         ///< @brief Decimal number.
+    BOOLEAN,        ///< @brief Checkbox, use "1" to check it.
+    SECRET,         ///< @brief Password text field.
+    CHOICE,         ///< @brief String list.
+    ICHOICE,        ///< @brief String list with a text input field.
+    SLIDER,         ///< @brief Decimal number as a slider.
+    VSLIDER,        ///< @brief Decimal number as a slider and number label.
+    COLOR,          ///< @brief Color value as an unsigned integer and with a color dialog for editing colors.
+    FILE,           ///< @brief File string with a file dialog for selecting new file.
+    DIR,            ///< @brief Directory string with a file dialog for selecting new directory.
+    DATE,           ///< @brief Date string as "YYYY-MM-DD" with a date dialog for selecting a new date.
+    LIST,           ///< @brief Text field with a string list dialog to select a new string.
+    MTEXT,          ///< @brief Multiline text field with a text dialog for editing.
+};
+
+extern std::string EditColorLabel;
+extern std::string EditDateLabel;
+extern std::string EditDirLabel;
+extern std::string EditFileLabel;
+extern std::string EditListLabel;
+extern std::string EditTextLabel;
+std::string format_slider(double val, double min, double max, double step);
+
+/*
+ *      ______    _ _ _
+ *     |  ____|  | (_) |
+ *     | |__   __| |_| |_ ___  _ __
+ *     |  __| / _` | | __/ _ \| '__|
+ *     | |___| (_| | | || (_) | |
+ *     |______\__,_|_|\__\___/|_|
  *
  *
  */
-//------------------------------------------------------------------------------
-// A table editing widget
-//
-class TableEditor : public TableDisplay {
-    using TableDisplay::cell_value;
+
+/** @brief A table editor widget.
+*
+* Implement virtual methods to be useful.\n
+* At least Display::cell_value(int, int) must be implemented to actual show any text.\n
+* And Editor::cell_value(int, int, const std::string&) must be implemented to save edited values.\n
+*
+* @snippet tableeditor.cpp flw::table::test example
+* @snippet tableeditor.cpp flw::table::Editor example
+* @image html tableeditor.png
+*/
+class Editor : public Display {
+    using Display::cell_value;
 
 public:
-    enum class FORMAT {
-                                DEFAULT,
-                                INT_DEF,
-                                INT_SEP,
-                                DEC_DEF,
-                                DEC_0,
-                                DEC_1,
-                                DEC_2,
-                                DEC_3,
-                                DEC_4,
-                                DEC_5,
-                                DEC_6,
-                                DEC_7,
-                                DEC_8,
-                                DATE_DEF,
-                                DATE_WORLD,
-                                DATE_US,
-                                SECRET_DEF,
-                                SECRET_DOT,
-    };
-
-    enum class REND {
-                                TEXT,
-                                INTEGER,
-                                NUMBER,
-                                BOOLEAN,
-                                SECRET,
-                                CHOICE,
-                                INPUT_CHOICE,
-                                SLIDER,
-                                VALUE_SLIDER,
-                                DLG_COLOR,
-                                DLG_FILE,
-                                DLG_DIR,
-                                DLG_DATE,
-                                DLG_LIST,
-    };
-    
-    static const char*          SELECT_DATE;
-    static const char*          SELECT_DIR;
-    static const char*          SELECT_FILE;
-    static const char*          SELECT_LIST;
-
-    explicit                    TableEditor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    explicit                    Editor(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        send_changed_event_always(bool value)
-                                    { _send_changed_event_always = value; }
+                                    { _force_events = value; } ///< @brief Send change event even if value has not changed.
     virtual StringVector        cell_choice(int row, int col)
-                                    { (void) row; (void) col; return StringVector(); }
+                                    { (void) row; (void) col; return StringVector(); } ///< @brief Get choice string vector.
     virtual bool                cell_edit(int row, int col)
-                                    { (void) row; (void) col; return false; }
-    virtual FORMAT              cell_format(int row, int col)
-                                    { (void) row; (void) col; return TableEditor::FORMAT::DEFAULT; }
-    virtual REND                cell_rend(int row, int col)
-                                    { (void) row; (void) col; return TableEditor::REND::TEXT; }
-    virtual bool                cell_value(int row, int col, const char* value)
-                                    { (void) row; (void) col; (void) value; return false; }
-    void                        cmd_add(int count);
+                                    { (void) row; (void) col; return false; } ///< @brief Is cell editable?
+    virtual Format              cell_format(int row, int col)
+                                    { (void) row; (void) col; return Format::DEFAULT; } ///< @brief Draw options for Editor::Type.
+    virtual Type                cell_type(int row, int col)
+                                    { (void) row; (void) col; return Type::TEXT; } ///< @brief Type of value.
+    virtual bool                cell_value(int row, int col, const std::string& value)
+                                    { (void) row; (void) col; (void) value; return false; } ///< @brief Set new value. @return True to stop editing.
     void                        cmd_cut();
     void                        cmd_delete();
     void                        cmd_paste();
     int                         handle(int event) override;
     void                        reset() override;
 
-    static const char*          FormatSlider(double val, double min, double max, double step);
-
-private:
-    bool                        _send_changed_event_always;
+protected:
     void                        _draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current = false) override;
     void                        _edit_create();
-    void                        _edit_quick(const char* key);
-    void                        _edit_show();
-    void                        _edit_start(const char* key = "");
+    void                        _edit_quick(const std::string& key);
+    void                        _edit_show_dlg();
+    void                        _edit_start(const std::string& key = "");
     void                        _edit_stop(bool save = true);
     int                         _ev_keyboard_down2();
     int                         _ev_mouse_click2();
     int                         _ev_paste();
+    std::string                 _get_find_value(int row, int col) override;
 
-    Fl_Widget*                  _edit2;
-    Fl_Widget*                  _edit3;
+    Fl_Widget*                  _edit2;         // Only used for Type::INPUT_CHOICE/Fl_Input_Choice editing and for focus reason.
+    Fl_Widget*                  _edit3;         // Only used for Type::INPUT_CHOICE/Fl_Input_Choice editing and for focus reason.
+    bool                        _force_events;  // True to force events even if value has not changed.
 };
 
+} // table
 } // flw
 
 // MKALGAM_OFF

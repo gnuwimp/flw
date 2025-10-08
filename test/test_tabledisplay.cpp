@@ -18,22 +18,35 @@ using namespace flw;
 #define ROWS 10'000
 #define COLS 100
 
-class TestTable : public TableDisplay {
+/*
+ *      _______        _ _______    _     _      
+ *     |__   __|      | |__   __|  | |   | |     
+ *        | | ___  ___| |_ | | __ _| |__ | | ___ 
+ *        | |/ _ \/ __| __|| |/ _` | '_ \| |/ _ \
+ *        | |  __/\__ \ |_ | | (_| | |_) | |  __/
+ *        |_|\___||___/\__||_|\__,_|_.__/|_|\___|
+ *                                               
+ *                                               
+ */
+
+//----------------------------------------------------------------------------------
+class TestTable : public table::Display {
 public:
     char buffer[200];
     int  widths[ROWS + 1];
 
-    TestTable(Fl_Callback* cb) : TableDisplay() {
+    //------------------------------------------------------------------------------
+    TestTable(Fl_Callback* cb) : table::Display() {
         callback(cb, this);
         header(true, true);
         lines(true, true);
         resize_column_width(true);
-        select_mode(TableDisplay::SELECT::CELL);
+        select_mode(table::Select::CELL);
         resize_column_width(true);
         take_focus();
-//        header(true, false);
-//        header(false, false);
-//        lines(false, false);
+        //header(true, false);
+        //header(false, false);
+        //lines(false, false);
 
         widths[0] = flw::PREF_FONTSIZE * 8;
 
@@ -44,6 +57,7 @@ public:
         size(ROWS, COLS);
     }
 
+    //------------------------------------------------------------------------------
     Fl_Align cell_align(int, int col) override {
         if (col == 0) {
             return FL_ALIGN_RIGHT;
@@ -59,9 +73,10 @@ public:
         }
     }
 
+    //------------------------------------------------------------------------------
     Fl_Color cell_color(int row, int col) override {
         if (col == 0) {
-            return TableDisplay::cell_color(row, col);
+            return Display::cell_color(row, col);
         }
         else if (col == 3) {
             return FL_GREEN;
@@ -70,16 +85,17 @@ public:
             return FL_CYAN;
         }
         else {
-            return TableDisplay::cell_color(row, col);
+            return Display::cell_color(row, col);
         }
     }
 
+    //------------------------------------------------------------------------------
     Fl_Color cell_textcolor(int row, int col) override {
         if (col == 0) {
-            return TableDisplay::cell_textcolor(row, col);
+            return Display::cell_textcolor(row, col);
         }
         else if (row == this->row() && col == column()) {
-            return TableDisplay::cell_textcolor(row, col);
+            return Display::cell_textcolor(row, col);
         }
         else if (col == 3) {
             return FL_RED;
@@ -88,29 +104,32 @@ public:
             return FL_BLUE;
         }
         else {
-            return TableDisplay::cell_textcolor(row, col);
+            return Display::cell_textcolor(row, col);
         }
     }
 
+    //------------------------------------------------------------------------------
     Fl_Font cell_textfont(int row, int col) override {
         if (col == 0) {
             return FL_COURIER_BOLD;
         }
         else {
-            return TableDisplay::cell_textfont(row, col);
+            return Display::cell_textfont(row, col);
         }
     }
 
+    //------------------------------------------------------------------------------
     Fl_Fontsize cell_textsize(int row, int col) override {
         if (col == 0) {
-            return TableDisplay::cell_textsize(row, col) + 4;
+            return Display::cell_textsize(row, col) + 4;
         }
         else {
-            return TableDisplay::cell_textsize(row, col);
+            return Display::cell_textsize(row, col);
         }
     }
 
-    const char* cell_value(int row, int col) override {
+    //------------------------------------------------------------------------------
+    std::string cell_value(int row, int col) override {
         if (col == 0 && row == 0) {
             return "";
         }
@@ -127,27 +146,42 @@ public:
         return buffer;
     }
 
+    //------------------------------------------------------------------------------
     int cell_width(int col) override {
         return widths[col];
     }
 
+    //------------------------------------------------------------------------------
     void cell_width(int col, int width) override {
         widths[col] = width;
     }
 };
 
+/*
+ *      _______        _   
+ *     |__   __|      | |  
+ *        | | ___  ___| |_ 
+ *        | |/ _ \/ __| __|
+ *        | |  __/\__ \ |_ 
+ *        |_|\___||___/\__|
+ *                         
+ *                         
+ */
+ 
+//----------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
     Fl_Menu_Bar* bar;
     TestTable*   table;
 
 public:
-    Test() : Fl_Double_Window(800, 480, "test_tabledisplay.cpp") {
+    //------------------------------------------------------------------------------
+    Test() : Fl_Double_Window(1200, 800, "test_tabledisplay.cpp") {
         bar   = new Fl_Menu_Bar(0, 0, 0, 0);
         table = new TestTable(Test::Callback);
 
-        bar->add("Select/TableDisplay::SELECT::NO", 0, CallbackSelect, this, FL_MENU_RADIO);
-        bar->add("Select/TableDisplay::SELECT::CELL", 0, CallbackSelect, this, FL_MENU_RADIO | FL_MENU_VALUE);
-        bar->add("Select/TableDisplay::SELECT::ROW", 0, CallbackSelect, this, FL_MENU_RADIO | FL_MENU_DIVIDER);
+        bar->add("Select/Select::NO", 0, CallbackSelect, this, FL_MENU_RADIO);
+        bar->add("Select/Select::CELL", 0, CallbackSelect, this, FL_MENU_RADIO | FL_MENU_VALUE);
+        bar->add("Select/Select::ROW", 0, CallbackSelect, this, FL_MENU_RADIO | FL_MENU_DIVIDER);
 
         bar->add("Header/No", 0, CallbackHeader, this, FL_MENU_RADIO);
         bar->add("Header/Column", 0, CallbackHeader, this, FL_MENU_RADIO);
@@ -170,16 +204,18 @@ public:
         bar->add("Scrollbar/Vertical", 0, CallbackScrollbar, this, FL_MENU_RADIO);
         bar->add("Scrollbar/Both", 0, CallbackScrollbar, this, FL_MENU_RADIO);
         
-//        bar->add("Debug/Remove all rows", 0, CallbackDebugRemoveAllRows, this);
+        bar->add("Debug/Table", 0, CallbackDebug, this);
+
+        //bar->add("Debug/Remove all rows", 0, CallbackDebugRemoveAllRows, this);
 
         ((Fl_Menu_Item*) bar->find_item("Header/Both"))->setonly();
         ((Fl_Menu_Item*) bar->find_item("Lines/Both"))->setonly();
         ((Fl_Menu_Item*) bar->find_item("Resize/Yes"))->setonly();
         ((Fl_Menu_Item*) bar->find_item("Expand Last Col/No"))->setonly();
         ((Fl_Menu_Item*) bar->find_item("Scrollbar/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Select/TableDisplay::SELECT::CELL"))->setonly();
+        ((Fl_Menu_Item*) bar->find_item("Select/Select::CELL"))->setonly();
 
-//        bar->hide();
+        //bar->hide();
 
         resizable(this);
         size_range(64, 48);
@@ -189,6 +225,7 @@ public:
         util::labelfont(this);
     }
 
+    //------------------------------------------------------------------------------
     void resize(int X, int Y, int W, int H) override {
         auto b = 0;
         Fl_Double_Window::resize(X, Y, W, H);
@@ -196,55 +233,64 @@ public:
         table->resize(b, flw::PREF_FONTSIZE * 2 + b, W - b * 2, H - flw::PREF_FONTSIZE * 2 - b * 2);
     }
 
+    //------------------------------------------------------------------------------
     static void Callback(Fl_Widget*, void* v) {
-        TableDisplay* table = (TableDisplay*) v;
+        table::Display* table = (table::Display*) v;
 
-        if (table->event() == TableDisplay::EVENT::UNDEFINED) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::UNDEFINED\n", table->event_row(), table->event_col());
+        if (table->event() == table::Event::UNDEFINED) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::UNDEFINED\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::CHANGED) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::CHANGED\n", table->event_row(), table->event_col());
+        else if (table->event() == table::Event::CHANGED) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CHANGED\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::CURSOR) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::CURSOR\n", table->event_row(), table->event_col());
+        else if (table->event() == table::Event::CURSOR) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CURSOR\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::COLUMN) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::COLUMN\n", table->event_row(), table->event_col());
+        else if (table->event() == table::Event::COLUMN) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::COLUMN\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::COLUMN_CTRL) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::COLUMN_CTRL\n", table->event_row(), table->event_col());
+        else if (table->event() == table::Event::COLUMN_CTRL) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::COLUMN_CTRL\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::ROW) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::ROW\n", table->event_row(), table->event_col());
+        else if (table->event() == table::Event::ROW) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::ROW\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::ROW_CTRL) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  TableDisplay::EVENT::ROW_CTRL\n", table->event_row(), table->event_col());
+        else if (table->event() == table::Event::ROW_CTRL) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::ROW_CTRL\n", table->event_row(), table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::SIZE) {
-            fprintf(stderr, "Callback: rows=%4d, columns=%4d => TableDisplay::EVENT::SIZE\n", table->rows(), table->columns());
+        else if (table->event() == table::Event::SIZE) {
+            fprintf(stderr, "Callback: rows=%4d, columns=%4d => table::Event::SIZE\n", table->rows(), table->columns());
         }
-        else if (table->event() == TableDisplay::EVENT::APPEND_ROW) {
-            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::APPEND_ROW\n", table->event_row());
+        else if (table->event() == table::Event::APPEND_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => table::Event::APPEND_ROW\n", table->event_row());
         }
-        else if (table->event() == TableDisplay::EVENT::APPEND_COLUMN) {
-            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::APPEND_COLUMN\n", table->event_col());
+        else if (table->event() == table::Event::APPEND_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => table::Event::APPEND_COLUMN\n", table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::INSERT_ROW) {
-            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::INSERT_ROW\n", table->event_row());
+        else if (table->event() == table::Event::INSERT_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => table::Event::INSERT_ROW\n", table->event_row());
         }
-        else if (table->event() == TableDisplay::EVENT::INSERT_COLUMN) {
-            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::INSERT_COLUMN\n", table->event_col());
+        else if (table->event() == table::Event::INSERT_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => table::Event::INSERT_COLUMN\n", table->event_col());
         }
-        else if (table->event() == TableDisplay::EVENT::DELETE_ROW) {
-            fprintf(stderr, "Callback: row=   %4d => TableDisplay::EVENT::DELETE_ROW\n", table->event_row());
+        else if (table->event() == table::Event::DELETE_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => table::Event::DELETE_ROW\n", table->event_row());
         }
-        else if (table->event() == TableDisplay::EVENT::DELETE_COLUMN) {
-            fprintf(stderr, "Callback: column=%4d => TableDisplay::EVENT::DELETE_COLUMN\n", table->event_col());
+        else if (table->event() == table::Event::DELETE_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => table::Event::DELETE_COLUMN\n", table->event_col());
         }
 
         fflush(stderr);
     }
 
+    //------------------------------------------------------------------------------
+    static void CallbackDebug(Fl_Widget*, void* v) {
+        Test* w = (Test*) v;
+        
+        w->table->debug();
+    }
+
+    //------------------------------------------------------------------------------
     static void CallbackDebugRemoveAllRows(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
@@ -253,16 +299,21 @@ public:
         w->table->debug();
     }
 
+    //------------------------------------------------------------------------------
     static void CallbackExpand(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
-        if (w->bar->find_item("Expand Last Col/No")->value())
+        if (w->bar->find_item("Expand Last Col/No")->value()) {
             w->table->expand_last_column(false);
-        else if (w->bar->find_item("Expand Last Col/Yes")->value())
+        }
+        else if (w->bar->find_item("Expand Last Col/Yes")->value()) {
             w->table->expand_last_column(true);
+        }
+
         w->table->redraw();
     }
 
+    //------------------------------------------------------------------------------
     static void CallbackHeader(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
@@ -283,6 +334,7 @@ public:
     }
 
 
+    //------------------------------------------------------------------------------
     static void CallbackLines(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
@@ -302,6 +354,7 @@ public:
         w->table->redraw();
     }
 
+    //------------------------------------------------------------------------------
     static void CallbackResize(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
@@ -315,6 +368,7 @@ public:
         w->table->redraw();
     }
 
+    //------------------------------------------------------------------------------
     static void CallbackScrollbar(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
@@ -334,23 +388,36 @@ public:
         w->table->redraw();
     }
 
+    //------------------------------------------------------------------------------
     static void CallbackSelect(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
 
-        if (w->bar->find_item("Select/TableDisplay::SELECT::NO")->value()) {
-            w->table->select_mode(TableDisplay::SELECT::NO);
+        if (w->bar->find_item("Select/Select::NO")->value()) {
+            w->table->select_mode(table::Select::NO);
         }
-        else if (w->bar->find_item("Select/TableDisplay::SELECT::CELL")->value()) {
-            w->table->select_mode(TableDisplay::SELECT::CELL);
+        else if (w->bar->find_item("Select/Select::CELL")->value()) {
+            w->table->select_mode(table::Select::CELL);
         }
-        else if (w->bar->find_item("Select/TableDisplay::SELECT::ROW")->value()) {
-            w->table->select_mode(TableDisplay::SELECT::ROW);
+        else if (w->bar->find_item("Select/Select::ROW")->value()) {
+            w->table->select_mode(table::Select::ROW);
         }
 
         w->table->redraw();
     }
 };
 
+/*
+ *                      _       
+ *                     (_)      
+ *      _ __ ___   __ _ _ _ __  
+ *     | '_ ` _ \ / _` | | '_ \ 
+ *     | | | | | | (_| | | | | |
+ *     |_| |_| |_|\__,_|_|_| |_|
+ *                              
+ *                              
+ */
+
+//----------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
