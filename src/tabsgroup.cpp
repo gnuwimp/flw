@@ -34,29 +34,61 @@ namespace flw {
 */
 class _TabsGroupButton : public Fl_Toggle_Button {
 public:
-    int                         tw;     // Width of label when button are on top or bottom.
-    Fl_Widget*                  widget; // Child widget.
+    int        tw;     // Width of label when button are on top or bottom.
+    Fl_Widget* widget; // Child widget.
 
     /** @brief Create tab button.
     *
-    * @param[in] align   Label align.
-    * @param[in] label   Label text.
-    * @param[in] widget  Child widget.
-    * @param[in] o       Pointer to parent TabsGroup.
+    * @param[in] box_type   Tab box.
+    * @param[in] dbox_type  Down box.
+    * @param[in] color      Selection color.
+    * @param[in] label      Label text.
+    * @param[in] widget     Child widget.
+    * @param[in] o          Pointer to parent TabsGroup.
     */
-    explicit _TabsGroupButton(Fl_Align align, const std::string& label, Fl_Widget* widget, void* o) :
+    _TabsGroupButton(Fl_Boxtype box_type, Fl_Boxtype dbox_type, Fl_Color color, const std::string& label, Fl_Widget* widget_, void* o) :
     Fl_Toggle_Button(0, 0, 0, 0) {
-        tw           = 0;
-        this->widget = widget;
+        tw     = 0;
+        widget = widget_;
 
-        this->align(align);
         copy_label(label.c_str());
         tooltip("");
         when(FL_WHEN_CHANGED);
-        callback(TabsGroup::Callback, o);
-        selection_color(FL_SELECTION_COLOR);
+        callback(TabsGroup::CallbackButton, o);
+        selection_color(color);
         labelfont(flw::PREF_FONT);
         labelsize(flw::PREF_FONTSIZE);
+        box(FL_THIN_UP_BOX);
+        down_box(FL_NO_BOX);
+
+        if (box_type != FL_MAX_BOXTYPE) {
+            box(box_type);
+        }
+
+        if (dbox_type != FL_MAX_BOXTYPE) {
+            down_box(dbox_type);
+        }
+    }
+
+};
+
+/** @brief Group widget.
+* @private
+*/
+class _TabsGroup : public Fl_Group {
+public:
+    /** @brief Create group.
+    *
+    */
+    _TabsGroup(int X, int Y, int W, int H) :
+    Fl_Group(X, Y, W, H) {
+    }
+
+    /** @brief Resize widget only, not children.
+    *
+    */
+    void resize(int X, int Y, int W, int H) {
+        Fl_Widget::resize(X, Y, W, H);
     }
 };
 
@@ -68,11 +100,8 @@ public:
  *        | | (_| | |_) \__ \ |__| | | | (_) | |_| | |_) |
  *        |_|\__,_|_.__/|___/\_____|_|  \___/ \__,_| .__/
  *                                                 | |
- *                                                 |_|
+ *                                                 |_
  */
-
-int TabsGroup::MIN_WIDTH_NORTH_SOUTH = 4;
-int TabsGroup::MIN_WIDTH_EAST_WEST   = 4;
 
 /** @brief Create tab group.
 *
@@ -89,56 +118,66 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     clip_children(1);
     resizable(nullptr);
 
-    _scroll    = new Fl_Scroll(X, Y, W, H);
-    _pack      = new Fl_Flex(X, Y, W, H);
-    _active1   = -1;
-    _active2   = -1;
-    _n         = 0;
-    _s         = 0;
-    _w         = 0;
-    _e         = 0;
-    _align     = 0;
-    _disable_k = false;
+    _scroll   = new Fl_Scrollbar(0, 0, 0, 0, "SCROLL");
+    _tabs     = new _TabsGroup(0, 0, 0, 0);
+    _active1  = -1;
+    _active2  = -1;
+    _color    = FL_SELECTION_COLOR;
+    _e        = 0;
+    _keyboard = true;
+    _n        = 0;
+    _s        = 0;
+    _tab_box  = FL_MAX_BOXTYPE;
+    _tabd_box = FL_MAX_BOXTYPE;
+    _visible  = 0;
+    _w        = 0;
+    _width1   = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
+    _width2   = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
 
-    _pack->end();
-    _scroll->tooltip(TabsGroup::Help());
-    _scroll->box(FL_NO_BOX);
-    _scroll->add(_pack);
-    Fl_Group::add(_scroll);
-    tab_pos(Pos::NORTH);
+    _tabs->end();
+    _tabs->add(_scroll);
+    Fl_Group::add(_tabs);
+
+    _scroll->linesize(4);
+    _scroll->value(1, 1, 1, 16);
+    _scroll->callback(TabsGroup::CallbackScrollbar, this);
+    _tabs->tooltip(TabsGroup::Help());
+    _tabs->box(FL_NO_BOX);
+    _tabs->clip_children(1);
+
+    tab_pos(Pos::TOP);
     update_pref();
 }
 
 /** @brief Activate and show button and child widget.
 *
 * @param[in] widget  Either button widget or its user widget.
-* @param[in] kludge  If false then make a second try when going in down/right direction.
 */
-void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
-    if (kludge == false) {
-        auto count   = 0;
-        auto current = _active1;
+void TabsGroup::_activate(Fl_Widget* widget) {
+    auto count   = 0;
+    auto current = _active1;
 
-        _active1 = -1;
+    _active1 = -1;
 
-        for (auto button : _widgets) {
-            auto b = static_cast<_TabsGroupButton*>(button);
+    for (auto button : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(button);
 
-            if (b == widget || b->widget == widget) {
-                _active1 = count;
-                _active2 = (current != _active1) ? current : _active2;
-                b->value(1);
-                b->widget->show();
-                b->widget->take_focus();
-            }
-            else {
-                b->value(0);
-                b->widget->hide();
-            }
-
-            count++;
+        if (b == widget || b->widget == widget) {
+            _active1 = count;
+            _active2 = (current != _active1) ? current : _active2;
+            b->value(1);
+            b->widget->show();
+            b->widget->take_focus();
         }
+        else {
+            b->value(0);
+            b->widget->hide();
+        }
+
+        count++;
     }
+
+    do_layout();
 
     auto but = _active_button();
 
@@ -146,34 +185,29 @@ void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
         return;
     }
 
-    if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
+    if (is_tabs_horizontal() ==  true) {
         if (but->x() < _scroll->x()) {
-            _scroll->scroll_to(_scroll->xposition() + but->x() - _scroll->x(), _scroll->yposition());
+            _scroll->value(_active1 + 1);
+            do_layout();
         }
-        else if (but->x() + but->w() > _scroll->x() + _scroll->w()) {
-            _scroll->scroll_to(_pack->w() - _scroll->w(), _scroll->yposition());
-
-            if (kludge == false) {
-                Fl::flush();
-                _activate(widget, true);
-            }
+        else if (but->x() + but->w() > x() + w()) {
+            _scroll->value(_active1 - _visible + 2);
+            do_layout();
         }
     }
-    else {
+    else if (is_tabs_vertical() == true) {
         if (but->y() < _scroll->y()) {
-            _scroll->scroll_to(_scroll->xposition(), _scroll->yposition() + but->y() - _scroll->y());
+            _scroll->value(_active1 + 1);
+            do_layout();
         }
-        else if (but->y() + but->h() > _scroll->y() + _scroll->h() || but->h() == 0) {
-            _scroll->scroll_to(_scroll->xposition(), _pack->h() - _scroll->h());
-
-            if (kludge == false) {
-                Fl::flush();
-                _activate(widget, true);
-            }
+        else if (but->y() + but->h() > h() + y()) {
+            _scroll->value(_active1 - _visible + 2);
+            do_layout();
         }
     }
 
     _resize_active_widget();
+    Fl::redraw();
 }
 
 /** @brief Get active tab button.
@@ -181,7 +215,9 @@ void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
 * @return Button or NULL.
 */
 Fl_Widget* TabsGroup::_active_button() {
-    return (_active1 >= 0 && _active1 < static_cast<int>(_widgets.size())) ? _widgets[_active1] : nullptr;
+    return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
+        _widgets[_active1] :
+        nullptr;
 }
 
 /** @brief Add child widget.
@@ -198,25 +234,25 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget
         return;
     }
 
-    auto button = new _TabsGroupButton(_align, label, widget, this);
+    auto button = new _TabsGroupButton(_tab_box, _tabd_box, _color, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : static_cast<int>(_widgets.size());
 
     button->copy_tooltip(tooltip.c_str());
 
     if (idx < 0 || idx >= static_cast<int>(_widgets.size()) - 1) {
         Fl_Group::add(widget);
-        _pack->add(button);
+        _tabs->add(button);
         _widgets.push_back(button);
     }
     else {
         idx++;
         auto b = static_cast<_TabsGroupButton*>(_widgets[idx]);
         Fl_Group::insert(*widget, b->widget);
-        _pack->insert(*button, b);
+        _tabs->insert(*button, b);
         _widgets.insert(_widgets.begin() + idx, button);
     }
 
-    TabsGroup::Callback(button, this);
+    TabsGroup::CallbackButton(button, this);
 }
 
 /** @brief Tab button has been activated so switch to new widget.
@@ -224,8 +260,27 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget
 * @param[in] sender  Tab button.
 * @param[in] object  This object.
 */
-void TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    static_cast<TabsGroup*>(object)->_activate(sender, false);
+void TabsGroup::CallbackButton(Fl_Widget* sender, void* object) {
+    static_cast<TabsGroup*>(object)->_activate(sender);
+}
+
+/** @brief Scroll buttons.
+*
+* @param[in] sender  Scrollbar button.
+* @param[in] object  This object.
+*/
+void TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
+    auto self = static_cast<TabsGroup*>(object);
+
+    if (self->is_tabs_horizontal() ==  true) {
+        self->_resize_top_bottom(self->x(), self->y(), self->w(), self->h());
+    }
+    else if (self->is_tabs_vertical() == true) {
+        self->_resize_left_right(self->x(), self->y(), self->w(), self->h());
+    }
+
+    self->redraw();
+    self->_tabs->redraw_label(); //!!! Fixes failed button redraws.
 }
 
 /** @brief Get child widget.
@@ -235,7 +290,9 @@ void TabsGroup::Callback(Fl_Widget* sender, void* object) {
 * @return Widget or NULL.
 */
 Fl_Widget* TabsGroup::child(int index) const {
-    return (index >= 0 && index < static_cast<int>(_widgets.size())) ? static_cast<_TabsGroupButton*>(_widgets[index])->widget : nullptr;
+    return index >= 0 && index < static_cast<int>(_widgets.size()) ?
+        static_cast<_TabsGroupButton*>(_widgets[index])->widget :
+        nullptr;
 }
 
 /** @brief Remove all widgets.
@@ -246,15 +303,15 @@ void TabsGroup::clear() {
     _active2 = -1;
 
     _widgets.clear();
-    _scroll->remove(_pack);
-    _scroll->clear();
-    _pack->clear();
-    Fl_Group::remove(_scroll);
+
+    _tabs->remove(_scroll);
+    Fl_Group::remove(_tabs);
+    _tabs->clear();
     Fl_Group::clear();
-    Fl_Group::add(_scroll);
-    _scroll->add(_pack);
+
+    Fl_Group::add(_tabs);
+    _tabs->add(_scroll);
     update_pref();
-    _pack->need_layout(1);
     do_layout();
     Fl::redraw();
 }
@@ -265,42 +322,47 @@ void TabsGroup::clear() {
 */
 void TabsGroup::debug(bool all) const {
 #ifdef DEBUG
+    puts("------------------------------------------------------------");
+    auto w = ((TabsGroup*) this)->_active_button();
     printf("TabsGroup ==>\n");
-    printf("    _active1   = %d\n", _active1);
-    printf("    _active2   = %d\n", _active2);
-    printf("    _drag      = %d\n", _drag);
-    printf("    _xpos      = %d\n", _xpos);
-    printf("    _disable_k = %d\n", _disable_k);
-    printf("    _widgets   = %d\n", static_cast<int>(_widgets.size()));
-    printf("    visible    = %s\n", _scroll->visible() ? "visible" : "hidden");
-    printf("    children   = %d\n", children());
+    printf("    _tab_pos  = %d\n", (int) _tab_pos);
+    printf("    active    = %s\n", w ? w->label() : "NULL");
+    printf("    _active1  = %d\n", _active1);
+    printf("    _active2  = %d\n", _active2);
+    printf("    _drag     = %d\n", _drag);
+    printf("    _width1   = %d\n", _width1);
+    printf("    _width2   = %d\n", _width2);
+    printf("    _keyboard = %d\n", _keyboard);
+    printf("    _widgets  = %d\n", static_cast<int>(_widgets.size()));
+    printf("    _visible  = %d\n", _visible);
+    printf("    _area     = %d - %d :: %d - %d\n", _area.x(), _area.y(), _area.w(), _area.h());
+    printf("    scrollbar = %d - %d\n", (int) _scroll->value(), (int) _scroll->maximum());
+    printf("    children  = %d\n", children());
     printf("\n");
 
     if (all == true) {
-        flw::debug::print(this);
+        flw::debug::print(this->_tabs);
         printf("\n");
+
+        int f = 0;
+        for (auto widget : _widgets) {
+            auto b = static_cast<_TabsGroupButton*>(widget);
+            printf("%2d: %s\n", f++, b->label());
+        }
     }
 
+    puts("------------------------------------------------------------");
     fflush(stdout);
 #else
     (void) all;
 #endif
 }
 
-/** @brief Redraw widget.
-*
-* Force scroll widget to redraw (is it needed?).
-*/
-void TabsGroup::draw() {
-    _scroll->redraw();
-    Fl_Group::draw();
-}
-
 /** @brief Find index for widget.
 *
 * @param[in] widget  Widget to find.
 *
-* @return Index or -1 if not found.
+* @return Index or -1 if not found, 0 is the first widget.
 */
 int TabsGroup::find(const Fl_Widget* widget) const {
     auto num = 0;
@@ -321,7 +383,7 @@ int TabsGroup::find(const Fl_Widget* widget) const {
 
 /** @brief Handle events.
 *
-* If tabs are west/east then check for mouse drag events and resize width of buttons.\n
+* If tabs are left/right then check for mouse drag events and resize width of buttons.\n
 * Check also for key events, tab buttons can be selected with alt + 0-9.\n
 * And they can also be moved with alt+shift+left/right keys.\n
 *
@@ -330,20 +392,20 @@ int TabsGroup::find(const Fl_Widget* widget) const {
 * @return Either 1 from this widget or value from parent widget.
 */
 int TabsGroup::handle(int event) {
-    if (_tab_pos == Pos::WEST || _tab_pos == Pos::EAST) { // Only left/right mode can resize width by using mouse.
+    if (is_tabs_vertical() == true) { // Only left/right mode can resize width by using mouse.
         if (event == FL_DRAG) {
             if (_drag == true) {
                 auto pos = 0;
 
-                if (_tab_pos == Pos::WEST) {
+                if (is_tabs_left() == true) {
                     pos = Fl::event_x() - x();
                 }
-                else {
+                else if (is_tabs_right() == true) {
                     pos = x() + w() - Fl::event_x();
                 }
 
-                if (pos != _xpos) {
-                    _xpos = pos;
+                if (pos != _width1) {
+                    _width1 = pos;
                     do_layout();
                 }
 
@@ -357,8 +419,8 @@ int TabsGroup::handle(int event) {
         else if (event == FL_MOVE) {
             auto event_x = Fl::event_x();
 
-            if (_tab_pos == Pos::WEST) {
-                auto pos = x() + _xpos;
+            if (_tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2) {
+                auto pos = x() + _width1;
 
                 if (event_x > (pos - 3) && event_x <= (pos + 3)) {
                     if (_drag == false) {
@@ -369,8 +431,8 @@ int TabsGroup::handle(int event) {
                     return 1;
                 }
             }
-            else {
-                auto pos = x() + w() - _xpos;
+            else if (_tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2) {
+                auto pos = x() + w() - _width1;
 
                 if (event_x > (pos - 3) && event_x <= (pos + 3)) {
                     if (_drag == false) {
@@ -394,7 +456,7 @@ int TabsGroup::handle(int event) {
         }
     }
 
-    if (event == FL_KEYBOARD && _disable_k == false) { // Select tab by using keyboard.
+    if (event == FL_KEYBOARD && _keyboard == true) { // Select tab by using keyboard.
         auto key   = Fl::event_key();
         auto alt   = Fl::event_alt() != 0;
         auto alt2  = alt;
@@ -411,7 +473,7 @@ int TabsGroup::handle(int event) {
             tab = (tab == 0) ? 9 : tab - 1;
 
             if (tab < static_cast<int>(_widgets.size())) {
-                TabsGroup::Callback(_widgets[tab], this);
+                TabsGroup::CallbackButton(_widgets[tab], this);
             }
             return 1;
         }
@@ -425,7 +487,7 @@ int TabsGroup::handle(int event) {
             }
 
             auto tab = swap(_active1, _active1 - 1);
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && shift == true && (key == FL_Right || key == FL_Down)) { // Move tab.
@@ -438,27 +500,26 @@ int TabsGroup::handle(int event) {
             }
 
             auto tab = swap(_active1, _active1 + 1);
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && key == FL_Left) { // Switch tab.
             auto tab = (_active1 == 0) ? static_cast<int>(_widgets.size()) - 1 : _active1 - 1;
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && key == FL_Right) { // Switch tab.
             auto tab = (_active1 == static_cast<int>(_widgets.size()) - 1) ? 0 : _active1 + 1;
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && (key == FL_Up || key == FL_Down)) { // Switch between last two tabs.
             auto tab = (_active2 == -1) ? _active1 : _active2;
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
     }
-
-    if (event == FL_FOCUS) {
+    else if (event == FL_FOCUS) {
         auto widget = value();
 
         if (widget != nullptr && widget != Fl::focus()) {
@@ -489,7 +550,7 @@ const char* TabsGroup::Help() {
 *
 */
 void TabsGroup::hide_tabs() {
-    _scroll->hide();
+    _tabs->hide();
     do_layout();
 }
 
@@ -497,31 +558,34 @@ void TabsGroup::hide_tabs() {
 *
 * If "before" widget is NULL then the widget will be inserted first.
 *
-* @param[in] label   Label for this widget.
-* @param[in] widget  Child widget.
-* @param[in] before  Insert before this, optional.
+* @param[in] label    Label for this widget.
+* @param[in] widget   Child widget.
+* @param[in] before   Insert before this, optional.
+* @param[in] tooltip  Tab tooltip, optional.
 */
-void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before) {
+void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before, const std::string& tooltip) {
     if (find(widget) != -1) {
         return;
     }
 
-    auto button = new _TabsGroupButton(_align, label, widget, this);
+    auto button = new _TabsGroupButton(_tab_box, _tabd_box, _color, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
+
+    button->copy_tooltip(tooltip.c_str());
 
     if (idx >= static_cast<int>(_widgets.size())) {
         Fl_Group::add(widget);
-        _pack->add(button);
+        _tabs->add(button);
         _widgets.push_back(button);
     }
     else {
         auto b = static_cast<_TabsGroupButton*>(_widgets[idx]);
         Fl_Group::insert(*widget, b->widget);
-        _pack->insert(*button, b);
+        _tabs->insert(*button, b);
         _widgets.insert(_widgets.begin() + idx, button);
     }
 
-    TabsGroup::Callback(button, this);
+    TabsGroup::CallbackButton(button, this);
     do_layout();
 }
 
@@ -531,7 +595,7 @@ void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Wid
 *
 * @return Label string or empty string.
 */
-std::string TabsGroup::label(Fl_Widget* widget) {
+std::string TabsGroup::label(const Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num == -1) {
@@ -572,7 +636,7 @@ Fl_Widget* TabsGroup::remove(int index) {
 
     _widgets.erase(_widgets.begin() + index);
     remove(res);
-    _scroll->remove(button);
+    _tabs->remove(button);
     delete button;
 
     if (index < _active1) {
@@ -583,7 +647,7 @@ Fl_Widget* TabsGroup::remove(int index) {
     }
 
     do_layout();
-    TabsGroup::Callback(_active_button(), this);
+    TabsGroup::CallbackButton(_active_button(), this);
 
     return res;
 }
@@ -592,121 +656,229 @@ Fl_Widget* TabsGroup::remove(int index) {
 *
 */
 void TabsGroup::resize(int X, int Y, int W, int H) {
-    Fl_Widget::resize(X, Y, W, H);
-
     if (W == 0 || H == 0) {
         return;
     }
+    else if (_old.w() == W && _old.h() == H) {
+        return;
+    }
 
-    if (_scroll->visible() == 0) {
+    Fl_Widget::resize(X, Y, W, H);
+
+    if (_tabs->visible() == 0) {
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - _n - _s);
     }
     else {
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
 
-        if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) { // Resize buttons, either on top/bottom or left/right.
-            _resize_north_south(X, Y, W, H);
+        if (is_tabs_horizontal() == true) {
+            _resize_top_bottom(X, Y, W, H);
         }
-        else {
-            _resize_east_west(X, Y, W, H);
+        else if (is_tabs_vertical() == true) {
+            _resize_left_right(X, Y, W, H);
         }
-
     }
 
     _resize_active_widget();
+    _old = Fl_Rect(this);
+    Fl::redraw();
 }
 
 /** @brief Resize child widget (only the visible one).
 *
 */
 void TabsGroup::_resize_active_widget() {
-    for (auto w : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(w);
+    auto but = static_cast<_TabsGroupButton*>(_active_button());
 
-        if (b->widget->visible() != 0) {
-            b->widget->resize(_area.x(), _area.y(), _area.w(), _area.h());
-        }
+    if (but == nullptr) {
+        return;
     }
 
-    Fl::redraw();
+    if (Fl_Rect(but->widget) != _area) {
+        but->widget->resize(_area.x(), _area.y(), _area.w(), _area.h());
+        Fl::redraw();
+    }
 }
 
 /** @brief Resize tab buttons if they are on the left or right side.
 *
 */
-void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
-    auto height = flw::PREF_FONTSIZE + 8;
+void TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
+    auto height = flw::PREF_FONTSIZE + TabsGroup::HEIGHT;
     auto pack_h = (height + _space) * static_cast<int>(_widgets.size()) - _space;
     auto scroll = 0;
 
-    if (_xpos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) { // Set min size for widgets on the left
-        _xpos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
+    _visible = static_cast<int>(H / (height + _space));
+
+    if (_width1 < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) { // Set min size for widgets on the left.
+        _width1 = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
     }
-    else if (_xpos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) { // Set min size for widgets on the right
-        _xpos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
+    else if (_width1 > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) { // Set min size for widgets on the right.
+        _width1 = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
     }
 
     if (pack_h > H) {
-        scroll = (_scroll->scrollbar_size() == 0) ? Fl::scrollbar_size() : _scroll->scrollbar_size();
+        auto size = static_cast<int>(_widgets.size() - _visible + 2);
+
+        scroll = Fl::scrollbar_size();
+        _scroll->show();
+        _scroll->range(1, size > 0 ? size : 1);
+    }
+    else {
+        _scroll->resize(0, 0, 0, 0);
+        _scroll->hide();
     }
 
-    for (auto b : _widgets) {
-        b->size(0, height);
+    if (is_tabs_left() == true) {
+        _tabs->resize(X, Y, _width1, H);
+        _area = Fl_Rect(X + _width1 + _w, Y + _n, W - _width1 - _w - _e, H - _n - _s);
+
+        if (_tab_pos == Pos::LEFT) {
+            _scroll->resize(_tabs->x(), _tabs->y(), scroll, _tabs->h());
+        }
+        else if (_tab_pos == Pos::LEFT2) {
+            _scroll->resize(_tabs->x() + _width1 - scroll, _tabs->y(), scroll, _tabs->h());
+        }
+    }
+    else if (is_tabs_right() == true) {
+        _tabs->resize(X + W - _width1, Y, _width1, H);
+        _area = Fl_Rect(X + _w, Y + _n, W - _width1 - _w - _e, H - _n - _s);
+
+        if (_tab_pos == Pos::RIGHT) {
+            _scroll->resize(_tabs->x() + _tabs->w() - scroll, _tabs->y(), scroll, _tabs->h());
+        }
+        else if (_tab_pos == Pos::RIGHT2) {
+            _scroll->resize(_tabs->x(), _tabs->y(), scroll, _tabs->h());
+        }
     }
 
-    if (_tab_pos == Pos::WEST) {
-        _scroll->resize(X, Y, _xpos, H);
-        _pack->resize(X, Y, _xpos - scroll, pack_h);
-        _area = Fl_Rect(X + _xpos + _w, Y + _n, W - _xpos - _w - _e, H - _n - _s);
-    }
-    else { // Pos::EAST.
-        _scroll->resize(X + W - _xpos, Y, _xpos, H);
-        _pack->resize(X + W - _xpos, Y, _xpos - scroll, pack_h);
-        _area = Fl_Rect(X + _w, Y + _n, W - _xpos - _w - _e, H - _n - _s);
+    auto ypos = -(_scroll->value() - 1);
+    ypos *= height + _space;
+    ypos += _tabs->y();
+
+    for (auto widget : _widgets) {
+        auto b  = static_cast<_TabsGroupButton*>(widget);
+
+        b->tw = 0;
+        b->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+
+        if (_tab_pos == Pos::LEFT) {
+            b->resize(_tabs->x() + scroll, ypos, _tabs->w() - scroll, height);
+        }
+        else if (_tab_pos == Pos::LEFT2) {
+            b->resize(_tabs->x(), ypos, _tabs->w() - scroll, height);
+        }
+        else if (_tab_pos == Pos::RIGHT) {
+            b->resize(_tabs->x(), ypos, _tabs->w() - scroll, height);
+        }
+        else if (_tab_pos == Pos::RIGHT2) {
+            b->resize(_tabs->x() + scroll, ypos, _tabs->w() - scroll, height);
+        }
+
+        ypos += height + _space;
     }
 }
 
 /** @brief Resize tab buttons if they are on the top or bottom side.
 *
 */
-void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
-    auto height = flw::PREF_FONTSIZE + 8;
-    auto scroll = 0;
+void TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
+    auto height = flw::PREF_FONTSIZE + TabsGroup::HEIGHT;
     auto pack_w = 0;
+    auto scroll = 0;
+    auto width  = 0;
+    auto minw   = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH + _space;
+    auto maxw   = flw::PREF_FONTSIZE * _width2 + _space;
 
-    for (auto widget : _widgets) { // Check if scrollbar has to be visible.
+    _visible = 0;
+    fl_font(labelfont(), labelsize());
+
+    for (auto widget : _widgets) { // Check if horizontal scrollbar has to be visible.
         auto b  = static_cast<_TabsGroupButton*>(widget);
         auto th = 0;
 
         b->tw = 0;
         fl_measure(b->label(), b->tw, th);
 
-        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH) {
-            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH;
+        if (b->tw + flw::PREF_FONTSIZE > width) {
+            width = b->tw + flw::PREF_FONTSIZE;
         }
-
-        b->tw += flw::PREF_FONTSIZE;
-        pack_w += b->tw + _space;
     }
+
+    if (width < minw) {
+        width = minw;
+    }
+    else if (width > maxw) {
+        width = maxw;
+    }
+
+    pack_w   = (width + _space) * static_cast<int>(_widgets.size()) - _space;
+    _visible = static_cast<int>(W / (width + _space));
 
     if (pack_w - _space > W) {
-        scroll = (_scroll->scrollbar_size() == 0) ? Fl::scrollbar_size() : _scroll->scrollbar_size();
+        auto size = static_cast<int>(_widgets.size() - _visible + 2);
+
+        scroll = Fl::scrollbar_size();
+        _scroll->show();
+        _scroll->range(1, size > 0 ? size : 1);
     }
+
+    else {
+        _scroll->resize(0, 0, 0, 0);
+        _scroll->hide();
+    }
+
+    if (is_tabs_top() == true) {
+        _tabs->resize(X, Y, W, height + scroll);
+        _area = Fl_Rect(X + _w, Y + height + scroll + _n, W - _w - _e, H - height - scroll - _n - _s);
+
+        if (_tab_pos == Pos::TOP) {
+            _scroll->resize(_tabs->x(), _tabs->y(), _tabs->w(), scroll);
+        }
+        else if (_tab_pos == Pos::TOP2) {
+            _scroll->resize(_tabs->x(), _tabs->y() + height, _tabs->w(), scroll);
+        }
+    }
+    else if (is_tabs_bottom() == true) {
+        _tabs->resize(X, Y + H - height - scroll, W, height + scroll);
+        _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - height - scroll - _n - _s);
+
+        if (_tab_pos == Pos::BOTTOM) {
+            _scroll->resize(_tabs->x(), _tabs->y() + _tabs->h() - scroll, _tabs->w(), scroll);
+        }
+        else if (_tab_pos == Pos::BOTTOM2) {
+            _scroll->resize(_tabs->x(), _tabs->y(), _tabs->w(), scroll);
+        }
+    }
+
+    auto xpos = -(_scroll->value() - 1);
+    xpos *= width + _space;
+    xpos += _tabs->x();
 
     for (auto widget : _widgets) {
         auto b  = static_cast<_TabsGroupButton*>(widget);
-        b->size(b->tw, 0);
-    }
 
-    if (_tab_pos == Pos::NORTH) {
-        _scroll->resize(X, Y, W, height + scroll);
-        _pack->resize(X, Y, pack_w, height);
-        _area = Fl_Rect(X + _w, Y + height + scroll + _n, W - _w - _e, H - height - scroll - _n - _s);
-    }
-    else { // Pos::SOUTH.
-        _scroll->resize(X, Y + H - height - scroll, W, height + scroll);
-        _pack->resize(X, Y + H - height - scroll, pack_w, height);
-        _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - height - scroll - _n - _s);
+        if (b->tw >= width) {
+            b->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        }
+        else {
+            b->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        }
+
+        if (_tab_pos == Pos::TOP) {
+            b->resize(xpos, _tabs->y() + scroll, width, height);
+        }
+        else if (_tab_pos == Pos::TOP2) {
+            b->resize(xpos, _tabs->y(), width, height);
+        }
+        else if (_tab_pos == Pos::BOTTOM) {
+            b->resize(xpos, _tabs->y() + _tabs->h() - height - scroll, width, height);
+        }
+        else if (_tab_pos == Pos::BOTTOM2) {
+            b->resize(xpos, _tabs->y() + _tabs->h() - height, width, height);
+        }
+
+        xpos += width + _space;
     }
 }
 
@@ -714,7 +886,7 @@ void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
 *
 */
 void TabsGroup::show_tabs() {
-    _scroll->show();
+    _tabs->show();
     do_layout();
 }
 
@@ -727,7 +899,7 @@ void TabsGroup::show_tabs() {
 *
 */
 void TabsGroup::sort(bool ascending, bool casecompare) {
-    auto pack = const_cast<Fl_Widget**>(_pack->array());
+    auto pack = const_cast<Fl_Widget**>(_tabs->array());
     auto butt = _active_button();
 
     if (ascending == true && casecompare == true) {
@@ -743,15 +915,15 @@ void TabsGroup::sort(bool ascending, bool casecompare) {
         std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return fl_utf_strcasecmp(b->label(), a->label()) < 0; });
     }
 
-    for (int f = 0; f < _pack->children(); f++) {
-        pack[f] = _widgets[f];
+    for (int f = 1; f < _tabs->children(); f++) {
+        pack[f] = _widgets[f - 1];
 
-        if (_widgets[f] == butt) {
-            _active1 = f;
+        if (_widgets[f - 1] == butt) {
+            _active1 = f - 1;
         }
     }
 
-    do_layout();
+    _activate(butt);
 }
 
 /** @brief Swap two tab buttons/widgets.
@@ -769,17 +941,17 @@ int TabsGroup::swap(int from, int to) {
     }
 
     auto active = (_active1 == from);
-    auto pack   = const_cast<Fl_Widget**>(_pack->array());
+    auto pack   = const_cast<Fl_Widget**>(_tabs->array()); // Ignore widget 0 which is the scrollbar.
 
     if (from == 0 && to == -1) { // Move button from top to last.
         auto widget = _widgets[0];
 
         for (int f = 1; f <= last; f++) {
             _widgets[f - 1] = _widgets[f];
-            pack[f - 1]     = pack[f];
+            pack[f] = pack[f + 1];
         }
 
-        pack[last]     = widget;
+        pack[last + 1] = widget;
         _widgets[last] = widget;
 
         if (active == true) {
@@ -791,12 +963,12 @@ int TabsGroup::swap(int from, int to) {
     else if (from == last && to == static_cast<int>(_widgets.size())) { // Move button from last to first.
         auto widget = _widgets[last];
 
-        for (int f = last - 1; f >= 0; f--) {
-            _widgets[f + 1] = _widgets[f];
-            pack[f + 1]     = pack[f];
+        for (int f = last; f > 0; f--) {
+            _widgets[f] = _widgets[f - 1];
+            pack[f + 1] = pack[f];
         }
 
-        pack[0]     = widget;
+        pack[1] = widget;
         _widgets[0] = widget;
 
         if (active == true) {
@@ -808,10 +980,10 @@ int TabsGroup::swap(int from, int to) {
     else { // Swap two buttons.
         auto widget = _widgets[from];
 
-        pack[from]     = pack[to];
-        pack[to]       = widget;
+        pack[from + 1] = pack[to + 1];
+        pack[to + 1] = widget;
         _widgets[from] = _widgets[to];
-        _widgets[to]   = widget;
+        _widgets[to] = widget;
 
         if (active == true) {
             _active1 = to;
@@ -820,44 +992,68 @@ int TabsGroup::swap(int from, int to) {
         util::swap_rect(_widgets[from], _widgets[to]);
     }
 
-    _pack->need_layout(1);
-
     return _active1;
+}
+
+/** @brief Set tab button boxtype.
+*
+* @param[in] boxtype       Use FL_MAX_BOXTYPE to reset to default.
+* @param[in] down_boxtype  Use FL_MAX_BOXTYPE to reset to default.
+*/
+void TabsGroup::tab_box(Fl_Boxtype boxtype, Fl_Boxtype down_boxtype) {
+    _tab_box  = boxtype;
+    _tabd_box = down_boxtype;
+
+    for (auto widget : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(widget);
+
+        if (_tab_box == FL_MAX_BOXTYPE) {
+            b->box(FL_THIN_UP_BOX);
+        }
+        else {
+            b->box(_tab_box);
+        }
+
+        if (_tabd_box == FL_MAX_BOXTYPE) {
+            b->down_box(FL_NO_BOX);
+        }
+        else {
+            b->down_box(_tab_box);
+        }
+    }
+}
+
+/** @brief Set tab selection color.
+*
+* @param[in] color  Color, if different than FL_SELECTION_COLOR it will not change when theme changes.
+*/
+void TabsGroup::tab_color(Fl_Color color) {
+    _color = color;
+
+    for (auto widget : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(widget);
+        b->selection_color(_color);
+    }
 }
 
 /** @brief Set on which side the tab buttons should be.
 *
-* @param[in] pos    North/south/west/east.
-* @param[in] space  Space between tab buttons (0 - 20 pixels).
-*
+* @param[in] pos    One of Pos values.
+* @param[in] space  Space between tab buttons (0 - TabsGroup::MAX_SPACE pixels).
 */
 void TabsGroup::tab_pos(Pos pos, int space) {
     _tab_pos = pos;
-    _space   = (space >= 0 && space <= 20) ? space : TabsGroup::DEFAULT_SPACE_PX;
-    _align   = FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
+    _space   = (space >= 0 && space <= TabsGroup::MAX_SPACE) ? space : TabsGroup::DEFAULT_SPACE;
 
-    if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
-        _align = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
-        _scroll->type(Fl_Scroll::HORIZONTAL);
-        _pack->type(Fl_Flex::HORIZONTAL);
+    if (is_tabs_horizontal() == true) {
+        _scroll->type(FL_HORIZONTAL);
     }
-    else {
-        _pack->type(Fl_Flex::VERTICAL);
-        _scroll->type(Fl_Scroll::VERTICAL);
+    else if (is_tabs_vertical() == true) {
+        _scroll->type(FL_VERTICAL);
     }
 
-    for (auto widget : _widgets) {
-        widget->align(_align);
-    }
-
-    _pack->spacing(_space);
-    do_layout();
-
-    auto w = value();
-
-    if (w != nullptr) {
-        w->take_focus();
-    }
+    _scroll->value(1);
+    _activate(_active_button());
 }
 
 /** @brief Get tab button tooltip.
@@ -893,13 +1089,14 @@ void TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
 
 /** @brief Update font preferences.
 *
-* @param[in] characters  Number of characters for west/east label width.
-* @param[in] font        Font to use.
-* @param[in] fontsize    Size of font.
+* @param[in] font      Font to use.
+* @param[in] fontsize  Size of font.
 */
-void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
+void TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
-    _xpos = fontsize * characters;
+
+    labelfont(font);
+    labelsize(fontsize);
 
     for (auto widget : _widgets) {
         widget->labelfont(font);
@@ -912,7 +1109,9 @@ void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fonts
 * @return Widget or NULL.
 */
 Fl_Widget* TabsGroup::value() const {
-    return (_active1 >= 0 && _active1 < static_cast<int>(_widgets.size())) ? static_cast<_TabsGroupButton*>(_widgets[_active1])->widget : nullptr;
+    return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
+        static_cast<_TabsGroupButton*>(_widgets[_active1])->widget :
+        nullptr;
 }
 
 /** @brief Set active widget.
@@ -921,7 +1120,7 @@ Fl_Widget* TabsGroup::value() const {
 */
 void TabsGroup::value(int num) {
     if (num >= 0 && num < static_cast<int>(_widgets.size())) {
-        TabsGroup::Callback(_widgets[num], this);
+        _activate(_widgets[num]);
     }
 }
 
