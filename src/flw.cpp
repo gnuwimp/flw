@@ -194,7 +194,17 @@ void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) 
         puts("flw::debug::print() => null widget");
     }
     else {
-        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, %c, \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->visible() ? 'V' : 'H', widget->label() ? widget->label() : "NULL");
+        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, X=%4d, Y=%4d, %c, \"%s\"\n", 
+            indent.c_str(), 
+            widget->x(), 
+            widget->y(), 
+            widget->w(), 
+            widget->h(), 
+            widget->x() + widget->w(), 
+            widget->y() + widget->h(), 
+            widget->visible() ? 'V' : 'H', 
+            widget->label() ? widget->label() : "NULL"
+        );
         auto group = widget->as_group();
 
         if (group != nullptr && recursive == true) {
@@ -1102,6 +1112,50 @@ void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
 double util::to_double(const std::string& string, double def) {
     try {
         return std::stod(string);
+    }
+    catch(...) {
+        return def;
+    }
+}
+
+/** @brief Convert string to an vector of double numbers.
+*
+* @param[in]  string   String to convert.
+* @param[out] numbers  Result vector.
+* @param[in]  size     Size of result vector.
+*
+* @return Number of converted numbers.
+*/
+size_t util::to_doubles(const std::string& string, double numbers[], size_t size) {
+    auto end = (char*) nullptr;
+    auto in  = string.c_str();
+    auto f   = (size_t) 0;
+
+    errno = 0;
+
+    for (; f < size; f++) {
+        numbers[f] = strtod(in, &end);
+
+        if (errno != 0 || in == end) {
+            return f;
+        }
+
+        in = end;
+    }
+
+    return f;
+}
+
+/** @brief Convert string to integer.
+*
+* @param[in] string  String to convert.
+* @param[in] def     Default number if exception is thrown.
+*
+* @return Converted integer or default integer.
+*/
+int64_t util::to_int(const std::string& string, int64_t def) {
+    try {
+        return static_cast<int64_t>(std::stoll(string));
     }
     catch(...) {
         return def;

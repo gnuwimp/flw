@@ -12,6 +12,7 @@
 // MKALGAM_ON
 
 #include <string>
+#include <map>
 #include <vector>
 #include <cmath>
 #include <FL/Fl_Group.H>
@@ -25,7 +26,11 @@
 #define FLW_LINE                        { ::printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
 #define FLW_RED                         { ::printf("\033[7m\033[31m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
 #define FLW_GREEN                       { ::printf("\033[7m\033[32m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_YELLOW                      { ::printf("\033[7m\033[33m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
 #define FLW_BLUE                        { ::printf("\033[7m\033[34m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_MAGENTA                     { ::printf("\033[7m\033[35m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_CYAN                        { ::printf("\033[7m\033[36m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
+#define FLW_RGB                         { ::printf("\033[7m\033[31m%6u: \033[32m%s::\033[34m%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
 
 #define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
 #define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << std::endl; fflush(stdout); }
@@ -70,7 +75,11 @@
 #define FLW_LINE
 #define FLW_RED
 #define FLW_GREEN
+#define FLW_YELLOW
 #define FLW_BLUE
+#define FLW_MAGENTA
+#define FLW_CYAN
+#define FLW_RGB
 #define FLW_PRINT(...)
 #define FLW_PRINTV(...)
 #define FLW_PRINTD(...)
@@ -84,9 +93,10 @@
 
 namespace flw {
 
+typedef std::map<std::string, std::string> StringHash;                  ///< @brief Hash with string keys and string values.
 typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
-typedef std::vector<void*>       VoidVector;                            ///< @brief Vector with void pointers
-typedef std::vector<Fl_Widget*>  WidgetVector;                          ///< @brief Vector with widget pointers.
+typedef std::vector<void*> VoidVector;                                  ///< @brief Vector with void pointers
+typedef std::vector<Fl_Widget*> WidgetVector;                           ///< @brief Vector with widget pointers.
 typedef bool (*PrintCallback)(void* data, int pw, int ph, int page);    ///< @brief A drawing callback for printing to postscript.
 
 extern int                      PREF_FIXED_FONT;                        ///< @brief Fixed font - default FL_COURIER.
@@ -148,6 +158,8 @@ namespace util {
     std::string                 substr(const std::string& string, std::string::size_type pos, std::string::size_type size = std::string::npos);
     void                        swap_rect(Fl_Widget* w1, Fl_Widget* w2);
     double                      to_double(const std::string& string, double def = INFINITY);
+    size_t                      to_doubles(const std::string& string, double numbers[], size_t size);
+    int64_t                     to_int(const std::string& string, int64_t def = 0);
     long long                   to_long(const std::string& string, long long def = 0);
     static inline std::string   to_string(const char* text)
                                     { return text != nullptr ? text : ""; }
