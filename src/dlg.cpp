@@ -178,9 +178,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DateChooserDlg*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -293,9 +291,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -417,9 +413,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgList*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -619,7 +613,10 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPassword*>(o);
 
-        if (w == self) {
+        if (w == self || w == self->_cancel) {
+            self->_ret = false;
+            self->_run = false;
+            self->hide();
         }
         else if (w == self->_password1) {
             self->check();
@@ -638,11 +635,6 @@ public:
             }
 
             self->check();
-        }
-        else if (w == self->_cancel) {
-            self->_ret = false;
-            self->_run = false;
-            self->hide();
         }
         else if (w == self->_close) {
             self->_ret = true;
@@ -907,9 +899,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrint*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -1122,9 +1112,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrintText*>(o);
 
-        if (w == self) {
-        }
-        else if ( w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -1345,9 +1333,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectCheckBoxes*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -1504,9 +1490,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectChoice*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -1681,9 +1665,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectString*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_list->deselect();
             self->_run = false;
             self->hide();
@@ -1903,9 +1885,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSlider*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -1993,9 +1973,9 @@ public:
 
         _buffer = new Fl_Text_Buffer();
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _grid   = new GridGroup(0, 0, w(), h());
-        _save   = new Fl_Button(0, 0, 0, 0, "&Save");
+        _save   = new Fl_Button(0, 0, 0, 0, "&Save...");
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
         _edit   = edit;
         _res    = nullptr;
@@ -2058,9 +2038,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgText*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -2181,7 +2159,7 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use scaling");
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use scaling");
         _scale_val   = new Fl_Slider(0, 0, 0, 0);
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _parent      = (parent != nullptr) ? parent : top_window();
@@ -2220,7 +2198,11 @@ public:
         _font_label->color(FL_BACKGROUND2_COLOR);
         _font_label->tooltip("Default font.");
         _scale->callback(_DlgTheme::Callback, this);
-        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nSave settings and restart application.");
+        _scale->tooltip(
+            "Turn on/off FLTK scaling for HiDPI screens.\n"
+            "This work somewhat different depending on what desktop it is running on.\n"
+            "Save settings and restart application."
+        );
         _scale->value(flw::PREF_SCALE_ON);
         _scale_val->range(0.5, 2.0);
         _scale_val->step(0.05);
@@ -2257,9 +2239,7 @@ public:
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgTheme*>(o);
 
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -2491,14 +2471,14 @@ public:
 };
 
 /**
- *      ______          _   
- *     |  ____|        | |  
- *     | |__ ___  _ __ | |_ 
+ *      ______          _
+ *     |  ____|        | |
+ *     | |__ ___  _ __ | |_
  *     |  __/ _ \| '_ \| __|
- *     | | | (_) | | | | |_ 
+ *     | | | (_) | | | | |_
  *     |_|  \___/|_| |_|\__|
- *                          
- *                          
+ *
+ *
  */
 
 /** @brief Create font dialog.
@@ -2545,9 +2525,7 @@ void Font::_activate() {
 void Font::Callback(Fl_Widget* w, void* o) {
     auto self = static_cast<Font*>(o);
 
-    if (w == self) {
-    }
-    else if (w == self->_cancel) {
+    if (w == self || w == self->_cancel) {
         self->_run = false;
         self->hide();
     }
