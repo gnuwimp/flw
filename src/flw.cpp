@@ -2048,7 +2048,7 @@ void theme::save_win_to_pref(Fl_Preferences& pref, const std::string& basename, 
 * @param[in] border       Draw a border around page.
 * @param[in] line_num     Width of line numbers, 0 to disable (0 - 8).
 */
-PrintText::PrintText(const std::string& filename,
+util::PrintText::PrintText(const std::string& filename,
     Fl_Paged_Device::Page_Format page_format,
     Fl_Paged_Device::Page_Layout page_layout,
     Fl_Font font,
@@ -2075,14 +2075,14 @@ PrintText::PrintText(const std::string& filename,
 /** @brief Stop printing.
 *
 */
-PrintText::~PrintText() {
+util::PrintText::~PrintText() {
     _stop();
 }
 
 /** @brief Check and create new page if needed.
 *
 */
-void PrintText::_check_for_new_page() {
+void util::PrintText::_check_for_new_page() {
     if (_py + _lh > _ph || _page_count == 0) {
         if (_page_count > 0) {
             fl_pop_clip();
@@ -2127,7 +2127,7 @@ void PrintText::_check_for_new_page() {
 *
 * @param[in] text  Line of text.
 */
-void PrintText::_measure_lw_lh(const std::string& text) {
+void util::PrintText::_measure_lw_lh(const std::string& text) {
     _lw = _lh = 0;
     fl_measure(text.c_str(), _lw, _lh, 0);
 }
@@ -2139,7 +2139,7 @@ void PrintText::_measure_lw_lh(const std::string& text) {
 *
 * @return Error string or empty string.
 */
-std::string PrintText::print(const char* text, unsigned replace_tab_with_space) {
+std::string util::PrintText::print(const char* text, unsigned replace_tab_with_space) {
     return print(util::split_string(text, "\n"), replace_tab_with_space);
 }
 
@@ -2150,7 +2150,7 @@ std::string PrintText::print(const char* text, unsigned replace_tab_with_space) 
 *
 * @return Error string or empty string.
 */
-std::string PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
+std::string util::PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
     return print(util::split_string(text.c_str(), "\n"), replace_tab_with_space);
 }
 
@@ -2161,7 +2161,7 @@ std::string PrintText::print(const std::string& text, unsigned replace_tab_with_
 *
 * @return Error string or empty string.
 */
-std::string PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
+std::string util::PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
     std::string res;
     std::string tab;
 
@@ -2204,7 +2204,7 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
 *
 * @param[in] line  Text line.
 */
-void PrintText::_print_line(const std::string& line) {
+void util::PrintText::_print_line(const std::string& line) {
     _line_count++;
     _check_for_new_page();
 
@@ -2230,7 +2230,7 @@ void PrintText::_print_line(const std::string& line) {
 *
 * @param[in] line  Text line.
 */
-void PrintText::_print_wrapped_line(const std::string& line) {
+void util::PrintText::_print_wrapped_line(const std::string& line) {
     auto p1 = line.c_str();
     auto s1 = std::string();
     auto s2 = std::string();
@@ -2291,7 +2291,7 @@ void PrintText::_print_wrapped_line(const std::string& line) {
 /** @brief Create printer object.
 *
 */
-std::string PrintText::_start() {
+std::string util::PrintText::_start() {
     if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
         return "error: could not open file!";
     }
@@ -2316,7 +2316,7 @@ std::string PrintText::_start() {
 *
 * @return Error string or empty string.
 */
-std::string PrintText::_stop() {
+std::string util::PrintText::_stop() {
     std::string res = "";
 
     if (_printer != nullptr) {

@@ -1161,7 +1161,7 @@ public:
         auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
         auto file    = _file->label();
-        auto printer = PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
+        auto printer = util::PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
         auto err     = printer.print(_text, tab);
 
         if (err == "") {
