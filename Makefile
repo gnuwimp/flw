@@ -21,7 +21,6 @@ OBJ = obj/date.o \
 	obj/chart.o \
 	obj/datechooser.o \
 	obj/dlg.o \
-	obj/grid.o \
 	obj/gridgroup.o \
 	obj/inputmenu.o \
 	obj/lcdnumber.o \
@@ -30,6 +29,7 @@ OBJ = obj/date.o \
 	obj/recentmenu.o \
 	obj/scrollbrowser.o \
 	obj/splitgroup.o \
+	obj/table.o \
 	obj/tabledisplay.o \
 	obj/tableeditor.o \
 	obj/tabsgroup.o \
@@ -46,7 +46,6 @@ all: obj \
 	test_chart.exe \
 	test_datechooser.exe \
 	test_dlg.exe \
-	test_grid.exe \
 	test_gridgroup.exe \
 	test_inputmenu.exe \
 	test_lcdnumber.exe \
@@ -55,6 +54,7 @@ all: obj \
 	test_recentmenu.exe \
 	test_scrollbrowser.exe \
 	test_splitgroup.exe \
+	test_table.exe \
 	test_tabledisplay.exe \
 	test_tableeditor.exe \
 	test_tabsgroup.exe \
@@ -93,9 +93,6 @@ obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/flw.h
 obj/file.o: src/file.cpp src/file.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/grid.o: src/grid.cpp src/grid.h src/tabledisplay.h  src/tableeditor.h src/flw.h
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
 obj/gridgroup.o: src/gridgroup.cpp src/gridgroup.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -121,6 +118,9 @@ obj/scrollbrowser.o: src/scrollbrowser.cpp src/scrollbrowser.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/splitgroup.o: src/splitgroup.cpp src/splitgroup.h src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/table.o: src/table.cpp src/table.h src/tabledisplay.h  src/tableeditor.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/tabledisplay.o: src/tabledisplay.cpp src/tabledisplay.h src/dlg.h src/flw.h
@@ -152,6 +152,8 @@ run_chart: test_chart.exe
 debug_chart: test_chart.exe
 	gdb ./test_chart.exe
 
+#-------------------
+
 obj/test_datechooser.o: test/test_datechooser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -160,6 +162,8 @@ test_datechooser.exe: obj/test_datechooser.o $(OBJ)
 
 run_datechooser: test_datechooser.exe
 	./test_datechooser.exe $(arg)
+
+#-------------------
 
 obj/test_dlg.o: test/test_dlg.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -170,11 +174,7 @@ test_dlg.exe: obj/test_dlg.o $(OBJ)
 run_dlg: test_dlg.exe
 	./test_dlg.exe $(arg)
 
-obj/test_grid.o: test/test_grid.cpp $(OBJ)
-	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-
-test_grid.exe: obj/test_grid.o $(OBJ)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+#-------------------
 
 obj/test_gridgroup.o: test/test_gridgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -184,6 +184,8 @@ test_gridgroup.exe: obj/test_gridgroup.o $(OBJ)
 
 run_gridgroup: test_gridgroup.exe
 	./test_gridgroup.exe $(arg)
+
+#-------------------
 
 obj/test_inputmenu.o: test/test_inputmenu.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -197,11 +199,15 @@ run_inputmenu: test_inputmenu.exe
 debug_inputmenu: test_inputmenu.exe
 	gdb ./test_inputmenu.exe
 
+#-------------------
+
 obj/test_lcdnumber.o: test/test_lcdnumber.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_lcdnumber.exe: obj/test_lcdnumber.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
+
+#-------------------
 
 obj/test_logdisplay.o: test/test_logdisplay.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -212,6 +218,8 @@ test_logdisplay.exe: obj/test_logdisplay.o $(OBJ)
 run_logdisplay: test_logdisplay.exe
 	./test_logdisplay.exe $(arg)
 
+#-------------------
+
 obj/test_plot.o: test/test_plot.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -220,6 +228,8 @@ test_plot.exe: obj/test_plot.o $(OBJ)
 
 run_plot: test_plot.exe
 	./test_plot.exe $(arg)
+
+#-------------------
 
 obj/test_recentmenu.o: test/test_recentmenu.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -230,8 +240,18 @@ test_recentmenu.exe: obj/test_recentmenu.o $(OBJ)
 run_recentmenu: test_recentmenu.exe
 	./test_recentmenu.exe $(arg)
 
+#-------------------
+
 obj/test_splitgroup.o: test/test_splitgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+test_splitgroup.exe: obj/test_splitgroup.o $(OBJ)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+run_splitgroup: test_splitgroup.exe
+	./test_splitgroup.exe $(arg)
+
+#-------------------
 
 obj/test_scrollbrowser.o: test/test_scrollbrowser.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -242,11 +262,18 @@ test_scrollbrowser.exe: obj/test_scrollbrowser.o $(OBJ)
 run_scrollbrowser: test_scrollbrowser.exe
 	./test_scrollbrowser.exe $(arg)
 
-test_splitgroup.exe: obj/test_splitgroup.o $(OBJ)
+#-------------------
+
+obj/test_table.o: test/test_table.cpp $(OBJ)
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+test_table.exe: obj/test_table.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_splitgroup: test_splitgroup.exe
-	./test_splitgroup.exe $(arg)
+run_table: test_table.exe
+	./test_table.exe $(arg)
+
+#-------------------
 
 obj/test_tabledisplay.o: test/test_tabledisplay.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -257,6 +284,8 @@ test_tabledisplay.exe: obj/test_tabledisplay.o $(OBJ)
 run_tabledisplay: test_tabledisplay.exe
 	./test_tabledisplay.exe $(arg)
 
+#-------------------
+
 obj/test_tableeditor.o: test/test_tableeditor.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -265,6 +294,8 @@ test_tableeditor.exe: obj/test_tableeditor.o $(OBJ)
 
 run_tableeditor: test_tableeditor.exe
 	./test_tableeditor.exe $(arg)
+
+#-------------------
 
 obj/test_tabsgroup.o: test/test_tabsgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -275,6 +306,8 @@ test_tabsgroup.exe: obj/test_tabsgroup.o $(OBJ)
 run_tabsgroup: test_tabsgroup.exe
 	./test_tabsgroup.exe $(arg)
 
+#-------------------
+
 obj/test_toolgroup.o: test/test_toolgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -283,6 +316,8 @@ test_toolgroup.exe: obj/test_toolgroup.o $(OBJ) $(THEME_RESOURCE)
 
 run_toolgroup: test_toolgroup.exe
 	./test_toolgroup.exe $(arg)
+
+#-------------------
 
 obj/test_theme.o: test/test_theme.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@

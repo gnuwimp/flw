@@ -6077,9 +6077,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DateChooserDlg*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -6139,9 +6137,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgHtml*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -6205,9 +6201,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgList*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -6324,7 +6318,10 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPassword*>(o);
-        if (w == self) {
+        if (w == self || w == self->_cancel) {
+            self->_ret = false;
+            self->_run = false;
+            self->hide();
         }
         else if (w == self->_password1) {
             self->check();
@@ -6341,11 +6338,6 @@ public:
                 self->_file->value("");
             }
             self->check();
-        }
-        else if (w == self->_cancel) {
-            self->_ret = false;
-            self->_run = false;
-            self->hide();
         }
         else if (w == self->_close) {
             self->_ret = true;
@@ -6515,9 +6507,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrint*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -6671,9 +6661,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgPrintText*>(o);
-        if (w == self) {
-        }
-        else if ( w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -6715,7 +6703,7 @@ public:
         auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
         auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
         auto file    = _file->label();
-        auto printer = PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
+        auto printer = util::PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
         auto err     = printer.print(_text, tab);
         if (err == "") {
             auto s = _label2;
@@ -6816,9 +6804,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectCheckBoxes*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -6912,9 +6898,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectChoice*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -7024,9 +7008,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectString*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_list->deselect();
             self->_run = false;
             self->hide();
@@ -7153,9 +7135,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSlider*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -7196,9 +7176,9 @@ public:
         end();
         _buffer = new Fl_Text_Buffer();
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Close");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
         _grid   = new GridGroup(0, 0, w(), h());
-        _save   = new Fl_Button(0, 0, 0, 0, "&Save");
+        _save   = new Fl_Button(0, 0, 0, 0, "&Save...");
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
         _edit   = edit;
         _res    = nullptr;
@@ -7248,9 +7228,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgText*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_cancel) {
+        if (w == self || w == self->_cancel) {
             self->_run = false;
             self->hide();
         }
@@ -7315,7 +7293,7 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, "&Regular font");
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "Use scaling");
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use scaling");
         _scale_val   = new Fl_Slider(0, 0, 0, 0);
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _parent      = (parent != nullptr) ? parent : top_window();
@@ -7350,7 +7328,11 @@ public:
         _font_label->color(FL_BACKGROUND2_COLOR);
         _font_label->tooltip("Default font.");
         _scale->callback(_DlgTheme::Callback, this);
-        _scale->tooltip("Turn on/off FLTK scaling for HiDPI screens.\nSave settings and restart application.");
+        _scale->tooltip(
+            "Turn on/off FLTK scaling for HiDPI screens.\n"
+            "This work somewhat different depending on what desktop it is running on.\n"
+            "Save settings and restart application."
+        );
         _scale->value(flw::PREF_SCALE_ON);
         _scale_val->range(0.5, 2.0);
         _scale_val->step(0.05);
@@ -7379,9 +7361,7 @@ public:
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgTheme*>(o);
-        if (w == self) {
-        }
-        else if (w == self->_close) {
+        if (w == self || w == self->_close) {
             self->_run = false;
             self->hide();
         }
@@ -7564,9 +7544,7 @@ void Font::_activate() {
 }
 void Font::Callback(Fl_Widget* w, void* o) {
     auto self = static_cast<Font*>(o);
-    if (w == self) {
-    }
-    else if (w == self->_cancel) {
+    if (w == self || w == self->_cancel) {
         self->_run = false;
         self->hide();
     }
@@ -7940,7 +7918,17 @@ void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) 
         puts("flw::debug::print() => null widget");
     }
     else {
-        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, %c, \"%s\"\n", indent.c_str(), widget->x(), widget->y(), widget->w(), widget->h(), widget->visible() ? 'V' : 'H', widget->label() ? widget->label() : "NULL");
+        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, X=%4d, Y=%4d, %c, \"%s\"\n",
+            indent.c_str(),
+            widget->x(),
+            widget->y(),
+            widget->w(),
+            widget->h(),
+            widget->x() + widget->w(),
+            widget->y() + widget->h(),
+            widget->visible() ? 'V' : 'H',
+            widget->label() ? widget->label() : "NULL"
+        );
         auto group = widget->as_group();
         if (group != nullptr && recursive == true) {
             indent += "\t";
@@ -8440,6 +8428,28 @@ void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
 double util::to_double(const std::string& string, double def) {
     try {
         return std::stod(string);
+    }
+    catch(...) {
+        return def;
+    }
+}
+size_t util::to_doubles(const std::string& string, double numbers[], size_t size) {
+    auto end = (char*) nullptr;
+    auto in  = string.c_str();
+    auto f   = (size_t) 0;
+    errno = 0;
+    for (; f < size; f++) {
+        numbers[f] = strtod(in, &end);
+        if (errno != 0 || in == end) {
+            return f;
+        }
+        in = end;
+    }
+    return f;
+}
+int64_t util::to_int(const std::string& string, int64_t def) {
+    try {
+        return static_cast<int64_t>(std::stoll(string));
     }
     catch(...) {
         return def;
@@ -9019,7 +9029,7 @@ void theme::save_win_to_pref(Fl_Preferences& pref, const std::string& basename, 
     pref.set((basename + "s").c_str(), flw::PREF_SCALE_ON);
     pref.set((basename + "sv").c_str(), flw::PREF_SCALE_VAL);
 }
-PrintText::PrintText(const std::string& filename,
+util::PrintText::PrintText(const std::string& filename,
     Fl_Paged_Device::Page_Format page_format,
     Fl_Paged_Device::Page_Layout page_layout,
     Fl_Font font,
@@ -9041,10 +9051,10 @@ PrintText::PrintText(const std::string& filename,
     _printer     = nullptr;
     _wrap        = wrap;
 }
-PrintText::~PrintText() {
+util::PrintText::~PrintText() {
     _stop();
 }
-void PrintText::_check_for_new_page() {
+void util::PrintText::_check_for_new_page() {
     if (_py + _lh > _ph || _page_count == 0) {
         if (_page_count > 0) {
             fl_pop_clip();
@@ -9077,17 +9087,17 @@ void PrintText::_check_for_new_page() {
         _page_count++;
     }
 }
-void PrintText::_measure_lw_lh(const std::string& text) {
+void util::PrintText::_measure_lw_lh(const std::string& text) {
     _lw = _lh = 0;
     fl_measure(text.c_str(), _lw, _lh, 0);
 }
-std::string PrintText::print(const char* text, unsigned replace_tab_with_space) {
+std::string util::PrintText::print(const char* text, unsigned replace_tab_with_space) {
     return print(util::split_string(text, "\n"), replace_tab_with_space);
 }
-std::string PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
+std::string util::PrintText::print(const std::string& text, unsigned replace_tab_with_space) {
     return print(util::split_string(text.c_str(), "\n"), replace_tab_with_space);
 }
-std::string PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
+std::string util::PrintText::print(const StringVector& lines, unsigned replace_tab_with_space) {
     std::string res;
     std::string tab;
     while (replace_tab_with_space > 0 && replace_tab_with_space <= 16) {
@@ -9119,7 +9129,7 @@ std::string PrintText::print(const StringVector& lines, unsigned replace_tab_wit
     }
     return res;
 }
-void PrintText::_print_line(const std::string& line) {
+void util::PrintText::_print_line(const std::string& line) {
     _line_count++;
     _check_for_new_page();
     if (_line_num > 0) {
@@ -9137,7 +9147,7 @@ void PrintText::_print_line(const std::string& line) {
         _py += _lh;
     }
 }
-void PrintText::_print_wrapped_line(const std::string& line) {
+void util::PrintText::_print_wrapped_line(const std::string& line) {
     auto p1 = line.c_str();
     auto s1 = std::string();
     auto s2 = std::string();
@@ -9183,7 +9193,7 @@ void PrintText::_print_wrapped_line(const std::string& line) {
         _py += _lh;
     }
 }
-std::string PrintText::_start() {
+std::string util::PrintText::_start() {
     if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
         return "error: could not open file!";
     }
@@ -9200,7 +9210,7 @@ std::string PrintText::_start() {
     _printer->begin_job(_file, 0, _page_format, _page_layout);
     return "";
 }
-std::string PrintText::_stop() {
+std::string util::PrintText::_stop() {
     std::string res = "";
     if (_printer != nullptr) {
         if (_page_count > 0) {
@@ -9218,136 +9228,11 @@ std::string PrintText::_stop() {
     return res;
 }
 }
-#include <stdarg.h>
-namespace flw {
-    static int _FLW_GRID_STRING_SIZE = 1000;
-}
-flw::Grid::Grid(int rows, int cols, int X, int Y, int W, int H, const char* l) : flw::TableEditor(X, Y, W, H, l) {
-    rows    = rows < 1 ? 1 : rows;
-    cols    = cols < 1 ? 1 : cols;
-    _buffer = static_cast<char*>(calloc(_FLW_GRID_STRING_SIZE + 1, 1));
-    Grid::size(rows, cols);
-    lines(true, true);
-    header(true, true);
-    select_mode(TableDisplay::SELECT::CELL);
-    active_cell(1, 1);
-    resize_column_width(true);
-    expand_last_column(true);
-}
-flw::Grid::~Grid() {
-    free(_buffer);
-}
-Fl_Align flw::Grid::cell_align(int row, int col) {
-    return (Fl_Align) _get_int(_cell_align, row, col, TableEditor::cell_align(row, col));
-}
-void flw::Grid::cell_align(int row, int col, Fl_Align align) {
-    _set_int(_cell_align, row, col, (int) align);
-}
-flw::StringVector flw::Grid::cell_choice(int row, int col) {
-    _cell_choices.clear();
-    auto choices = _get_string(_cell_choice, row, col);
-    if (*choices != 0) {
-        auto tmp   = strdup(choices);
-        auto start = tmp;
-        auto iter  = tmp;
-        while (*iter) {
-            if (*iter == '\t') {
-                *iter = 0;
-                _cell_choices.push_back(start);
-                start = iter + 1;
-            }
-            iter++;
-        }
-        free(tmp);
-    }
-    return _cell_choices;
-}
-void flw::Grid::cell_choice(int row, int col, const char* value) {
-    _set_string(_cell_choice, row, col, value);
-}
-Fl_Color flw::Grid::cell_color(int row, int col) {
-    return (Fl_Color) _get_int(_cell_color, row, col, TableEditor::cell_color(row, col));
-}
-void flw::Grid::cell_color(int row, int col, Fl_Color color) {
-    _set_int(_cell_color, row, col, (int) color);
-}
-bool flw::Grid::cell_edit(int row, int col) {
-    return (bool) _get_int(_cell_edit, row, col, 0);
-}
-void flw::Grid::cell_edit(int row, int col, bool value) {
-    _set_int(_cell_edit, row, col, (int) value);
-}
-flw::TableEditor::FORMAT flw::Grid::cell_format(int row, int col) {
-    return (TableEditor::FORMAT) _get_int(_cell_format, row, col, (int) TableEditor::FORMAT::DEFAULT);
-}
-void flw::Grid::cell_format(int row, int col, TableEditor::FORMAT value) {
-    _set_int(_cell_format, row, col, (int) value);
-}
-flw::TableEditor::REND flw::Grid::cell_rend(int row, int col) {
-    return (TableEditor::REND) _get_int(_cell_rend, row, col, (int) TableEditor::REND::TEXT);
-}
-void flw::Grid::cell_rend(int row, int col, TableEditor::REND rend) {
-    _set_int(_cell_rend, row, col, (int) rend);
-}
-Fl_Color flw::Grid::cell_textcolor(int row, int col) {
-    return (Fl_Color) _get_int(_cell_textcolor, row, col, TableEditor::cell_textcolor(row, col));
-}
-void flw::Grid::cell_textcolor(int row, int col, Fl_Color color) {
-    _set_int(_cell_textcolor, row, col, (int) color);
-}
-const char* flw::Grid::cell_value(int row, int col) {
-    return _get_string(_cell_value, row, col);
-}
-bool flw::Grid::cell_value(int row, int col, const char* value) {
-    _set_string(_cell_value, row, col, value);
-    return true;
-}
-void flw::Grid::cell_value2(int row, int col, const char* format, ...) {
-    va_list args;
-    int     n = 0;
-    va_start(args, format);
-    n = vsnprintf(_buffer, _FLW_GRID_STRING_SIZE, format, args);
-    va_end(args);
-    if (n < 1 || n >= _FLW_GRID_STRING_SIZE) {
-        *_buffer = 0;
-    }
-    cell_value(row, col, _buffer);
-}
-int flw::Grid::cell_width(int col) {
-    int W = _get_int(_cell_width, 0, col, 80);
-    return W >= 10 ? W : TableEditor::cell_width(col);
-}
-void flw::Grid::cell_width(int col, int width) {
-    _set_int(_cell_width, 0, col, (int) width);
-}
-int flw::Grid::_get_int(StringMap& map, int row, int col, int def) {
-    auto value = _get_string(map, row, col);
-    return *value ? atoi(value) : def;
-}
-const char* flw::Grid::_get_key(int row, int col) {
-    sprintf(_key, "r%dc%d", row, col);
-    return _key;
-}
-const char* flw::Grid::_get_string(StringMap& map, int row, int col, const char* def) {
-    auto search = map.find(_get_key(row, col));
-    return search != map.end() ? search->second.c_str() : def;
-}
-void flw::Grid::_set_int(StringMap& map, int row, int col, int value) {
-    char value2[100];
-    sprintf(value2, "%d", value);
-    map[_get_key(row, col)] = value2;
-}
-void flw::Grid::_set_string(StringMap& map, int row, int col, const char* value) {
-    map[_get_key(row, col)] = value ? value : "";
-}
-void flw::Grid::size(int rows, int cols) {
-    if (rows > 0 && cols > 0) {
-        TableEditor::size(rows, cols);
-    }
-}
 namespace flw {
 struct _GridGroupChild {
     Fl_Widget*                  widget;
+    Fl_Widget*                  focus;
+    bool                        g;
     short                       x;
     short                       y;
     short                       w;
@@ -9356,8 +9241,10 @@ struct _GridGroupChild {
     short                       r;
     short                       t;
     short                       b;
-    _GridGroupChild(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
-        set(WIDGET, X, Y, W, H);
+    _GridGroupChild(Fl_Widget* WIDGET, Fl_Widget* F, int X, int Y, int W, int H) {
+        widget = WIDGET;
+        focus = F;
+        set(X, Y, W, H);
         adjust();
     }
     void adjust(int L = 0, int R = 0, int T = 0, int B = 0) {
@@ -9366,12 +9253,11 @@ struct _GridGroupChild {
         t = T;
         b = B;
     }
-    void set(Fl_Widget* WIDGET, int X, int Y, int W, int H) {
-        widget = WIDGET;
-        x      = X;
-        y      = Y;
-        w      = W;
-        h      = H;
+    void set(int X, int Y, int W, int H) {
+        x = X;
+        y = Y;
+        w = W;
+        h = H;
     }
 };
 GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
@@ -9385,8 +9271,8 @@ GridGroup::~GridGroup() {
         delete static_cast<_GridGroupChild*>(v);
     }
 }
-void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H) {
-    _widgets.push_back(new _GridGroupChild(widget, X, Y, W, H));
+void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
+    _widgets.push_back(new _GridGroupChild(widget, F, X, Y, W, H));
     Fl_Group::add(widget);
 }
 void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
@@ -9412,34 +9298,36 @@ int GridGroup::handle(int event) {
             Fl_Widget* last    = nullptr;
             Fl_Widget* current = Fl::focus();
             _last_active_widget(&first, &last);
-            if (Fl::event_shift() == 0) {
-                if (first != nullptr && current != nullptr && current == last) {
-                    Fl::focus(first);
-                    first->redraw();
-                    return 1;
-                }
+            if (Fl::event_shift() == 0 && first != nullptr && current != nullptr && current == last) {
+                Fl::focus(first);
+                redraw();
+                return 1;
             }
-            else {
-                if (first != nullptr && current != nullptr && current == first) {
-                    Fl::focus(last);
-                    last->redraw();
-                    return 1;
-                }
+            else if (Fl::event_shift() != 0 && first != nullptr && current != nullptr && current == first) {
+                Fl::focus(last);
+                redraw();
+                return 1;
             }
         }
     }
     return Fl_Group::handle(event);
 }
 void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
-    for (int f = 0; f < children(); f++) {
-        auto c = child(f);
-        auto g = c->as_group();
-        if (g == nullptr) {
-            if (c->active() != 0) {
-                *last = c;
+    for (auto& v : _widgets) {
+        auto child = static_cast<_GridGroupChild*>(v);
+        auto g = child->widget->as_group();
+        if (g == nullptr || child->focus != nullptr) {
+            if (child->widget->active() != 0 && child->focus != nullptr) {
+                *last = child->focus;
             }
-            if (*first == nullptr && c->active() != 0) {
-                *first = c;
+            else if (child->widget->active() != 0) {
+                *last = child->widget;
+            }
+            if (*first == nullptr && child->widget->active() != 0 && child->focus != nullptr) {
+                *first = child->focus;
+            }
+            else if (*first == nullptr && child->widget->active() != 0) {
+                *first = child->widget;
             }
         }
     }
@@ -9519,7 +9407,7 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
     for (auto& v : _widgets) {
         auto child = static_cast<_GridGroupChild*>(v);
         if (child->widget == widget) {
-            child->set(widget, X, Y, W, H);
+            child->set(X, Y, W, H);
             return;
         }
     }
@@ -12252,42 +12140,36 @@ flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Grou
     resizable(nullptr);
     clear();
 }
-void flw::SplitGroup::add(Fl_Widget* widget, SplitGroup::CHILD child) {
-    auto num = child == SplitGroup::CHILD::FIRST ? 0 : 1;
-    if (_widgets[num] != nullptr) {
-        remove(_widgets[num]);
-        delete _widgets[num];
+void flw::SplitGroup::add(Fl_Widget* widget, bool first) {
+    if (_widgets[first] != nullptr) {
+        remove(_widgets[first]);
+        delete _widgets[first];
     }
-    _widgets[num] = widget;
+    _widgets[first] = widget;
     if (widget != nullptr) {
         Fl_Group::add(widget);
     }
 }
 void flw::SplitGroup::clear() {
     Fl_Group::clear();
-    _drag       = false;
-    _min        = 50;
-    _split_pos  = -1;
-    _direction  = DIRECTION::VERTICAL;
-    _widgets[0] = nullptr;
-    _widgets[1] = nullptr;
-}
-void flw::SplitGroup::direction(SplitGroup::DIRECTION direction) {
-    _direction = direction;
-    _split_pos = -1;
-    Fl::redraw();
+    _drag           = false;
+    _min_split_pos = 50;
+    _split_pos      = -1;
+    _pos            = Pos::VERTICAL;
+    _widgets[0]     = nullptr;
+    _widgets[1]     = nullptr;
 }
 int flw::SplitGroup::handle(int event) {
     if (event == FL_DRAG) {
         if (_drag == true) {
             auto pos = 0;
-            if (_direction == SplitGroup::DIRECTION::VERTICAL) {
+            if (_pos == Pos::VERTICAL) {
                 pos = Fl::event_x() - x();
             }
             else {
                 pos = Fl::event_y() - y();
             }
-            if (pos != _split_pos) {
+            if (pos != _split_pos && pos >= _min_split_pos) {
                 _split_pos = pos;
                 do_layout();
             }
@@ -12295,7 +12177,7 @@ int flw::SplitGroup::handle(int event) {
         }
     }
     else if (event == FL_LEAVE) {
-        if (_direction == SplitGroup::DIRECTION::VERTICAL) {
+        if (_pos == Pos::VERTICAL) {
             if (Fl::event_y() < y() || Fl::event_y() > y() + h() || Fl::event_x() < x() || Fl::event_x() > x() + w()) {
                 _drag = false;
                 fl_cursor(FL_CURSOR_DEFAULT);
@@ -12310,7 +12192,7 @@ int flw::SplitGroup::handle(int event) {
     }
     else if (event == FL_MOVE) {
         if (_widgets[0] != nullptr && _widgets[1] != nullptr && _widgets[0]->visible() != 0 && _widgets[1]->visible() != 0) {
-            if (_direction == SplitGroup::DIRECTION::VERTICAL) {
+            if (_pos == Pos::VERTICAL) {
                 auto mx  = Fl::event_x();
                 auto pos = x() + _split_pos;
                 if (mx > (pos - 3) && mx <= (pos + 3)) {
@@ -12345,25 +12227,38 @@ int flw::SplitGroup::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void flw::SplitGroup::resize(int X, int Y, int W, int H) {
-    Fl_Widget::resize(X, Y, W, H);
-    if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
+void flw::SplitGroup::hide_child(bool first) {
+    if (_widgets[first] == nullptr) {
         return;
     }
-    auto currx = X;
-    auto curry = Y;
-    auto currh = H;
-    auto currw = W;
-    if (_direction == SplitGroup::DIRECTION::VERTICAL) {
+    _widgets[first]->hide();
+    do_layout();
+}
+void flw::SplitGroup::pos(Pos pos) {
+    _pos       = pos;
+    _split_pos = -1;
+    do_layout();
+    Fl::redraw();
+}
+void flw::SplitGroup::resize(int X, int Y, int W, int H) {
+    Fl_Widget::resize(X, Y, W, H);
+    if (W == 0 || H == 0) {
+        return;
+    }
+    auto currx    = X;
+    auto curry    = Y;
+    auto currh    = H;
+    auto currw    = W;
+    if (_pos == Pos::VERTICAL) {
         if (_widgets[0] != nullptr && _widgets[1] != nullptr && _widgets[0]->visible() != 0 && _widgets[1]->visible() != 0) {
-            if (_split_pos == -1) {
+            if (_split_pos < 0) {
                 _split_pos = W / 2;
             }
-            else if (_split_pos >= W - _min) {
-                _split_pos = W - _min;
+            else if (_split_pos >= W - _min_split_pos) {
+                _split_pos = W - _min_split_pos;
             }
-            else if (_split_pos <= _min) {
-                _split_pos = _min;
+            else if (_split_pos < _min_split_pos) {
+                _split_pos = _min_split_pos;
             }
             auto max = (X + W) - 4;
             auto pos = _split_pos + X;
@@ -12375,8 +12270,8 @@ void flw::SplitGroup::resize(int X, int Y, int W, int H) {
             }
             auto w1 = pos - (X + 2);
             auto w2 = (X + W) - (pos + 2);
-            _widgets[0]->resize(currx, curry, w1, currh);
-            _widgets[1]->resize(currx + w1 + 4, curry, w2, currh);
+            _widgets[1]->resize(currx, curry, w1, currh);
+            _widgets[0]->resize(currx + w1 + 4, curry, w2, currh);
         }
         else if (_widgets[0] && _widgets[0]->visible()) {
             _widgets[0]->resize(currx, curry, currw, currh);
@@ -12386,14 +12281,14 @@ void flw::SplitGroup::resize(int X, int Y, int W, int H) {
         }
     }
     else if (_widgets[0] != nullptr && _widgets[1] != nullptr && _widgets[0]->visible() != 0 && _widgets[1]->visible() != 0) {
-        if (_split_pos == -1) {
+        if (_split_pos < 0) {
             _split_pos = H / 2;
         }
-        else if (_split_pos >= H - _min) {
-            _split_pos = H - _min;
+        else if (_split_pos >= H - _min_split_pos) {
+            _split_pos = H - _min_split_pos;
         }
-        else if (_split_pos <= _min) {
-            _split_pos = _min;
+        else if (_split_pos < _min_split_pos) {
+            _split_pos = _min_split_pos;
         }
         auto max = (Y + H) - 4;
         auto pos = _split_pos + Y;
@@ -12405,8 +12300,8 @@ void flw::SplitGroup::resize(int X, int Y, int W, int H) {
         }
         auto h1 = pos - (Y + 2);
         auto h2 = (Y + H) - (pos + 2);
-        _widgets[0]->resize(currx, curry, currw, h1);
-        _widgets[1]->resize(currx, curry + h1 + 4, currw, h2);
+        _widgets[1]->resize(currx, curry, currw, h1);
+        _widgets[0]->resize(currx, curry + h1 + 4, currw, h2);
     }
     else if (_widgets[0] != nullptr && _widgets[0]->visible() != 0) {
         _widgets[0]->resize(currx, curry, currw, currh);
@@ -12415,29 +12310,71 @@ void flw::SplitGroup::resize(int X, int Y, int W, int H) {
         _widgets[1]->resize(currx, curry, currw, currh);
     }
 }
-void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION direction, int second_size) {
-    if (_widgets[0] == nullptr || _widgets[1] == nullptr) {
+void flw::SplitGroup::show_child(bool first) {
+    if (_widgets[first] == nullptr) {
         return;
     }
-    auto num = (child == SplitGroup::CHILD::FIRST) ? 0 : 1;
-    if (_widgets[num]->visible() && _direction == direction) {
-        _widgets[num]->hide();
+    _widgets[first]->show();
+    do_layout();
+}
+#include <stdarg.h>
+namespace flw {
+namespace table {
+Table::Table(int rows, int cols, int X, int Y, int W, int H, const char* l) : Editor(X, Y, W, H, l) {
+    rows    = rows < 1 ? 1 : rows;
+    cols    = cols < 1 ? 1 : cols;
+    Table::size(rows, cols);
+    lines(true, true);
+    header(true, true);
+    select_mode(Select::CELL);
+    active_cell(1, 1);
+    resize_column_width(true);
+    expand_last_column(true);
+}
+StringVector Table::cell_choice(int row, int col) {
+    _cell_choices.clear();
+    auto choices = _get_string(_cell_choice, row, col);
+    if (choices != "") {
+        _cell_choices = util::split_string(choices, "\t");
     }
-    else {
-        _widgets[num]->show();
-        if (_direction != direction || split_pos() == -1) {
-            _direction = direction;
-            if (second_size == -1) {
-                split_pos(-1);
-            }
-            else if (_direction == SplitGroup::DIRECTION::VERTICAL) {
-                split_pos(w() - second_size);
-            }
-            else {
-                split_pos(h() - second_size);
-            }
-        }
+    return _cell_choices;
+}
+int Table::_get_int(StringHash& hash, int row, int col, int def) {
+    auto value = _get_string(hash, row, col);
+    return value != "" ? atoi(value.c_str()) : def;
+}
+std::string Table::_get_key(int row, int col) {
+    char key[100];
+    snprintf(key, 100, "r%dc%d", row, col);
+    return key;
+}
+std::string Table::_get_string(StringHash& hash, int row, int col, const std::string& def) {
+    auto search = hash.find(_get_key(row, col));
+    return search != hash.end() ? search->second.c_str() : def;
+}
+void Table::reset() {
+    _cell_align.clear();
+    _cell_choice.clear();
+    _cell_color.clear();
+    _cell_edit.clear();
+    _cell_format.clear();
+    _cell_textcolor.clear();
+    _cell_type.clear();
+    _cell_value.clear();
+    _cell_width.clear();
+}
+void Table::_set_int(StringHash& hash, int row, int col, int value) {
+    char value2[100];
+    sprintf(value2, "%d", value);
+    hash[_get_key(row, col)] = value2;
+}
+void Table::size(int rows, int cols) {
+    if (rows > 0 && cols > 0) {
+        reset();
+        Editor::size(rows, cols);
     }
+}
+}
 }
 #include <FL/Fl.H>
 #include <FL/Fl_Return_Button.H>
@@ -12446,9 +12383,11 @@ void flw::SplitGroup::toggle(SplitGroup::CHILD child, SplitGroup::DIRECTION dire
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
-class _TableDisplayScrollbar : public Fl_Scrollbar {
+namespace table {
+static constexpr const char* HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
+class _Scrollbar : public Fl_Scrollbar {
 public:
-    _TableDisplayScrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
+    _Scrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
     }
     int handle(int event) override {
         if (event == FL_FOCUS ||
@@ -12460,14 +12399,14 @@ public:
         return Fl_Scrollbar::handle(event);
     }
 };
-class _TableDisplayCellDialog : public Fl_Double_Window {
+class _GotoDialog : public Fl_Double_Window {
     Fl_Int_Input*                   _row;
     Fl_Int_Input*                   _col;
     GridGroup*                      _grid;
     bool                            _ret;
     bool                            _run;
 public:
-    _TableDisplayCellDialog(int row, int col) :
+    _GotoDialog(int row, int col) :
     Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
         end();
         _col  = new Fl_Int_Input(0, 0, 0, 0, "Column:");
@@ -12479,13 +12418,13 @@ public:
         _grid->add(_col,   1, 10,  -1,   4);
         add(_grid);
         _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-        _row->callback(_TableDisplayCellDialog::Callback, this);
+        _row->callback(_GotoDialog::Callback, this);
         _row->labelsize(flw::PREF_FONTSIZE);
         _row->textfont(flw::PREF_FIXED_FONT);
         _row->textsize(flw::PREF_FONTSIZE);
         _row->when(FL_WHEN_ENTER_KEY_ALWAYS);
         _col->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-        _col->callback(_TableDisplayCellDialog::Callback, this);
+        _col->callback(_GotoDialog::Callback, this);
         _col->labelsize(flw::PREF_FONTSIZE);
         _col->textfont(flw::PREF_FIXED_FONT);
         _col->textsize(flw::PREF_FONTSIZE);
@@ -12495,13 +12434,13 @@ public:
         _row->value(b);
         sprintf(b, "%d", col > 0 ? col : 1);
         _col->value(b);
-        callback(_TableDisplayCellDialog::Callback, this);
+        callback(_GotoDialog::Callback, this);
         set_modal();
         resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_TableDisplayCellDialog*>(o);
+        auto self = static_cast<_GotoDialog*>(o);
         if (w == self) {
             self->_run = false;
             self->hide();
@@ -12529,18 +12468,18 @@ public:
         return _ret;
     }
 };
-class _TableDisplayFindDialog : public Fl_Double_Window {
+class _FindDialog : public Fl_Double_Window {
     Fl_Input*                   _find;
     Fl_Button*                  _next;
     Fl_Button*                  _prev;
     Fl_Button*                  _close;
     GridGroup*                  _grid;
-    TableDisplay*               _table;
+    Display*                    _table;
     bool                        _repeat;
     bool                        _run;
 public:
-    explicit _TableDisplayFindDialog(TableDisplay* table) :
-    Fl_Double_Window(0, 0, 10, 10, "Find Text In Table Cells") {
+    _FindDialog(Display* table) :
+    Fl_Double_Window(0, 0, 10, 10, "Find Text") {
         end();
         _close  = new Fl_Button(0, 0, 0, 0, "&Close");
         _grid   = new GridGroup(0, 0, w(), h());
@@ -12555,26 +12494,26 @@ public:
         _grid->add(_next,   -34, -5,  16,   4);
         _grid->add(_close,  -17, -5,  16,   4);
         add(_grid);
-        _close->callback(_TableDisplayFindDialog::Callback, this);
+        _close->callback(_FindDialog::Callback, this);
         _close->labelsize(flw::PREF_FONTSIZE);
-        _next->callback(_TableDisplayFindDialog::Callback, this);
+        _next->callback(_FindDialog::Callback, this);
         _next->labelsize(flw::PREF_FONTSIZE);
-        _prev->callback(_TableDisplayFindDialog::Callback, this);
+        _prev->callback(_FindDialog::Callback, this);
         _prev->labelsize(flw::PREF_FONTSIZE);
         _find->align(FL_ALIGN_LEFT);
-        _find->callback(_TableDisplayFindDialog::Callback, this);
+        _find->callback(_FindDialog::Callback, this);
         _find->labelsize(flw::PREF_FONTSIZE);
         _find->textfont(flw::PREF_FIXED_FONT);
         _find->textsize(flw::PREF_FONTSIZE);
         _find->value(_table->_find.c_str());
         _find->when(FL_WHEN_ENTER_KEY_ALWAYS);
-        callback(_TableDisplayFindDialog::Callback, this);
+        callback(_FindDialog::Callback, this);
         set_modal();
         resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 6);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_TableDisplayFindDialog*>(o);
+        auto self = static_cast<_FindDialog*>(o);
         if (w == self) {
             self->_run = false;
             self->hide();
@@ -12595,9 +12534,9 @@ public:
         }
     }
     void find(bool next) {
-        auto find = _find->value();
+        auto find = util::to_string(_find->value());
         _repeat = next;
-        if (*find == 0) {
+        if (find == "") {
             fl_beep(FL_BEEP_ERROR);
             return;
         }
@@ -12625,8 +12564,9 @@ public:
         if (next == true) {
             for (int r = row; r <= _table->rows(); r++) {
                 for (int c = col; c <= _table->columns(); c++) {
-                    auto v = _table->cell_value(r, c);
-                    if (v != nullptr && strstr(v, find) != nullptr) {
+                    auto v = _table->_get_find_value(r, c);
+                    auto p = v.find(find);
+                    if (p != std::string::npos) {
                         _table->active_cell(r, c, true);
                         _table->_find = find;
                         return;
@@ -12634,7 +12574,7 @@ public:
                 }
                 col = 1;
             }
-            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find) == 1) {
+            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find.c_str()) == 1) {
                 col = row = 1;
                 goto AGAIN;
             }
@@ -12642,8 +12582,8 @@ public:
         else {
             for (int r = row; r >= 1; r--) {
                 for (int c = col; c >= 1; c--) {
-                    auto v = _table->cell_value(r, c);
-                    if (v != nullptr && strstr(v, find) != nullptr) {
+                    auto v = _table->_get_find_value(r, c);
+                    if (v.find(find) != std::string::npos) {
                         _table->active_cell(r, c, true);
                         _table->_find = find;
                         return;
@@ -12651,7 +12591,7 @@ public:
                 }
                 col = _table->columns();
             }
-            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find) == 1) {
+            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find.c_str()) == 1) {
                 row = _table->rows();
                 col = _table->columns();
                 goto AGAIN;
@@ -12668,10 +12608,10 @@ public:
         }
     }
 };
-TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
-    _hor  = new _TableDisplayScrollbar(0, 0, 0, 0);
-    _ver  = new _TableDisplayScrollbar(0, 0, 0, 0);
+    _hor  = new _Scrollbar(0, 0, 0, 0);
+    _ver  = new _Scrollbar(0, 0, 0, 0);
     _edit = nullptr;
     add(_ver);
     add(_hor);
@@ -12684,12 +12624,12 @@ TableDisplay::TableDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group
     box(FL_BORDER_BOX);
     color(FL_BACKGROUND_COLOR);
     selection_color(FL_SELECTION_COLOR);
-    tooltip(TableDisplay::HELP_TEXT);
+    tooltip(table::HELP_TEXT);
     clip_children(1);
     util::labelfont(this);
     reset();
 }
-void TableDisplay::active_cell(int row, int col, bool show) {
+void Display::active_cell(int row, int col, bool show) {
     auto send = false;
     if (_rows == 0 || row < 1 || row > _rows || _cols == 0 || col < 1 || col > _cols) {
         row = -1;
@@ -12701,7 +12641,7 @@ void TableDisplay::active_cell(int row, int col, bool show) {
     _curr_row = row;
     _curr_col = col;
     if (send == true) {
-        _set_event(_curr_row, _curr_col, EVENT::CURSOR);
+        _set_event(_curr_row, _curr_col, Event::CURSOR);
         do_callback();
     }
     redraw();
@@ -12709,17 +12649,17 @@ void TableDisplay::active_cell(int row, int col, bool show) {
         show_cell(_curr_row, _curr_col);
     }
 }
-void TableDisplay::_CallbackVer(Fl_Widget*, void* o) {
-    auto table = static_cast<TableDisplay*>(o);
+void Display::_CallbackVer(Fl_Widget*, void* o) {
+    auto table = static_cast<Display*>(o);
     table->_start_col = table->_hor->value();
     table->redraw();
 }
- void TableDisplay::_CallbackHor(Fl_Widget*, void* o) {
-    auto table = static_cast<TableDisplay*>(o);
+void Display::_CallbackHor(Fl_Widget*, void* o) {
+    auto table = static_cast<Display*>(o);
     table->_start_row = table->_ver->value();
     table->redraw();
 }
-int TableDisplay::_cell_height(int Y) {
+int Display::_cell_height(int Y) {
     auto y2 = y() + h() - _hor->h();
     if (Y + _height >= y2) {
         return y2 - Y;
@@ -12728,7 +12668,7 @@ int TableDisplay::_cell_height(int Y) {
         return _height;
     }
 }
-int TableDisplay::_cell_width(int col, int X) {
+int Display::_cell_width(int col, int X) {
     auto cw  = cell_width(col);
     auto min = _height;
     if (cw < min) {
@@ -12748,29 +12688,30 @@ int TableDisplay::_cell_width(int col, int X) {
     }
     return cw;
 }
-void TableDisplay::cmd_copy() {
+void Display::cmd_copy() {
     auto val = cell_value(_curr_row, _curr_col);
-    Fl::copy(val, strlen(val), 1);
+    Fl::copy(val.c_str(), static_cast<int>(val.length()), 1);
 }
-void TableDisplay::cmd_find() {
-    auto dlg = _TableDisplayFindDialog(this);
+void Display::cmd_find() {
+    auto dlg = _FindDialog(this);
     dlg.run(window());
 }
-void TableDisplay::cmd_goto() {
-    auto dlg = _TableDisplayCellDialog(_curr_row, _curr_col);
+void Display::cmd_goto() {
+    auto dlg = _GotoDialog(_curr_row, _curr_col);
     if (dlg.run(window()) == true) {
         active_cell(dlg.row(), dlg.col(), true);
     }
 }
-void TableDisplay::debug() const {
+void Display::debug() const {
 #ifdef DEBUG
-    printf("flw::TableDisplay:\n");
+    printf("flw::Display:\n");
     printf("    rows            = %4d\n", _rows);
     printf("    cols            = %4d\n", _cols);
     printf("    curr_row        = %4d\n", _curr_row);
     printf("    curr_col        = %4d\n", _curr_col);
     printf("    start_row       = %4d\n", _start_row);
     printf("    start_col       = %4d\n", _start_col);
+    printf("    enable_keys     = %4d\n", _enable_keys);
     printf("    event           = %4d\n", (int) _event);
     printf("    event_row       = %4d\n", _event_row);
     printf("    event_col       = %4d\n", _event_col);
@@ -12786,8 +12727,8 @@ void TableDisplay::debug() const {
     printf("    disable_ver     = %4d\n", _disable_ver);
 #endif
 }
-void TableDisplay::draw() {
-    if (_edit) {
+void Display::draw() {
+    if (_edit != nullptr) {
         _edit->resize(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
     _update_scrollbars();
@@ -12824,7 +12765,7 @@ void TableDisplay::draw() {
     }
     fl_pop_clip();
 }
-void TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+void Display::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
     auto align    = cell_align(row, col);
     auto textfont = cell_textfont(row, col);
@@ -12842,7 +12783,7 @@ void TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H, bool
         fl_rectf(X + 1, Y, W + 1, H);
         fl_font(textfont, textsize);
         fl_color(textcolor);
-        _draw_text(val, X + space, Y + 2, W - space * 2, H - 4, align);
+        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
         fl_color(FL_DARK3);
         if (ver == true) {
             fl_line(X, Y, X, Y + H);
@@ -12857,11 +12798,11 @@ void TableDisplay::_draw_cell(int row, int col, int X, int Y, int W, int H, bool
         fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
         fl_font(textfont, textsize);
         fl_color(FL_FOREGROUND_COLOR);
-        _draw_text(val, X + space, Y + 2, W - space * 2, H - 4, align);
+        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
     }
     fl_pop_clip();
 }
-void TableDisplay::_draw_row(int row, int W, int Y, int H) {
+void Display::_draw_row(int row, int W, int Y, int H) {
     auto x1 = x();
     auto x2 = x() + W;
     for (auto c = (_show_row_header ? 0 : _start_col); c <= _cols; c++) {
@@ -12872,10 +12813,10 @@ void TableDisplay::_draw_row(int row, int W, int Y, int H) {
             _current_cell[2] = cw;
             _current_cell[3] = H;
             if (_edit == nullptr) {
-                _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != TableDisplay::SELECT::NO);
+                _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != Select::NO);
             }
         }
-        else if (row > 0 && row == _curr_row && _select == TableDisplay::SELECT::ROW) {
+        else if (row > 0 && row == _curr_row && _select == Select::ROW) {
             _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, true);
         }
         else {
@@ -12890,7 +12831,7 @@ void TableDisplay::_draw_row(int row, int W, int Y, int H) {
         }
     }
 }
-void TableDisplay::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
+void Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
     if (align == FL_ALIGN_CENTER || align == FL_ALIGN_RIGHT) {
         if (fl_width(string) > W) {
             align = FL_ALIGN_LEFT;
@@ -12898,7 +12839,7 @@ void TableDisplay::_draw_text(const char* string, int X, int Y, int W, int H, Fl
     }
     fl_draw(string, X, Y, W, H, align);
 }
-int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
+int Display::_ev_keyboard_down(bool only_append_insert) {
     auto key   = Fl::event_key();
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
@@ -12906,75 +12847,75 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
         if (_enable_keys == false) {
         }
         else if (cmd == true && key == 'a') {
-            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
+            _set_event(_curr_row, _curr_col, (shift == true) ? Event::APPEND_COLUMN : Event::APPEND_ROW);
             do_callback();
             return 1;
         }
         else if (cmd == true && key == 'i') {
-            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::INSERT_COLUMN : EVENT::INSERT_ROW);
+            _set_event(_curr_row, _curr_col, (shift == true) ? Event::INSERT_COLUMN : Event::INSERT_ROW);
             do_callback();
             return 1;
         }
         else if (cmd == true && key == 'd') {
-            _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::DELETE_COLUMN : EVENT::DELETE_ROW);
+            _set_event(_curr_row, _curr_col, (shift == true) ? Event::DELETE_COLUMN : Event::DELETE_ROW);
             do_callback();
             return 1;
         }
     }
     else if (cmd == true && key == FL_Up && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_UP);
+        _move_cursor(Move::SCROLL_UP);
         return 1;
     }
     else if (key == FL_Up && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::UP);
+        _move_cursor(Move::UP);
         return 1;
     }
     else if (cmd == true && key == FL_Down && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_DOWN);
+        _move_cursor(Move::SCROLL_DOWN);
         return 1;
     }
     else if (key == FL_Down && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::DOWN);
+        _move_cursor(Move::DOWN);
         return 1;
     }
     else if (cmd == true && key == FL_Left && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_LEFT);
+        _move_cursor(Move::SCROLL_LEFT);
         return 1;
     }
     else if ((key == FL_Left && shift == false) || (key == FL_Tab && shift == true)) {
-        _move_cursor(_TABLEDISPLAY_MOVE::LEFT);
+        _move_cursor(Move::LEFT);
         return 1;
     }
     else if (cmd == true && key == FL_Right && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::SCROLL_RIGHT);
+        _move_cursor(Move::SCROLL_RIGHT);
         return 1;
     }
     else if ((key == FL_Right && shift == false) || (key == FL_Tab && shift == false)) {
-        _move_cursor(_TABLEDISPLAY_MOVE::RIGHT);
+        _move_cursor(Move::RIGHT);
         return 1;
     }
     else if (cmd == true && key == FL_Page_Up && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::FIRST_ROW);
+        _move_cursor(Move::FIRST_ROW);
         return 1;
     }
     else if (key == FL_Page_Up && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::PAGE_UP);
+        _move_cursor(Move::PAGE_UP);
         return 1;
     }
     else if (cmd == true && key == FL_Page_Down && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::LAST_ROW);
+        _move_cursor(Move::LAST_ROW);
         return 1;
     }
     else if (key == FL_Page_Down && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::PAGE_DOWN);
+        _move_cursor(Move::PAGE_DOWN);
         return 1;
     }
     else if (key == FL_Home && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::FIRST_COL);
+        _move_cursor(Move::FIRST_COL);
         return 1;
     }
     else if (key == FL_End && shift == false) {
-        _move_cursor(_TABLEDISPLAY_MOVE::LAST_COL);
+        _move_cursor(Move::LAST_COL);
         return 1;
     }
     else if (cmd == true && key == 'c' && shift == false) {
@@ -12992,23 +12933,23 @@ int TableDisplay::_ev_keyboard_down(bool only_append_insert) {
     else if (_enable_keys == false) {
     }
     else if (cmd == true && key == 'a') {
-        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::APPEND_COLUMN : EVENT::APPEND_ROW);
+        _set_event(_curr_row, _curr_col, (shift == true) ? Event::APPEND_COLUMN : Event::APPEND_ROW);
         do_callback();
         return 1;
     }
     else if (cmd == true && key == 'i') {
-        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::INSERT_COLUMN : EVENT::INSERT_ROW);
+        _set_event(_curr_row, _curr_col, (shift == true) ? Event::INSERT_COLUMN : Event::INSERT_ROW);
         do_callback();
         return 1;
     }
     else if (cmd == true && key == 'd') {
-        _set_event(_curr_row, _curr_col, (shift == true) ? EVENT::DELETE_COLUMN : EVENT::DELETE_ROW);
+        _set_event(_curr_row, _curr_col, (shift == true) ? Event::DELETE_COLUMN : Event::DELETE_ROW);
         do_callback();
         return 1;
     }
     return 0;
 }
-int TableDisplay::_ev_mouse_click () {
+int Display::_ev_mouse_click () {
     if (Fl::event_button1() && _drag == true) {
         return 1;
     }
@@ -13021,11 +12962,11 @@ int TableDisplay::_ev_mouse_click () {
         Fl::focus(this);
     }
     if (r == 0 && c >= 1) {
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? EVENT::COLUMN_CTRL : EVENT::COLUMN);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? Event::COLUMN_CTRL : Event::COLUMN);
         do_callback();
     }
     else if (c == 0 && r >= 1) {
-        _set_event(r, c, (Fl::event_ctrl() != 0) ? EVENT::ROW_CTRL : EVENT::ROW);
+        _set_event(r, c, (Fl::event_ctrl() != 0) ? Event::ROW_CTRL : Event::ROW);
         do_callback();
     }
     else if (r == -1 || c == -1) {
@@ -13040,12 +12981,12 @@ int TableDisplay::_ev_mouse_click () {
             return 0;
         }
     }
-    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != TableDisplay::SELECT::NO) {
+    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != Select::NO) {
         active_cell(r, c);
     }
     return 2;
 }
-int TableDisplay::_ev_mouse_drag() {
+int Display::_ev_mouse_drag() {
     if (_drag == false) {
         return 2;
     }
@@ -13071,7 +13012,7 @@ int TableDisplay::_ev_mouse_drag() {
     }
     return 2;
 }
-int TableDisplay::_ev_mouse_move() {
+int Display::_ev_mouse_move() {
     auto mx = Fl::event_x();
     auto x1 = x() + (_show_row_header ? _cell_width(0) : 0);
     auto x2 = x() + w() - _ver->w();
@@ -13104,7 +13045,7 @@ int TableDisplay::_ev_mouse_move() {
     _resize_col = -1;
     return 2;
 }
-void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
+void Display::_get_cell_below_mouse(int& row, int& col) {
     row = -1;
     col = -1;
     auto my = Fl::event_y();
@@ -13147,7 +13088,7 @@ void TableDisplay::_get_cell_below_mouse(int& row, int& col) {
         }
     }
 }
-int TableDisplay::handle(int event) {
+int Display::handle(int event) {
     auto ret = 2;
     if (_rows > 0 && _cols > 0) {
         if (event == FL_FOCUS) {
@@ -13182,18 +13123,18 @@ int TableDisplay::handle(int event) {
         return Fl_Group::handle(event);
     }
 }
-void TableDisplay::header(bool row, bool col) {
+void Display::header(bool row, bool col) {
     _show_row_header = row;
     _show_col_header = col;
     redraw();
 }
-void TableDisplay::lines(bool ver, bool hor) {
+void Display::lines(bool ver, bool hor) {
     _show_ver_lines = ver;
     _show_hor_lines = hor;
     redraw();
 }
-void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
-    if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != TableDisplay::SELECT::NO) {
+void Display::_move_cursor(Move move) {
+    if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != Select::NO) {
         auto r     = _curr_row;
         auto c     = _curr_col;
         auto range = (int) ((h() - _hor->h() - (_show_row_header ? _height : 0)) / _height);
@@ -13206,30 +13147,30 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         else {
             if (range > 0) {
                 switch (move) {
-                    case _TABLEDISPLAY_MOVE::FIRST_ROW:
+                    case Move::FIRST_ROW:
                         r = 1;
                         break;
-                    case _TABLEDISPLAY_MOVE::UP:
+                    case Move::UP:
                         r = r > 1 ? r - 1 : 1;
                         break;
-                    case _TABLEDISPLAY_MOVE::SCROLL_UP:
+                    case Move::SCROLL_UP:
                         r = r > 8 ? r - 8 : 1;
                         break;
-                    case _TABLEDISPLAY_MOVE::PAGE_UP:
+                    case Move::PAGE_UP:
                         r = _start_row - range > 0 ? _start_row - range : 1;
                         _start_row = r;
                         break;
-                    case _TABLEDISPLAY_MOVE::DOWN:
+                    case Move::DOWN:
                         r = r < _rows ? r + 1 : _rows;
                         break;
-                    case _TABLEDISPLAY_MOVE::SCROLL_DOWN:
+                    case Move::SCROLL_DOWN:
                         r = r < _rows - 8 ? r + 8 : _rows;
                         break;
-                    case _TABLEDISPLAY_MOVE::PAGE_DOWN:
+                    case Move::PAGE_DOWN:
                         r = _start_row + range <= _rows ? _start_row + range : _rows;
                         _start_row = r;
                         break;
-                    case _TABLEDISPLAY_MOVE::LAST_ROW:
+                    case Move::LAST_ROW:
                         r = _rows;
                         break;
                     default:
@@ -13245,22 +13186,22 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         }
         else {
             switch (move) {
-                case _TABLEDISPLAY_MOVE::LEFT:
+                case Move::LEFT:
                     c = c > 1 ? c - 1 : 1;
                     break;
-                case _TABLEDISPLAY_MOVE::SCROLL_LEFT:
+                case Move::SCROLL_LEFT:
                     c = c > 4 ? c - 4 : 1;
                     break;
-                case _TABLEDISPLAY_MOVE::RIGHT:
+                case Move::RIGHT:
                     c = c < _cols ? c + 1 : _cols;
                     break;
-                case _TABLEDISPLAY_MOVE::SCROLL_RIGHT:
+                case Move::SCROLL_RIGHT:
                     c = c < _cols - 4 ? c + 4 : _cols;
                     break;
-                case _TABLEDISPLAY_MOVE::FIRST_COL:
+                case Move::FIRST_COL:
                     c = 1;
                     break;
-                case _TABLEDISPLAY_MOVE::LAST_COL:
+                case Move::LAST_COL:
                     c = _cols;
                     break;
                 default:
@@ -13272,7 +13213,7 @@ void TableDisplay::_move_cursor(_TABLEDISPLAY_MOVE move) {
         }
     }
 }
-void TableDisplay::reset() {
+void Display::reset() {
     _cols            = 0;
     _curr_col        = -1;
     _curr_row        = -1;
@@ -13285,7 +13226,7 @@ void TableDisplay::reset() {
     _drag            = false;
     _edit            = nullptr;
     _enable_keys     = false;
-    _event           = EVENT::UNDEFINED;
+    _event           = Event::UNDEFINED;
     _event_col       = -1;
     _event_row       = -1;
     _expand          = false;
@@ -13293,7 +13234,7 @@ void TableDisplay::reset() {
     _resize          = false;
     _resize_col      = -1;
     _rows            = 0;
-    _select          = TableDisplay::SELECT::NO;
+    _select          = Select::NO;
     _show_col_header = false;
     _show_hor_lines  = false;
     _show_row_header = false;
@@ -13303,7 +13244,7 @@ void TableDisplay::reset() {
     _find            = "";
     redraw();
 }
-void TableDisplay::show_cell(int row, int col) {
+void Display::show_cell(int row, int col) {
     if (_rows > 0 && row > 0 && row <= _rows) {
         auto rc = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
         if (row <= _start_row) {
@@ -13340,20 +13281,21 @@ void TableDisplay::show_cell(int row, int col) {
     }
     redraw();
 }
-void TableDisplay::size(int rows, int cols) {
-    if (rows > -1 && _cols > -1) {
-        _rows      = rows;
-        _cols      = cols;
-        _curr_row  = 1;
-        _curr_col  = 1;
-        _start_row = 1;
-        _start_col = 1;
-        _set_event(_curr_row, _curr_col, EVENT::SIZE);
-        do_callback();
+void Display::size(int rows, int cols) {
+    if (rows < 0 || _cols < 0) {
+        return;
     }
+    _rows      = rows;
+    _cols      = cols;
+    _curr_row  = 1;
+    _curr_col  = 1;
+    _start_row = 1;
+    _start_col = 1;
+    _set_event(_curr_row, _curr_col, Event::SIZE);
+    do_callback();
     redraw();
 }
-void TableDisplay::_update_scrollbars() {
+void Display::_update_scrollbars() {
     if (_rows > 0 && _cols > 0) {
         if (_disable_hor == true) {
             _hor->hide();
@@ -13424,7 +13366,7 @@ void TableDisplay::_update_scrollbars() {
     _hor->Fl_Valuator::value(_start_col);
 }
 }
-#include <assert.h>
+}
 #include <errno.h>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
@@ -13435,123 +13377,97 @@ void TableDisplay::_update_scrollbars() {
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_draw.H>
-#include <FL/fl_show_colormap.H>
+#include <FL/Fl_Color_Chooser.H>
 namespace flw {
-int _tableeditor_to_doubles(std::string string, double numbers[], size_t size) {
-    auto end = (char*) nullptr;
-    auto in  = string.c_str();
-    auto f   = (size_t) 0;
-    errno = 0;
-    for (; f < size; f++) {
-        numbers[f] = strtod(in, &end);
-        if (errno != 0 || in == end) return f;
-        in = end;
-    }
-    return f;
+namespace table {
+static const std::string DEC_SMALL      = "-";
+static const std::string DEC_MEDIUM     = "--";
+static const std::string DEC_LARGE      = "---";
+static const std::string INC_SMALL      = "+";
+static const std::string INC_MEDIUM     = "++";
+static const std::string INC_LARGE      = "+++";
+std::string              EditColorLabel = "Set Color";
+std::string              EditDateLabel  = "Select Date";
+std::string              EditDirLabel   = "Select Directory";
+std::string              EditFileLabel  = "Select File";
+std::string              EditListLabel  = "Select String";
+std::string              EditTextLabel  = "Edit Text";
+std::string format_slider(double val, double min, double max, double step) {
+    static char result[2000];
+    snprintf(result, 2000, "%.4f %.4f %.4f %.4f", val, min, max, step);
+    return result;
 }
-int64_t _tableeditor_to_int(std::string string, int64_t def) {
-    try { return std::stoll(string.c_str(), 0, 0); }
-    catch (...) { return def; }
+Editor::Editor(int X, int Y, int W, int H, const char* l) : Display(X, Y, W, H, l) {
+    Editor::reset();
 }
-int _tableeditor_to_ints(std::string string, int64_t numbers[], size_t size) {
-    auto end = (char*) nullptr;
-    auto in  = string.c_str();
-    auto f   = (size_t) 0;
-    errno = 0;
-    for (; f < size; f++) {
-        numbers[f] = strtoll(in, &end, 10);
-        if (errno != 0 || in == end) return f;
-        in = end;
-    }
-    return f;
-}
-const char* TableEditor::SELECT_DATE = "Select Date";
-const char* TableEditor::SELECT_DIR  = "Select Directory";
-const char* TableEditor::SELECT_FILE = "Select File";
-const char* TableEditor::SELECT_LIST = "Select String";
-TableEditor::TableEditor(int X, int Y, int W, int H, const char* l) : TableDisplay(X, Y, W, H, l) {
-    TableEditor::reset();
-}
-void TableEditor::cmd_add(int count) {
-    if (count == 100) {
-        _edit_start("+++");
-    }
-    else if (count == 10) {
-        _edit_start("++");
-    }
-    else if (count == 1) {
-        _edit_start("+");
-    }
-    else if (count == -100) {
-        _edit_start("---");
-    }
-    else if (count == -10) {
-        _edit_start("--");
-    }
-    else if (count == -1) {
-        _edit_start("-");
-    }
-}
-void TableEditor::cmd_cut() {
+void Editor::cmd_cut() {
     auto val = cell_value(_curr_row, _curr_col);
-    Fl::copy(val, strlen(val), 1);
+    Fl::copy(val.c_str(), static_cast<int>(val.length()), 1);
     cmd_delete();
 }
-void TableEditor::cmd_delete() {
+void Editor::cmd_delete() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
         if (edit == true) {
-            auto rend = cell_rend(_curr_row, _curr_col);
+            auto type = cell_type(_curr_row, _curr_col);
             auto set  = false;
-            switch (rend) {
-                case TableEditor::REND::TEXT:
-                case TableEditor::REND::SECRET:
-                case TableEditor::REND::INPUT_CHOICE:
-                case TableEditor::REND::DLG_FILE:
-                case TableEditor::REND::DLG_DIR:
-                case TableEditor::REND::DLG_LIST:
+            switch (type) {
+                case Type::TEXT:
+                case Type::SECRET:
+                case Type::ICHOICE:
+                case Type::FILE:
+                case Type::DIR:
+                case Type::LIST:
+                case Type::MTEXT:
                     set = cell_value(_curr_row, _curr_col, "");
                     break;
-                case TableEditor::REND::INTEGER:
+                case Type::INTEGER:
                     set = cell_value(_curr_row, _curr_col, "0");
                     break;
-                case TableEditor::REND::NUMBER:
+                case Type::NUMBER:
                     set = cell_value(_curr_row, _curr_col, "0.0");
                     break;
-                case TableEditor::REND::BOOLEAN:
+                case Type::BOOLEAN:
                     set = cell_value(_curr_row, _curr_col, "0");
                     break;
-                case TableEditor::REND::DLG_DATE:
+                case Type::DATE:
                     set = cell_value(_curr_row, _curr_col, "1970-01-01");
                     break;
-                case TableEditor::REND::DLG_COLOR:
+                case Type::COLOR:
                     set = cell_value(_curr_row, _curr_col, "56");
                     break;
                 default:
                     break;
             }
             if (set == true) {
-                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+                _set_event(_curr_row, _curr_col, Event::CHANGED);
                 do_callback();
                 redraw();
             }
         }
     }
 }
-void TableEditor::cmd_paste() {
+void Editor::cmd_paste() {
     Fl::paste(*this, 1);
 }
-void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
     fl_push_clip(X, Y, W + 1, H);
     auto align     = cell_align(row, col);
     auto textcolor = cell_textcolor(row, col);
     auto textfont  = cell_textfont(row, col);
     auto textsize  = cell_textsize(row, col);
     auto val       = cell_value(row, col);
-    assert(val);
-    if (row > 0 && col > 0) {
+    if (row < 0 || col < 0) {
+    }
+    else if (row == 0 || col == 0) {
+        fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
+        fl_font(textfont, textsize);
+        fl_color(FL_FOREGROUND_COLOR);
+        _draw_text(val.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
+    }
+    else {
         auto format = cell_format(row, col);
-        auto rend   = cell_rend(row, col);
+        auto type   = cell_type(row, col);
         auto color  = cell_color(row, col);
         char buffer[100];
         if (current == true) {
@@ -13559,39 +13475,39 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             textcolor = fl_contrast(FL_FOREGROUND_COLOR, color);
         }
         fl_rectf(X + 1, Y, W + 1, H, color);
-        if (rend == TableEditor::REND::SECRET) {
+        if (type == Type::SECRET) {
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            if (format == TableEditor::FORMAT::SECRET_DOT) {
+            if (format == Format::SECRET_DOT) {
                 fl_draw("••••••", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
             else {
                 fl_draw("******", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
         }
-        else if (rend == TableEditor::REND::SLIDER) {
+        else if (type == Type::SLIDER) {
             double nums[4];
-            if (_tableeditor_to_doubles(val, nums, 4) == 4) {
+            if (util::to_doubles(val, nums, 4) == 4) {
                 auto range = 0.0;
                 if ((nums[2] - nums[1]) > 0.0001) {
                     range = (nums[0] - nums[1]) / (nums[2] - nums[1]);
                 }
-                auto width = (int) (range * (W - 3));
+                auto width = static_cast<int>(range * (W - 3));
                 if (width > 0) {
                     fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, width, H - 3, textcolor);
                 }
             }
         }
-        else if (rend == TableEditor::REND::DLG_COLOR) {
-            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, (Fl_Color) _tableeditor_to_int(val, 0));
+        else if (type == Type::COLOR) {
+            fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, W - 3, H - 3, static_cast<Fl_Color>(util::to_int(val, 0)));
         }
-        else if (rend == TableEditor::REND::DLG_DATE) {
-            auto        date = gnu::Date(val);
-            std::string string;
-            if (format == TableEditor::FORMAT::DATE_WORLD) {
+        else if (type == Type::DATE) {
+            auto date   = gnu::Date(val);
+            auto string = std::string();
+            if (format == Format::DATE_WORLD) {
                 string = date.format(gnu::Date::FORMAT::WORLD);
             }
-            else if (format == TableEditor::FORMAT::DATE_US) {
+            else if (format == Format::DATE_US) {
                 string = date.format(gnu::Date::FORMAT::US);
             }
             else {
@@ -13601,7 +13517,7 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_color(textcolor);
             _draw_text(string.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
-        else if (rend == TableEditor::REND::BOOLEAN) {
+        else if (type == Type::BOOLEAN) {
             auto bw  = textsize;
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
@@ -13615,16 +13531,16 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
                 x_1 = X + 6;
             }
             fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_WHITE);
-            if (*val == '1') {
+            if (*val.c_str() == '1') {
                 Fl_Rect r(x_1, y_1, bw - 1, bw - 1);
                 fl_draw_check(r, selection_color());
             }
         }
-        else if (rend == TableEditor::REND::INTEGER) {
-            auto num = _tableeditor_to_int(val, 0);
+        else if (type == Type::INTEGER) {
+            auto num = util::to_int(val, 0);
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            if (format == TableEditor::FORMAT::INT_SEP) {
+            if (format == Format::INT_SEP) {
                 auto s = util::format_int(num);
                 _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
             }
@@ -13633,39 +13549,39 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
                 _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
             }
         }
-        else if (rend == TableEditor::REND::NUMBER || rend == TableEditor::REND::VALUE_SLIDER) {
+        else if (type == Type::NUMBER || type == Type::VSLIDER) {
             auto num = util::to_double(val, 0.0);
-            if (rend == TableEditor::REND::VALUE_SLIDER) {
+            if (type == Type::VSLIDER) {
                 double nums[1];
-                if (_tableeditor_to_doubles(val, nums, 1) == 1) {
+                if (util::to_doubles(val, nums, 1) == 1) {
                     num = nums[0];
                 }
             }
-            if (format == TableEditor::FORMAT::DEC_0) {
+            if (format == Format::DEC_0) {
                 snprintf(buffer, 100, "%.0f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_1) {
+            else if (format == Format::DEC_1) {
                 snprintf(buffer, 100, "%.1f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_2) {
+            else if (format == Format::DEC_2) {
                 snprintf(buffer, 100, "%.2f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_3) {
+            else if (format == Format::DEC_3) {
                 snprintf(buffer, 100, "%.3f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_4) {
+            else if (format == Format::DEC_4) {
                 snprintf(buffer, 100, "%.4f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_5) {
+            else if (format == Format::DEC_5) {
                 snprintf(buffer, 100, "%.5f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_6) {
+            else if (format == Format::DEC_6) {
                 snprintf(buffer, 100, "%.6f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_7) {
+            else if (format == Format::DEC_7) {
                 snprintf(buffer, 100, "%.7f", num);
             }
-            else if (format == TableEditor::FORMAT::DEC_8) {
+            else if (format == Format::DEC_8) {
                 snprintf(buffer, 100, "%.8f", num);
             }
             else {
@@ -13675,10 +13591,32 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_color(textcolor);
             _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
         }
+        else if (type == Type::MTEXT) {
+            auto tmp = std::string();
+            for (auto c : val) {
+                if (tmp.length() == 30) {
+                    break;
+                }
+                else if ((c == 10 || c == 13 || c == 9) && tmp == "") {
+                }
+                else if ((c == 10 || c == 13 || c == 9) && tmp != "") {
+                    break;
+                }
+                else {
+                    tmp += c;
+                }
+            }
+            if (tmp != val) {
+                tmp += "...";
+            }
+            fl_font(textfont, textsize);
+            fl_color(textcolor);
+            _draw_text(tmp.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
+        }
         else {
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            _draw_text(val, X + 4, Y + 2, W - 8, H - 4, align);
+            _draw_text(val.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
         fl_color(FL_DARK3);
         if (ver == true) {
@@ -13690,38 +13628,31 @@ void TableEditor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool 
             fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
         }
     }
-    else {
-        fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
-        fl_font(textfont, textsize);
-        fl_color(FL_FOREGROUND_COLOR);
-        _draw_text(val, X + 4, Y + 2, W - 8, H - 4, align);
-    }
     fl_pop_clip();
 }
-void TableEditor::_edit_create() {
-    auto rend      = cell_rend(_curr_row, _curr_col);
+void Editor::_edit_create() {
+    auto rend      = cell_type(_curr_row, _curr_col);
     auto align     = cell_align(_curr_row, _curr_col);
     auto color     = cell_color(_curr_row, _curr_col);
     auto textcolor = FL_FOREGROUND_COLOR;
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
     auto val       = cell_value(_curr_row, _curr_col);
-    assert(val);
-    if (rend == TableEditor::REND::TEXT ||
-        rend == TableEditor::REND::INTEGER ||
-        rend == TableEditor::REND::NUMBER ||
-        rend == TableEditor::REND::SECRET) {
+    if (rend == Type::TEXT ||
+        rend == Type::INTEGER ||
+        rend == Type::NUMBER ||
+        rend == Type::SECRET) {
         auto w = (Fl_Input*) nullptr;
-        if (rend == TableEditor::REND::TEXT) {
+        if (rend == Type::TEXT) {
             w = new Fl_Input(0, 0, 0, 0);
         }
-        else if (rend == TableEditor::REND::INTEGER) {
+        else if (rend == Type::INTEGER) {
             w = new Fl_Int_Input(0, 0, 0, 0);
         }
-        else if (rend == TableEditor::REND::NUMBER) {
+        else if (rend == Type::NUMBER) {
             w = new Fl_Float_Input(0, 0, 0, 0);
         }
-        else if (rend == TableEditor::REND::SECRET) {
+        else if (rend == Type::SECRET) {
             w = new Fl_Secret_Input(0, 0, 0, 0);
         }
         w->align(align);
@@ -13731,23 +13662,23 @@ void TableEditor::_edit_create() {
         w->textcolor(textcolor);
         w->textfont(textfont);
         w->textsize(textsize);
-        w->value(val);
-        w->insert_position(0, strlen(val));
+        w->value(val.c_str());
+        w->insert_position(0, static_cast<int>(val.length()));
         _edit = w;
     }
-    else if (rend == TableEditor::REND::BOOLEAN) {
+    else if (rend == Type::BOOLEAN) {
         auto w = new Fl_Check_Button(0, 0, 0, 0);
         w->box(FL_BORDER_BOX);
         w->color(color);
         w->labelcolor(textcolor);
         w->labelsize(textsize);
-        w->value(*val && val[0] == '1' ? 1 : 0);
+        w->value(*val.c_str() == '1' ? 1 : 0);
         _edit = w;
     }
-    else if (rend == TableEditor::REND::SLIDER) {
+    else if (rend == Type::SLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
-        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
+        if (util::to_doubles(val, nums, 4) == 4) {
             w = new Fl_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -13759,10 +13690,10 @@ void TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == TableEditor::REND::VALUE_SLIDER) {
+    else if (rend == Type::VSLIDER) {
         auto w = (Fl_Slider*) nullptr;
         double nums[4];
-        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
+        if (util::to_doubles(val, nums, 4) == 4) {
             w = new Fl_Value_Slider(0, 0, 0, 0);
             w->color(color);
             w->selection_color(textcolor);
@@ -13775,18 +13706,18 @@ void TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == TableEditor::REND::CHOICE) {
+    else if (rend == Type::CHOICE) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
             auto w      = new Fl_Choice(0, 0, 0, 0);
-            auto select = (std::size_t) 0;
+            auto select = (size_t) 0;
             w->align(align);
             w->box(FL_BORDER_BOX);
             w->down_box(FL_BORDER_BOX);
             w->labelsize(textsize);
             w->textfont(textfont);
             w->textsize(textsize);
-            for (std::size_t f = 0; f < choices.size(); f++) {
+            for (size_t f = 0; f < choices.size(); f++) {
                 const auto& s = choices[f];
                 w->add(s.c_str());
                 if (s == val) {
@@ -13797,7 +13728,7 @@ void TableEditor::_edit_create() {
             _edit = w;
         }
     }
-    else if (rend == TableEditor::REND::INPUT_CHOICE) {
+    else if (rend == Type::ICHOICE) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
             auto w = new Fl_Input_Choice(0, 0, 0, 0);
@@ -13814,9 +13745,9 @@ void TableEditor::_edit_create() {
             for (const auto& s : choices) {
                 w->add(s.c_str());
             }
-            if (*val) {
-                w->value(val);
-                w->input()->insert_position(0, strlen(val));
+            if (val != "") {
+                w->value(val.c_str());
+                w->input()->insert_position(0, static_cast<int>(val.length()));
             }
             _edit  = w;
             _edit2 = w->input();
@@ -13833,108 +13764,134 @@ void TableEditor::_edit_create() {
         }
     }
 }
-void TableEditor::_edit_quick(const char* key) {
-    auto rend = cell_rend(_curr_row, _curr_col);
+void Editor::_edit_quick(const std::string& key) {
+    auto rend = cell_type(_curr_row, _curr_col);
     auto val  = cell_value(_curr_row, _curr_col);
     char buffer[100];
-    assert(val);
-    if (rend == TableEditor::REND::INTEGER) {
-        auto num = _tableeditor_to_int(val, 0);
-        if (strcmp(key, "+") == 0) {
+    if (rend == Type::INTEGER) {
+        auto num = util::to_int(val, 0);
+        if (key == table::INC_SMALL) {
             num++;
         }
-        else if (strcmp(key, "++") == 0) {
+        else if (key == table::INC_MEDIUM) {
             num += 10;
         }
-        else if (strcmp(key, "+++") == 0) {
+        else if (key == table::INC_LARGE) {
             num += 100;
         }
-        else if (strcmp(key, "-") == 0) {
+        else if (key == table::DEC_SMALL) {
             num--;
         }
-        else if (strcmp(key, "--") == 0) {
+        else if (key == table::DEC_MEDIUM) {
             num -= 10;
         }
-        else if (strcmp(key, "---") == 0) {
+        else if (key == table::DEC_LARGE) {
             num -= 100;
         }
-        snprintf(buffer, 100, "%lld", (long long int) num);
-        if ((_send_changed_event_always == true || strcmp(val, buffer) != 0) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+        snprintf(buffer, 100, "%lld", static_cast<long long int>(num));
+        if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
         }
     }
-    else if (rend == TableEditor::REND::NUMBER) {
+    else if (rend == Type::NUMBER) {
         auto num = util::to_double(val, 0.0);
-        if (strcmp(key, "+") == 0) {
+        if (key == table::INC_SMALL) {
             num += 0.1;
         }
-        else if (strcmp(key, "++") == 0) {
+        else if (key == table::INC_MEDIUM) {
             num += 1.0;
         }
-        else if (strcmp(key, "+++") == 0) {
+        else if (key == table::INC_LARGE) {
             num += 10.0;
         }
-        else if (strcmp(key, "-") == 0) {
+        else if (key == table::DEC_SMALL) {
             num -= 0.1;
         }
-        else if (strcmp(key, "--") == 0) {
+        else if (key == table::DEC_MEDIUM) {
             num -= 1.0;
         }
-        else if (strcmp(key, "---") == 0) {
+        else if (key == table::DEC_LARGE) {
             num -= 10.0;
         }
         snprintf(buffer, 100, "%f", num);
-        if ((_send_changed_event_always == true || strcmp(val, buffer) != 0) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+        if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
         }
     }
-    else if (rend == TableEditor::REND::DLG_DATE) {
+    else if (rend == Type::COLOR) {
+        auto color = static_cast<int>(util::to_int(val, 0));
+        if (key == table::INC_SMALL) {
+            color++;
+        }
+        else if (key == table::INC_MEDIUM) {
+            color += 8;
+        }
+        else if (key == table::INC_LARGE) {
+            color += 24;
+        }
+        else if (key == table::DEC_SMALL) {
+            color--;
+        }
+        else if (key == table::DEC_MEDIUM) {
+            color -= 8;
+        }
+        else if (key == table::DEC_LARGE) {
+            color -= 24;
+        }
+        color = color % 256;
+        snprintf(buffer, 100, "%d", color);
+        if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
+            do_callback();
+        }
+    }
+    else if (rend == Type::DATE) {
         auto date = gnu::Date(val);
-        if (strcmp(key, "+") == 0) {
+        if (key == table::INC_SMALL) {
             date.add_days(1);
         }
-        else if (strcmp(key, "++") == 0) {
+        else if (key == table::INC_MEDIUM) {
             date.add_months(1);
         }
-        else if (strcmp(key, "+++") == 0) {
+        else if (key == table::INC_LARGE) {
             date.add_years(1);
         }
-        else if (strcmp(key, "-") == 0) {
+        else if (key == table::DEC_SMALL) {
             date.add_days(-1);
         }
-        else if (strcmp(key, "--") == 0) {
+        else if (key == table::DEC_MEDIUM) {
             date.add_months(-1);
         }
-        else if (strcmp(key, "---") == 0) {
+        else if (key == table::DEC_LARGE) {
             date.add_years(-1);
         }
         auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
-        if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+        if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
         }
     }
-    else if (rend == TableEditor::REND::SLIDER || rend == TableEditor::REND::VALUE_SLIDER) {
+    else if (rend == Type::SLIDER || rend == Type::VSLIDER) {
         double nums[4];
-        if (_tableeditor_to_doubles(val, nums, 4) == 4) {
-            if (strcmp(key, "+") == 0) {
+        if (util::to_doubles(val, nums, 4) == 4) {
+            if (key == table::INC_SMALL) {
                 nums[0] += nums[3];
             }
-            else if (strcmp(key, "++") == 0) {
+            else if (key == table::INC_MEDIUM) {
                 nums[0] += (nums[3] * 10);
             }
-            else if (strcmp(key, "+++") == 0) {
+            else if (key == table::INC_LARGE) {
                 nums[0] += (nums[3] * 100);
             }
-            else if (strcmp(key, "-") == 0) {
+            else if (key == table::DEC_SMALL) {
                 nums[0] -= nums[3];
             }
-            else if (strcmp(key, "--") == 0) {
+            else if (key == table::DEC_MEDIUM) {
                 nums[0] -= (nums[3] * 10);
             }
-            else if (strcmp(key, "---") == 0) {
+            else if (key == table::DEC_LARGE) {
                 nums[0] -= (nums[3] * 100);
             }
             if (nums[0] < nums[1]) {
@@ -13943,80 +13900,95 @@ void TableEditor::_edit_quick(const char* key) {
             else if (nums[0] > nums[2]) {
                 nums[0] = nums[2];
             }
-            auto val2 = FormatSlider(nums[0], nums[1], nums[2], nums[3]);
-            if ((_send_changed_event_always == true || strcmp(val, val2) != 0) && cell_value(_curr_row, _curr_col, val2) == true) {
-                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+            auto val2 = table::format_slider(nums[0], nums[1], nums[2], nums[3]);
+            if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2) == true) {
+                _set_event(_curr_row, _curr_col, Event::CHANGED);
                 do_callback();
             }
         }
     }
 }
-void TableEditor::_edit_show() {
-    auto rend = cell_rend(_curr_row, _curr_col);
+void Editor::_edit_show_dlg() {
+    auto rend = cell_type(_curr_row, _curr_col);
     auto val  = cell_value(_curr_row, _curr_col);
-    assert(val);
-    if (rend == TableEditor::REND::DLG_COLOR) {
-        auto color1 = (int) _tableeditor_to_int(val, 0);
-        auto color2 = (int) fl_show_colormap((Fl_Color) color1);
-        char buffer[100];
-        snprintf(buffer, 20, "%d", color2);
-        if ((_send_changed_event_always == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+    if (rend == Type::COLOR) {
+        auto red    = (uchar) 0;
+        auto green  = (uchar) 0;
+        auto blue   = (uchar) 0;
+        auto color1 = static_cast<Fl_Color>(util::to_int(val, 0));
+        Fl::get_color(color1, red, green, blue);
+        if (fl_color_chooser(table::EditColorLabel.c_str(), red, green, blue, 2) != 0) {
+            auto color2 = fl_rgb_color(red, green, blue);
+            char buffer[100];
+            snprintf(buffer, 100, "%u", color2);
+            if ((_force_events == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
+                _set_event(_curr_row, _curr_col, Event::CHANGED);
+                do_callback();
+            }
+        }
+    }
+    else if (rend == Type::FILE) {
+        auto result = util::to_string(fl_file_chooser(table::EditFileLabel.c_str(), "", val.c_str(), 0));
+        if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
         }
     }
-    else if (rend == TableEditor::REND::DLG_FILE) {
-        auto result = fl_file_chooser(TableEditor::SELECT_FILE, "", val, 0);
-        if ((_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0)) && cell_value(_curr_row, _curr_col, result) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+    else if (rend == Type::DIR) {
+        auto result = util::to_string(fl_dir_chooser(table::EditDirLabel.c_str(), val.c_str()));
+        if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
         }
     }
-    else if (rend == TableEditor::REND::DLG_DIR) {
-        auto result = fl_dir_chooser(TableEditor::SELECT_DIR, val);
-        if ((_send_changed_event_always == true || (result != nullptr && strcmp(val, result) != 0)) && cell_value(_curr_row, _curr_col, result) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
-            do_callback();
-        }
-    }
-    else if (rend == TableEditor::REND::DLG_DATE) {
+    else if (rend == Type::DATE) {
         auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
-        auto result = flw::dlg::date(TableEditor::SELECT_DATE, date1, top_window());
+        auto result = flw::dlg::date(table::EditDateLabel, date1, top_window());
         auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
-        if ((_send_changed_event_always == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+        if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
         }
     }
-    else if (rend == TableEditor::REND::DLG_LIST) {
+    else if (rend == Type::LIST) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
-            auto row = dlg::select_string(TableEditor::SELECT_LIST, choices, val);
+            auto row = dlg::select_string(table::EditListLabel.c_str(), choices, val);
             if (row >= 0) {
                 const auto& string = choices[row];
-                if ((_send_changed_event_always == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
-                    _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+                if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
+                    _set_event(_curr_row, _curr_col, Event::CHANGED);
                     do_callback();
                 }
             }
         }
     }
+    else if (rend == Type::MTEXT) {
+        auto val2 = val;
+        if (dlg::text_edit(table::EditTextLabel.c_str(), val2, top_window()) == true) {
+            if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
+                _set_event(_curr_row, _curr_col, Event::CHANGED);
+                do_callback();
+            }
+        }
+    }
 }
-void TableEditor::_edit_start(const char* key) {
-    if (_select != TableEditor::SELECT::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
+void Editor::_edit_start(const std::string& key) {
+    if (_select != Select::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
         Fl::event_clicks(0);
         Fl::event_is_click(0);
-        TableEditor::REND rend = cell_rend(_curr_row, _curr_col);
-        if (*key != 0) {
+        Type type = cell_type(_curr_row, _curr_col);
+        if (key != "") {
             _edit_quick(key);
         }
-        else if (rend == TableEditor::REND::DLG_COLOR ||
-                 rend == TableEditor::REND::DLG_FILE ||
-                 rend == TableEditor::REND::DLG_DIR ||
-                 rend == TableEditor::REND::DLG_DATE ||
-                 rend == TableEditor::REND::DLG_LIST) {
-            _edit_show();
+        else if (type == Type::COLOR ||
+                 type == Type::FILE ||
+                 type == Type::DIR ||
+                 type == Type::DATE ||
+                 type == Type::LIST ||
+                 type == Type::MTEXT) {
+            _edit_show_dlg();
         }
         else {
             _edit_create();
@@ -14024,33 +13996,29 @@ void TableEditor::_edit_start(const char* key) {
         redraw();
     }
 }
-void TableEditor::_edit_stop(bool save) {
+void Editor::_edit_stop(bool save) {
     if (_edit != nullptr) {
-        auto rend = cell_rend(_curr_row, _curr_col);
+        auto type = cell_type(_curr_row, _curr_col);
         auto val  = cell_value(_curr_row, _curr_col);
         auto stop = true;
         if (save == true) {
-            if (rend == TableEditor::REND::TEXT ||
-                rend == TableEditor::REND::INTEGER ||
-                rend == TableEditor::REND::NUMBER ||
-                rend == TableEditor::REND::SECRET) {
+            if (type == Type::TEXT ||
+                type == Type::INTEGER ||
+                type == Type::NUMBER ||
+                type == Type::SECRET) {
                 auto input = static_cast<Fl_Input*>(_edit);
-                auto val2  = input->value();
+                auto val2  = util::to_string(input->value());
                 char buffer[100];
-                if (rend == TableEditor::REND::INTEGER) {
-                    snprintf(buffer, 100, "%d", (int) _tableeditor_to_int(val2, 0));
+                if (type == Type::INTEGER) {
+                    snprintf(buffer, 100, "%lld", static_cast<long long int>(util::to_int(val2, 0)));
                     val2 = buffer;
                 }
-                else if (rend == TableEditor::REND::NUMBER) {
+                else if (type == Type::NUMBER) {
                     auto num = util::to_double(val2, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
-                if (val2 == 0) {
-                    stop = true;
-                    save = false;
-                }
-                else if (strcmp(val, val2) == 0) {
+                if (val == val2) {
                     stop = true;
                     save = false;
                 }
@@ -14058,12 +14026,13 @@ void TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == TableEditor::REND::BOOLEAN) {
+            else if (type == Type::BOOLEAN) {
                 auto button = static_cast<Fl_Check_Button*>(_edit);
-                auto val2   = "0";
-                if (button->value())
+                auto val2   = std::string("0");
+                if (button->value() != 0) {
                     val2 = "1";
-                if (strcmp(val, val2) == 0) {
+                }
+                if (val == val2) {
                     stop = true;
                     save = false;
                 }
@@ -14071,10 +14040,10 @@ void TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == TableEditor::REND::SLIDER || rend == TableEditor::REND::VALUE_SLIDER) {
+            else if (type == Type::SLIDER || type == Type::VSLIDER) {
                 auto slider = static_cast<Fl_Slider*>(_edit);
-                auto val2   = FormatSlider(slider->value(), slider->minimum(), slider->maximum(), slider->step());
-                if (strcmp(val, val2) == 0) {
+                auto val2   = table::format_slider(slider->value(), slider->minimum(), slider->maximum(), slider->step());
+                if (val == val2) {
                     stop = true;
                     save = false;
                 }
@@ -14082,14 +14051,10 @@ void TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == TableEditor::REND::CHOICE) {
+            else if (type == Type::CHOICE) {
                 auto choice = static_cast<Fl_Choice*>(_edit);
-                auto val2   = choice->text();
-                if (val2 == 0) {
-                    stop = true;
-                    save = false;
-                }
-                else if (strcmp(val, val2) == 0) {
+                auto val2   = util::to_string(choice->text());
+                if (val == val2) {
                     stop = true;
                     save = false;
                 }
@@ -14097,14 +14062,10 @@ void TableEditor::_edit_stop(bool save) {
                     stop = cell_value(_curr_row, _curr_col, val2);
                 }
             }
-            else if (rend == TableEditor::REND::INPUT_CHOICE) {
+            else if (type == Type::ICHOICE) {
                 auto input_choice = static_cast<Fl_Input_Choice*>(_edit);
-                auto val2         = input_choice->value();
-                if (val2 == 0) {
-                    stop = true;
-                    save = false;
-                }
-                else if (strcmp(val, val2) == 0) {
+                auto val2         = util::to_string(input_choice->value());
+                if (val == val2) {
                     stop = true;
                     save = false;
                 }
@@ -14123,8 +14084,8 @@ void TableEditor::_edit_stop(bool save) {
             _current_cell[1] = 0;
             _current_cell[2] = 0;
             _current_cell[3] = 0;
-            if (_send_changed_event_always == true || save == true) {
-                _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+            if (_force_events == true || save == true) {
+                _set_event(_curr_row, _curr_col, Event::CHANGED);
                 do_callback();
             }
             Fl::check();
@@ -14137,7 +14098,7 @@ void TableEditor::_edit_stop(bool save) {
         }
     }
 }
-int TableEditor::_ev_keyboard_down2() {
+int Editor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -14173,34 +14134,34 @@ int TableEditor::_ev_keyboard_down2() {
             cmd_paste();
             return 1;
         }
-        else if (alt == true && shift == true && (key == '+' || text == "+" || key == FL_KP + '+')) {
-            cmd_add(100);
+        else if (alt == true && shift == true && (key == '+' || text == table::INC_SMALL || key == FL_KP + '+')) {
+            _edit_start(table::INC_LARGE);
             return 1;
         }
-        else if (alt == true && (key == '+' || text == "+" || key == FL_KP + '+')) {
-            cmd_add(10);
+        else if (alt == true && (key == '+' || text == table::INC_SMALL || key == FL_KP + '+')) {
+            _edit_start(table::INC_MEDIUM);
             return 1;
         }
-        else if (key == '+' || text == "+" || key == FL_KP + '+') {
-            cmd_add(1);
+        else if (key == '+' || text == table::INC_SMALL || key == FL_KP + '+') {
+            _edit_start(table::INC_SMALL);
             return 1;
         }
-        else if (alt == true && shift == true && (key == '-' || text == "-" || key == FL_KP + '-')) {
-            cmd_add(-100);
+        else if (alt == true && shift == true && (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-')) {
+            _edit_start(table::DEC_LARGE);
             return 1;
         }
-        else if (alt == true && (key == '-' || text == "-" || key == FL_KP + '-')) {
-            cmd_add(-10);
+        else if (alt == true && (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-')) {
+            _edit_start(table::DEC_MEDIUM);
             return 1;
         }
-        else if (key == '-' || text == "-" || key == FL_KP + '-') {
-            cmd_add(-1);
+        else if (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-') {
+            _edit_start(table::DEC_SMALL);
             return 1;
         }
     }
     return 0;
 }
-int TableEditor::_ev_mouse_click2() {
+int Editor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -14216,63 +14177,65 @@ int TableEditor::_ev_mouse_click2() {
     }
     return 2;
 }
-int TableEditor::_ev_paste() {
-    auto text = Fl::event_text();
-    if (_curr_row > 0 && _curr_col > 0 && text && *text) {
-        auto        rend = cell_rend(_curr_row, _curr_col);
+int Editor::_ev_paste() {
+    auto text = util::to_string(Fl::event_text());
+    if (_curr_row > 0 && _curr_col > 0 && text != "") {
+        auto        type = cell_type(_curr_row, _curr_col);
         auto        val  = cell_value(_curr_row, _curr_col);
         char        buffer[100];
         std::string string;
-        switch(rend) {
-            case TableEditor::REND::CHOICE:
-            case TableEditor::REND::DLG_LIST:
-            case TableEditor::REND::SLIDER:
-            case TableEditor::REND::VALUE_SLIDER:
+        switch(type) {
+            case Type::CHOICE:
+            case Type::LIST:
+            case Type::SLIDER:
+            case Type::VSLIDER:
                 return 1;
-            case TableEditor::REND::DLG_DIR:
-            case TableEditor::REND::DLG_FILE:
-            case TableEditor::REND::INPUT_CHOICE:
-            case TableEditor::REND::SECRET:
-            case TableEditor::REND::TEXT:
+            case Type::DIR:
+            case Type::FILE:
+            case Type::ICHOICE:
+            case Type::SECRET:
+            case Type::TEXT:
+            case Type::MTEXT:
                 break;
-            case TableEditor::REND::BOOLEAN:
-                if (strcmp("1", text) == 0 || strcmp("true", text) == 0) {
+            case Type::BOOLEAN: {
+                if (text == "1" || text == "true") {
                     text = "1";
                 }
-                else if (strcmp("0", text) == 0 || strcmp("false", text) == 0) {
+                else if (text == "0" || text == "false") {
                     text = "0";
                 }
                 else {
                     return 1;
                 }
-            case TableEditor::REND::DLG_COLOR:
-            case TableEditor::REND::INTEGER:
-                if (*text < '0' || *text > '9') {
+                break;
+            }
+            case Type::COLOR:
+            case Type::INTEGER: {
+                if (text[0] < '0' || text[0] > '9') {
                     return 1;
                 }
                 else {
-                    auto num = _tableeditor_to_int(text, 0);
-                    snprintf(buffer, 100, "%lld", (long long int) num);
+                    auto num = util::to_int(text, 0);
+                    snprintf(buffer, 100, "%lld", static_cast<long long int>(num));
                     text = buffer;
-                    if (rend == TableEditor::REND::DLG_COLOR && (num < 0 || num > 255)) {
+                    if (type == Type::COLOR && (num < 0 || num > 255)) {
                         return 1;
                     }
-                    else {
-                        break;
-                    }
                 }
-            case TableEditor::REND::NUMBER: {
-                if (*text < '0' || *text > '9') {
+                break;
+            }
+            case Type::NUMBER: {
+                if (text[0] < '0' || text[0] > '9') {
                     return 1;
                 }
                 else {
                     auto num = util::to_double(text, 0.0);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
-                    break;
                 }
+                break;
             }
-            case TableEditor::REND::DLG_DATE: {
+            case Type::DATE: {
                 auto date = gnu::Date(text);
                 if (date.year() == 1 && date.month() == 1 && date.day() == 1) {
                     return 1;
@@ -14280,24 +14243,30 @@ int TableEditor::_ev_paste() {
                 else {
                     string = date.format(gnu::Date::FORMAT::ISO_LONG);
                     text = string.c_str();
-                    break;
                 }
+                break;
             }
         }
-        if ((_send_changed_event_always == true || strcmp(val, text) != 0) && cell_value(_curr_row, _curr_col, text) == true) {
-            _set_event(_curr_row, _curr_col, TableEditor::EVENT::CHANGED);
+        if ((_force_events == true || val != text) && cell_value(_curr_row, _curr_col, text) == true) {
+            _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
             redraw();
         }
     }
     return 1;
 }
-const char* TableEditor::FormatSlider(double val, double min, double max, double step) {
-    static char result[200];
-    snprintf(result, 200, "%.4f %.4f %.4f %.4f", val, min, max, step);
-    return result;
+std::string Editor::_get_find_value(int row, int col) {
+    auto type = cell_type(row, col);
+    auto val  = cell_value(row, col);
+    if (type == Type::SLIDER || type == Type::VSLIDER) {
+        auto pos = val.find(" ");
+        if (pos != std::string::npos) {
+            val = val.substr(0, pos);
+        }
+    }
+    return val;
 }
-int TableEditor::handle(int event) {
+int Editor::handle(int event) {
     auto ret = 2;
     if (_rows > 0 && _cols > 0) {
         if (event == FL_UNFOCUS) {
@@ -14321,14 +14290,15 @@ int TableEditor::handle(int event) {
         return ret;
     }
     else {
-        return TableDisplay::handle(event);
+        return Display::handle(event);
     }
 }
-void TableEditor::reset() {
-    TableDisplay::reset();
-    _send_changed_event_always = false;
-    _edit2 = nullptr;
-    _edit3 = nullptr;
+void Editor::reset() {
+    Display::reset();
+    _force_events = false;
+    _edit2        = nullptr;
+    _edit3        = nullptr;
+}
 }
 }
 #include <assert.h>
@@ -14338,167 +14308,208 @@ void TableEditor::reset() {
 namespace flw {
 class _TabsGroupButton : public Fl_Toggle_Button {
 public:
-    int                         tw;
-    Fl_Widget*                  widget;
-    explicit _TabsGroupButton(Fl_Align align, const std::string& label, Fl_Widget* widget, void* o) :
+    int        tw;
+    Fl_Widget* widget;
+    _TabsGroupButton(Fl_Boxtype box_type, Fl_Boxtype dbox_type, Fl_Color color, const std::string& label, Fl_Widget* widget_, void* o) :
     Fl_Toggle_Button(0, 0, 0, 0) {
-        tw           = 0;
-        this->widget = widget;
-        this->align(align);
+        tw     = 0;
+        widget = widget_;
         copy_label(label.c_str());
         tooltip("");
         when(FL_WHEN_CHANGED);
-        callback(TabsGroup::Callback, o);
-        selection_color(FL_SELECTION_COLOR);
+        callback(TabsGroup::CallbackButton, o);
+        selection_color(color);
         labelfont(flw::PREF_FONT);
         labelsize(flw::PREF_FONTSIZE);
+        box(FL_THIN_UP_BOX);
+        down_box(FL_NO_BOX);
+        if (box_type != FL_MAX_BOXTYPE) {
+            box(box_type);
+        }
+        if (dbox_type != FL_MAX_BOXTYPE) {
+            down_box(dbox_type);
+        }
     }
 };
-int TabsGroup::MIN_WIDTH_NORTH_SOUTH = 4;
-int TabsGroup::MIN_WIDTH_EAST_WEST   = 4;
+class _TabsGroup : public Fl_Group {
+public:
+    _TabsGroup(int X, int Y, int W, int H) :
+    Fl_Group(X, Y, W, H) {
+    }
+    void resize(int X, int Y, int W, int H) {
+        Fl_Widget::resize(X, Y, W, H);
+    }
+};
 TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
-    _scroll    = new Fl_Scroll(X, Y, W, H);
-    _pack      = new Fl_Flex(X, Y, W, H);
-    _active1   = -1;
-    _active2   = -1;
-    _n         = 0;
-    _s         = 0;
-    _w         = 0;
-    _e         = 0;
-    _align     = 0;
-    _disable_k = false;
-    _pack->end();
-    _scroll->tooltip(TabsGroup::Help());
-    _scroll->box(FL_NO_BOX);
-    _scroll->add(_pack);
-    Fl_Group::add(_scroll);
-    tab_pos(Pos::NORTH);
+    _scroll   = new Fl_Scrollbar(0, 0, 0, 0);
+    _tabs     = new _TabsGroup(0, 0, 0, 0);
+    _active1  = -1;
+    _active2  = -1;
+    _color    = FL_SELECTION_COLOR;
+    _e        = 0;
+    _keyboard = true;
+    _n        = 0;
+    _s        = 0;
+    _down_box = FL_MAX_BOXTYPE;
+    _up_box   = FL_MAX_BOXTYPE;
+    _visible  = 0;
+    _w        = 0;
+    _width1   = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
+    _width2   = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
+    _tabs->end();
+    _tabs->add(_scroll);
+    Fl_Group::add(_tabs);
+    _scroll->linesize(4);
+    _scroll->value(1, 1, 1, 16);
+    _scroll->callback(TabsGroup::CallbackScrollbar, this);
+    _tabs->tooltip(TabsGroup::Help());
+    _tabs->box(FL_NO_BOX);
+    _tabs->clip_children(1);
+    tab_pos(Pos::TOP);
     update_pref();
 }
-void TabsGroup::_activate(Fl_Widget* widget, bool kludge) {
-    if (kludge == false) {
-        auto count   = 0;
-        auto current = _active1;
-        _active1 = -1;
-        for (auto button : _widgets) {
-            auto b = static_cast<_TabsGroupButton*>(button);
-            if (b == widget || b->widget == widget) {
-                _active1 = count;
-                _active2 = (current != _active1) ? current : _active2;
-                b->value(1);
-                b->widget->show();
-                b->widget->take_focus();
-            }
-            else {
-                b->value(0);
-                b->widget->hide();
-            }
-            count++;
+void TabsGroup::_activate(Fl_Widget* widget) {
+    auto count   = 0;
+    auto current = _active1;
+    _active1 = -1;
+    for (auto button : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(button);
+        if (b == widget || b->widget == widget) {
+            _active1 = count;
+            _active2 = (current != _active1) ? current : _active2;
+            b->value(1);
+            b->widget->show();
+            b->widget->take_focus();
         }
+        else {
+            b->value(0);
+            b->widget->hide();
+        }
+        count++;
     }
+    do_layout();
     auto but = _active_button();
     if (but == nullptr) {
         return;
     }
-    if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
+    if (is_tabs_horizontal() ==  true) {
         if (but->x() < _scroll->x()) {
-            _scroll->scroll_to(_scroll->xposition() + but->x() - _scroll->x(), _scroll->yposition());
+            _scroll->value(_active1 + 1);
+            do_layout();
         }
-        else if (but->x() + but->w() > _scroll->x() + _scroll->w()) {
-            _scroll->scroll_to(_pack->w() - _scroll->w(), _scroll->yposition());
-            if (kludge == false) {
-                Fl::flush();
-                _activate(widget, true);
-            }
+        else if (but->x() + but->w() > x() + w()) {
+            _scroll->value(_active1 - _visible + 2);
+            do_layout();
         }
     }
-    else {
+    else if (is_tabs_vertical() == true) {
         if (but->y() < _scroll->y()) {
-            _scroll->scroll_to(_scroll->xposition(), _scroll->yposition() + but->y() - _scroll->y());
+            _scroll->value(_active1 + 1);
+            do_layout();
         }
-        else if (but->y() + but->h() > _scroll->y() + _scroll->h() || but->h() == 0) {
-            _scroll->scroll_to(_scroll->xposition(), _pack->h() - _scroll->h());
-            if (kludge == false) {
-                Fl::flush();
-                _activate(widget, true);
-            }
+        else if (but->y() + but->h() > h() + y()) {
+            _scroll->value(_active1 - _visible + 2);
+            do_layout();
         }
     }
     _resize_active_widget();
+    Fl::redraw();
 }
 Fl_Widget* TabsGroup::_active_button() {
-    return (_active1 >= 0 && _active1 < static_cast<int>(_widgets.size())) ? _widgets[_active1] : nullptr;
+    return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
+        _widgets[_active1] :
+        nullptr;
 }
 void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after, const std::string& tooltip) {
     if (find(widget) != -1) {
         return;
     }
-    auto button = new _TabsGroupButton(_align, label, widget, this);
+    auto button = new _TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : static_cast<int>(_widgets.size());
     button->copy_tooltip(tooltip.c_str());
     if (idx < 0 || idx >= static_cast<int>(_widgets.size()) - 1) {
         Fl_Group::add(widget);
-        _pack->add(button);
+        _tabs->add(button);
         _widgets.push_back(button);
     }
     else {
         idx++;
         auto b = static_cast<_TabsGroupButton*>(_widgets[idx]);
         Fl_Group::insert(*widget, b->widget);
-        _pack->insert(*button, b);
+        _tabs->insert(*button, b);
         _widgets.insert(_widgets.begin() + idx, button);
     }
-    TabsGroup::Callback(button, this);
+    TabsGroup::CallbackButton(button, this);
 }
-void TabsGroup::Callback(Fl_Widget* sender, void* object) {
-    static_cast<TabsGroup*>(object)->_activate(sender, false);
+void TabsGroup::CallbackButton(Fl_Widget* sender, void* object) {
+    static_cast<TabsGroup*>(object)->_activate(sender);
+}
+void TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
+    auto self = static_cast<TabsGroup*>(object);
+    if (self->is_tabs_horizontal() ==  true) {
+        self->_resize_top_bottom(self->x(), self->y(), self->w(), self->h());
+    }
+    else if (self->is_tabs_vertical() == true) {
+        self->_resize_left_right(self->x(), self->y(), self->w(), self->h());
+    }
+    self->redraw();
+    self->_tabs->redraw_label();
 }
 Fl_Widget* TabsGroup::child(int index) const {
-    return (index >= 0 && index < static_cast<int>(_widgets.size())) ? static_cast<_TabsGroupButton*>(_widgets[index])->widget : nullptr;
+    return index >= 0 && index < static_cast<int>(_widgets.size()) ?
+        static_cast<_TabsGroupButton*>(_widgets[index])->widget :
+        nullptr;
 }
 void TabsGroup::clear() {
     _active1 = -1;
     _active2 = -1;
     _widgets.clear();
-    _scroll->remove(_pack);
-    _scroll->clear();
-    _pack->clear();
-    Fl_Group::remove(_scroll);
+    _tabs->remove(_scroll);
+    Fl_Group::remove(_tabs);
+    _tabs->clear();
     Fl_Group::clear();
-    Fl_Group::add(_scroll);
-    _scroll->add(_pack);
+    Fl_Group::add(_tabs);
+    _tabs->add(_scroll);
     update_pref();
-    _pack->need_layout(1);
     do_layout();
     Fl::redraw();
 }
 void TabsGroup::debug(bool all) const {
 #ifdef DEBUG
+    puts("------------------------------------------------------------");
+    auto w = ((TabsGroup*) this)->_active_button();
     printf("TabsGroup ==>\n");
-    printf("    _active1   = %d\n", _active1);
-    printf("    _active2   = %d\n", _active2);
-    printf("    _drag      = %d\n", _drag);
-    printf("    _xpos      = %d\n", _xpos);
-    printf("    _disable_k = %d\n", _disable_k);
-    printf("    _widgets   = %d\n", static_cast<int>(_widgets.size()));
-    printf("    visible    = %s\n", _scroll->visible() ? "visible" : "hidden");
-    printf("    children   = %d\n", children());
+    printf("    _tab_pos  = %d\n", (int) _tab_pos);
+    printf("    active    = %s\n", w ? w->label() : "NULL");
+    printf("    _active1  = %d\n", _active1);
+    printf("    _active2  = %d\n", _active2);
+    printf("    _drag     = %d\n", _drag);
+    printf("    _width1   = %d\n", _width1);
+    printf("    _width2   = %d\n", _width2);
+    printf("    _keyboard = %d\n", _keyboard);
+    printf("    _widgets  = %d\n", static_cast<int>(_widgets.size()));
+    printf("    _visible  = %d\n", _visible);
+    printf("    _area     = %d - %d :: %d - %d\n", _area.x(), _area.y(), _area.w(), _area.h());
+    printf("    scrollbar = %d - %d\n", (int) _scroll->value(), (int) _scroll->maximum());
+    printf("    children  = %d\n", children());
     printf("\n");
     if (all == true) {
-        flw::debug::print(this);
+        flw::debug::print(this->_tabs);
         printf("\n");
+        int f = 0;
+        for (auto widget : _widgets) {
+            auto b = static_cast<_TabsGroupButton*>(widget);
+            printf("%2d: %s\n", f++, b->label());
+        }
     }
+    puts("------------------------------------------------------------");
     fflush(stdout);
 #else
     (void) all;
 #endif
-}
-void TabsGroup::draw() {
-    _scroll->redraw();
-    Fl_Group::draw();
 }
 int TabsGroup::find(const Fl_Widget* widget) const {
     auto num = 0;
@@ -14514,18 +14525,19 @@ int TabsGroup::find(const Fl_Widget* widget) const {
     return -1;
 }
 int TabsGroup::handle(int event) {
-    if (_tab_pos == Pos::WEST || _tab_pos == Pos::EAST) {
+    if (is_tabs_vertical() == true) {
         if (event == FL_DRAG) {
             if (_drag == true) {
-                auto pos = 0;
-                if (_tab_pos == Pos::WEST) {
+                auto pos   = 0;
+                auto width = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
+                if (is_tabs_left() == true) {
                     pos = Fl::event_x() - x();
                 }
-                else {
+                else if (is_tabs_right() == true) {
                     pos = x() + w() - Fl::event_x();
                 }
-                if (pos != _xpos) {
-                    _xpos = pos;
+                if (pos != _width1 && pos >= width && pos <= w() - width) {
+                    _width1 = pos;
                     do_layout();
                 }
                 return 1;
@@ -14537,8 +14549,8 @@ int TabsGroup::handle(int event) {
         }
         else if (event == FL_MOVE) {
             auto event_x = Fl::event_x();
-            if (_tab_pos == Pos::WEST) {
-                auto pos = x() + _xpos;
+            if (_tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2) {
+                auto pos = x() + _width1;
                 if (event_x > (pos - 3) && event_x <= (pos + 3)) {
                     if (_drag == false) {
                         _drag = true;
@@ -14547,8 +14559,8 @@ int TabsGroup::handle(int event) {
                     return 1;
                 }
             }
-            else {
-                auto pos = x() + w() - _xpos;
+            else if (_tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2) {
+                auto pos = x() + w() - _width1;
                 if (event_x > (pos - 3) && event_x <= (pos + 3)) {
                     if (_drag == false) {
                         _drag = true;
@@ -14568,7 +14580,7 @@ int TabsGroup::handle(int event) {
             }
         }
     }
-    if (event == FL_KEYBOARD && _disable_k == false) {
+    if (event == FL_KEYBOARD && _keyboard == true) {
         auto key   = Fl::event_key();
         auto alt   = Fl::event_alt() != 0;
         auto alt2  = alt;
@@ -14582,7 +14594,7 @@ int TabsGroup::handle(int event) {
             auto tab = key - '0';
             tab = (tab == 0) ? 9 : tab - 1;
             if (tab < static_cast<int>(_widgets.size())) {
-                TabsGroup::Callback(_widgets[tab], this);
+                TabsGroup::CallbackButton(_widgets[tab], this);
             }
             return 1;
         }
@@ -14594,7 +14606,7 @@ int TabsGroup::handle(int event) {
                 _active2--;
             }
             auto tab = swap(_active1, _active1 - 1);
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && shift == true && (key == FL_Right || key == FL_Down)) {
@@ -14605,26 +14617,26 @@ int TabsGroup::handle(int event) {
                 _active2++;
             }
             auto tab = swap(_active1, _active1 + 1);
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && key == FL_Left) {
             auto tab = (_active1 == 0) ? static_cast<int>(_widgets.size()) - 1 : _active1 - 1;
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && key == FL_Right) {
             auto tab = (_active1 == static_cast<int>(_widgets.size()) - 1) ? 0 : _active1 + 1;
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && (key == FL_Up || key == FL_Down)) {
             auto tab = (_active2 == -1) ? _active1 : _active2;
-            TabsGroup::Callback(_widgets[tab], this);
+            TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
     }
-    if (event == FL_FOCUS) {
+    else if (event == FL_FOCUS) {
         auto widget = value();
         if (widget != nullptr && widget != Fl::focus()) {
             widget->take_focus();
@@ -14643,42 +14655,29 @@ const char* TabsGroup::Help() {
     return HELP;
 }
 void TabsGroup::hide_tabs() {
-    _scroll->hide();
+    _tabs->hide();
     do_layout();
 }
-void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before) {
+void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before, const std::string& tooltip) {
     if (find(widget) != -1) {
         return;
     }
-    auto button = new _TabsGroupButton(_align, label, widget, this);
+    auto button = new _TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
+    button->copy_tooltip(tooltip.c_str());
     if (idx >= static_cast<int>(_widgets.size())) {
         Fl_Group::add(widget);
-        _pack->add(button);
+        _tabs->add(button);
         _widgets.push_back(button);
     }
     else {
         auto b = static_cast<_TabsGroupButton*>(_widgets[idx]);
         Fl_Group::insert(*widget, b->widget);
-        _pack->insert(*button, b);
+        _tabs->insert(*button, b);
         _widgets.insert(_widgets.begin() + idx, button);
     }
-    TabsGroup::Callback(button, this);
+    TabsGroup::CallbackButton(button, this);
     do_layout();
-}
-std::string TabsGroup::label(Fl_Widget* widget) {
-    auto num = find(widget);
-    if (num == -1) {
-        return "";
-    }
-    return _widgets[num]->label();
-}
-void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
-    auto num = find(widget);
-    if (num == -1) {
-        return;
-    }
-    _widgets[num]->copy_label(label.c_str());
 }
 Fl_Widget* TabsGroup::remove(int index) {
     if (index < 0 || index >= static_cast<int>(_widgets.size())) {
@@ -14688,7 +14687,7 @@ Fl_Widget* TabsGroup::remove(int index) {
     auto res    = button->widget;
     _widgets.erase(_widgets.begin() + index);
     remove(res);
-    _scroll->remove(button);
+    _tabs->remove(button);
     delete button;
     if (index < _active1) {
         _active1--;
@@ -14697,7 +14696,7 @@ Fl_Widget* TabsGroup::remove(int index) {
         _active1 = static_cast<int>(_widgets.size()) - 1;
     }
     do_layout();
-    TabsGroup::Callback(_active_button(), this);
+    TabsGroup::CallbackButton(_active_button(), this);
     return res;
 }
 void TabsGroup::resize(int X, int Y, int W, int H) {
@@ -14705,95 +14704,184 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     if (W == 0 || H == 0) {
         return;
     }
-    if (_scroll->visible() == 0) {
+    if (_tabs->visible() == 0) {
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - _n - _s);
     }
     else {
         fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
-        if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
-            _resize_north_south(X, Y, W, H);
+        if (is_tabs_horizontal() == true) {
+            _resize_top_bottom(X, Y, W, H);
         }
-        else {
-            _resize_east_west(X, Y, W, H);
+        else if (is_tabs_vertical() == true) {
+            _resize_left_right(X, Y, W, H);
         }
     }
     _resize_active_widget();
-}
-void TabsGroup::_resize_active_widget() {
-    for (auto w : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(w);
-        if (b->widget->visible() != 0) {
-            b->widget->resize(_area.x(), _area.y(), _area.w(), _area.h());
-        }
-    }
     Fl::redraw();
 }
-void TabsGroup::_resize_east_west(int X, int Y, int W, int H) {
-    auto height = flw::PREF_FONTSIZE + 8;
-    auto pack_h = (height + _space) * static_cast<int>(_widgets.size()) - _space;
-    auto scroll = 0;
-    if (_xpos < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
-        _xpos = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
+void TabsGroup::_resize_active_widget() {
+    auto but = static_cast<_TabsGroupButton*>(_active_button());
+    if (but == nullptr) {
+        return;
     }
-    else if (_xpos > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST) {
-        _xpos = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_EAST_WEST;
-    }
-    if (pack_h > H) {
-        scroll = (_scroll->scrollbar_size() == 0) ? Fl::scrollbar_size() : _scroll->scrollbar_size();
-    }
-    for (auto b : _widgets) {
-        b->size(0, height);
-    }
-    if (_tab_pos == Pos::WEST) {
-        _scroll->resize(X, Y, _xpos, H);
-        _pack->resize(X, Y, _xpos - scroll, pack_h);
-        _area = Fl_Rect(X + _xpos + _w, Y + _n, W - _xpos - _w - _e, H - _n - _s);
-    }
-    else {
-        _scroll->resize(X + W - _xpos, Y, _xpos, H);
-        _pack->resize(X + W - _xpos, Y, _xpos - scroll, pack_h);
-        _area = Fl_Rect(X + _w, Y + _n, W - _xpos - _w - _e, H - _n - _s);
+    if (Fl_Rect(but->widget) != _area) {
+        but->widget->resize(_area.x(), _area.y(), _area.w(), _area.h());
+        Fl::redraw();
     }
 }
-void TabsGroup::_resize_north_south(int X, int Y, int W, int H) {
-    auto height = flw::PREF_FONTSIZE + 8;
+void TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
+    auto height = flw::PREF_FONTSIZE + TabsGroup::HEIGHT;
+    auto pack_h = (height + _space) * static_cast<int>(_widgets.size()) - _space;
     auto scroll = 0;
+    _visible = static_cast<int>(H / (height + _space));
+    if (_width1 < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) {
+        _width1 = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
+    }
+    else if (_width1 > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) {
+        _width1 = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
+    }
+    if (pack_h > H) {
+        auto size = static_cast<int>(_widgets.size() - _visible + 2);
+        scroll = Fl::scrollbar_size();
+        _scroll->range(1, size > 0 ? size : 1);
+        _scroll->show();
+    }
+    else {
+        _scroll->value(1);
+        _scroll->resize(0, 0, 0, 0);
+        _scroll->hide();
+    }
+    if (is_tabs_left() == true) {
+        _tabs->resize(X, Y, _width1, H);
+        _area = Fl_Rect(X + _width1 + _w, Y + _n, W - _width1 - _w - _e, H - _n - _s);
+        if (_tab_pos == Pos::LEFT) {
+            _scroll->resize(_tabs->x(), _tabs->y(), scroll, _tabs->h());
+        }
+        else if (_tab_pos == Pos::LEFT2) {
+            _scroll->resize(_tabs->x() + _width1 - scroll, _tabs->y(), scroll, _tabs->h());
+        }
+    }
+    else if (is_tabs_right() == true) {
+        _tabs->resize(X + W - _width1, Y, _width1, H);
+        _area = Fl_Rect(X + _w, Y + _n, W - _width1 - _w - _e, H - _n - _s);
+        if (_tab_pos == Pos::RIGHT) {
+            _scroll->resize(_tabs->x() + _tabs->w() - scroll, _tabs->y(), scroll, _tabs->h());
+        }
+        else if (_tab_pos == Pos::RIGHT2) {
+            _scroll->resize(_tabs->x(), _tabs->y(), scroll, _tabs->h());
+        }
+    }
+    auto ypos = -(_scroll->value() - 1);
+    ypos *= height + _space;
+    ypos += _tabs->y();
+    for (auto widget : _widgets) {
+        auto b  = static_cast<_TabsGroupButton*>(widget);
+        b->tw = 0;
+        b->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        if (_tab_pos == Pos::LEFT) {
+            b->resize(_tabs->x() + scroll, ypos, _tabs->w() - scroll, height);
+        }
+        else if (_tab_pos == Pos::LEFT2) {
+            b->resize(_tabs->x(), ypos, _tabs->w() - scroll, height);
+        }
+        else if (_tab_pos == Pos::RIGHT) {
+            b->resize(_tabs->x(), ypos, _tabs->w() - scroll, height);
+        }
+        else if (_tab_pos == Pos::RIGHT2) {
+            b->resize(_tabs->x() + scroll, ypos, _tabs->w() - scroll, height);
+        }
+        ypos += height + _space;
+    }
+}
+void TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
+    auto height = flw::PREF_FONTSIZE + TabsGroup::HEIGHT;
     auto pack_w = 0;
+    auto scroll = 0;
+    auto width  = 0;
+    auto minw   = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH + _space;
+    auto maxw   = flw::PREF_FONTSIZE * _width2 + _space;
+    _visible = 0;
+    fl_font(labelfont(), labelsize());
     for (auto widget : _widgets) {
         auto b  = static_cast<_TabsGroupButton*>(widget);
         auto th = 0;
         b->tw = 0;
         fl_measure(b->label(), b->tw, th);
-        if (b->tw < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH) {
-            b->tw = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH_NORTH_SOUTH;
+        if (b->tw + flw::PREF_FONTSIZE > width) {
+            width = b->tw + flw::PREF_FONTSIZE;
         }
-        b->tw += flw::PREF_FONTSIZE;
-        pack_w += b->tw + _space;
     }
+    if (width < minw) {
+        width = minw;
+    }
+    else if (width > maxw) {
+        width = maxw;
+    }
+    pack_w   = (width + _space) * static_cast<int>(_widgets.size()) - _space;
+    _visible = static_cast<int>(W / (width + _space));
     if (pack_w - _space > W) {
-        scroll = (_scroll->scrollbar_size() == 0) ? Fl::scrollbar_size() : _scroll->scrollbar_size();
-    }
-    for (auto widget : _widgets) {
-        auto b  = static_cast<_TabsGroupButton*>(widget);
-        b->size(b->tw, 0);
-    }
-    if (_tab_pos == Pos::NORTH) {
-        _scroll->resize(X, Y, W, height + scroll);
-        _pack->resize(X, Y, pack_w, height);
-        _area = Fl_Rect(X + _w, Y + height + scroll + _n, W - _w - _e, H - height - scroll - _n - _s);
+        auto size = static_cast<int>(_widgets.size() - _visible + 2);
+        scroll = Fl::scrollbar_size();
+        _scroll->show();
+        _scroll->range(1, size > 0 ? size : 1);
     }
     else {
-        _scroll->resize(X, Y + H - height - scroll, W, height + scroll);
-        _pack->resize(X, Y + H - height - scroll, pack_w, height);
+        _scroll->value(1);
+        _scroll->resize(0, 0, 0, 0);
+        _scroll->hide();
+    }
+    if (is_tabs_top() == true) {
+        _tabs->resize(X, Y, W, height + scroll);
+        _area = Fl_Rect(X + _w, Y + height + scroll + _n, W - _w - _e, H - height - scroll - _n - _s);
+        if (_tab_pos == Pos::TOP) {
+            _scroll->resize(_tabs->x(), _tabs->y(), _tabs->w(), scroll);
+        }
+        else if (_tab_pos == Pos::TOP2) {
+            _scroll->resize(_tabs->x(), _tabs->y() + height, _tabs->w(), scroll);
+        }
+    }
+    else if (is_tabs_bottom() == true) {
+        _tabs->resize(X, Y + H - height - scroll, W, height + scroll);
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - height - scroll - _n - _s);
+        if (_tab_pos == Pos::BOTTOM) {
+            _scroll->resize(_tabs->x(), _tabs->y() + _tabs->h() - scroll, _tabs->w(), scroll);
+        }
+        else if (_tab_pos == Pos::BOTTOM2) {
+            _scroll->resize(_tabs->x(), _tabs->y(), _tabs->w(), scroll);
+        }
+    }
+    auto xpos = -(_scroll->value() - 1);
+    xpos *= width + _space;
+    xpos += _tabs->x();
+    for (auto widget : _widgets) {
+        auto b  = static_cast<_TabsGroupButton*>(widget);
+        if (b->tw >= width) {
+            b->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        }
+        else {
+            b->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        }
+        if (_tab_pos == Pos::TOP) {
+            b->resize(xpos, _tabs->y() + scroll, width, height);
+        }
+        else if (_tab_pos == Pos::TOP2) {
+            b->resize(xpos, _tabs->y(), width, height);
+        }
+        else if (_tab_pos == Pos::BOTTOM) {
+            b->resize(xpos, _tabs->y() + _tabs->h() - height - scroll, width, height);
+        }
+        else if (_tab_pos == Pos::BOTTOM2) {
+            b->resize(xpos, _tabs->y() + _tabs->h() - height, width, height);
+        }
+        xpos += width + _space;
     }
 }
 void TabsGroup::show_tabs() {
-    _scroll->show();
+    _tabs->show();
     do_layout();
 }
 void TabsGroup::sort(bool ascending, bool casecompare) {
-    auto pack = const_cast<Fl_Widget**>(_pack->array());
+    auto pack = const_cast<Fl_Widget**>(_tabs->array());
     auto butt = _active_button();
     if (ascending == true && casecompare == true) {
         std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return strcmp(a->label(), b->label()) < 0; });
@@ -14807,13 +14895,13 @@ void TabsGroup::sort(bool ascending, bool casecompare) {
     else if (ascending == false && casecompare == false) {
         std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return fl_utf_strcasecmp(b->label(), a->label()) < 0; });
     }
-    for (int f = 0; f < _pack->children(); f++) {
-        pack[f] = _widgets[f];
-        if (_widgets[f] == butt) {
-            _active1 = f;
+    for (int f = 1; f < _tabs->children(); f++) {
+        pack[f] = _widgets[f - 1];
+        if (_widgets[f - 1] == butt) {
+            _active1 = f - 1;
         }
     }
-    do_layout();
+    _activate(butt);
 }
 int TabsGroup::swap(int from, int to) {
     auto last = static_cast<int>(_widgets.size()) - 1;
@@ -14821,14 +14909,14 @@ int TabsGroup::swap(int from, int to) {
         return _active1;
     }
     auto active = (_active1 == from);
-    auto pack   = const_cast<Fl_Widget**>(_pack->array());
+    auto pack   = const_cast<Fl_Widget**>(_tabs->array());
     if (from == 0 && to == -1) {
         auto widget = _widgets[0];
         for (int f = 1; f <= last; f++) {
             _widgets[f - 1] = _widgets[f];
-            pack[f - 1]     = pack[f];
+            pack[f] = pack[f + 1];
         }
-        pack[last]     = widget;
+        pack[last + 1] = widget;
         _widgets[last] = widget;
         if (active == true) {
             _active1 = last;
@@ -14837,11 +14925,11 @@ int TabsGroup::swap(int from, int to) {
     }
     else if (from == last && to == static_cast<int>(_widgets.size())) {
         auto widget = _widgets[last];
-        for (int f = last - 1; f >= 0; f--) {
-            _widgets[f + 1] = _widgets[f];
-            pack[f + 1]     = pack[f];
+        for (int f = last; f > 0; f--) {
+            _widgets[f] = _widgets[f - 1];
+            pack[f + 1] = pack[f];
         }
-        pack[0]     = widget;
+        pack[1] = widget;
         _widgets[0] = widget;
         if (active == true) {
             _active1 = 0;
@@ -14850,40 +14938,68 @@ int TabsGroup::swap(int from, int to) {
     }
     else {
         auto widget = _widgets[from];
-        pack[from]     = pack[to];
-        pack[to]       = widget;
+        pack[from + 1] = pack[to + 1];
+        pack[to + 1] = widget;
         _widgets[from] = _widgets[to];
-        _widgets[to]   = widget;
+        _widgets[to] = widget;
         if (active == true) {
             _active1 = to;
         }
         util::swap_rect(_widgets[from], _widgets[to]);
     }
-    _pack->need_layout(1);
     return _active1;
+}
+void TabsGroup::tab_box(Fl_Boxtype up_box, Fl_Boxtype down_box) {
+    _up_box   = up_box;
+    _down_box = down_box;
+    for (auto widget : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(widget);
+        if (_up_box == FL_MAX_BOXTYPE) {
+            b->box(FL_THIN_UP_BOX);
+        }
+        else {
+            b->box(_up_box);
+        }
+        if (_down_box == FL_MAX_BOXTYPE) {
+            b->down_box(FL_NO_BOX);
+        }
+        else {
+            b->down_box(_down_box);
+        }
+    }
+}
+void TabsGroup::tab_color(Fl_Color color) {
+    _color = color;
+    for (auto widget : _widgets) {
+        auto b = static_cast<_TabsGroupButton*>(widget);
+        b->selection_color(_color);
+    }
+}
+std::string TabsGroup::tab_label(const Fl_Widget* widget) {
+    auto num = find(widget);
+    if (num == -1) {
+        return "";
+    }
+    return _widgets[num]->label();
+}
+void TabsGroup::tab_label(const std::string& label, Fl_Widget* widget) {
+    auto num = find(widget);
+    if (num == -1) {
+        return;
+    }
+    _widgets[num]->copy_label(label.c_str());
 }
 void TabsGroup::tab_pos(Pos pos, int space) {
     _tab_pos = pos;
-    _space   = (space >= 0 && space <= 20) ? space : TabsGroup::DEFAULT_SPACE_PX;
-    _align   = FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
-    if (_tab_pos == Pos::NORTH || _tab_pos == Pos::SOUTH) {
-        _align = FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP;
-        _scroll->type(Fl_Scroll::HORIZONTAL);
-        _pack->type(Fl_Flex::HORIZONTAL);
+    _space   = (space >= 0 && space <= TabsGroup::MAX_SPACE) ? space : TabsGroup::DEFAULT_SPACE;
+    if (is_tabs_horizontal() == true) {
+        _scroll->type(FL_HORIZONTAL);
     }
-    else {
-        _pack->type(Fl_Flex::VERTICAL);
-        _scroll->type(Fl_Scroll::VERTICAL);
+    else if (is_tabs_vertical() == true) {
+        _scroll->type(FL_VERTICAL);
     }
-    for (auto widget : _widgets) {
-        widget->align(_align);
-    }
-    _pack->spacing(_space);
-    do_layout();
-    auto w = value();
-    if (w != nullptr) {
-        w->take_focus();
-    }
+    _scroll->value(1);
+    _activate(_active_button());
 }
 std::string TabsGroup::tooltip(Fl_Widget* widget) const {
     auto num = find(widget);
@@ -14899,20 +15015,23 @@ void TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
     }
     _widgets[num]->copy_tooltip(tooltip.c_str());
 }
-void TabsGroup::update_pref(unsigned characters, Fl_Font font, Fl_Fontsize fontsize) {
+void TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
-    _xpos = fontsize * characters;
+    labelfont(font);
+    labelsize(fontsize);
     for (auto widget : _widgets) {
         widget->labelfont(font);
         widget->labelsize(fontsize);
     }
 }
 Fl_Widget* TabsGroup::value() const {
-    return (_active1 >= 0 && _active1 < static_cast<int>(_widgets.size())) ? static_cast<_TabsGroupButton*>(_widgets[_active1])->widget : nullptr;
+    return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
+        static_cast<_TabsGroupButton*>(_widgets[_active1])->widget :
+        nullptr;
 }
 void TabsGroup::value(int num) {
     if (num >= 0 && num < static_cast<int>(_widgets.size())) {
-        TabsGroup::Callback(_widgets[num], this);
+        _activate(_widgets[num]);
     }
 }
 }

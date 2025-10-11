@@ -9,8 +9,9 @@ FLTK must be compiled with --enable-use_std flag.
 The source will NOT compile with Microsoft Visual Studio.
 The API is not stable and may change from time to time.
 
-The source are using C++17 features and all widgets are in the namespace flw. 
-None gui classes are in namespace gnu (Date, File, JS).
+The source are using C++17 features. 
+All FLTK related classes and functions are in namespace flw. 
+None gui classes are in namespace gnu (Date, File, JS). 
 
 Use the amalgamated version of all source files in the root directory of flw (flw.h, flw.cpp). 
 The source files in the src/ directory are intended for development of flw. 
@@ -20,36 +21,36 @@ independent of flw and FLTK and can be used stand-alone.
 All files (except lcdnumber.h, lcdnumber.cpp) are released under the [GNU General Public License v3.0](LICENSE).
 
 Widgets:
-* Chart - Chart widget with dates as x data.
-* DateChooser - Show month date view.
-* Grid - Edit data in TableEditor with built in storage.
-* GridGroup - A layout widget using a grid.
-* InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list and use arrow keys in the input widget to switch between strings.
-* LcdNumber - Number widget in lcd style.
-* Plot - Numerical chart.
-* ScrollBrowser - Scroll faster and let user copy a line to clipboard.
-* SplitGroup - A layout widget for two widgets that can be resized with mouse.
-* TableDisplay - Show data in a grid.
-* TableEditor - Edit data in a grid.
-* ToolGroup - A layout widget for a horizontal or vertical group of widgets.
-* TabsGroup - A tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
+* flw::chart::Chart - Chart widget with dates/numbers.
+* flw::DateChooser - Show month date view.
+* flw::GridGroup - A layout widget using a grid.
+* flw::InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list.
+* flw::LcdNumber - Number widget in lcd style.
+* flw::plot::Plot - A simple numerical chart widget.
+* flw::ScrollBrowser - Scroll faster and let user copy a line to clipboard.
+* flw::SplitGroup - A layout widget for two widgets that can be resized with mouse.
+* flw::table::Table - A table editor with built in storage.
+* flw::table::TableDisplay - Show data in a grid.
+* flw::table::TableEditor - Edit data in a grid.
+* flw::ToolGroup - A layout widget for a horizontal or vertical group of widgets.
+* flw::TabsGroup - A tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
 
 Dialogs:
-* dlg::Font - A dialog for selecting font and font size.
-* dlg::Progress - A dialog with a message list and a progress bar for time consuming work.
-* dlg::date - Show a date selection dialog.
-* dlg::html - Show text in a html view.
-* dlg::list* - Show a list of strings.
-* dlg::password* - Ask user for password and optional password confirmation.
-* dlg::print - Print drawing from a user callback.
-* dlg::print_text* - Print plain text to postscript.
-* dlg::select_checkboxes - Show a dialog with a list of checkboxes.
-* dlg::select_choice - Show a string selection dialog with Fl_Choice.
-* dlg::select_string* - Let user select a string from a list and also to filter shown strings.
-* dlg::slider - Show a number input dialog that uses a Fl_Hor_Value_Slider widget.
-* dlg::text - Show text in an editor widget.
-* dlg::text_edit - Show and edit a text in an editor widget.
-* dlg::theme - Let user select a theme.
+* flw::dlg::Font - A dialog for selecting font and font size.
+* flw::dlg::Progress - A dialog with a message list and a progress bar for time consuming work.
+* flw::dlg::date - Show a date selection dialog.
+* flw::dlg::html - Show text in a html view.
+* flw::dlg::list* - Show a list of strings.
+* flw::dlg::password* - Ask user for password and optional password confirmation.
+* flw::dlg::print - Print widget to postscript.
+* flw::dlg::print_text* - Print plain text to postscript.
+* flw::dlg::select_checkboxes - Show a dialog with a list of checkboxes.
+* flw::dlg::select_choice - Show a string selection dialog with Fl_Choice.
+* flw::dlg::select_string* - Let user select a string from a list and also to filter shown strings.
+* flw::dlg::slider - Show a number input dialog that uses a Fl_Hor_Value_Slider widget.
+* flw::dlg::text - Show text in an editor widget.
+* flw::dlg::text_edit - Show and edit a text in an editor widget.
+* flw::dlg::theme - Let user select a theme.
 
 ## Screenshots of some of the widgets
 
