@@ -196,7 +196,7 @@ int GridGroup::handle(int event) {
                 redraw();
                 return 1;
             }
-            
+
             //printf("FOCUS:  %p: %s\n", Fl::focus() ? Fl::focus() : 0, Fl::focus() && Fl::focus()->label() ? Fl::focus()->label() : "NULL");
         }
     }

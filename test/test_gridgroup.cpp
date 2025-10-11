@@ -20,36 +20,36 @@ class Button : public Fl_Button {
 public:
     Button(int X = 0, int Y = 0, int W = 0, int H = 0, const char* L = nullptr) : Fl_Button(X, Y, W, H, L) {
     }
-    
+
     void draw() override {
         if (Fl::focus() == this) {
             color(color::TEAL);
         }
         else {
             color(FL_BACKGROUND_COLOR);
-        
+
         }
-        
+
         Fl_Button::draw();
     }
 };
 
-/***
- *      _______        _  __ 
+/*
+ *      _______        _  __
  *     |__   __|      | |/_ |
  *        | | ___  ___| |_| |
  *        | |/ _ \/ __| __| |
  *        | |  __/\__ \ |_| |
  *        |_|\___||___/\__|_|
- *                           
- *                           
+ *
+ *
  */
 
 class Test1 : public Fl_Double_Window {
 public:
     Test1(int W, int H) : Fl_Double_Window(W, H, "Test1 :: test_gridgroup.cpp") {
         end();
-        
+
         b1    = new Button(0, 0, 0, 0, "B&1");
         grid1 = new GridGroup(10, 10, 300, H - 20);
 
@@ -68,7 +68,7 @@ public:
         grid1->box(FL_FLAT_BOX);
         grid1->size(8);
         util::labelfont(grid1, flw::PREF_FONT, 8);
-        
+
         b2    = new Button(0, 0, 0, 0, "B&2");
         grid2 = new GridGroup(320, 10, W - 330, H - 20);
 
@@ -87,7 +87,7 @@ public:
         grid2->color(FL_RED);
         grid2->box(FL_FLAT_BOX);
         util::labelfont(grid2);
-        
+
         b1->callback(Callback, this);
         b2->callback(Callback, this);
 
@@ -101,7 +101,7 @@ public:
 
     static void Callback(Fl_Widget* w, void* v) {
         Test1* self = (Test1*) v;
-        
+
         if (w == self->b1) {
             delete self->grid1->remove(self->b1);
             self->b1 = nullptr;
@@ -120,15 +120,15 @@ public:
     Fl_Button* b2;
 };
 
-/***
- *      _______        _   ___  
- *     |__   __|      | | |__ \ 
+/*
+ *      _______        _   ___
+ *     |__   __|      | | |__ \
  *        | | ___  ___| |_   ) |
- *        | |/ _ \/ __| __| / / 
- *        | |  __/\__ \ |_ / /_ 
+ *        | |/ _ \/ __| __| / /
+ *        | |  __/\__ \ |_ / /_
  *        |_|\___||___/\__|____|
- *                              
- *                              
+ *
+ *
  */
 
 #define ADJUST "Toggle GridGroup::Adjust()\nFor GRID2"
@@ -138,7 +138,7 @@ class Test2 : public Fl_Double_Window {
 public:
     Test2(int W, int H) : Fl_Double_Window(W, H, "Test2 :: test_gridgroup.cpp") {
         end();
-        
+
         grid   = new GridGroup(0, 0, W, H, "GRID");
         toggle = true;
 
@@ -158,7 +158,7 @@ public:
         util::find_widget(grid, "&TOP")->take_focus();
         //util::find_widget(grid, "&TOP")->deactivate();
         util::labelfont(grid);
-        
+
         grid2  = new GridGroup(0, 0, 0, 0, "GRID2");
         //auto box1 = new Button(0, 0, 0, 0, "b1");
         auto box1 = new flw::InputMenu(0, 0, 0, 0, "i1");
@@ -181,16 +181,16 @@ public:
         box4->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
         box4->box(FL_BORDER_BOX);
         box4->tooltip("adjusted 1 pixel left and right and top and bottom\nb1, b2, b3, b4 are slight overlapping");
-        
+
         grid2->add(box1,  0,   0,  40,  30, box1->input());
         grid2->add(box2, 40,   0,   0,  30);
         grid2->add(box3,  0,  30,  40,   0);
         grid2->add(box4, 40,  30,   0,   0);
-        
+
         grid2->adjust(box2, -1, 1,  0, 0);
         grid2->adjust(box3,  0, 0, -1, 1);
         grid2->adjust(box4, -1, 1, -1, 1);
-        
+
         util::labelfont(grid2);
         box1->callback(Callback2, this);
         box2->callback(Callback2, this);
@@ -207,7 +207,7 @@ public:
 
     static void Callback1(Fl_Widget* w, void* v) {
         printf("Callback1(%s)\n", w->label());
-        
+
         Test2* t = (Test2*) v;
         t->toggle = !t->toggle;
 
@@ -231,19 +231,19 @@ public:
                 t->grid2->adjust(util::find_widget(t->grid, "b4"));
             }
         }
-        
+
         t->grid2->do_layout();
     }
-    
+
     static void Callback2(Fl_Widget* w, void*) {
         printf("Callback2(%s)\n", w->label());
     }
 
     static void Callback3(Fl_Widget* w, void* v) {
         printf("Callback3(%s)\n", w->label());
-        
+
         Test2* t = (Test2*) v;
-        
+
         if (util::find_widget(t, "&TOP")->active()) {
             util::find_widget(t, "&TOP")->deactivate();
             util::find_widget(t, "b3")->deactivate();
@@ -257,10 +257,10 @@ public:
     static void Callback4(Fl_Widget* w, void* v) {
         Test2* t = (Test2*) v;
         int i = 0;
-        
+
         while (t->grid2->children() > 1) {
             auto w2 = t->grid2->child(i);
-            
+
             if (w2 != w) {
                 delete t->grid2->remove(w2);
             }
@@ -268,16 +268,16 @@ public:
                 i = 1;
             }
         }
-        
+
         t->grid2->do_layout();
     }
 
     int handle(int event) override {
         if (event == FL_KEYUP && Fl::event_key() == 'p') {
-            auto f = Fl::focus();            
+            auto f = Fl::focus();
             if (f) printf("FOCUS: %p: %s\n", f, f->label());
         }
-        
+
         return Fl_Double_Window::handle(event);
     }
 
@@ -286,15 +286,15 @@ public:
     bool        toggle;
 };
 
-/***
- *                      _       
- *                     (_)      
- *      _ __ ___   __ _ _ _ __  
- *     | '_ ` _ \ / _` | | '_ \ 
+/*
+ *                      _
+ *                     (_)
+ *      _ __ ___   __ _ _ _ __
+ *     | '_ ` _ \ / _` | | '_ \
  *     | | | | | | (_| | | | | |
  *     |_| |_| |_|\__,_|_|_| |_|
- *                              
- *                              
+ *
+ *
  */
 
 int main(int argc, const char** argv) {
@@ -309,7 +309,7 @@ int main(int argc, const char** argv) {
         win2.show();
         Fl::run();
     }
-    
+
     puts("DONE");
     return 0;
 }
