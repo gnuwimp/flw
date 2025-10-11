@@ -13,164 +13,120 @@
 
 using namespace flw;
 
+/*
+ *      _______        _
+ *     |__   __|      | |
+ *        | | ___  ___| |_
+ *        | |/ _ \/ __| __|
+ *        | |  __/\__ \ |_
+ *        |_|\___||___/\__|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
 public:
-    Test(int w, int h) : Fl_Double_Window(w, h, "test_splitgroup.cpp") {
-        group  = new SplitGroup(0, 0, w, h);
-        group1 = new SplitGroup(0, 0, 0, 0);
-        group2 = new SplitGroup(0, 0, 0, 0);
+    //--------------------------------------------------------------------------
+    Test(int W, int H) : Fl_Double_Window(W, H, "test_splitgroup.cpp") {
+        b1     = new Fl_Button(0, 0, 0, 0, "Swap Widgets");
+        b2     = new Fl_Button(0, 0, 0, 0, "Hide");
+        b3     = new Fl_Button(0, 0, 0, 0, "Show");
+        b4     = new Fl_Button(0, 0, 0, 0, "Swap Pos");
+        group  = new SplitGroup();
+        group1 = new SplitGroup();
+        group2 = new SplitGroup();
 
+        add(b1);
+        add(b2);
+        add(b3);
+        add(b4);
         add(group);
-        group->add(group1, SplitGroup::CHILD::FIRST);
-        group->add(group2, SplitGroup::CHILD::SECOND);
-        group->direction(SplitGroup::DIRECTION::HORIZONTAL);
-        group->min_pos(75);
-        group->split_pos(150);
 
-        group1->add(new Fl_Button(0, 0, 0, 0, "Swap"), SplitGroup::CHILD::FIRST);
-        group1->add(new Fl_Button(0, 0, 0, 0, "Hide/Show Left"), SplitGroup::CHILD::SECOND);
-        group1->split_pos(200);
-        group1->child(SplitGroup::CHILD::FIRST)->callback(Callback1Left, this);
-        group1->child(SplitGroup::CHILD::SECOND)->callback(Callback1Right, this);
+        group->add(group1, true);
+        group->add(group2, false);
+        group->pos(SplitGroup::Pos::HORIZONTAL);
+        group->min_split_pos(100);
 
-        group2_direction = SplitGroup::DIRECTION::HORIZONTAL;
-        group2_child     = SplitGroup::CHILD::SECOND;
-        group2_count     = 0;
-        group2_pos       = 150;
+        group1->add(new Fl_Button(0, 0, 0, 0, "A"), true);
+        group1->add(new Fl_Button(0, 0, 0, 0, "B"), false);
 
-        group2->add(new Fl_Button(0, 0, 0, 0, "1 Hide SECOND/HORIZONTAL"), SplitGroup::CHILD::FIRST);
-        group2->add(new Fl_Button(0, 0, 0, 0, "2 Hide SECOND/HORIZONTAL"), SplitGroup::CHILD::SECOND);
-        group2->direction(SplitGroup::DIRECTION::HORIZONTAL);
-        group2->min_pos(75);
-        group2->split_pos(group2_pos);
-        group2->child(SplitGroup::CHILD::FIRST)->callback(Callback2Top, this);
-        group2->child(SplitGroup::CHILD::SECOND)->callback(Callback2Top, this);
+        group2->add(new Fl_Button(0, 0, 0, 0, "C"), true);
+        group2->add(new Fl_Button(0, 0, 0, 0, "D"), false);
+        group2->pos(SplitGroup::Pos::HORIZONTAL);
+        group2->min_split_pos(10);
 
+        //group1->split_pos(100);
         group->do_layout();
-        resizable(this);
+
+        b1->callback(Callback, this);
+        b2->callback(Callback, this);
+        b3->callback(Callback, this);
+        b4->callback(Callback, this);
+
+        resizable(group);
         size_range(64, 48);
     }
 
-    static void Callback1Left(Fl_Widget*, void* o) {
-        auto w = (Test*) o;
-        w->group1->swap();
-    }
-
-    static void Callback1Right(Fl_Widget*, void* o) {
+    //--------------------------------------------------------------------------
+    static void Callback(Fl_Widget* b, void* o) {
         auto w = (Test*) o;
 
-        if (w->group1->child(SplitGroup::CHILD::FIRST)->visible()) {
-            w->group1->child(SplitGroup::CHILD::FIRST)->hide();
-        }
-        else {
-            w->group1->child(SplitGroup::CHILD::FIRST)->show();
-        }
+        if (b == w->b1) {
+            w->group1->show_child(true);
+            w->group1->show_child(false);
+            w->group1->swap();
 
-        w->group->do_layout();
+            w->group2->show_child(true);
+            w->group2->show_child(false);
+            w->group2->swap();
+        }
+        else if (b == w->b2) {
+            w->group1->hide_child(true);
+            w->group2->hide_child(true);
+        }
+        else if (b == w->b3) {
+            w->group1->show_child(true);
+            w->group2->show_child(true);
+        }
+        else if (b == w->b4) {
+            w->group->pos(w->group->pos() == SplitGroup::Pos::HORIZONTAL ? SplitGroup::Pos::VERTICAL : SplitGroup::Pos::HORIZONTAL);
+            w->group1->pos(w->group1->pos() == SplitGroup::Pos::HORIZONTAL ? SplitGroup::Pos::VERTICAL : SplitGroup::Pos::HORIZONTAL);
+            w->group2->pos(w->group2->pos() == SplitGroup::Pos::HORIZONTAL ? SplitGroup::Pos::VERTICAL : SplitGroup::Pos::HORIZONTAL);
+        }
     }
 
-    static void Callback2Top(Fl_Widget*, void* o) {
-        auto w = (Test*) o;
-
-        w->group2_count++;
-        // fprintf(stderr, "count=%d, toggle=%s\n", w->group2_count, w->group2_child == SplitGroup::CHILD::FIRST ? "first" : "second");
-
-        if (w->group2_count <= 2) {
-            w->group2->toggle(w->group2_child, w->group2_direction, w->group2_pos);
-        }
-        else if (w->group2_count == 3) {
-            w->group2_direction = w->group2_direction == SplitGroup::DIRECTION::HORIZONTAL ? SplitGroup::DIRECTION::VERTICAL : SplitGroup::DIRECTION::HORIZONTAL;
-            w->group2->toggle(w->group2_child, w->group2_direction, w->group2_pos);
-        }
-        else if (w->group2_count <= 5) {
-            w->group2->toggle(w->group2_child, w->group2_direction, w->group2_pos);
-        }
-        else {
-            w->group2_child     = w->group2_child == SplitGroup::CHILD::FIRST ? SplitGroup::CHILD::SECOND : SplitGroup::CHILD::FIRST;
-            w->group2_direction = SplitGroup::DIRECTION::HORIZONTAL;
-            w->group2_count     = 0;
-
-            if (w->group2_child == SplitGroup::CHILD::SECOND && w->group2_count == 0) {
-                w->group2_pos = -1;
-            }
-
-            w->group2->toggle(w->group2_child, w->group2_direction, w->group2_pos);
-        }
-
-        if (w->group2_child == SplitGroup::CHILD::SECOND) {
-            if (w->group2_count == 0) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Hide SECOND/HORIZONTAL (From Start)");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Hide SECOND/HORIZONTAL (From Start)");
-            }
-            else if (w->group2_count == 1) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show SECOND/HORIZONTAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show SECOND/HORIZONTAL");
-            }
-            else if (w->group2_count == 2) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show VERTICAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show VERTICAL");
-            }
-            else if (w->group2_count == 3) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Hide SECOND/VERTICAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Hide SECOND/VERTICAL");
-            }
-            else if (w->group2_count == 4) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show SECOND/VERTICAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show SECOND/VERTICAL");
-            }
-            else if (w->group2_count == 5) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show HORIZONTAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show HORIZONTAL");
-            }
-            else {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("ERROR_LEFT");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("ERROR_LEFT");
-            }
-        }
-        else {
-            if (w->group2_count == 0) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Hide FIRST/HORIZONTAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Hide FIRST/HORIZONTAL");
-            }
-            else if (w->group2_count == 1) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show FIRST/HORIZONTAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show FIRST/HORIZONTAL");
-            }
-            else if (w->group2_count == 2) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show VERTICAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show VERTICAL");
-            }
-            else if (w->group2_count == 3) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Hide FIRST/VERTICAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Hide FIRST/VERTICAL");
-            }
-            else if (w->group2_count == 4) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show FIRST/VERTICAL");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show FIRST/VERTICAL");
-            }
-            else if (w->group2_count == 5) {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("1 Show HORIZONTAL (Equal Size)");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("2 Show HORIZONTAL (Equal Size)");
-            }
-            else {
-                w->group2->child(SplitGroup::CHILD::FIRST)->label("ERROR_RIGHT");
-                w->group2->child(SplitGroup::CHILD::SECOND)->label("ERROR_RIGHT");
-            }
-        }
-
-        w->group->do_layout();
-        Fl::redraw();
+    //--------------------------------------------------------------------------
+    void resize(int X, int Y, int W, int H) {
+        Fl_Double_Window::resize(X, Y, W, H);
+        b1->resize(0, 0, 110, 28);
+        b2->resize(114, 0, 110, 28);
+        b3->resize(228, 0, 110, 28);
+        b4->resize(342, 0, 110, 28);
+        group->resize(0, 28, W, H - 28);
     }
 
-    SplitGroup*           group1;
-    SplitGroup*           group2;
-    SplitGroup*           group;
-    SplitGroup::CHILD     group2_child;
-    SplitGroup::DIRECTION group2_direction;
-    int                   group2_count;
-    int                   group2_pos;
+    Fl_Button*      b1;
+    Fl_Button*      b2;
+    Fl_Button*      b3;
+    Fl_Button*      b4;
+    SplitGroup*     group;
+    SplitGroup*     group1;
+    SplitGroup*     group2;
 };
 
+/*
+ *                      _
+ *                     (_)
+ *      _ __ ___   __ _ _ _ __
+ *     | '_ ` _ \ / _` | | '_ \
+ *     | | | | | | (_| | | | | |
+ *     |_| |_| |_|\__,_|_|_| |_|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
@@ -178,5 +134,6 @@ int main(int argc, const char** argv) {
 
     Test win(800, 480);
     win.show();
+
     return Fl::run();
 }
