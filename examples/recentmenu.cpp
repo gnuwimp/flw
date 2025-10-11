@@ -13,10 +13,10 @@ int main() {
 
     #define CALLBACK(X) [](Fl_Widget*, void* o) { X; }
 
-    Fl_Preferences   pref   = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "example_recentmenu");
-    Fl_Window*       win    = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::RecentMenu");
-    Fl_Menu_Bar*     menu   = new Fl_Menu_Bar(0, 0, 640, 28);
-    flw::RecentMenu* recent = new flw::RecentMenu(menu, CALLBACK( // Callback for an item in recent menu.
+    auto pref   = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "example_recentmenu");
+    auto win    = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::RecentMenu");
+    auto menu   = new Fl_Menu_Bar(0, 0, 640, 28);
+    auto recent = new flw::RecentMenu(menu, CALLBACK( // Callback for an item in recent menu.
         puts(static_cast<Fl_Menu_Bar*>(o)->text())
     ), menu);
 
@@ -30,10 +30,10 @@ int main() {
 
     // After 5 items the oldest will be deleted.
     recent->max_items(5);
-    
+
     // Load menu items from preference file.
     recent->load_pref(pref);
-    
+
     // Add two items if nothing are stored in preference file.
     if (recent->items().size() == 0) {
         recent->insert("gridgroup.cpp");

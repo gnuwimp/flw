@@ -9,30 +9,32 @@ int main() {
 
     // [flw::TabsGroup example]
 
-    Fl_Window*      win  = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::TabsGroup");
-    flw::TabsGroup* tabs = new flw::TabsGroup(0, 0, 640, 480);
+    auto* win  = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::TabsGroup");
+    auto* tabs = new flw::TabsGroup(0, 0, 640, 480);
 
     // Add child widgets.
     tabs->add("Hello", new Fl_Button(0, 0, 0, 0, "Hello World 1"));
     tabs->add("XXXXX", new Fl_Button(0, 0, 0, 0, "Hello World 2"));
 
-    // Move tabs from top side to left side.
-    tabs->tab_pos(flw::TabsGroup::Pos::WEST);
+    // Add many tabs.
+    for (int f = 1; f <= 40; f++) {
+        tabs->add(flw::util::format("Tab %02d", f), new Fl_Button(0, 0, 0, 0, "Hello World"));
+    }
+
+    // Move tabs from default top side to left side.
+    tabs->tab_pos(flw::TabsGroup::Pos::LEFT);
 
     // Change tab button label from "XXXXX" to "World".
-    auto x = tabs->child(1);
-    tabs->label("World", x);
+    tabs->tab_label("World", tabs->child(1));
 
     // Add widget between the two first widgets.
-    tabs->insert("Inserted", new Fl_Button(0, 0, 0, 0, "Hello World 3"), x);
+    tabs->insert("Inserted", new Fl_Button(0, 0, 0, 0, "Hello World 3"), tabs->child(1));
 
     // Swap positions of "Hello" and "World".
     tabs->swap(0, 2);
-
-    // Change minimum width of tab buttons (10 * flw::PREF_FONTSIZE).
-    flw::TabsGroup::MIN_WIDTH_EAST_WEST = 10;
-
     tabs->do_layout();
+    tabs->value(tabs->child(0));
+
     win->resizable(tabs);
     win->show();
     Fl::run();

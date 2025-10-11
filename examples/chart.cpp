@@ -9,7 +9,7 @@ int main() {
 
     // [flw::chart::Chart example]
 
-    auto win     = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 1280, 640, "flw::chart::Chart");
+    auto win     = new Fl_Window(Fl::w() / 2 - 640, Fl::h() / 2 - 320, 1280, 640, "flw::chart::Chart");
     auto chart   = new flw::chart::Chart(0, 0, 1280, 640);
     auto start   = gnu::Date("2000-01-01");
     auto stop    = gnu::Date("2000-12-31");
@@ -18,7 +18,7 @@ int main() {
     auto points3 = flw::chart::PointVector();
     auto points4 = flw::chart::PointVector();
     auto points5 = flw::chart::PointVector();
-    
+
     while (start <= stop) {
         auto r1 = rand() % 200 + 500;
         auto r2 = rand() % 120'000 + 20'000;
@@ -26,11 +26,11 @@ int main() {
         points2.push_back(flw::chart::Point(start.format(gnu::Date::FORMAT::ISO_TIME), r2));
         start.add_days(1);
     }
-    
+
     points3 = flw::chart::Point::MovingAverage(points1, 8);
     points4 = flw::chart::Point::Modify(flw::chart::Point::MovingAverage(points1, 5), flw::chart::Modifier::MULTIPLICATION, 4.0);
     points5 = flw::chart::Point::MovingAverage(points2, 8);
-    
+
     auto line1 = flw::chart::Line(points1, "BAR_HLC", flw::chart::LineType::BAR_HLC);
     line1.set_color(FL_BLUE);
     line1.set_width(4);
@@ -51,7 +51,7 @@ int main() {
     auto line5 = flw::chart::Line(points5, "MVG 8", flw::chart::LineType::LINE);
     line5.set_color(FL_DARK_GREEN);
     line5.set_width(2);
-    
+
     chart->area(flw::chart::AreaNum::ONE).add_line(line1);
     chart->area(flw::chart::AreaNum::ONE).add_line(line2);
     chart->area(flw::chart::AreaNum::ONE).add_line(line3);

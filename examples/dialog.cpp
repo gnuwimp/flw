@@ -164,7 +164,7 @@ And by opposing end them? To die: to sleep;
 )";
 
     // Create printer object.
-    flw::PrintText printer = flw::PrintText(
+    auto printer = flw::util::PrintText(
         "text.ps",                                  // Output file.
         Fl_Paged_Device::Page_Format::A4,           // A4 page format.
         Fl_Paged_Device::Page_Layout::PORTRAIT,     // Portrait format.

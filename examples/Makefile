@@ -17,6 +17,9 @@ all: flw.o \
 	inputmenu.exe \
 	plot.exe \
 	recentmenu.exe \
+	splitgroup.exe \
+	table.exe \
+	tableeditor.exe \
 	tabsgroup.exe \
 
 #-------------------------------------------------------------------------------
@@ -49,6 +52,15 @@ plot.exe: plot.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 recentmenu.exe: recentmenu.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+splitgroup.exe: splitgroup.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+table.exe: table.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+tableeditor.exe: tableeditor.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 tabsgroup.exe: tabsgroup.cpp flw.o
@@ -87,6 +99,15 @@ run_plot: plot.exe
 
 run_recentmenu: recentmenu.exe
 	./recentmenu.exe
+
+run_splitgroup: splitgroup.exe
+	./splitgroup.exe
+
+run_table: table.exe
+	./table.exe
+
+run_tableeditor: tableeditor.exe
+	./tableeditor.exe
 
 run_tabsgroup: tabsgroup.exe
 	./tabsgroup.exe

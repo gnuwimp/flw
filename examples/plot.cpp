@@ -10,7 +10,7 @@ int main() {
 
     // [flw::plot::Plot example]
 
-    auto win     = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 1280, 640, "flw::plot::Plot");
+    auto win     = new Fl_Window(Fl::w() / 2 - 640, Fl::h() / 2 - 320, 1280, 640, "flw::plot::Plot");
     auto plot    = new flw::plot::Plot(0, 0, 1280, 640);
     auto points1 = flw::plot::PointVector();
     auto points2 = flw::plot::PointVector();

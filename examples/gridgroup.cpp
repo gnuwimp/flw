@@ -9,8 +9,8 @@ int main() {
 
     // [flw::GridGroup example]
 
-    Fl_Window*      win  = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::GridGroup");
-    flw::GridGroup* grid = new flw::GridGroup(0, 0, 640, 480);
+    auto win  = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::GridGroup");
+    auto grid = new flw::GridGroup(0, 0, 640, 480);
 
     // Button at the top that use all available width.
     grid->add(new Fl_Button(0, 0, 0, 0, "X=1, Y=1, W=-1, H=4"), 1, 1, -1, 4);
