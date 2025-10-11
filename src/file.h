@@ -22,6 +22,8 @@
 #include <vector>
 #include <array>
 
+/** @brief Classes unrelated to FLTK.
+*/
 namespace gnu {
 
 /** @brief File related functions.
