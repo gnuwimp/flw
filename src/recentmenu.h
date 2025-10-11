@@ -42,40 +42,40 @@ namespace flw {
 */
 class RecentMenu {
 public:
-                                    RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
-    void                            append(const std::string& item)
-                                        { return _add(item, true); } ///< @brief Append item last in menu. @param[in] item  Menu label.
-    void                            insert(const std::string& item)
-                                        { return _add(item, false); } ///< @brief Insert item first in menu. @param[in] item  Menu label.
-    StringVector                    items() const
-                                        { return _items; } ///< @brief Number of items.
-    size_t                          max_items() const
-                                        { return _max; } ///< @brief Get max number of items.
-    void                            max_items(size_t max)
-                                        { if (max > 0 && max <= 100) _max = max; } ///< @brief Set max number of items. @param[in] max  From 1 to 100.
-    Fl_Menu_*                       menu()
-                                        { return _menu; } ///< @brief Get menu object.
-    void                            load_pref(Fl_Preferences& pref, const std::string& base_name = "files");
-    void                            save_pref(Fl_Preferences& pref, const std::string& base_name = "files");
-    void*                           user_data()
-                                        { return _user; } ///< @brief Get user data.
-    void                            user_data(void* data)
-                                        { _user = data; } ///< @brief Set user data.
+                                RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
+    void                        append(const std::string& item)
+                                    { return _add(item, true); } ///< @brief Append item last in menu. @param[in] item  Menu label.
+    void                        insert(const std::string& item)
+                                    { return _add(item, false); } ///< @brief Insert item first in menu. @param[in] item  Menu label.
+    StringVector                items() const
+                                    { return _items; } ///< @brief Number of items.
+    size_t                      max_items() const
+                                    { return _max; } ///< @brief Get max number of items.
+    void                        max_items(size_t max)
+                                    { if (max > 0 && max <= 100) _max = max; } ///< @brief Set max number of items. @param[in] max  From 1 to 100.
+    Fl_Menu_*                   menu()
+                                    { return _menu; } ///< @brief Get menu object.
+    void                        load_pref(Fl_Preferences& pref, const std::string& base_name = "files");
+    void                        save_pref(Fl_Preferences& pref, const std::string& base_name = "files");
+    void*                       user_data()
+                                    { return _user; } ///< @brief Get user data.
+    void                        user_data(void* data)
+                                    { _user = data; } ///< @brief Set user data.
 
-    static void                     CallbackClear(Fl_Widget*, void* o);
+    static void                 CallbackClear(Fl_Widget*, void* o);
 
 private:
-    void                            _add(const std::string& item, bool append);
-    size_t                          _add_string(StringVector& items, size_t max_size, const std::string& string);
-    size_t                          _insert_string(StringVector& items, size_t max_size, const std::string& string);
+    void                        _add(const std::string& item, bool append);
+    size_t                      _add_string(StringVector& items, size_t max_size, const std::string& string);
+    size_t                      _insert_string(StringVector& items, size_t max_size, const std::string& string);
 
-    std::string                     _base;
-    Fl_Callback*                    _callback;
-    std::string                     _clear;
-    StringVector                    _items;
-    size_t                          _max;
-    Fl_Menu_*                       _menu;
-    void*                           _user;
+    std::string                 _base;
+    Fl_Callback*                _callback;
+    std::string                 _clear;
+    StringVector                _items;
+    size_t                      _max;
+    Fl_Menu_*                   _menu;
+    void*                       _user;
 };
 }
 
