@@ -47,7 +47,7 @@ public:
 
         TEST1   = this;
         boxtype = FL_MAX_BOXTYPE;
-        
+
         //tabs = new TabsGroup(50, 50, W - 100, H - 100);
         tabs = new TabsGroup(0, 0, W, H);
 
@@ -163,17 +163,17 @@ public:
             TEST1->tabs->debug();
         }
         else if (w == TEST1->b6) {
-            TEST1->tabs->label("This Is A New Label", TEST1->b6);
+            TEST1->tabs->tab_label("This Is A New Label", TEST1->b6);
             TEST1->tabs->do_layout();
         }
         else if (w == TEST1->b7) {
-            TEST1->tabs->label("", TEST1->b1);
-            TEST1->tabs->label("", TEST1->b2);
-            TEST1->tabs->label("", TEST1->b3);
-            TEST1->tabs->label("", TEST1->b4);
-            TEST1->tabs->label("", TEST1->b5);
-            TEST1->tabs->label("", TEST1->b6);
-            TEST1->tabs->label("", TEST1->b7);
+            TEST1->tabs->tab_label("", TEST1->b1);
+            TEST1->tabs->tab_label("", TEST1->b2);
+            TEST1->tabs->tab_label("", TEST1->b3);
+            TEST1->tabs->tab_label("", TEST1->b4);
+            TEST1->tabs->tab_label("", TEST1->b5);
+            TEST1->tabs->tab_label("", TEST1->b6);
+            TEST1->tabs->tab_label("", TEST1->b7);
             TEST1->tabs->do_layout();
         }
         else if (w == TEST1->b8) {
@@ -197,7 +197,7 @@ public:
                 TEST1->boxtype = FL_MAX_BOXTYPE;
                 update_tabs(FL_MAX_BOXTYPE, FL_MAX_BOXTYPE);
             }
-            
+
             Fl::redraw();
         }
         else if (w == TEST1->b9) {
@@ -360,7 +360,7 @@ public:
         //tabs->tab_pos(TabsGroup::Pos::LEFT, 20);
         //tabs->tab_pos(TabsGroup::Pos::BOTTOM, 20);
         tabs->do_layout();
-    
+
         resizable(tabs);
         size_range(64, 48);
         flw::util::labelfont(this);
@@ -584,7 +584,7 @@ int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
     }
-    
+
     Fl::screen_scale(0, 1.0);
     //flw::PREF_FONTSIZE = 10;
 

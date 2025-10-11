@@ -118,7 +118,7 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     clip_children(1);
     resizable(nullptr);
 
-    _scroll   = new Fl_Scrollbar(0, 0, 0, 0, "SCROLL");
+    _scroll   = new Fl_Scrollbar(0, 0, 0, 0);
     _tabs     = new _TabsGroup(0, 0, 0, 0);
     _active1  = -1;
     _active2  = -1;
@@ -127,8 +127,8 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _keyboard = true;
     _n        = 0;
     _s        = 0;
-    _tab_box  = FL_MAX_BOXTYPE;
-    _tabd_box = FL_MAX_BOXTYPE;
+    _down_box = FL_MAX_BOXTYPE;
+    _up_box   = FL_MAX_BOXTYPE;
     _visible  = 0;
     _w        = 0;
     _width1   = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
@@ -234,7 +234,7 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget
         return;
     }
 
-    auto button = new _TabsGroupButton(_tab_box, _tabd_box, _color, label, widget, this);
+    auto button = new _TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : static_cast<int>(_widgets.size());
 
     button->copy_tooltip(tooltip.c_str());
@@ -395,7 +395,8 @@ int TabsGroup::handle(int event) {
     if (is_tabs_vertical() == true) { // Only left/right mode can resize width by using mouse.
         if (event == FL_DRAG) {
             if (_drag == true) {
-                auto pos = 0;
+                auto pos   = 0;
+                auto width = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
 
                 if (is_tabs_left() == true) {
                     pos = Fl::event_x() - x();
@@ -404,7 +405,7 @@ int TabsGroup::handle(int event) {
                     pos = x() + w() - Fl::event_x();
                 }
 
-                if (pos != _width1) {
+                if (pos != _width1 && pos >= width && pos <= w() - width) {
                     _width1 = pos;
                     do_layout();
                 }
@@ -568,7 +569,7 @@ void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Wid
         return;
     }
 
-    auto button = new _TabsGroupButton(_tab_box, _tabd_box, _color, label, widget, this);
+    auto button = new _TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
 
     button->copy_tooltip(tooltip.c_str());
@@ -587,37 +588,6 @@ void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Wid
 
     TabsGroup::CallbackButton(button, this);
     do_layout();
-}
-
-/** @brief Get tab button label.
-*
-* @param[in] widget  Child widget to get tab button label for.
-*
-* @return Label string or empty string.
-*/
-std::string TabsGroup::label(const Fl_Widget* widget) {
-    auto num = find(widget);
-
-    if (num == -1) {
-        return "";
-    }
-
-    return _widgets[num]->label();
-}
-
-/** @brief Set tab button label.
-*
-* @param[in] label   New label.
-* @param[in] widget  Child widget to set tab button label for.
-*/
-void TabsGroup::label(const std::string& label, Fl_Widget* widget) {
-    auto num = find(widget);
-
-    if (num == -1) {
-        return;
-    }
-
-    _widgets[num]->copy_label(label.c_str());
 }
 
 /** @brief Remove child widget.
@@ -656,14 +626,11 @@ Fl_Widget* TabsGroup::remove(int index) {
 *
 */
 void TabsGroup::resize(int X, int Y, int W, int H) {
+    Fl_Widget::resize(X, Y, W, H);
+
     if (W == 0 || H == 0) {
         return;
     }
-    else if (_old.w() == W && _old.h() == H) {
-        return;
-    }
-
-    Fl_Widget::resize(X, Y, W, H);
 
     if (_tabs->visible() == 0) {
         _area = Fl_Rect(X + _w, Y + _n, W - _w - _e, H - _n - _s);
@@ -680,7 +647,6 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
     }
 
     _resize_active_widget();
-    _old = Fl_Rect(this);
     Fl::redraw();
 }
 
@@ -716,15 +682,15 @@ void TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
     else if (_width1 > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) { // Set min size for widgets on the right.
         _width1 = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
     }
-
     if (pack_h > H) {
         auto size = static_cast<int>(_widgets.size() - _visible + 2);
 
         scroll = Fl::scrollbar_size();
-        _scroll->show();
         _scroll->range(1, size > 0 ? size : 1);
+        _scroll->show();
     }
     else {
+        _scroll->value(1);
         _scroll->resize(0, 0, 0, 0);
         _scroll->hide();
     }
@@ -824,6 +790,7 @@ void TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
     }
 
     else {
+        _scroll->value(1);
         _scroll->resize(0, 0, 0, 0);
         _scroll->hide();
     }
@@ -997,28 +964,28 @@ int TabsGroup::swap(int from, int to) {
 
 /** @brief Set tab button boxtype.
 *
-* @param[in] boxtype       Use FL_MAX_BOXTYPE to reset to default.
-* @param[in] down_boxtype  Use FL_MAX_BOXTYPE to reset to default.
+* @param[in] up_box    Use FL_MAX_BOXTYPE to reset to default.
+* @param[in] down_box  Use FL_MAX_BOXTYPE to reset to default.
 */
-void TabsGroup::tab_box(Fl_Boxtype boxtype, Fl_Boxtype down_boxtype) {
-    _tab_box  = boxtype;
-    _tabd_box = down_boxtype;
+void TabsGroup::tab_box(Fl_Boxtype up_box, Fl_Boxtype down_box) {
+    _up_box   = up_box;
+    _down_box = down_box;
 
     for (auto widget : _widgets) {
         auto b = static_cast<_TabsGroupButton*>(widget);
 
-        if (_tab_box == FL_MAX_BOXTYPE) {
+        if (_up_box == FL_MAX_BOXTYPE) {
             b->box(FL_THIN_UP_BOX);
         }
         else {
-            b->box(_tab_box);
+            b->box(_up_box);
         }
 
-        if (_tabd_box == FL_MAX_BOXTYPE) {
+        if (_down_box == FL_MAX_BOXTYPE) {
             b->down_box(FL_NO_BOX);
         }
         else {
-            b->down_box(_tab_box);
+            b->down_box(_down_box);
         }
     }
 }
@@ -1034,6 +1001,37 @@ void TabsGroup::tab_color(Fl_Color color) {
         auto b = static_cast<_TabsGroupButton*>(widget);
         b->selection_color(_color);
     }
+}
+
+/** @brief Get tab button label.
+*
+* @param[in] widget  Child widget to get tab button label for.
+*
+* @return Label string or empty string.
+*/
+std::string TabsGroup::tab_label(const Fl_Widget* widget) {
+    auto num = find(widget);
+
+    if (num == -1) {
+        return "";
+    }
+
+    return _widgets[num]->label();
+}
+
+/** @brief Set tab button label.
+*
+* @param[in] label   New label.
+* @param[in] widget  Child widget to set tab button label for.
+*/
+void TabsGroup::tab_label(const std::string& label, Fl_Widget* widget) {
+    auto num = find(widget);
+
+    if (num == -1) {
+        return;
+    }
+
+    _widgets[num]->copy_label(label.c_str());
 }
 
 /** @brief Set on which side the tab buttons should be.

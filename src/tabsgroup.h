@@ -81,7 +81,7 @@ public:
     void                        disable_keyboard()
                                     { _keyboard = false; } ///< @brief Disable all keyboard shortcuts.
     void                        do_layout()
-                                    { _old = Fl_Rect(); TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all widgets.
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); } ///< @brief Resize all widgets.
     void                        enable_keyboard()
                                     { _keyboard = true; } ///< @brief Enable all keyboard shortcuts.
     int                         find(const Fl_Widget* widget) const;
@@ -102,8 +102,6 @@ public:
                                     { return _tabs->visible(); } ///< @brief Is tab buttons visible?
     bool                        is_tabs_vertical() const
                                     { return _tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2 || _tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2; } ///< @brief Is tab buttons on the left or right side?
-    std::string                 label(const Fl_Widget* widget);
-    void                        label(const std::string& label, Fl_Widget* widget);
     void                        max_top_width(unsigned characters = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH)
                                     { if (characters >= TabsGroup::MIN_WIDTH && characters <= 100) _width2 = characters; }  ///< @brief Set max width to top/bottom tabs. @param[in] characters  From TabsGroup::MIN_WIDTH to 100, default 10 (characters * fontsize).
     Fl_Widget*                  remove(int index);
@@ -112,8 +110,10 @@ public:
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
-    void                        tab_box(Fl_Boxtype boxtype = FL_MAX_BOXTYPE, Fl_Boxtype dboxtype = FL_MAX_BOXTYPE);
+    void                        tab_box(Fl_Boxtype up_box = FL_MAX_BOXTYPE, Fl_Boxtype down_box = FL_MAX_BOXTYPE);
     void                        tab_color(Fl_Color color = FL_SELECTION_COLOR);
+    std::string                 tab_label(const Fl_Widget* widget);
+    void                        tab_label(const std::string& label, Fl_Widget* widget);
     Pos                         tab_pos() const
                                     { return _tab_pos; } ///< @brief Get position of the tab buttons, @return One of Pos values.
     void                        tab_pos(Pos pos, int space = TabsGroup::DEFAULT_SPACE);
@@ -137,12 +137,11 @@ private:
     void                        _resize_left_right(int X, int Y, int W, int H);
     void                        _resize_top_bottom(int X, int Y, int W, int H);
 
-    Fl_Boxtype                  _tab_box;   // Box type for tab buttons.
-    Fl_Boxtype                  _tabd_box;  // Box type for tab buttons.
+    Fl_Boxtype                  _down_box;  // Box type for tab buttons.
+    Fl_Boxtype                  _up_box;    // Box type for tab buttons.
     Fl_Color                    _color;     // Tab color, default FL_SELECTION_COLOR.
     Fl_Group*                   _tabs;      // Area for tab buttons.
     Fl_Rect                     _area;      // Area for widgets.
-    Fl_Rect                     _old;       // Optimize resize callbacks.
     Fl_Scrollbar*               _scroll;    // Scrollbar for scrolling tabs if they are to large to fit.
     Pos                         _tab_pos;   // Tab placement.
     WidgetVector                _widgets;   // Vector with _TabsGroupButton objects.
