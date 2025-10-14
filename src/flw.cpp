@@ -22,6 +22,7 @@
 #include <FL/Fl_Tooltip.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
+#include <FL/Fl_SVG_Image.H>
 
 #ifdef _WIN32
     #include <FL/x.H>
@@ -194,15 +195,15 @@ void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) 
         puts("flw::debug::print() => null widget");
     }
     else {
-        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, X=%4d, Y=%4d, %c, \"%s\"\n", 
-            indent.c_str(), 
-            widget->x(), 
-            widget->y(), 
-            widget->w(), 
-            widget->h(), 
-            widget->x() + widget->w(), 
-            widget->y() + widget->h(), 
-            widget->visible() ? 'V' : 'H', 
+        printf("%sx=%4d, y=%4d, w=%4d, h=%4d, X=%4d, Y=%4d, %c, \"%s\"\n",
+            indent.c_str(),
+            widget->x(),
+            widget->y(),
+            widget->w(),
+            widget->h(),
+            widget->x() + widget->w(),
+            widget->y() + widget->h(),
+            widget->visible() ? 'V' : 'H',
             widget->label() ? widget->label() : "NULL"
         );
         auto group = widget->as_group();
@@ -725,6 +726,42 @@ std::string util::format_int(int64_t num, char del) {
     std::string r = tmp2;
     std::reverse(r.begin(), r.end());
     return r;
+}
+
+/** @brief Set icon for widget.
+*
+* Widget manages image memory and will delete it.
+*
+* @param[in] widget     Widget to set icon for.
+* @param[in] svg_image  Valid svg image.
+* @param[in] max_size   Max image size (from 16 - 4096).
+*
+* @return True if image was set.
+*/
+bool util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size) {
+    auto svg = (svg_image.length() > 40) ? new Fl_SVG_Image(nullptr, svg_image.c_str()) : nullptr;
+
+    if (svg == nullptr) {
+        return false;
+    }
+    else if (max_size < 16 || max_size > 4096) {
+        delete svg;
+        return false;
+    }
+
+    auto image   = svg->copy();
+    auto deimage = image->copy();
+
+    image->scale(max_size, max_size);
+    deimage->inactive();
+    deimage->scale(max_size, max_size);
+    widget->bind_image(image);
+    widget->bind_deimage(deimage);
+    widget->bind_image(1);
+    widget->bind_deimage(1);
+    delete svg;
+
+    return true;
 }
 
 /** @brief Check if string contains any letter but not control character.
