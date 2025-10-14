@@ -9,6 +9,7 @@
     #include "file.h"
     #include "tableeditor.h"
     #include "waitcursor.h"
+    #include "icons.h"
 #endif
 
 #include "test.h"
@@ -143,6 +144,40 @@ void test_font_small() {
 void test_html() {
     auto html = "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text";
     dlg::html("flw::dlg::html", html);
+}
+
+//------------------------------------------------------------------------------
+void test_icons() {
+    auto size = flw::PREF_FONTSIZE * 8;
+    auto w    = size * 8;
+    auto h    = size * 5;
+    auto win  = new Fl_Double_Window(0, 0, w, h);
+    auto b1   = new Fl_Button(0, 0, size, size, "ALERT");
+    auto b2   = new Fl_Button(size, 0, size, size, "CONFIRM");
+    auto b3   = new Fl_Button(size * 2, 0, size, size, "DELETE");
+    auto b4   = new Fl_Button(size * 3, 0, size, size, "ERROR");
+    auto b5   = new Fl_Button(size * 4, 0, size, size, "INFO");
+    auto b6   = new Fl_Button(size * 5, 0, size, size, "STOP");
+    auto b7   = new Fl_Button(size * 6, 0, size, size, "QUESTION");
+    auto b8   = new Fl_Button(size * 7, 0, size, size, "WARNING");
+    auto box  = new Fl_Box(w / 2 - 150, h / 2 - 150, 300, 300, "WARNING");
+    
+    util::labelfont(win);
+    util::icon(b1, icons::ALERT, flw::PREF_FONTSIZE * 3);
+    util::icon(b2, icons::CONFIRM, flw::PREF_FONTSIZE * 3);
+    util::icon(b3, icons::DELETE, flw::PREF_FONTSIZE * 3);
+    util::icon(b4, icons::ERROR, flw::PREF_FONTSIZE * 3);
+    util::icon(b5, icons::INFO, flw::PREF_FONTSIZE * 3);
+    util::icon(b6, icons::STOP, flw::PREF_FONTSIZE * 3);
+    util::icon(b7, icons::QUESTION, flw::PREF_FONTSIZE * 3);
+    util::icon(b8, icons::WARNING, flw::PREF_FONTSIZE * 3);
+    util::icon(box, icons::WARNING, flw::PREF_FONTSIZE * 3);
+    box->deactivate();
+    box->box(FL_BORDER_BOX);
+
+    win->show();
+    Fl::run();
+    delete win;
 }
 
 //------------------------------------------------------------------------------
@@ -567,6 +602,10 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "html") {
             test_html();
+        }
+
+        if (run == "" || run == "icons") {
+            test_icons();
         }
 
         if (run == "" || run == "list") {
