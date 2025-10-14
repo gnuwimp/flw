@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief A static text display that can be used for logging or similar purposes.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "logdisplay.h"
 #include "dlg.h"
@@ -13,7 +18,7 @@
 
 namespace flw {
 
-/***
+/*
  *                 _            _
  *                (_)          | |
  *      _ __  _ __ ___   ____ _| |_ ___
@@ -43,23 +48,23 @@ Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE_TABLE[] = {
     { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, 0, 0 },
     { FL_CYAN,              FL_COURIER_BOLD,    14, 0, 0 },
 
-    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_GRAY,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_RED,               FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_GREEN,        FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_BLUE,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_MAGENTA,           FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_YELLOW,       FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_CYAN,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_GRAY,              FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_RED,               FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_GREEN,        FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_BLUE,              FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_MAGENTA,           FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_CYAN,              FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
 
-    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_GRAY,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_RED,               FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_BLUE,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_MAGENTA,           FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_CYAN,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_GRAY,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_RED,               FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_BLUE,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_MAGENTA,           FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_CYAN,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
 };
 
 static const std::string _LOGDISPLAY_JSON_EXAMPLE = R"(Example json string
@@ -123,18 +128,19 @@ Use one or all.
 )";
 
 static const std::string _LOGDISPLAY_HELP = R"(@bSet style colors
-All options will be called for every line.
+All options will be called (sequentially) for every line.
 Text must be valid JSON wrapped within [].
 Count property is how many strings to color, 0 means all.
 If inclusive is set to false only characters between found strings will be colored.
+Colors might be overwritten unless a lock has been set.
 
-If lock is true then never change colors that have been set.
+@bIf lock is true then never change colors that have been set in current line.
 @f{
 @f    "style": "lock",
 @f    "on": true
 @f}
 
-Color characters by using index in line.
+@bColor characters by using index in line.
 @f{
 @f    "style": "line",
 @f    "start": 0,
@@ -142,14 +148,14 @@ Color characters by using index in line.
 @f    "color": "RED"
 @f}
 
-Color all numbers.
+@bColor all numbers.
 @f{
 @f    "style": "num",
 @f    "color": "MAGENTA",
 @f    "count": 0
 @f}
 
-Color strings.
+@bColor strings.
 @f{
 @f    "style": "string",
 @f    "word1": "find_text_from_left",
@@ -157,7 +163,7 @@ Color strings.
 @f    "count": 0
 @f}
 
-Color string but start from the right.
+@bColor string but start from the right.
 @f{
 @f    "style": "rstring",
 @f    "word1": "find_text_from_right",
@@ -165,7 +171,7 @@ Color string but start from the right.
 @f    "count": 0
 @f}
 
-Color text between two strings.
+@bColor text between two strings.
 @f{
 @f    "style": "range",
 @f    "word1": "from_string",
@@ -175,7 +181,7 @@ Color text between two strings.
 @f    "count": 0
 @f}
 
-Color text from first found string to the last found string.
+@bColor text from first found string to the last found string.
 @f{
 @f    "style": "between",
 @f    "word1": "from_first_string",
@@ -184,7 +190,7 @@ Color text from first found string to the last found string.
 @f    "color": "BLUE"
 @f}
 
-This property will call LogDisplay::line_custom_cb() which does nothing so override it.
+@bThis property will call LogDisplay::line_custom_cb() which does nothing so override it.
 @f{
 @f    "style": "custom",
 @f    "word1": "string_1",
@@ -195,7 +201,7 @@ This property will call LogDisplay::line_custom_cb() which does nothing so overr
 @f    "color": "BLUE"
 @f}
 
-@bValid colors
+@bNormal colors:
 FOREGROUND
 GRAY
 RED
@@ -204,6 +210,8 @@ BLUE
 MAGENTA
 YELLOW
 CYAN
+
+@bBold colors:
 BOLD_FOREGROUND
 BOLD_GRAY
 BOLD_RED
@@ -212,24 +220,28 @@ BOLD_BLUE
 BOLD_MAGENTA
 BOLD_YELLOW
 BOLD_CYAN
-BG_FOREGROUND
-BG_GRAY
-BG_RED
-BG_GREEN
-BG_BLUE
-BG_MAGENTA
-BG_YELLOW
-BG_CYAN
-BG_BOLD_FOREGROUND
-BG_BOLD_GRAY
-BG_BOLD_RED
-BG_BOLD_GREEN
-BG_BOLD_BLUE
-BG_BOLD_MAGENTA
-BG_BOLD_YELLOW
-BG_BOLD_CYAN
 
-    )";
+@bNormal colors with underline:
+U_FOREGROUND
+U_GRAY
+U_RED
+U_GREEN
+U_BLUE
+U_MAGENTA
+U_YELLOW
+U_CYAN
+
+@bBold colors with underline:
+U_BOLD_FOREGROUND
+U_BOLD_GRAY
+U_BOLD_RED
+U_BOLD_GREEN
+U_BOLD_BLUE
+U_BOLD_MAGENTA
+U_BOLD_YELLOW
+U_BOLD_CYAN
+
+)";
 
 static const std::string _LOGDISPLAY_TOOLTIP = R"(Ctrl + 'f' for enter search text.
 F3 to search for next word.
@@ -238,7 +250,21 @@ Ctrl + 'h' to display style string help.
 Ctrl + 'e' to edit style string.
 )";
 
-//----------------------------------------------------------------------
+/*
+ *           _                 _____  _           _              _____ _         _
+ *          | |               |  __ \(_)         | |            / ____| |       | |
+ *          | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _| (___ | |_ _   _| | ___
+ *          | |    / _ \ / _` | |  | | / __| '_ \| |/ _` | | | |\___ \| __| | | | |/ _ \
+ *          | |___| (_) | (_| | |__| | \__ \ |_) | | (_| | |_| |____) | |_| |_| | |  __/
+ *          |______\___/ \__, |_____/|_|___/ .__/|_|\__,_|\__, |_____/ \__|\__, |_|\___|
+ *      ______            __/ |            | |             __/ |            __/ |
+ *     |______|          |___/             |_|            |___/            |___/
+ */
+
+/** @brief Display styles.
+* @private
+*
+*/
 struct _LogDisplayStyle {
     enum STYLE {
                                 EMPTY,
@@ -252,7 +278,7 @@ struct _LogDisplayStyle {
                                 STRING,
     };
 
-    LogDisplay::COLOR           color;
+    LogDisplay::Color           color;
     STYLE                       style;
     bool                        inclusive;
     bool                        on;
@@ -262,9 +288,11 @@ struct _LogDisplayStyle {
     std::string                 word1;
     std::string                 word2;
 
-    //------------------------------------------------------------------
+    /** @brief Init.
+    *
+    */
     _LogDisplayStyle() {
-        color     = LogDisplay::FOREGROUND;
+        color     = LogDisplay::Color::FOREGROUND;
         count     = 0;
         inclusive = false;
         on        = false;
@@ -274,48 +302,52 @@ struct _LogDisplayStyle {
     }
 };
 
-//----------------------------------------------------------------------
-static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
-    if (name == "GRAY") return LogDisplay::GRAY;
-    else if (name == "RED") return LogDisplay::RED;
-    else if (name == "GREEN") return LogDisplay::GREEN;
-    else if (name == "BLUE") return LogDisplay::BLUE;
-    else if (name == "MAGENTA") return LogDisplay::MAGENTA;
-    else if (name == "YELLOW") return LogDisplay::YELLOW;
-    else if (name == "CYAN") return LogDisplay::CYAN;
-    else if (name == "BOLD_FOREGROUND") return LogDisplay::BOLD_FOREGROUND;
-    else if (name == "BOLD_GRAY") return LogDisplay::BOLD_GRAY;
-    else if (name == "BOLD_RED") return LogDisplay::BOLD_RED;
-    else if (name == "BOLD_GREEN") return LogDisplay::BOLD_GREEN;
-    else if (name == "BOLD_BLUE") return LogDisplay::BOLD_BLUE;
-    else if (name == "BOLD_MAGENTA") return LogDisplay::BOLD_MAGENTA;
-    else if (name == "BOLD_YELLOW") return LogDisplay::BOLD_YELLOW;
-    else if (name == "BOLD_CYAN") return LogDisplay::BOLD_CYAN;
-    else if (name == "BG_FOREGROUND") return LogDisplay::BG_FOREGROUND;
-    else if (name == "BG_GRAY") return LogDisplay::BG_GRAY;
-    else if (name == "BG_RED") return LogDisplay::BG_RED;
-    else if (name == "BG_GREEN") return LogDisplay::BG_GREEN;
-    else if (name == "BG_BLUE") return LogDisplay::BG_BLUE;
-    else if (name == "BG_MAGENTA") return LogDisplay::BG_MAGENTA;
-    else if (name == "BG_YELLOW") return LogDisplay::BG_YELLOW;
-    else if (name == "BG_CYAN") return LogDisplay::BG_CYAN;
-    else if (name == "BG_BOLD_FOREGROUND") return LogDisplay::BG_BOLD_FOREGROUND;
-    else if (name == "BG_BOLD_GRAY") return LogDisplay::BG_BOLD_GRAY;
-    else if (name == "BG_BOLD_RED") return LogDisplay::BG_BOLD_RED;
-    else if (name == "BG_BOLD_GREEN") return LogDisplay::BG_BOLD_GREEN;
-    else if (name == "BG_BOLD_BLUE") return LogDisplay::BG_BOLD_BLUE;
-    else if (name == "BG_BOLD_MAGENTA") return LogDisplay::BG_BOLD_MAGENTA;
-    else if (name == "BG_BOLD_YELLOW") return LogDisplay::BG_BOLD_YELLOW;
-    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
-    else return LogDisplay::GRAY;
+/** @brief Convert string color to real color.
+*
+*/
+static LogDisplay::Color _logdisplay_convert_color(const std::string& name) {
+    if (name == "GRAY") return LogDisplay::Color::GRAY;
+    else if (name == "RED") return LogDisplay::Color::RED;
+    else if (name == "GREEN") return LogDisplay::Color::GREEN;
+    else if (name == "BLUE") return LogDisplay::Color::BLUE;
+    else if (name == "MAGENTA") return LogDisplay::Color::MAGENTA;
+    else if (name == "YELLOW") return LogDisplay::Color::YELLOW;
+    else if (name == "CYAN") return LogDisplay::Color::CYAN;
+    else if (name == "BOLD_FOREGROUND") return LogDisplay::Color::BOLD_FOREGROUND;
+    else if (name == "BOLD_GRAY") return LogDisplay::Color::BOLD_GRAY;
+    else if (name == "BOLD_RED") return LogDisplay::Color::BOLD_RED;
+    else if (name == "BOLD_GREEN") return LogDisplay::Color::BOLD_GREEN;
+    else if (name == "BOLD_BLUE") return LogDisplay::Color::BOLD_BLUE;
+    else if (name == "BOLD_MAGENTA") return LogDisplay::Color::BOLD_MAGENTA;
+    else if (name == "BOLD_YELLOW") return LogDisplay::Color::BOLD_YELLOW;
+    else if (name == "BOLD_CYAN") return LogDisplay::Color::BOLD_CYAN;
+    else if (name == "U_FOREGROUND") return LogDisplay::Color::U_FOREGROUND;
+    else if (name == "U_GRAY") return LogDisplay::Color::U_GRAY;
+    else if (name == "U_RED") return LogDisplay::Color::U_RED;
+    else if (name == "U_GREEN") return LogDisplay::Color::U_GREEN;
+    else if (name == "U_BLUE") return LogDisplay::Color::U_BLUE;
+    else if (name == "U_MAGENTA") return LogDisplay::Color::U_MAGENTA;
+    else if (name == "U_YELLOW") return LogDisplay::Color::U_YELLOW;
+    else if (name == "U_CYAN") return LogDisplay::Color::U_CYAN;
+    else if (name == "U_BOLD_FOREGROUND") return LogDisplay::Color::U_BOLD_FOREGROUND;
+    else if (name == "U_BOLD_GRAY") return LogDisplay::Color::U_BOLD_GRAY;
+    else if (name == "U_BOLD_RED") return LogDisplay::Color::U_BOLD_RED;
+    else if (name == "U_BOLD_GREEN") return LogDisplay::Color::U_BOLD_GREEN;
+    else if (name == "U_BOLD_BLUE") return LogDisplay::Color::U_BOLD_BLUE;
+    else if (name == "U_BOLD_MAGENTA") return LogDisplay::Color::U_BOLD_MAGENTA;
+    else if (name == "U_BOLD_YELLOW") return LogDisplay::Color::U_BOLD_YELLOW;
+    else if (name == "U_BOLD_CYAN") return LogDisplay::Color::U_BOLD_CYAN;
+    else return LogDisplay::Color::GRAY;
 }
 
-//----------------------------------------------------------------------
-static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
+/** @brief Convert json to display styles.
+*
+*/
+static std::vector<_LogDisplayStyle> _logdisplay_parse_json(const std::string& json) {
     #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
 
     auto res = std::vector<_LogDisplayStyle>();
-    auto js  = gnu::json::decode(json.c_str(), json.length());
+    auto js  = gnu::json::decode(json.c_str(), json.length(), true);
 
     if (js.has_err() == true) {
         fl_alert("error: failed to parse json\n%s", js.err_c());
@@ -355,14 +387,14 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
             res.push_back(style);
         }
     }
-    
+
     return res;
 }
 
-//----------------------------------------------------------------------
-// Returns new converted buffer if it does contain \r.
-// Otherwise it returns nullptr.
-//
+/** @brief Returns new converted buffer if it does contain \r.
+*
+* Otherwise it returns nullptr.
+*/
 static char* _logdisplay_win_to_unix(const char* string) {
     auto r = false;
     auto b = string;
@@ -397,20 +429,35 @@ static char* _logdisplay_win_to_unix(const char* string) {
     return res;
 }
 
-//------------------------------------------------------------------------------
-LogDisplay::LogDisplay::Tmp::Tmp() {
+/*
+ *      _                 _____  _           _                _______
+ *     | |               |  __ \(_)         | |            _ |__   __|
+ *     | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _(_|_) | |_ __ ___  _ __
+ *     | |    / _ \ / _` | |  | | / __| '_ \| |/ _` | | | |     | | '_ ` _ \| '_ \
+ *     | |___| (_) | (_| | |__| | \__ \ |_) | | (_| | |_| |_ _  | | | | | | | |_) |
+ *     |______\___/ \__, |_____/|_|___/ .__/|_|\__,_|\__, (_|_) |_|_| |_| |_| .__/
+ *                   __/ |            | |             __/ |                 | |
+ *                  |___/             |_|            |___/                  |_|
+ */
+
+ /** @brief Create tmp struct.
+* @private
+*/
+LogDisplay::Tmp::Tmp() {
     buf  = nullptr;
     len  = 0;
     pos  = 0;
     size = 0;
 }
 
-//------------------------------------------------------------------------------
-LogDisplay::LogDisplay::Tmp::~Tmp() {
+/** @brief
+* @private
+*/
+LogDisplay::Tmp::~Tmp() {
     free(buf);
 }
 
-/***
+/*
  *      _                 _____  _           _
  *     | |               |  __ \(_)         | |
  *     | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _
@@ -421,8 +468,15 @@ LogDisplay::LogDisplay::Tmp::~Tmp() {
  *                  |___/             |_|            |___/
  */
 
-//------------------------------------------------------------------------------
-LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Display(x, y, w, h, l) {
+/** @brief Create log display widget.
+*
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+* @param[in] l  Label.
+*/
+LogDisplay::LogDisplay(int X, int Y, int W, int H, const char *l) : Fl_Text_Display(X, Y, W, H, l) {
     _buffer      = new Fl_Text_Buffer();
     _style       = new Fl_Text_Buffer();
     _lock_colors = false;
@@ -435,7 +489,9 @@ LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Disp
     tooltip(_LOGDISPLAY_TOOLTIP.c_str());
 }
 
-//------------------------------------------------------------------------------
+/** @brief Free buffer.
+*
+*/
 LogDisplay::~LogDisplay() {
     buffer(nullptr);
     delete _buffer;
@@ -443,7 +499,9 @@ LogDisplay::~LogDisplay() {
     delete _tmp;
 }
 
-//------------------------------------------------------------------------------
+/** @brief Start dialog to edit style string.
+*
+*/
 void LogDisplay::edit_styles() {
     auto json    = (_json == "") ? _LOGDISPLAY_JSON_EXAMPLE : _json;
     auto changed = dlg::text_edit("Edit JSON Style String", json, top_window(), 40, 50);
@@ -455,7 +513,11 @@ void LogDisplay::edit_styles() {
     style(json);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Show dialog and search for text.
+*
+* @param[in] next       Find next.
+* @param[in] force_ask  True to force showing dialog.
+*/
 void LogDisplay::find(bool next, bool force_ask) {
     if (_find == "" || force_ask) {
         auto s = fl_input("Enter search string", _find.c_str());
@@ -506,7 +568,9 @@ void LogDisplay::find(bool next, bool force_ask) {
     show_insert_position();
 }
 
-//------------------------------------------------------------------------------
+/** @brief Handle keyboard shortcuts.
+*
+*/
 int LogDisplay::handle(int event) {
     if (event == FL_KEYBOARD) {
         auto key = Fl::event_key();
@@ -541,7 +605,45 @@ int LogDisplay::handle(int event) {
     return Fl_Text_Display::handle(event);
 }
 
-//------------------------------------------------------------------------------
+/** @brief Callback for custom styling.
+*
+* @param[in] row   Line number.
+* @param[in] line  Text line.
+*/
+void LogDisplay::line_cb(size_t row, const std::string& line) {
+    (void) row;
+    (void) line;
+}
+
+/** @brief Callback for custom styling.
+*
+* Not all values has to be used at the same time.
+*
+* @param[in] row        Line number.
+* @param[in] line       Text line.
+* @param[in] word1      Start word.
+* @param[in] word2      Stop word.
+* @param[in] color      Text color.
+* @param[in] inclusive  True to color inclusive.
+* @param[in] start      Start pos.
+* @param[in] stop       Stop pos.
+* @param[in] count      Number of stylings.
+*/
+void LogDisplay::line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::Color color, bool inclusive, size_t start, size_t stop, size_t count)  {
+    (void) row;
+    (void) line;
+    (void) word1;
+    (void) word2;
+    (void) color;
+    (void) inclusive;
+    (void) start;
+    (void) stop;
+    (void) count;
+}
+
+/** @brief Save text to file.
+*
+*/
 void LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
 
@@ -550,12 +652,100 @@ void LogDisplay::save_file() {
     }
 }
 
-//------------------------------------------------------------------------------
-// Parse string and style text
-// If input string is empty then LogDisplay::line_cb() is called (must be overriden)
-//
-void LogDisplay::style(std::string json) {
-    auto ds  = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
+/** @brief Parse json string and style text.
+*
+* If JSON string is empty then LogDisplay::line_cb() is called (must be overriden).\n
+*\n
+* All JSON strings are parsed sequentially for every line.\n
+* JSON examples:\n
+*\n
+* If lock is true then never change colors that have been set in current line.
+* @code
+* {
+*     "style": "lock",
+*     "on": true
+* }
+* @endcode
+*
+* Color characters by using index in line.
+* @code
+* {
+*     "style": "line",
+*     "start": 0,
+*     "stop": 10,
+*     "color": "RED"
+* }
+* @endcode
+*
+* Color all numbers.
+* @code
+* {
+*     "style": "num",
+*     "color": "MAGENTA",
+*     "count": 0
+* }
+* @endcode
+*
+* Color strings.
+* @code
+* {
+*     "style": "string",
+*     "word1": "find_text_from_left",
+*     "color": "BLUE",
+*     "count": 0
+* }
+* @endcode
+*
+* Color string but start from the right.
+* @code
+* {
+*     "style": "rstring",
+*     "word1": "find_text_from_right",
+*     "color": "BLUE",
+*     "count": 0
+* }
+* @endcode
+*
+* Color text between two strings.
+* @code
+* {
+*     "style": "range",
+*     "word1": "from_string",
+*     "word2": "to_string",
+*     "inclusive": true,
+*     "color": "BLUE",
+*     "count": 0
+* }
+* @endcode
+*
+* Color text from first found string to the last found string.
+* @code
+* {
+*     "style": "between",
+*     "word1": "from_first_string",
+*     "word2": "to_last_string",
+*     "inclusive": true,
+*     "color": "BLUE"
+* }
+* @endcode
+*
+* This property will call LogDisplay::line_custom_cb() which does nothing so override it.
+* @code
+* {
+*     "style": "custom",
+*     "word1": "string_1",
+*     "word2": "string_2",
+*     "start": 0,
+*     "stop": 10,
+*     "inclusive": true,
+*     "color": "BLUE"
+* }
+* @endcode
+*
+* @param[in] json  JSON string.
+*/
+void LogDisplay::style(const std::string& json) {
+    auto ds = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
 
     _json      = json;
     _tmp       = new Tmp();
@@ -575,7 +765,7 @@ void LogDisplay::style(std::string json) {
                 line_cb(row, line);
             }
             else {
-                lock_colors(false);
+                unlock_colors(); // Every text line starts with color unlocked.
 
                 for (const auto& d : ds) {
                     if (d.style == _LogDisplayStyle::BETWEEN) {
@@ -588,7 +778,12 @@ void LogDisplay::style(std::string json) {
                         style_line(d.start, d.stop, d.color);
                     }
                     else if (d.style == _LogDisplayStyle::LOCK) {
-                        lock_colors(d.on);
+                        if (d.on == true) {
+                            lock_colors();
+                        }
+                        else {
+                            unlock_colors();
+                        }
                     }
                     else if (d.style == _LogDisplayStyle::NUM) {
                         style_num(line, d.color, d.count);
@@ -611,15 +806,22 @@ void LogDisplay::style(std::string json) {
         }
 
         _style->text(_tmp->buf);
-        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), (char) LogDisplay::FOREGROUND, nullptr, 0);
+        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), static_cast<char>(Color::FOREGROUND), nullptr, 0);
     }
 
     delete _tmp;
     _tmp = nullptr;
 }
 
-//------------------------------------------------------------------------------
-void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color) {
+/** @brief Style text between two words.
+*
+* @param[in] line       Line of text.
+* @param[in] word1      Start word.
+* @param[in] word2      Stop word.
+* @param[in] inclusive  True to use from start to stop, false from from + 1 to stop - 1.
+* @param[in] color      Color to use.
+*/
+void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -637,28 +839,36 @@ void LogDisplay::style_between(const std::string& line, const std::string& word1
     }
 }
 
-//------------------------------------------------------------------------------
-// Start and stop are positions in current line
-//
-void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::COLOR c) {
+/** @brief Set color between two indexes.
+*
+* Start and stop are positions in current line.
+*
+* @param[in] start  Start index.
+* @param[in] stop   Stop index.
+* @param[in] color  Color value.
+*/
+void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color color) {
     assert(_tmp);
 
     start += _tmp->pos;
     stop  += _tmp->pos;
 
     while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->len) {
-        if (_lock_colors == false || _tmp->buf[start] == (char) LogDisplay::LogDisplay::FOREGROUND) {
-            _tmp->buf[start] = (char) c;
+        if (_lock_colors == false || _tmp->buf[start] == static_cast<char>(Color::FOREGROUND)) {
+            _tmp->buf[start] = static_cast<char>(color);
         }
 
         start++;
     }
 }
 
-//------------------------------------------------------------------------------
-// Color all numbers
-//
-void LogDisplay::style_num(const std::string& line, LogDisplay::COLOR color, size_t count) {
+/** @brief Color all numbers.
+*
+* @param[in] line   Text line.
+* @param[in] color  Color value.
+* @param[in] count  Max numbers of stylings.
+*/
+void LogDisplay::style_num(const std::string& line, LogDisplay::Color color, size_t count) {
     if (count == 0) {
         count = 999;
     }
@@ -673,10 +883,16 @@ void LogDisplay::style_num(const std::string& line, LogDisplay::COLOR color, siz
     }
 }
 
-//------------------------------------------------------------------------------
-// Color text between from and to string
-//
-void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count) {
+/** @brief Color text between from and to string.
+*
+* @param[in] line       Text line.
+* @param[in] word1      From string.
+* @param[in] word2      To string.
+* @param[in] inclusive  True to color inclusive found.
+* @param[in] color      Color value.
+* @param[in] count      Max number of stylings.
+*/
+void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color, size_t count) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -712,10 +928,14 @@ void LogDisplay::style_range(const std::string& line, const std::string& word1, 
     }
 }
 
-//------------------------------------------------------------------------------
-// Color string - start from the end
-//
-void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
+/** @brief Color word, starting from right.
+*
+* @param[in] line   Text line.
+* @param[in] word1  From string.
+* @param[in] color  Color value.
+* @param[in] count  Max number of stylings.
+*/
+void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -738,10 +958,14 @@ void LogDisplay::style_rstring(const std::string& line, const std::string& word1
     }
 }
 
-//------------------------------------------------------------------------------
-// Color string - start from the beginning
-//
-void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
+/** @brief Color word, starting from left.
+*
+* @param[in] line   Text line.
+* @param[in] word1  From string.
+* @param[in] color  Color value.
+* @param[in] count  Max number of stylings.
+*/
+void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -759,7 +983,9 @@ void LogDisplay::style_string(const std::string& line, const std::string& word1,
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Updpate font preferences using flw::PREF_FIXED_FONT.
+*
+*/
 void LogDisplay::update_pref() {
     labelsize(flw::PREF_FIXED_FONTSIZE);
     linenumber_bgcolor(FL_BACKGROUND_COLOR);
@@ -782,10 +1008,11 @@ void LogDisplay::update_pref() {
     }
 }
 
-//------------------------------------------------------------------------------
+/** @brief Set text.
+*
+* @param[in] text  Text to show.
+*/
 void LogDisplay::value(const char* text) {
-    assert(text);
-
     _buffer->text("");
     _style->text("");
 
