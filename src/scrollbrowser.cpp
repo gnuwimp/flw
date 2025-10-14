@@ -6,20 +6,39 @@
 // MKALGAM_ON
 
 namespace flw {
-    static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
-    static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
-    static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
-}
 
-//------------------------------------------------------------------------------
-flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
+static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
+static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
+static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
+
+/*
+ *       _____                _ _ ____
+ *      / ____|              | | |  _ \
+ *     | (___   ___ _ __ ___ | | | |_) |_ __ _____      _____  ___ _ __
+ *      \___ \ / __| '__/ _ \| | |  _ <| '__/ _ \ \ /\ / / __|/ _ \ '__|
+ *      ____) | (__| | | (_) | | | |_) | | | (_) \ V  V /\__ \  __/ |
+ *     |_____/ \___|_|  \___/|_|_|____/|_|  \___/ \_/\_/ |___/\___|_|
+ *
+ *
+ */
+
+/** @brief Create widget.
+*
+* @param[in] lines  Number of lines to scroll with page up/down.
+* @param[in] X      X pos.
+* @param[in] Y      Y pos.
+* @param[in] W      Width.
+* @param[in] H      Height.
+* @param[in] l      Optional label.
+*/
+ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
     end();
 
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
-    _scroll    = (scroll > 0) ? scroll : 9;
     _flag_move = true;
     _flag_menu = true;
 
+    scroll_lines(lines);
     static_cast<Fl_Group*>(this)->add(_menu);
     _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
@@ -28,8 +47,10 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     update_pref();
 }
 
-//------------------------------------------------------------------------------
-void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
+/** @brief Callback form the menu.
+*
+*/
+void ScrollBrowser::Callback(Fl_Widget*, void* o) {
     auto self  = static_cast<ScrollBrowser*>(o);
     auto txt   = self->_menu->text();
     auto label = std::string((txt != nullptr) ? txt : "");
@@ -38,7 +59,7 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     clip.reserve(self->size() * 40 + 100);
 
     if (label == _SCROLLBROWSER_MENU_LINE) {
-        if (self->value() != 0) {
+        if (self->value() > 0) {
             clip = util::remove_browser_format(util::to_string(self->text(self->value())));
         }
     }
@@ -55,17 +76,24 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     }
 }
 
-//------------------------------------------------------------------------------
-int flw::ScrollBrowser::handle(int event) {
+/** @brief Take care of scroll and menu events.
+* 
+* Handle mouse wheel and keyboard scrolling.\n
+* Or show menu.\n
+*
+*/
+int ScrollBrowser::handle(int event) {
     if (event == FL_MOUSEWHEEL) {
-        if (Fl::event_dy() > 0) {
-            topline(topline() + _scroll);
-        }
-        else if (Fl::event_dy() < 0) {
-            topline(topline() - _scroll);
-        }
+        if (_flag_move == true) {
+            if (Fl::event_dy() > 0) {
+                topline(topline() + _scroll);
+            }
+            else if (Fl::event_dy() < 0) {
+                topline(topline() - _scroll);
+            }
 
-        return 1;
+            return 1;
+        }
     }
     else if (event == FL_KEYBOARD) {
         if (_flag_move == true) {
@@ -117,8 +145,12 @@ int flw::ScrollBrowser::handle(int event) {
     return Fl_Hold_Browser::handle(event);
 }
 
-//------------------------------------------------------------------------------
-void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+/** @brief Update font preferences.
+*
+* @param[in] text_font  Text font fo the list, label and menu.
+* @param[in] text_size  Text size for the list, label and menu.
+*/
+void ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
     textfont(text_font);
@@ -126,5 +158,7 @@ void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     _menu->textfont(text_font);
     _menu->textsize(text_size);
 }
+
+} //flw
 
 // MKALGAM_OFF

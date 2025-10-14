@@ -14,15 +14,29 @@
 
 using namespace flw;
 
+/*
+ *      _______        _
+ *     |__   __|      | |
+ *        | | ___  ___| |_
+ *        | |/ _ \/ __| __|
+ *        | |  __/\__ \ |_
+ *        |_|\___||___/\__|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
 public:
+    //--------------------------------------------------------------------------
     Test(int W, int H) : Fl_Double_Window(W, H, "test_scrollbrowser.cpp") {
         TEST = this;
 
         box     = new Fl_Box(0, 0, 0, 0);
         browser = new ScrollBrowser();
         button1 = new Fl_Button(0, 0, 0, 0, "Toggle Menu");
-        button2 = new Fl_Button(0, 0, 0, 0, "Toggle Page Move");
+        button2 = new Fl_Button(0, 0, 0, 0, "Toggle Scrollmode");
+        button3 = new Fl_Button(0, 0, 0, 0, "Toggle 3/9 Lines");
         grid    = new GridGroup(0, 0, W, H);
 
         add(grid);
@@ -30,6 +44,7 @@ public:
         grid->add(box,     42,  1,  -1,   4);
         grid->add(button1, 42,  6,  -1,   4);
         grid->add(button2, 42, 11,  -1,   4);
+        grid->add(button3, 42, 16,  -1,   4);
         grid->do_layout();
 
         for (int f = 0; f < 200; f++) {
@@ -38,19 +53,20 @@ public:
             browser->add(buf);
         }
 
-//        browser->enable_menu(false);
-//        browser->enable_pagemove(false);
         box->box(FL_BORDER_BOX);
         box->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         browser->callback(Callback);
         button1->callback(Callback);
         button2->callback(Callback);
+        button3->callback(Callback);
+        browser->take_focus();
 
         callback(Callback);
         resizable(grid);
         size_range(64, 48);
     }
 
+    //--------------------------------------------------------------------------
     static void Callback(Fl_Widget* sender, void*) {
         char buf[100];
         *buf = 0;
@@ -63,15 +79,34 @@ public:
             TEST->box->copy_label(buf);
         }
         else if (sender == TEST->button1) {
-            TEST->browser->enable_menu(!TEST->browser->enable_menu());
+            if (TEST->browser->is_menu_enabled() == true) {
+                TEST->browser->disable_menu();
+            }
+            else {
+                TEST->browser->enable_menu();
+            }
         }
         else if (sender == TEST->button2) {
-            TEST->browser->enable_pagemove(!TEST->browser->enable_pagemove());
+            if (TEST->browser->is_scrollmode_enabled() == true) {
+                TEST->browser->disable_scrollmode();
+            }
+            else {
+                TEST->browser->enable_scrollmode();
+            }
+        }
+        else if (sender == TEST->button3) {
+            if (TEST->browser->scroll_lines() == 9) {
+                TEST->browser->scroll_lines(3);
+            }
+            else {
+                TEST->browser->scroll_lines(9);
+            }
         }
     }
 
     Fl_Button*     button1;
     Fl_Button*     button2;
+    Fl_Button*     button3;
     ScrollBrowser* browser;
     GridGroup*     grid;
     Fl_Box*        box;
@@ -80,6 +115,18 @@ public:
 
 Test* Test::TEST = nullptr;
 
+/*
+ *                      _
+ *                     (_)
+ *      _ __ ___   __ _ _ _ __
+ *     | '_ ` _ \ / _` | | '_ \
+ *     | | | | | | (_| | | | | |
+ *     |_| |_| |_|\__,_|_|_| |_|
+ *
+ *
+ */
+
+//------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
     if (flw::theme::parse(argc, argv) == false) {
         flw::theme::load("oxy");
