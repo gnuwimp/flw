@@ -22,8 +22,8 @@ int main() {
     while (start <= stop) {
         auto r1 = rand() % 200 + 500;
         auto r2 = rand() % 120'000 + 20'000;
-        points1.push_back(flw::chart::Point(start.format(gnu::Date::FORMAT::ISO_TIME), r1, r1 * 0.9, r1 * 0.95));
-        points2.push_back(flw::chart::Point(start.format(gnu::Date::FORMAT::ISO_TIME), r2));
+        points1.push_back(flw::chart::Point(start.format(gnu::Date::Format::ISO_TIME), r1, r1 * 0.9, r1 * 0.95));
+        points2.push_back(flw::chart::Point(start.format(gnu::Date::Format::ISO_TIME), r2));
         start.add_days(1);
     }
 

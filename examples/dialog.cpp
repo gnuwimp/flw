@@ -10,7 +10,7 @@ void date_example() {
     auto date = gnu::Date("31/12/1999");
 
     if (flw::dlg::date("flw::dlg::date()", date) == true) {
-        printf("flw::dlg::date = %s\n", date.format(gnu::Date::FORMAT::ISO_LONG).c_str());
+        printf("flw::dlg::date = %s\n", date.format(gnu::Date::Format::ISO_LONG).c_str());
     }
     else {
         printf("No date was selected\n");

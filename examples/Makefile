@@ -15,6 +15,7 @@ all: flw.o \
 	dialog.exe \
 	gridgroup.exe \
 	inputmenu.exe \
+	lcddisplay.exe \
 	plot.exe \
 	recentmenu.exe \
 	splitgroup.exe \
@@ -46,6 +47,12 @@ gridgroup.exe: gridgroup.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 inputmenu.exe: inputmenu.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+lcddisplay.exe: lcddisplay.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+logdisplay.exe: logdisplay.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 plot.exe: plot.cpp flw.o
@@ -93,6 +100,12 @@ run_gridgroup: gridgroup.exe
 
 run_inputmenu: inputmenu.exe
 	./inputmenu.exe
+
+run_lcddisplay: lcddisplay.exe
+	./lcddisplay.exe
+
+run_logdisplay: logdisplay.exe
+	./logdisplay.exe
 
 run_plot: plot.exe
 	./plot.exe

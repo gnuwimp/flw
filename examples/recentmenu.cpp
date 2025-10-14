@@ -11,22 +11,22 @@ int main() {
 
     // [flw::RecentMenu example]
 
-    #define CALLBACK(X) [](Fl_Widget*, void* o) { X; }
-
     auto pref   = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "example_recentmenu");
     auto win    = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::RecentMenu");
-    auto menu   = new Fl_Menu_Bar(0, 0, 640, 28);
-    auto recent = new flw::RecentMenu(menu, CALLBACK( // Callback for an item in recent menu.
-        puts(static_cast<Fl_Menu_Bar*>(o)->text())
-    ), menu);
+    auto menu   = new Fl_Menu_Bar(0, 0, 640, 28);   
+    auto recent = new flw::util::RecentMenu(menu, [](Fl_Widget*, void* o) {
+        // Callback for an item in recent menu.
+        puts(static_cast<Fl_Menu_Bar*>(o)->text());
+    }, menu);
 
-    menu->add("&File/Add file...", FL_COMMAND + 'o', CALLBACK( // Add file to recent menu.
+    menu->add("&File/Add file...", FL_COMMAND + 'o', [](Fl_Widget*, void* o) {
+        // Add file to recent menu.
         auto filename = fl_file_chooser("Select File", "All Files (*)\tExecutable Files (*.exe)", "");
 
         if (filename != nullptr) {
-            static_cast<flw::RecentMenu*>(o)->insert(filename);
+            static_cast<flw::util::RecentMenu*>(o)->insert(filename);
         }
-    ), recent);
+    }, recent);
 
     // After 5 items the oldest will be deleted.
     recent->max_items(5);
