@@ -152,7 +152,7 @@ struct Point {
     static size_t               BinarySearch(const PointVector& in, const Point& key);
     static PointVector          DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block = PointVector());
     static PointVector          DayToMonth(const PointVector& in, bool sum = false);
-    static PointVector          DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum = false);
+    static PointVector          DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum = false);
     static void                 Debug(const PointVector& in);
     static PointVector          ExponentialMovingAverage(const PointVector& in, size_t days);
     static PointVector          Fixed(const PointVector& in, double value);

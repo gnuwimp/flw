@@ -424,7 +424,7 @@ Point::Point(const std::string& date, double value) {
         fabs(value) < chart::MAX_VALUE &&
         valid_date.is_invalid() == false) {
 
-        this->date = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
+        this->date = valid_date.format(gnu::Date::Format::ISO_TIME);
         this->high = this->low = this->close = value;
     }
     else {
@@ -471,7 +471,7 @@ Point::Point(const std::string& date, double high, double low, double close) {
             close = tmp;
         }
 
-        this->date  = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
+        this->date  = valid_date.format(gnu::Date::Format::ISO_TIME);
         this->high  = high;
         this->low   = low;
         this->close = close;
@@ -573,11 +573,11 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
     auto       res     = PointVector();
 
     if (range == DateRange::FRIDAY) {
-        while (current.weekday() != gnu::Date::DAY::FRIDAY)
+        while (current.weekday() != gnu::Date::Day::FRIDAY)
             current.add_days(1);
     }
     else if (range == DateRange::SUNDAY) {
-        while (current.weekday() != gnu::Date::DAY::SUNDAY) {
+        while (current.weekday() != gnu::Date::Day::SUNDAY) {
             current.add_days(1);
         }
     }
@@ -590,9 +590,9 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
             current.add_days(1);
         }
         else if (range == DateRange::WEEKDAY) {
-            gnu::Date::DAY weekday = current.weekday();
+            gnu::Date::Day weekday = current.weekday();
 
-            if (weekday >= gnu::Date::DAY::MONDAY && weekday <= gnu::Date::DAY::FRIDAY) {
+            if (weekday >= gnu::Date::Day::MONDAY && weekday <= gnu::Date::Day::FRIDAY) {
                 date = gnu::Date(current);
             }
 
@@ -625,7 +625,7 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
         }
 
         if (date.year() > 1) {
-            Point price(date.format(gnu::Date::FORMAT::ISO_TIME_LONG));
+            Point price(date.format(gnu::Date::Format::ISO_TIME_LONG));
 
             if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
                 res.push_back(price);
@@ -660,7 +660,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
             pdate = gnu::Date(data.date.c_str());
 
             if (stop < pdate) {
-                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+                current.date = stop.format(gnu::Date::Format::ISO_TIME);
                 res.push_back(current);
                 current = data;
                 stop = gnu::Date(current.date.c_str());
@@ -685,7 +685,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
         }
 
         if (f + 1 == in.size()) {
-            auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            auto s = stop.format(gnu::Date::Format::ISO_TIME);
             stop.set_day_to_last_in_month();
             current.date = s;
             res.push_back(current);
@@ -705,7 +705,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum) {
+PointVector Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum) {
     size_t          f = 0;
     PointVector res;
     Point       current;
@@ -730,7 +730,7 @@ PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool
             pdate = gnu::Date(data.date.c_str());
 
             if (stop < pdate) {
-                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+                current.date = stop.format(gnu::Date::Format::ISO_TIME);
                 res.push_back(current);
                 current = data;
             }
@@ -755,11 +755,11 @@ PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool
                 stop.add_days(7);
             }
 
-            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            current.date = stop.format(gnu::Date::Format::ISO_TIME);
         }
 
         if (f + 1 == in.size()) {
-            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            current.date = stop.format(gnu::Date::Format::ISO_TIME);
             res.push_back(current);
         }
 
@@ -1892,7 +1892,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     else if (formula == Algorithm::DAY_TO_WEEK) {
         auto answer = fl_choice("Would you like to use highest/lowest and last close value per week?\nOr sum values per week?", nullptr, "High/Low", "Sum");
 
-        vec1   = Point::DayToWeek(line0->data(), gnu::Date::DAY::SUNDAY, answer == 2);
+        vec1   = Point::DayToWeek(line0->data(), gnu::Date::Day::SUNDAY, answer == 2);
         label1 = "Weekly (Sunday)";
         type1  = line0->type();
     }
@@ -2082,10 +2082,10 @@ void Chart::_create_tooltip(bool ctrl) {
         if (X >= x1 && X <= x1 + _tick_width - 1) { // Is mouse x pos inside current tick?
             const Line* LINE = _area->selected_line();
             const auto       DATE = gnu::Date(_dates[start].date);
-            std::string      date = DATE.format(gnu::Date::FORMAT::DAY_MONTH_YEAR);
+            std::string      date = DATE.format(gnu::Date::Format::DAY_MONTH_YEAR);
 
             if (_date_range == DateRange::HOUR || _date_range == DateRange::MIN || _date_range == DateRange::SEC) {
-                 date += " - " + DATE.format(gnu::Date::FORMAT::TIME_LONG);
+                 date += " - " + DATE.format(gnu::Date::Format::TIME_LONG);
             }
 
             _tooltip = date + "\n \n \n ";

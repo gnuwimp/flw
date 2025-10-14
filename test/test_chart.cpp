@@ -90,10 +90,10 @@ chart::PointVector create_serie1(const char* start, const char* stop, double val
         }
 
         if (divide > 1.0) {
-            res.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO_TIME), high / divide, low / divide, close / divide));
+            res.push_back(chart::Point(date1.format(gnu::Date::Format::ISO_TIME), high / divide, low / divide, close / divide));
         }
         else {
-            res.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO_TIME), high, low, close));
+            res.push_back(chart::Point(date1.format(gnu::Date::Format::ISO_TIME), high, low, close));
         }
 
         if (range == chart::DateRange::HOUR) {
@@ -131,7 +131,7 @@ chart::PointVector create_serie2(const char* start, const char* stop, double num
     auto date2 = gnu::Date(stop);
 
     while (date1 <= date2) {
-        res.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO_TIME), sinl(f) + num));
+        res.push_back(chart::Point(date1.format(gnu::Date::Format::ISO_TIME), sinl(f) + num));
         f += num;
         num += add;
         date1.add_days(1);
@@ -221,11 +221,11 @@ void test3(chart::Chart* chart, std::string label, const chart::DateRange range,
     }
 
     if (range == chart::DateRange::FRIDAY) {
-        vec2 = chart::Point::DayToWeek(vec1, gnu::Date::DAY::FRIDAY);
+        vec2 = chart::Point::DayToWeek(vec1, gnu::Date::Day::FRIDAY);
         chart->set_tick_width(25);
     }
     else if (range == chart::DateRange::SUNDAY) {
-        vec2 = chart::Point::DayToWeek(vec1, gnu::Date::DAY::SUNDAY);
+        vec2 = chart::Point::DayToWeek(vec1, gnu::Date::Day::SUNDAY);
         chart->set_tick_width(25);
     }
     else if (range == chart::DateRange::MONTH) {
@@ -359,7 +359,7 @@ void test7(chart::Chart* chart) {
     auto p     = -3.5;
 
     while (date1 <= date2) {
-        vec1.push_back(chart::Point(date1.format(gnu::Date::FORMAT::ISO).c_str(), p));
+        vec1.push_back(chart::Point(date1.format(gnu::Date::Format::ISO).c_str(), p));
         date1.add_days(1);
 
         if (rand() % 3 == 1) {
