@@ -63,11 +63,11 @@ public:
 
 private:
 
-    Pos                         _pos;                   ///< @brief Layout.
-    Fl_Widget*                  _widgets[2];            ///< @brief Child widgets, [0] is the right/bottom and [1] is the left/top.
-    bool                        _drag;                  ///< @brief Drag event.
-    int                         _min_split_pos;        ///< @brief Min split pos.
-    int                         _split_pos;             ///< @brief Current split pos.
+    Pos                         _pos;               ///< @brief Layout.
+    Fl_Widget*                  _widgets[2];        ///< @brief Child widgets, [0] is the right/bottom and [1] is the left/top.
+    bool                        _drag;              ///< @brief Drag event.
+    int                         _min_split_pos;     ///< @brief Min split pos.
+    int                         _split_pos;         ///< @brief Current split pos.
 };
 
 }

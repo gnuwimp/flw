@@ -55,12 +55,12 @@ void flw::SplitGroup::add(Fl_Widget* widget, bool first) {
 void flw::SplitGroup::clear() {
     Fl_Group::clear();
 
-    _drag           = false;
+    _drag          = false;
     _min_split_pos = 50;
-    _split_pos      = -1;
-    _pos            = Pos::VERTICAL;
-    _widgets[0]     = nullptr;
-    _widgets[1]     = nullptr;
+    _split_pos     = -1;
+    _pos           = Pos::VERTICAL;
+    _widgets[0]    = nullptr;
+    _widgets[1]    = nullptr;
 }
 
 /** @brief Take care of mouse drag.
