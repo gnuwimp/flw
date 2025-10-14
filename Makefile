@@ -23,7 +23,7 @@ OBJ = obj/date.o \
 	obj/dlg.o \
 	obj/gridgroup.o \
 	obj/inputmenu.o \
-	obj/lcdnumber.o \
+	obj/lcddisplay.o \
 	obj/logdisplay.o \
 	obj/plot.o \
 	obj/recentmenu.o \
@@ -48,7 +48,7 @@ all: obj \
 	test_dlg.exe \
 	test_gridgroup.exe \
 	test_inputmenu.exe \
-	test_lcdnumber.exe \
+	test_lcddisplay.exe \
 	test_logdisplay.exe \
 	test_plot.exe \
 	test_recentmenu.exe \
@@ -102,7 +102,7 @@ obj/inputmenu.o: src/inputmenu.cpp src/inputmenu.h src/flw.h
 obj/json.o: src/json.cpp src/json.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/lcdnumber.o: src/lcdnumber.cpp src/lcdnumber.h src/flw.h
+obj/lcddisplay.o: src/lcddisplay.cpp src/lcddisplay.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/dlg.h src/flw.h
@@ -165,7 +165,7 @@ run_datechooser: test_datechooser.exe
 
 #-------------------
 
-obj/test_dlg.o: test/test_dlg.cpp $(OBJ)
+obj/test_dlg.o: test/test_dlg.cpp $(OBJ) src/icons.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_dlg.exe: obj/test_dlg.o $(OBJ)
@@ -201,11 +201,14 @@ debug_inputmenu: test_inputmenu.exe
 
 #-------------------
 
-obj/test_lcdnumber.o: test/test_lcdnumber.cpp $(OBJ)
+obj/test_lcddisplay.o: test/test_lcddisplay.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_lcdnumber.exe: obj/test_lcdnumber.o $(OBJ)
+test_lcddisplay.exe: obj/test_lcddisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
+
+run_lcddisplay: test_lcddisplay.exe
+	./test_lcddisplay.exe $(arg)
 
 #-------------------
 

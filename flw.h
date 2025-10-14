@@ -17,7 +17,7 @@ public:
                                 ON,
                                 OFF,
     };
-    enum class COMPARE {
+    enum class Compare {
                                 YYYYMM,
                                 YYYYMMDD,
                                 YYYYMMDDHH,
@@ -25,7 +25,7 @@ public:
                                 YYYYMMDDHHMMSS,
                                 LAST = YYYYMMDDHHMMSS,
     };
-    enum class DAY {
+    enum class Day {
                                 INVALID,
                                 MONDAY,
                                 TUESDAY,
@@ -36,7 +36,7 @@ public:
                                 SUNDAY,
                                 LAST = SUNDAY,
     };
-    enum class FORMAT {
+    enum class Format {
                                 ISO,
                                 ISO_LONG,
                                 ISO_TIME,
@@ -49,7 +49,11 @@ public:
                                 DAY_MONTH_YEAR_SHORT,
                                 WEEKDAY_MONTH_YEAR,
                                 WEEKDAY_MONTH_YEAR_SHORT,
-                                LAST = WEEKDAY_MONTH_YEAR_SHORT,
+                                WEEKDAY,
+                                WEEKDAY_SHORT,
+                                MONTH,
+                                MONTH_SHORT,
+                                LAST = MONTH_SHORT,
     };
     static const int            SECS_PER_HOUR = 3600;
     static const int            SECS_PER_DAY  = 3600 * 24;
@@ -79,7 +83,7 @@ public:
                                     { _year = _month = _day = _hour = _min = _sec = 0; return *this; }
     Date&                       clear_time()
                                     { _hour = _min = _sec = 0; return *this; }
-    int                         compare(const Date& other, Date::COMPARE flag = Date::COMPARE::YYYYMMDDHHMMSS) const;
+    int                         compare(const Date& other, Compare flag = Compare::YYYYMMDDHHMMSS) const;
     int                         day() const
                                     { return _day; }
     int                         days_in_month() const;
@@ -87,8 +91,8 @@ public:
     void                        debug() const;
     int                         diff_days(const Date& other) const;
     int                         diff_months(const Date& other) const;
-    int                         diff_seconds(const Date& other) const;
-    std::string                 format(Date::FORMAT format = Date::FORMAT::ISO) const;
+    int64_t                     diff_seconds(const Date& other) const;
+    std::string                 format(Format format = Format::ISO) const;
     int                         hour() const
                                     { return _hour; }
     bool                        is_invalid() const
@@ -112,16 +116,16 @@ public:
     Date&                       set_minute(int min);
     Date&                       set_month(int month);
     Date&                       set_second(int sec);
-    Date&                       set_weekday(Date::DAY weekday);
+    Date&                       set_weekday(Day weekday);
     Date&                       set_year(int year);
     int64_t                     time() const;
     int                         week() const;
-    Date::DAY                   weekday() const;
+    Day                         weekday() const;
     const char*                 weekday_name() const;
     const char*                 weekday_name_short() const;
     int                         year() const
                                     { return _year; }
-    static inline bool          Compare(const Date& a, const Date& b)
+    static inline bool          CompareDates(const Date& a, const Date& b)
                                     { return a.compare(b) < 0; }
 private:
     short                       _year;
@@ -504,6 +508,168 @@ private:
 };
 }
 }
+namespace icons {
+static const std::string ALERT = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 506.4 506.4" xml:space="preserve">
+<circle style="fill:#DF5C4E;" cx="253.2" cy="253.2" r="249.2"/>
+<g>
+	<path style="fill:#F4EFEF;" d="M253.2,332.4c-10.8,0-20-8.8-20-19.6v-174c0-10.8,9.2-19.6,20-19.6s20,8.8,20,19.6v174
+		C273.2,323.6,264,332.4,253.2,332.4z"/>
+	<path style="fill:#F4EFEF;" d="M253.2,395.6c-5.2,0-10.4-2-14-5.6s-5.6-8.8-5.6-14s2-10.4,5.6-14s8.8-6,14-6s10.4,2,14,6
+		c3.6,3.6,6,8.8,6,14s-2,10.4-6,14C263.6,393.6,258.4,395.6,253.2,395.6z"/>
+</g>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8
+	C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="M249.2,336.4c-13.2,0-24-10.8-24-23.6v-174c0-13.2,10.8-23.6,24-23.6s24,10.8,24,23.6v174
+	C273.2,325.6,262.4,336.4,249.2,336.4z M249.2,122.8c-8.8,0-16,7.2-16,15.6v174c0,8.8,7.2,15.6,16,15.6s16-7.2,16-15.6v-174
+	C265.2,130,258,122.8,249.2,122.8z"/>
+<path d="M249.2,399.6c-6.4,0-12.4-2.4-16.8-6.8c-4.4-4.4-6.8-10.4-6.8-16.8s2.4-12.4,6.8-16.8c4.4-4.4,10.8-6.8,16.8-6.8
+	c6.4,0,12.4,2.4,16.8,6.8c4.4,4.4,6.8,10.4,6.8,16.8s-2.4,12.4-7.2,16.8C261.6,397.2,255.6,399.6,249.2,399.6z M249.2,360
+	c-4,0-8.4,1.6-11.2,4.8c-2.8,2.8-4.4,6.8-4.4,11.2c0,4,1.6,8.4,4.8,11.2c2.8,2.8,7.2,4.8,11.2,4.8s8.4-1.6,11.2-4.8
+	c2.8-2.8,4.8-7.2,4.8-11.2s-1.6-8.4-4.8-11.2C257.2,361.6,253.2,360,249.2,360z"/>
+</svg>
+)";
+static const std::string CONFIRM = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 506.4 506.4" xml:space="preserve">
+<circle style="fill:#54B265;" cx="253.2" cy="253.2" r="249.2"/>
+<path style="fill:#F4EFEF;" d="M372.8,200.4l-11.2-11.2c-4.4-4.4-12-4.4-16.4,0L232,302.4l-69.6-69.6c-4.4-4.4-12-4.4-16.4,0
+	L134.4,244c-4.4,4.4-4.4,12,0,16.4l89.2,89.2c4.4,4.4,12,4.4,16.4,0l0,0l0,0l10.4-10.4l0.8-0.8l121.6-121.6
+	C377.2,212.4,377.2,205.2,372.8,200.4z"/>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8
+	C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="M231.6,357.2c-4,0-8-1.6-11.2-4.4l-89.2-89.2c-6-6-6-16,0-22l11.6-11.6c6-6,16.4-6,22,0l66.8,66.8L342,186.4
+	c2.8-2.8,6.8-4.4,11.2-4.4c4,0,8,1.6,11.2,4.4l11.2,11.2l0,0c6,6,6,16,0,22L242.8,352.4C239.6,355.6,235.6,357.2,231.6,357.2z
+	 M154,233.6c-2,0-4,0.8-5.6,2.4l-11.6,11.6c-2.8,2.8-2.8,8,0,10.8l89.2,89.2c2.8,2.8,8,2.8,10.8,0l132.8-132.8c2.8-2.8,2.8-8,0-10.8
+	l-11.2-11.2c-2.8-2.8-8-2.8-10.8,0L234.4,306c-1.6,1.6-4,1.6-5.6,0l-69.6-69.6C158,234.4,156,233.6,154,233.6z"/>
+</svg>
+)";
+static const std::string DELETE = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 506.4 506.4" xml:space="preserve">
+<circle style="fill:#DF5C4E;" cx="253.2" cy="253.2" r="249.2"/>
+<path style="fill:#F4EFEF;" d="M373.2,244.8c0-6.4-5.2-11.6-11.6-11.6H140.8c-6.4,0-11.6,5.2-11.6,11.6v16.8
+	c0,6.4,5.2,11.6,11.6,11.6h220.8c6.4,0,11.6-5.2,11.6-11.6V244.8z"/>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8
+	C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="M357.6,277.2H136.8c-8.8,0-15.6-7.2-15.6-15.6v-16.8c0-8.8,7.2-15.6,15.6-15.6h220.8c8.8,0,15.6,7.2,15.6,15.6v16.8
+	C373.2,270,366,277.2,357.6,277.2z M136.8,237.2c-4.4,0-7.6,3.6-7.6,7.6v16.8c0,4.4,3.6,7.6,7.6,7.6h220.8c4.4,0,7.6-3.6,7.6-7.6
+	v-16.8c0-4.4-3.6-7.6-7.6-7.6H136.8z"/>
+</svg>
+)";
+static const std::string ERROR = R"(
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" version="1.1" viewBox="0 0 506.4 506.4" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+<circle cx="253.2" cy="253.2" r="249.2" fill="#ff2a2a"/>
+<path d="m281.6 253.2 90.8-90.8c4.4-4.4 4.4-12 0-16.4l-11.2-11.2c-4.4-4.4-12-4.4-16.4 0l-90.8 90.8-90.8-90.8c-4.4-4.4-12-4.4-16.4 0l-11.2 11.2c-4.4 4.4-4.4 12 0 16.4l90.8 90.8-90.8 90.8c-4.4 4.4-4.4 12 0 16.4l11.2 11.6c4.4 4.4 12 4.4 16.4 0l90.8-90.8 90.8 90.8c4.4 4.4 12 4.4 16.4 0l11.2-11.6c4.4-4.4 4.4-12 0-16.4l-90.8-90.8z" fill="#F4EFEF"/>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8  C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="m352.8 379.6c-4 0-8-1.6-11.2-4.4l-88-88-88 88c-2.8 2.8-6.8 4.4-11.2 4.4-4 0-8-1.6-11.2-4.4l-11.2-11.2c-2.8-2.8-4.4-6.8-4.4-11.2 0-4 1.6-8 4.4-11.2l88-88-88-88c-2.8-2.8-4.4-6.8-4.4-11.2 0-4 1.6-8 4.4-11.2l11.2-11.2c6-6 16.4-6 22 0l88 88 88-88c2.8-2.8 6.8-4.4 11.2-4.4 4 0 8 1.6 11.2 4.4l11.2 11.2c6 6 6 16 0 22l-88 88 88 88c2.8 2.8 4.4 6.8 4.4 11.2 0 4-1.6 8-4.4 11.2l-11.2 11.2c-2.8 3.2-6.4 4.8-10.8 4.8zm-99.2-102.4c1.2 0 2 0.4 2.8 1.2l90.8 90.8c1.6 1.6 3.2 2.4 5.6 2.4 2 0 4-0.8 5.6-2.4l11.6-11.6c1.6-1.6 2.4-3.2 2.4-5.6 0-2-0.8-4-2.4-5.6l-90.8-90.8c-0.8-0.8-1.2-1.6-1.2-2.8s0.4-2 1.2-2.8l90.8-90.8c2.8-2.8 2.8-8 0-10.8l-11.2-11.2c-1.6-1.6-3.2-2.4-5.6-2.4-2 0-4 0.8-5.6 2.4l-90.8 90.8c-1.6 1.6-4 1.6-5.6 0l-90.8-90.8c-2.8-2.8-8-2.8-10.8 0l-11.6 11.2c-1.6 1.6-2.4 3.2-2.4 5.6s0.8 4 2.4 5.6l90.8 90.8c1.6 1.6 1.6 4 0 5.6l-90.8 90.8c-1.6 1.6-2.4 3.2-2.4 5.6 0 2 0.8 4 2.4 5.6l11.6 11.6c2.8 2.8 8 2.8 10.8 0l90.8-90.8c0.4-1.2 1.2-1.6 2.4-1.6z"/>
+</svg>
+)";
+static const std::string INFO = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 512 512" xml:space="preserve">
+<circle style="fill:#FFD782;" cx="256.006" cy="256.005" r="247.389"/>
+<path style="opacity:0.1;enable-background:new    ;" d="M77.547,255.999c0-124.928,92.609-228.209,212.918-244.982
+	C279.199,9.447,267.697,8.616,256,8.616C119.374,8.616,8.617,119.374,8.617,255.999c0,136.627,110.758,247.383,247.383,247.383
+	c11.697,0,23.199-0.831,34.465-2.401C170.156,484.209,77.547,380.928,77.547,255.999z"/>
+<g>
+	<rect x="222.632" y="197.679" style="fill:#515262;" width="66.736" height="225.802"/>
+	<circle style="fill:#515262;" cx="256.006" cy="126.635" r="39.313"/>
+</g>
+<path d="M439.868,430.105c-2.055,0-4.116-0.731-5.764-2.214c-3.536-3.185-3.821-8.632-0.638-12.168
+	c39.53-43.893,61.299-100.617,61.299-159.722C494.767,124.342,387.657,17.232,256,17.232c-55.312,0-109.23,19.347-151.821,54.477
+	c-3.669,3.027-9.101,2.508-12.13-1.164c-3.028-3.672-2.507-9.102,1.165-12.129C138.885,20.747,196.696,0,256,0
+	c68.38,0,132.667,26.629,181.019,74.981s74.981,112.639,74.981,181.019c0,63.372-23.342,124.192-65.727,171.254
+	C444.572,429.143,442.224,430.105,439.868,430.105z"/>
+<path d="M256,512c-68.379,0-132.667-26.629-181.019-74.981S0.001,324.38,0.001,255.999c0-64.259,23.919-125.711,67.35-173.036
+	c3.216-3.505,8.667-3.741,12.174-0.523c3.506,3.218,3.739,8.668,0.522,12.174C39.54,138.752,17.233,196.067,17.233,255.999
+	c0,131.657,107.11,238.767,238.767,238.767c56.109,0,110.637-19.862,153.538-55.927c3.643-3.063,9.077-2.591,12.14,1.051
+	c3.062,3.643,2.592,9.078-1.051,12.14C374.625,490.703,316.16,512,256,512z"/>
+<path d="M289.368,432.092h-66.736c-4.76,0-8.616-3.858-8.616-8.616V197.677c0-4.758,3.857-8.616,8.616-8.616h66.736
+	c4.76,0,8.616,3.858,8.616,8.616v225.798C297.984,428.234,294.127,432.092,289.368,432.092z M231.25,414.86h49.503V206.293H231.25
+	V414.86z"/>
+<path d="M256,174.561c-26.429,0-47.93-21.501-47.93-47.93s21.501-47.93,47.93-47.93s47.93,21.501,47.93,47.93
+	C303.93,153.06,282.429,174.561,256,174.561z M256,95.933c-16.926,0-30.698,13.771-30.698,30.698s13.771,30.698,30.698,30.698
+	s30.698-13.771,30.698-30.698S272.927,95.933,256,95.933z"/>
+</svg>
+)";
+static const std::string STOP = R"(
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" version="1.1" viewBox="0 0 506.4 506.4" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+<circle cx="253.2" cy="253.2" r="249.2" fill="#80b3ff"/>
+<path d="m349.2 331.6c0 12-9.6 21.6-21.6 21.6h-152.8c-12 0-21.6-9.6-21.6-21.6v-152.8c0-12 9.6-21.6 21.6-21.6h152.8c12 0 21.6 9.6 21.6 21.6v152.8z" fill="#F4EFEF"/>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8  C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="m323.6 357.2h-152.8c-14 0-25.6-11.6-25.6-25.6v-152.8c0-14 11.6-25.6 25.6-25.6h152.8c14 0 25.6 11.6 25.6 25.6v152.8c0 14-11.6 25.6-25.6 25.6zm-152.8-196c-9.6 0-17.6 8-17.6 17.6v152.8c0 9.6 8 17.6 17.6 17.6h152.8c9.6 0 17.6-8 17.6-17.6v-152.8c0-9.6-8-17.6-17.6-17.6h-152.8z"/>
+</svg>
+)";
+static const std::string QUESTION = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 506.4 506.4" xml:space="preserve">
+<circle style="fill:#ACD9EA;" cx="253.2" cy="253.2" r="249.2"/>
+<g>
+	<path style="fill:#F4EFEF;" d="M253.2,332.4c-10.8,0-20-8.8-20-19.6v-36c0-10.8,8.8-19.6,20-19.6c28,0,51.2-22.8,51.2-50.8
+		s-22.8-50.8-50.8-50.8s-50.8,22.8-50.8,50.8c0,10.8-8.8,19.6-19.6,19.6s-19.6-8.8-19.6-19.6c0-50,40.8-90.4,90.4-90.4
+		s90.8,40.8,90.8,90.4c0,43.2-26.8,79.2-70.8,88.4v18.4C273.2,323.6,264,332.4,253.2,332.4z"/>
+	<path style="fill:#F4EFEF;" d="M252.4,395.6c-5.2,0-10.4-2-14-6c-3.6-3.6-5.6-8.8-5.6-14s2-10.4,5.6-14s8.8-5.6,14-5.6
+		s10.4,2,14,5.6s6,8.8,6,14s-2,10.4-6,14C262.4,393.6,257.6,395.6,252.4,395.6z"/>
+</g>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8
+	C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="M249.2,336.4c-13.2,0-24-10.8-24-23.6v-36c0-12.8,12-23.6,26-23.6c26,0,48-21.6,48-46.8c0-26-20.8-46.8-46.4-46.8
+	c-25.6,0-46.8,21.2-46.8,46.8c0,13.2-10.8,23.6-23.6,23.6c-13.2,0-23.6-10.8-23.6-23.6c0-52,42.4-94.4,94.4-94.4
+	s92.8,41.6,92.8,94.4c0,44.8-29.2,81.2-72.8,91.6v15.2C273.2,325.6,262.4,336.4,249.2,336.4z M252.8,150.8c30,0,54.4,24.8,54.4,54.8
+	c0,29.6-25.6,54.8-56,54.8c-8.4,0-18,6.8-18,15.6v36c0,8.8,7.2,15.6,16,15.6s16-7.2,16-15.6v-18.4c0-2,1.2-3.6,3.2-4
+	c41.6-8.4,69.6-42.4,69.6-84.4c0-48.4-37.2-86.4-84.8-86.4s-86.4,38.8-86.4,86.4c0,8.8,7.2,15.6,15.6,15.6c8.8,0,15.6-7.2,15.6-15.6
+	C198,175.2,222.4,150.8,252.8,150.8z"/>
+<path d="M252.4,399.6c-6.4,0-12.4-2.4-16.8-7.2c-4.4-4.4-6.8-10.4-6.8-16.8s2.4-12.4,6.8-16.8c4.4-4.4,10.4-6.8,16.8-6.8
+	c6.4,0,12.4,2.4,16.8,6.8c4.4,4.4,6.8,10.8,6.8,16.8c0,6.4-2.4,12.4-6.8,16.8C264.8,397.2,258.4,399.6,252.4,399.6z M252.4,360
+	c-4,0-8.4,1.6-11.2,4.8c-2.8,2.8-4.4,6.8-4.4,11.2s1.6,8.4,4.4,11.2c2.8,2.8,7.2,4.8,11.2,4.8s8.4-1.6,11.2-4.8
+	c2.8-2.8,4.8-7.2,4.8-11.2s-1.6-8-4.8-11.2C260.4,361.6,256.4,360,252.4,360z"/>
+</svg>
+)";
+static const std::string WARNING = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 507.425 507.425" xml:space="preserve">
+<path style="fill:#FFC52F;" d="M329.312,129.112l13.6,22l150.8,242.4c22.4,36,6,65.2-36.8,65.2h-406.4c-42.4,0-59.2-29.6-36.8-65.6
+	l198.8-320.8c22.4-36,58.8-36,81.2,0L329.312,129.112z"/>
+<g>
+	<path style="fill:#F4EFEF;" d="M253.712,343.512c-10.8,0-20-8.8-20-20v-143.2c0-10.8,9.2-20,20-20s20,8.8,20,20v143.2
+		C273.712,334.312,264.512,343.512,253.712,343.512z"/>
+	<path style="fill:#F4EFEF;" d="M253.312,407.112c-5.2,0-10.4-2-14-6c-3.6-3.6-6-8.8-6-14s2-10.4,6-14c3.6-3.6,8.8-6,14-6
+		s10.4,2,14,6c3.6,3.6,6,8.8,6,14s-2,10.4-6,14C263.712,404.712,258.512,407.112,253.312,407.112z"/>
+</g>
+<path d="M456.912,465.512h-406.4c-22,0-38.4-7.6-46-21.6s-5.6-32.8,6-51.2l198.8-321.6c11.6-18.8,27.2-29.2,44.4-29.2l0,0
+	c16.8,0,32.4,10,43.6,28.4l35.2,56.4l0,0l13.6,22l150.8,243.6c11.6,18.4,13.6,37.2,6,51.2
+	C495.312,457.912,478.912,465.512,456.912,465.512z M253.312,49.912L253.312,49.912c-14,0-27.2,8.8-37.6,25.2l-198.8,321.6
+	c-10,16-12,31.6-5.6,43.2s20.4,17.6,39.2,17.6h406.4c18.8,0,32.8-6.4,39.2-17.6c6.4-11.2,4.4-27.2-5.6-43.2l-150.8-243.6l-13.6-22
+	l-35.2-56.4C280.512,58.712,267.312,49.912,253.312,49.912z"/>
+<path d="M249.712,347.512c-13.2,0-24-10.8-24-24v-143.2c0-13.2,10.8-24,24-24s24,10.8,24,24v143.2
+	C273.712,336.712,262.912,347.512,249.712,347.512z M249.712,164.312c-8.8,0-16,7.2-16,16v143.2c0,8.8,7.2,16,16,16s16-7.2,16-16
+	v-143.2C265.712,171.512,258.512,164.312,249.712,164.312z"/>
+<path d="M249.712,411.112L249.712,411.112c-6.4,0-12.4-2.4-16.8-6.8c-4.4-4.4-6.8-10.8-6.8-16.8c0-6.4,2.4-12.4,6.8-16.8
+	c4.4-4.4,10.8-7.2,16.8-7.2c6.4,0,12.4,2.4,16.8,7.2c4.4,4.4,7.2,10.4,7.2,16.8s-2.4,12.4-7.2,16.8
+	C262.112,408.312,256.112,411.112,249.712,411.112z M249.712,371.112c-4,0-8.4,1.6-11.2,4.8c-2.8,2.8-4.8,7.2-4.8,11.2
+	c0,4.4,1.6,8.4,4.8,11.2c2.8,2.8,7.2,4.8,11.2,4.8s8.4-1.6,11.2-4.8c2.8-2.8,4.8-7.2,4.8-11.2s-1.6-8.4-4.8-11.2
+	C258.112,372.712,253.712,371.112,249.712,371.112z"/>
+</svg>
+)";
+}
 #include <string>
 #include <map>
 #include <vector>
@@ -619,6 +785,7 @@ namespace util {
     std::string                 format(const std::string& format, ...);
     std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
+    bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size);
     bool                        is_empty(const std::string& string);
     void                        labelfont(Fl_Widget* widget, Fl_Font font = flw::PREF_FONT, int size = flw::PREF_FONTSIZE);
     int64_t                     microseconds();
@@ -828,7 +995,7 @@ struct Point {
     static size_t               BinarySearch(const PointVector& in, const Point& key);
     static PointVector          DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block = PointVector());
     static PointVector          DayToMonth(const PointVector& in, bool sum = false);
-    static PointVector          DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum = false);
+    static PointVector          DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum = false);
     static void                 Debug(const PointVector& in);
     static PointVector          ExponentialMovingAverage(const PointVector& in, size_t days);
     static PointVector          Fixed(const PointVector& in, double value);
@@ -1130,29 +1297,31 @@ private:
 namespace flw {
 class ToolGroup : public Fl_Group {
 public:
-    enum class DIRECTION {
+    enum class Pos {
                                 HORIZONTAL,
                                 VERTICAL,
     };
-    explicit                    ToolGroup(DIRECTION direction = DIRECTION::HORIZONTAL, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+                                ToolGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                 ~ToolGroup();
-    void                        add(Fl_Widget* widget, int SIZE = 0);
+    Fl_Widget*                  add(Fl_Widget* widget, unsigned size = 0);
     void                        clear();
-    DIRECTION                   direction() const
-                                    { return _direction; }
-    void                        direction(DIRECTION direction)
-                                    { _direction = direction; }
     void                        do_layout()
                                     { resize(x(), y(), w(), h()); Fl::redraw(); }
     bool                        expand_last() const
                                     { return _expand; }
     void                        expand_last(bool value)
-                                    { _expand = value; }
+                                    { _expand = value; do_layout(); }
+    Pos                         pos() const
+                                    { return _pos; }
+    void                        pos(Pos pos)
+                                    { _pos = pos; do_layout(); }
     Fl_Widget*                  remove(Fl_Widget* widget);
+    Fl_Widget*                  replace(Fl_Widget* old_widget, Fl_Widget* new_widget);
     void                        resize(int X, int Y, int W, int H) override;
-    void                        resize(Fl_Widget* widget, int SIZE = 0);
+    void                        size(Fl_Widget* widget, unsigned size);
+    void                        size(unsigned size);
 private:
-    DIRECTION                   _direction;
+    Pos                         _pos;
     VoidVector                  _widgets;
     bool                        _expand;
 };
@@ -1189,29 +1358,31 @@ private:
 namespace flw {
 class ScrollBrowser : public Fl_Hold_Browser {
 public:
-                                ScrollBrowser(const ScrollBrowser&) = delete;
-                                ScrollBrowser(ScrollBrowser&&) = delete;
-    ScrollBrowser&              operator=(const ScrollBrowser&) = delete;
-    ScrollBrowser&              operator=(ScrollBrowser&&) = delete;
-    explicit                    ScrollBrowser(int scroll = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    bool                        enable_menu() const
+                                ScrollBrowser(int lines = 9, int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    void                        disable_menu()
+                                    { _flag_menu = false; }
+    void                        disable_scrollmode()
+                                    { _flag_move = false; }
+    void                        enable_menu()
+                                    { _flag_menu = true; }
+    void                        enable_scrollmode()
+                                    { _flag_move = true; }
+    bool                        is_menu_enabled() const
                                     { return _flag_menu; }
-    void                        enable_menu(bool menu)
-                                    { _flag_menu = menu; }
-    bool                        enable_pagemove() const
+    bool                        is_scrollmode_enabled() const
                                     { return _flag_move; }
-    void                        enable_pagemove(bool move)
-                                    { _flag_move = move; }
     int                         handle(int event) override;
     Fl_Menu_Button*             menu()
                                     { return _menu; }
+    int                         scroll_lines() const
+                                    { return _scroll; }
+    void                        scroll_lines(int lines)
+                                    { if (lines > 0) _scroll = lines; }
     std::string                 text2() const
                                     { return util::remove_browser_format(util::to_string(text(value()))); }
     std::string                 text2(int line) const
                                     { return util::remove_browser_format(util::to_string(text(line))); }
-    void                        update_pref()
-                                    { update_pref(flw::PREF_FONT, flw::PREF_FONTSIZE); }
-    void                        update_pref(Fl_Font text_font, Fl_Fontsize text_size);
+    void                        update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
     static void                 Callback(Fl_Widget*, void*);
 private:
     Fl_Menu_Button*             _menu;
@@ -1356,64 +1527,64 @@ private:
 }
 #include <FL/Fl_Box.H>
 namespace flw {
-    class LcdNumber : public Fl_Box {
-    public:
-        explicit                        LcdNumber(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-        Fl_Align                        align() const
-                                            { return _align; }
-        void                            align(Fl_Align align)
-                                            { _align = align; Fl::redraw(); }
-        int                             dot_size() const
-                                            { return _dot_size; }
-        void                            dot_size(int size)
-                                            { _dot_size = size; Fl::redraw(); }
-        void                            draw() override;
-        Fl_Color                        segment_color() const
-                                            { return _seg_color; }
-        void                            segment_color(Fl_Color color)
-                                            { _seg_color = color; Fl::redraw(); }
-        int                             segment_gap() const
-                                            { return _seg_gap; }
-        void                            segment_gap(int gap)
-                                            { _seg_gap = gap; Fl::redraw(); }
-        int                             thickness() const
-                                            { return _thick; }
-        void                            thickness(int thickness)
-                                            { _thick = thickness; Fl::redraw(); }
-        int                             unit_gap()
-                                            { return _unit_gap; }
-        void                            unit_gap(int gap)
-                                            { _unit_gap = gap; Fl::redraw(); }
-        int                             unit_h() const
-                                            { return _unit_h; }
-        void                            unit_h(int height)
-                                            { _unit_h = height; Fl::redraw(); }
-        int                             unit_w() const
-                                            { return _unit_w; }
-        void                            unit_w(int width)
-                                            { _unit_w = width; Fl::redraw(); }
-        const char*                     value() const
-                                            { return _value; }
-        void                            value(const char* value);
-    private:
-        void                            _draw_seg(uchar a, int x, int y, int w, int h);
-        Fl_Align                        _align;
-        Fl_Color                        _seg_color;
-        char                            _value[100];
-        int                             _dot_size;
-        int                             _seg_gap;
-        int                             _thick;
-        int                             _unit_gap;
-        int                             _unit_h;
-        int                             _unit_w;
-    };
+class LCDDisplay : public Fl_Box {
+public:
+                                LCDDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    Fl_Align                    align() const
+                                    { return _align; }
+    void                        align(Fl_Align align)
+                                    { _align = align; Fl::redraw(); }
+    int                         dot_size() const
+                                    { return _dot_size; }
+    void                        dot_size(int size)
+                                    { _dot_size = size; Fl::redraw(); }
+    void                        draw() override;
+    Fl_Color                    segment_color() const
+                                    { return _seg_color; }
+    void                        segment_color(Fl_Color color)
+                                    { _seg_color = color; Fl::redraw(); }
+    int                         segment_gap() const
+                                    { return _seg_gap; }
+    void                        segment_gap(int gap)
+                                    { _seg_gap = gap; Fl::redraw(); }
+    int                         thickness() const
+                                    { return _thick; }
+    void                        thickness(int thickness)
+                                    { _thick = thickness; Fl::redraw(); }
+    int                         unit_gap()
+                                    { return _unit_gap; }
+    void                        unit_gap(int gap)
+                                    { _unit_gap = gap; Fl::redraw(); }
+    int                         unit_h() const
+                                    { return _unit_h; }
+    void                        unit_h(int height)
+                                    { _unit_h = height; Fl::redraw(); }
+    int                         unit_w() const
+                                    { return _unit_w; }
+    void                        unit_w(int width)
+                                    { _unit_w = width; Fl::redraw(); }
+    const std::string           value() const
+                                    { return _value; }
+    void                        value(const std::string& value);
+private:
+    void                        _draw(unsigned a, int x, int y, int w, int h);
+    Fl_Align                    _align;
+    Fl_Color                    _seg_color;
+    std::string                 _value;
+    int                         _dot_size;
+    int                         _seg_gap;
+    int                         _thick;
+    int                         _unit_gap;
+    int                         _unit_h;
+    int                         _unit_w;
+};
 }
 #include <FL/Fl_Text_Display.H>
 #include <string>
 namespace flw {
 class LogDisplay : public Fl_Text_Display {
 public:
-    enum COLOR {
+    enum class Color {
                                 FOREGROUND          = 'A',
                                 GRAY                = 'B',
                                 RED                 = 'C',
@@ -1430,46 +1601,48 @@ public:
                                 BOLD_MAGENTA        = 'N',
                                 BOLD_YELLOW         = 'O',
                                 BOLD_CYAN           = 'P',
-                                BG_FOREGROUND       = 'Q',
-                                BG_GRAY             = 'R',
-                                BG_RED              = 'S',
-                                BG_GREEN            = 'T',
-                                BG_BLUE             = 'U',
-                                BG_MAGENTA          = 'V',
-                                BG_YELLOW           = 'W',
-                                BG_CYAN             = 'X',
-                                BG_BOLD_FOREGROUND  = 'Y',
-                                BG_BOLD_GRAY        = 'Z',
-                                BG_BOLD_RED         = '[',
-                                BG_BOLD_GREEN       = '\\',
-                                BG_BOLD_BLUE        = ']',
-                                BG_BOLD_MAGENTA     = '^',
-                                BG_BOLD_YELLOW      = '_',
-                                BG_BOLD_CYAN        = '`',
-                                LAST                = '`',
+                                U_FOREGROUND        = 'Q',
+                                U_GRAY              = 'R',
+                                U_RED               = 'S',
+                                U_GREEN             = 'T',
+                                U_BLUE              = 'U',
+                                U_MAGENTA           = 'V',
+                                U_YELLOW            = 'W',
+                                U_CYAN              = 'X',
+                                U_BOLD_FOREGROUND   = 'Y',
+                                U_BOLD_GRAY         = 'Z',
+                                U_BOLD_RED          = '[',
+                                U_BOLD_GREEN        = '\\',
+                                U_BOLD_BLUE         = ']',
+                                U_BOLD_MAGENTA      = '^',
+                                U_BOLD_YELLOW       = '_',
+                                U_BOLD_CYAN         = '`',
+                                LAST                = U_BOLD_CYAN,
     };
     explicit                    LogDisplay(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
                                 ~LogDisplay();
     void                        edit_styles();
     void                        find(bool next, bool force_ask);
     int                         handle(int event) override;
-    void                        lock_colors(bool lock)
-                                    { _lock_colors = lock; }
+    void                        lock_colors()
+                                    { _lock_colors = true; }
     void                        save_file();
-    void                        style(std::string json = "");
+    void                        style(const std::string& json = "");
+    void                        unlock_colors()
+                                    { _lock_colors = false; }
     void                        update_pref();
     void                        value(const char* text);
+    void                        value(const std::string& text)
+                                    { value(text.c_str()); }
 protected:
-    virtual void                line_cb(size_t row, const std::string& line)
-                                    { (void) row; (void) line; }
-    virtual void                line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::COLOR color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0)
-                                    { (void) row; (void) line; (void) word1; (void) word2; (void) color;  (void) inclusive;  (void) start;  (void) stop;  (void) count; }
-    void                        style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color);
-    void                        style_line(size_t start, size_t stop, LogDisplay::COLOR c);
-    void                        style_num(const std::string& line, LogDisplay::COLOR color, size_t count = 0);
-    void                        style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count = 0);
-    void                        style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count = 0);
-    void                        style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count = 0);
+    virtual void                line_cb(size_t row, const std::string& line);
+    virtual void                line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::Color color, bool inclusive, size_t start = 0, size_t stop = 0, size_t count = 0);
+    void                        style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color);
+    void                        style_line(size_t start, size_t stop, LogDisplay::Color color);
+    void                        style_num(const std::string& line, LogDisplay::Color color, size_t count = 0);
+    void                        style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color, size_t count = 0);
+    void                        style_rstring(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count = 0);
+    void                        style_string(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count = 0);
 private:
     const char*                 _check_text(const char* text);
     char                        _style_char(size_t pos) const
@@ -1767,6 +1940,7 @@ private:
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Preferences.H>
 namespace flw {
+namespace util {
 class RecentMenu {
 public:
                                 RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
@@ -1801,6 +1975,7 @@ private:
     Fl_Menu_*                   _menu;
     void*                       _user;
 };
+}
 }
 #include <FL/Fl.H>
 #include <FL/Fl_Group.H>
@@ -2252,15 +2427,11 @@ private:
 };
 }
 namespace flw {
-    class WaitCursor {
-        static WaitCursor*              WAITCURSOR;
-    public:
-                                        WaitCursor(const WaitCursor&) = delete;
-                                        WaitCursor(WaitCursor&&) = delete;
-                                        WaitCursor& operator=(const WaitCursor&) = delete;
-                                        WaitCursor& operator=(WaitCursor&&) = delete;
-                                        WaitCursor();
-                                        ~WaitCursor();
-    };
+class WaitCursor {
+    static WaitCursor*          WAITCURSOR;
+public:
+                                WaitCursor();
+                                ~WaitCursor();
+};
 }
 #endif

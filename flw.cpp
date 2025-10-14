@@ -38,7 +38,7 @@ static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& mont
     min   = timeinfo->tm_min;
     sec   = timeinfo->tm_sec;
 }
-static Date::DAY _date_weekday(int year, int month, int day) {
+static Date::Day _date_weekday(int year, int month, int day) {
     if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days_in_month(year, month)) {
         int start = 0;
         int y1    = year - 1;
@@ -55,7 +55,7 @@ static Date::DAY _date_weekday(int year, int month, int day) {
                 start += days;
             }
             else {
-                return Date::DAY::INVALID;
+                return Date::Day::INVALID;
             }
         }
         start = start % 7;
@@ -67,13 +67,13 @@ static Date::DAY _date_weekday(int year, int month, int day) {
             }
         }
         if (start < 1 || start > 7) {
-            return Date::DAY::INVALID;
+            return Date::Day::INVALID;
         }
         else {
-            return (Date::DAY) start;
+            return (Date::Day) start;
         }
     }
-    return Date::DAY::INVALID;
+    return Date::Day::INVALID;
 }
 static bool _date_is_leapyear(int year) {
     if (year < 1 || year > 9999) {
@@ -233,7 +233,7 @@ bool Date::add_seconds(const int64_t seconds) {
     _sec  = s;
     return true;
 }
-int Date::compare(const Date& other, Date::COMPARE flag) const {
+int Date::compare(const Date& other, Compare flag) const {
     if (_year < other._year) {
         return -1;
     }
@@ -246,7 +246,7 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
     else if (_month > other._month) {
         return 1;
     }
-    if (flag >= Date::COMPARE::YYYYMMDD) {
+    if (flag >= Compare::YYYYMMDD) {
         if (_day < other._day) {
             return -1;
         }
@@ -254,7 +254,7 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
             return 1;
         }
     }
-    if (flag >= Date::COMPARE::YYYYMMDDHH) {
+    if (flag >= Compare::YYYYMMDDHH) {
         if (_hour < other._hour) {
             return -1;
         }
@@ -262,7 +262,7 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
             return 1;
         }
     }
-    if (flag >= Date::COMPARE::YYYYMMDDHHMM) {
+    if (flag >= Compare::YYYYMMDDHHMM) {
         if (_min < other._min) {
             return -1;
         }
@@ -270,7 +270,7 @@ int Date::compare(const Date& other, Date::COMPARE flag) const {
             return 1;
         }
     }
-    if (flag >= Date::COMPARE::YYYYMMDDHHMMSS) {
+    if (flag >= Compare::YYYYMMDDHHMMSS) {
         if (_sec < other._sec) {
             return -1;
         }
@@ -297,20 +297,22 @@ int Date::days_into_year() const {
     return res + _day;
 }
 void Date::debug() const {
-    printf("Date| %s\n", format(Date::FORMAT::ISO_TIME_LONG).c_str());
+#ifdef DEBUG
+    printf("Date| %s\n", format(Format::ISO_TIME_LONG).c_str());
     fflush(stdout);
+#endif
 }
 int Date::diff_days(const Date& date) const {
     Date d(date);
     int  res = 0;
-    if (compare(d, Date::COMPARE::YYYYMMDD) < 0) {
-        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
+    if (compare(d, Compare::YYYYMMDD) < 0) {
+        while (compare(d, Compare::YYYYMMDD) != 0) {
             d.add_days(-1);
             res++;
         }
     }
-    else if (compare(d, Date::COMPARE::YYYYMMDD) > 0) {
-        while (compare(d, Date::COMPARE::YYYYMMDD) != 0) {
+    else if (compare(d, Compare::YYYYMMDD) > 0) {
+        while (compare(d, Compare::YYYYMMDD) != 0) {
             d.add_days(1);
             res--;
         }
@@ -320,21 +322,21 @@ int Date::diff_days(const Date& date) const {
 int Date::diff_months(const Date& date) const {
     Date d(date);
     int  res = 0;
-    if (compare(d, Date::COMPARE::YYYYMM) < 0) {
-        while (compare(d, Date::COMPARE::YYYYMM)) {
+    if (compare(d, Compare::YYYYMM) < 0) {
+        while (compare(d, Compare::YYYYMM)) {
             d.add_months(-1);
             res++;
         }
     }
-    else if (compare(d, Date::COMPARE::YYYYMM) > 0) {
-        while (compare(d, Date::COMPARE::YYYYMM)) {
+    else if (compare(d, Compare::YYYYMM) > 0) {
+        while (compare(d, Compare::YYYYMM)) {
             d.add_months(1);
             res--;
         }
     }
     return res;
 }
-int Date::diff_seconds(const Date& date) const {
+int64_t Date::diff_seconds(const Date& date) const {
     int64_t unix1 = time();
     int64_t unix2 = date.time();
     if (unix1 >= 0 && unix2 >= 0) {
@@ -342,44 +344,56 @@ int Date::diff_seconds(const Date& date) const {
     }
     return 0;
 }
-std::string Date::format(Date::FORMAT format) const {
+std::string Date::format(Format format) const {
     char tmp[100];
     int  n = 0;
-    if (format == Date::FORMAT::ISO) {
+    if (format == Format::ISO) {
         n = snprintf(tmp, 100, "%04d%02d%02d", _year, _month, _day);
     }
-    else if (format == Date::FORMAT::ISO_LONG) {
+    else if (format == Format::ISO_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d", _year, _month, _day);
     }
-    else if (format == Date::FORMAT::ISO_TIME) {
+    else if (format == Format::ISO_TIME) {
         n = snprintf(tmp, 100, "%04d%02d%02d %02d%02d%02d", _year, _month, _day, _hour, _min, _sec);
     }
-    else if (format == Date::FORMAT::ISO_TIME_LONG) {
+    else if (format == Format::ISO_TIME_LONG) {
         n = snprintf(tmp, 100, "%04d-%02d-%02d %02d:%02d:%02d", _year, _month, _day, _hour, _min, _sec);
     }
-    else if (format == Date::FORMAT::TIME) {
+    else if (format == Format::TIME) {
         n = snprintf(tmp, 100, "%02d%02d%02d", _hour, _min, _sec);
     }
-    else if (format == Date::FORMAT::TIME_LONG) {
+    else if (format == Format::TIME_LONG) {
         n = snprintf(tmp, 100, "%02d:%02d:%02d", _hour, _min, _sec);
     }
-    else if (format == Date::FORMAT::US) {
+    else if (format == Format::US) {
         n = snprintf(tmp, 100, "%d/%d/%04d", _month, _day, _year);
     }
-    else if (format == Date::FORMAT::WORLD) {
+    else if (format == Format::WORLD) {
         n = snprintf(tmp, 100, "%d/%d/%04d", _day, _month, _year);
     }
-    else if (format == Date::FORMAT::DAY_MONTH_YEAR) {
+    else if (format == Format::DAY_MONTH_YEAR) {
         n = snprintf(tmp, 100, "%d %s %04d", _day, month_name(), _year);
     }
-    else if (format == Date::FORMAT::DAY_MONTH_YEAR_SHORT) {
+    else if (format == Format::DAY_MONTH_YEAR_SHORT) {
         n = snprintf(tmp, 100, "%d %s, %04d", _day, month_name_short(), _year);
     }
-    else if (format == Date::FORMAT::WEEKDAY_MONTH_YEAR) {
+    else if (format == Format::WEEKDAY_MONTH_YEAR) {
         n = snprintf(tmp, 100, "%s %d %s %04d", weekday_name(), _day, month_name(), _year);
     }
-    else if (format == Date::FORMAT::WEEKDAY_MONTH_YEAR_SHORT) {
+    else if (format == Format::WEEKDAY_MONTH_YEAR_SHORT) {
         n = snprintf(tmp, 100, "%s, %d %s, %04d", weekday_name_short(), _day, month_name_short(), _year);
+    }
+    else if (format == Format::WEEKDAY) {
+        n = snprintf(tmp, 100, "%s", weekday_name());
+    }
+    else if (format == Format::WEEKDAY_SHORT) {
+        n = snprintf(tmp, 100, "%s", weekday_name_short());
+    }
+    else if (format == Format::MONTH) {
+        n = snprintf(tmp, 100, "%s", month_name());
+    }
+    else if (format == Format::MONTH_SHORT) {
+        n = snprintf(tmp, 100, "%s", month_name_short());
     }
     if (n < 0 || n >= 100) {
         *tmp = 0;
@@ -603,7 +617,7 @@ Date& Date::set_second(int sec) {
     }
     return *this;
 }
-Date& Date::set_weekday(Date::DAY day) {
+Date& Date::set_weekday(Date::Day day) {
     if (weekday() < day) {
         while (weekday() < day) {
             add_days(1);
@@ -637,16 +651,16 @@ int64_t Date::time() const {
     return mktime(&t);
 }
 int Date::week() const {
-    Date::DAY wday  = _date_weekday(_year, _month, _day);
-    Date::DAY wday1 = _date_weekday(_year, 1, 1);
-    if (wday != Date::DAY::INVALID && wday1 != Date::DAY::INVALID) {
+    Date::Day wday  = _date_weekday(_year, _month, _day);
+    Date::Day wday1 = _date_weekday(_year, 1, 1);
+    if (wday != Date::Day::INVALID && wday1 != Date::Day::INVALID) {
         auto w     = 0;
         auto y1    = _year - 1;
         auto leap  = _date_is_leapyear(_year);
         auto leap1 = _date_is_leapyear(y1);
         auto yday  = days_into_year();
-        if (yday <= (8 - (int) wday1) && wday1 > Date::DAY::THURSDAY) {
-            if (wday1 == Date::DAY::FRIDAY || (wday1 == Date::DAY::SATURDAY && leap1)) {
+        if (yday <= (8 - (int) wday1) && wday1 > Date::Day::THURSDAY) {
+            if (wday1 == Date::Day::FRIDAY || (wday1 == Date::Day::SATURDAY && leap1)) {
                 w = 53;
             }
             else {
@@ -661,7 +675,7 @@ int Date::week() const {
             else {
                 days = yday + (7 - (int) wday) + ((int) wday1 - 1);
                 days = days / 7;
-                if (wday1 > Date::DAY::THURSDAY) {
+                if (wday1 > Date::Day::THURSDAY) {
                     days--;
                 }
                 w = days;
@@ -673,7 +687,7 @@ int Date::week() const {
     }
     return 0;
 }
-Date::DAY Date::weekday() const {
+Date::Day Date::weekday() const {
     return _date_weekday(_year, _month, _day);
 }
 const char* Date::weekday_name() const {
@@ -3252,7 +3266,7 @@ Point::Point(const std::string& date, double value) {
     if (std::isfinite(value) == true &&
         fabs(value) < chart::MAX_VALUE &&
         valid_date.is_invalid() == false) {
-        this->date = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
+        this->date = valid_date.format(gnu::Date::Format::ISO_TIME);
         this->high = this->low = this->close = value;
     }
     else {
@@ -3283,7 +3297,7 @@ Point::Point(const std::string& date, double high, double low, double close) {
             low = close;
             close = tmp;
         }
-        this->date  = valid_date.format(gnu::Date::FORMAT::ISO_TIME);
+        this->date  = valid_date.format(gnu::Date::Format::ISO_TIME);
         this->high  = high;
         this->low   = low;
         this->close = close;
@@ -3349,11 +3363,11 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
     auto const stop    = gnu::Date(stop_date.c_str());
     auto       res     = PointVector();
     if (range == DateRange::FRIDAY) {
-        while (current.weekday() != gnu::Date::DAY::FRIDAY)
+        while (current.weekday() != gnu::Date::Day::FRIDAY)
             current.add_days(1);
     }
     else if (range == DateRange::SUNDAY) {
-        while (current.weekday() != gnu::Date::DAY::SUNDAY) {
+        while (current.weekday() != gnu::Date::Day::SUNDAY) {
             current.add_days(1);
         }
     }
@@ -3364,8 +3378,8 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
             current.add_days(1);
         }
         else if (range == DateRange::WEEKDAY) {
-            gnu::Date::DAY weekday = current.weekday();
-            if (weekday >= gnu::Date::DAY::MONDAY && weekday <= gnu::Date::DAY::FRIDAY) {
+            gnu::Date::Day weekday = current.weekday();
+            if (weekday >= gnu::Date::Day::MONDAY && weekday <= gnu::Date::Day::FRIDAY) {
                 date = gnu::Date(current);
             }
             current.add_days(1);
@@ -3395,7 +3409,7 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
             current.add_seconds(1);
         }
         if (date.year() > 1) {
-            Point price(date.format(gnu::Date::FORMAT::ISO_TIME_LONG));
+            Point price(date.format(gnu::Date::Format::ISO_TIME_LONG));
             if (block.size() == 0 || std::binary_search(block.begin(), block.end(), price) == false) {
                 res.push_back(price);
             }
@@ -3418,7 +3432,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
         else {
             pdate = gnu::Date(data.date.c_str());
             if (stop < pdate) {
-                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+                current.date = stop.format(gnu::Date::Format::ISO_TIME);
                 res.push_back(current);
                 current = data;
                 stop = gnu::Date(current.date.c_str());
@@ -3440,7 +3454,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
             }
         }
         if (f + 1 == in.size()) {
-            auto s = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            auto s = stop.format(gnu::Date::Format::ISO_TIME);
             stop.set_day_to_last_in_month();
             current.date = s;
             res.push_back(current);
@@ -3449,7 +3463,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
     }
     return res;
 }
-PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool sum) {
+PointVector Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum) {
     size_t          f = 0;
     PointVector res;
     Point       current;
@@ -3470,7 +3484,7 @@ PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool
         else {
             pdate = gnu::Date(data.date.c_str());
             if (stop < pdate) {
-                current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+                current.date = stop.format(gnu::Date::Format::ISO_TIME);
                 res.push_back(current);
                 current = data;
             }
@@ -3491,10 +3505,10 @@ PointVector Point::DayToWeek(const PointVector& in, gnu::Date::DAY weekday, bool
             while (stop < pdate) {
                 stop.add_days(7);
             }
-            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            current.date = stop.format(gnu::Date::Format::ISO_TIME);
         }
         if (f + 1 == in.size()) {
-            current.date = stop.format(gnu::Date::FORMAT::ISO_TIME);
+            current.date = stop.format(gnu::Date::Format::ISO_TIME);
             res.push_back(current);
         }
         f++;
@@ -4215,7 +4229,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
     else if (formula == Algorithm::DAY_TO_WEEK) {
         auto answer = fl_choice("Would you like to use highest/lowest and last close value per week?\nOr sum values per week?", nullptr, "High/Low", "Sum");
-        vec1   = Point::DayToWeek(line0->data(), gnu::Date::DAY::SUNDAY, answer == 2);
+        vec1   = Point::DayToWeek(line0->data(), gnu::Date::Day::SUNDAY, answer == 2);
         label1 = "Weekly (Sunday)";
         type1  = line0->type();
     }
@@ -4364,9 +4378,9 @@ void Chart::_create_tooltip(bool ctrl) {
         if (X >= x1 && X <= x1 + _tick_width - 1) {
             const Line* LINE = _area->selected_line();
             const auto       DATE = gnu::Date(_dates[start].date);
-            std::string      date = DATE.format(gnu::Date::FORMAT::DAY_MONTH_YEAR);
+            std::string      date = DATE.format(gnu::Date::Format::DAY_MONTH_YEAR);
             if (_date_range == DateRange::HOUR || _date_range == DateRange::MIN || _date_range == DateRange::SEC) {
-                 date += " - " + DATE.format(gnu::Date::FORMAT::TIME_LONG);
+                 date += " - " + DATE.format(gnu::Date::Format::TIME_LONG);
             }
             _tooltip = date + "\n \n \n ";
             if (ctrl == false || LINE == nullptr || LINE->size() == 0 || LINE->is_visible() == false) {
@@ -5959,7 +5973,7 @@ void flw::DateChooser::set(const gnu::Date& date) {
 void flw::DateChooser::_set_label() {
     auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
     auto date   = canvas->get();
-    auto string = date.format(gnu::Date::FORMAT::WEEKDAY_MONTH_YEAR);
+    auto string = date.format(gnu::Date::Format::WEEKDAY_MONTH_YEAR);
     _month_label->copy_label(string.c_str());
 }
 }
@@ -7812,6 +7826,7 @@ void Progress::value(double value) {
 #include <FL/Fl_Tooltip.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
+#include <FL/Fl_SVG_Image.H>
 #ifdef _WIN32
     #include <FL/x.H>
     #include <windows.h>
@@ -8208,6 +8223,27 @@ std::string util::format_int(int64_t num, char del) {
     std::string r = tmp2;
     std::reverse(r.begin(), r.end());
     return r;
+}
+bool util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size) {
+    auto svg = (svg_image.length() > 40) ? new Fl_SVG_Image(nullptr, svg_image.c_str()) : nullptr;
+    if (svg == nullptr) {
+        return false;
+    }
+    else if (max_size < 16 || max_size > 4096) {
+        delete svg;
+        return false;
+    }
+    auto image   = svg->copy();
+    auto deimage = image->copy();
+    image->scale(max_size, max_size);
+    deimage->inactive();
+    deimage->scale(max_size, max_size);
+    widget->bind_image(image);
+    widget->bind_deimage(deimage);
+    widget->bind_image(1);
+    widget->bind_deimage(1);
+    delete svg;
+    return true;
 }
 bool util::is_empty(const std::string& string) {
     bool ctrl   = false;
@@ -9561,30 +9597,50 @@ void InputMenu::_values(const StringVector& menu_list, const std::string& input_
 }
 #include <FL/fl_draw.H>
 namespace flw {
-    static const unsigned char _LCDNUMBER_SEGMENTS[20] = {
-        0x00,
-        0x7E,
-        0x30,
-        0x6D,
-        0x79,
-        0x33,
-        0x5B,
-        0x5F,
-        0x70,
-        0x7F,
-        0x7B,
-        0x77,
-        0x1F,
-        0x4E,
-        0x3D,
-        0x4F,
-        0x47,
-        0x01,
-        0xA0,
-        0x00,
-    };
-}
-flw::LcdNumber::LcdNumber(int x, int y, int w, int h, const char *l) : Fl_Box(x, y, w, h, l) {
+static const unsigned char _LCDNUMBER_SEGMENTS[0x29] = {
+    0x00,
+    0x00 | 0x02 | 0x04 | 0x08 | 0x10 | 0x20 | 0x40,
+    0x00 | 0x00 | 0x00 | 0x00 | 0x10 | 0x20 | 0x00,
+    0x01 | 0x00 | 0x04 | 0x08 | 0x00 | 0x20 | 0x40,
+    0x01 | 0x00 | 0x00 | 0x08 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x00 | 0x00 | 0x10 | 0x20 | 0x00,
+    0x01 | 0x02 | 0x00 | 0x08 | 0x10 | 0x00 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x08 | 0x10 | 0x00 | 0x40,
+    0x00 | 0x00 | 0x00 | 0x00 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x08 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x00 | 0x08 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x00 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x08 | 0x10 | 0x00 | 0x00,
+    0x00 | 0x02 | 0x04 | 0x08 | 0x00 | 0x00 | 0x40,
+    0x01 | 0x00 | 0x04 | 0x08 | 0x10 | 0x20 | 0x00,
+    0x01 | 0x02 | 0x04 | 0x08 | 0x00 | 0x00 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x00 | 0x00 | 0x00 | 0x40,
+    0x00 | 0x02 | 0x04 | 0x08 | 0x10 | 0x00 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x00 | 0x10 | 0x20 | 0x00,
+    0x00 | 0x02 | 0x04 | 0x00 | 0x00 | 0x00 | 0x00,
+    0x00 | 0x00 | 0x04 | 0x08 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x00 | 0x10 | 0x00 | 0x40,
+    0x00 | 0x02 | 0x04 | 0x08 | 0x00 | 0x00 | 0x00,
+    0x01 | 0x00 | 0x04 | 0x00 | 0x10 | 0x00 | 0x40,
+    0x01 | 0x00 | 0x04 | 0x00 | 0x10 | 0x00 | 0x00,
+    0x01 | 0x00 | 0x04 | 0x08 | 0x10 | 0x00 | 0x00,
+    0x01 | 0x02 | 0x04 | 0x00 | 0x00 | 0x20 | 0x40,
+    0x01 | 0x02 | 0x00 | 0x00 | 0x10 | 0x20 | 0x40,
+    0x01 | 0x00 | 0x04 | 0x00 | 0x00 | 0x00 | 0x00,
+    0x00 | 0x02 | 0x00 | 0x08 | 0x10 | 0x00 | 0x40,
+    0x01 | 0x02 | 0x04 | 0x08 | 0x00 | 0x00 | 0x00,
+    0x00 | 0x00 | 0x04 | 0x08 | 0x10 | 0x00 | 0x00,
+    0x00 | 0x02 | 0x00 | 0x08 | 0x00 | 0x20 | 0x00,
+    0x01 | 0x02 | 0x00 | 0x08 | 0x00 | 0x20 | 0x00,
+    0x00 | 0x00 | 0x04 | 0x00 | 0x10 | 0x00 | 0x00,
+    0x01 | 0x02 | 0x00 | 0x08 | 0x10 | 0x20 | 0x00,
+    0x00 | 0x00 | 0x04 | 0x08 | 0x00 | 0x20 | 0x40,
+    0x01 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00,
+    0x26,
+    0x27,
+    0x00,
+};
+LCDDisplay::LCDDisplay(int X, int Y, int W, int H, const char *l) : Fl_Box(X, Y, W, H, l) {
     _align     = FL_ALIGN_LEFT;
     _dot_size  = 6;
     _seg_color = FL_FOREGROUND_COLOR;
@@ -9593,26 +9649,24 @@ flw::LcdNumber::LcdNumber(int x, int y, int w, int h, const char *l) : Fl_Box(x,
     _unit_gap  = 4;
     _unit_h    = 42;
     _unit_w    = 21;
-    *_value = 0;
-    value("0");
     box(FL_NO_BOX);
 }
-void flw::LcdNumber::draw() {
+void LCDDisplay::draw() {
     Fl_Box::draw();
-    int sw   = 0;
-    int tx   = x();
-    int ty   = y();
-    int tw   = w();
-    int th   = h();
-    for (size_t f = 0; f < strlen(_value); f++) {
-        if (_value[f] == 0x12) {
+    int sw = 0;
+    int tx = x();
+    int ty = y();
+    int tw = w();
+    int th = h();
+    for (auto c : _value) {
+        if (c == 0x26 || c == 0x27) {
             sw += _dot_size + _unit_gap;
         }
         else {
             sw += _unit_w + _unit_gap;
         }
     }
-    switch(_align) {
+    switch (_align) {
         case FL_ALIGN_RIGHT:
             tx += (tw - sw) - _unit_w;
             break;
@@ -9626,18 +9680,26 @@ void flw::LcdNumber::draw() {
     ty += ((th - _unit_h) >> 1);
     fl_color(active_r() ? _seg_color : fl_inactive(_seg_color));
     int xx = tx;
-    for(int i = 0; _value[i]; i++) {
-        if (_value[i] == 0x12) {
+    for (auto c : _value) {
+        if (c == 0x26) {
             fl_rectf(xx, ty + _unit_h + 1 - _dot_size, _dot_size, _dot_size);
             xx += (_dot_size + _unit_gap);
         }
+        else if (c == 0x27) {
+            fl_rectf(xx, ty + _unit_h + 1 - _dot_size, _dot_size, _dot_size);
+            fl_rectf(xx, ty + _unit_h + 1 - _dot_size * 3, _dot_size, _dot_size);
+            xx += (_dot_size + _unit_gap);
+        }
+        else if (c > 0x00 && c < 0x26) {
+            _draw(_LCDNUMBER_SEGMENTS[static_cast<size_t>(c)], xx, ty, _unit_w, _unit_h);
+            xx += (_unit_w + _unit_gap);
+        }
         else {
-            _draw_seg(_LCDNUMBER_SEGMENTS[(int) _value[i]], xx, ty, _unit_w, _unit_h);
             xx += (_unit_w + _unit_gap);
         }
     }
 }
-void flw::LcdNumber::_draw_seg(uchar a, int x, int y, int w, int h) {
+void LCDDisplay::_draw(unsigned a, int x, int y, int w, int h) {
     int x0, y0, x1, y1, x2, y2, x3, y3;
     int h2     = h >> 1;
     int thick2 = _thick >> 1;
@@ -9733,41 +9795,33 @@ void flw::LcdNumber::_draw_seg(uchar a, int x, int y, int w, int h) {
         fl_polygon(x0, y0, x1, y1, x2, y2);
     }
 }
-void flw::LcdNumber::value(const char *value) {
-    size_t l = value ? strlen(value) : 0;
-    if (l && l < 100) {
-        for (size_t i = 0; i < l; i++) {
-            if (value[i] >= 0x30 && value[i] <= 0x39) {
-                _value[i] = value[i] - 0x2F;
-            }
-            else if (value[i] >= 0x41 && value[i] <= 0x46) {
-                _value[i] = value[i] - 0x36;
-            }
-            else if (value[i] >= 0x61 && value[i] <= 0x66) {
-                _value[i] = value[i] - 0x56;
-            }
-            else if (value[i] == '-') {
-                _value[i] = 0x11;
-            }
-            else if (value[i] == ' ') {
-                _value[i] = 0x13;
-            }
-            else if (value[i] == '.') {
-                _value[i] = 0x12;
-            }
-            else if (value[i] == ':') {
-                _value[i] = 0x12;
-            }
-            else {
-                _value[i] = 0x13;
-            }
-            _value[i + 1] = 0;
+void LCDDisplay::value(const std::string& value) {
+    _value = "";
+    for (auto c : value) {
+        if (c >= 0x30 && c <= 0x39) {
+            _value += (c - 0x2F);
+        }
+        else if (c >= 0x41 && c <= 0x5a) {
+            _value += (c - 0x36);
+        }
+        else if (c >= 0x61 && c <= 0x7a) {
+            _value += (c - 0x56);
+        }
+        else if (c == '-') {
+            _value += (0x25);
+        }
+        else if (c == '.') {
+            _value += (0x26);
+        }
+        else if (c == ':') {
+            _value += (0x27);
+        }
+        else {
+            _value += (0x28);
         }
     }
-    else {
-        *_value = 0;
-    }
     Fl::redraw();
+}
 }
 #include <assert.h>
 #include <FL/fl_ask.H>
@@ -9790,22 +9844,22 @@ Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE_TABLE[] = {
     { FL_MAGENTA,           FL_COURIER_BOLD,    14, 0, 0 },
     { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, 0, 0 },
     { FL_CYAN,              FL_COURIER_BOLD,    14, 0, 0 },
-    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_GRAY,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_RED,               FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_GREEN,        FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_BLUE,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_MAGENTA,           FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_YELLOW,       FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_CYAN,              FL_COURIER,         14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_GRAY,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_RED,               FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_BLUE,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_MAGENTA,           FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
-    { FL_CYAN,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_BGCOLOR, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_GRAY,              FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_RED,               FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_GREEN,        FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_BLUE,              FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_MAGENTA,           FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_CYAN,              FL_COURIER,         14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_FOREGROUND_COLOR,  FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_GRAY,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_RED,               FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_GREEN,        FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_BLUE,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_MAGENTA,           FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_DARK_YELLOW,       FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
+    { FL_CYAN,              FL_COURIER_BOLD,    14, Fl_Text_Display::ATTR_UNDERLINE, 0 },
 };
 static const std::string _LOGDISPLAY_JSON_EXAMPLE = R"(Example json string
 All available options are below.
@@ -9867,18 +9921,19 @@ Use one or all.
 ]
 )";
 static const std::string _LOGDISPLAY_HELP = R"(@bSet style colors
-All options will be called for every line.
+All options will be called (sequentially) for every line.
 Text must be valid JSON wrapped within [].
 Count property is how many strings to color, 0 means all.
 If inclusive is set to false only characters between found strings will be colored.
+Colors might be overwritten unless a lock has been set.
 
-If lock is true then never change colors that have been set.
+@bIf lock is true then never change colors that have been set in current line.
 @f{
 @f    "style": "lock",
 @f    "on": true
 @f}
 
-Color characters by using index in line.
+@bColor characters by using index in line.
 @f{
 @f    "style": "line",
 @f    "start": 0,
@@ -9886,14 +9941,14 @@ Color characters by using index in line.
 @f    "color": "RED"
 @f}
 
-Color all numbers.
+@bColor all numbers.
 @f{
 @f    "style": "num",
 @f    "color": "MAGENTA",
 @f    "count": 0
 @f}
 
-Color strings.
+@bColor strings.
 @f{
 @f    "style": "string",
 @f    "word1": "find_text_from_left",
@@ -9901,7 +9956,7 @@ Color strings.
 @f    "count": 0
 @f}
 
-Color string but start from the right.
+@bColor string but start from the right.
 @f{
 @f    "style": "rstring",
 @f    "word1": "find_text_from_right",
@@ -9909,7 +9964,7 @@ Color string but start from the right.
 @f    "count": 0
 @f}
 
-Color text between two strings.
+@bColor text between two strings.
 @f{
 @f    "style": "range",
 @f    "word1": "from_string",
@@ -9919,7 +9974,7 @@ Color text between two strings.
 @f    "count": 0
 @f}
 
-Color text from first found string to the last found string.
+@bColor text from first found string to the last found string.
 @f{
 @f    "style": "between",
 @f    "word1": "from_first_string",
@@ -9928,7 +9983,7 @@ Color text from first found string to the last found string.
 @f    "color": "BLUE"
 @f}
 
-This property will call LogDisplay::line_custom_cb() which does nothing so override it.
+@bThis property will call LogDisplay::line_custom_cb() which does nothing so override it.
 @f{
 @f    "style": "custom",
 @f    "word1": "string_1",
@@ -9939,7 +9994,7 @@ This property will call LogDisplay::line_custom_cb() which does nothing so overr
 @f    "color": "BLUE"
 @f}
 
-@bValid colors
+@bNormal colors:
 FOREGROUND
 GRAY
 RED
@@ -9948,6 +10003,8 @@ BLUE
 MAGENTA
 YELLOW
 CYAN
+
+@bBold colors:
 BOLD_FOREGROUND
 BOLD_GRAY
 BOLD_RED
@@ -9956,24 +10013,28 @@ BOLD_BLUE
 BOLD_MAGENTA
 BOLD_YELLOW
 BOLD_CYAN
-BG_FOREGROUND
-BG_GRAY
-BG_RED
-BG_GREEN
-BG_BLUE
-BG_MAGENTA
-BG_YELLOW
-BG_CYAN
-BG_BOLD_FOREGROUND
-BG_BOLD_GRAY
-BG_BOLD_RED
-BG_BOLD_GREEN
-BG_BOLD_BLUE
-BG_BOLD_MAGENTA
-BG_BOLD_YELLOW
-BG_BOLD_CYAN
 
-    )";
+@bNormal colors with underline:
+U_FOREGROUND
+U_GRAY
+U_RED
+U_GREEN
+U_BLUE
+U_MAGENTA
+U_YELLOW
+U_CYAN
+
+@bBold colors with underline:
+U_BOLD_FOREGROUND
+U_BOLD_GRAY
+U_BOLD_RED
+U_BOLD_GREEN
+U_BOLD_BLUE
+U_BOLD_MAGENTA
+U_BOLD_YELLOW
+U_BOLD_CYAN
+
+)";
 static const std::string _LOGDISPLAY_TOOLTIP = R"(Ctrl + 'f' for enter search text.
 F3 to search for next word.
 Shift + F3 to search for previous word.
@@ -9992,7 +10053,7 @@ struct _LogDisplayStyle {
                                 RSTRING,
                                 STRING,
     };
-    LogDisplay::COLOR           color;
+    LogDisplay::Color           color;
     STYLE                       style;
     bool                        inclusive;
     bool                        on;
@@ -10002,7 +10063,7 @@ struct _LogDisplayStyle {
     std::string                 word1;
     std::string                 word2;
     _LogDisplayStyle() {
-        color     = LogDisplay::FOREGROUND;
+        color     = LogDisplay::Color::FOREGROUND;
         count     = 0;
         inclusive = false;
         on        = false;
@@ -10011,44 +10072,44 @@ struct _LogDisplayStyle {
         style     = _LogDisplayStyle::EMPTY;
     }
 };
-static LogDisplay::COLOR _logdisplay_convert_color(std::string name) {
-    if (name == "GRAY") return LogDisplay::GRAY;
-    else if (name == "RED") return LogDisplay::RED;
-    else if (name == "GREEN") return LogDisplay::GREEN;
-    else if (name == "BLUE") return LogDisplay::BLUE;
-    else if (name == "MAGENTA") return LogDisplay::MAGENTA;
-    else if (name == "YELLOW") return LogDisplay::YELLOW;
-    else if (name == "CYAN") return LogDisplay::CYAN;
-    else if (name == "BOLD_FOREGROUND") return LogDisplay::BOLD_FOREGROUND;
-    else if (name == "BOLD_GRAY") return LogDisplay::BOLD_GRAY;
-    else if (name == "BOLD_RED") return LogDisplay::BOLD_RED;
-    else if (name == "BOLD_GREEN") return LogDisplay::BOLD_GREEN;
-    else if (name == "BOLD_BLUE") return LogDisplay::BOLD_BLUE;
-    else if (name == "BOLD_MAGENTA") return LogDisplay::BOLD_MAGENTA;
-    else if (name == "BOLD_YELLOW") return LogDisplay::BOLD_YELLOW;
-    else if (name == "BOLD_CYAN") return LogDisplay::BOLD_CYAN;
-    else if (name == "BG_FOREGROUND") return LogDisplay::BG_FOREGROUND;
-    else if (name == "BG_GRAY") return LogDisplay::BG_GRAY;
-    else if (name == "BG_RED") return LogDisplay::BG_RED;
-    else if (name == "BG_GREEN") return LogDisplay::BG_GREEN;
-    else if (name == "BG_BLUE") return LogDisplay::BG_BLUE;
-    else if (name == "BG_MAGENTA") return LogDisplay::BG_MAGENTA;
-    else if (name == "BG_YELLOW") return LogDisplay::BG_YELLOW;
-    else if (name == "BG_CYAN") return LogDisplay::BG_CYAN;
-    else if (name == "BG_BOLD_FOREGROUND") return LogDisplay::BG_BOLD_FOREGROUND;
-    else if (name == "BG_BOLD_GRAY") return LogDisplay::BG_BOLD_GRAY;
-    else if (name == "BG_BOLD_RED") return LogDisplay::BG_BOLD_RED;
-    else if (name == "BG_BOLD_GREEN") return LogDisplay::BG_BOLD_GREEN;
-    else if (name == "BG_BOLD_BLUE") return LogDisplay::BG_BOLD_BLUE;
-    else if (name == "BG_BOLD_MAGENTA") return LogDisplay::BG_BOLD_MAGENTA;
-    else if (name == "BG_BOLD_YELLOW") return LogDisplay::BG_BOLD_YELLOW;
-    else if (name == "BG_BOLD_CYAN") return LogDisplay::BG_BOLD_CYAN;
-    else return LogDisplay::GRAY;
+static LogDisplay::Color _logdisplay_convert_color(const std::string& name) {
+    if (name == "GRAY") return LogDisplay::Color::GRAY;
+    else if (name == "RED") return LogDisplay::Color::RED;
+    else if (name == "GREEN") return LogDisplay::Color::GREEN;
+    else if (name == "BLUE") return LogDisplay::Color::BLUE;
+    else if (name == "MAGENTA") return LogDisplay::Color::MAGENTA;
+    else if (name == "YELLOW") return LogDisplay::Color::YELLOW;
+    else if (name == "CYAN") return LogDisplay::Color::CYAN;
+    else if (name == "BOLD_FOREGROUND") return LogDisplay::Color::BOLD_FOREGROUND;
+    else if (name == "BOLD_GRAY") return LogDisplay::Color::BOLD_GRAY;
+    else if (name == "BOLD_RED") return LogDisplay::Color::BOLD_RED;
+    else if (name == "BOLD_GREEN") return LogDisplay::Color::BOLD_GREEN;
+    else if (name == "BOLD_BLUE") return LogDisplay::Color::BOLD_BLUE;
+    else if (name == "BOLD_MAGENTA") return LogDisplay::Color::BOLD_MAGENTA;
+    else if (name == "BOLD_YELLOW") return LogDisplay::Color::BOLD_YELLOW;
+    else if (name == "BOLD_CYAN") return LogDisplay::Color::BOLD_CYAN;
+    else if (name == "U_FOREGROUND") return LogDisplay::Color::U_FOREGROUND;
+    else if (name == "U_GRAY") return LogDisplay::Color::U_GRAY;
+    else if (name == "U_RED") return LogDisplay::Color::U_RED;
+    else if (name == "U_GREEN") return LogDisplay::Color::U_GREEN;
+    else if (name == "U_BLUE") return LogDisplay::Color::U_BLUE;
+    else if (name == "U_MAGENTA") return LogDisplay::Color::U_MAGENTA;
+    else if (name == "U_YELLOW") return LogDisplay::Color::U_YELLOW;
+    else if (name == "U_CYAN") return LogDisplay::Color::U_CYAN;
+    else if (name == "U_BOLD_FOREGROUND") return LogDisplay::Color::U_BOLD_FOREGROUND;
+    else if (name == "U_BOLD_GRAY") return LogDisplay::Color::U_BOLD_GRAY;
+    else if (name == "U_BOLD_RED") return LogDisplay::Color::U_BOLD_RED;
+    else if (name == "U_BOLD_GREEN") return LogDisplay::Color::U_BOLD_GREEN;
+    else if (name == "U_BOLD_BLUE") return LogDisplay::Color::U_BOLD_BLUE;
+    else if (name == "U_BOLD_MAGENTA") return LogDisplay::Color::U_BOLD_MAGENTA;
+    else if (name == "U_BOLD_YELLOW") return LogDisplay::Color::U_BOLD_YELLOW;
+    else if (name == "U_BOLD_CYAN") return LogDisplay::Color::U_BOLD_CYAN;
+    else return LogDisplay::Color::GRAY;
 }
-static std::vector<_LogDisplayStyle> _logdisplay_parse_json(std::string json) {
+static std::vector<_LogDisplayStyle> _logdisplay_parse_json(const std::string& json) {
     #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
     auto res = std::vector<_LogDisplayStyle>();
-    auto js  = gnu::json::decode(json.c_str(), json.length());
+    auto js  = gnu::json::decode(json.c_str(), json.length(), true);
     if (js.has_err() == true) {
         fl_alert("error: failed to parse json\n%s", js.err_c());
         return res;
@@ -10111,16 +10172,16 @@ static char* _logdisplay_win_to_unix(const char* string) {
     }
     return res;
 }
-LogDisplay::LogDisplay::Tmp::Tmp() {
+LogDisplay::Tmp::Tmp() {
     buf  = nullptr;
     len  = 0;
     pos  = 0;
     size = 0;
 }
-LogDisplay::LogDisplay::Tmp::~Tmp() {
+LogDisplay::Tmp::~Tmp() {
     free(buf);
 }
-LogDisplay::LogDisplay(int x, int y, int w, int h, const char *l) : Fl_Text_Display(x, y, w, h, l) {
+LogDisplay::LogDisplay(int X, int Y, int W, int H, const char *l) : Fl_Text_Display(X, Y, W, H, l) {
     _buffer      = new Fl_Text_Buffer();
     _style       = new Fl_Text_Buffer();
     _lock_colors = false;
@@ -10217,14 +10278,29 @@ int LogDisplay::handle(int event) {
     }
     return Fl_Text_Display::handle(event);
 }
+void LogDisplay::line_cb(size_t row, const std::string& line) {
+    (void) row;
+    (void) line;
+}
+void LogDisplay::line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::Color color, bool inclusive, size_t start, size_t stop, size_t count)  {
+    (void) row;
+    (void) line;
+    (void) word1;
+    (void) word2;
+    (void) color;
+    (void) inclusive;
+    (void) start;
+    (void) stop;
+    (void) count;
+}
 void LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
     if (filename != nullptr && _buffer->savefile(filename) != 0) {
         fl_alert("error: failed to save text to %s", filename);
     }
 }
-void LogDisplay::style(std::string json) {
-    auto ds  = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
+void LogDisplay::style(const std::string& json) {
+    auto ds = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
     _json      = json;
     _tmp       = new Tmp();
     _tmp->size = _buffer->length();
@@ -10239,7 +10315,7 @@ void LogDisplay::style(std::string json) {
                 line_cb(row, line);
             }
             else {
-                lock_colors(false);
+                unlock_colors();
                 for (const auto& d : ds) {
                     if (d.style == _LogDisplayStyle::BETWEEN) {
                         style_range(line, d.word1, d.word2, d.inclusive, d.color);
@@ -10251,7 +10327,12 @@ void LogDisplay::style(std::string json) {
                         style_line(d.start, d.stop, d.color);
                     }
                     else if (d.style == _LogDisplayStyle::LOCK) {
-                        lock_colors(d.on);
+                        if (d.on == true) {
+                            lock_colors();
+                        }
+                        else {
+                            unlock_colors();
+                        }
                     }
                     else if (d.style == _LogDisplayStyle::NUM) {
                         style_num(line, d.color, d.count);
@@ -10272,12 +10353,12 @@ void LogDisplay::style(std::string json) {
             free(line);
         }
         _style->text(_tmp->buf);
-        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), (char) LogDisplay::FOREGROUND, nullptr, 0);
+        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), static_cast<char>(Color::FOREGROUND), nullptr, 0);
     }
     delete _tmp;
     _tmp = nullptr;
 }
-void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color) {
+void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -10292,18 +10373,18 @@ void LogDisplay::style_between(const std::string& line, const std::string& word1
         }
     }
 }
-void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::COLOR c) {
+void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color color) {
     assert(_tmp);
     start += _tmp->pos;
     stop  += _tmp->pos;
     while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->len) {
-        if (_lock_colors == false || _tmp->buf[start] == (char) LogDisplay::LogDisplay::FOREGROUND) {
-            _tmp->buf[start] = (char) c;
+        if (_lock_colors == false || _tmp->buf[start] == static_cast<char>(Color::FOREGROUND)) {
+            _tmp->buf[start] = static_cast<char>(color);
         }
         start++;
     }
 }
-void LogDisplay::style_num(const std::string& line, LogDisplay::COLOR color, size_t count) {
+void LogDisplay::style_num(const std::string& line, LogDisplay::Color color, size_t count) {
     if (count == 0) {
         count = 999;
     }
@@ -10315,7 +10396,7 @@ void LogDisplay::style_num(const std::string& line, LogDisplay::COLOR color, siz
         }
     }
 }
-void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::COLOR color, size_t count) {
+void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color, size_t count) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -10343,7 +10424,7 @@ void LogDisplay::style_range(const std::string& line, const std::string& word1, 
         }
     }
 }
-void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
+void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -10360,7 +10441,7 @@ void LogDisplay::style_rstring(const std::string& line, const std::string& word1
         count--;
     }
 }
-void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::COLOR color, size_t count) {
+void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -10394,7 +10475,6 @@ void LogDisplay::update_pref() {
     }
 }
 void LogDisplay::value(const char* text) {
-    assert(text);
     _buffer->text("");
     _style->text("");
     auto win = _logdisplay_win_to_unix(text);
@@ -11954,6 +12034,7 @@ void Plot::update_pref() {
 }
 }
 namespace flw {
+namespace util {
 RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, const std::string& base_label, const std::string& clear_label) {
     _menu     = menu;
     _callback = callback;
@@ -12032,17 +12113,17 @@ void RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
     pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), "");
 }
 }
-namespace flw {
-    static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
-    static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
-    static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
 }
-flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
+namespace flw {
+static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
+static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
+static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
+ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
     end();
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
-    _scroll    = (scroll > 0) ? scroll : 9;
     _flag_move = true;
     _flag_menu = true;
+    scroll_lines(lines);
     static_cast<Fl_Group*>(this)->add(_menu);
     _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
@@ -12050,14 +12131,14 @@ flw::ScrollBrowser::ScrollBrowser(int scroll, int X, int Y, int W, int H, const 
     tooltip(_SCROLLBROWSER_TOOLTIP.c_str());
     update_pref();
 }
-void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
+void ScrollBrowser::Callback(Fl_Widget*, void* o) {
     auto self  = static_cast<ScrollBrowser*>(o);
     auto txt   = self->_menu->text();
     auto label = std::string((txt != nullptr) ? txt : "");
     auto clip  = std::string();
     clip.reserve(self->size() * 40 + 100);
     if (label == _SCROLLBROWSER_MENU_LINE) {
-        if (self->value() != 0) {
+        if (self->value() > 0) {
             clip = util::remove_browser_format(util::to_string(self->text(self->value())));
         }
     }
@@ -12072,15 +12153,17 @@ void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
         Fl::copy(clip.c_str(), clip.length(), 2);
     }
 }
-int flw::ScrollBrowser::handle(int event) {
+int ScrollBrowser::handle(int event) {
     if (event == FL_MOUSEWHEEL) {
-        if (Fl::event_dy() > 0) {
-            topline(topline() + _scroll);
+        if (_flag_move == true) {
+            if (Fl::event_dy() > 0) {
+                topline(topline() + _scroll);
+            }
+            else if (Fl::event_dy() < 0) {
+                topline(topline() - _scroll);
+            }
+            return 1;
         }
-        else if (Fl::event_dy() < 0) {
-            topline(topline() - _scroll);
-        }
-        return 1;
     }
     else if (event == FL_KEYBOARD) {
         if (_flag_move == true) {
@@ -12125,13 +12208,14 @@ int flw::ScrollBrowser::handle(int event) {
     }
     return Fl_Hold_Browser::handle(event);
 }
-void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+void ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
     textfont(text_font);
     textsize(text_size);
     _menu->textfont(text_font);
     _menu->textsize(text_size);
+}
 }
 #include <FL/fl_draw.H>
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
@@ -12152,12 +12236,12 @@ void flw::SplitGroup::add(Fl_Widget* widget, bool first) {
 }
 void flw::SplitGroup::clear() {
     Fl_Group::clear();
-    _drag           = false;
+    _drag          = false;
     _min_split_pos = 50;
-    _split_pos      = -1;
-    _pos            = Pos::VERTICAL;
-    _widgets[0]     = nullptr;
-    _widgets[1]     = nullptr;
+    _split_pos     = -1;
+    _pos           = Pos::VERTICAL;
+    _widgets[0]    = nullptr;
+    _widgets[1]    = nullptr;
 }
 int flw::SplitGroup::handle(int event) {
     if (event == FL_DRAG) {
@@ -13505,13 +13589,13 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             auto date   = gnu::Date(val);
             auto string = std::string();
             if (format == Format::DATE_WORLD) {
-                string = date.format(gnu::Date::FORMAT::WORLD);
+                string = date.format(gnu::Date::Format::WORLD);
             }
             else if (format == Format::DATE_US) {
-                string = date.format(gnu::Date::FORMAT::US);
+                string = date.format(gnu::Date::Format::US);
             }
             else {
-                string = date.format(gnu::Date::FORMAT::ISO_LONG);
+                string = date.format(gnu::Date::Format::ISO_LONG);
             }
             fl_font(textfont, textsize);
             fl_color(textcolor);
@@ -13867,7 +13951,7 @@ void Editor::_edit_quick(const std::string& key) {
         else if (key == table::DEC_LARGE) {
             date.add_years(-1);
         }
-        auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
+        auto string = date.format(gnu::Date::Format::ISO_LONG);
         if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
@@ -13945,7 +14029,7 @@ void Editor::_edit_show_dlg() {
         auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
         auto result = flw::dlg::date(table::EditDateLabel, date1, top_window());
-        auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
+        auto string = date1.format(gnu::Date::Format::ISO_LONG);
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
             do_callback();
@@ -14241,7 +14325,7 @@ int Editor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    string = date.format(gnu::Date::FORMAT::ISO_LONG);
+                    string = date.format(gnu::Date::Format::ISO_LONG);
                     text = string.c_str();
                 }
                 break;
@@ -15038,36 +15122,47 @@ void TabsGroup::value(int num) {
 namespace flw {
 struct _ToolGroupChild {
     Fl_Widget*                  widget;
-    short                       size;
+    int                         size;
     _ToolGroupChild(Fl_Widget* WIDGET, int SIZE) {
-        set(WIDGET, SIZE);
+        set(WIDGET);
+        set(SIZE);
     }
-    void set(Fl_Widget* WIDGET, int SIZE) {
+    void set(Fl_Widget* WIDGET) {
         widget = WIDGET;
-        size   = SIZE;
+    }
+    void set(int SIZE) {
+        size = SIZE;
     }
 };
-ToolGroup::ToolGroup(DIRECTION direction, int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+ToolGroup::ToolGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
-    _direction = direction;
-    _expand    = false;
+    _pos    = Pos::HORIZONTAL;
+    _expand = false;
 }
 ToolGroup::~ToolGroup() {
+    clear();
+}
+Fl_Widget* ToolGroup::add(Fl_Widget* widget, unsigned size) {
+    if (find(widget) != children()) {
+        return nullptr;
+    }
+    _widgets.push_back(new _ToolGroupChild(widget, size));
+    Fl_Group::add(widget);
+    return widget;
+}
+void ToolGroup::clear() {
     for (auto v : _widgets) {
         delete static_cast<_ToolGroupChild*>(v);
     }
-}
-void ToolGroup::add(Fl_Widget* widget, int SIZE) {
-    _widgets.push_back(new _ToolGroupChild(widget, SIZE));
-    Fl_Group::add(widget);
-}
-void ToolGroup::clear() {
     _widgets.clear();
     Fl_Group::clear();
 }
 Fl_Widget* ToolGroup::remove(Fl_Widget* widget) {
+    if (find(widget) == children()) {
+        return nullptr;
+    }
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
         auto child = static_cast<_ToolGroupChild*>(*it);
         if (child->widget == widget) {
@@ -15077,9 +15172,21 @@ Fl_Widget* ToolGroup::remove(Fl_Widget* widget) {
             return widget;
         }
     }
-    #ifdef DEBUG
-        fprintf(stderr, "error: ToolGroup::remove can't find widget\n");
-    #endif
+    return nullptr;
+}
+Fl_Widget* ToolGroup::replace(Fl_Widget* old_widget, Fl_Widget* new_widget) {
+    if (find(old_widget) == children()) {
+        return nullptr;
+    }
+    for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
+        auto child = static_cast<_ToolGroupChild*>(*it);
+        if (child->widget == old_widget) {
+            insert(*new_widget, old_widget);
+            child->set(new_widget);
+            Fl_Group::remove(old_widget);
+            return old_widget;
+        }
+    }
     return nullptr;
 }
 void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
@@ -15087,7 +15194,7 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
     if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
         return;
     }
-    auto leftover = (_direction == DIRECTION::HORIZONTAL) ? W : H;
+    auto leftover = (_pos == Pos::HORIZONTAL) ? W : H;
     auto count    = 0;
     auto last     = static_cast<Fl_Widget*>(nullptr);
     auto avg      = 0;
@@ -15109,7 +15216,7 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
     for (auto v : _widgets) {
         auto child = static_cast<_ToolGroupChild*>(v);
         if (child->widget != nullptr) {
-            if (_direction == DIRECTION::HORIZONTAL) {
+            if (_pos == Pos::HORIZONTAL) {
                 if (_expand == true && child->widget == last) {
                     child->widget->resize(xpos, Y, X + W - xpos, H);
                 }
@@ -15122,7 +15229,7 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
                     xpos += avg;
                 }
             }
-            else {
+            else if (_pos == Pos::VERTICAL) {
                 if (_expand == true && child->widget == last) {
                     child->widget->resize(X, ypos, W, Y + H - ypos);
                 }
@@ -15138,14 +15245,21 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
         }
     }
 }
-void ToolGroup::resize(Fl_Widget* widget, int SIZE) {
+void ToolGroup::size(Fl_Widget* widget, unsigned size) {
     for (auto v : _widgets) {
         auto child = static_cast<_ToolGroupChild*>(v);
         if (child->widget == widget) {
-            child->set(widget, SIZE);
+            child->set(size);
             return;
         }
     }
+}
+void ToolGroup::size(unsigned size) {
+    for (auto v : _widgets) {
+        auto child = static_cast<_ToolGroupChild*>(v);
+        child->set(size);
+    }
+    do_layout();
 }
 }
 #include <FL/fl_draw.H>
