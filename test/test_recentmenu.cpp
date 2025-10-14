@@ -14,12 +14,12 @@
 
 //------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
-    Fl_Button*          add_button;
-    flw::RecentMenu*    add_recent;
-    int                 count;
-    Fl_Button*          insert_button;
-    flw::RecentMenu*    insert_recent;
-    Fl_Menu_Bar*        menu;
+    Fl_Button*                  add_button;
+    Fl_Button*                  insert_button;
+    Fl_Menu_Bar*                menu;
+    flw::util::RecentMenu*      add_recent;
+    flw::util::RecentMenu*      insert_recent;
+    int                         count;
 
 public:
     //------------------------------------------------------------------------------
@@ -40,9 +40,9 @@ public:
         menu->callback(Test::Callback, this);
 
         menu->add("&File/Open...",                     FL_COMMAND + 'o',           Test::Callback, this);
-        insert_recent = new flw::RecentMenu(menu, CallbackInsert, this);
+        insert_recent = new flw::util::RecentMenu(menu, CallbackInsert, this);
         insert_recent->max_items(5);
-        add_recent = new flw::RecentMenu(menu, CallbackAdd, this, "&File/Open recent (add)");
+        add_recent = new flw::util::RecentMenu(menu, CallbackAdd, this, "&File/Open recent (add)");
         add_recent->max_items(5);
         menu->add("&File/Save",                        FL_COMMAND + 's',           Test::Callback, this);
         menu->add("&File/Close",                       0,                          Test::Callback, this);
@@ -94,7 +94,7 @@ public:
     }
 
     //------------------------------------------------------------------------------
-    void make_menu(flw::RecentMenu* recent, bool append) {
+    void make_menu(flw::util::RecentMenu* recent, bool append) {
         auto label = flw::util::format("/this/is/a/file/number & _%d_", ++count);
         if (append == false) recent->insert(label);
         else recent->append(label);

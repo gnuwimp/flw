@@ -17,9 +17,9 @@
 #include <FL/Fl_Preferences.H>
 
 namespace flw {
+namespace util {
 
-
-/***
+/*
  *      _____                     _   __  __
  *     |  __ \                   | | |  \/  |
  *     | |__) |___  ___ ___ _ __ | |_| \  / | ___ _ __  _   _
@@ -77,7 +77,9 @@ private:
     Fl_Menu_*                   _menu;
     void*                       _user;
 };
-}
+
+} // util
+} // flw
 
 // MKALGAM_OFF
 

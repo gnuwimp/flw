@@ -11,6 +11,7 @@
 // MKALGAM_ON
 
 namespace flw {
+namespace util {
 
 /***
  *      _____                     _   __  __
@@ -179,6 +180,7 @@ void RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
     pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), "");
 }
 
+} // util
 } // flw
 
 // MKALGAM_OFF
