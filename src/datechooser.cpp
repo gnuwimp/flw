@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief A date chooser widget.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "datechooser.h"
 #include "flw.h"
@@ -438,7 +443,7 @@ void flw::DateChooser::set(const gnu::Date& date) {
 void flw::DateChooser::_set_label() {
     auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
     auto date   = canvas->get();
-    auto string = date.format(gnu::Date::FORMAT::WEEKDAY_MONTH_YEAR);
+    auto string = date.format(gnu::Date::Format::WEEKDAY_MONTH_YEAR);
 
     _month_label->copy_label(string.c_str());
 }
