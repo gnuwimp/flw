@@ -233,13 +233,13 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             auto string = std::string();
 
             if (format == Format::DATE_WORLD) {
-                string = date.format(gnu::Date::FORMAT::WORLD);
+                string = date.format(gnu::Date::Format::WORLD);
             }
             else if (format == Format::DATE_US) {
-                string = date.format(gnu::Date::FORMAT::US);
+                string = date.format(gnu::Date::Format::US);
             }
             else {
-                string = date.format(gnu::Date::FORMAT::ISO_LONG);
+                string = date.format(gnu::Date::Format::ISO_LONG);
             }
 
             fl_font(textfont, textsize);
@@ -659,7 +659,7 @@ void Editor::_edit_quick(const std::string& key) {
             date.add_years(-1);
         }
 
-        auto string = date.format(gnu::Date::FORMAT::ISO_LONG);
+        auto string = date.format(gnu::Date::Format::ISO_LONG);
 
         if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
@@ -754,7 +754,7 @@ void Editor::_edit_show_dlg() {
         auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
         auto result = flw::dlg::date(table::EditDateLabel, date1, top_window());
-        auto string = date1.format(gnu::Date::FORMAT::ISO_LONG);
+        auto string = date1.format(gnu::Date::Format::ISO_LONG);
 
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
@@ -1121,7 +1121,7 @@ int Editor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    string = date.format(gnu::Date::FORMAT::ISO_LONG);
+                    string = date.format(gnu::Date::Format::ISO_LONG);
                     text = string.c_str();
                 }
 

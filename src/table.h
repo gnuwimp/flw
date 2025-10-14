@@ -21,7 +21,8 @@ namespace table {
 
 /** @brief Table editor widget with embedded data storage.
 *
-* To show and edit simple tables.
+* To show and edit simple tables.\n
+* To do more advanced editing, storing and validating of data use flw::table::Editor.\n
 *
 * @snippet table.cpp flw::table::Table example
 * @image html table.png
