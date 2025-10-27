@@ -508,6 +508,8 @@ public:
     Test(int W, int H) : Fl_Double_Window(W, H, "test_chart.cpp") {
         end();
 
+        dlg::options(this);
+
         menu  = new Fl_Menu_Bar(0, 0, 0, 0);
         chart = new chart::Chart();
 
@@ -566,17 +568,14 @@ public:
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
         menu::set_item(menu, "&Settings/srand(time)", true);
-//        menu::set_item(menu, "&Settings/srand(666)", true); RAND = 666; TEST = TEST_RIGHT_10;
+        //menu::set_item(menu, "&Settings/srand(666)", true); RAND = 666; TEST = TEST_RIGHT_10;
         menu->textsize(flw::PREF_FONTSIZE);
         util::labelfont(this);
 
-        resize(0, 0, W, H);
-        create_chart();
         resizable(this);
-        size_range(64, 48);
         show();
-        
-        flw::util::labelfont(this);
+        resize(300, 300, W, H);
+        create_chart();
     }
 
     //--------------------------------------------------------------------------
@@ -798,7 +797,7 @@ public:
         Fl_Double_Window::resize(X, Y, W, H);
         menu->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
         chart->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
-//         chart->resize(100, 100, W - 200, H - 200);
+         //chart->resize(100, 100, W - 200, H - 200);
     }
 
     //--------------------------------------------------------------------------

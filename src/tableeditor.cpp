@@ -284,7 +284,7 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             }
         }
         else if (type == Type::NUMBER || type == Type::VSLIDER) {
-            auto num = util::to_double(val, 0.0);
+            auto num = util::to_double(val);
 
             if (type == Type::VSLIDER) {
                 double nums[1];
@@ -294,7 +294,10 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
                 }
             }
 
-            if (format == Format::DEC_0) {
+            if (std::isinf(num) == true) {
+                snprintf(buffer, 100, "%s", "inf");
+            }
+            else if (format == Format::DEC_0) {
                 snprintf(buffer, 100, "%.0f", num);
             }
             else if (format == Format::DEC_1) {
@@ -579,9 +582,12 @@ void Editor::_edit_quick(const std::string& key) {
         }
     }
     else if (rend == Type::NUMBER) {
-        auto num = util::to_double(val, 0.0);
+        auto num = util::to_double(val);
 
-        if (key == table::INC_SMALL) {
+        if (std::isinf(num) == true) {
+            num = 0.0;
+        }
+        else if (key == table::INC_SMALL) {
             num += 0.1;
         }
         else if (key == table::INC_MEDIUM) {
@@ -753,7 +759,7 @@ void Editor::_edit_show_dlg() {
     else if (rend == Type::DATE) {
         auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
-        auto result = flw::dlg::date(table::EditDateLabel, date1, top_window());
+        auto result = flw::dlg::date(table::EditDateLabel, date1);
         auto string = date1.format(gnu::Date::Format::ISO_LONG);
 
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
@@ -780,7 +786,7 @@ void Editor::_edit_show_dlg() {
     else if (rend == Type::MTEXT) {
         auto val2 = val;
 
-        if (dlg::text_edit(table::EditTextLabel.c_str(), val2, top_window()) == true) {
+        if (dlg::text_edit(table::EditTextLabel.c_str(), val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
                 do_callback();
@@ -844,7 +850,7 @@ void Editor::_edit_stop(bool save) {
                     val2 = buffer;
                 }
                 else if (type == Type::NUMBER) {
-                    auto num = util::to_double(val2, 0.0);
+                    auto num = util::to_double(val2);
                     snprintf(buffer, 100, "%f", num);
                     val2 = buffer;
                 }
@@ -1106,7 +1112,7 @@ int Editor::_ev_paste() {
                     return 1;
                 }
                 else {
-                    auto num = util::to_double(text, 0.0);
+                    auto num = util::to_double(text);
                     snprintf(buffer, 100, "%f", num);
                     text = buffer;
                 }

@@ -40,42 +40,54 @@ namespace dlg {
  *
  */
 
-extern const char*              PASSWORD_CANCEL;
-extern const char*              PASSWORD_OK;
-
-void                            center_message_dialog();
-bool                            date(const std::string& title, gnu::Date& date, Fl_Window* parent = nullptr, int W = 33, int H = 21);
+Fl_Button*                      button(int X, int Y, int W, int H, const std::string& l);
+Fl_Button*                      button(int X, int Y, int W, int H, const std::string& l, const std::string& icon, bool ret = false);
+void                            center_fl_message_dialog();
+bool                            date(const std::string& title, gnu::Date& date, int W = 33, int H = 21);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
-void                            html(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list(const std::string& title, const std::string& list, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
+void                            html(const std::string& title, const std::string& text, int W = 40, int H = 23);
+std::string                     input(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 11);
+std::string                     input_double(const std::string& title, const std::string& message, double& value, int W = 40, int H = 11);
+std::string                     input_int(const std::string& title, const std::string& message, int64_t& value, int W = 40, int H = 11);
+std::string                     input_multi(const std::string& title, const std::string& message, std::string& value, int W = 54, int H = 22);
+std::string                     input_secret(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 11);
+void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, int W = 40, int H = 23);
+void                            list(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
+void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, int W = 40, int H = 23);
+void                            msg(const std::string& title, const std::string& message, int W = 40, int H = 9);
+std::string                     msg_ask(const std::string& title, const std::string& message, const std::string& b1 = label::YES, const std::string& b2 = label::NO, const std::string& b3 = "", const std::string& b4 = "", const std::string& b5 = "", int W = 54, int H = 9);
+void                            msg_alert(const std::string& title, const std::string& message, int W = 40, int H = 9);
+void                            msg_error(const std::string& title, const std::string& message, int W = 40, int H = 9);
+std::string                     msg_warning(const std::string& title, const std::string& message, const std::string& b1 = label::YES, const std::string& b2 = label::NO, int W = 40, int H = 9);
+void                            options(Fl_Window* parent = Fl::first_window(), bool msg_icon_border = true, bool msg_label_border = false, bool msg_active_color = false);
+void                            options_pop();
+void                            options_push();
 void                            panic(const std::string& message);
-bool                            password(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password_confirm(const std::string& title, std::string& password, Fl_Window* parent = nullptr);
-bool                            password_confirm_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-bool                            password_and_file(const std::string& title, std::string& password, std::string& file, Fl_Window* parent = nullptr);
-void                            print(const std::string& title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0, Fl_Window* parent = nullptr);
-bool                            print_text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr);
-bool                            print_text(const std::string& title, const StringVector& text, Fl_Window* parent = nullptr);
-StringVector                    select_checkboxes(const std::string& title, const StringVector& list, Fl_Window* parent = nullptr);
-int                             select_choice(const std::string& title, const StringVector& list, int selected = 0, Fl_Window* parent = nullptr);
-int                             select_string(const std::string& title, const StringVector& list, int select_row, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-int                             select_string(const std::string& title, const StringVector& list, const std::string& select_row, bool fixed_font = false, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-bool                            slider(const std::string& title, double min, double max, double& value, double step = 1.0, Fl_Window* parent = nullptr);
-void                            text(const std::string& title, const std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-bool                            text_edit(const std::string& title, std::string& text, Fl_Window* parent = nullptr, int W = 40, int H = 23);
-void                            theme(bool enable_font = false, bool enable_fixedfont = false, Fl_Window* parent = nullptr);
+bool                            password(const std::string& title, std::string& password);
+bool                            password_confirm(const std::string& title, std::string& password);
+bool                            password_confirm_and_file(const std::string& title, std::string& password, std::string& file);
+bool                            password_and_file(const std::string& title, std::string& password, std::string& file);
+void                            print(const std::string& title, PrintCallback cb, void* data = nullptr, int from = 1, int to = 0);
+bool                            print_text(const std::string& title, const std::string& text);
+bool                            print_text(const std::string& title, const StringVector& text);
+StringVector                    select_checkboxes(const std::string& title, const StringVector& list);
+int                             select_choice(const std::string& title, const StringVector& list, int selected = 0);
+int                             select_string(const std::string& title, const StringVector& list, int select_row, bool fixed_font = false, int W = 40, int H = 23);
+int                             select_string(const std::string& title, const StringVector& list, const std::string& select_row, bool fixed_font = false, int W = 40, int H = 23);
+bool                            slider(const std::string& title, double min, double max, double& value, double step = 1.0);
+void                            text(const std::string& title, const std::string& text, int W = 40, int H = 23);
+bool                            text_edit(const std::string& title, std::string& text, int W = 40, int H = 23);
+void                            theme(bool enable_font = false, bool enable_fixedfont = false);
 
 /**
- *      ______          _   
- *     |  ____|        | |  
- *     | |__ ___  _ __ | |_ 
+ *      ______          _
+ *     |  ____|        | |
+ *     | |__ ___  _ __ | |_
  *     |  __/ _ \| '_ \| __|
- *     | | | (_) | | | | |_ 
+ *     | | | (_) | | | | |_
  *     |_|  \___/|_| |_|\__|
- *                          
- *                          
+ *
+ *
  */
 
 /** @brief A dialog for selecting font and font size.
@@ -105,7 +117,7 @@ public:
                                     { return _fontname; } ///< @brief Return selected font name.
     int                         fontsize()
                                     { return _fontsize; } ///< @brief Return selected font size.
-    bool                        run(Fl_Window* parent = nullptr);
+    bool                        run();
 
 private:
     void                        _activate();
@@ -150,7 +162,7 @@ class Progress : public Fl_Double_Window {
 public:
                                 Progress(const std::string& title, bool cancel = false, bool pause = false, double min = 0.0, double max = 0.0);
     void                        range(double min, double max);
-    void                        start(Fl_Window* parent = nullptr);
+    void                        start();
     bool                        update(const StringVector& messages, unsigned milli = 100);
     bool                        update(double value, const StringVector& messages, unsigned milli = 100);
     bool                        update(const std::string& message, unsigned milli = 100);

@@ -134,6 +134,7 @@ public:
         resizable(this);
         size_range(64, 48);
         menu = nullptr;
+        dlg::options(this);
     }
 
     void create() {
@@ -409,7 +410,7 @@ public:
     }
 
     static void CallbackTheme(Fl_Widget*, void*) {
-        flw::dlg::theme(true, true, TEST);
+        flw::dlg::theme(true, true);
         TEST->clear();
         TEST->create();
         TEST->update_pref();

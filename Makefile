@@ -146,7 +146,7 @@ obj/test_chart.o: test/test_chart.cpp src/chart.h $(OBJ)
 test_chart.exe: obj/test_chart.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_chart: test_chart.exe
+chart: test_chart.exe
 	./test_chart.exe $(arg)
 
 debug_chart: test_chart.exe
@@ -160,7 +160,7 @@ obj/test_datechooser.o: test/test_datechooser.cpp $(OBJ)
 test_datechooser.exe: obj/test_datechooser.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_datechooser: test_datechooser.exe
+datechooser: test_datechooser.exe
 	./test_datechooser.exe $(arg)
 
 #-------------------
@@ -171,7 +171,7 @@ obj/test_dlg.o: test/test_dlg.cpp $(OBJ) src/icons.h
 test_dlg.exe: obj/test_dlg.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_dlg: test_dlg.exe
+dlg: test_dlg.exe
 	./test_dlg.exe $(arg)
 
 #-------------------
@@ -182,7 +182,7 @@ obj/test_gridgroup.o: test/test_gridgroup.cpp $(OBJ)
 test_gridgroup.exe: obj/test_gridgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_gridgroup: test_gridgroup.exe
+gridgroup: test_gridgroup.exe
 	./test_gridgroup.exe $(arg)
 
 #-------------------
@@ -193,7 +193,7 @@ obj/test_inputmenu.o: test/test_inputmenu.cpp $(OBJ)
 test_inputmenu.exe: obj/test_inputmenu.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_inputmenu: test_inputmenu.exe
+inputmenu: test_inputmenu.exe
 	./test_inputmenu.exe $(arg)
 
 debug_inputmenu: test_inputmenu.exe
@@ -207,7 +207,7 @@ obj/test_lcddisplay.o: test/test_lcddisplay.cpp $(OBJ)
 test_lcddisplay.exe: obj/test_lcddisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_lcddisplay: test_lcddisplay.exe
+lcddisplay: test_lcddisplay.exe
 	./test_lcddisplay.exe $(arg)
 
 #-------------------
@@ -218,7 +218,7 @@ obj/test_logdisplay.o: test/test_logdisplay.cpp $(OBJ)
 test_logdisplay.exe: obj/test_logdisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_logdisplay: test_logdisplay.exe
+logdisplay: test_logdisplay.exe
 	./test_logdisplay.exe $(arg)
 
 #-------------------
@@ -229,7 +229,7 @@ obj/test_plot.o: test/test_plot.cpp $(OBJ)
 test_plot.exe: obj/test_plot.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_plot: test_plot.exe
+plot: test_plot.exe
 	./test_plot.exe $(arg)
 
 #-------------------
@@ -240,7 +240,7 @@ obj/test_recentmenu.o: test/test_recentmenu.cpp $(OBJ)
 test_recentmenu.exe: obj/test_recentmenu.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_recentmenu: test_recentmenu.exe
+recentmenu: test_recentmenu.exe
 	./test_recentmenu.exe $(arg)
 
 #-------------------
@@ -251,7 +251,7 @@ obj/test_splitgroup.o: test/test_splitgroup.cpp $(OBJ)
 test_splitgroup.exe: obj/test_splitgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_splitgroup: test_splitgroup.exe
+splitgroup: test_splitgroup.exe
 	./test_splitgroup.exe $(arg)
 
 #-------------------
@@ -262,7 +262,7 @@ obj/test_scrollbrowser.o: test/test_scrollbrowser.cpp $(OBJ)
 test_scrollbrowser.exe: obj/test_scrollbrowser.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_scrollbrowser: test_scrollbrowser.exe
+scrollbrowser: test_scrollbrowser.exe
 	./test_scrollbrowser.exe $(arg)
 
 #-------------------
@@ -273,7 +273,7 @@ obj/test_table.o: test/test_table.cpp $(OBJ)
 test_table.exe: obj/test_table.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_table: test_table.exe
+table: test_table.exe
 	./test_table.exe $(arg)
 
 #-------------------
@@ -284,7 +284,7 @@ obj/test_tabledisplay.o: test/test_tabledisplay.cpp $(OBJ)
 test_tabledisplay.exe: obj/test_tabledisplay.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_tabledisplay: test_tabledisplay.exe
+tabledisplay: test_tabledisplay.exe
 	./test_tabledisplay.exe $(arg)
 
 #-------------------
@@ -295,7 +295,7 @@ obj/test_tableeditor.o: test/test_tableeditor.cpp $(OBJ)
 test_tableeditor.exe: obj/test_tableeditor.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_tableeditor: test_tableeditor.exe
+tableeditor: test_tableeditor.exe
 	./test_tableeditor.exe $(arg)
 
 #-------------------
@@ -306,7 +306,7 @@ obj/test_tabsgroup.o: test/test_tabsgroup.cpp $(OBJ)
 test_tabsgroup.exe: obj/test_tabsgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_tabsgroup: test_tabsgroup.exe
+tabsgroup: test_tabsgroup.exe
 	./test_tabsgroup.exe $(arg)
 
 #-------------------
@@ -317,7 +317,7 @@ obj/test_toolgroup.o: test/test_toolgroup.cpp $(OBJ)
 test_toolgroup.exe: obj/test_toolgroup.o $(OBJ) $(THEME_RESOURCE)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_toolgroup: test_toolgroup.exe
+toolgroup: test_toolgroup.exe
 	./test_toolgroup.exe $(arg)
 
 #-------------------
@@ -328,7 +328,7 @@ obj/test_theme.o: test/test_theme.cpp $(OBJ)
 test_theme.exe: obj/test_theme.o $(OBJ) $(THEME_RESOURCE)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-run_theme: test_theme.exe
+theme: test_theme.exe
 	./test_theme.exe $(arg)
 
 debug_theme: test_theme.exe

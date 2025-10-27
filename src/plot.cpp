@@ -108,7 +108,7 @@ public:
         end();
 
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
@@ -920,11 +920,11 @@ bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
 */
 bool Plot::create_line(Algorithm alg) {
     if (_selected_line >= _lines.size()) {
-        fl_alert("Line has not been selected!");
+        dlg::msg_alert("Plot Error", "Line has not been selected!");
         return false;
     }
     else if (_lines.size() >= plot::MAX_LINES) {
-        fl_alert("Max line count reached!");
+        dlg::msg_alert("Plot Error", "Max line count reached!");
         return false;
     }
 
@@ -934,25 +934,26 @@ bool Plot::create_line(Algorithm alg) {
 
     if (alg == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Select Modification", list, 0, top_window());
+        auto ans  = dlg::select_choice("Select Modification", list, 0);
 
         if (ans < 0 || ans > static_cast<int>(plot::Modifier::LAST)) {
             return false;
         }
 
         auto modify = static_cast<plot::Modifier>(ans);
-        auto value  = util::to_double(fl_input_str(16, "Enter value", "0"));
+        auto value  = 0.0;
+        auto answer = flw::dlg::input_double("Plot", "Enter value.", value);
 
-        if (std::isinf(value) == true) {
+        if (answer == flw::label::CANCEL || std::isinf(value) == true) {
             return false;
         }
         else if (fabs(value) < plot::MIN_VALUE) {
-            fl_alert("To small value for division!");
+            dlg::msg_alert("Plot Error", "To small value for division!");
             return false;
         }
 
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
-        ans    = dlg::select_choice("Select Target", list, 0, top_window());
+        ans    = dlg::select_choice("Select Target", list, 0);
         vec1   = Point::Modify(line0.data(), modify, (ans == 0 ? plot::Value::X : ans == 1 ? plot::Value::Y : plot::Value::X_AND_Y), value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
@@ -962,7 +963,7 @@ bool Plot::create_line(Algorithm alg) {
     }
 
     if (vec1.size() == 0) {
-        fl_alert("To few data values!");
+        dlg::msg_alert("Plot Error", "To few data values!");
         return false;
     }
 
@@ -1681,7 +1682,7 @@ bool Plot::load_json() {
 * @return True if ok.
 */
 bool Plot::load_json(const std::string& filename) {
-#define _FLW_PLOT_ERROR(X) { fl_alert("error: illegal plot value at pos %u", (X)->pos()); reset(); return false; }
+#define _FLW_PLOT_ERROR(X) { dlg::msg_alert("JSON Error", util::format("Illegal plot value at pos %u", (X)->pos())); reset(); return false; }
     _filename = "";
 
     reset();
@@ -1691,7 +1692,7 @@ bool Plot::load_json(const std::string& filename) {
     auto buf = gnu::file::read(filename);
 
     if (buf.c_str() == nullptr) {
-        fl_alert("error: failed to load %s", filename.c_str());
+        dlg::msg_alert("JSON Error", util::format("Failed to load %s", filename.c_str()));
         return false;
     }
 
@@ -1701,7 +1702,7 @@ bool Plot::load_json(const std::string& filename) {
     double clamp[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
 
     if (js.has_err() == true) {
-        fl_alert("error: failed to parse %s (%s)", filename.c_str(), js.err_c());
+        dlg::msg_alert("JSON Error", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
         return false;
     }
 
@@ -1793,7 +1794,7 @@ bool Plot::load_json(const std::string& filename) {
 */
 bool Plot::load_line_from_csv() {
     if (_lines.size() >= plot::MAX_LINES) {
-        fl_alert("Max line count reached!");
+        dlg::msg_alert("Plot Error", "Max line count reached!");
         return false;
     }
 
@@ -1806,7 +1807,7 @@ bool Plot::load_line_from_csv() {
     auto vec = Point::LoadCSV(filename);
 
     if (vec.size() == 0) {
-        fl_alert("To few data values!");
+        dlg::msg_alert("Plot Error", "To few data values!");
         return false;
     }
 
@@ -1823,7 +1824,7 @@ bool Plot::load_line_from_csv() {
 */
 void Plot::print_to_postscript() {
     _printing = true;
-    dlg::print("Print Plot", Plot::_CallbackPrinter, this, 1, 1, top_window());
+    dlg::print("Print Plot", Plot::_CallbackPrinter, this, 1, 1);
     _printing = false;
     redraw();
 }
@@ -1963,7 +1964,7 @@ bool Plot::save_json(const std::string& filename) {
         return res;
     }
     catch(const std::string& e) {
-        fl_alert("error: failed to encode json\n%s", e.c_str());
+        dlg::msg_alert("JSON Error", util::format("Failed to encode json\n%s", e.c_str()));
         return false;
     }
 }
@@ -1991,7 +1992,7 @@ bool Plot::save_line_to_csv() {
 * @return True if ok.
 */
 bool Plot::save_png() {
-    return flw::util::png_save("", window(), x(),  y(),  w(),  h());
+    return flw::util::png_save(window(), "", x(),  y(),  w(),  h());
 }
 
 /** @brief Ask for min or max clamp value.
@@ -2005,41 +2006,44 @@ void Plot::setup_clamp(Clamp clamp) {
     switch (clamp) {
         case plot::Clamp::MINX:
             val = _min_x;
-            info = "Set min X value or inf to disable";
+            info = "Set min X value or press cancel to remove.";
             break;
+
         case plot::Clamp::MAXX:
             val = _max_x;
-            info = "Set max X value or inf to disable";
+            info = "Set max X value or press cancel to remove.";
             break;
+
         case plot::Clamp::MINY:
             val = _min_y;
-            info = "Set min Y value or inf to disable";
+            info = "Set min Y value or press cancel to remove.";
             break;
+
         case plot::Clamp::MAXY:
             val = _max_y;
-            info = "Set max Y value or inf to disable";
+            info = "Set max Y value or press cancel to remove.";
             break;
     }
 
-    auto input  = (std::isfinite(val) == true) ? util::format("%f", val) : "inf";
-    auto output = fl_input_str(16, "%s", input.c_str(), info.c_str());
+    auto answer = flw::dlg::input_double("Plot", info, val);
 
-    if (output == "") {
-        return;
+    if (answer == flw::label::CANCEL) {
+        val = INFINITY;
     }
-
-    val = util::to_double(output);
 
     switch (clamp) {
         case plot::Clamp::MINX:
             _min_x = val;
             break;
+
         case plot::Clamp::MAXX:
             _max_x = val;
             break;
+
         case plot::Clamp::MINY:
             _min_y = val;
             break;
+
         case plot::Clamp::MAXY:
             _max_y = val;
             break;
@@ -2053,11 +2057,11 @@ void Plot::setup_clamp(Clamp clamp) {
 */
 void Plot::setup_create_line() {
     if (_selected_line >= _lines.size()) {
-        fl_alert("Line has not been selected!");
+        dlg::msg_alert("Plot Error", "Line has not been selected!");
         return;
     }
     else if (_lines.size() >= plot::MAX_LINES) {
-        fl_alert("Max line count reached!");
+        dlg::msg_alert("Plot Error", "Max line count reached!");
         return;
     }
 
@@ -2066,7 +2070,7 @@ void Plot::setup_create_line() {
         "Swap values",
     };
 
-    switch (dlg::select_choice("Select Formula", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Formula", list, 0)) {
         case 0:
             create_line(Algorithm::MODIFY);
             break;
@@ -2087,7 +2091,7 @@ void Plot::setup_delete_lines() {
     }
 
     auto list = _create_check_labels(false);
-    list = dlg::select_checkboxes("Delete Lines", list, top_window());
+    list = dlg::select_checkboxes("Delete Lines", list);
 
     if (list.size() == 0) {
         return;
@@ -2110,35 +2114,44 @@ void Plot::setup_delete_lines() {
 * @param[in] val  What label to set.
 */
 void Plot::setup_label(Label val) {
-    const char* l = nullptr;
+    std::string l, answer;
 
     switch (val) {
         case plot::Label::MAIN:
-            l = fl_input(40, "Enter main label", _label.c_str());
+            l = _label;
+            answer = flw::dlg::input("Plot", "Enter main label", l);
             break;
+
         case plot::Label::X:
-            l = fl_input(40, "Enter X label", _x.label().c_str());
+            l = _x.label();
+            answer = flw::dlg::input("Plot", "Enter X label", l);
             break;
+
         case plot::Label::Y:
-            l = fl_input(40, "Enter Y label", _y.label().c_str());
+            l = _y.label();
+            answer = flw::dlg::input("Plot", "Enter Y label", l);
             break;
     }
 
-    if (l != nullptr) {
-        switch (val) {
-            case plot::Label::MAIN:
-                _label = l;
-                break;
-            case plot::Label::X:
-                _x.set_label(l);
-                break;
-            case plot::Label::Y:
-                _y.set_label(l);
-                break;
-        }
-
-        init();
+    if (answer == flw::label::CANCEL) {
+        return;
     }
+
+    switch (val) {
+        case plot::Label::MAIN:
+            _label = l;
+            break;
+
+        case plot::Label::X:
+            _x.set_label(l);
+            break;
+
+        case plot::Label::Y:
+            _y.set_label(l);
+            break;
+    }
+
+    init();
 }
 
 /** @brief Show and property dialog for current line.
@@ -2168,7 +2181,7 @@ void Plot::setup_show_or_hide_lines() {
     }
 
     auto list = _create_check_labels(true);
-    list = dlg::select_checkboxes("Show Or Hide Lines", list, top_window());
+    list = dlg::select_checkboxes("Show Or Hide Lines", list);
 
     if (list.size() == 0) {
         return;

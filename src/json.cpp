@@ -248,7 +248,7 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
 */
 static std::string _format_error(unsigned source, unsigned pos, unsigned line) {
     char buf[256];
-    snprintf(buf, 256, "error: invalid json (%u) at pos %u and line %u", source, pos, line);
+    snprintf(buf, 256, "Error: invalid json (%u) at pos %u and line %u", source, pos, line);
     return buf;
 }
 
@@ -1589,7 +1589,7 @@ json::Builder& json::Builder::add(JS* js) {
     if (_current == nullptr) {
         if (name != "") {
             delete js;
-            throw std::string("error: root object must be nameless <" + name + ">");
+            throw std::string("Error: root object must be nameless <" + name + ">.");
         }
         else {
             _root = _current = js;
@@ -1601,7 +1601,7 @@ json::Builder& json::Builder::add(JS* js) {
         if (_current->is_array() == true) {
             if (name != "") {
                 delete js;
-                throw std::string("error: values added to array are nameless <" + name + ">");
+                throw std::string("Error: values added to array are nameless <" + name + ">.");
             }
             else if (*js == TYPE::ARRAY || *js == TYPE::OBJECT) {
                 _current->_va->push_back(js);
@@ -1614,7 +1614,7 @@ json::Builder& json::Builder::add(JS* js) {
         else if (_current->is_object() == true) {
             if (_current->find(name) != nullptr) {
                 delete js;
-                throw std::string("error: duplicate name <" + name + ">");
+                throw std::string("Error: duplicate name <" + name + ">.");
             }
             else if (js->is_array() == true || js->is_object() == true) {
                 (*_current->_vo)[name] = js;
@@ -1626,7 +1626,7 @@ json::Builder& json::Builder::add(JS* js) {
         }
         else {
             delete js;
-            throw std::string("error: missing container");
+            throw std::string("Error: missing container.");
         }
     }
 
@@ -1643,10 +1643,10 @@ json::Builder& json::Builder::add(JS* js) {
 */
 std::string json::Builder::encode(ENCODE option) const {
     if (_root == nullptr) {
-        throw std::string("error: empty json");
+        throw std::string("Error: empty json.");
     }
     else if (_name != "") {
-        throw std::string("error: unused name value <" + _name + ">");
+        throw std::string("Error: unused name value <" + _name + ">.");
     }
 
     auto j = json::encode(*_root, option);
@@ -1666,10 +1666,10 @@ std::string json::Builder::encode(ENCODE option) const {
 */
 json::Builder& json::Builder::end() {
     if (_current == nullptr) {
-        throw std::string("error: empty json");
+        throw std::string("Error: empty json.");
     }
     else if (_current == _root) {
-        throw std::string("error: already at the top level");
+        throw std::string("Error: already at the top level.");
     }
 
     _current = _current->parent();

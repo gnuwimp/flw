@@ -49,7 +49,7 @@ public:
     void                        align(Fl_Align align)
                                     { _align = align; Fl::redraw(); } ///< @brief Set LCD alignment.
     int                         dot_size() const
-                                    { return _dot_size; } ///< @brief ///< @brief Get dot size.
+                                    { return _dot_size; } ///< @brief Get dot size.
     void                        dot_size(int size)
                                     { _dot_size = size; Fl::redraw(); } ///< @brief Set dot size in pixels.
     void                        draw() override;

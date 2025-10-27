@@ -114,7 +114,7 @@ public:
 
         _align  = new Fl_Choice(0, 0, 0, 0, "Align");
         _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, "&Ok");
+        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::label::OK.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
@@ -1857,11 +1857,11 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
 */
 bool Chart::create_line(Algorithm formula, bool support) {
     if (_area == nullptr || _area->selected_line() == nullptr) {
-        fl_alert("Error: area or line has not been selected!");
+        dlg::msg_alert("Chart Error", "Area or line has not been selected!");
         return false;
     }
     else if (_area->size() >= Area::MAX_LINES) {
-        fl_alert("Error: max line count reached!");
+        dlg::msg_alert("Chart Error", "Max line count reached!");
         return false;
     }
 
@@ -1880,9 +1880,14 @@ bool Chart::create_line(Algorithm formula, bool support) {
     auto type3  = LineType::LINE;
 
     if (formula == Algorithm::ATR) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL) {
+            return false;
+        }
+        else if (days < 2 || days > 365) {
+            flw::dlg::msg_alert("Chart", "Days are out of range!");
             return false;
         }
 
@@ -1890,23 +1895,24 @@ bool Chart::create_line(Algorithm formula, bool support) {
         label1 = util::format("ATR %d Days", days);
     }
     else if (formula == Algorithm::DAY_TO_WEEK) {
-        auto answer = fl_choice("Would you like to use highest/lowest and last close value per week?\nOr sum values per week?", nullptr, "High/Low", "Sum");
+        auto answer = dlg::msg_ask("Chart", "Would you like to use highest/lowest and last close value per week?\nOr sum values per week?", "Sum", "High/Low");
 
-        vec1   = Point::DayToWeek(line0->data(), gnu::Date::Day::SUNDAY, answer == 2);
+        vec1   = Point::DayToWeek(line0->data(), gnu::Date::Day::SUNDAY, answer == "Sum");
         label1 = "Weekly (Sunday)";
         type1  = line0->type();
     }
     else if (formula == Algorithm::DAY_TO_MONTH) {
-        auto answer = fl_choice("Would you like to use highest/lowest and last close value per month?\nOr sum values per month?", nullptr, "High/Low", "Sum");
+        auto answer = dlg::msg_ask("Chart", "Would you like to use highest/lowest and last close value per month?\nOr sum values per month?", "Sum", "High/Low");
 
-        vec1   = Point::DayToMonth(line0->data(), answer == 2);
+        vec1   = Point::DayToMonth(line0->data(), answer == "Sum");
         label1 = "Monthly";
         type1  = line0->type();
     }
     else if (formula == Algorithm::EXP_MOVING_AVERAGE) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1914,9 +1920,10 @@ bool Chart::create_line(Algorithm formula, bool support) {
         label1 = util::format("Exponential Moving Average %d Days", days);
     }
     else if (formula == Algorithm::FIXED) {
-        auto value = util::to_double(fl_input_str(16, "Enter value", "0"));
+        auto value  = 0.0;
+        auto answer = flw::dlg::input_double("Chart", "Enter value.", value);
 
-        if (std::isinf(value) == true) {
+        if (answer == flw::label::CANCEL || std::isinf(value) == true) {
             return false;
         }
 
@@ -1926,20 +1933,21 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
     else if (formula == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Select Modification", list, 0, top_window());
+        auto ans  = dlg::select_choice("Select Modification", list, 0);
 
         if (ans < 0 || ans > static_cast<int>(Modifier::LAST)) {
             return false;
         }
 
         auto modify = static_cast<Modifier>(ans);
-        auto value  = util::to_double(fl_input_str(16, "Enter value", "0"));
+        auto value  = 0.0;
+        auto answer = flw::dlg::input_double("Chart", "Enter value.", value);
 
-        if (std::isinf(value) == true) {
+        if (answer == flw::label::CANCEL || std::isinf(value) == true) {
             return false;
         }
         else if (fabs(value) < chart::MIN_VALUE) {
-            fl_alert("Error: to small value for division!");
+            dlg::msg_alert("Chart Error", "To small value for division!");
             return false;
         }
 
@@ -1948,9 +1956,10 @@ bool Chart::create_line(Algorithm formula, bool support) {
         type1  = line0->type();
     }
     else if (formula == Algorithm::MOMENTUM) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1964,9 +1973,10 @@ bool Chart::create_line(Algorithm formula, bool support) {
         }
     }
     else if (formula == Algorithm::MOVING_AVERAGE) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1974,9 +1984,10 @@ bool Chart::create_line(Algorithm formula, bool support) {
         label1 = util::format("Moving Average %d Days", days);
     }
     else if (formula == Algorithm::RSI) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1993,9 +2004,10 @@ bool Chart::create_line(Algorithm formula, bool support) {
         }
     }
     else if (formula == Algorithm::STD_DEV) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -2003,9 +2015,10 @@ bool Chart::create_line(Algorithm formula, bool support) {
         label1 = util::format("Std. dev. %d Days", days);
     }
     else if (formula == Algorithm::STOCHASTICS) {
-        auto days = util::to_long(fl_input_str(3, "Enter number of days (2 - 365)", "14"));
+        auto days   = (int64_t) 14;
+        auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (days < 2 || days > 365) {
+        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -2023,7 +2036,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
 
     if (vec1.size() == 0) {
-        fl_alert("Error: no data!");
+        dlg::msg_alert("Chart Error", "No data!");
         return false;
     }
 
@@ -3019,7 +3032,7 @@ bool Chart::load_json() {
 * @return True if ok.
 */
 bool Chart::load_json(const std::string& filename) {
-    #define _FLW_CHART_ERROR(X) { fl_alert("Error: illegal chart value at pos %u", (X)->pos()); reset(); return false; }
+    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart Error", "Illegal chart value at pos %u", (X)->pos()); reset(); return false; }
 
     _filename = "";
 
@@ -3030,14 +3043,14 @@ bool Chart::load_json(const std::string& filename) {
     auto buf = gnu::file::read(filename);
 
     if (buf.c_str() == nullptr) {
-        fl_alert("Error: failed to load %s", filename.c_str());
+        dlg::msg_alert("Chart Error", util::format("Failed to load %s", filename.c_str()));
         return false;
     }
 
     auto js = gnu::json::decode(buf.c_str(), buf.size(), true);
 
     if (js.has_err() == true) {
-        fl_alert("Error: failed to parse %s (%s)", filename.c_str(), js.err_c());
+        dlg::msg_alert("Chart Error", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
         return false;
     }
 
@@ -3047,7 +3060,7 @@ bool Chart::load_json(const std::string& filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != chart::VERSION) { fl_alert("Error: wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
+                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart Error", "Wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -3147,7 +3160,7 @@ bool Chart::load_json(const std::string& filename) {
 */
 bool Chart::load_line_from_csv() {
     if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
-        fl_alert("Error: max line count reached!");
+        dlg::msg_alert("Chart Error", "Max line count reached!");
         return false;
     }
 
@@ -3160,7 +3173,7 @@ bool Chart::load_line_from_csv() {
     auto vec = Point::LoadCSV(filename);
 
     if (vec.size() == 0) {
-        fl_alert("Error: no data!");
+        dlg::msg_alert("Chart Error", "No data!");
         return false;
     }
 
@@ -3203,7 +3216,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
         auto& dest  = _areas[static_cast<size_t>(destination)];
 
         if (dest.add_line(line2) == false) {
-            fl_alert("Error: target area has reached maximum number of lines!");
+            dlg::msg_alert("Chart Error", "Target area has reached maximum number of lines!");
             return false;
         }
     }
@@ -3217,7 +3230,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
 */
 void Chart::print_to_postscript() {
     _printing = true;
-    dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1, top_window());
+    dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1);
     _printing = false;
     redraw();
 }
@@ -3378,7 +3391,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
         return res;
     }
     catch(const std::string& e) {
-        fl_alert("Error: failed to encode json\n%s", e.c_str());
+        dlg::msg_alert("Chart Error", util::format("Failed to encode json\n%s", e.c_str()));
         return false;
     }
 }
@@ -3392,18 +3405,18 @@ bool Chart::save_line_to_csv() {
         return false;
     }
 
-    auto filename = util::to_string(fl_file_chooser("Save To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
+    auto filename = util::to_string(fl_file_chooser("Save Line To CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
 
     if (util::is_empty(filename) == true) {
         return false;
     }
 
     const auto* line   = _area->selected_line();
-    const auto  answer = fl_choice("Save all data or only those in view?", nullptr, "All", "View");
+    const auto  answer = dlg::msg_ask("Select Range", "Save all data or only those in view?", "View", "All");
     auto        data   = PointVector();
     const auto& ldata  = line->data();
 
-    if (answer == 2) {
+    if (answer == "View") {
         auto curr = _date_start;
         auto stop = _date_start + _ticks;
 
@@ -3423,7 +3436,7 @@ bool Chart::save_line_to_csv() {
     }
 
     if (data.size() == 0) {
-        fl_alert("Error: no data!");
+        dlg::msg_alert("Chart Error", "No data!");
         return false;
     }
     else {
@@ -3436,7 +3449,7 @@ bool Chart::save_line_to_csv() {
 * @return True if ok.
 */
 bool Chart::save_png() {
-    return util::png_save("", top_window(), x() + 1,  y() + 1,  w() - 2,  h() - _scroll->h() - 1);
+    return util::png_save(top_window(), "", x() + 1,  y() + 1,  w() - 2,  h() - _scroll->h() - 1);
 }
 
 /** @brief Set size for all chart areas
@@ -3501,7 +3514,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
 
-    switch (dlg::select_choice("Select Number Of Chart Areas", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Number Of Chart Areas", list, 0)) {
         case 0:
             set_area_size(100);
             break;
@@ -3544,15 +3557,13 @@ void Chart::setup_clamp(bool min) {
 
     auto area   = static_cast<int>(_area->area()) + 1;
     auto clamp  = (min == true) ? _area->clamp_min() : _area->clamp_max();
-    auto input  = (clamp.has_value() == true) ? util::format("%f", clamp.value()) : "inf";
-    auto info   = (min == true) ? util::format("Enter min clamp value or inf to disable for area %d", area) : util::format("Enter max clamp value or inf to disable for area %d", area);
-    auto output = fl_input_str(16, "%s", input.c_str(), info.c_str());
+    auto value  = (clamp.has_value() == true) ? clamp.value() : INFINITY;
+    auto info   = util::format("Enter %s clamp value or press cancel to remove it for area %d.", (min == true) ? "min" : "max", area);
+    auto answer = flw::dlg::input_double("Chart", info, value);
 
-    if (output == "") {
-        return;
+    if (answer == flw::label::CANCEL) {
+        value = INFINITY;
     }
-
-    auto value = util::to_double(output);
 
     if (min == true) {
         _area->set_min_clamp(value);
@@ -3569,11 +3580,11 @@ void Chart::setup_clamp(bool min) {
 */
 void Chart::setup_create_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
-        fl_alert("Error: area or line has not been selected!");
+        dlg::msg_alert("Chart Error", "Area or line has not been selected!");
         return;
     }
     else if (_area->size() >= Area::MAX_LINES) {
-        fl_alert("Error: max line count reached!");
+        dlg::msg_alert("Chart Error", "Max line count reached!");
         return;
     }
 
@@ -3594,7 +3605,7 @@ void Chart::setup_create_line() {
         "Horizontal fixed line"
     };
 
-    switch (dlg::select_choice("Select Formula", list, 0, top_window())) {
+    switch (dlg::select_choice("Select Formula", list, 0)) {
         case 0:
             create_line(Algorithm::MOVING_AVERAGE);
             break;
@@ -3647,7 +3658,7 @@ void Chart::setup_create_line() {
 */
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::select_choice("Select Date Range Type", list, static_cast<int>(_date_range), top_window());
+    auto sel  = dlg::select_choice("Select Date Range Type", list, static_cast<int>(_date_range));
 
     if (sel == -1) {
         return;
@@ -3665,7 +3676,7 @@ void Chart::setup_delete_lines() {
         return;
     }
 
-    auto list_labels = dlg::select_checkboxes("Delete Lines", _label_array(*_area, LabelType::OFF), top_window());
+    auto list_labels = dlg::select_checkboxes("Delete Lines", _label_array(*_area, LabelType::OFF));
 
     if (list_labels.size() == 0) {
         return;
@@ -3686,12 +3697,13 @@ void Chart::setup_delete_lines() {
 *
 */
 void Chart::setup_label() {
-    auto l = fl_input(40, "Enter label", _label.c_str());
+    auto answer = dlg::input("Chart", "Enter label.", _label);
 
-    if (l != nullptr) {
-        _label = l;
-        init();
+    if (answer == flw::label::CANCEL) {
+        return;
     }
+
+    init();
 }
 
 /** @brief Show property dialog for current line in current area.
@@ -3720,14 +3732,14 @@ void Chart::setup_move_lines() {
         return;
     }
 
-    auto list_labels = dlg::select_checkboxes("Move Lines", _label_array(*_area, LabelType::OFF), top_window());
+    auto list_labels = dlg::select_checkboxes("Move Lines", _label_array(*_area, LabelType::OFF));
 
     if (list_labels.size() == 0) {
         return;
     }
 
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::select_choice("Select Area", list_areas, 0, top_window());
+    auto area       = dlg::select_choice("Select Area", list_areas, 0);
 
     if (area < 0 || area > static_cast<int>(AreaNum::LAST)) {
         return;
@@ -3753,7 +3765,7 @@ void Chart::setup_show_or_hide_lines() {
     }
 
     auto list = _label_array(*_area, LabelType::VISIBLE);
-    list = dlg::select_checkboxes("Show Or Hide Lines", list, top_window());
+    list = dlg::select_checkboxes("Show Or Hide Lines", list);
 
     if (list.size() == 0) {
         return;

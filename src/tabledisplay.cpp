@@ -8,6 +8,7 @@
 
 #include "tabledisplay.h"
 #include "gridgroup.h"
+#include "dlg.h"
 
 // MKALGAM_ON
 
@@ -322,9 +323,12 @@ public:
                 col = 1;
             }
 
-            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the beginning?", nullptr, "Yes", "No", find.c_str()) == 1) {
+            if (dlg::msg_ask("Find", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), label::NO, label::YES) == label::YES) {
                 col = row = 1;
                 goto AGAIN;
+            }
+            else {
+                hide();
             }
         }
         else {
@@ -342,10 +346,13 @@ public:
                 col = _table->columns();
             }
 
-            if (fl_choice("Unable to find <%s>!\nWould you like to try again from the end?", nullptr, "Yes", "No", find.c_str()) == 1) {
+            if (dlg::msg_ask("Find", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), label::NO, label::YES) == label::YES) {
                 row = _table->rows();
                 col = _table->columns();
                 goto AGAIN;
+            }
+            else {
+                hide();
             }
         }
     }

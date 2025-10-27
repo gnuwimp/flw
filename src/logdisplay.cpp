@@ -344,13 +344,13 @@ static LogDisplay::Color _logdisplay_convert_color(const std::string& name) {
 *
 */
 static std::vector<_LogDisplayStyle> _logdisplay_parse_json(const std::string& json) {
-    #define FLW_LOGDISPLAY_ERROR(X) { fl_alert("error: illegal value at pos %u", (X)->pos()); res.clear(); return res; }
+    #define FLW_LOGDISPLAY_ERROR(X) { dlg::msg_alert("JSON Error", util::format("Illegal value at pos %u", (X)->pos())); res.clear(); return res; }
 
     auto res = std::vector<_LogDisplayStyle>();
     auto js  = gnu::json::decode(json.c_str(), json.length(), true);
 
     if (js.has_err() == true) {
-        fl_alert("error: failed to parse json\n%s", js.err_c());
+        dlg::msg_alert("JSON Error", util::format("Failed to parse json\n%s", js.err_c()));
         return res;
     }
 
@@ -504,7 +504,7 @@ LogDisplay::~LogDisplay() {
 */
 void LogDisplay::edit_styles() {
     auto json    = (_json == "") ? _LOGDISPLAY_JSON_EXAMPLE : _json;
-    auto changed = dlg::text_edit("Edit JSON Style String", json, top_window(), 40, 50);
+    auto changed = dlg::text_edit("Edit JSON Style String", json, 40, 50);
 
     if (changed == false) {
         return;
@@ -520,13 +520,11 @@ void LogDisplay::edit_styles() {
 */
 void LogDisplay::find(bool next, bool force_ask) {
     if (_find == "" || force_ask) {
-        auto s = fl_input("Enter search string", _find.c_str());
+        auto answer = dlg::input("LogDisplay", "Enter search string", _find);
 
-        if (s == nullptr || *s == 0) {
+        if (answer == label::CANCEL || _find == "") {
             return;
         }
-
-        _find = s;
     }
 
     auto found = false;
@@ -590,7 +588,7 @@ int LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("Style Help", _LOGDISPLAY_HELP, false, top_window(), 40, 30);
+                dlg::list("Style Help", _LOGDISPLAY_HELP, false, 40, 30);
                 return 1;
             }
         }
@@ -648,7 +646,7 @@ void LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
 
     if (filename != nullptr && _buffer->savefile(filename) != 0) {
-        fl_alert("error: failed to save text to %s", filename);
+        dlg::msg_alert("Saving Error", util::format("Failed to save text to %s", filename));
     }
 }
 

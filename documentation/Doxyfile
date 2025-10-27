@@ -944,46 +944,46 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT = \
-../src/chart.h \
 ../src/chart.cpp \
-../src/datechooser.h \
-../src/datechooser.cpp \
-../src/date.h \
+../src/chart.h \
 ../src/date.cpp \
-../src/dlg.h \
+../src/date.h \
+../src/datechooser.cpp \
+../src/datechooser.h \
 ../src/dlg.cpp \
-../src/file.h \
+../src/dlg.h \
 ../src/file.cpp \
-../src/flw.h \
+../src/file.h \
 ../src/flw.cpp \
-../src/gridgroup.h \
+../src/flw.h \
 ../src/gridgroup.cpp \
-../src/inputmenu.h \
+../src/gridgroup.h \
 ../src/inputmenu.cpp \
-../src/json.h \
+../src/inputmenu.h \
 ../src/json.cpp \
-../src/lcddisplay.h \
+../src/json.h \
 ../src/lcddisplay.cpp \
-../src/logdisplay.h \
+../src/lcddisplay.h \
 ../src/logdisplay.cpp \
-../src/plot.h \
+../src/logdisplay.h \
 ../src/plot.cpp \
-../src/recentmenu.h \
+../src/plot.h \
 ../src/recentmenu.cpp \
-../src/scrollbrowser.h \
+../src/recentmenu.h \
 ../src/scrollbrowser.cpp \
-../src/splitgroup.h \
+../src/scrollbrowser.h \
 ../src/splitgroup.cpp \
-../src/tabsgroup.h \
-../src/tabsgroup.cpp \
-../src/table.h \
+../src/splitgroup.h \
 ../src/table.cpp \
-../src/tabledisplay.h \
+../src/table.h \
 ../src/tabledisplay.cpp \
-../src/tableeditor.h \
+../src/tabledisplay.h \
 ../src/tableeditor.cpp \
-../src/waitcursor.h \
+../src/tableeditor.h \
+../src/tabsgroup.cpp \
+../src/tabsgroup.h \
 ../src/waitcursor.cpp \
+../src/waitcursor.h \
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

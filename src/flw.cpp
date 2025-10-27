@@ -92,6 +92,26 @@ const StringVector PREF_THEMES2 = {
     "tan_plastic",
 };
 
+/*
+ *                 _
+ *                (_)
+ *      _ __  _ __ ___   __
+ *     | '_ \| '__| \ \ / /
+ *     | |_) | |  | |\ V /
+ *     | .__/|_|  |_| \_/
+ *     | |
+ *     |_|
+ */
+
+namespace priv {
+
+static unsigned char _OLD_R[256]  = { 0 };
+static unsigned char _OLD_G[256]  = { 0 };
+static unsigned char _OLD_B[256]  = { 0 };
+static bool          _IS_DARK     = false;
+static bool          _SAVED_COLOR = false;
+static int           _SCROLLSIZE  = Fl::scrollbar_size();
+
 /** @brief Print to postscript file.
 *
 * @param[in] ps_filename  Filename.
@@ -104,7 +124,7 @@ const StringVector PREF_THEMES2 = {
 *
 * @return Error string or empty string.
 */
-static std::string _flw_print(
+static std::string _print(
     const std::string& ps_filename,
     Fl_Paged_Device::Page_Format format,
     Fl_Paged_Device::Page_Layout layout,
@@ -160,6 +180,388 @@ ERR:
     fclose(file);
     return res;
 }
+
+/** @brief Create additional colors.
+*
+* Colors are reset every time a new theme has been selected
+*
+* @param[in] dark  True if a dark theme has been requested.
+*/
+static void _additional_colors(bool dark) {
+    color::BEIGE            = fl_rgb_color(245, 245, 220);
+    color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
+    color::CRIMSON          = fl_rgb_color(220,  20,  60);
+    color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
+    color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
+    color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
+    color::GOLD             = fl_rgb_color(255, 215,   0);
+    color::GRAY             = fl_rgb_color(128, 128, 128);
+    color::INDIGO           = fl_rgb_color( 75,   0, 130);
+    color::OLIVE            = fl_rgb_color(128, 128,   0);
+    color::PINK             = fl_rgb_color(255, 192, 203);
+    color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
+    color::SIENNA           = fl_rgb_color(160,  82,  45);
+    color::SILVER           = fl_rgb_color(192, 192, 192);
+    color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
+    color::TEAL             = fl_rgb_color(  0, 128, 128);
+    color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
+    color::VIOLET           = fl_rgb_color(238, 130, 238);
+
+    if (dark == true) {
+        color::BEIGE            = fl_darker(color::BEIGE);
+        color::CHOCOLATE        = fl_darker(color::CHOCOLATE);
+        color::CRIMSON          = fl_darker(color::CRIMSON);
+        color::DARKOLIVEGREEN   = fl_darker(color::DARKOLIVEGREEN);
+        color::DODGERBLUE       = fl_darker(color::DODGERBLUE);
+        color::FORESTGREEN      = fl_darker(color::FORESTGREEN);
+        color::GOLD             = fl_darker(color::GOLD);
+        color::GRAY             = fl_darker(color::GRAY);
+        color::INDIGO           = fl_darker(color::INDIGO);
+        color::OLIVE            = fl_darker(color::OLIVE);
+        color::PINK             = fl_darker(color::PINK);
+        color::ROYALBLUE        = fl_darker(color::ROYALBLUE);
+        color::SIENNA           = fl_darker(color::SIENNA);
+        color::SILVER           = fl_darker(color::SILVER);
+        color::SLATEGRAY        = fl_darker(color::SLATEGRAY);
+        color::TEAL             = fl_darker(color::TEAL);
+        color::TURQUOISE        = fl_darker(color::TURQUOISE);
+        color::VIOLET           = fl_darker(color::VIOLET);
+    }
+}
+
+/** @brief Set blue colors.
+*/
+static void _blue_colors() {
+    Fl::set_color(0,   228, 228, 228); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    79,  86,  94); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  241, 196,  126); // FL_SELECTION_COLOR
+    Fl::set_color(56,    0,   0,   0); // FL_BLACK
+    Fl::background(48, 56, 65);
+
+    unsigned char r = 0;
+    unsigned char g = 0;
+    unsigned char b = 0;
+
+    for (int f = 32; f < 49; f++) {
+        Fl::set_color(f, r, g, b);
+
+        if (f == 32) {
+            r = 0;
+            g = 9;
+            b = 18;
+        }
+        else {
+            r += 2 + (f < 44);
+            g += 2 + (f < 44);
+            b += 2 + (f < 44);
+        }
+    }
+}
+
+/** @brief Set dark colors.
+*/
+static void _dark_colors() {
+    Fl::set_color(0,   200, 200, 200); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,    64,  64,  64); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  177, 227, 177); // FL_SELECTION_COLOR
+    Fl::set_color(56,    0,   0,   0); // FL_BLACK
+    Fl::set_color(49, 43, 43, 43);
+    Fl::background(43, 43, 43);
+
+    unsigned char c = 0;
+
+    for (int f = 32; f < 49; f++) {
+        Fl::set_color(f, c, c, c);
+        c += 2;
+        if (f > 40) c++;
+    }
+}
+
+/** @brief Make default colors darker (for dark themes).
+*/
+static void _make_default_colors_darker() {
+    Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
+    Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
+    Fl::set_color(FL_RED, fl_darker(Fl::get_color(FL_RED)));
+    Fl::set_color(FL_DARK_RED, fl_darker(Fl::get_color(FL_DARK_RED)));
+    Fl::set_color(FL_YELLOW, fl_darker(Fl::get_color(FL_YELLOW)));
+    Fl::set_color(FL_DARK_YELLOW, fl_darker(Fl::get_color(FL_DARK_YELLOW)));
+    Fl::set_color(FL_BLUE, fl_darker(Fl::get_color(FL_BLUE)));
+    Fl::set_color(FL_DARK_BLUE, fl_darker(Fl::get_color(FL_DARK_BLUE)));
+    Fl::set_color(FL_CYAN, fl_darker(Fl::get_color(FL_CYAN)));
+    Fl::set_color(FL_DARK_CYAN, fl_darker(Fl::get_color(FL_DARK_CYAN)));
+    Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
+    Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
+}
+
+/** @brief Restore original colors.
+*/
+static void _restore_colors() {
+    if (_SAVED_COLOR == true) {
+        for (int f = 0; f < 256; f++) {
+            Fl::set_color(f, priv::_OLD_R[f], priv::_OLD_G[f], priv::_OLD_B[f]);
+        }
+    }
+}
+
+/** @brief Set colors so they can be restored later.
+*/
+static void _save_colors() {
+    if (_SAVED_COLOR == false) {
+        for (int f = 0; f < 256; f++) {
+            unsigned char r1, g1, b1;
+            Fl::get_color(f, r1, g1, b1);
+            priv::_OLD_R[f] = r1;
+            priv::_OLD_G[f] = g1;
+            priv::_OLD_B[f] = b1;
+        }
+
+        _SAVED_COLOR = true;
+    }
+}
+
+/** @brief Set tan colors.
+*/
+static void _tan_colors() {
+    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
+    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
+    Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
+    Fl::set_color(15,  188, 114,  50); // FL_SELECTION_COLOR
+    Fl::background(206, 202, 187);
+}
+
+/** @brief Load default theme.
+* @private
+*/
+void _load_default() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("none");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_DEFAULT];
+    _IS_DARK = false;
+}
+
+/** @brief Load gleam theme.
+* @private
+*/
+void _load_gleam() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM];
+    _IS_DARK = false;
+}
+
+/** @brief Load blue gleam theme.
+* @private
+*/
+void _load_gleam_blue() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_make_default_colors_darker();
+    priv::_blue_colors();
+    priv::_additional_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_BLUE];
+    _IS_DARK = true;
+}
+
+/** @brief Load dark gleam theme.
+* @private
+*/
+void _load_gleam_dark() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_make_default_colors_darker();
+    priv::_dark_colors();
+    priv::_additional_colors(true);
+    Fl::set_color(255, 112, 112, 112);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_DARK];
+    _IS_DARK = true;
+}
+
+/** @brief Load tan gleam theme.
+* @private
+*/
+void _load_gleam_tan() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_tan_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("gleam");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_TAN];
+    _IS_DARK = false;
+}
+
+/** @brief Load gtk theme.
+* @private
+*/
+void _load_gtk() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK];
+    _IS_DARK = false;
+}
+
+/** @brief Load blue gtk theme.
+* @private
+*/
+void _load_gtk_blue() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_make_default_colors_darker();
+    priv::_blue_colors();
+    priv::_additional_colors(true);
+    Fl::set_color(255, 101, 117, 125);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_BLUE];
+    _IS_DARK = true;
+}
+
+/** @brief Load dark gtk theme.
+* @private
+*/
+void _load_gtk_dark() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_make_default_colors_darker();
+    priv::_dark_colors();
+    priv::_additional_colors(true);
+    Fl::set_color(255, 112, 112, 112);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_DARK];
+    _IS_DARK = true;
+}
+
+/** @brief Load tan gtk theme.
+* @private
+*/
+void _load_gtk_tan() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_tan_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("gtk+");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_TAN];
+    _IS_DARK = false;
+}
+
+/** @brief Load oxy theme.
+* @private
+*/
+void _load_oxy() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("oxy");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_OXY];
+    _IS_DARK = false;
+}
+
+/** @brief Load tan oxy theme.
+* @private
+*/
+void _load_oxy_tan() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_tan_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("oxy");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_OXY_TAN];
+    _IS_DARK = false;
+}
+
+/** @brief Load plastic theme.
+* @private
+*/
+void _load_plastic() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_PLASTIC];
+    _IS_DARK = false;
+}
+
+/** @brief Load tan plastic theme.
+* @private
+*/
+void _load_plastic_tan() {
+    priv::_save_colors();
+    priv::_restore_colors();
+    priv::_tan_colors();
+    priv::_additional_colors(false);
+    Fl::scheme("plastic");
+    Fl::redraw();
+    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_PLASTIC_TAN];
+    _IS_DARK = false;
+}
+
+/** @brief Set scrollbar size.
+* @private
+*/
+void _scrollbar() {
+    if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
+        auto f = (double) flw::PREF_FONTSIZE / 14.0;
+        auto s = (int) (f * priv::_SCROLLSIZE);
+        Fl::scrollbar_size(s);
+    }
+    else if (priv::_SCROLLSIZE > 0) {
+        Fl::scrollbar_size(priv::_SCROLLSIZE);
+    }
+}
+
+} // flw::priv
+
+/*
+ *                _
+ *               | |
+ *       ___ ___ | | ___  _ __
+ *      / __/ _ \| |/ _ \| '__|
+ *     | (_| (_) | | (_) | |
+ *      \___\___/|_|\___/|_|
+ *
+ *
+ */
+
+Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
+Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
+Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
+Fl_Color color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
+Fl_Color color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
+Fl_Color color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
+Fl_Color color::GOLD             = fl_rgb_color(255, 215,   0);
+Fl_Color color::GRAY             = fl_rgb_color(128, 128, 128);
+Fl_Color color::INDIGO           = fl_rgb_color( 75,   0, 130);
+Fl_Color color::OLIVE            = fl_rgb_color(128, 128,   0);
+Fl_Color color::PINK             = fl_rgb_color(255, 192, 203);
+Fl_Color color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
+Fl_Color color::SIENNA           = fl_rgb_color(160,  82,  45);
+Fl_Color color::SILVER           = fl_rgb_color(192, 192, 192);
+Fl_Color color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
+Fl_Color color::TEAL             = fl_rgb_color(  0, 128, 128);
+Fl_Color color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
+Fl_Color color::VIOLET           = fl_rgb_color(238, 130, 238);
 
 /*
  *          _      _
@@ -302,6 +704,33 @@ bool debug::test(double ref, double val, double diff, int line, const char* func
 }
 
 /*
+ *      _       _          _
+ *     | |     | |        | |
+ *     | | __ _| |__   ___| |
+ *     | |/ _` | '_ \ / _ \ |
+ *     | | (_| | |_) |  __/ |
+ *     |_|\__,_|_.__/ \___|_|
+ *
+ *
+ */
+
+std::string label::BROWSE   = "&Browse";
+std::string label::CANCEL   = "&Cancel";
+std::string label::CLOSE    = "Cl&ose";
+std::string label::DEL      = "&Delete";
+std::string label::DISCARD  = "&Discard";
+std::string label::MONO     = "&Mono font";
+std::string label::NO       = "&No";
+std::string label::OK       = "&Ok";
+std::string label::PRINT    = "&Print";
+std::string label::REGULAR  = "&Regular font";
+std::string label::SAVE     = "&Save";
+std::string label::SAVE_DOT = "&Save...";
+std::string label::SELECT   = "&Select";
+std::string label::UPDATE   = "&Update";
+std::string label::YES      = "&Yes";
+
+/*
  *
  *
  *      _ __ ___   ___ _ __  _   _
@@ -340,7 +769,7 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) 
     return const_cast<Fl_Menu_Item*>(item);
 }
 
-} // menu
+} // flw::menu
 
 /** @brief Enable or disable menu item.
 *
@@ -730,13 +1159,15 @@ std::string util::format_int(int64_t num, char del) {
 
 /** @brief Set icon for widget.
 *
-* Widget manages image memory and will delete it.
+* Widget manages image memory and will delete it.\n
 *
 * @param[in] widget     Widget to set icon for.
 * @param[in] svg_image  Valid svg image.
 * @param[in] max_size   Max image size (from 16 - 4096).
 *
 * @return True if image was set.
+*
+* @image html icons.png
 */
 bool util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size) {
     auto svg = (svg_image.length() > 40) ? new Fl_SVG_Image(nullptr, svg_image.c_str()) : nullptr;
@@ -786,7 +1217,7 @@ bool util::is_empty(const std::string& string) {
         else if (c == 32) {
             space = true;
         }
-        else if (c < 0 || c > 32) {
+        else {
             letter = true;
         }
     }
@@ -877,8 +1308,8 @@ int32_t util::milliseconds() {
 * If coordinates are 0 it will use all widget.\n
 * Might look fuzzy if FLTK scaling is turned on.\
 *
-* @param[in] opt_name  Optional filename.
 * @param[in] window    Window to save.
+* @param[in] opt_name  Optional filename.
 * @param[in] X         X pos in window.
 * @param[in] Y         X pos in window.
 * @param[in] W         Window width.
@@ -886,7 +1317,7 @@ int32_t util::milliseconds() {
 *
 * @return True if an image has been saved.
 */
-bool util::png_save(const std::string& opt_name, Fl_Window* window, int X, int Y, int W, int H) {
+bool util::png_save(Fl_Window* window, const std::string& opt_name, int X, int Y, int W, int H) {
     auto res = false;
 
 #ifdef FLW_USE_PNG
@@ -911,16 +1342,16 @@ bool util::png_save(const std::string& opt_name, Fl_Window* window, int X, int Y
                 res = true;
             }
             else if (ret == -1) {
-                fl_alert("%s", "error: missing libraries!");
+                fl_alert("%s", "Error: missing libraries!");
             }
             else if (ret == -2) {
-                fl_alert("error: failed to save image to %s!", filename);
+                fl_alert("Error: failed to save image to %s!", filename);
             }
 
             delete []image;
         }
         else {
-            fl_alert("%s", "error: failed to grab image!");
+            fl_alert("%s", "Error: failed to grab image!");
         }
     }
 #else
@@ -930,7 +1361,7 @@ bool util::png_save(const std::string& opt_name, Fl_Window* window, int X, int Y
     (void) Y;
     (void) W;
     (void) H;
-    fl_alert("error: flw not compiled with FLW_USE_PNG flag");
+    fl_alert("Error: flw has not been compiled with FLW_USE_PNG flag!");
 #endif
 
     return res;
@@ -949,7 +1380,7 @@ bool util::png_save(const std::string& opt_name, Fl_Window* window, int X, int Y
 * @return Error string or empty string.
 */
 std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data) {
-    return flw::_flw_print(ps_filename, format, layout, cb, data, 0, 0);
+    return priv::_print(ps_filename, format, layout, cb, data, 0, 0);
 }
 
 /** @brief Print user drawing to postscript file.
@@ -971,7 +1402,7 @@ std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Fo
         return "error: invalid from/to range";
     }
 
-    return flw::_flw_print(ps_filename, format, layout, cb, data, from, to);
+    return priv::_print(ps_filename, format, layout, cb, data, from, to);
 }
 
 /** @brief Remove formatting from a browser text line.
@@ -1126,6 +1557,25 @@ std::string util::substr(const std::string& string, std::string::size_type pos, 
     }
 }
 
+/** @brief Trim whitespace from both ends of string
+*
+* @param[in,out] string  Input string.
+*
+* @return Trimmed input string.
+*/
+std::string util::trim(const std::string& string) {
+    auto res = string;
+    
+    try {
+        res.erase(res.begin(), std::find_if(res.begin(), res.end(), [](auto c) { return !std::isspace(c);} ));
+        res.erase(std::find_if(res.rbegin(), res.rend(), [](int ch) { return !std::isspace(ch); }).base(), res.end());
+        return res;
+    }
+    catch(...) {
+        return string;
+    }
+}
+
 /** @brief Swap rectangles.
 *
 * @param[in,out] w1  Widget 1.
@@ -1142,16 +1592,15 @@ void util::swap_rect(Fl_Widget* w1, Fl_Widget* w2) {
 /** @brief Convert string to number.
 *
 * @param[in] string  String to convert.
-* @param[in] def     Default number if exception is thrown.
 *
-* @return Converted number or default number.
+* @return Converted number or INFINITY.
 */
-double util::to_double(const std::string& string, double def) {
+double util::to_double(const std::string& string) {
     try {
         return std::stod(string);
     }
     catch(...) {
-        return def;
+        return INFINITY;
     }
 }
 
@@ -1236,828 +1685,6 @@ void* util::zero_memory(char* mem, size_t size) {
 #endif
 
     return mem;
-}
-
-/*
- *                _
- *               | |
- *       ___ ___ | | ___  _ __
- *      / __/ _ \| |/ _ \| '__|
- *     | (_| (_) | | (_) | |
- *      \___\___/|_|\___/|_|
- *
- *
- */
-
-Fl_Color color::BEIGE            = fl_rgb_color(245, 245, 220);
-Fl_Color color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
-Fl_Color color::CRIMSON          = fl_rgb_color(220,  20,  60);
-Fl_Color color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
-Fl_Color color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
-Fl_Color color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
-Fl_Color color::GOLD             = fl_rgb_color(255, 215,   0);
-Fl_Color color::GRAY             = fl_rgb_color(128, 128, 128);
-Fl_Color color::INDIGO           = fl_rgb_color( 75,   0, 130);
-Fl_Color color::OLIVE            = fl_rgb_color(128, 128,   0);
-Fl_Color color::PINK             = fl_rgb_color(255, 192, 203);
-Fl_Color color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
-Fl_Color color::SIENNA           = fl_rgb_color(160,  82,  45);
-Fl_Color color::SILVER           = fl_rgb_color(192, 192, 192);
-Fl_Color color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
-Fl_Color color::TEAL             = fl_rgb_color(  0, 128, 128);
-Fl_Color color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
-Fl_Color color::VIOLET           = fl_rgb_color(238, 130, 238);
-
-/*
- *      _   _
- *     | | | |
- *     | |_| |__   ___ _ __ ___   ___
- *     | __| '_ \ / _ \ '_ ` _ \ / _ \
- *     | |_| | | |  __/ | | | | |  __/
- *      \__|_| |_|\___|_| |_| |_|\___|
- *
- *
- */
-
-namespace theme {
-
-static unsigned char _OLD_R[256]  = { 0 };
-static unsigned char _OLD_G[256]  = { 0 };
-static unsigned char _OLD_B[256]  = { 0 };
-static bool          _IS_DARK     = false;
-static bool          _SAVED_COLOR = false;
-static int           _SCROLLSIZE  = Fl::scrollbar_size();
-
-/** @brief Create additional colors.
-*
-* Colors are reset every time a new theme has been selected
-*
-* @param[in] dark  True if a dark theme has been requested.
-*/
-static void _additional_colors(bool dark) {
-    color::BEIGE            = fl_rgb_color(245, 245, 220);
-    color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
-    color::CRIMSON          = fl_rgb_color(220,  20,  60);
-    color::DARKOLIVEGREEN   = fl_rgb_color( 85, 107,  47);
-    color::DODGERBLUE       = fl_rgb_color( 30, 144, 255);
-    color::FORESTGREEN      = fl_rgb_color( 34, 139,  34);
-    color::GOLD             = fl_rgb_color(255, 215,   0);
-    color::GRAY             = fl_rgb_color(128, 128, 128);
-    color::INDIGO           = fl_rgb_color( 75,   0, 130);
-    color::OLIVE            = fl_rgb_color(128, 128,   0);
-    color::PINK             = fl_rgb_color(255, 192, 203);
-    color::ROYALBLUE        = fl_rgb_color( 65, 105, 225);
-    color::SIENNA           = fl_rgb_color(160,  82,  45);
-    color::SILVER           = fl_rgb_color(192, 192, 192);
-    color::SLATEGRAY        = fl_rgb_color(112, 128, 144);
-    color::TEAL             = fl_rgb_color(  0, 128, 128);
-    color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
-    color::VIOLET           = fl_rgb_color(238, 130, 238);
-
-    if (dark == true) {
-        color::BEIGE            = fl_darker(color::BEIGE);
-        color::CHOCOLATE        = fl_darker(color::CHOCOLATE);
-        color::CRIMSON          = fl_darker(color::CRIMSON);
-        color::DARKOLIVEGREEN   = fl_darker(color::DARKOLIVEGREEN);
-        color::DODGERBLUE       = fl_darker(color::DODGERBLUE);
-        color::FORESTGREEN      = fl_darker(color::FORESTGREEN);
-        color::GOLD             = fl_darker(color::GOLD);
-        color::GRAY             = fl_darker(color::GRAY);
-        color::INDIGO           = fl_darker(color::INDIGO);
-        color::OLIVE            = fl_darker(color::OLIVE);
-        color::PINK             = fl_darker(color::PINK);
-        color::ROYALBLUE        = fl_darker(color::ROYALBLUE);
-        color::SIENNA           = fl_darker(color::SIENNA);
-        color::SILVER           = fl_darker(color::SILVER);
-        color::SLATEGRAY        = fl_darker(color::SLATEGRAY);
-        color::TEAL             = fl_darker(color::TEAL);
-        color::TURQUOISE        = fl_darker(color::TURQUOISE);
-        color::VIOLET           = fl_darker(color::VIOLET);
-    }
-}
-
-/** @brief Set blue colors.
-*/
-static void _blue_colors() {
-    Fl::set_color(0,   228, 228, 228); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    79,  86,  94); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,   108, 113, 125); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  241, 196,  126); // FL_SELECTION_COLOR
-    Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::background(48, 56, 65);
-
-    unsigned char r = 0;
-    unsigned char g = 0;
-    unsigned char b = 0;
-
-    for (int f = 32; f < 49; f++) {
-        Fl::set_color(f, r, g, b);
-
-        if (f == 32) {
-            r = 0;
-            g = 9;
-            b = 18;
-        }
-        else {
-            r += 2 + (f < 44);
-            g += 2 + (f < 44);
-            b += 2 + (f < 44);
-        }
-//        if (f > 40) c++;
-    }
-}
-
-/** @brief Set dark colors.
-*/
-static void _dark_colors() {
-    Fl::set_color(0,   200, 200, 200); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    64,  64,  64); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  177, 227, 177); // FL_SELECTION_COLOR
-    Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::set_color(49, 43, 43, 43);
-    Fl::background(43, 43, 43);
-
-    unsigned char c = 0;
-
-    for (int f = 32; f < 49; f++) {
-        Fl::set_color(f, c, c, c);
-        c += 2;
-        if (f > 40) c++;
-    }
-}
-
-/** @brief Make default colors darker (for dark themes).
-*/
-static void _make_default_colors_darker() {
-    Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
-    Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
-    Fl::set_color(FL_RED, fl_darker(Fl::get_color(FL_RED)));
-    Fl::set_color(FL_DARK_RED, fl_darker(Fl::get_color(FL_DARK_RED)));
-    Fl::set_color(FL_YELLOW, fl_darker(Fl::get_color(FL_YELLOW)));
-    Fl::set_color(FL_DARK_YELLOW, fl_darker(Fl::get_color(FL_DARK_YELLOW)));
-    Fl::set_color(FL_BLUE, fl_darker(Fl::get_color(FL_BLUE)));
-    Fl::set_color(FL_DARK_BLUE, fl_darker(Fl::get_color(FL_DARK_BLUE)));
-    Fl::set_color(FL_CYAN, fl_darker(Fl::get_color(FL_CYAN)));
-    Fl::set_color(FL_DARK_CYAN, fl_darker(Fl::get_color(FL_DARK_CYAN)));
-    Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
-    Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
-}
-
-/** @brief Restore original colors.
-*/
-static void _restore_colors() {
-    if (_SAVED_COLOR == true) {
-        for (int f = 0; f < 256; f++) {
-            Fl::set_color(f, theme::_OLD_R[f], theme::_OLD_G[f], theme::_OLD_B[f]);
-        }
-    }
-}
-
-/** @brief Set colors so they can be restored later.
-*/
-static void _save_colors() {
-    if (_SAVED_COLOR == false) {
-        for (int f = 0; f < 256; f++) {
-            unsigned char r1, g1, b1;
-            Fl::get_color(f, r1, g1, b1);
-            theme::_OLD_R[f] = r1;
-            theme::_OLD_G[f] = g1;
-            theme::_OLD_B[f] = b1;
-        }
-
-        _SAVED_COLOR = true;
-    }
-}
-
-/** @brief Set tan colors.
-*/
-static void _tan_colors() {
-    Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  188, 114,  50); // FL_SELECTION_COLOR
-    Fl::background(206, 202, 187);
-}
-
-/** @brief Load default theme.
-*/
-void _load_default() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("none");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_DEFAULT];
-    _IS_DARK = false;
-}
-
-/** @brief Load gleam theme.
-*/
-void _load_gleam() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM];
-    _IS_DARK = false;
-}
-
-/** @brief Load blue gleam theme.
-*/
-void _load_gleam_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_make_default_colors_darker();
-    theme::_blue_colors();
-    theme::_additional_colors(true);
-    Fl::set_color(255, 101, 117, 125);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_BLUE];
-    _IS_DARK = true;
-}
-
-/** @brief Load dark gleam theme.
-*/
-void _load_gleam_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_make_default_colors_darker();
-    theme::_dark_colors();
-    theme::_additional_colors(true);
-    Fl::set_color(255, 112, 112, 112);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_DARK];
-    _IS_DARK = true;
-}
-
-/** @brief Load tan gleam theme.
-*/
-void _load_gleam_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("gleam");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GLEAM_TAN];
-    _IS_DARK = false;
-}
-
-/** @brief Load gtk theme.
-*/
-void _load_gtk() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK];
-    _IS_DARK = false;
-}
-
-/** @brief Load blue gtk theme.
-*/
-void _load_gtk_blue() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_make_default_colors_darker();
-    theme::_blue_colors();
-    theme::_additional_colors(true);
-    Fl::set_color(255, 101, 117, 125);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_BLUE];
-    _IS_DARK = true;
-}
-
-/** @brief Load dark gtk theme.
-*/
-void _load_gtk_dark() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_make_default_colors_darker();
-    theme::_dark_colors();
-    theme::_additional_colors(true);
-    Fl::set_color(255, 112, 112, 112);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_DARK];
-    _IS_DARK = true;
-}
-
-/** @brief Load tan gtk theme.
-*/
-void _load_gtk_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("gtk+");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_GTK_TAN];
-    _IS_DARK = false;
-}
-
-/** @brief Load oxy theme.
-*/
-void _load_oxy() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("oxy");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY];
-    _IS_DARK = false;
-}
-
-/** @brief Load tan oxy theme.
-*/
-void _load_oxy_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("oxy");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_OXY_TAN];
-    _IS_DARK = false;
-}
-
-/** @brief Load plastic theme.
-*/
-void _load_plastic() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("plastic");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC];
-    _IS_DARK = false;
-}
-
-/** @brief Load tan plastic theme.
-*/
-void _load_plastic_tan() {
-    theme::_save_colors();
-    theme::_restore_colors();
-    theme::_tan_colors();
-    theme::_additional_colors(false);
-    Fl::scheme("plastic");
-    Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[theme::THEME_PLASTIC_TAN];
-    _IS_DARK = false;
-}
-
-/** @brief Set scrollbar size.
-*/
-void _scrollbar() {
-    if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
-        auto f = (double) flw::PREF_FONTSIZE / 14.0;
-        auto s = (int) (f * theme::_SCROLLSIZE);
-        Fl::scrollbar_size(s);
-    }
-    else if (theme::_SCROLLSIZE > 0) {
-        Fl::scrollbar_size(theme::_SCROLLSIZE);
-    }
-}
-
-} // theme
-
-/** @brief Check if a dark theme has been loaded
-*
-* @return True for dark theme.
-*/
-bool theme::is_dark() {
-    if (flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[theme::THEME_GTK_DARK]) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-/** @brief Load a theme.
-*
-* Valid theme names are:\n
-*   "default"\n
-*    "gleam"\n
-*    "blue gleam"\n
-*    "blue_gleam"\n
-*    "dark gleam"\n
-*    "dark_gleam"\n
-*    "tan gleam"\n
-*    "tan_gleam"\n
-*    "gtk"\n
-*    "blue gtk"\n
-*    "blue_gtk"\n
-*    "dark gtk"\n
-*    "dark_gtk"\n
-*    "tan gtk"\n
-*    "tan_gtk"\n
-*    "oxy"\n
-*    "tan oxy"\n
-*    "tan_oxy"\n
-*    "plastic"\n
-*    "tan plastic"\n
-*    "tan_plastic"\n
-
-* @param[in] name  Theme name.
-*
-* @return True if theme has been loaded.
-*/
-bool theme::load(const std::string& name) {
-    if (theme::_SCROLLSIZE == 0) {
-        theme::_SCROLLSIZE = Fl::scrollbar_size();
-    }
-
-    if (name == flw::PREF_THEMES[theme::THEME_DEFAULT] || name == flw::PREF_THEMES2[theme::THEME_DEFAULT]) {
-        theme::_load_default();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM] || name == flw::PREF_THEMES2[theme::THEME_GLEAM]) {
-        theme::_load_gleam();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_BLUE] || name == flw::PREF_THEMES2[theme::THEME_GLEAM_BLUE]) {
-        theme::_load_gleam_blue();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_DARK] || name == flw::PREF_THEMES2[theme::THEME_GLEAM_DARK]) {
-        theme::_load_gleam_dark();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GLEAM_TAN] || name == flw::PREF_THEMES2[theme::THEME_GLEAM_TAN]) {
-        theme::_load_gleam_tan();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK] || name == flw::PREF_THEMES2[theme::THEME_GTK]) {
-        theme::_load_gtk();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_BLUE] || name == flw::PREF_THEMES2[theme::THEME_GTK_BLUE]) {
-        theme::_load_gtk_blue();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_DARK] || name == flw::PREF_THEMES2[theme::THEME_GTK_DARK]) {
-        theme::_load_gtk_dark();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_GTK_TAN] || name == flw::PREF_THEMES2[theme::THEME_GTK_TAN]) {
-        theme::_load_gtk_tan();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_OXY] || name == flw::PREF_THEMES2[theme::THEME_OXY]) {
-        theme::_load_oxy();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_OXY_TAN] || name == flw::PREF_THEMES2[theme::THEME_OXY_TAN]) {
-        theme::_load_oxy_tan();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC] || name == flw::PREF_THEMES2[theme::THEME_PLASTIC]) {
-        theme::_load_plastic();
-    }
-    else if (name == flw::PREF_THEMES[theme::THEME_PLASTIC_TAN] || name == flw::PREF_THEMES2[theme::THEME_PLASTIC_TAN]) {
-        theme::_load_plastic_tan();
-    }
-    else {
-        return false;
-    }
-
-    theme::_scrollbar();
-    return true;
-}
-
-/** @brief Get font value.
-*
-* First time it is called it will load all available fonts from the system.
-*
-* @param[in] requested_font  Font name.
-*
-* @return Found font value or -1.
-*/
-Fl_Font theme::load_font(const std::string& requested_font) {
-    theme::load_fonts();
-
-    auto count = 0;
-
-    for (auto font : flw::PREF_FONTNAMES) {
-        auto font2 = util::remove_browser_format(font);
-
-        if (requested_font == font2) {
-            return count;
-        }
-
-        count++;
-    }
-
-    return -1;
-}
-
-/** @brief Load fonts to flw font list.
-*
-* But do it only the first time.
-*
-* @param[in] iso8859_only  True to only use fonts with ISO8859-1 character set.
-*/
-void theme::load_fonts(bool iso8859_only) {
-    if (flw::PREF_FONTNAMES.size() == 0) {
-        auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
-
-        for (int f = 0; f < fonts; f++) {
-            auto attr  = 0;
-            auto name1 = Fl::get_font_name(static_cast<Fl_Font>(f), &attr);
-            auto name2 = std::string();
-
-            if (attr & FL_BOLD) {
-                name2 = std::string("@b");
-            }
-
-            if (attr & FL_ITALIC) {
-                name2 += std::string("@i");
-            }
-
-            name2 += std::string("@.");
-            name2 += name1;
-            flw::PREF_FONTNAMES.push_back(strdup(name2.c_str()));
-            //printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
-        }
-    }
-}
-
-/** @brief Load icon before showing window.
-*
-* Use only windows or linux arguments.
-*
-* @param[in] win           Window object.
-* @param[in] win_resource  Win32 resource (Windows 10/11 only).
-* @param[in] xpm_resource  Xpm icon (Linux only).
-* @param[in] name          Application name (Linux only).
-*/
-void theme::load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
-    assert(win);
-
-    if (win->shown() != 0) {
-        fl_alert("%s", "warning: load icon before showing window!");
-    }
-
-#if defined(_WIN32)
-    win->icon(reinterpret_cast<char*>(LoadIcon(fl_display, MAKEINTRESOURCE(win_resource))));
-    (void) name;
-    (void) xpm_resource;
-    (void) name;
-#elif defined(__linux__)
-    assert(xpm_resource);
-
-    Fl_Pixmap    pix(xpm_resource);
-    Fl_RGB_Image rgb(&pix, Fl_Color(0));
-
-    win->icon(&rgb);
-    win->xclass((name != nullptr) ? name : "FLTK");
-    (void) win_resource;
-#else
-    (void) win;
-    (void) win_resource;
-    (void) xpm_resource;
-    (void) name;
-#endif
-}
-
-/** @brief Load window rectangle from preference.
-*
-* Some size checks are done to assure that the rectangle can be shown on the desktop.
-*
-* @param[in] pref      Loaded preference object.
-* @param[in] basename  Basename for window size.
-*
-* @return Rectangle with coordinates or empty.
-*/
-Fl_Rect theme::load_rect_from_pref(Fl_Preferences& pref, const std::string& basename) {
-    int  x, y, w, h;
-
-    pref.get((basename + "x").c_str(), x, 0);
-    pref.get((basename + "y").c_str(), y, 0);
-    pref.get((basename + "w").c_str(), w, 0);
-    pref.get((basename + "h").c_str(), h, 0);
-
-    if (x < 0 || x > Fl::w()) {
-        x = 0;
-    }
-
-    if (y < 0 || y > Fl::h()) {
-        y = 0;
-    }
-
-    if (w > Fl::w()) {
-        x = 0;
-        w = Fl::w();
-    }
-
-    if (h > Fl::h()) {
-        y = 0;
-        h = Fl::h();
-    }
-
-    return Fl_Rect(x, y, w, h);
-}
-
-/** @brief Load theme and font data.
-*
-* @param[in] pref  Loaded preference object.
-*/
-void theme::load_theme_from_pref(Fl_Preferences& pref) {
-    auto val = 0;
-    char buffer[4000];
-
-    pref.get("regular_name", buffer, "", 4000);
-    std::string name = buffer;
-
-    if (name != "" && name != "FL_HELVETICA") {
-        auto font = theme::load_font(name);
-
-        if (font != -1) {
-            flw::PREF_FONT     = font;
-            flw::PREF_FONTNAME = name;
-        }
-    }
-
-    pref.get("regular_size", val, flw::PREF_FONTSIZE);
-
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FONTSIZE = val;
-    }
-
-    pref.get("mono_name", buffer, "", 1000);
-    name = buffer;
-
-    if (name != "" && name != "FL_COURIER") {
-        auto font = theme::load_font(name);
-
-        if (font != -1) {
-            flw::PREF_FIXED_FONT     = font;
-            flw::PREF_FIXED_FONTNAME = name;
-        }
-    }
-
-    pref.get("mono_size", val, flw::PREF_FIXED_FONTSIZE);
-
-    if (val >= 6 && val <= 72) {
-        flw::PREF_FIXED_FONTSIZE = val;
-    }
-
-    pref.get("theme", buffer, "oxy", 4000);
-    theme::load(buffer);
-    Fl_Tooltip::font(flw::PREF_FONT);
-    Fl_Tooltip::size(flw::PREF_FONTSIZE);
-    _scrollbar();
-}
-
-/** @brief Load window size and optional scaling.
-*
-* Scaling might not work width some desktops.
-*
-* @param[in] pref      Loaded preference object.
-* @param[in] basename  Base name in preference file.
-* @param[in] window    Window to use.
-* @param[in] show      True to show window.
-* @param[in] defw      Default width if no width is found.
-* @param[in] defh      Default height if no height is found.
-*
-* @return Current window scale value.
-*/
-double theme::load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show, int defw, int defh) {
-    assert(window);
-
-    int  x           = 0;
-    int  y           = 0;
-    int  w           = 0;
-    int  h           = 0;
-    int  s           = 0;
-    auto sv          = 0.0;
-    auto def_scaling = Fl::screen_scale(window->screen_num());
-
-    pref.get((basename + "x").c_str(), x, 80);
-    pref.get((basename + "y").c_str(), y, 60);
-    pref.get((basename + "w").c_str(), w, defw);
-    pref.get((basename + "h").c_str(), h, defh);
-    pref.get((basename + "s").c_str(), s, 1);
-    pref.get((basename + "sv").c_str(), sv, def_scaling);
-
-    if (x < 0 || x > Fl::w()) {
-        x = 0;
-    }
-
-    if (y < 0 || y > Fl::h()) {
-        y = 0;
-    }
-
-#ifdef _WIN32
-    if (show == true && window->shown() == 0) { // Show before resize in windows.
-        window->show();
-    }
-
-    window->resize(x, y, w, h);
-#else
-    window->resize(x, y, w, h);
-
-    if (show == true && window->shown() == 0) {
-        window->show();
-    }
-#endif
-
-    if (sv < 0.5 || sv > 2.0) {
-        sv = def_scaling;
-    }
-
-    flw::PREF_SCALE_ON  = s;
-    flw::PREF_SCALE_VAL = sv;
-
-    if (flw::PREF_SCALE_ON == false) {
-        Fl::screen_scale(window->screen_num(), 1.0);
-    }
-    else {
-        Fl::screen_scale(window->screen_num(), sv);
-    }
-
-    return flw::PREF_SCALE_VAL;
-}
-
-/** @brief Parse command line arguments for theme and font values.
-*
-* @param[in] argc  Number of arguments.
-* @param[in] argv  Arguments.
-*
-* @return True if a theme has been set.
-*/
-bool theme::parse(int argc, const char** argv) {
-    auto res = false;
-
-    for (auto f = 1; f < argc; f++) {
-        if (res == false) {
-            res = theme::load(argv[f]);
-        }
-
-        auto fontsize = atoi(argv[f]);
-
-        if (fontsize >= 6 && fontsize <= 72) {
-            flw::PREF_FONTSIZE = fontsize;
-        }
-
-        if (std::string("scaleoff") == argv[f] && flw::PREF_SCALE_VAL < 0.1) {
-            flw::PREF_SCALE_ON = false;
-
-            if (Fl::first_window() != nullptr) {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(Fl::first_window()->screen_num());
-                Fl::screen_scale(Fl::first_window()->screen_num(), 1.0);
-            }
-            else {
-                flw::PREF_SCALE_VAL = Fl::screen_scale(0);
-                Fl::screen_scale(0, 1.0);
-            }
-        }
-    }
-
-    flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
-    Fl_Tooltip::font(flw::PREF_FONT);
-    Fl_Tooltip::size(flw::PREF_FONTSIZE);
-
-    return res;
-}
-
-/** @brief Save window size.
-*
-* @param[in] pref      Preference object.
-* @param[in] basename  Basename for this rectangle (x, y, w, h are added to basename).
-* @param[in] rect      Rectangle to save.
-*/
-void theme::save_rect_to_pref(Fl_Preferences& pref, const std::string& basename, const Fl_Rect& rect) {
-    pref.set((basename + "x").c_str(), rect.x());
-    pref.set((basename + "y").c_str(), rect.y());
-    pref.set((basename + "w").c_str(), rect.w());
-    pref.set((basename + "h").c_str(), rect.h());
-}
-
-/** @brief Save theme and font data.
-*
-* @param[in] pref  Preference object..
-*/
-void theme::save_theme_to_pref(Fl_Preferences& pref) {
-    pref.set("theme", flw::PREF_THEME.c_str());
-    pref.set("regular_name", flw::PREF_FONTNAME.c_str());
-    pref.set("regular_size", flw::PREF_FONTSIZE);
-    pref.set("mono_name", flw::PREF_FIXED_FONTNAME.c_str());
-    pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
-}
-
-/** @brief Save window size.
-*
-* @param[in] pref      Preference object..
-* @param[in] basename  Base name in preference file.
-* @param[in] window    Window to use.
-*/
-void theme::save_win_to_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window) {
-    pref.set((basename + "x").c_str(), window->x());
-    pref.set((basename + "y").c_str(), window->y());
-    pref.set((basename + "w").c_str(), window->w());
-    pref.set((basename + "h").c_str(), window->h());
-    pref.set((basename + "s").c_str(), flw::PREF_SCALE_ON);
-    pref.set((basename + "sv").c_str(), flw::PREF_SCALE_VAL);
 }
 
 /*
@@ -2375,6 +2002,460 @@ std::string util::PrintText::_stop() {
 
     return res;
 }
+
+/*
+ *      _   _
+ *     | | | |
+ *     | |_| |__   ___ _ __ ___   ___
+ *     | __| '_ \ / _ \ '_ ` _ \ / _ \
+ *     | |_| | | |  __/ | | | | |  __/
+ *      \__|_| |_|\___|_| |_| |_|\___|
+ *
+ *
+ */
+
+namespace theme {
+
+/** @brief Check if a dark theme has been loaded
+*
+* @return True for dark theme.
+*/
+bool is_dark() {
+    if (flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GLEAM_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GLEAM_DARK] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GTK_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GTK_DARK]) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/** @brief Load a theme.
+*
+* Valid theme names are:\n
+*   "default"\n
+*    "gleam"\n
+*    "blue gleam"\n
+*    "blue_gleam"\n
+*    "dark gleam"\n
+*    "dark_gleam"\n
+*    "tan gleam"\n
+*    "tan_gleam"\n
+*    "gtk"\n
+*    "blue gtk"\n
+*    "blue_gtk"\n
+*    "dark gtk"\n
+*    "dark_gtk"\n
+*    "tan gtk"\n
+*    "tan_gtk"\n
+*    "oxy"\n
+*    "tan oxy"\n
+*    "tan_oxy"\n
+*    "plastic"\n
+*    "tan plastic"\n
+*    "tan_plastic"\n
+
+* @param[in] name  Theme name.
+*
+* @return True if theme has been loaded.
+*/
+bool load(const std::string& name) {
+    if (priv::_SCROLLSIZE == 0) {
+        priv::_SCROLLSIZE = Fl::scrollbar_size();
+    }
+
+    if (name == flw::PREF_THEMES[priv::THEME_DEFAULT] || name == flw::PREF_THEMES2[priv::THEME_DEFAULT]) {
+        priv::_load_default();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM] || name == flw::PREF_THEMES2[priv::THEME_GLEAM]) {
+        priv::_load_gleam();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_BLUE] || name == flw::PREF_THEMES2[priv::THEME_GLEAM_BLUE]) {
+        priv::_load_gleam_blue();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_DARK] || name == flw::PREF_THEMES2[priv::THEME_GLEAM_DARK]) {
+        priv::_load_gleam_dark();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_TAN] || name == flw::PREF_THEMES2[priv::THEME_GLEAM_TAN]) {
+        priv::_load_gleam_tan();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GTK] || name == flw::PREF_THEMES2[priv::THEME_GTK]) {
+        priv::_load_gtk();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GTK_BLUE] || name == flw::PREF_THEMES2[priv::THEME_GTK_BLUE]) {
+        priv::_load_gtk_blue();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GTK_DARK] || name == flw::PREF_THEMES2[priv::THEME_GTK_DARK]) {
+        priv::_load_gtk_dark();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_GTK_TAN] || name == flw::PREF_THEMES2[priv::THEME_GTK_TAN]) {
+        priv::_load_gtk_tan();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_OXY] || name == flw::PREF_THEMES2[priv::THEME_OXY]) {
+        priv::_load_oxy();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_OXY_TAN] || name == flw::PREF_THEMES2[priv::THEME_OXY_TAN]) {
+        priv::_load_oxy_tan();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_PLASTIC] || name == flw::PREF_THEMES2[priv::THEME_PLASTIC]) {
+        priv::_load_plastic();
+    }
+    else if (name == flw::PREF_THEMES[priv::THEME_PLASTIC_TAN] || name == flw::PREF_THEMES2[priv::THEME_PLASTIC_TAN]) {
+        priv::_load_plastic_tan();
+    }
+    else {
+        return false;
+    }
+
+    priv::_scrollbar();
+    return true;
+}
+
+/** @brief Get font value.
+*
+* First time it is called it will load all available fonts from the system.
+*
+* @param[in] requested_font  Font name.
+*
+* @return Found font value or -1.
+*/
+Fl_Font load_font(const std::string& requested_font) {
+    load_fonts();
+
+    auto count = 0;
+
+    for (auto font : flw::PREF_FONTNAMES) {
+        auto font2 = util::remove_browser_format(font);
+
+        if (requested_font == font2) {
+            return count;
+        }
+
+        count++;
+    }
+
+    return -1;
+}
+
+/** @brief Load fonts to flw font list.
+*
+* But do it only the first time.
+*
+* @param[in] iso8859_only  True to only use fonts with ISO8859-1 character set.
+*/
+void load_fonts(bool iso8859_only) {
+    if (flw::PREF_FONTNAMES.size() == 0) {
+        auto fonts = Fl::set_fonts((iso8859_only == true) ? nullptr : "-*");
+
+        for (int f = 0; f < fonts; f++) {
+            auto attr  = 0;
+            auto name1 = Fl::get_font_name(static_cast<Fl_Font>(f), &attr);
+            auto name2 = std::string();
+
+            if (attr & FL_BOLD) {
+                name2 = std::string("@b");
+            }
+
+            if (attr & FL_ITALIC) {
+                name2 += std::string("@i");
+            }
+
+            name2 += std::string("@.");
+            name2 += name1;
+            flw::PREF_FONTNAMES.push_back(strdup(name2.c_str()));
+            //printf("%3d - %-40s - %-40s\n", f, name1, name2.c_str()); fflush(stdout);
+        }
+    }
+}
+
+/** @brief Load icon before showing window.
+*
+* Use only windows or linux arguments.\n
+* Does not work running in wayland mode.\n
+*
+* @param[in] win           Window object.
+* @param[in] win_resource  Win32 resource (Windows 10/11 only).
+* @param[in] xpm_resource  Xpm icon (Linux only).
+* @param[in] name          Application name (Linux only).
+*/
+void load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
+    assert(win);
+
+    if (win->shown() != 0) {
+        fl_alert("%s", "Warning: load icon before showing window!");
+    }
+
+#if defined(_WIN32)
+    win->icon(reinterpret_cast<char*>(LoadIcon(fl_display, MAKEINTRESOURCE(win_resource))));
+    (void) name;
+    (void) xpm_resource;
+    (void) name;
+#elif defined(__linux__)
+    assert(xpm_resource);
+
+    Fl_Pixmap    pix(xpm_resource);
+    Fl_RGB_Image rgb(&pix, Fl_Color(0));
+
+    win->icon(&rgb);
+    win->xclass((name != nullptr) ? name : "FLTK");
+    (void) win_resource;
+#else
+    (void) win;
+    (void) win_resource;
+    (void) xpm_resource;
+    (void) name;
+#endif
+}
+
+/** @brief Load window rectangle from preference.
+*
+* Some size checks are done to assure that the rectangle can be shown on the desktop.
+*
+* @param[in] pref      Loaded preference object.
+* @param[in] basename  Basename for window size.
+*
+* @return Rectangle with coordinates or empty.
+*/
+Fl_Rect load_rect_from_pref(Fl_Preferences& pref, const std::string& basename) {
+    int  x, y, w, h;
+
+    pref.get((basename + "x").c_str(), x, 0);
+    pref.get((basename + "y").c_str(), y, 0);
+    pref.get((basename + "w").c_str(), w, 0);
+    pref.get((basename + "h").c_str(), h, 0);
+
+    if (x < 0 || x > Fl::w()) {
+        x = 0;
+    }
+
+    if (y < 0 || y > Fl::h()) {
+        y = 0;
+    }
+
+    if (w > Fl::w()) {
+        x = 0;
+        w = Fl::w();
+    }
+
+    if (h > Fl::h()) {
+        y = 0;
+        h = Fl::h();
+    }
+
+    return Fl_Rect(x, y, w, h);
+}
+
+/** @brief Load theme, font and scaling values.
+*
+* Scaling settings has to be restored to same screen.\n
+* Also wayland, X11 and windows works somewhat different.\n
+* So user has to test and try different settings until one works.\n
+*
+* @param[in] pref        Loaded preference object.
+* @param[in] screen_num  Which screen to set scaling for.
+*
+* @return Current window scale value.
+*/
+double load_theme_from_pref(Fl_Preferences& pref, unsigned screen_num) {
+    auto val = 0;
+    char buffer[4000];
+
+    pref.get("regular_name", buffer, "", 4000);
+    std::string name = buffer;
+
+    if (name != "" && name != "FL_HELVETICA") {
+        auto font = load_font(name);
+
+        if (font != -1) {
+            flw::PREF_FONT     = font;
+            flw::PREF_FONTNAME = name;
+        }
+    }
+
+    pref.get("regular_size", val, flw::PREF_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FONTSIZE = val;
+    }
+
+    pref.get("mono_name", buffer, "", 1000);
+    name = buffer;
+
+    if (name != "" && name != "FL_COURIER") {
+        auto font = load_font(name);
+
+        if (font != -1) {
+            flw::PREF_FIXED_FONT     = font;
+            flw::PREF_FIXED_FONTNAME = name;
+        }
+    }
+
+    pref.get("mono_size", val, flw::PREF_FIXED_FONTSIZE);
+
+    if (val >= 6 && val <= 72) {
+        flw::PREF_FIXED_FONTSIZE = val;
+    }
+
+    pref.get("theme", buffer, "oxy", 4000);
+    load(buffer);
+    Fl_Tooltip::font(flw::PREF_FONT);
+    Fl_Tooltip::size(flw::PREF_FONTSIZE);
+    priv::_scrollbar();
+
+    auto so = 0;
+    auto sv = 0.0;
+    auto def_scaling = Fl::screen_scale(screen_num);
+
+    pref.get("scaling_on", so, 1);
+    pref.get("scaling_value", sv, def_scaling);
+
+    if (sv < 0.5 || sv > 2.0) {
+        sv = def_scaling;
+    }
+
+    flw::PREF_SCALE_ON  = so;
+    flw::PREF_SCALE_VAL = sv;
+
+    if (flw::PREF_SCALE_ON == false) {
+        Fl::screen_scale(screen_num, 1.0);
+    }
+    else {
+        Fl::screen_scale(screen_num, sv);
+    }
+
+    return flw::PREF_SCALE_VAL;
+}
+
+/** @brief Load window size and optional scaling.
+*
+* Load theme before loading windows preferences.\n
+*
+* @param[in] pref      Loaded preference object.
+* @param[in] basename  Base name in preference file.
+* @param[in] window    Window to use.
+* @param[in] show      True to show window.
+* @param[in] defw      Default width if no width is found.
+* @param[in] defh      Default height if no height is found.
+*/
+void load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show, int defw, int defh) {
+    int x = 0;
+    int y = 0;
+    int w = 0;
+    int h = 0;
+
+    pref.get((basename + "x").c_str(), x, 80);
+    pref.get((basename + "y").c_str(), y, 60);
+    pref.get((basename + "w").c_str(), w, defw);
+    pref.get((basename + "h").c_str(), h, defh);
+
+    if (x < 0 || x > Fl::w()) {
+        x = 0;
+    }
+
+    if (y < 0 || y > Fl::h()) {
+        y = 0;
+    }
+
+#ifdef _WIN32
+    if (show == true && window->shown() == 0) { // Show before resize in windows.
+        window->show();
+    }
+
+    window->resize(x, y, w, h);
+#else
+    window->resize(x, y, w, h);
+
+    if (show == true && window->shown() == 0) {
+        window->show();
+    }
+#endif
+}
+
+/** @brief Parse command line arguments for theme and font values.
+*
+* @param[in] argc  Number of arguments.
+* @param[in] argv  Arguments.
+*
+* @return True if a theme has been set.
+*/
+bool parse(int argc, const char** argv) {
+    auto res = false;
+
+    for (auto f = 1; f < argc; f++) {
+        if (res == false) {
+            res = load(argv[f]);
+        }
+
+        auto fontsize = atoi(argv[f]);
+
+        if (fontsize >= 6 && fontsize <= 72) {
+            flw::PREF_FONTSIZE = fontsize;
+        }
+
+        if (std::string("scaleoff") == argv[f] && flw::PREF_SCALE_VAL < 0.1) {
+            flw::PREF_SCALE_ON = false;
+
+            if (Fl::first_window() != nullptr) {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(Fl::first_window()->screen_num());
+                Fl::screen_scale(Fl::first_window()->screen_num(), 1.0);
+            }
+            else {
+                flw::PREF_SCALE_VAL = Fl::screen_scale(0);
+                Fl::screen_scale(0, 1.0);
+            }
+        }
+    }
+
+    flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
+    Fl_Tooltip::font(flw::PREF_FONT);
+    Fl_Tooltip::size(flw::PREF_FONTSIZE);
+
+    return res;
+}
+
+/** @brief Save window size.
+*
+* @param[in] pref      Preference object.
+* @param[in] basename  Basename for this rectangle (x, y, w, h are added to basename).
+* @param[in] rect      Rectangle to save.
+*/
+void save_rect_to_pref(Fl_Preferences& pref, const std::string& basename, const Fl_Rect& rect) {
+    pref.set((basename + "x").c_str(), rect.x());
+    pref.set((basename + "y").c_str(), rect.y());
+    pref.set((basename + "w").c_str(), rect.w());
+    pref.set((basename + "h").c_str(), rect.h());
+}
+
+/** @brief Save theme, font and scaling values.
+*
+* @param[in] pref Preference object.
+*/
+void save_theme_to_pref(Fl_Preferences& pref) {
+    pref.set("theme", flw::PREF_THEME.c_str());
+    pref.set("regular_name", flw::PREF_FONTNAME.c_str());
+    pref.set("regular_size", flw::PREF_FONTSIZE);
+    pref.set("mono_name", flw::PREF_FIXED_FONTNAME.c_str());
+    pref.set("mono_size", flw::PREF_FIXED_FONTSIZE);
+    pref.set("scaling_on", flw::PREF_SCALE_ON);
+    pref.set("scaling_value", flw::PREF_SCALE_VAL);
+}
+
+/** @brief Save window size.
+*
+* @param[in] pref      Preference object..
+* @param[in] basename  Base name in preference file.
+* @param[in] window    Window to use.
+*/
+void save_win_to_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window) {
+    pref.set((basename + "x").c_str(), window->x());
+    pref.set((basename + "y").c_str(), window->y());
+    pref.set((basename + "w").c_str(), window->w());
+    pref.set((basename + "h").c_str(), window->h());
+}
+
+} // flw::theme
 
 } // flw
 

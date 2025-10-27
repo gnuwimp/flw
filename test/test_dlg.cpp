@@ -149,35 +149,45 @@ void test_html() {
 //------------------------------------------------------------------------------
 void test_icons() {
     auto size = flw::PREF_FONTSIZE * 8;
-    auto w    = size * 8;
+    auto w    = size * 13;
     auto h    = size * 5;
-    auto win  = new Fl_Double_Window(0, 0, w, h);
+    auto win  = Fl_Double_Window(0, 0, w, h);
     auto b1   = new Fl_Button(0, 0, size, size, "ALERT");
     auto b2   = new Fl_Button(size, 0, size, size, "CONFIRM");
-    auto b3   = new Fl_Button(size * 2, 0, size, size, "DELETE");
-    auto b4   = new Fl_Button(size * 3, 0, size, size, "ERROR");
+    auto b3   = new Fl_Button(size * 2, 0, size, size, "DEL");
+    auto b4   = new Fl_Button(size * 3, 0, size, size, "ERR");
     auto b5   = new Fl_Button(size * 4, 0, size, size, "INFO");
     auto b6   = new Fl_Button(size * 5, 0, size, size, "STOP");
     auto b7   = new Fl_Button(size * 6, 0, size, size, "QUESTION");
     auto b8   = new Fl_Button(size * 7, 0, size, size, "WARNING");
+    auto b9   = new Fl_Button(size * 8, 0, size, size, "PAUSE");
+    auto b10  = new Fl_Button(size * 9, 0, size, size, "BACK");
+    auto b11  = new Fl_Button(size * 10, 0, size, size, "FORWARD");
+    auto b12  = new Fl_Button(size * 11, 0, size, size, "CANCEL");
+    auto b13  = new Fl_Button(size * 12, 0, size, size, "PLAY");
     auto box  = new Fl_Box(w / 2 - 150, h / 2 - 150, 300, 300, "WARNING");
-    
-    util::labelfont(win);
-    util::icon(b1, icons::ALERT, flw::PREF_FONTSIZE * 3);
-    util::icon(b2, icons::CONFIRM, flw::PREF_FONTSIZE * 3);
-    util::icon(b3, icons::DELETE, flw::PREF_FONTSIZE * 3);
-    util::icon(b4, icons::ERROR, flw::PREF_FONTSIZE * 3);
-    util::icon(b5, icons::INFO, flw::PREF_FONTSIZE * 3);
-    util::icon(b6, icons::STOP, flw::PREF_FONTSIZE * 3);
-    util::icon(b7, icons::QUESTION, flw::PREF_FONTSIZE * 3);
-    util::icon(b8, icons::WARNING, flw::PREF_FONTSIZE * 3);
-    util::icon(box, icons::WARNING, flw::PREF_FONTSIZE * 3);
+
+    util::labelfont(&win);
+    util::icon(b1, flw::icons::ALERT, flw::PREF_FONTSIZE * 3);
+    util::icon(b2, flw::icons::CONFIRM, flw::PREF_FONTSIZE * 3);
+    util::icon(b3, flw::icons::DEL, flw::PREF_FONTSIZE * 3);
+    util::icon(b4, flw::icons::ERR, flw::PREF_FONTSIZE * 3);
+    util::icon(b5, flw::icons::INFO, flw::PREF_FONTSIZE * 3);
+    util::icon(b6, flw::icons::STOP, flw::PREF_FONTSIZE * 3);
+    util::icon(b7, flw::icons::QUESTION, flw::PREF_FONTSIZE * 3);
+    util::icon(b8, flw::icons::WARNING, flw::PREF_FONTSIZE * 3);
+    util::icon(b9, flw::icons::PAUSE, flw::PREF_FONTSIZE * 3);
+    util::icon(b10, flw::icons::BACK, flw::PREF_FONTSIZE * 3);
+    util::icon(b11, flw::icons::FORWARD, flw::PREF_FONTSIZE * 3);
+    util::icon(b12, flw::icons::CANCEL, flw::PREF_FONTSIZE * 3);
+    util::icon(b13, flw::icons::PLAY, flw::PREF_FONTSIZE * 3);
+    util::icon(box, flw::icons::WARNING, flw::PREF_FONTSIZE * 7);
     box->deactivate();
     box->box(FL_BORDER_BOX);
 
-    win->show();
+    util::center_window(&win);
+    win.show();
     Fl::run();
-    delete win;
 }
 
 //------------------------------------------------------------------------------
@@ -185,6 +195,51 @@ void test_list() {
     dlg::list("flw::dlg::list", HAMLET_LIST);
     dlg::list("flw::dlg::list - Fixed Font", HAMLET_LIST, true);
     dlg::list_file("flw::dlg::list_file - File", "test/browser.txt", true);
+}
+
+//------------------------------------------------------------------------------
+void test_message(bool input) {
+    if (input == false) {
+        //dlg::options(nullptr, false, true, true);
+        //dlg::options();
+        //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
+        //dlg::msg_alert("flw::dlg::msg_alert", HAMLET_TEXT);
+
+        dlg::msg("flw::dlg::msg", THREE_LINE);
+
+        dlg::msg_alert("flw::dlg::msg_alert", THREE_LINE);
+
+        dlg::msg_error("flw::dlg::msg_error", THREE_LINE);
+
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
+        //dlg::options_push();
+        //dlg::options(nullptr, false, true, true);
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE, "#One", "%Two", "!Three", "Four", "@Five"))
+        //dlg::options_pop();
+
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE, "One", "", "Two"))
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE, "", "", "One"))
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE))
+
+        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", THREE_LINE, "&One", "!&Two"))
+        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", THREE_LINE))
+    }
+    else {
+        std::string value = "Hello World";
+        FLW_PRINTV(dlg::input("flw::dlg::input", THREE_LINE, value), value)
+
+        int64_t value2 = 12345678912345;
+        FLW_PRINTV(dlg::input_int("flw::dlg::input_int", THREE_LINE, value2), value2)
+
+        double value3 = 123.456;
+        FLW_PRINTV(dlg::input_double("flw::dlg::input_double", THREE_LINE, value3), value3)
+
+        std::string value4 = THREE_LINE + THREE_LINE + THREE_LINE;
+        FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", THREE_LINE, value4), value4)
+
+        std::string value5 = "Password";
+        FLW_PRINTV(dlg::input_secret("flw::dlg::input_secret", THREE_LINE, value5), value5)
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -259,7 +314,7 @@ void test_print_text1() {
 
     while (r >= 0) {
     #ifdef _WIN32
-        dlg::center_message_dialog();
+        dlg::center_fl_message_dialog();
         r = fl_choice_n("%s", "Print Long Lines", "Print Hamlet", "Print UTF8", "Print some test texts.\nSome fonts might have issues.");
 
         if (r == 0) dlg::print_text("flw::dlg::print_text", LONG_TEXT);
@@ -269,7 +324,7 @@ void test_print_text1() {
         std::string ps = "output.ps";
         auto p = false;
 
-        dlg::center_message_dialog();
+        dlg::center_fl_message_dialog();
         r = fl_choice_n("Print to the default %s file.\nIt will be opened with system default program.\nThere are font issues if you use any other than the normal fltk fonts.\nAnd lot of the utf8 characters does not print well.", "Print Long Lines", "Print Hamlet", "Print UTF8", ps.c_str());
 
         if (r == 0) p = dlg::print_text("flw::dlg::print_text", LONG_TEXT);
@@ -375,7 +430,7 @@ void test_print_text3() {
 
     while (r >= 0 && b1.c_str() && b2.c_str()) {
     #ifdef _WIN32
-        dlg::center_message_dialog();
+        dlg::center_fl_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
         if (r == 0) dlg::print_text("flw::dlg::print_text", b1.c_str());
@@ -384,7 +439,7 @@ void test_print_text3() {
         std::string ps = "output.ps";
         auto p = false;
 
-        dlg::center_message_dialog();
+        dlg::center_fl_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
 
         if (r == 0) p = dlg::print_text("flw::dlg::print_text", b1.c_str());
@@ -501,7 +556,7 @@ void test_text() {
     dlg::text("flw::dlg::text", HAMLET_TEXT);
 
     std::string t = HAMLET_TEXT;
-    printf("flw::dlg::text_edit: %d\n", dlg::text_edit("flw::dlg::text_edit", t, nullptr, 70, 50));
+    printf("flw::dlg::text_edit: %d\n", dlg::text_edit("flw::dlg::text_edit", t, 70, 50));
     if (t != HAMLET_TEXT) printf("text changed!\n%s\n", t.c_str());
     else printf("text NOT changed!\n");
 }
@@ -524,8 +579,6 @@ void test_wait() {
 
 //------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
-    theme::parse(argc, argv);
-
     puts("run individual tests with");
     puts("    check");
     puts("    choice");
@@ -546,6 +599,11 @@ int main(int argc, const char** argv) {
     puts("    theme");
     puts("    wait");
     fflush(stdout);
+
+    {
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_flw_dlg");
+        flw::theme::load_theme_from_pref(pref);
+    }
 
     for (int f = 0; f < argc; f++) {
         std::string run = "";
@@ -578,6 +636,9 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "theme") {
             test_theme();
+            auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_flw_dlg");
+            pref.clear();
+            flw::theme::save_theme_to_pref(pref);
         }
 
         if (run == "" || run == "font") {
@@ -610,6 +671,14 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "list") {
             test_list();
+        }
+
+        if (run == "" || run == "msg" || run == "message") {
+            test_message(false);
+        }
+
+        if (run == "" || run == "inp" || run == "input") {
+            test_message(true);
         }
 
         if (run == "" || run == "print")  {

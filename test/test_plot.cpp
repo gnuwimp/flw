@@ -185,7 +185,7 @@ public:
         menu->add("&Settings/Font 10",          0, Test::Callback10, this);
         menu->add("&Settings/Font 14",          0, Test::Callback14, this);
         menu->add("&Settings/Font 24",          0, Test::Callback24, this);
-//        menu->add("&Settings/Debug",            0, Test::CallbackDebug, this);
+        //menu->add("&Settings/Debug",            0, Test::CallbackDebug, this);
 
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
@@ -193,7 +193,6 @@ public:
         create_plot();
 
         resizable(this);
-        size_range(64, 48);
         show();
         resize(300, 100, W, H);
     }

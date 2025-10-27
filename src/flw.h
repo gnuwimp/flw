@@ -93,6 +93,17 @@
 
 namespace flw {
 
+/*
+ *       __ _
+ *      / _| |
+ *     | |_| |_      __
+ *     |  _| \ \ /\ / /
+ *     | | | |\ V  V /
+ *     |_| |_| \_/\_/
+ *
+ *
+ */
+
 typedef std::map<std::string, std::string> StringHash;                  ///< @brief Hash with string keys and string values.
 typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
 typedef std::vector<void*> VoidVector;                                  ///< @brief Vector with void pointers
@@ -111,6 +122,69 @@ extern bool                     PREF_SCALE_ON;                          ///< @br
 extern std::string              PREF_THEME;                             ///< @brief Name of theme - default "default".
 extern const StringVector       PREF_THEMES;                            ///< @brief Name of themes.
 
+/*
+ *                _
+ *               | |
+ *       ___ ___ | | ___  _ __
+ *      / __/ _ \| |/ _ \| '__|
+ *     | (_| (_) | | (_) | |
+ *      \___\___/|_|\___/|_|
+ *
+ *
+ */
+
+/** @brief Color values.
+    Fl_Color BEIGE\n
+    Fl_Color CHOCOLATE\n
+    Fl_Color CRIMSON\n
+    Fl_Color DARKOLIVEGREEN\n
+    Fl_Color DODGERBLUE\n
+    Fl_Color FORESTGREEN\n
+    Fl_Color GOLD\n
+    Fl_Color GRAY\n
+    Fl_Color INDIGO\n
+    Fl_Color OLIVE\n
+    Fl_Color PINK\n
+    Fl_Color ROYALBLUE\n
+    Fl_Color SIENNA\n
+    Fl_Color SILVER\n
+    Fl_Color SLATEGRAY\n
+    Fl_Color TEAL\n
+    Fl_Color TURQUOISE\n
+    Fl_Color VIOLET\n
+*/
+namespace color {
+    extern Fl_Color             BEIGE;
+    extern Fl_Color             CHOCOLATE;
+    extern Fl_Color             CRIMSON;
+    extern Fl_Color             DARKOLIVEGREEN;
+    extern Fl_Color             DODGERBLUE;
+    extern Fl_Color             FORESTGREEN;
+    extern Fl_Color             GOLD;
+    extern Fl_Color             GRAY;
+    extern Fl_Color             INDIGO;
+    extern Fl_Color             OLIVE;
+    extern Fl_Color             PINK;
+    extern Fl_Color             ROYALBLUE;
+    extern Fl_Color             SIENNA;
+    extern Fl_Color             SILVER;
+    extern Fl_Color             SLATEGRAY;
+    extern Fl_Color             TEAL;
+    extern Fl_Color             TURQUOISE;
+    extern Fl_Color             VIOLET;
+} // flw::color
+
+/*
+ *          _      _
+ *         | |    | |
+ *       __| | ___| |__  _   _  __ _
+ *      / _` |/ _ \ '_ \| | | |/ _` |
+ *     | (_| |  __/ |_) | |_| | (_| |
+ *      \__,_|\___|_.__/ \__,_|\__, |
+ *                              __/ |
+ *                             |___/
+ */
+
 /** @brief Debug functions.
 */
 namespace debug {
@@ -120,7 +194,50 @@ namespace debug {
     bool                        test(const char* ref, const char* val, int line, const char* func);
     bool                        test(int64_t ref, int64_t val, int line, const char* func);
     bool                        test(double ref, double val, double diff, int line, const char* func);
-}
+} // flw::debug
+
+/*
+ *      _       _          _
+ *     | |     | |        | |
+ *     | | __ _| |__   ___| |
+ *     | |/ _` | '_ \ / _ \ |
+ *     | | (_| | |_) |  __/ |
+ *     |_|\__,_|_.__/ \___|_|
+ *
+ *
+ */
+
+/** @brief Some common label strings.
+*/
+namespace label {
+    extern std::string          BROWSE;
+    extern std::string          CANCEL;
+    extern std::string          CLOSE;
+    extern std::string          DEL;
+    extern std::string          DISCARD;
+    extern std::string          MONO;
+    extern std::string          NO;
+    extern std::string          OK;
+    extern std::string          PRINT;
+    extern std::string          REGULAR;
+    extern std::string          SAVE;
+    extern std::string          SAVE_DOT;
+    extern std::string          SELECT;
+    extern std::string          UPDATE;
+    extern std::string          YES;
+
+} // flw::label
+
+/*
+ *
+ *
+ *      _ __ ___   ___ _ __  _   _
+ *     | '_ ` _ \ / _ \ '_ \| | | |
+ *     | | | | | |  __/ | | | |_| |
+ *     |_| |_| |_|\___|_| |_|\__,_|
+ *
+ *
+ */
 
 /** @brief Menu item functions.
 */
@@ -131,7 +248,18 @@ namespace menu {
     bool                        item_value(Fl_Menu_* menu, const char* text);
     void                        set_item(Fl_Menu_* menu, const char* text, bool value);
     void                        setonly_item(Fl_Menu_* menu, const char* text);
-}
+} // flw::debug
+
+/*
+ *            _   _ _
+ *           | | (_) |
+ *      _   _| |_ _| |
+ *     | | | | __| | |
+ *     | |_| | |_| | |
+ *      \__,_|\__|_|_|
+ *
+ *
+ */
 
 /** @brief Utility functions.
 */
@@ -149,7 +277,7 @@ namespace util {
     void                        labelfont(Fl_Widget* widget, Fl_Font font = flw::PREF_FONT, int size = flw::PREF_FONTSIZE);
     int64_t                     microseconds();
     int32_t                     milliseconds();
-    bool                        png_save(const std::string& opt_name, Fl_Window* window, int X = 0, int Y = 0, int W = 0, int H = 0);
+    bool                        png_save(Fl_Window* window, const std::string& opt_name = "", int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data);
     std::string                 print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to);
     std::string                 remove_browser_format(const std::string& text);
@@ -158,12 +286,13 @@ namespace util {
     StringVector                split_string(const std::string& string, const std::string& split);
     std::string                 substr(const std::string& string, std::string::size_type pos, std::string::size_type size = std::string::npos);
     void                        swap_rect(Fl_Widget* w1, Fl_Widget* w2);
-    double                      to_double(const std::string& string, double def = INFINITY);
+    double                      to_double(const std::string& string);
     size_t                      to_doubles(const std::string& string, double numbers[], size_t size);
     int64_t                     to_int(const std::string& string, int64_t def = 0);
     long long                   to_long(const std::string& string, long long def = 0);
     static inline std::string   to_string(const char* text)
                                     { return text != nullptr ? text : ""; }
+    std::string                 trim(const std::string& string);
     void*                       zero_memory(char* mem, size_t size);
 
 /*
@@ -233,9 +362,23 @@ private:
     std::string                 _filename;          // Postscript filename.
 };
 
-} // util
+} // flw::util
+
+/*
+ *      _   _
+ *     | | | |
+ *     | |_| |__   ___ _ __ ___   ___
+ *     | __| '_ \ / _ \ '_ ` _ \ / _ \
+ *     | |_| | | |  __/ | | | | |  __/
+ *      \__|_| |_|\___|_| |_| |_|\___|
+ *
+ *
+ */
 
 /** @brief Load different themes and save/load window preferences.
+*
+* Load theme before loading windows preferences.\n
+* Scaling settings are not optimal and works different depending on which desktop are being used.\n
 */
 namespace theme {
     bool                        is_dark();
@@ -244,74 +387,37 @@ namespace theme {
     void                        load_fonts(bool iso8859_only = true);
     void                        load_icon(Fl_Window* win, int win_resource, const char** xpm_resource = nullptr, const char* name = nullptr);
     Fl_Rect                     load_rect_from_pref(Fl_Preferences& pref, const std::string& basename);
-    void                        load_theme_from_pref(Fl_Preferences& pref);
-    double                      load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show = true, int defw = 800, int defh = 600);
+    double                      load_theme_from_pref(Fl_Preferences& pref, unsigned screen_num = 0);
+    void                        load_win_from_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window, bool show = true, int defw = 800, int defh = 600);
     bool                        parse(int argc, const char** argv);
     void                        save_rect_to_pref(Fl_Preferences& pref, const std::string& basename, const Fl_Rect& rect);
     void                        save_theme_to_pref(Fl_Preferences& pref);
     void                        save_win_to_pref(Fl_Preferences& pref, const std::string& basename, Fl_Window* window);
+} // flw::theme
 
-    /** @brief Theme values, internal usage only.
-    * @private
-    */
-    enum {
-                                THEME_DEFAULT,
-                                THEME_GLEAM,
-                                THEME_GLEAM_BLUE,
-                                THEME_GLEAM_DARK,
-                                THEME_GLEAM_TAN,
-                                THEME_GTK,
-                                THEME_GTK_BLUE,
-                                THEME_GTK_DARK,
-                                THEME_GTK_TAN,
-                                THEME_OXY,
-                                THEME_OXY_TAN,
-                                THEME_PLASTIC,
-                                THEME_PLASTIC_TAN,
-                                THEME_NIL,
-    };
-}
+namespace priv {
 
-/** @brief Color values.
-    Fl_Color BEIGE\n
-    Fl_Color CHOCOLATE\n
-    Fl_Color CRIMSON\n
-    Fl_Color DARKOLIVEGREEN\n
-    Fl_Color DODGERBLUE\n
-    Fl_Color FORESTGREEN\n
-    Fl_Color GOLD\n
-    Fl_Color GRAY\n
-    Fl_Color INDIGO\n
-    Fl_Color OLIVE\n
-    Fl_Color PINK\n
-    Fl_Color ROYALBLUE\n
-    Fl_Color SIENNA\n
-    Fl_Color SILVER\n
-    Fl_Color SLATEGRAY\n
-    Fl_Color TEAL\n
-    Fl_Color TURQUOISE\n
-    Fl_Color VIOLET\n
+/* @brief Theme values, internal usage only.
+* @private
 */
-namespace color {
-    extern Fl_Color             BEIGE;
-    extern Fl_Color             CHOCOLATE;
-    extern Fl_Color             CRIMSON;
-    extern Fl_Color             DARKOLIVEGREEN;
-    extern Fl_Color             DODGERBLUE;
-    extern Fl_Color             FORESTGREEN;
-    extern Fl_Color             GOLD;
-    extern Fl_Color             GRAY;
-    extern Fl_Color             INDIGO;
-    extern Fl_Color             OLIVE;
-    extern Fl_Color             PINK;
-    extern Fl_Color             ROYALBLUE;
-    extern Fl_Color             SIENNA;
-    extern Fl_Color             SILVER;
-    extern Fl_Color             SLATEGRAY;
-    extern Fl_Color             TEAL;
-    extern Fl_Color             TURQUOISE;
-    extern Fl_Color             VIOLET;
-}
+enum {
+    THEME_DEFAULT,
+    THEME_GLEAM,
+    THEME_GLEAM_BLUE,
+    THEME_GLEAM_DARK,
+    THEME_GLEAM_TAN,
+    THEME_GTK,
+    THEME_GTK_BLUE,
+    THEME_GTK_DARK,
+    THEME_GTK_TAN,
+    THEME_OXY,
+    THEME_OXY_TAN,
+    THEME_PLASTIC,
+    THEME_PLASTIC_TAN,
+    THEME_NIL,
+};
+
+} // flw::priv
 
 } // flw
 
