@@ -74,7 +74,7 @@ Checkbox dialog<br>
 <img src="documentation/images/select_checkboxes_dialog.png"/>
 
 Message dialog<br>
-<img src="documentation/images/dlg_message.png"/>
+<img src="documentation/images/dlg_msg.png"/>
 
 Text input dialog<br>
 <img src="documentation/images/dlg_input.png"/>
