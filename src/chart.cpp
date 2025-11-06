@@ -44,34 +44,34 @@ namespace chart {
 #define _FLW_CHART_CLIP(X) { X; }
 //#define _FLW_CHART_CLIP(X)
 
-static const char* const _LABEL_ADD_CSV         = "Add line from CSV file...";
-static const char* const _LABEL_ADD_LINE        = "Create line...";
-static const char* const _LABEL_CLEAR           = "Clear chart";
-static const char* const _LABEL_LOAD_JSON       = "Load chart from JSON...";
-static const char* const _LABEL_PRINT           = "Print to PostScript file...";
-static const char* const _LABEL_SAVE_CSV        = "Save line to CSV...";
-static const char* const _LABEL_SAVE_JSON       = "Save chart to JSON...";
-static const char* const _LABEL_SAVE_PNG        = "Save to png file...";
-static const char* const _LABEL_SETUP_AREA      = "Number of areas...";
-static const char* const _LABEL_SETUP_DELETE    = "Delete lines...";
+static const char* const _LABEL_ADD_CSV         = "Add Line from CSV File...";
+static const char* const _LABEL_ADD_LINE        = "Create Line...";
+static const char* const _LABEL_CLEAR           = "Clear Chart";
+static const char* const _LABEL_LOAD_JSON       = "Load Chart from JSON...";
+static const char* const _LABEL_PRINT           = "Print to PostScript File...";
+static const char* const _LABEL_SAVE_CSV        = "Save Line to CSV...";
+static const char* const _LABEL_SAVE_JSON       = "Save Chart to JSON...";
+static const char* const _LABEL_SAVE_PNG        = "Save to PNG File...";
+static const char* const _LABEL_SETUP_AREA      = "Number of Areas...";
+static const char* const _LABEL_SETUP_DELETE    = "Delete Lines...";
 static const char* const _LABEL_SETUP_LABEL     = "Label...";
-static const char* const _LABEL_SETUP_LINE      = "Line properties...";
-static const char* const _LABEL_SETUP_MAX_CLAMP = "Set max clamp...";
-static const char* const _LABEL_SETUP_MIN_CLAMP = "Set min clamp...";
-static const char* const _LABEL_SETUP_MOVE      = "Move lines...";
-static const char* const _LABEL_SETUP_RANGE     = "Date range...";
-static const char* const _LABEL_SETUP_SHOW      = "Show or hide lines...";
-static const char* const _LABEL_SHOW_HLINES     = "Show horizontal lines";
-static const char* const _LABEL_SHOW_LABELS     = "Show line labels";
-static const char* const _LABEL_SHOW_VLINES     = "Show vertical lines";
+static const char* const _LABEL_SETUP_LINE      = "Line Properties...";
+static const char* const _LABEL_SETUP_MAX_CLAMP = "Set Max Clamp...";
+static const char* const _LABEL_SETUP_MIN_CLAMP = "Set Min Clamp...";
+static const char* const _LABEL_SETUP_MOVE      = "Move Lines...";
+static const char* const _LABEL_SETUP_RANGE     = "Date Range...";
+static const char* const _LABEL_SETUP_SHOW      = "Show or Hide Lines...";
+static const char* const _LABEL_SHOW_HLINES     = "Show Horizontal Lines";
+static const char* const _LABEL_SHOW_LABELS     = "Show Line Labels";
+static const char* const _LABEL_SHOW_VLINES     = "Show Vertical Lines";
 static const int         _MIN_MARGIN            =  3;
 static const int         _MIN_AREA_SIZE         = 10;
 static const int         _TICK_SIZE             =  4;
 static const std::string _LABEL_SYMBOL          = "@-> ";
 
 #ifdef DEBUG
-static const char* const _LABEL_DEBUG           = "Debug chart";
-static const char* const _LABEL_DEBUG_LINE      = "Print visible values";
+static const char* const _LABEL_DEBUG           = "Debug Chart";
+static const char* const _LABEL_DEBUG_LINE      = "Print Visible Values";
 #endif
 
 /*
@@ -92,7 +92,6 @@ static const char* const _LABEL_DEBUG_LINE      = "Print visible values";
 class _LineSetup : public Fl_Double_Window {
 public:
     Line&                       _line;
-    Fl_Button*                  _cancel;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _align;
@@ -100,7 +99,6 @@ public:
     Fl_Hor_Slider*              _width;
     Fl_Input*                   _label;
     GridGroup*                  _grid;
-    bool                        _ret;
     bool                        _run;
 
 public:
@@ -108,20 +106,18 @@ public:
     *
     */
     _LineSetup(Fl_Window* parent, Line& line) :
-    Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
+    Fl_Double_Window(0, 0, 10, 10, "Chart - Line Properties"),
     _line(line) {
         end();
 
         _align  = new Fl_Choice(0, 0, 0, 0, "Align");
-        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::label::OK.c_str());
+        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::label::CLOSE.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
         _line   = line;
-        _ret    = false;
         _run    = false;
 
         _grid->add(_label,     12,   1,  -1,  4);
@@ -129,7 +125,6 @@ public:
         _grid->add(_align,     12,  11,  -1,  4);
         _grid->add(_color,     12,  16,  -1,  4);
         _grid->add(_width,     12,  21,  -1,  4);
-        _grid->add(_cancel,   -34,  -5,  16,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
 
@@ -137,7 +132,6 @@ public:
         _align->add("Right");
         _align->textfont(flw::PREF_FONT);
         _align->textsize(flw::PREF_FONTSIZE);
-        _cancel->callback(_LineSetup::Callback, this);
         _close->callback(_LineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
         _color->callback(_LineSetup::Callback, this);
@@ -146,11 +140,11 @@ public:
         _type->add("Line");
         _type->add("Dotted Line");
         _type->add("Bar");
-        _type->add("Bar clamp");
-        _type->add("Bar hlc");
+        _type->add("Bar Clamp");
+        _type->add("Bar HLC");
         _type->add("Horizontal");
-        _type->add("Expand all horizontal points");
-        _type->add("Expand first horizontal point");
+        _type->add("Expand All Horizontal Points");
+        _type->add("Expand First Horizontal Point");
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
@@ -158,13 +152,12 @@ public:
         _width->precision(0);
         _width->range(1, chart::MAX_LINE_WIDTH);
         _width->value(_line.width());
-        _width->tooltip("Max line width.");
+        _width->tooltip("Max Line Width.");
 
         resizable(_grid);
         util::labelfont(this);
         callback(_LineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
-        size_range(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
@@ -180,10 +173,6 @@ public:
 
         if (w == self) {
         }
-        else if (w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
         else if (w == self->_color) {
             self->_color->color(fl_show_colormap(self->_line.color()));
         }
@@ -193,7 +182,6 @@ public:
             self->redraw();
         }
         else if (w == self->_close) {
-            self->_ret = true;
             self->_run = false;
             self->update_line();
             self->hide();
@@ -202,9 +190,8 @@ public:
 
     /** @brief Show dialog.
     *
-    * @return True if close has been pressed.
     */
-    bool run() {
+    void run() {
         _run = true;
         show();
 
@@ -212,8 +199,6 @@ public:
             Fl::wait();
             Fl::flush();
         }
-
-        return _ret;
     }
 
     /** @brief Update input chart line.
@@ -907,14 +892,17 @@ PointVector Point::Modify(const PointVector& in, Modifier modify, double value) 
             case Modifier::ADDITION:
                 res.push_back(Point(data.date, data.high + value, data.low + value, data.close + value));
                 break;
-            case Modifier::DIVISION:
-                res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
+            
+            case Modifier::SUBTRACTION:
+                res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
                 break;
+            
             case Modifier::MULTIPLICATION:
                 res.push_back(Point(data.date, data.high * value, data.low * value, data.close * value));
                 break;
-            case Modifier::SUBTRACTION:
-                res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
+            
+            case Modifier::DIVISION:
+                res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
                 break;
         }
     }
@@ -1058,8 +1046,8 @@ bool Point::SaveCSV(const PointVector& in, const std::string& filename, const st
     csv.reserve(in.size() * 40 + 256);
 
     for (const auto& data : in) {
-        char buffer[256];
-        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
+        char buffer[2'000];
+        snprintf(buffer, 2'000, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
         csv += buffer;
     }
 
@@ -1857,11 +1845,11 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
 */
 bool Chart::create_line(Algorithm formula, bool support) {
     if (_area == nullptr || _area->selected_line() == nullptr) {
-        dlg::msg_alert("Chart Error", "Area or line has not been selected!");
+        dlg::msg_alert("Chart", "Area or line has not been selected!");
         return false;
     }
     else if (_area->size() >= Area::MAX_LINES) {
-        dlg::msg_alert("Chart Error", "Max line count reached!");
+        dlg::msg_alert("Chart", "Max supported line count reached!");
         return false;
     }
 
@@ -1933,7 +1921,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
     else if (formula == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Chart - Select Modification", list, 0);
 
         if (ans < 0 || ans > static_cast<int>(Modifier::LAST)) {
             return false;
@@ -1947,7 +1935,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
             return false;
         }
         else if (fabs(value) < chart::MIN_VALUE) {
-            dlg::msg_alert("Chart Error", "To small value for division!");
+            dlg::msg_alert("Chart", "To small value!");
             return false;
         }
 
@@ -2036,7 +2024,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
 
     if (vec1.size() == 0) {
-        dlg::msg_alert("Chart Error", "No data!");
+        dlg::msg_alert("Chart", "No data!");
         return false;
     }
 
@@ -3032,7 +3020,7 @@ bool Chart::load_json() {
 * @return True if ok.
 */
 bool Chart::load_json(const std::string& filename) {
-    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart Error", "Illegal chart value at pos %u", (X)->pos()); reset(); return false; }
+    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart", "Illegal chart value at pos %u", (X)->pos()); reset(); return false; }
 
     _filename = "";
 
@@ -3043,14 +3031,14 @@ bool Chart::load_json(const std::string& filename) {
     auto buf = gnu::file::read(filename);
 
     if (buf.c_str() == nullptr) {
-        dlg::msg_alert("Chart Error", util::format("Failed to load %s", filename.c_str()));
+        dlg::msg_alert("Chart", util::format("Failed to load %s", filename.c_str()));
         return false;
     }
 
     auto js = gnu::json::decode(buf.c_str(), buf.size(), true);
 
     if (js.has_err() == true) {
-        dlg::msg_alert("Chart Error", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
+        dlg::msg_alert("Chart", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
         return false;
     }
 
@@ -3060,7 +3048,7 @@ bool Chart::load_json(const std::string& filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart Error", "Wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
+                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart", "Wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -3160,7 +3148,7 @@ bool Chart::load_json(const std::string& filename) {
 */
 bool Chart::load_line_from_csv() {
     if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
-        dlg::msg_alert("Chart Error", "Max line count reached!");
+        dlg::msg_alert("Chart", "Max line count reached!");
         return false;
     }
 
@@ -3173,7 +3161,7 @@ bool Chart::load_line_from_csv() {
     auto vec = Point::LoadCSV(filename);
 
     if (vec.size() == 0) {
-        dlg::msg_alert("Chart Error", "No data!");
+        dlg::msg_alert("Chart", "No data!");
         return false;
     }
 
@@ -3216,7 +3204,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
         auto& dest  = _areas[static_cast<size_t>(destination)];
 
         if (dest.add_line(line2) == false) {
-            dlg::msg_alert("Chart Error", "Target area has reached maximum number of lines!");
+            dlg::msg_alert("Chart", "Target area has reached maximum number of lines!");
             return false;
         }
     }
@@ -3230,7 +3218,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
 */
 void Chart::print_to_postscript() {
     _printing = true;
-    dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1);
+    dlg::print("Chart", Chart::_CallbackPrinter, this, 1, 1);
     _printing = false;
     redraw();
 }
@@ -3391,7 +3379,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
         return res;
     }
     catch(const std::string& e) {
-        dlg::msg_alert("Chart Error", util::format("Failed to encode json\n%s", e.c_str()));
+        dlg::msg_alert("Chart", util::format("Failed to encode json\n%s", e.c_str()));
         return false;
     }
 }
@@ -3412,7 +3400,7 @@ bool Chart::save_line_to_csv() {
     }
 
     const auto* line   = _area->selected_line();
-    const auto  answer = dlg::msg_ask("Select Range", "Save all data or only those in view?", "View", "All");
+    const auto  answer = dlg::msg_ask("Chart", "Select range.\nSave all data or only those in view?", "View", "All");
     auto        data   = PointVector();
     const auto& ldata  = line->data();
 
@@ -3436,7 +3424,7 @@ bool Chart::save_line_to_csv() {
     }
 
     if (data.size() == 0) {
-        dlg::msg_alert("Chart Error", "No data!");
+        dlg::msg_alert("Chart", "No data!");
         return false;
     }
     else {
@@ -3512,33 +3500,45 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 *
 */
 void Chart::setup_area() {
-    auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
+    auto list = StringVector() = {"One", "Two Equal Size", "Two (60%, 40%)", "Three Equal Size", "Three (50%, 25%, 25%)", "Four Equal Size", "Four (40%, 20%, 20%, 20%)", "Five Equal Size", "Five (40%, 15%, 15%, 15%, 15%)"};
 
-    switch (dlg::select_choice("Select Number Of Chart Areas", list, 0)) {
+    switch (dlg::select_choice("Chart - Select Number of Chart Areas", list, 0)) {
         case 0:
             set_area_size(100);
             break;
+
         case 1:
             set_area_size(50, 50);
             break;
+
         case 2:
             set_area_size(60, 40);
             break;
+
         case 3:
             set_area_size(34, 33, 33);
             break;
+
         case 4:
             set_area_size(50, 25, 25);
             break;
+
         case 5:
             set_area_size(25, 25, 25, 25);
             break;
+
         case 6:
             set_area_size(40, 20, 20, 20);
             break;
+
         case 7:
             set_area_size(20, 20, 20, 20, 20);
             break;
+
+        case 8:
+            set_area_size(40, 15, 15, 15, 15);
+            break;
+
         default:
             break;
     }
@@ -3580,74 +3580,88 @@ void Chart::setup_clamp(bool min) {
 */
 void Chart::setup_create_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
-        dlg::msg_alert("Chart Error", "Area or line has not been selected!");
+        dlg::msg_alert("Chart", "Area or line has not been selected!");
         return;
     }
     else if (_area->size() >= Area::MAX_LINES) {
-        dlg::msg_alert("Chart Error", "Max line count reached!");
+        dlg::msg_alert("Chart", "Max line count reached!");
         return;
     }
 
     auto list = StringVector() = {
-        "Moving average",
-        "Exponential moving average",
+        "Moving Average",
+        "Exponential Moving Average",
         "Momentum",
-        "Momentum + support line",
-        "Standard deviation",
+        "Momentum + Support Line",
+        "Standard Deviation",
         "Stochastics",
-        "Stochastics + support lines",
+        "Stochastics + Support Lines",
         "Relative Strength Index (RSI)",
-        "Relative Strength Index (RSI) + support lines",
+        "Relative Strength Index (RSI) + Support Lines",
         "Average True Range (ATR)",
-        "Day to week",
-        "Day to month",
+        "Day to Week",
+        "Day to Month",
         "Modify",
-        "Horizontal fixed line"
+        "Horizontal Fixed Line"
     };
 
-    switch (dlg::select_choice("Select Formula", list, 0)) {
+    switch (dlg::select_choice("Chart - Select Formula", list, 0)) {
         case 0:
             create_line(Algorithm::MOVING_AVERAGE);
             break;
+
         case 1:
             create_line(Algorithm::EXP_MOVING_AVERAGE);
             break;
+
         case 2:
             create_line(Algorithm::MOMENTUM);
             break;
+
         case 3:
             create_line(Algorithm::MOMENTUM, true);
             break;
+
         case 4:
             create_line(Algorithm::STD_DEV);
             break;
+
         case 5:
             create_line(Algorithm::STOCHASTICS);
             break;
+
         case 6:
             create_line(Algorithm::STOCHASTICS, true);
             break;
+
         case 7:
             create_line(Algorithm::RSI);
             break;
+
         case 8:
             create_line(Algorithm::RSI, true);
             break;
+
         case 9:
             create_line(Algorithm::ATR);
             break;
+
         case 10:
             create_line(Algorithm::DAY_TO_WEEK);
             break;
+
         case 11:
             create_line(Algorithm::DAY_TO_MONTH);
             break;
+
         case 12:
             create_line(Algorithm::MODIFY);
             break;
+
         case 13:
             create_line(Algorithm::FIXED);
             break;
+
         default:
             break;
     }
@@ -3658,7 +3672,7 @@ void Chart::setup_create_line() {
 */
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::select_choice("Select Date Range Type", list, static_cast<int>(_date_range));
+    auto sel  = dlg::select_choice("Chart - Select Date Range Type", list, static_cast<int>(_date_range));
 
     if (sel == -1) {
         return;
@@ -3676,7 +3690,7 @@ void Chart::setup_delete_lines() {
         return;
     }
 
-    auto list_labels = dlg::select_checkboxes("Delete Lines", _label_array(*_area, LabelType::OFF));
+    auto list_labels = dlg::select_checkboxes("Chart - Delete Lines", _label_array(*_area, LabelType::OFF));
 
     if (list_labels.size() == 0) {
         return;
@@ -3715,12 +3729,8 @@ void Chart::setup_line() {
     }
 
     auto line = const_cast<Line*>(_area->selected_line());
-    auto ok   = _LineSetup(top_window(), *line).run();
 
-    if (ok == false) {
-        return;
-    }
-
+    _LineSetup(top_window(), *line).run();
     init_new_data();
 }
 
@@ -3732,14 +3742,14 @@ void Chart::setup_move_lines() {
         return;
     }
 
-    auto list_labels = dlg::select_checkboxes("Move Lines", _label_array(*_area, LabelType::OFF));
+    auto list_labels = dlg::select_checkboxes("Chart - Move Lines", _label_array(*_area, LabelType::OFF));
 
     if (list_labels.size() == 0) {
         return;
     }
 
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::select_choice("Select Area", list_areas, 0);
+    auto area       = dlg::select_choice("Chart - Select Area", list_areas, 0);
 
     if (area < 0 || area > static_cast<int>(AreaNum::LAST)) {
         return;
@@ -3765,7 +3775,7 @@ void Chart::setup_show_or_hide_lines() {
     }
 
     auto list = _label_array(*_area, LabelType::VISIBLE);
-    list = dlg::select_checkboxes("Show Or Hide Lines", list);
+    list = dlg::select_checkboxes("Chart - Show Or Hide Lines", list);
 
     if (list.size() == 0) {
         return;

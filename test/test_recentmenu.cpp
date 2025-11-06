@@ -44,6 +44,7 @@ public:
         insert_recent->max_items(5);
         add_recent = new flw::util::RecentMenu(menu, CallbackAdd, this, "&File/Open recent (add)");
         add_recent->max_items(5);
+        menu->add("&File/Clear",                       0,                          Test::Callback2, this);
         menu->add("&File/Save",                        FL_COMMAND + 's',           Test::Callback, this);
         menu->add("&File/Close",                       0,                          Test::Callback, this);
         menu->add("&File/Quit",                        FL_COMMAND + 'q',           Test::Callback, this);
@@ -64,6 +65,11 @@ public:
         pref.clear();
         insert_recent->save_pref(pref);
         add_recent->save_pref(pref, "files2");
+        
+        for (auto& insert : insert_recent->items()) {
+            FLW_PRINTV(insert)
+            (void) insert;
+        }
     }
 
     //------------------------------------------------------------------------------
@@ -79,6 +85,13 @@ public:
         else if (w == self->insert_button) {
             self->make_menu(self->insert_recent, false);
         }
+    }
+
+    //------------------------------------------------------------------------------
+    static void Callback2(Fl_Widget*, void* o) {
+        auto self = (Test*) o;
+        self->insert_recent->clear();
+        self->add_recent->clear();
     }
 
     //------------------------------------------------------------------------------

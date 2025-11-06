@@ -42,13 +42,16 @@ namespace util {
 */
 class RecentMenu {
 public:
-                                RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
+                                RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open Recent", const std::string& clear_label = "/Clear");
     void                        append(const std::string& item)
                                     { return _add(item, true); } ///< @brief Append item last in menu. @param[in] item  Menu label.
+    void                        clear()
+                                    { return _add("", false); } ///< @brief Clear all string except clear item.
     void                        insert(const std::string& item)
                                     { return _add(item, false); } ///< @brief Insert item first in menu. @param[in] item  Menu label.
     StringVector                items() const
                                     { return _items; } ///< @brief Number of items.
+    void                        items(const StringVector& names);
     size_t                      max_items() const
                                     { return _max; } ///< @brief Get max number of items.
     void                        max_items(size_t max)
@@ -62,12 +65,12 @@ public:
     void                        user_data(void* data)
                                     { _user = data; } ///< @brief Set user data.
 
-    static void                 CallbackClear(Fl_Widget*, void* o);
-
 private:
     void                        _add(const std::string& item, bool append);
     size_t                      _add_string(StringVector& items, size_t max_size, const std::string& string);
     size_t                      _insert_string(StringVector& items, size_t max_size, const std::string& string);
+
+    static void                 _Callback(Fl_Widget*, void* o);
 
     std::string                 _base;
     Fl_Callback*                _callback;

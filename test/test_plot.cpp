@@ -154,10 +154,6 @@ public:
         add(menu);
         add(plot);
 
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_plot");
-        flw::theme::load_theme_from_pref(pref);
-        flw::theme::load_win_from_pref(pref, "gui.", this, true);
-
         menu->add("&Test/Autorun",              0, Test::CallbackAuto, this, FL_MENU_DIVIDER);
         menu->add("&Test/Save",                 0, Test::CallbackSave, this);
         menu->add("&Test/Load",                 0, Test::CallbackLoad, this, FL_MENU_DIVIDER);
@@ -193,8 +189,12 @@ public:
         create_plot();
 
         resizable(this);
-        show();
         resize(300, 100, W, H);
+        show();
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_plot");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
     }
 
     //--------------------------------------------------------------------------
@@ -374,7 +374,7 @@ public:
         }
         else if (TEST == TEST_RANGE1) {
             auto vec1 = create_line(-10);
-            auto vec2 = plot::Point::Modify(vec1, plot::Modifier::MULTIPLICATION, plot::Value::Y, -1.0);
+            auto vec2 = plot::Point::Modify(vec1, plot::Modifier::MULTIPLICATION, plot::Target::Y, -1.0);
             
             plot->add_line(plot::Line(vec1, "LineType::LINE_WITH_SQUARE", plot::LineType::LINE_WITH_SQUARE, FL_BLUE, 2));
             plot->add_line(plot::Line(vec2, "Inverted Line", plot::LineType::LINE_DOT, FL_RED, 3));

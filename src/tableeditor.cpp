@@ -34,12 +34,12 @@ static const std::string DEC_LARGE      = "---";
 static const std::string INC_SMALL      = "+";
 static const std::string INC_MEDIUM     = "++";
 static const std::string INC_LARGE      = "+++";
-std::string              EditColorLabel = "Set Color";
-std::string              EditDateLabel  = "Select Date";
-std::string              EditDirLabel   = "Select Directory";
-std::string              EditFileLabel  = "Select File";
-std::string              EditListLabel  = "Select String";
-std::string              EditTextLabel  = "Edit Text";
+std::string              EditColorLabel = "Table - Set Color";
+std::string              EditDateLabel  = "Table - Select Date";
+std::string              EditDirLabel   = "Table - Select Directory";
+std::string              EditFileLabel  = "Table - Select File";
+std::string              EditListLabel  = "Table - Select String";
+std::string              EditTextLabel  = "Table - Edit Text";
 
 /** @brief Format a 4 number string for the slider widgets.
 *

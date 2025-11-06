@@ -900,8 +900,10 @@ namespace label {
     extern std::string          DEL;
     extern std::string          DISCARD;
     extern std::string          MONO;
+    extern std::string          NEXT;
     extern std::string          NO;
     extern std::string          OK;
+    extern std::string          PREV;
     extern std::string          PRINT;
     extern std::string          REGULAR;
     extern std::string          SAVE;
@@ -1090,10 +1092,10 @@ enum class LineType {
 };
 enum class Modifier {
     ADDITION,
-    DIVISION,
-    MULTIPLICATION,
     SUBTRACTION,
-    LAST = SUBTRACTION,
+    MULTIPLICATION,
+    DIVISION,
+    LAST = DIVISION,
 };
 enum class AreaNum {
     ONE,
@@ -1841,12 +1843,12 @@ enum class LineType {
 };
 enum class Modifier {
     ADDITION,
-    DIVISION,
-    MULTIPLICATION,
     SUBTRACTION,
-    LAST = SUBTRACTION,
+    MULTIPLICATION,
+    DIVISION,
+    LAST = DIVISION,
 };
-enum class Value {
+enum class Target {
     X,
     Y,
     X_AND_Y,
@@ -1864,7 +1866,7 @@ struct Point {
     static void                 Debug(const PointVector& in);
     static PointVector          LoadCSV(const std::string& filename, const std::string& sep = ",");
     static bool                 MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y);
-    static PointVector          Modify(const PointVector& in, plot::Modifier modify, plot::Value target, double value);
+    static PointVector          Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value);
     static bool                 SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep = ",");
     static PointVector          Swap(const PointVector& in);
 };
@@ -2081,13 +2083,16 @@ namespace flw {
 namespace util {
 class RecentMenu {
 public:
-                                RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open recent", const std::string& clear_label = "/Clear");
+                                RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata = nullptr, const std::string& base_label = "&File/Open Recent", const std::string& clear_label = "/Clear");
     void                        append(const std::string& item)
                                     { return _add(item, true); }
+    void                        clear()
+                                    { return _add("", false); }
     void                        insert(const std::string& item)
                                     { return _add(item, false); }
     StringVector                items() const
                                     { return _items; }
+    void                        items(const StringVector& names);
     size_t                      max_items() const
                                     { return _max; }
     void                        max_items(size_t max)
@@ -2100,11 +2105,11 @@ public:
                                     { return _user; }
     void                        user_data(void* data)
                                     { _user = data; }
-    static void                 CallbackClear(Fl_Widget*, void* o);
 private:
     void                        _add(const std::string& item, bool append);
     size_t                      _add_string(StringVector& items, size_t max_size, const std::string& string);
     size_t                      _insert_string(StringVector& items, size_t max_size, const std::string& string);
+    static void                 _Callback(Fl_Widget*, void* o);
     std::string                 _base;
     Fl_Callback*                _callback;
     std::string                 _clear;
@@ -2462,7 +2467,7 @@ class TabsGroup : public Fl_Group {
 public:
     static const int            DEFAULT_SPACE             =  2;
     static const int            DEFAULT_MAX_HOR_TAB_WIDTH = 12;
-    static const int            DEFAULT_VER_TAB_WIDTH     = 10;
+    static const int            DEFAULT_VER_TAB_WIDTH     = 12;
     static const int            HEIGHT                    =  8;
     static const int            MAX_SPACE                 = 20;
     static const int            MIN_WIDTH                 =  4;

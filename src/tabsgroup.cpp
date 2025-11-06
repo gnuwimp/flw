@@ -1095,6 +1095,8 @@ void TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
 
     labelfont(font);
     labelsize(fontsize);
+    _width1 = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
+    _width2 = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
 
     for (auto widget : _widgets) {
         widget->labelfont(font);

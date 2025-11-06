@@ -3019,38 +3019,37 @@ namespace chart {
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 #define _FLW_CHART_DEBUG(X)
 #define _FLW_CHART_CLIP(X) { X; }
-static const char* const _LABEL_ADD_CSV         = "Add line from CSV file...";
-static const char* const _LABEL_ADD_LINE        = "Create line...";
-static const char* const _LABEL_CLEAR           = "Clear chart";
-static const char* const _LABEL_LOAD_JSON       = "Load chart from JSON...";
-static const char* const _LABEL_PRINT           = "Print to PostScript file...";
-static const char* const _LABEL_SAVE_CSV        = "Save line to CSV...";
-static const char* const _LABEL_SAVE_JSON       = "Save chart to JSON...";
-static const char* const _LABEL_SAVE_PNG        = "Save to png file...";
-static const char* const _LABEL_SETUP_AREA      = "Number of areas...";
-static const char* const _LABEL_SETUP_DELETE    = "Delete lines...";
+static const char* const _LABEL_ADD_CSV         = "Add Line from CSV File...";
+static const char* const _LABEL_ADD_LINE        = "Create Line...";
+static const char* const _LABEL_CLEAR           = "Clear Chart";
+static const char* const _LABEL_LOAD_JSON       = "Load Chart from JSON...";
+static const char* const _LABEL_PRINT           = "Print to PostScript File...";
+static const char* const _LABEL_SAVE_CSV        = "Save Line to CSV...";
+static const char* const _LABEL_SAVE_JSON       = "Save Chart to JSON...";
+static const char* const _LABEL_SAVE_PNG        = "Save to PNG File...";
+static const char* const _LABEL_SETUP_AREA      = "Number of Areas...";
+static const char* const _LABEL_SETUP_DELETE    = "Delete Lines...";
 static const char* const _LABEL_SETUP_LABEL     = "Label...";
-static const char* const _LABEL_SETUP_LINE      = "Line properties...";
-static const char* const _LABEL_SETUP_MAX_CLAMP = "Set max clamp...";
-static const char* const _LABEL_SETUP_MIN_CLAMP = "Set min clamp...";
-static const char* const _LABEL_SETUP_MOVE      = "Move lines...";
-static const char* const _LABEL_SETUP_RANGE     = "Date range...";
-static const char* const _LABEL_SETUP_SHOW      = "Show or hide lines...";
-static const char* const _LABEL_SHOW_HLINES     = "Show horizontal lines";
-static const char* const _LABEL_SHOW_LABELS     = "Show line labels";
-static const char* const _LABEL_SHOW_VLINES     = "Show vertical lines";
+static const char* const _LABEL_SETUP_LINE      = "Line Properties...";
+static const char* const _LABEL_SETUP_MAX_CLAMP = "Set Max Clamp...";
+static const char* const _LABEL_SETUP_MIN_CLAMP = "Set Min Clamp...";
+static const char* const _LABEL_SETUP_MOVE      = "Move Lines...";
+static const char* const _LABEL_SETUP_RANGE     = "Date Range...";
+static const char* const _LABEL_SETUP_SHOW      = "Show or Hide Lines...";
+static const char* const _LABEL_SHOW_HLINES     = "Show Horizontal Lines";
+static const char* const _LABEL_SHOW_LABELS     = "Show Line Labels";
+static const char* const _LABEL_SHOW_VLINES     = "Show Vertical Lines";
 static const int         _MIN_MARGIN            =  3;
 static const int         _MIN_AREA_SIZE         = 10;
 static const int         _TICK_SIZE             =  4;
 static const std::string _LABEL_SYMBOL          = "@-> ";
 #ifdef DEBUG
-static const char* const _LABEL_DEBUG           = "Debug chart";
-static const char* const _LABEL_DEBUG_LINE      = "Print visible values";
+static const char* const _LABEL_DEBUG           = "Debug Chart";
+static const char* const _LABEL_DEBUG_LINE      = "Print Visible Values";
 #endif
 class _LineSetup : public Fl_Double_Window {
 public:
     Line&                       _line;
-    Fl_Button*                  _cancel;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _align;
@@ -3058,37 +3057,32 @@ public:
     Fl_Hor_Slider*              _width;
     Fl_Input*                   _label;
     GridGroup*                  _grid;
-    bool                        _ret;
     bool                        _run;
 public:
     _LineSetup(Fl_Window* parent, Line& line) :
-    Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
+    Fl_Double_Window(0, 0, 10, 10, "Chart - Line Properties"),
     _line(line) {
         end();
         _align  = new Fl_Choice(0, 0, 0, 0, "Align");
-        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::label::OK.c_str());
+        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::label::CLOSE.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
         _line   = line;
-        _ret    = false;
         _run    = false;
         _grid->add(_label,     12,   1,  -1,  4);
         _grid->add(_type,      12,   6,  -1,  4);
         _grid->add(_align,     12,  11,  -1,  4);
         _grid->add(_color,     12,  16,  -1,  4);
         _grid->add(_width,     12,  21,  -1,  4);
-        _grid->add(_cancel,   -34,  -5,  16,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
         _align->add("Left");
         _align->add("Right");
         _align->textfont(flw::PREF_FONT);
         _align->textsize(flw::PREF_FONTSIZE);
-        _cancel->callback(_LineSetup::Callback, this);
         _close->callback(_LineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
         _color->callback(_LineSetup::Callback, this);
@@ -3097,11 +3091,11 @@ public:
         _type->add("Line");
         _type->add("Dotted Line");
         _type->add("Bar");
-        _type->add("Bar clamp");
-        _type->add("Bar hlc");
+        _type->add("Bar Clamp");
+        _type->add("Bar HLC");
         _type->add("Horizontal");
-        _type->add("Expand all horizontal points");
-        _type->add("Expand first horizontal point");
+        _type->add("Expand All Horizontal Points");
+        _type->add("Expand First Horizontal Point");
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
@@ -3109,12 +3103,11 @@ public:
         _width->precision(0);
         _width->range(1, chart::MAX_LINE_WIDTH);
         _width->value(_line.width());
-        _width->tooltip("Max line width.");
+        _width->tooltip("Max Line Width.");
         resizable(_grid);
         util::labelfont(this);
         callback(_LineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
-        size_range(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
@@ -3125,10 +3118,6 @@ public:
         auto self = static_cast<_LineSetup*>(o);
         if (w == self) {
         }
-        else if (w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
         else if (w == self->_color) {
             self->_color->color(fl_show_colormap(self->_line.color()));
         }
@@ -3138,20 +3127,18 @@ public:
             self->redraw();
         }
         else if (w == self->_close) {
-            self->_ret = true;
             self->_run = false;
             self->update_line();
             self->hide();
         }
     }
-    bool run() {
+    void run() {
         _run = true;
         show();
         while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
-        return _ret;
     }
     void update_line() {
         _line.set_label(_label->value());
@@ -3596,14 +3583,14 @@ PointVector Point::Modify(const PointVector& in, Modifier modify, double value) 
             case Modifier::ADDITION:
                 res.push_back(Point(data.date, data.high + value, data.low + value, data.close + value));
                 break;
-            case Modifier::DIVISION:
-                res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
+            case Modifier::SUBTRACTION:
+                res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
                 break;
             case Modifier::MULTIPLICATION:
                 res.push_back(Point(data.date, data.high * value, data.low * value, data.close * value));
                 break;
-            case Modifier::SUBTRACTION:
-                res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
+            case Modifier::DIVISION:
+                res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
                 break;
         }
     }
@@ -3689,8 +3676,8 @@ bool Point::SaveCSV(const PointVector& in, const std::string& filename, const st
     std::string csv;
     csv.reserve(in.size() * 40 + 256);
     for (const auto& data : in) {
-        char buffer[256];
-        snprintf(buffer, 256, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
+        char buffer[2'000];
+        snprintf(buffer, 2'000, "%s%s%s%s%s%s%s\n", data.date.c_str(), sep.c_str(), gnu::json::format_number(data.high).c_str(), sep.c_str(), gnu::json::format_number(data.low).c_str(), sep.c_str(), gnu::json::format_number(data.close).c_str());
         csv += buffer;
     }
     return gnu::file::write(filename, csv.c_str(), csv.size());
@@ -4199,11 +4186,11 @@ void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
 }
 bool Chart::create_line(Algorithm formula, bool support) {
     if (_area == nullptr || _area->selected_line() == nullptr) {
-        dlg::msg_alert("Chart Error", "Area or line has not been selected!");
+        dlg::msg_alert("Chart", "Area or line has not been selected!");
         return false;
     }
     else if (_area->size() >= Area::MAX_LINES) {
-        dlg::msg_alert("Chart Error", "Max line count reached!");
+        dlg::msg_alert("Chart", "Max supported line count reached!");
         return false;
     }
     auto line0  = _area->selected_line();
@@ -4265,7 +4252,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
     else if (formula == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Chart - Select Modification", list, 0);
         if (ans < 0 || ans > static_cast<int>(Modifier::LAST)) {
             return false;
         }
@@ -4276,7 +4263,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
             return false;
         }
         else if (fabs(value) < chart::MIN_VALUE) {
-            dlg::msg_alert("Chart Error", "To small value for division!");
+            dlg::msg_alert("Chart", "To small value!");
             return false;
         }
         vec1   = Point::Modify(line0->data(), modify, value);
@@ -4350,7 +4337,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         }
     }
     if (vec1.size() == 0) {
-        dlg::msg_alert("Chart Error", "No data!");
+        dlg::msg_alert("Chart", "No data!");
         return false;
     }
     line1.set_data(vec1).set_label(label1).set_type(type1).set_align(line0->align()).set_color(FL_BLUE);
@@ -5088,19 +5075,19 @@ bool Chart::load_json() {
     return load_json(filename);
 }
 bool Chart::load_json(const std::string& filename) {
-    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart Error", "Illegal chart value at pos %u", (X)->pos()); reset(); return false; }
+    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart", "Illegal chart value at pos %u", (X)->pos()); reset(); return false; }
     _filename = "";
     reset();
     redraw();
     auto wc  = WaitCursor();
     auto buf = gnu::file::read(filename);
     if (buf.c_str() == nullptr) {
-        dlg::msg_alert("Chart Error", util::format("Failed to load %s", filename.c_str()));
+        dlg::msg_alert("Chart", util::format("Failed to load %s", filename.c_str()));
         return false;
     }
     auto js = gnu::json::decode(buf.c_str(), buf.size(), true);
     if (js.has_err() == true) {
-        dlg::msg_alert("Chart Error", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
+        dlg::msg_alert("Chart", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
         return false;
     }
     if (js.is_object() == false) _FLW_CHART_ERROR(&js);
@@ -5108,7 +5095,7 @@ bool Chart::load_json(const std::string& filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart Error", "Wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
+                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart", "Wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -5195,7 +5182,7 @@ bool Chart::load_json(const std::string& filename) {
 }
 bool Chart::load_line_from_csv() {
     if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
-        dlg::msg_alert("Chart Error", "Max line count reached!");
+        dlg::msg_alert("Chart", "Max line count reached!");
         return false;
     }
     auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
@@ -5204,7 +5191,7 @@ bool Chart::load_line_from_csv() {
     }
     auto vec = Point::LoadCSV(filename);
     if (vec.size() == 0) {
-        dlg::msg_alert("Chart Error", "No data!");
+        dlg::msg_alert("Chart", "No data!");
         return false;
     }
     auto line = Line(vec, filename);
@@ -5229,7 +5216,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
         auto  line2 = *line1;
         auto& dest  = _areas[static_cast<size_t>(destination)];
         if (dest.add_line(line2) == false) {
-            dlg::msg_alert("Chart Error", "Target area has reached maximum number of lines!");
+            dlg::msg_alert("Chart", "Target area has reached maximum number of lines!");
             return false;
         }
     }
@@ -5238,7 +5225,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
 }
 void Chart::print_to_postscript() {
     _printing = true;
-    dlg::print("Print Chart", Chart::_CallbackPrinter, this, 1, 1);
+    dlg::print("Chart", Chart::_CallbackPrinter, this, 1, 1);
     _printing = false;
     redraw();
 }
@@ -5358,7 +5345,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
         return res;
     }
     catch(const std::string& e) {
-        dlg::msg_alert("Chart Error", util::format("Failed to encode json\n%s", e.c_str()));
+        dlg::msg_alert("Chart", util::format("Failed to encode json\n%s", e.c_str()));
         return false;
     }
 }
@@ -5371,7 +5358,7 @@ bool Chart::save_line_to_csv() {
         return false;
     }
     const auto* line   = _area->selected_line();
-    const auto  answer = dlg::msg_ask("Select Range", "Save all data or only those in view?", "View", "All");
+    const auto  answer = dlg::msg_ask("Chart", "Select range.\nSave all data or only those in view?", "View", "All");
     auto        data   = PointVector();
     const auto& ldata  = line->data();
     if (answer == "View") {
@@ -5390,7 +5377,7 @@ bool Chart::save_line_to_csv() {
         data = ldata;
     }
     if (data.size() == 0) {
-        dlg::msg_alert("Chart Error", "No data!");
+        dlg::msg_alert("Chart", "No data!");
         return false;
     }
     else {
@@ -5435,8 +5422,8 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
     return false;
 }
 void Chart::setup_area() {
-    auto list = StringVector() = {"One", "Two equal", "Two (60%, 40%)", "Three equal", "Three (50%, 25%, 25%)", "Four Equal", "Four (40%, 20%, 20%, 20%)", "Five equal"};
-    switch (dlg::select_choice("Select Number Of Chart Areas", list, 0)) {
+    auto list = StringVector() = {"One", "Two Equal Size", "Two (60%, 40%)", "Three Equal Size", "Three (50%, 25%, 25%)", "Four Equal Size", "Four (40%, 20%, 20%, 20%)", "Five Equal Size", "Five (40%, 15%, 15%, 15%, 15%)"};
+    switch (dlg::select_choice("Chart - Select Number of Chart Areas", list, 0)) {
         case 0:
             set_area_size(100);
             break;
@@ -5460,6 +5447,9 @@ void Chart::setup_area() {
             break;
         case 7:
             set_area_size(20, 20, 20, 20, 20);
+            break;
+        case 8:
+            set_area_size(40, 15, 15, 15, 15);
             break;
         default:
             break;
@@ -5488,30 +5478,30 @@ void Chart::setup_clamp(bool min) {
 }
 void Chart::setup_create_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
-        dlg::msg_alert("Chart Error", "Area or line has not been selected!");
+        dlg::msg_alert("Chart", "Area or line has not been selected!");
         return;
     }
     else if (_area->size() >= Area::MAX_LINES) {
-        dlg::msg_alert("Chart Error", "Max line count reached!");
+        dlg::msg_alert("Chart", "Max line count reached!");
         return;
     }
     auto list = StringVector() = {
-        "Moving average",
-        "Exponential moving average",
+        "Moving Average",
+        "Exponential Moving Average",
         "Momentum",
-        "Momentum + support line",
-        "Standard deviation",
+        "Momentum + Support Line",
+        "Standard Deviation",
         "Stochastics",
-        "Stochastics + support lines",
+        "Stochastics + Support Lines",
         "Relative Strength Index (RSI)",
-        "Relative Strength Index (RSI) + support lines",
+        "Relative Strength Index (RSI) + Support Lines",
         "Average True Range (ATR)",
-        "Day to week",
-        "Day to month",
+        "Day to Week",
+        "Day to Month",
         "Modify",
-        "Horizontal fixed line"
+        "Horizontal Fixed Line"
     };
-    switch (dlg::select_choice("Select Formula", list, 0)) {
+    switch (dlg::select_choice("Chart - Select Formula", list, 0)) {
         case 0:
             create_line(Algorithm::MOVING_AVERAGE);
             break;
@@ -5560,7 +5550,7 @@ void Chart::setup_create_line() {
 }
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::select_choice("Select Date Range Type", list, static_cast<int>(_date_range));
+    auto sel  = dlg::select_choice("Chart - Select Date Range Type", list, static_cast<int>(_date_range));
     if (sel == -1) {
         return;
     }
@@ -5571,7 +5561,7 @@ void Chart::setup_delete_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
-    auto list_labels = dlg::select_checkboxes("Delete Lines", _label_array(*_area, LabelType::OFF));
+    auto list_labels = dlg::select_checkboxes("Chart - Delete Lines", _label_array(*_area, LabelType::OFF));
     if (list_labels.size() == 0) {
         return;
     }
@@ -5596,22 +5586,19 @@ void Chart::setup_line() {
         return;
     }
     auto line = const_cast<Line*>(_area->selected_line());
-    auto ok   = _LineSetup(top_window(), *line).run();
-    if (ok == false) {
-        return;
-    }
+    _LineSetup(top_window(), *line).run();
     init_new_data();
 }
 void Chart::setup_move_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
-    auto list_labels = dlg::select_checkboxes("Move Lines", _label_array(*_area, LabelType::OFF));
+    auto list_labels = dlg::select_checkboxes("Chart - Move Lines", _label_array(*_area, LabelType::OFF));
     if (list_labels.size() == 0) {
         return;
     }
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::select_choice("Select Area", list_areas, 0);
+    auto area       = dlg::select_choice("Chart - Select Area", list_areas, 0);
     if (area < 0 || area > static_cast<int>(AreaNum::LAST)) {
         return;
     }
@@ -5629,7 +5616,7 @@ void Chart::setup_show_or_hide_lines() {
         return;
     }
     auto list = _label_array(*_area, LabelType::VISIBLE);
-    list = dlg::select_checkboxes("Show Or Hide Lines", list);
+    list = dlg::select_checkboxes("Chart - Show Or Hide Lines", list);
     if (list.size() == 0) {
         return;
     }
@@ -5864,23 +5851,23 @@ GridGroup(X, Y, W, H, l) {
     add(_month_label, 0, 4, 0, 4);
     add(_canvas,      0, 8, 0, 0);
     _b1->callback(flw::DateChooser::_Callback, this);
-    _b1->tooltip("Previous year");
+    _b1->tooltip("Previous year.");
     _b2->callback(flw::DateChooser::_Callback, this);
-    _b2->tooltip("Previous month");
+    _b2->tooltip("Previous month.");
     _b3->callback(flw::DateChooser::_Callback, this);
-    _b3->tooltip("Next month");
+    _b3->tooltip("Next month.");
     _b4->callback(flw::DateChooser::_Callback, this);
-    _b4->tooltip("Next year");
+    _b4->tooltip("Next year.");
     _b5->callback(flw::DateChooser::_Callback, this);
-    _b5->tooltip("Today");
+    _b5->tooltip("Today.");
     _b6->callback(flw::DateChooser::_Callback, this);
-    _b6->tooltip("10 years in the past");
+    _b6->tooltip("10 years in the pas.t");
     _b7->callback(flw::DateChooser::_Callback, this);
-    _b7->tooltip("10 years in the future");
+    _b7->tooltip("10 years in the future.");
     _canvas->callback(flw::DateChooser::_Callback, this);
     _month_label->box(FL_UP_BOX);
     util::labelfont(this);
-    tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
+    tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month.");
     resizable(this);
     do_layout();
 }
@@ -6033,32 +6020,32 @@ static bool         MSG_ACTIVE_COLOR2 = false;
  void _load_plastic_tan();
  void _scrollbar();
 static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
-    format->add("A0 format");
-    format->add("A1 format");
-    format->add("A2 format");
-    format->add("A3 format");
-    format->add("A4 format");
-    format->add("A5 format");
-    format->add("A6 format");
-    format->add("A7 format");
-    format->add("A8 format");
-    format->add("A9 format");
-    format->add("B0 format");
-    format->add("B1 format");
-    format->add("B2 format");
-    format->add("B3 format");
-    format->add("B4 format");
-    format->add("B5 format");
-    format->add("B6 format");
-    format->add("B7 format");
-    format->add("B8 format");
-    format->add("B9 format");
-    format->add("Executive format");
-    format->add("Folio format");
-    format->add("Ledger format");
-    format->add("Legal format");
-    format->add("Letter format");
-    format->add("Tabloid format");
+    format->add("A0 Format");
+    format->add("A1 Format");
+    format->add("A2 Format");
+    format->add("A3 Format");
+    format->add("A4 Format");
+    format->add("A5 Format");
+    format->add("A6 Format");
+    format->add("A7 Format");
+    format->add("A8 Format");
+    format->add("A9 Format");
+    format->add("B0 Format");
+    format->add("B1 Format");
+    format->add("B2 Format");
+    format->add("B3 Format");
+    format->add("B4 Format");
+    format->add("B5 Format");
+    format->add("B6 Format");
+    format->add("B7 Format");
+    format->add("B8 Format");
+    format->add("B9 Format");
+    format->add("Executive Format");
+    format->add("Folio Format");
+    format->add("Ledger Format");
+    format->add("Legal Format");
+    format->add("Letter Format");
+    format->add("Tabloid Format");
     format->tooltip("Select paper format.");
     format->value(4);
     layout->add("Portrait");
@@ -6180,7 +6167,7 @@ void dlg::options_push() {
     priv::MSG_ACTIVE_COLOR2 = priv::MSG_ACTIVE_COLOR;
 }
 void dlg::panic(const std::string& message) {
-    dlg::msg_error("Application Error", util::format("panic! I have to quit\n%s", message.c_str()));
+    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
     exit(1);
 }
 namespace priv {
@@ -6216,7 +6203,6 @@ public:
         callback(Callback, this);
         copy_label(title.c_str());
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
         set_modal();
     }
     static void Callback(Fl_Widget* w, void* o) {
@@ -6275,7 +6261,6 @@ public:
         _html->value(text.c_str());
         callback(_DlgHtml::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -6333,7 +6318,6 @@ public:
         }
         callback(_DlgList::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -6570,7 +6554,6 @@ public:
         resizable(_grid);
         util::labelfont(this);
         util::center_window(this, priv::PARENT);
-        size_range(10, 10);
         _grid->do_layout();
     }
     static void Callback(Fl_Widget* w, void* o) {
@@ -6720,7 +6703,7 @@ public:
         _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _file->textfont(flw::PREF_FIXED_FONT);
         _file->textsize(flw::PREF_FONTSIZE);
-        _file->tooltip("Select optional key file");
+        _file->tooltip("Select optional key file.");
         _password1->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _password1->callback(_DlgPassword::Callback, this);
         _password1->textfont(flw::PREF_FIXED_FONT);
@@ -6754,7 +6737,6 @@ public:
         callback(_DlgPassword::Callback, this);
         copy_label(title.c_str());
         size(W, H);
-        size_range(W, H);
         set_modal();
         util::center_window(this, priv::PARENT);
         _grid->do_layout();
@@ -6944,7 +6926,6 @@ public:
         _DlgPrint::Callback(_to, this);
         callback(_DlgPrint::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -7056,9 +7037,9 @@ public:
         _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
         util::labelfont(this);
-        _align->add("Left align");
-        _align->add("Center align");
-        _align->add("Right align");
+        _align->add("Left Align");
+        _align->add("Center Align");
+        _align->add("Right Align");
         _align->tooltip("Line numbers are only used for left aligned text.");
         _align->value(0);
         _align->textfont(flw::PREF_FONT);
@@ -7099,7 +7080,6 @@ public:
         _DlgPrintText::Callback(_tab, this);
         callback(_DlgPrintText::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -7215,12 +7195,12 @@ public:
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 20),
     _labels(strings) {
         end();
-        _all    = new Fl_Button(0, 0, 0, 0, "All on");
+        _all    = new Fl_Button(0, 0, 0, 0, "All On");
         _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
         _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
         _invert = new Fl_Button(0, 0, 0, 0, "Invert");
-        _none   = new Fl_Button(0, 0, 0, 0, "All off");
+        _none   = new Fl_Button(0, 0, 0, 0, "All Off");
         _scroll = new Fl_Scroll(0, 0, 0, 0);
         _ret    = false;
         _run    = false;
@@ -7248,7 +7228,6 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 12);
         util::center_window(this, priv::PARENT);
     }
     static void Callback(Fl_Widget* w, void* o) {
@@ -7343,7 +7322,6 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6);
         util::center_window(this, priv::PARENT);
         _grid->do_layout();
     }
@@ -7445,7 +7423,6 @@ public:
         callback(_DlgSelectString::Callback, this);
         copy_label(title.c_str());
         activate_button();
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -7583,7 +7560,6 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6);
         util::center_window(this, priv::PARENT);
         _grid->do_layout();
         _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
@@ -7673,7 +7649,6 @@ public:
         util::labelfont(this);
         callback(_DlgText::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -7751,7 +7726,7 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, label::REGULAR.c_str());
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use scaling");
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use Scaling");
         _scale_val   = new Fl_Slider(0, 0, 0, 0);
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
@@ -7775,7 +7750,7 @@ public:
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
         _fixed_label->color(FL_BACKGROUND2_COLOR);
-        _fixed_label->tooltip("Default fixed font");
+        _fixed_label->tooltip("Default fixed font.");
         _fixedfont->callback(_DlgTheme::Callback, this);
         _fixedfont->tooltip("Set default fixed font.");
         _font->callback(_DlgTheme::Callback, this);
@@ -8111,7 +8086,6 @@ void dlg::Font::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize f
     resizable(_grid);
     copy_label(title.c_str());
     callback(Font::Callback, this);
-    size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
     _grid->resize(0, 0, w(), h());
@@ -8183,7 +8157,6 @@ Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
     util::labelfont(this);
     callback(Progress::Callback, this);
     copy_label(title.c_str());
-    size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(_grid);
     _grid->resize(0, 0, w(), h());
@@ -8345,23 +8318,23 @@ static std::string _print(
     int                       pw;
     std::string               res;
     if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
-        return "error: could not open file!";
+        return "Error: could not open file!";
     }
     printer.begin_job(file, 0, format, layout);
     while (cont == true) {
         if (printer.begin_page() != 0) {
-            res = "error: couldn't create new page!";
+            res = "Error: couldn't create new page!";
             goto ERR;
         }
         if (printer.printable_rect(&pw, &ph) != 0) {
-            res = "error: couldn't retrieve page size!";
+            res = "Error: couldn't retrieve page size!";
             goto ERR;
         }
         fl_push_clip(0, 0, pw, ph);
         cont = cb(data, pw, ph, from);
         fl_pop_clip();
         if (printer.end_page() != 0) {
-            res = "error: couldn't end page!";
+            res = "Error: couldn't end page!";
             goto ERR;
         }
         if (from > 0) {
@@ -8690,7 +8663,7 @@ void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) 
 }
 bool debug::test(bool val, int line, const char* func) {
     if (val == false) {
-        fprintf(stderr, "error: test failed at line %d in %s\n", line, func);
+        fprintf(stderr, "Error: test failed at line %d in %s\n", line, func);
         fflush(stderr);
         return false;
     }
@@ -8701,7 +8674,7 @@ bool debug::test(const char* ref, const char* val, int line, const char* func) {
         return true;
     }
     else if (ref == nullptr || val == nullptr || strcmp(ref, val) != 0) {
-        fprintf(stderr, "error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
+        fprintf(stderr, "Error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
         fflush(stderr);
         return false;
     }
@@ -8709,7 +8682,7 @@ bool debug::test(const char* ref, const char* val, int line, const char* func) {
 }
 bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
     if (ref != val) {
-        fprintf(stderr, "error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
+        fprintf(stderr, "Error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
         fflush(stderr);
         return false;
     }
@@ -8717,7 +8690,7 @@ bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
 }
 bool debug::test(double ref, double val, double diff, int line, const char* func) {
     if (fabs(ref - val) > diff) {
-        fprintf(stderr, "error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
+        fprintf(stderr, "Error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
         fflush(stderr);
         return false;
     }
@@ -8728,11 +8701,13 @@ std::string label::CANCEL   = "&Cancel";
 std::string label::CLOSE    = "Cl&ose";
 std::string label::DEL      = "&Delete";
 std::string label::DISCARD  = "&Discard";
-std::string label::MONO     = "&Mono font";
+std::string label::MONO     = "&Mono Font";
+std::string label::NEXT     = "&Next";
 std::string label::NO       = "&No";
 std::string label::OK       = "&Ok";
+std::string label::PREV     = "&Previous";
 std::string label::PRINT    = "&Print";
-std::string label::REGULAR  = "&Regular font";
+std::string label::REGULAR  = "&Regular Font";
 std::string label::SAVE     = "&Save";
 std::string label::SAVE_DOT = "&Save...";
 std::string label::SELECT   = "&Select";
@@ -9107,7 +9082,7 @@ std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Fo
 }
 std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     if (from < 1 || from > to) {
-        return "error: invalid from/to range";
+        return "Error: invalid from/to range!";
     }
     return priv::_print(ps_filename, format, layout, cb, data, from, to);
 }
@@ -9301,14 +9276,14 @@ void util::PrintText::_check_for_new_page() {
         if (_page_count > 0) {
             fl_pop_clip();
             if (_printer->end_page() != 0) {
-                throw "error: couldn't end current page";
+                throw "Error: couldn't end current page!";
             }
         }
         if (_printer->begin_page() != 0) {
-            throw "error: couldn't create new page!";
+            throw "Error: couldn't create new page!";
         }
         if (_printer->printable_rect(&_pw, &_ph) != 0) {
-            throw "error: couldn't retrieve page size!";
+            throw "Error: couldn't retrieve page size!";
         }
         fl_font(_font, _fontsize);
         fl_color(FL_BLACK);
@@ -9367,7 +9342,7 @@ std::string util::PrintText::print(const StringVector& lines, unsigned replace_t
         res = ex;
     }
     catch (...) {
-        res = "error: unknown exception!";
+        res = "Error: unknown exception!";
     }
     return res;
 }
@@ -9437,7 +9412,7 @@ void util::PrintText::_print_wrapped_line(const std::string& line) {
 }
 std::string util::PrintText::_start() {
     if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
-        return "error: could not open file!";
+        return "Error: could not open file!";
     }
     _lh         = 0;
     _line_count = 0;
@@ -9458,7 +9433,7 @@ std::string util::PrintText::_stop() {
         if (_page_count > 0) {
             fl_pop_clip();
             if (_printer->end_page() != 0) {
-                res = "error: could not end page!";
+                res = "Error: could not end page!";
             }
         }
         _printer->end_job();
@@ -9791,9 +9766,9 @@ void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
             return;
         }
     }
-    #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::adjust() failed to find widget (label=%s)\n", widget->label());
-    #endif
+#ifdef DEBUG
+    fprintf(stderr, "Error: flw::GridGroup::adjust() failed to find widget (label=%s)!\n", widget->label());
+#endif
 }
 void GridGroup::clear() {
     _widgets.clear();
@@ -9850,9 +9825,9 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
             return widget;
         }
     }
-    #ifdef DEBUG
-        fprintf(stderr, "error: GridGroup::remove can't find widget\n");
-    #endif
+#ifdef DEBUG
+    fprintf(stderr, "Error: GridGroup::remove can't find widget!\n");
+#endif
     return nullptr;
 }
 void GridGroup::resize(int X, int Y, int W, int H) {
@@ -9919,9 +9894,9 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
             return;
         }
     }
-    #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::resize() failed to find widget (label=%s)\n", widget->label());
-    #endif
+#ifdef DEBUG
+    fprintf(stderr, "Error: flw::GridGroup::resize() failed to find widget (label=%s)!\n", widget->label());
+#endif
 }
 }
 #include <algorithm>
@@ -10579,11 +10554,11 @@ static LogDisplay::Color _logdisplay_convert_color(const std::string& name) {
     else return LogDisplay::Color::GRAY;
 }
 static std::vector<_LogDisplayStyle> _logdisplay_parse_json(const std::string& json) {
-    #define FLW_LOGDISPLAY_ERROR(X) { dlg::msg_alert("JSON Error", util::format("Illegal value at pos %u", (X)->pos())); res.clear(); return res; }
+    #define FLW_LOGDISPLAY_ERROR(X) { dlg::msg_alert("LogDisplay", util::format("Illegal value at pos %u", (X)->pos())); res.clear(); return res; }
     auto res = std::vector<_LogDisplayStyle>();
     auto js  = gnu::json::decode(json.c_str(), json.length(), true);
     if (js.has_err() == true) {
-        dlg::msg_alert("JSON Error", util::format("Failed to parse json\n%s", js.err_c()));
+        dlg::msg_alert("LogDisplay", util::format("Failed to parse json!\n%s", js.err_c()));
         return res;
     }
     if (js.is_array() == false) FLW_LOGDISPLAY_ERROR(&js)
@@ -10672,7 +10647,7 @@ LogDisplay::~LogDisplay() {
 }
 void LogDisplay::edit_styles() {
     auto json    = (_json == "") ? _LOGDISPLAY_JSON_EXAMPLE : _json;
-    auto changed = dlg::text_edit("Edit JSON Style String", json, 40, 50);
+    auto changed = dlg::text_edit("LogDisplay - Edit JSON Style", json, 40, 50);
     if (changed == false) {
         return;
     }
@@ -10680,7 +10655,7 @@ void LogDisplay::edit_styles() {
 }
 void LogDisplay::find(bool next, bool force_ask) {
     if (_find == "" || force_ask) {
-        auto answer = dlg::input("LogDisplay", "Enter search string", _find);
+        auto answer = dlg::input("LogDisplay", "Enter search string.", _find);
         if (answer == label::CANCEL || _find == "") {
             return;
         }
@@ -10736,7 +10711,7 @@ int LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("Style Help", _LOGDISPLAY_HELP, false, 40, 30);
+                dlg::list("LogDisplay - Style Help", _LOGDISPLAY_HELP, false, 40, 30);
                 return 1;
             }
         }
@@ -10767,7 +10742,7 @@ void LogDisplay::line_custom_cb(size_t row, const std::string& line, const std::
 void LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
     if (filename != nullptr && _buffer->savefile(filename) != 0) {
-        dlg::msg_alert("Saving Error", util::format("Failed to save text to %s", filename));
+        dlg::msg_alert("LogDisplay", util::format("Failed to save text to %s!", filename));
     }
 }
 void LogDisplay::style(const std::string& json) {
@@ -10969,79 +10944,73 @@ namespace plot {
 #define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 #define _FLW_PLOT_DEBUG(X)
 #define _FLW_PLOT_CLIP(X) { X; }
-static const char* const _LABEL_ADD_LINE     = "Create line...";
-static const char* const _LABEL_CLEAR        = "Clear plot";
-static const char* const _LABEL_LOAD_CVS     = "Add line from cvs...";
+static const char* const _LABEL_ADD_LINE     = "Create Line...";
+static const char* const _LABEL_CLEAR        = "Clear Plot";
+static const char* const _LABEL_LOAD_CVS     = "Add Line from CVS...";
 static const char* const _LABEL_LOAD_JSON    = "Load plot from JSON...";
-static const char* const _LABEL_PRINT        = "Print to PostScript file...";
-static const char* const _LABEL_SAVE_CVS     = "Save line to cvs...";
-static const char* const _LABEL_SAVE_JSON    = "Save plot to JSON...";
-static const char* const _LABEL_SAVE_PNG     = "Save to png file...";
-static const char* const _LABEL_SETUP_DELETE = "Delete lines...";
-static const char* const _LABEL_SETUP_HLINES = "Show horizontal lines";
+static const char* const _LABEL_PRINT        = "Print to PostScript File...";
+static const char* const _LABEL_SAVE_CVS     = "Save Line to CVS...";
+static const char* const _LABEL_SAVE_JSON    = "Save Plot to JSON...";
+static const char* const _LABEL_SAVE_PNG     = "Save to PNG File...";
+static const char* const _LABEL_SETUP_DELETE = "Delete Lines...";
+static const char* const _LABEL_SETUP_HLINES = "Show Horizontal Lines";
 static const char* const _LABEL_SETUP_LABEL  = "Label...";
-static const char* const _LABEL_SETUP_LABELS = "Show line labels";
-static const char* const _LABEL_SETUP_LINE   = "Line properties...";
-static const char* const _LABEL_SETUP_MAXX   = "Set max X...";
-static const char* const _LABEL_SETUP_MAXY   = "Set max Y...";
-static const char* const _LABEL_SETUP_MINX   = "Set min X...";
-static const char* const _LABEL_SETUP_MINY   = "Set min Y...";
-static const char* const _LABEL_SETUP_SHOW   = "Show or hide lines...";
-static const char* const _LABEL_SETUP_VLINES = "Show vertical lines";
+static const char* const _LABEL_SETUP_LABELS = "Show Line Labels";
+static const char* const _LABEL_SETUP_LINE   = "Line Properties...";
+static const char* const _LABEL_SETUP_MAXX   = "Set Max X...";
+static const char* const _LABEL_SETUP_MAXY   = "Set Max Y...";
+static const char* const _LABEL_SETUP_MINX   = "Set Min X...";
+static const char* const _LABEL_SETUP_MINY   = "Set Min Y...";
+static const char* const _LABEL_SETUP_SHOW   = "Show or Hide Lines...";
+static const char* const _LABEL_SETUP_VLINES = "Show Vertical Lines";
 static const char* const _LABEL_SETUP_XLABEL = "X Label...";
 static const char* const _LABEL_SETUP_YLABEL = "Y Label...";
 static const int         _TICK_SIZE     = 4;
 #ifdef DEBUG
 static const char* const _LABEL_DEBUG        = "Debug";
-static const char* const _LABEL_DEBUG_LINE   = "Debug line";
+static const char* const _LABEL_DEBUG_LINE   = "Debug Line";
 #endif
 class _LineSetup : public Fl_Double_Window {
 public:
     Line&                       _line;
-    Fl_Button*                  _cancel;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _type;
     Fl_Hor_Slider*              _width;
     Fl_Input*                   _label;
     GridGroup*                  _grid;
-    bool                        _ret;
     bool                        _run;
 public:
     _LineSetup(Fl_Window* parent, Line& line) :
-    Fl_Double_Window(0, 0, 10, 10, "Line Properties"),
+    Fl_Double_Window(0, 0, 10, 10, "Plot - Line Properties"),
     _line(line) {
         end();
-        _cancel = new Fl_Button(0, 0, 0, 0, "&Cancel");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
+        _close  = new Fl_Return_Button(0, 0, 0, 0, label::CLOSE.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
         _type   = new Fl_Choice(0, 0, 0, 0, "Type");
         _width  = new Fl_Hor_Slider(0, 0, 0, 0);
         _line   = line;
-        _ret    = false;
         _run    = false;
         _grid->add(_label,     12,   1,  -1,  4);
         _grid->add(_type,      12,   6,  -1,  4);
         _grid->add(_color,     12,  11,  -1,  4);
         _grid->add(_width,     12,  16,  -1,  4);
-        _grid->add(_cancel,   -34,  -5,  16,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
-        _cancel->callback(_LineSetup::Callback, this);
         _close->callback(_LineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
         _color->callback(_LineSetup::Callback, this);
         _label->textfont(flw::PREF_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
         _type->add("Line");
-        _type->add("Dashed line");
-        _type->add("Dotted line");
-        _type->add("Line with square");
+        _type->add("Dashed Line");
+        _type->add("Dotted Line");
+        _type->add("Line with Square");
         _type->add("Vector");
         _type->add("Circle");
-        _type->add("Filled circle");
+        _type->add("Filled Circle");
         _type->add("Square");
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
@@ -11055,7 +11024,6 @@ public:
         util::labelfont(this);
         callback(_LineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 14 * flw::PREF_FONTSIZE);
-        size_range(30 * flw::PREF_FONTSIZE, 14 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
@@ -11066,10 +11034,6 @@ public:
         auto self = static_cast<_LineSetup*>(o);
         if (w == self) {
         }
-        else if (w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
         else if (w == self->_color) {
             self->_color->color(fl_show_colormap(self->_line.color()));
         }
@@ -11079,20 +11043,18 @@ public:
             self->redraw();
         }
         else if (w == self->_close) {
-            self->_ret = true;
             self->_run = false;
             self->update_line();
             self->hide();
         }
     }
-    bool run() {
+    void run() {
         _run = true;
         show();
         while (_run == true) {
             Fl::wait();
             Fl::flush();
         }
-        return _ret;
     }
     void update_line() {
         _line.set_label(_label->value());
@@ -11204,18 +11166,29 @@ bool Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& 
     }
     return std::isfinite(min_x) && std::isfinite(max_x) && std::isfinite(min_y) && std::isfinite(max_y);
 }
-PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Value target, double value) {
+PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value) {
     PointVector res;
     if (fabs(value) < plot::MIN_VALUE || fabs(value) > plot::MAX_VALUE) {
         return res;
     }
     for (const auto& data : in) {
         switch (modify) {
+            case plot::Modifier::ADDITION:
+                if (target == plot::Target::X) {
+                    res.push_back(Point(data.x + value, data.y));
+                }
+                else if (target == plot::Target::Y) {
+                    res.push_back(Point(data.x, data.y + value));
+                }
+                else {
+                    res.push_back(Point(data.x + value, data.y + value));
+                }
+                break;
             case plot::Modifier::SUBTRACTION:
-                if (target == plot::Value::X) {
+                if (target == plot::Target::X) {
                     res.push_back(Point(data.x - value, data.y));
                 }
-                else if (target == plot::Value::Y) {
+                else if (target == plot::Target::Y) {
                     res.push_back(Point(data.x, data.y - value));
                 }
                 else {
@@ -11223,10 +11196,10 @@ PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Va
                 }
                 break;
             case plot::Modifier::MULTIPLICATION:
-                if (target == plot::Value::X) {
+                if (target == plot::Target::X) {
                     res.push_back(Point(data.x * value, data.y));
                 }
-                else if (target == plot::Value::Y) {
+                else if (target == plot::Target::Y) {
                     res.push_back(Point(data.x, data.y * value));
                 }
                 else {
@@ -11234,25 +11207,14 @@ PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Va
                 }
                 break;
             case plot::Modifier::DIVISION:
-                if (target == plot::Value::X) {
+                if (target == plot::Target::X) {
                     res.push_back(Point(data.x / value, data.y));
                 }
-                else if (target == plot::Value::Y) {
+                else if (target == plot::Target::Y) {
                     res.push_back(Point(data.x, data.y / value));
                 }
                 else {
                     res.push_back(Point(data.x / value, data.y / value));
-                }
-                break;
-            default:
-                if (target == plot::Value::X) {
-                    res.push_back(Point(data.x + value, data.y));
-                }
-                else if (target == plot::Value::Y) {
-                    res.push_back(Point(data.x, data.y + value));
-                }
-                else {
-                    res.push_back(Point(data.x + value, data.y + value));
                 }
                 break;
         }
@@ -11533,11 +11495,11 @@ bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
 }
 bool Plot::create_line(Algorithm alg) {
     if (_selected_line >= _lines.size()) {
-        dlg::msg_alert("Plot Error", "Line has not been selected!");
+        dlg::msg_alert("Plot", "Line has not been selected!");
         return false;
     }
     else if (_lines.size() >= plot::MAX_LINES) {
-        dlg::msg_alert("Plot Error", "Max line count reached!");
+        dlg::msg_alert("Plot", "Max line count reached!");
         return false;
     }
     Line&      line0 = _lines[_selected_line];
@@ -11545,23 +11507,23 @@ bool Plot::create_line(Algorithm alg) {
     std::string label1;
     if (alg == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Plot - Select Modification", list, 0);
         if (ans < 0 || ans > static_cast<int>(plot::Modifier::LAST)) {
             return false;
         }
         auto modify = static_cast<plot::Modifier>(ans);
         auto value  = 0.0;
-        auto answer = flw::dlg::input_double("Plot", "Enter value.", value);
+        auto answer = flw::dlg::input_double("Plot", "Enter value.\nUse positive values for subtraction.", value);
         if (answer == flw::label::CANCEL || std::isinf(value) == true) {
             return false;
         }
         else if (fabs(value) < plot::MIN_VALUE) {
-            dlg::msg_alert("Plot Error", "To small value for division!");
+            dlg::msg_alert("Plot", "To small value!");
             return false;
         }
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
-        ans    = dlg::select_choice("Select Target", list, 0);
-        vec1   = Point::Modify(line0.data(), modify, (ans == 0 ? plot::Value::X : ans == 1 ? plot::Value::Y : plot::Value::X_AND_Y), value);
+        ans    = dlg::select_choice("Plot - Select Target", list, 0);
+        vec1   = Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
     else if (alg == Algorithm::SWAP) {
@@ -11569,7 +11531,7 @@ bool Plot::create_line(Algorithm alg) {
         label1 = util::format("%s swapped X/Y", line0.label().c_str());
     }
     if (vec1.size() == 0) {
-        dlg::msg_alert("Plot Error", "To few data values!");
+        dlg::msg_alert("Plot", "To few data values!");
         return false;
     }
     auto line1 = Line(vec1, label1);
@@ -12089,14 +12051,14 @@ bool Plot::load_json() {
     return load_json(filename);
 }
 bool Plot::load_json(const std::string& filename) {
-#define _FLW_PLOT_ERROR(X) { dlg::msg_alert("JSON Error", util::format("Illegal plot value at pos %u", (X)->pos())); reset(); return false; }
+#define _FLW_PLOT_ERROR(X) { dlg::msg_alert("Plot", util::format("Illegal plot value at pos %u", (X)->pos())); reset(); return false; }
     _filename = "";
     reset();
     redraw();
     auto wc  = WaitCursor();
     auto buf = gnu::file::read(filename);
     if (buf.c_str() == nullptr) {
-        dlg::msg_alert("JSON Error", util::format("Failed to load %s", filename.c_str()));
+        dlg::msg_alert("Plot", util::format("Failed to load %s", filename.c_str()));
         return false;
     }
     auto   js       = gnu::json::decode(buf.c_str(), buf.size());
@@ -12104,7 +12066,7 @@ bool Plot::load_json(const std::string& filename) {
     auto   y        = Scale();
     double clamp[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
     if (js.has_err() == true) {
-        dlg::msg_alert("JSON Error", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
+        dlg::msg_alert("Plot", util::format("Failed to parse %s (%s)", filename.c_str(), js.err_c()));
         return false;
     }
     if (js.is_object() == false) _FLW_PLOT_ERROR(&js);
@@ -12185,7 +12147,7 @@ bool Plot::load_json(const std::string& filename) {
 }
 bool Plot::load_line_from_csv() {
     if (_lines.size() >= plot::MAX_LINES) {
-        dlg::msg_alert("Plot Error", "Max line count reached!");
+        dlg::msg_alert("Plot", "Max line count reached!");
         return false;
     }
     auto filename = util::to_string(fl_file_chooser("Select CSV File", "All Files (*)\tCSV Files (*.csv)", ""));
@@ -12194,7 +12156,7 @@ bool Plot::load_line_from_csv() {
     }
     auto vec = Point::LoadCSV(filename);
     if (vec.size() == 0) {
-        dlg::msg_alert("Plot Error", "To few data values!");
+        dlg::msg_alert("Plot", "To few data values!");
         return false;
     }
     auto line = Line(vec, filename);
@@ -12205,7 +12167,7 @@ bool Plot::load_line_from_csv() {
 }
 void Plot::print_to_postscript() {
     _printing = true;
-    dlg::print("Print Plot", Plot::_CallbackPrinter, this, 1, 1);
+    dlg::print("Plot", Plot::_CallbackPrinter, this, 1, 1);
     _printing = false;
     redraw();
 }
@@ -12308,7 +12270,7 @@ bool Plot::save_json(const std::string& filename) {
         return res;
     }
     catch(const std::string& e) {
-        dlg::msg_alert("JSON Error", util::format("Failed to encode json\n%s", e.c_str()));
+        dlg::msg_alert("Plot", util::format("Failed to encode json!\n%s", e.c_str()));
         return false;
     }
 }
@@ -12368,18 +12330,18 @@ void Plot::setup_clamp(Clamp clamp) {
 }
 void Plot::setup_create_line() {
     if (_selected_line >= _lines.size()) {
-        dlg::msg_alert("Plot Error", "Line has not been selected!");
+        dlg::msg_alert("Plot", "Select a line first!");
         return;
     }
     else if (_lines.size() >= plot::MAX_LINES) {
-        dlg::msg_alert("Plot Error", "Max line count reached!");
+        dlg::msg_alert("Plot", "Max supported line count reached!");
         return;
     }
     auto list = StringVector() = {
         "Modify",
-        "Swap values",
+        "Swap Values",
     };
-    switch (dlg::select_choice("Select Formula", list, 0)) {
+    switch (dlg::select_choice("Plot - Select Formula", list, 0)) {
         case 0:
             create_line(Algorithm::MODIFY);
             break;
@@ -12395,7 +12357,7 @@ void Plot::setup_delete_lines() {
         return;
     }
     auto list = _create_check_labels(false);
-    list = dlg::select_checkboxes("Delete Lines", list);
+    list = dlg::select_checkboxes("Plot - Delete Lines", list);
     if (list.size() == 0) {
         return;
     }
@@ -12412,15 +12374,15 @@ void Plot::setup_label(Label val) {
     switch (val) {
         case plot::Label::MAIN:
             l = _label;
-            answer = flw::dlg::input("Plot", "Enter main label", l);
+            answer = flw::dlg::input("Plot", "Enter main label.", l);
             break;
         case plot::Label::X:
             l = _x.label();
-            answer = flw::dlg::input("Plot", "Enter X label", l);
+            answer = flw::dlg::input("Plot", "Enter X label.", l);
             break;
         case plot::Label::Y:
             l = _y.label();
-            answer = flw::dlg::input("Plot", "Enter Y label", l);
+            answer = flw::dlg::input("Plot", "Enter Y label.", l);
             break;
     }
     if (answer == flw::label::CANCEL) {
@@ -12444,10 +12406,7 @@ void Plot::setup_line() {
         return;
     }
     auto& line = _lines[_selected_line];
-    auto ok    = _LineSetup(top_window(), line).run();
-    if (ok == false) {
-        return;
-    }
+    _LineSetup(top_window(), line).run();
     redraw();
 }
 void Plot::setup_show_or_hide_lines() {
@@ -12455,7 +12414,7 @@ void Plot::setup_show_or_hide_lines() {
         return;
     }
     auto list = _create_check_labels(true);
-    list = dlg::select_checkboxes("Show Or Hide Lines", list);
+    list = dlg::select_checkboxes("Plot - Show Or Hide Lines", list);
     if (list.size() == 0) {
         return;
     }
@@ -12516,7 +12475,7 @@ RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, co
     _clear    = clear_label;
     _user     = userdata;
     _max      = 10;
-    _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
+    _menu->add((_base + _clear).c_str(), 0, RecentMenu::_Callback, this, FL_MENU_DIVIDER);
 }
 void RecentMenu::_add(const std::string& item, bool append) {
     if (item == "") {
@@ -12531,7 +12490,7 @@ void RecentMenu::_add(const std::string& item, bool append) {
     auto index = _menu->find_index(_base.c_str());
     if (index >= 0) {
         _menu->clear_submenu(index);
-        _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
+        _menu->add((_base + _clear).c_str(), 0, RecentMenu::_Callback, this, FL_MENU_DIVIDER);
     }
     for (const auto& f : _items) {
         _menu->add((_base + "/" + flw::util::fix_menu_string(f)).c_str(), 0, _callback, _user);
@@ -12550,9 +12509,8 @@ size_t RecentMenu::_add_string(StringVector& items, size_t max_size, const std::
     }
     return items.size();
 }
-void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
-    auto self = static_cast<RecentMenu*>(o);
-    self->_add("", false);
+void RecentMenu::_Callback(Fl_Widget*, void* o) {
+    static_cast<RecentMenu*>(o)->_add("", false);
 }
 size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const std::string& string) {
     for (auto it = items.begin(); it != items.end(); ++it) {
@@ -12566,6 +12524,12 @@ size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const st
         items.pop_back();
     }
     return items.size();
+}
+void RecentMenu::items(const StringVector& names) {
+    auto res = StringVector();
+    for (const auto& name : names) {
+        _add(name, true);
+    }
 }
 void RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
     auto index = 1;
@@ -12589,9 +12553,9 @@ void RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
 }
 }
 namespace flw {
-static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
+static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy all Lines";
 static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
-static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
+static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu.";
 ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
     end();
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
@@ -13037,12 +13001,12 @@ class _FindDialog : public Fl_Double_Window {
     bool                        _run;
 public:
     _FindDialog(Display* table) :
-    Fl_Double_Window(0, 0, 10, 10, "Find Text") {
+    Fl_Double_Window(0, 0, 10, 10, "Table - Find Text") {
         end();
-        _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+        _close  = new Fl_Button(0, 0, 0, 0, label::CLOSE.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
-        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Next");
-        _prev   = new Fl_Button(0, 0, 0, 0, "&Previous");
+        _next   = new Fl_Return_Button(0, 0, 0, 0, label::NEXT.c_str());
+        _prev   = new Fl_Button(0, 0, 0, 0, label::PREV.c_str());
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
@@ -13132,7 +13096,7 @@ public:
                 }
                 col = 1;
             }
-            if (dlg::msg_ask("Find", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), label::NO, label::YES) == label::YES) {
+            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), label::NO, label::YES) == label::YES) {
                 col = row = 1;
                 goto AGAIN;
             }
@@ -13152,7 +13116,7 @@ public:
                 }
                 col = _table->columns();
             }
-            if (dlg::msg_ask("Find", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), label::NO, label::YES) == label::YES) {
+            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), label::NO, label::YES) == label::YES) {
                 row = _table->rows();
                 col = _table->columns();
                 goto AGAIN;
@@ -13950,12 +13914,12 @@ static const std::string DEC_LARGE      = "---";
 static const std::string INC_SMALL      = "+";
 static const std::string INC_MEDIUM     = "++";
 static const std::string INC_LARGE      = "+++";
-std::string              EditColorLabel = "Set Color";
-std::string              EditDateLabel  = "Select Date";
-std::string              EditDirLabel   = "Select Directory";
-std::string              EditFileLabel  = "Select File";
-std::string              EditListLabel  = "Select String";
-std::string              EditTextLabel  = "Edit Text";
+std::string              EditColorLabel = "Table - Set Color";
+std::string              EditDateLabel  = "Table - Select Date";
+std::string              EditDirLabel   = "Table - Select Directory";
+std::string              EditFileLabel  = "Table - Select File";
+std::string              EditListLabel  = "Table - Select String";
+std::string              EditTextLabel  = "Table - Edit Text";
 std::string format_slider(double val, double min, double max, double step) {
     static char result[2000];
     snprintf(result, 2000, "%.4f %.4f %.4f %.4f", val, min, max, step);
@@ -15589,6 +15553,8 @@ void TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
     labelfont(font);
     labelsize(fontsize);
+    _width1 = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
+    _width2 = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
     for (auto widget : _widgets) {
         widget->labelfont(font);
         widget->labelsize(fontsize);

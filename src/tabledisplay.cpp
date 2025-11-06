@@ -206,13 +206,13 @@ public:
     *
     */
     _FindDialog(Display* table) :
-    Fl_Double_Window(0, 0, 10, 10, "Find Text") {
+    Fl_Double_Window(0, 0, 10, 10, "Table - Find Text") {
         end();
 
-        _close  = new Fl_Button(0, 0, 0, 0, "&Close");
+        _close  = new Fl_Button(0, 0, 0, 0, label::CLOSE.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
-        _next   = new Fl_Return_Button(0, 0, 0, 0, "&Next");
-        _prev   = new Fl_Button(0, 0, 0, 0, "&Previous");
+        _next   = new Fl_Return_Button(0, 0, 0, 0, label::NEXT.c_str());
+        _prev   = new Fl_Button(0, 0, 0, 0, label::PREV.c_str());
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
@@ -323,7 +323,7 @@ public:
                 col = 1;
             }
 
-            if (dlg::msg_ask("Find", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), label::NO, label::YES) == label::YES) {
+            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), label::NO, label::YES) == label::YES) {
                 col = row = 1;
                 goto AGAIN;
             }
@@ -346,7 +346,7 @@ public:
                 col = _table->columns();
             }
 
-            if (dlg::msg_ask("Find", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), label::NO, label::YES) == label::YES) {
+            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), label::NO, label::YES) == label::YES) {
                 row = _table->rows();
                 col = _table->columns();
                 goto AGAIN;

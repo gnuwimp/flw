@@ -7,9 +7,9 @@
 
 namespace flw {
 
-static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy All Lines";
+static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy all Lines";
 static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
-static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu";
+static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu.";
 
 /*
  *       _____                _ _ ____

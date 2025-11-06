@@ -49,7 +49,7 @@ class TabsGroup : public Fl_Group {
 public:
     static const int            DEFAULT_SPACE             =  2;     ///< @brief Default space between buttons.
     static const int            DEFAULT_MAX_HOR_TAB_WIDTH = 12;     ///< @brief Default max tab width for top/bottom tabs.
-    static const int            DEFAULT_VER_TAB_WIDTH     = 10;     ///< @brief Default max tab width for top/bottom tabs.
+    static const int            DEFAULT_VER_TAB_WIDTH     = 12;     ///< @brief Default tab width for left/right tabs.
     static const int            HEIGHT                    =  8;     ///< @brief Additional height for tabs.
     static const int            MAX_SPACE                 = 20;     ///< @brief Max space between buttons.
     static const int            MIN_WIDTH                 =  4;     ///< @brief Min width for tab button and container widget.

@@ -79,16 +79,16 @@ enum class LineType {
 */
 enum class Modifier {
     ADDITION,               ///< @brief Add to values.
-    DIVISION,               ///< @brief Divide values.
-    MULTIPLICATION,         ///< @brief Multiply values.
     SUBTRACTION,            ///< @brief Subtract values.
-    LAST = SUBTRACTION,     ///< @brief Same as SUBTRACTION.
+    MULTIPLICATION,         ///< @brief Multiply values.
+    DIVISION,               ///< @brief Divide values.
+    LAST = DIVISION,        ///< @brief Same as DIVISION.
 };
 
 /** @brief Which value to modify.
 *
 */
-enum class Value {
+enum class Target {
     X,                  ///< @brief Change X.
     Y,                  ///< @brief Change Y.
     X_AND_Y,            ///< @brief Change X and Y.
@@ -124,7 +124,7 @@ struct Point {
     static void                 Debug(const PointVector& in);
     static PointVector          LoadCSV(const std::string& filename, const std::string& sep = ",");
     static bool                 MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y);
-    static PointVector          Modify(const PointVector& in, plot::Modifier modify, plot::Value target, double value);
+    static PointVector          Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value);
     static bool                 SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep = ",");
     static PointVector          Swap(const PointVector& in);
 };

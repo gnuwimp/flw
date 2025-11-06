@@ -151,9 +151,9 @@ void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
         }
     }
 
-    #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::adjust() failed to find widget (label=%s)\n", widget->label());
-    #endif
+#ifdef DEBUG
+    fprintf(stderr, "Error: flw::GridGroup::adjust() failed to find widget (label=%s)!\n", widget->label());
+#endif
 }
 
 /** @brief Delete all child widgets,
@@ -250,9 +250,9 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
         }
     }
 
-    #ifdef DEBUG
-        fprintf(stderr, "error: GridGroup::remove can't find widget\n");
-    #endif
+#ifdef DEBUG
+    fprintf(stderr, "Error: GridGroup::remove can't find widget!\n");
+#endif
 
     return nullptr;
 }
@@ -349,9 +349,9 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
         }
     }
 
-    #ifdef DEBUG
-        fprintf(stderr, "error: flw::GridGroup::resize() failed to find widget (label=%s)\n", widget->label());
-    #endif
+#ifdef DEBUG
+    fprintf(stderr, "Error: flw::GridGroup::resize() failed to find widget (label=%s)!\n", widget->label());
+#endif
 }
 
 } // flw

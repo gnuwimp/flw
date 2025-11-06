@@ -513,10 +513,6 @@ public:
         menu  = new Fl_Menu_Bar(0, 0, 0, 0);
         chart = new chart::Chart();
 
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
-        flw::theme::load_theme_from_pref(pref);
-        flw::theme::load_win_from_pref(pref, "gui.", this, true);
-
         add(menu);
         add(chart);
 
@@ -573,9 +569,13 @@ public:
         util::labelfont(this);
 
         resizable(this);
-        show();
         resize(300, 300, W, H);
+        show();
         create_chart();
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
     }
 
     //--------------------------------------------------------------------------

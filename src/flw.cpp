@@ -141,19 +141,19 @@ static std::string _print(
     std::string               res;
 
     if ((file = fl_fopen(ps_filename.c_str(), "wb")) == nullptr) {
-        return "error: could not open file!";
+        return "Error: could not open file!";
     }
 
     printer.begin_job(file, 0, format, layout);
 
     while (cont == true) {
         if (printer.begin_page() != 0) {
-            res = "error: couldn't create new page!";
+            res = "Error: couldn't create new page!";
             goto ERR;
         }
 
         if (printer.printable_rect(&pw, &ph) != 0) {
-            res = "error: couldn't retrieve page size!";
+            res = "Error: couldn't retrieve page size!";
             goto ERR;
         }
 
@@ -162,7 +162,7 @@ static std::string _print(
         fl_pop_clip();
 
         if (printer.end_page() != 0) {
-            res = "error: couldn't end page!";
+            res = "Error: couldn't end page!";
             goto ERR;
         }
 
@@ -634,7 +634,7 @@ void debug::print(const Fl_Widget* widget, std::string& indent, bool recursive) 
 */
 bool debug::test(bool val, int line, const char* func) {
     if (val == false) {
-        fprintf(stderr, "error: test failed at line %d in %s\n", line, func);
+        fprintf(stderr, "Error: test failed at line %d in %s\n", line, func);
         fflush(stderr);
         return false;
     }
@@ -656,7 +656,7 @@ bool debug::test(const char* ref, const char* val, int line, const char* func) {
         return true;
     }
     else if (ref == nullptr || val == nullptr || strcmp(ref, val) != 0) {
-        fprintf(stderr, "error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
+        fprintf(stderr, "Error: test failed '%s' != '%s' at line %d in %s\n", ref ? ref : "NULL", val ? val : "NULL", line, func);
         fflush(stderr);
         return false;
     }
@@ -675,7 +675,7 @@ bool debug::test(const char* ref, const char* val, int line, const char* func) {
 */
 bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
     if (ref != val) {
-        fprintf(stderr, "error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
+        fprintf(stderr, "Error: test failed '%lld' != '%lld' at line %d in %s\n", (long long int) ref, (long long int) val, line, func);
         fflush(stderr);
         return false;
     }
@@ -695,7 +695,7 @@ bool debug::test(int64_t ref, int64_t val, int line, const char* func) {
 */
 bool debug::test(double ref, double val, double diff, int line, const char* func) {
     if (fabs(ref - val) > diff) {
-        fprintf(stderr, "error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
+        fprintf(stderr, "Error: test failed '%f' != '%f' at line %d in %s\n", ref, val, line, func);
         fflush(stderr);
         return false;
     }
@@ -719,11 +719,13 @@ std::string label::CANCEL   = "&Cancel";
 std::string label::CLOSE    = "Cl&ose";
 std::string label::DEL      = "&Delete";
 std::string label::DISCARD  = "&Discard";
-std::string label::MONO     = "&Mono font";
+std::string label::MONO     = "&Mono Font";
+std::string label::NEXT     = "&Next";
 std::string label::NO       = "&No";
 std::string label::OK       = "&Ok";
+std::string label::PREV     = "&Previous";
 std::string label::PRINT    = "&Print";
-std::string label::REGULAR  = "&Regular font";
+std::string label::REGULAR  = "&Regular Font";
 std::string label::SAVE     = "&Save";
 std::string label::SAVE_DOT = "&Save...";
 std::string label::SELECT   = "&Select";
@@ -1399,7 +1401,7 @@ std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Fo
 */
 std::string util::print(const std::string& ps_filename, Fl_Paged_Device::Page_Format format, Fl_Paged_Device::Page_Layout layout, PrintCallback cb, void* data, int from, int to) {
     if (from < 1 || from > to) {
-        return "error: invalid from/to range";
+        return "Error: invalid from/to range!";
     }
 
     return priv::_print(ps_filename, format, layout, cb, data, from, to);
@@ -1565,7 +1567,7 @@ std::string util::substr(const std::string& string, std::string::size_type pos, 
 */
 std::string util::trim(const std::string& string) {
     auto res = string;
-    
+
     try {
         res.erase(res.begin(), std::find_if(res.begin(), res.end(), [](auto c) { return !std::isspace(c);} ));
         res.erase(std::find_if(res.rbegin(), res.rend(), [](int ch) { return !std::isspace(ch); }).base(), res.end());
@@ -1752,16 +1754,16 @@ void util::PrintText::_check_for_new_page() {
             fl_pop_clip();
 
             if (_printer->end_page() != 0) {
-                throw "error: couldn't end current page";
+                throw "Error: couldn't end current page!";
             }
         }
 
         if (_printer->begin_page() != 0) {
-            throw "error: couldn't create new page!";
+            throw "Error: couldn't create new page!";
         }
 
         if (_printer->printable_rect(&_pw, &_ph) != 0) {
-            throw "error: couldn't retrieve page size!";
+            throw "Error: couldn't retrieve page size!";
         }
 
         fl_font(_font, _fontsize);
@@ -1858,7 +1860,7 @@ std::string util::PrintText::print(const StringVector& lines, unsigned replace_t
         res = ex;
     }
     catch (...) {
-        res = "error: unknown exception!";
+        res = "Error: unknown exception!";
     }
 
     return res;
@@ -1957,7 +1959,7 @@ void util::PrintText::_print_wrapped_line(const std::string& line) {
 */
 std::string util::PrintText::_start() {
     if ((_file = fl_fopen(_filename.c_str(), "wb")) == nullptr) {
-        return "error: could not open file!";
+        return "Error: could not open file!";
     }
 
     _lh         = 0;
@@ -1988,7 +1990,7 @@ std::string util::PrintText::_stop() {
             fl_pop_clip();
 
             if (_printer->end_page() != 0) {
-                res = "error: could not end page!";
+                res = "Error: could not end page!";
             }
         }
 
@@ -2177,7 +2179,7 @@ void load_fonts(bool iso8859_only) {
 *
 * @param[in] win           Window object.
 * @param[in] win_resource  Win32 resource (Windows 10/11 only).
-* @param[in] xpm_resource  Xpm icon (Linux only).
+* @param[in] xpm_resource  Xpm icon (Linux/X11 only).
 * @param[in] name          Application name (Linux only).
 */
 void load_icon(Fl_Window* win, int win_resource, const char** xpm_resource, const char* name) {
@@ -2331,6 +2333,7 @@ double load_theme_from_pref(Fl_Preferences& pref, unsigned screen_num) {
 /** @brief Load window size and optional scaling.
 *
 * Load theme before loading windows preferences.\n
+* Set resizable() widget before calling this.\n
 *
 * @param[in] pref      Loaded preference object.
 * @param[in] basename  Base name in preference file.

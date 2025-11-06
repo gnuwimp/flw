@@ -98,10 +98,10 @@ enum class LineType {
 */
 enum class Modifier {
     ADDITION,               ///< @brief Add to values.
-    DIVISION,               ///< @brief Divide values.
-    MULTIPLICATION,         ///< @brief Multiply values.
     SUBTRACTION,            ///< @brief Subtract values.
-    LAST = SUBTRACTION,     ///< @brief Same as SUBTRACTION.
+    MULTIPLICATION,         ///< @brief Multiply values.
+    DIVISION,               ///< @brief Divide values.
+    LAST = DIVISION,        ///< @brief Same as SUBTRACTION.
 };
 
 /** @brief Chart area index.

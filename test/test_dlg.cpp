@@ -228,10 +228,10 @@ void test_message(bool input) {
         std::string value = "Hello World";
         FLW_PRINTV(dlg::input("flw::dlg::input", THREE_LINE, value), value)
 
-        int64_t value2 = 12345678912345;
+        int64_t value2 = 12345678912345; (void) value2;
         FLW_PRINTV(dlg::input_int("flw::dlg::input_int", THREE_LINE, value2), value2)
 
-        double value3 = 123.456;
+        double value3 = 123.456; (void) value3;
         FLW_PRINTV(dlg::input_double("flw::dlg::input_double", THREE_LINE, value3), value3)
 
         std::string value4 = THREE_LINE + THREE_LINE + THREE_LINE;
@@ -588,9 +588,9 @@ int main(int argc, const char** argv) {
     puts("    html");
     puts("    list");
     puts("    print");
-    puts("    print_text1");
-    puts("    print_text2");
-    puts("    print_text3");
+    puts("    print2");
+    puts("    print3");
+    puts("    print4");
     puts("    progress");
     puts("    pwd");
     puts("    select");
@@ -685,15 +685,15 @@ int main(int argc, const char** argv) {
             test_print();
         }
 
-        if (run == "print_text1")  {
+        if (run == "print2")  {
             test_print_text1();
         }
 
-        if (run == "print_text2")  {
+        if (run == "print3")  {
             test_print_text2();
         }
 
-        if (run == "print_text3")  {
+        if (run == "print4")  {
             test_print_text3();
         }
 

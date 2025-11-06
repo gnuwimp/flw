@@ -46,7 +46,7 @@ RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, co
     _user     = userdata;
     _max      = 10;
 
-    _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
+    _menu->add((_base + _clear).c_str(), 0, RecentMenu::_Callback, this, FL_MENU_DIVIDER);
 }
 
 /** @brief Add item.
@@ -69,7 +69,7 @@ void RecentMenu::_add(const std::string& item, bool append) {
 
     if (index >= 0) {
         _menu->clear_submenu(index);
-        _menu->add((_base + _clear).c_str(), 0, RecentMenu::CallbackClear, this, FL_MENU_DIVIDER);
+        _menu->add((_base + _clear).c_str(), 0, RecentMenu::_Callback, this, FL_MENU_DIVIDER);
 
     }
 
@@ -107,9 +107,8 @@ size_t RecentMenu::_add_string(StringVector& items, size_t max_size, const std::
 *
 * @param[in] o  This object.
 */
-void RecentMenu::CallbackClear(Fl_Widget*, void* o) {
-    auto self = static_cast<RecentMenu*>(o);
-    self->_add("", false);
+void RecentMenu::_Callback(Fl_Widget*, void* o) {
+    static_cast<RecentMenu*>(o)->_add("", false);
 }
 
 /** @brief Insert item
@@ -135,6 +134,18 @@ size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const st
     }
 
     return items.size();
+}
+
+/** @brief Add menu list.
+*
+* @param[in] names  Vector with menu strings.
+*/
+void RecentMenu::items(const StringVector& names) {
+    auto res = StringVector();
+
+    for (const auto& name : names) {
+        _add(name, true);
+    }
 }
 
 /** @brief Load items from a preference file.

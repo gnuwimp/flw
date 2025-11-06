@@ -216,8 +216,10 @@ namespace label {
     extern std::string          DEL;
     extern std::string          DISCARD;
     extern std::string          MONO;
+    extern std::string          NEXT;
     extern std::string          NO;
     extern std::string          OK;
+    extern std::string          PREV;
     extern std::string          PRINT;
     extern std::string          REGULAR;
     extern std::string          SAVE;

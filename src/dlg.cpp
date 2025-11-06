@@ -71,32 +71,32 @@ static bool         MSG_ACTIVE_COLOR2 = false;
 * @param[in] layout  Choice widget with layout names.
 */
 static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
-    format->add("A0 format");
-    format->add("A1 format");
-    format->add("A2 format");
-    format->add("A3 format");
-    format->add("A4 format");
-    format->add("A5 format");
-    format->add("A6 format");
-    format->add("A7 format");
-    format->add("A8 format");
-    format->add("A9 format");
-    format->add("B0 format");
-    format->add("B1 format");
-    format->add("B2 format");
-    format->add("B3 format");
-    format->add("B4 format");
-    format->add("B5 format");
-    format->add("B6 format");
-    format->add("B7 format");
-    format->add("B8 format");
-    format->add("B9 format");
-    format->add("Executive format");
-    format->add("Folio format");
-    format->add("Ledger format");
-    format->add("Legal format");
-    format->add("Letter format");
-    format->add("Tabloid format");
+    format->add("A0 Format");
+    format->add("A1 Format");
+    format->add("A2 Format");
+    format->add("A3 Format");
+    format->add("A4 Format");
+    format->add("A5 Format");
+    format->add("A6 Format");
+    format->add("A7 Format");
+    format->add("A8 Format");
+    format->add("A9 Format");
+    format->add("B0 Format");
+    format->add("B1 Format");
+    format->add("B2 Format");
+    format->add("B3 Format");
+    format->add("B4 Format");
+    format->add("B5 Format");
+    format->add("B6 Format");
+    format->add("B7 Format");
+    format->add("B8 Format");
+    format->add("B9 Format");
+    format->add("Executive Format");
+    format->add("Folio Format");
+    format->add("Ledger Format");
+    format->add("Legal Format");
+    format->add("Letter Format");
+    format->add("Tabloid Format");
     format->tooltip("Select paper format.");
     format->value(4);
 
@@ -323,7 +323,7 @@ void dlg::options_push() {
 * @param[in] message  Message string.
 */
 void dlg::panic(const std::string& message) {
-    dlg::msg_error("Application Error", util::format("panic! I have to quit\n%s", message.c_str()));
+    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
     exit(1);
 }
 
@@ -387,7 +387,6 @@ public:
         callback(Callback, this);
         copy_label(title.c_str());
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 22, flw::PREF_FONTSIZE * 14);
         set_modal();
     }
 
@@ -500,7 +499,6 @@ public:
 
         callback(_DlgHtml::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -615,7 +613,6 @@ public:
 
         callback(_DlgList::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -975,7 +972,6 @@ public:
         resizable(_grid);
         util::labelfont(this);
         util::center_window(this, priv::PARENT);
-        size_range(10, 10);
         _grid->do_layout();
     }
 
@@ -1221,7 +1217,7 @@ void dlg::msg_error(const std::string& title, const std::string& message, int W,
 
 /** @brief Show an dialog with a warning icon and 1 or more buttons.
 *
-* @see dlg::button(int X, int Y, int W, int H, const std::string& l) on how to add a icon.\n
+* @see dlg::button() on how to add a icon.\n
 * Any button label can be empty and it will be hidden.\n
 *
 * @param[in] title    Dialog title.
@@ -1315,7 +1311,7 @@ public:
         _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _file->textfont(flw::PREF_FIXED_FONT);
         _file->textsize(flw::PREF_FONTSIZE);
-        _file->tooltip("Select optional key file");
+        _file->tooltip("Select optional key file.");
         _password1->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _password1->callback(_DlgPassword::Callback, this);
         _password1->textfont(flw::PREF_FIXED_FONT);
@@ -1352,7 +1348,6 @@ public:
         callback(_DlgPassword::Callback, this);
         copy_label(title.c_str());
         size(W, H);
-        size_range(W, H);
         set_modal();
         util::center_window(this, priv::PARENT);
         _grid->do_layout();
@@ -1636,7 +1631,6 @@ public:
         _DlgPrint::Callback(_to, this);
         callback(_DlgPrint::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -1806,9 +1800,9 @@ public:
         add(_grid);
 
         util::labelfont(this);
-        _align->add("Left align");
-        _align->add("Center align");
-        _align->add("Right align");
+        _align->add("Left Align");
+        _align->add("Center Align");
+        _align->add("Right Align");
         _align->tooltip("Line numbers are only used for left aligned text.");
         _align->value(0);
         _align->textfont(flw::PREF_FONT);
@@ -1850,7 +1844,6 @@ public:
         _DlgPrintText::Callback(_tab, this);
         callback(_DlgPrintText::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -2040,12 +2033,12 @@ public:
     _labels(strings) {
         end();
 
-        _all    = new Fl_Button(0, 0, 0, 0, "All on");
+        _all    = new Fl_Button(0, 0, 0, 0, "All On");
         _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
         _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
         _invert = new Fl_Button(0, 0, 0, 0, "Invert");
-        _none   = new Fl_Button(0, 0, 0, 0, "All off");
+        _none   = new Fl_Button(0, 0, 0, 0, "All Off");
         _scroll = new Fl_Scroll(0, 0, 0, 0);
         _ret    = false;
         _run    = false;
@@ -2077,7 +2070,6 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 36, flw::PREF_FONTSIZE * 12);
         util::center_window(this, priv::PARENT);
     }
 
@@ -2235,7 +2227,6 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6);
         util::center_window(this, priv::PARENT);
         _grid->do_layout();
     }
@@ -2398,7 +2389,6 @@ public:
         callback(_DlgSelectString::Callback, this);
         copy_label(title.c_str());
         activate_button();
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -2632,7 +2622,6 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        size_range(flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 6);
         util::center_window(this, priv::PARENT);
         _grid->do_layout();
         _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
@@ -2778,7 +2767,6 @@ public:
 
         callback(_DlgText::Callback, this);
         copy_label(title.c_str());
-        size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
         set_modal();
         resizable(_grid);
         util::center_window(this, priv::PARENT);
@@ -2920,7 +2908,7 @@ public:
         _font        = new Fl_Button(0, 0, 0, 0, label::REGULAR.c_str());
         _font_label  = new Fl_Box(0, 0, 0, 0);
         _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use scaling");
+        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use Scaling");
         _scale_val   = new Fl_Slider(0, 0, 0, 0);
         _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
         _theme_row   = 0;
@@ -2948,7 +2936,7 @@ public:
         _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
         _fixed_label->box(FL_BORDER_BOX);
         _fixed_label->color(FL_BACKGROUND2_COLOR);
-        _fixed_label->tooltip("Default fixed font");
+        _fixed_label->tooltip("Default fixed font.");
         _fixedfont->callback(_DlgTheme::Callback, this);
         _fixedfont->tooltip("Set default fixed font.");
         _font->callback(_DlgTheme::Callback, this);
@@ -3424,7 +3412,6 @@ void dlg::Font::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize f
     resizable(_grid);
     copy_label(title.c_str());
     callback(Font::Callback, this);
-    size_range(flw::PREF_FONTSIZE * 38, flw::PREF_FONTSIZE * 12);
     set_modal();
     _fonts->take_focus();
     _grid->resize(0, 0, w(), h());
@@ -3562,7 +3549,6 @@ Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
     util::labelfont(this);
     callback(Progress::Callback, this);
     copy_label(title.c_str());
-    size_range(flw::PREF_FONTSIZE * 24, flw::PREF_FONTSIZE * 12);
     set_modal();
     resizable(_grid);
     _grid->resize(0, 0, w(), h());

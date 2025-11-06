@@ -272,24 +272,24 @@ GridGroup(X, Y, W, H, l) {
     add(_canvas,      0, 8, 0, 0);
 
     _b1->callback(flw::DateChooser::_Callback, this);
-    _b1->tooltip("Previous year");
+    _b1->tooltip("Previous year.");
     _b2->callback(flw::DateChooser::_Callback, this);
-    _b2->tooltip("Previous month");
+    _b2->tooltip("Previous month.");
     _b3->callback(flw::DateChooser::_Callback, this);
-    _b3->tooltip("Next month");
+    _b3->tooltip("Next month.");
     _b4->callback(flw::DateChooser::_Callback, this);
-    _b4->tooltip("Next year");
+    _b4->tooltip("Next year.");
     _b5->callback(flw::DateChooser::_Callback, this);
-    _b5->tooltip("Today");
+    _b5->tooltip("Today.");
     _b6->callback(flw::DateChooser::_Callback, this);
-    _b6->tooltip("10 years in the past");
+    _b6->tooltip("10 years in the pas.t");
     _b7->callback(flw::DateChooser::_Callback, this);
-    _b7->tooltip("10 years in the future");
+    _b7->tooltip("10 years in the future.");
     _canvas->callback(flw::DateChooser::_Callback, this);
     _month_label->box(FL_UP_BOX);
 
     util::labelfont(this);
-    tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month");
+    tooltip("Use arrow keys to navigate\nUse ctrl+left/right to change month.");
     resizable(this);
     do_layout();
 }
