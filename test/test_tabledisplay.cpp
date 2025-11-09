@@ -208,12 +208,12 @@ public:
 
         //bar->add("Debug/Remove all rows", 0, CallbackDebugRemoveAllRows, this);
 
-        ((Fl_Menu_Item*) bar->find_item("Header/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Lines/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Resize/Yes"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Expand Last Col/No"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Scrollbar/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Select/Select::CELL"))->setonly();
+        flw::menu::setonly_item(bar, "Header/Both");
+        flw::menu::setonly_item(bar, "Lines/Both");
+        flw::menu::setonly_item(bar, "Resize/Yes");
+        flw::menu::setonly_item(bar, "Expand Last Col/No");
+        flw::menu::setonly_item(bar, "Scrollbar/Both");
+        flw::menu::setonly_item(bar, "Select/Select::CELL");
 
         //bar->hide();
 

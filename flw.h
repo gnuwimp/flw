@@ -598,6 +598,14 @@ static const std::string DEL = R"(
 	v-16.8c0-4.4-3.6-7.6-7.6-7.6H136.8z"/>
 </svg>
 )";
+static const std::string DOWN = R"(
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="48" height="48" fill="white" fill-opacity="0.01"/>
+<path d="M7.05322 10.0003L29.0532 10.0003V4.00032L7.05322 4.00032V10.0003Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M29.0531 10.0003C35.5721 17.1232 39.3127 21.2512 40.2749 22.3841C41.7183 24.0835 41.1122 26.0043 37.5001 26.0043C33.8879 26.0043 31.8047 20.7189 29.0531 20.7189C29.0367 20.7155 29.0356 27.4746 29.0498 40.9963C29.0515 42.6536 27.7094 43.9986 26.0521 44.0003L26.0489 44.0003C24.3898 44.0003 23.0447 42.6553 23.0447 40.9962V32.9867C15.072 31.7779 10.7374 31.111 10.0411 30.9859C8.99656 30.7984 7.05308 29.8014 7.05308 26.9323C7.05308 25.0196 7.05308 20.0423 7.05308 10.0003L29.0531 10.0003Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+</svg>
+)";
 static const std::string EDIT = R"(
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
@@ -661,6 +669,14 @@ static const std::string INFO = R"(
 </g>
 </svg>
 )";
+static const std::string LEFT = R"(
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="48" height="48" fill="white" fill-opacity="0.01"/>
+<path d="M44 40.9998V18.9998H38V40.9998H44Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M38 19C30.8948 12.4302 26.7757 8.66342 25.6428 7.69966C23.9433 6.25403 22.0226 6.86106 22.0226 10.4789C22.0226 14.0967 27.2864 16.2441 27.2864 19C27.2898 19.0164 20.529 19.0175 7.00404 19.0033C5.3467 19.0015 4.00175 20.3437 4 22.001C4 22.0021 4 22.0031 4 22.0042C4 23.6633 5.34501 25.0083 7.00417 25.0083H14.0165C15.2234 32.9769 15.8893 37.3099 16.0144 38.0073C16.2019 39.0535 17.199 41 20.068 41C21.9807 41 27.9581 41 38 41V19Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+</svg>
+)";
 static const std::string PASSWORD = R"(
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
@@ -708,16 +724,6 @@ static const std::string PLAY = R"(
   </g>
 </svg>
 )";
-static const std::string STOP = R"(
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-<svg width="800px" height="800px" version="1.1" viewBox="0 0 506.4 506.4" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
-<circle cx="253.2" cy="253.2" r="249.2" fill="#80b3ff"/>
-<path d="m349.2 331.6c0 12-9.6 21.6-21.6 21.6h-152.8c-12 0-21.6-9.6-21.6-21.6v-152.8c0-12 9.6-21.6 21.6-21.6h152.8c12 0 21.6 9.6 21.6 21.6v152.8z" fill="#F4EFEF"/>
-<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8  C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
-<path d="m323.6 357.2h-152.8c-14 0-25.6-11.6-25.6-25.6v-152.8c0-14 11.6-25.6 25.6-25.6h152.8c14 0 25.6 11.6 25.6 25.6v152.8c0 14-11.6 25.6-25.6 25.6zm-152.8-196c-9.6 0-17.6 8-17.6 17.6v152.8c0 9.6 8 17.6 17.6 17.6h152.8c9.6 0 17.6-8 17.6-17.6v-152.8c0-9.6-8-17.6-17.6-17.6h-152.8z"/>
-</svg>
-)";
 static const std::string QUESTION = R"(
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
@@ -743,6 +749,32 @@ static const std::string QUESTION = R"(
 	c6.4,0,12.4,2.4,16.8,6.8c4.4,4.4,6.8,10.8,6.8,16.8c0,6.4-2.4,12.4-6.8,16.8C264.8,397.2,258.4,399.6,252.4,399.6z M252.4,360
 	c-4,0-8.4,1.6-11.2,4.8c-2.8,2.8-4.4,6.8-4.4,11.2s1.6,8.4,4.4,11.2c2.8,2.8,7.2,4.8,11.2,4.8s8.4-1.6,11.2-4.8
 	c2.8-2.8,4.8-7.2,4.8-11.2s-1.6-8-4.8-11.2C260.4,361.6,256.4,360,252.4,360z"/>
+</svg>
+)";
+static const std::string RIGHT = R"(
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="48" height="48" fill="white" fill-opacity="0.01"/>
+<path d="M10.0266 40.9736L10.0266 18.9736H4.02661L4.02661 40.9736H10.0266Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10.0266 18.9736C17.1495 12.4546 21.2774 8.71403 22.4104 7.75178C24.1098 6.30839 26.0306 6.91448 26.0306 10.5266C26.0306 14.1388 20.7452 16.222 20.7452 18.9736C20.7418 18.99 27.5009 18.9911 41.0226 18.9769C42.6799 18.9752 44.0249 20.3173 44.0266 21.9746L44.0266 21.9778C44.0266 23.637 42.6816 24.982 41.0224 24.982H33.013C31.8042 32.9547 31.1373 37.2893 31.0122 37.9856C30.8247 39.0302 29.8276 40.9736 26.9586 40.9736C25.0459 40.9736 20.0686 40.9736 10.0266 40.9736V18.9736Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+</svg>
+)";
+static const std::string STOP = R"(
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" version="1.1" viewBox="0 0 506.4 506.4" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+<circle cx="253.2" cy="253.2" r="249.2" fill="#80b3ff"/>
+<path d="m349.2 331.6c0 12-9.6 21.6-21.6 21.6h-152.8c-12 0-21.6-9.6-21.6-21.6v-152.8c0-12 9.6-21.6 21.6-21.6h152.8c12 0 21.6 9.6 21.6 21.6v152.8z" fill="#F4EFEF"/>
+<path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8  C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
+<path d="m323.6 357.2h-152.8c-14 0-25.6-11.6-25.6-25.6v-152.8c0-14 11.6-25.6 25.6-25.6h152.8c14 0 25.6 11.6 25.6 25.6v152.8c0 14-11.6 25.6-25.6 25.6zm-152.8-196c-9.6 0-17.6 8-17.6 17.6v152.8c0 9.6 8 17.6 17.6 17.6h152.8c9.6 0 17.6-8 17.6-17.6v-152.8c0-9.6-8-17.6-17.6-17.6h-152.8z"/>
+</svg>
+)";
+static const std::string UP = R"(
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="48" height="48" fill="white" fill-opacity="0.01"/>
+<path d="M41 38.0001H19V44.0001H41V38.0001Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M19.0001 38.0001C12.4812 30.8772 8.74054 26.7493 7.77829 25.6164C6.33491 23.9169 6.941 21.9962 10.5532 21.9962C14.1653 21.9962 16.2485 27.2816 19.0001 27.2816C19.0165 27.285 19.0176 20.5258 19.0034 7.00418C19.0017 5.34683 20.3438 4.00188 22.0012 4.00014L22.0043 4.00014C23.6635 4.00014 25.0085 5.34515 25.0085 7.0043V15.0137C32.9813 16.2226 37.3158 16.8895 38.0122 17.0145C39.0567 17.2021 41.0001 18.1991 41.0001 21.0682C41.0001 22.9809 41.0001 27.9582 41.0001 38.0001H19.0001Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
 </svg>
 )";
 static const std::string WARNING = R"(
@@ -926,7 +958,7 @@ namespace util {
     int                         count_decimals(double number);
     Fl_Widget*                  find_widget(Fl_Group* group, const std::string& label);
     std::string                 fix_menu_string(const std::string& label);
-    std::string                 format(const std::string& format, ...);
+    std::string                 format(const char* format, ...);
     std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
     bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size);
@@ -1532,22 +1564,20 @@ void                            center_fl_message_dialog();
 bool                            date(const std::string& title, gnu::Date& date, int W = 33, int H = 21);
 bool                            font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
 void                            html(const std::string& title, const std::string& text, int W = 40, int H = 23);
-std::string                     input(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 11);
-std::string                     input_double(const std::string& title, const std::string& message, double& value, int W = 40, int H = 11);
-std::string                     input_int(const std::string& title, const std::string& message, int64_t& value, int W = 40, int H = 11);
+std::string                     input(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 10);
+std::string                     input_double(const std::string& title, const std::string& message, double& value, int W = 40, int H = 10);
+std::string                     input_int(const std::string& title, const std::string& message, int64_t& value, int W = 40, int H = 10);
 std::string                     input_multi(const std::string& title, const std::string& message, std::string& value, int W = 54, int H = 22);
-std::string                     input_secret(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 11);
+std::string                     input_secret(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 10);
 void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, int W = 40, int H = 23);
-void                            msg(const std::string& title, const std::string& message, int W = 40, int H = 9);
-std::string                     msg_ask(const std::string& title, const std::string& message, const std::string& b1 = label::YES, const std::string& b2 = label::NO, const std::string& b3 = "", const std::string& b4 = "", const std::string& b5 = "", int W = 54, int H = 9);
-void                            msg_alert(const std::string& title, const std::string& message, int W = 40, int H = 9);
-void                            msg_error(const std::string& title, const std::string& message, int W = 40, int H = 9);
-std::string                     msg_warning(const std::string& title, const std::string& message, const std::string& b1 = label::YES, const std::string& b2 = label::NO, int W = 40, int H = 9);
-void                            options(Fl_Window* parent = Fl::first_window(), bool msg_icon_border = true, bool msg_label_border = false, bool msg_active_color = false);
-void                            options_pop();
-void                            options_push();
+void                            msg(const std::string& title, const std::string& message, int W = 40, int H = 7);
+void                            msg_alert(const std::string& title, const std::string& message, int W = 40, int H = 7);
+std::string                     msg_ask(const std::string& title, const std::string& message, const std::string& b1 = label::YES, const std::string& b2 = label::NO, const std::string& b3 = "", const std::string& b4 = "", const std::string& b5 = "", int W = 40, int H = 7);
+void                            msg_error(const std::string& title, const std::string& message, int W = 40, int H = 7);
+std::string                     msg_warning(const std::string& title, const std::string& message, const std::string& b1 = label::YES, const std::string& b2 = label::NO, int W = 40, int H = 7);
+void                            options(Fl_Window* parent = nullptr, bool active_button_color = false);
 void                            panic(const std::string& message);
 bool                            password(const std::string& title, std::string& password);
 bool                            password_confirm(const std::string& title, std::string& password);
@@ -1557,7 +1587,7 @@ void                            print(const std::string& title, PrintCallback cb
 bool                            print_text(const std::string& title, const std::string& text);
 bool                            print_text(const std::string& title, const StringVector& text);
 StringVector                    select_checkboxes(const std::string& title, const StringVector& list);
-int                             select_choice(const std::string& title, const StringVector& list, int selected = 0);
+int                             select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected = 0);
 int                             select_string(const std::string& title, const StringVector& list, int select_row, bool fixed_font = false, int W = 40, int H = 23);
 int                             select_string(const std::string& title, const StringVector& list, const std::string& select_row, bool fixed_font = false, int W = 40, int H = 23);
 bool                            slider(const std::string& title, double min, double max, double& value, double step = 1.0);

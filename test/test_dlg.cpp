@@ -36,8 +36,11 @@ void test_check() {
 //------------------------------------------------------------------------------
 void test_choice() {
     StringVector v = {"Hello", "World", "How", "Are", "You?"};
-
-    printf("line %d was selected\n", dlg::select_choice("flw::dlg::select_choice", v, 1));
+    auto v2 = util::split_string(HAMLET_TEXT, "\n");
+    
+    //dlg::options(nullptr, true, true);
+    printf("line %d was selected\n", dlg::select_choice("flw::dlg::select_choice", "Two line message.\nHello World.", v, 1));
+    printf("line %d was selected\n", dlg::select_choice("flw::dlg::select_choice", "One line message.", v2));
     fflush(stdout);
 }
 
@@ -149,7 +152,7 @@ void test_html() {
 //------------------------------------------------------------------------------
 void test_icons() {
     auto size = flw::PREF_FONTSIZE * 8;
-    auto w    = size * 13;
+    auto w    = size * 17;
     auto h    = size * 5;
     auto win  = Fl_Double_Window(0, 0, w, h);
     auto b1   = new Fl_Button(0, 0, size, size, "ALERT");
@@ -165,6 +168,10 @@ void test_icons() {
     auto b11  = new Fl_Button(size * 10, 0, size, size, "FORWARD");
     auto b12  = new Fl_Button(size * 11, 0, size, size, "CANCEL");
     auto b13  = new Fl_Button(size * 12, 0, size, size, "PLAY");
+    auto b14  = new Fl_Button(size * 13, 0, size, size, "LEFT");
+    auto b15  = new Fl_Button(size * 14, 0, size, size, "RIGHT");
+    auto b16  = new Fl_Button(size * 15, 0, size, size, "UP");
+    auto b17  = new Fl_Button(size * 16, 0, size, size, "DOWN");
     auto box  = new Fl_Box(w / 2 - 150, h / 2 - 150, 300, 300, "WARNING");
 
     util::labelfont(&win);
@@ -181,6 +188,10 @@ void test_icons() {
     util::icon(b11, flw::icons::FORWARD, flw::PREF_FONTSIZE * 3);
     util::icon(b12, flw::icons::CANCEL, flw::PREF_FONTSIZE * 3);
     util::icon(b13, flw::icons::PLAY, flw::PREF_FONTSIZE * 3);
+    util::icon(b14, flw::icons::LEFT, flw::PREF_FONTSIZE * 3);
+    util::icon(b15, flw::icons::RIGHT, flw::PREF_FONTSIZE * 3);
+    util::icon(b16, flw::icons::UP, flw::PREF_FONTSIZE * 3);
+    util::icon(b17, flw::icons::DOWN, flw::PREF_FONTSIZE * 3);
     util::icon(box, flw::icons::WARNING, flw::PREF_FONTSIZE * 7);
     box->deactivate();
     box->box(FL_BORDER_BOX);
@@ -200,45 +211,40 @@ void test_list() {
 //------------------------------------------------------------------------------
 void test_message(bool input) {
     if (input == false) {
-        //dlg::options(nullptr, false, true, true);
-        //dlg::options();
+
+        dlg::msg("flw::dlg::msg", TWO_LINE);
+
+        dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
         //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
-        //dlg::msg_alert("flw::dlg::msg_alert", HAMLET_TEXT);
 
-        dlg::msg("flw::dlg::msg", THREE_LINE);
+        dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
 
-        dlg::msg_alert("flw::dlg::msg_alert", THREE_LINE);
-
-        dlg::msg_error("flw::dlg::msg_error", THREE_LINE);
-
+        dlg::options(nullptr, true);
         FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
-        //dlg::options_push();
-        //dlg::options(nullptr, false, true, true);
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE, "#One", "%Two", "!Three", "Four", "@Five"))
-        //dlg::options_pop();
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "#One", "%Two", "!Three", "Four", "@Five", 54, 11))
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE))
+        dlg::options();
 
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE, "One", "", "Two"))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE, "", "", "One"))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", THREE_LINE))
-
-        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", THREE_LINE, "&One", "!&Two"))
-        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", THREE_LINE))
+        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", TWO_LINE, "&One", "!&Two"))
+        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", TWO_LINE))
     }
     else {
         std::string value = "Hello World";
-        FLW_PRINTV(dlg::input("flw::dlg::input", THREE_LINE, value), value)
+        FLW_PRINTV(dlg::input("flw::dlg::input", TWO_LINE, value), value)
 
         int64_t value2 = 12345678912345; (void) value2;
-        FLW_PRINTV(dlg::input_int("flw::dlg::input_int", THREE_LINE, value2), value2)
+        FLW_PRINTV(dlg::input_int("flw::dlg::input_int", TWO_LINE, value2), value2)
 
         double value3 = 123.456; (void) value3;
-        FLW_PRINTV(dlg::input_double("flw::dlg::input_double", THREE_LINE, value3), value3)
+        FLW_PRINTV(dlg::input_double("flw::dlg::input_double", TWO_LINE, value3), value3)
 
         std::string value4 = THREE_LINE + THREE_LINE + THREE_LINE;
-        FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", THREE_LINE, value4), value4)
+        FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", TWO_LINE, value4), value4)
 
         std::string value5 = "Password";
-        FLW_PRINTV(dlg::input_secret("flw::dlg::input_secret", THREE_LINE, value5), value5)
+        FLW_PRINTV(dlg::input_secret("flw::dlg::input_secret", TWO_LINE, value5), value5)
     }
 }
 
@@ -593,8 +599,8 @@ int main(int argc, const char** argv) {
     puts("    print4");
     puts("    progress");
     puts("    pwd");
-    puts("    select");
     puts("    slider");
+    puts("    string");
     puts("    text");
     puts("    theme");
     puts("    wait");
@@ -705,12 +711,12 @@ int main(int argc, const char** argv) {
             test_pwd();
         }
 
-        if (run == "" || run == "select") {
-            test_select_string();
-        }
-
         if (run == "" || run == "slider")  {
             test_slider();
+        }
+
+        if (run == "" || run == "string") {
+            test_select_string();
         }
 
         if (run == "" || run == "text") {

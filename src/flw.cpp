@@ -1032,8 +1032,8 @@ std::string util::fix_menu_string(const std::string& label) {
 *
 * @return Formatted string or empty for any error.
 */
-std::string util::format(const std::string& format, ...) {
-    if (format == "") {
+std::string util::format(const char* format, ...) {
+    if (*format == 0) {
         return "";
     }
 
@@ -1044,12 +1044,11 @@ std::string util::format(const std::string& format, ...) {
     va_list     args;
 
     va_start(args, format);
-    n = vsnprintf(buf, l, format.c_str(), args);
+    n = vsnprintf(buf, l, format, args);
     va_end(args);
 
     if (n < 0) {
         free(buf);
-
         return res;
     }
 
@@ -1063,10 +1062,13 @@ std::string util::format(const std::string& format, ...) {
     free(buf);
     l = n + 1;
     buf = static_cast<char*>(calloc(l, 1));
-    if (buf == nullptr) return res;
+    
+    if (buf == nullptr) {
+        return res;
+    }
 
     va_start(args, format);
-    vsnprintf(buf, l, format.c_str(), args);
+    vsnprintf(buf, l, format, args);
     va_end(args);
     res = buf;
     free(buf);

@@ -4252,7 +4252,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
     else if (formula == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Chart - Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Chart", "Select modification.", list, 0);
         if (ans < 0 || ans > static_cast<int>(Modifier::LAST)) {
             return false;
         }
@@ -5423,7 +5423,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 }
 void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two Equal Size", "Two (60%, 40%)", "Three Equal Size", "Three (50%, 25%, 25%)", "Four Equal Size", "Four (40%, 20%, 20%, 20%)", "Five Equal Size", "Five (40%, 15%, 15%, 15%, 15%)"};
-    switch (dlg::select_choice("Chart - Select Number of Chart Areas", list, 0)) {
+    switch (dlg::select_choice("Chart", "Select number of chart areas", list, 0)) {
         case 0:
             set_area_size(100);
             break;
@@ -5501,7 +5501,7 @@ void Chart::setup_create_line() {
         "Modify",
         "Horizontal Fixed Line"
     };
-    switch (dlg::select_choice("Chart - Select Formula", list, 0)) {
+    switch (dlg::select_choice("Chart", "Select formula.", list, 0)) {
         case 0:
             create_line(Algorithm::MOVING_AVERAGE);
             break;
@@ -5550,7 +5550,7 @@ void Chart::setup_create_line() {
 }
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::select_choice("Chart - Select Date Range Type", list, static_cast<int>(_date_range));
+    auto sel  = dlg::select_choice("Chart", "Select date tange type.", list, static_cast<int>(_date_range));
     if (sel == -1) {
         return;
     }
@@ -5598,7 +5598,7 @@ void Chart::setup_move_lines() {
         return;
     }
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::select_choice("Chart - Select Area", list_areas, 0);
+    auto area       = dlg::select_choice("Chart", "Select area.", list_areas, 0);
     if (area < 0 || area > static_cast<int>(AreaNum::LAST)) {
         return;
     }
@@ -5996,14 +5996,8 @@ void flw::DateChooser::_set_label() {
 #include <FL/Fl_Tooltip.H>
 namespace flw {
 namespace priv {
-static Fl_Window*   PARENT            = nullptr;
-static Fl_Window*   PARENT2           = nullptr;
-static bool         MSG_ICON_BORDER   = true;
-static bool         MSG_ICON_BORDER2  = true;
-static bool         MSG_LABEL_BORDER  = false;
-static bool         MSG_LABEL_BORDER2 = false;
-static bool         MSG_ACTIVE_COLOR  = false;
-static bool         MSG_ACTIVE_COLOR2 = false;
+static Fl_Window*   PARENT              = nullptr;
+static bool         ACTIVE_BUTTON_COLOR = false;
  void _load_default();
  void _load_gleam();
  void _load_gleam_blue();
@@ -6065,7 +6059,7 @@ public:
         set_icon(l, icon);
     }
     void draw() override {
-        if (Fl::focus() == this && priv::MSG_ACTIVE_COLOR == true) {
+        if (Fl::focus() == this && priv::ACTIVE_BUTTON_COLOR == true) {
             if (_color == static_cast<Fl_Color>(-1)) {
                 color(fl_darker(FL_BACKGROUND_COLOR));
             }
@@ -6148,23 +6142,9 @@ void dlg::center_fl_message_dialog() {
     Fl::screen_xywh(X, Y, W, H);
     fl_message_position(W / 2, H / 2, 1);
 }
-void dlg::options(Fl_Window* parent, bool msg_icon_border, bool msg_label_border, bool msg_active_color) {
-    priv::PARENT           = parent;
-    priv::MSG_ICON_BORDER  = msg_icon_border;
-    priv::MSG_LABEL_BORDER = msg_label_border;
-    priv::MSG_ACTIVE_COLOR = msg_active_color;
-}
-void dlg::options_pop() {
-    priv::PARENT           = priv::PARENT2;
-    priv::MSG_ICON_BORDER  = priv::MSG_ICON_BORDER2;
-    priv::MSG_LABEL_BORDER = priv::MSG_LABEL_BORDER2;
-    priv::MSG_ACTIVE_COLOR = priv::MSG_ACTIVE_COLOR2;
-}
-void dlg::options_push() {
-    priv::PARENT2           = priv::PARENT;
-    priv::MSG_ICON_BORDER2  = priv::MSG_ICON_BORDER;
-    priv::MSG_LABEL_BORDER2 = priv::MSG_LABEL_BORDER;
-    priv::MSG_ACTIVE_COLOR2 = priv::MSG_ACTIVE_COLOR;
+void dlg::options(Fl_Window* parent, bool active_button_color) {
+    priv::PARENT              = parent;
+    priv::ACTIVE_BUTTON_COLOR = active_button_color;
 }
 void dlg::panic(const std::string& message) {
     dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
@@ -6429,7 +6409,7 @@ public:
         xpos  = -count * 21;
         if (value != nullptr) {
             if (multi == true) {
-                _grid->add(_input, 12, 11, -1, -6);
+                _grid->add(_input, 12, 8, -1, -6);
             }
             else {
                 _grid->add(_input, 12, -10, -1, 4);
@@ -6484,7 +6464,7 @@ public:
             _grid->add(_label, 12,  1, -1, -6);
         }
         else if (multi == true) {
-            _grid->add(_label, 12,  1, -1, 12);
+            _grid->add(_label, 12,  1, -1, 6);
         }
         else {
             _grid->add(_label, 12,  1, -1, -11);
@@ -6496,9 +6476,9 @@ public:
         _b3->callback(_DlgMsg::Callback, this);
         _b4->callback(_DlgMsg::Callback, this);
         _b5->callback(_DlgMsg::Callback, this);
-        _icon->box(priv::MSG_ICON_BORDER == true ? FL_BORDER_BOX : FL_NO_BOX);
+        _icon->box(FL_BORDER_BOX);
         _label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_TOP | FL_ALIGN_CLIP);
-        _label->box(priv::MSG_LABEL_BORDER == true ? FL_BORDER_BOX : FL_NO_BOX);
+        _label->box(FL_BORDER_BOX);
         _label->copy_label(message.c_str());
         if (_b1->is_return() == true) {
             _b1->take_focus();
@@ -7289,34 +7269,47 @@ StringVector dlg::select_checkboxes(const std::string& title, const StringVector
 }
 namespace priv {
 class _DlgSelectChoice : public Fl_Double_Window {
-    Fl_Button*                  _cancel;
-    Fl_Button*                  _close;
+    Fl_Box*                     _label;
+    priv::_Button*              _cancel;
+    priv::_Button*              _ok;
+    Fl_Button*                  _icon;
     Fl_Choice*                  _choice;
     GridGroup*                  _grid;
     bool                        _run;
     int                         _ret;
 public:
-    _DlgSelectChoice(const std::string& title, const StringVector& strings, int selected) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6) {
+    _DlgSelectChoice(const std::string& title, const std::string& message, const StringVector& strings, int selected) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 9.5) {
         end();
-        _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
+        _cancel = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, label::CANCEL));
         _choice = new Fl_Choice(0, 0, 0, 0);
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
+        _icon   = new Fl_Button(0, 0, 0, 0);
+        _label  = new Fl_Box(0, 0, 0, 0);
+        _ok     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, label::OK, icons::BACK, true));
         _ret    = -1;
         _run    = false;
-        _grid->add(_choice,   1,  1, -1,  4);
-        _grid->add(_cancel, -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_icon,     1,   1, 10,  10);
+        _grid->add(_label,   12,   1, -1, -11);
+        _grid->add(_choice,  12, -10, -1,   4);
+        _grid->add(_cancel, -34,  -5, 16,   4);
+        _grid->add(_ok,     -17,  -5, 16,   4);
         add(_grid);
         for (const auto& string : strings) {
             _choice->add(string.c_str());
         }
         _cancel->callback(_DlgSelectChoice::Callback, this);
+        _cancel->set_color(FL_BACKGROUND_COLOR);
         _choice->textfont(flw::PREF_FONT);
         _choice->textsize(flw::PREF_FONTSIZE);
         _choice->value(selected);
-        _close->callback(_DlgSelectChoice::Callback, this);
+        util::icon(_icon, icons::RIGHT, flw::PREF_FONTSIZE * 4);
+        _icon->box(FL_BORDER_BOX);
+        _label->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_CLIP);
+        _label->copy_label(message.c_str());
+        _label->box(FL_BORDER_BOX);
+        _ok->callback(_DlgSelectChoice::Callback, this);
+        _ok->set_color(FL_BACKGROUND_COLOR);
         util::labelfont(this);
         callback(_DlgSelectChoice::Callback, this);
         copy_label(title.c_str());
@@ -7331,7 +7324,7 @@ public:
             self->_run = false;
             self->hide();
         }
-        else if (w == self->_close) {
+        else if (w == self->_ok) {
             self->_ret = self->_choice->value();
             self->_run = false;
             self->hide();
@@ -7348,8 +7341,8 @@ public:
     }
 };
 }
-int dlg::select_choice(const std::string& title, const StringVector& list, int selected) {
-    priv::_DlgSelectChoice dlg(title, list, selected);
+int dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
+    priv::_DlgSelectChoice dlg(title, message, list, selected);
     return dlg.run();
 }
 namespace priv {
@@ -8864,8 +8857,8 @@ std::string util::fix_menu_string(const std::string& label) {
     util::replace_string(res, "&", "&&");
     return res;
 }
-std::string util::format(const std::string& format, ...) {
-    if (format == "") {
+std::string util::format(const char* format, ...) {
+    if (*format == 0) {
         return "";
     }
     int         l   = 128;
@@ -8874,7 +8867,7 @@ std::string util::format(const std::string& format, ...) {
     std::string res;
     va_list     args;
     va_start(args, format);
-    n = vsnprintf(buf, l, format.c_str(), args);
+    n = vsnprintf(buf, l, format, args);
     va_end(args);
     if (n < 0) {
         free(buf);
@@ -8888,9 +8881,11 @@ std::string util::format(const std::string& format, ...) {
     free(buf);
     l = n + 1;
     buf = static_cast<char*>(calloc(l, 1));
-    if (buf == nullptr) return res;
+    if (buf == nullptr) {
+        return res;
+    }
     va_start(args, format);
-    vsnprintf(buf, l, format.c_str(), args);
+    vsnprintf(buf, l, format, args);
     va_end(args);
     res = buf;
     free(buf);
@@ -11507,7 +11502,7 @@ bool Plot::create_line(Algorithm alg) {
     std::string label1;
     if (alg == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Plot - Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Plot", "Select modification.", list, 0);
         if (ans < 0 || ans > static_cast<int>(plot::Modifier::LAST)) {
             return false;
         }
@@ -11522,7 +11517,7 @@ bool Plot::create_line(Algorithm alg) {
             return false;
         }
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
-        ans    = dlg::select_choice("Plot - Select Target", list, 0);
+        ans    = dlg::select_choice("Plot", "Select target.", list, 0);
         vec1   = Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
@@ -12341,7 +12336,7 @@ void Plot::setup_create_line() {
         "Modify",
         "Swap Values",
     };
-    switch (dlg::select_choice("Plot - Select Formula", list, 0)) {
+    switch (dlg::select_choice("Plot", "Select formula.", list, 0)) {
         case 0:
             create_line(Algorithm::MODIFY);
             break;

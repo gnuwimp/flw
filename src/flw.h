@@ -271,7 +271,7 @@ namespace util {
     int                         count_decimals(double number);
     Fl_Widget*                  find_widget(Fl_Group* group, const std::string& label);
     std::string                 fix_menu_string(const std::string& label);
-    std::string                 format(const std::string& format, ...);
+    std::string                 format(const char* format, ...);
     std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
     bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size);

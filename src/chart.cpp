@@ -1921,7 +1921,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
     else if (formula == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Chart - Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Chart", "Select modification.", list, 0);
 
         if (ans < 0 || ans > static_cast<int>(Modifier::LAST)) {
             return false;
@@ -3502,7 +3502,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 void Chart::setup_area() {
     auto list = StringVector() = {"One", "Two Equal Size", "Two (60%, 40%)", "Three Equal Size", "Three (50%, 25%, 25%)", "Four Equal Size", "Four (40%, 20%, 20%, 20%)", "Five Equal Size", "Five (40%, 15%, 15%, 15%, 15%)"};
 
-    switch (dlg::select_choice("Chart - Select Number of Chart Areas", list, 0)) {
+    switch (dlg::select_choice("Chart", "Select number of chart areas", list, 0)) {
         case 0:
             set_area_size(100);
             break;
@@ -3605,7 +3605,7 @@ void Chart::setup_create_line() {
         "Horizontal Fixed Line"
     };
 
-    switch (dlg::select_choice("Chart - Select Formula", list, 0)) {
+    switch (dlg::select_choice("Chart", "Select formula.", list, 0)) {
         case 0:
             create_line(Algorithm::MOVING_AVERAGE);
             break;
@@ -3672,7 +3672,7 @@ void Chart::setup_create_line() {
 */
 void Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
-    auto sel  = dlg::select_choice("Chart - Select Date Range Type", list, static_cast<int>(_date_range));
+    auto sel  = dlg::select_choice("Chart", "Select date tange type.", list, static_cast<int>(_date_range));
 
     if (sel == -1) {
         return;
@@ -3749,7 +3749,7 @@ void Chart::setup_move_lines() {
     }
 
     auto list_areas = StringVector() = {"Area 1", "Area 2", "Area 3", "Area 4", "Area 5"};
-    auto area       = dlg::select_choice("Chart - Select Area", list_areas, 0);
+    auto area       = dlg::select_choice("Chart", "Select area.", list_areas, 0);
 
     if (area < 0 || area > static_cast<int>(AreaNum::LAST)) {
         return;

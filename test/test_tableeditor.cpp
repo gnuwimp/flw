@@ -421,12 +421,12 @@ public:
         table->take_focus();
         table->callback(Test::Callback, table);
 
-        ((Fl_Menu_Item*) bar->find_item("Header/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Lines/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Resize/Yes"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Expand Last Col/No"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Scrollbar/Both"))->setonly();
-        ((Fl_Menu_Item*) bar->find_item("Select/Select::CELL"))->setonly();
+        flw::menu::setonly_item(bar, "Header/Both");
+        flw::menu::setonly_item(bar, "Lines/Both");
+        flw::menu::setonly_item(bar, "Resize/Yes");
+        flw::menu::setonly_item(bar, "Expand Last Col/No");
+        flw::menu::setonly_item(bar, "Scrollbar/Both");
+        flw::menu::setonly_item(bar, "Select/Select::CELL");
 
          //table->header(true, false);
          //table->header(false, false);
@@ -504,12 +504,12 @@ public:
         auto w = (Test*) v;
 
         w->table->reset();
-        ((Fl_Menu_Item*) w->bar->find_item("Header/No"))->setonly();
-        ((Fl_Menu_Item*) w->bar->find_item("Lines/No"))->setonly();
-        ((Fl_Menu_Item*) w->bar->find_item("Resize/No"))->setonly();
-        ((Fl_Menu_Item*) w->bar->find_item("Expand Last Col/No"))->setonly();
-        ((Fl_Menu_Item*) w->bar->find_item("Scrollbar/Both"))->setonly();
-        ((Fl_Menu_Item*) w->bar->find_item("Select/Select::NO"))->setonly();
+        flw::menu::setonly_item(w->bar, "Header/No");
+        flw::menu::setonly_item(w->bar, "Lines/No");
+        flw::menu::setonly_item(w->bar, "Resize/No");
+        flw::menu::setonly_item(w->bar, "Expand Last Col/No");
+        flw::menu::setonly_item(w->bar, "Scrollbar/Both");
+        flw::menu::setonly_item(w->bar, "Select/Select::NO");
     }
 
     //------------------------------------------------------------------------------

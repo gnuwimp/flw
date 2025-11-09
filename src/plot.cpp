@@ -919,7 +919,7 @@ bool Plot::create_line(Algorithm alg) {
 
     if (alg == Algorithm::MODIFY) {
         auto list = StringVector() = {"Addition", "Subtraction", "Multiplication", "Division"};
-        auto ans  = dlg::select_choice("Plot - Select Modification", list, 0);
+        auto ans  = dlg::select_choice("Plot", "Select modification.", list, 0);
 
         if (ans < 0 || ans > static_cast<int>(plot::Modifier::LAST)) {
             return false;
@@ -938,7 +938,7 @@ bool Plot::create_line(Algorithm alg) {
         }
 
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
-        ans    = dlg::select_choice("Plot - Select Target", list, 0);
+        ans    = dlg::select_choice("Plot", "Select target.", list, 0);
         vec1   = Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
@@ -2055,7 +2055,7 @@ void Plot::setup_create_line() {
         "Swap Values",
     };
 
-    switch (dlg::select_choice("Plot - Select Formula", list, 0)) {
+    switch (dlg::select_choice("Plot", "Select formula.", list, 0)) {
         case 0:
             create_line(Algorithm::MODIFY);
             break;

@@ -40,14 +40,8 @@ namespace flw {
 */
 namespace priv {
 
-static Fl_Window*   PARENT            = nullptr;
-static Fl_Window*   PARENT2           = nullptr;
-static bool         MSG_ICON_BORDER   = true;
-static bool         MSG_ICON_BORDER2  = true;
-static bool         MSG_LABEL_BORDER  = false;
-static bool         MSG_LABEL_BORDER2 = false;
-static bool         MSG_ACTIVE_COLOR  = false;
-static bool         MSG_ACTIVE_COLOR2 = false;
+static Fl_Window*   PARENT              = nullptr;
+static bool         ACTIVE_BUTTON_COLOR = false;
 
 /* @private */ void _load_default();
 /* @private */ void _load_gleam();
@@ -119,7 +113,8 @@ static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
 
 /** @brief A button for dialogs.
 *
-*/class _Button : public Fl_Button {
+*/
+class _Button : public Fl_Button {
     Fl_Color                    _color;     // Optional color.
     bool                        _return;    // If true then it is and return button.
     std::string                 _icon;      // Icon name.
@@ -138,7 +133,7 @@ public:
     /** @brief Change background color if active.
     */
     void draw() override {
-        if (Fl::focus() == this && priv::MSG_ACTIVE_COLOR == true) {
+        if (Fl::focus() == this && priv::ACTIVE_BUTTON_COLOR == true) {
             if (_color == static_cast<Fl_Color>(-1)) {
                 color(fl_darker(FL_BACKGROUND_COLOR));
             }
@@ -286,36 +281,12 @@ void dlg::center_fl_message_dialog() {
 *
 * Some desktops can't place windows at a specific position.
 *
-* @param[in] parent            Center on this window, NULL to center on desktop.
-* @param[in] msg_icon_border   Border around message icons, default to true.
-* @param[in] msg_label_border  Border around message label, default false.
-* @param[in] msg_active_color  Change background color for active button.
+* @param[in] parent               Center on this window, NULL to center on desktop.
+* @param[in] active_button_color  Change background color for active button.
 */
-void dlg::options(Fl_Window* parent, bool msg_icon_border, bool msg_label_border, bool msg_active_color) {
-    priv::PARENT           = parent;
-    priv::MSG_ICON_BORDER  = msg_icon_border;
-    priv::MSG_LABEL_BORDER = msg_label_border;
-    priv::MSG_ACTIVE_COLOR = msg_active_color;
-}
-
-/** @brief Restore previous options.
-*
-*/
-void dlg::options_pop() {
-    priv::PARENT           = priv::PARENT2;
-    priv::MSG_ICON_BORDER  = priv::MSG_ICON_BORDER2;
-    priv::MSG_LABEL_BORDER = priv::MSG_LABEL_BORDER2;
-    priv::MSG_ACTIVE_COLOR = priv::MSG_ACTIVE_COLOR2;
-}
-
-/** @brief Save options.
-*
-*/
-void dlg::options_push() {
-    priv::PARENT2           = priv::PARENT;
-    priv::MSG_ICON_BORDER2  = priv::MSG_ICON_BORDER;
-    priv::MSG_LABEL_BORDER2 = priv::MSG_LABEL_BORDER;
-    priv::MSG_ACTIVE_COLOR2 = priv::MSG_ACTIVE_COLOR;
+void dlg::options(Fl_Window* parent, bool active_button_color) {
+    priv::PARENT              = parent;
+    priv::ACTIVE_BUTTON_COLOR = active_button_color;
 }
 
 /** @brief Show an dialog with message and then exit the program.
@@ -814,11 +785,11 @@ public:
         count = count + (b5 != "");
         xpos  = -count * 21;
 
-        // Add oprional input widget.
+        // Add optional input widget.
 
         if (value != nullptr) {
             if (multi == true) {
-                _grid->add(_input, 12, 11, -1, -6);
+                _grid->add(_input, 12, 8, -1, -6);
             }
             else {
                 _grid->add(_input, 12, -10, -1, 4);
@@ -887,7 +858,7 @@ public:
             _grid->add(_label, 12,  1, -1, -6);
         }
         else if (multi == true) {
-            _grid->add(_label, 12,  1, -1, 12);
+            _grid->add(_label, 12,  1, -1, 6);
         }
         else {
             _grid->add(_label, 12,  1, -1, -11);
@@ -901,9 +872,9 @@ public:
         _b3->callback(_DlgMsg::Callback, this);
         _b4->callback(_DlgMsg::Callback, this);
         _b5->callback(_DlgMsg::Callback, this);
-        _icon->box(priv::MSG_ICON_BORDER == true ? FL_BORDER_BOX : FL_NO_BOX);
+        _icon->box(FL_BORDER_BOX);
         _label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_TOP | FL_ALIGN_CLIP);
-        _label->box(priv::MSG_LABEL_BORDER == true ? FL_BORDER_BOX : FL_NO_BOX);
+        _label->box(FL_BORDER_BOX);
         _label->copy_label(message.c_str());
 
         // Make sure return buttons has focus (this is a visual issue).
@@ -1181,6 +1152,7 @@ void dlg::msg_alert(const std::string& title, const std::string& message, int W,
 /** @brief Show an dialog with a question icon.
 *
 * You can show 1 to 5 buttons to choose from.\n
+* If you use more than three buttons you must increase width and height.\n
 * @see dlg::button() on how to add a icon.\n
 * Any button label can be empty and it will be hidden.\n
 *
@@ -2182,8 +2154,10 @@ namespace priv {
 * @private
 */
 class _DlgSelectChoice : public Fl_Double_Window {
-    Fl_Button*                  _cancel;    // Cancel button.
-    Fl_Button*                  _close;     // Ok button.
+    Fl_Box*                     _label;     // Message label.
+    priv::_Button*              _cancel;    // Cancel button.
+    priv::_Button*              _ok;        // Ok button.
+    Fl_Button*                  _icon;      // Icon label.
     Fl_Choice*                  _choice;    // Choice widget with user strings to select from.
     GridGroup*                  _grid;      // Layout widget.
     bool                        _run;       // Run flag.
@@ -2196,20 +2170,24 @@ public:
     * @param[in] strings   Strings for the choce widget.
     * @param[in] selected  Selected string index.
     */
-    _DlgSelectChoice(const std::string& title, const StringVector& strings, int selected) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 6) {
+    _DlgSelectChoice(const std::string& title, const std::string& message, const StringVector& strings, int selected) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 9.5) {
         end();
 
-        _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
+        _cancel = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, label::CANCEL));
         _choice = new Fl_Choice(0, 0, 0, 0);
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
+        _icon   = new Fl_Button(0, 0, 0, 0);
+        _label  = new Fl_Box(0, 0, 0, 0);
+        _ok     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, label::OK, icons::BACK, true));
         _ret    = -1;
         _run    = false;
 
-        _grid->add(_choice,   1,  1, -1,  4);
-        _grid->add(_cancel, -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_icon,     1,   1, 10,  10);
+        _grid->add(_label,   12,   1, -1, -11);
+        _grid->add(_choice,  12, -10, -1,   4);
+        _grid->add(_cancel, -34,  -5, 16,   4);
+        _grid->add(_ok,     -17,  -5, 16,   4);
         add(_grid);
 
         for (const auto& string : strings) {
@@ -2217,10 +2195,17 @@ public:
         }
 
         _cancel->callback(_DlgSelectChoice::Callback, this);
+        _cancel->set_color(FL_BACKGROUND_COLOR);
         _choice->textfont(flw::PREF_FONT);
         _choice->textsize(flw::PREF_FONTSIZE);
         _choice->value(selected);
-        _close->callback(_DlgSelectChoice::Callback, this);
+        util::icon(_icon, icons::RIGHT, flw::PREF_FONTSIZE * 4);
+        _icon->box(FL_BORDER_BOX);
+        _label->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_CLIP);
+        _label->copy_label(message.c_str());
+        _label->box(FL_BORDER_BOX);
+        _ok->callback(_DlgSelectChoice::Callback, this);
+        _ok->set_color(FL_BACKGROUND_COLOR);
 
         util::labelfont(this);
         callback(_DlgSelectChoice::Callback, this);
@@ -2241,7 +2226,7 @@ public:
             self->_run = false;
             self->hide();
         }
-        else if (w == self->_close) {
+        else if (w == self->_ok) {
             self->_ret = self->_choice->value();
             self->_run = false;
             self->hide();
@@ -2269,6 +2254,7 @@ public:
 /** @brief Show a dialog with a choice widget that contains input strings to select from.
 *
 * @param[in] title     Dialog title.
+* @param[in] message   Message string.
 * @param[in] list      List with strings.
 * @param[in] selected  Index in string list to select.
 *
@@ -2277,8 +2263,8 @@ public:
 * @snippet dialog.cpp flw::dlg::select_choice example
 * @image html select_choice_dialog.png
 */
-int dlg::select_choice(const std::string& title, const StringVector& list, int selected) {
-    priv::_DlgSelectChoice dlg(title, list, selected);
+int dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
+    priv::_DlgSelectChoice dlg(title, message, list, selected);
     return dlg.run();
 }
 

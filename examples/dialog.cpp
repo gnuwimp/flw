@@ -239,7 +239,7 @@ void select_choice_example() {
     // [flw::dlg::select_choice example]
 
     flw::StringVector choices = {"Hello", "World", "How", "Are", "You?"};
-    int index = flw::dlg::select_choice("flw::dlg::select_choice()", choices, 1);
+    int index = flw::dlg::select_choice("flw::dlg::select_choice()", "Select one of the strings.", choices, 1);
     printf("selected index was %d\n", index);
 
     // [flw::dlg::select_choice example]
