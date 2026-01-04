@@ -219,11 +219,11 @@ public:
 * Insert first in a label "@" character first in label to use the icons::CONFIRM icon.\n
 * Icon option character will be removed from the label.\n
 *
-* @param[in] X X pos.
-* @param[in] Y Y pos.
-* @param[in] W Width.
-* @param[in] H Height.
-* @param[in] l Label.
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
+* @param[in] W  Width.
+* @param[in] H  Height.
+* @param[in] l  Label.
 *
 * @see util::icon() to see how they look.\n
 */
@@ -2351,22 +2351,19 @@ public:
                 _list->add(string.c_str());
 
                 if (string == selected_string) {
-                    r = f + 1;
+                    r = f;
                 }
 
                 f++;
             }
 
-            if (selected_string_index > 0 && selected_string_index <= (int) _strings.size()) {
-                _list->value(selected_string_index);
-                _list->middleline(selected_string_index);
-            }
-            else if (r > 0) {
-                _list->value(r);
-                _list->middleline(r);
+            if (selected_string_index >= 0 && selected_string_index < static_cast<int>(_strings.size())) {
+                _list->value(selected_string_index + 1);
+                _list->middleline(selected_string_index + 1);
             }
             else {
-                _list->value(1);
+                _list->value(r + 1);
+                _list->middleline(r + 1);
             }
         }
 
@@ -2507,13 +2504,13 @@ public:
 * The returned index is always the original index in input vector.\n
 *
 * @param[in] title         Dialog title.
-* @param[in] list          Filename to load.
-* @param[in] selected_row  Selected row index.
+* @param[in] list          Vector with strings.
+* @param[in] selected_row  Selected row in vector.
 * @param[in] fixed_font    True to use a fixed font.
 * @param[in] W             Width in characters.
 * @param[in] H             Height in characters.
 *
-* @return Selected index (from 0 to list.size() - 1) or -1.
+* @return Selected index in input vector.
 */
 int dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
     priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
@@ -2526,19 +2523,19 @@ int dlg::select_string(const std::string& title, const StringVector& list, int s
 * The returned index is always the original index in input vector.\n
 *
 * @param[in] title         Dialog title.
-* @param[in] list          Filename to load.
-* @param[in] selected_row  Selected string.
+* @param[in] list          Vector with strings.
+* @param[in] selected_row  Selected row in vector.
 * @param[in] fixed_font    True to use a fixed font.
 * @param[in] W             Width in characters.
 * @param[in] H             Height in characters.
 *
-* @return Selected index (from 0 to list.size() - 1) or -1.
+* @return Selected index in input vector.
 *
 * @snippet dialog.cpp flw::dlg::select example
 * @image html select_string_dialog.png
 */
 int dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, 0, selected_row, fixed_font, W, H);
+    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 

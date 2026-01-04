@@ -25,20 +25,20 @@
 
 namespace flw {
 
+/*
+ *          _ _       
+ *         | | |      
+ *       __| | | __ _ 
+ *      / _` | |/ _` |
+ *     | (_| | | (_| |
+ *      \__,_|_|\__, |
+ *               __/ |
+ *              |___/ 
+ */
+ 
 /** @brief Assorted dialog functions and classes.
 */
 namespace dlg {
-
-/*
- *       __                  _   _
- *      / _|                | | (_)
- *     | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
- *     |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
- *     | | | |_| | | | | (__| |_| | (_) | | | \__ \
- *     |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
- *
- *
- */
 
 Fl_Button*                      button(int X, int Y, int W, int H, const std::string& l);
 Fl_Button*                      button(int X, int Y, int W, int H, const std::string& l, const std::string& icon, bool ret = false);
@@ -77,7 +77,7 @@ void                            text(const std::string& title, const std::string
 bool                            text_edit(const std::string& title, std::string& text, int W = 40, int H = 23);
 void                            theme(bool enable_font = false, bool enable_fixedfont = false);
 
-/**
+/*
  *      ______          _
  *     |  ____|        | |
  *     | |__ ___  _ __ | |_
@@ -137,7 +137,7 @@ private:
     std::string                 _fontname;  // Selected font name.
 };
 
-/**
+/*
  *      _____
  *     |  __ \
  *     | |__) | __ ___   __ _ _ __ ___  ___ ___

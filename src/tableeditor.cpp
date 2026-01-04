@@ -771,7 +771,7 @@ void Editor::_edit_show_dlg() {
         auto choices = cell_choice(_curr_row, _curr_col);
 
         if (choices.size() > 0) {
-            auto row = dlg::select_string(table::EditListLabel.c_str(), choices, val);
+            auto row = dlg::select_string(table::EditListLabel, choices, val);
 
             if (row >= 0) {
                 const auto& string = choices[row];
@@ -786,7 +786,7 @@ void Editor::_edit_show_dlg() {
     else if (rend == Type::MTEXT) {
         auto val2 = val;
 
-        if (dlg::text_edit(table::EditTextLabel.c_str(), val2) == true) {
+        if (dlg::text_edit(table::EditTextLabel, val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
                 do_callback();

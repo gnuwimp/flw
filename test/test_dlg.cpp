@@ -527,13 +527,15 @@ void test_select_string() {
     std::vector<std::string> v;
     char c[100];
 
-    for (int f = 1; f <= 150; f++) {
+    for (int f = 0; f <= 150; f++) {
         snprintf(c, 100, "Hello World %05d", f);
         v.push_back(std::string(c));
     }
 
     printf("line %d was selected\n", (int) dlg::select_string("flw::dlg::select_string", v, 66));
     printf("line %d was selected\n", (int) dlg::select_string("flw::dlg::select_string", v, "Hello World 00044"));
+    //printf("line %d was selected\n", (int) dlg::select_string("flw::dlg::select_string", v, "Hello World 00000"));
+    //printf("line %d was selected\n", (int) dlg::select_string("flw::dlg::select_string", v, "Hello World 00150"));
     fflush(stdout);
 }
 
