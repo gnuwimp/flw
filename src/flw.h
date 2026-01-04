@@ -91,8 +91,6 @@
 #define FLW_TEST_TRUE(X)
 #endif
 
-namespace flw {
-
 /*
  *       __ _
  *      / _| |
@@ -103,6 +101,11 @@ namespace flw {
  *
  *
  */
+
+/** @brief FLW is an widget library for the FLTK gui library.
+*
+*/
+namespace flw {
 
 typedef std::map<std::string, std::string> StringHash;                  ///< @brief Hash with string keys and string values.
 typedef std::vector<std::string> StringVector;                          ///< @brief Vector with strings.
