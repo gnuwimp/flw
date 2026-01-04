@@ -65,10 +65,8 @@ public:
     void                        update_pref(Fl_Font text_font = flw::PREF_FONT, Fl_Fontsize text_size = flw::PREF_FONTSIZE);
     std::string                 value() const;
     void                        value(const std::string& string);
-    void                        values(const StringVector& list, const std::string& input_value)
-                                    { _values(list, input_value); } ///< @brief Set a list of string and input value. @param[in] list  List of strings. @param[in]  input_value Optional input string.
-    void                        values(const StringVector& list, size_t list_index = -1)
-                                    { _values(list, list.size() > list_index ? list[list_index] : ""); } ///< @brief Set a list of string and an optional input value. @param[in] list  List of strings. @param[in] list_index  Optional input string.
+    void                        values(const StringVector& list, const std::string& input_value);
+    void                        values(const StringVector& list, size_t list_index = -1);
 
 private:
     void                        _add(bool insert, const std::string& string, int max_list_len);

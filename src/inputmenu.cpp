@@ -263,6 +263,24 @@ void InputMenu::value(const std::string& string) {
     _input->value(string.c_str());
 }
 
+/** @brief Set a list of string and input value.
+*
+* @param[in] list         List of strings.
+* @param[in] input_value  Input string.
+*/
+void InputMenu::values(const StringVector& list, const std::string& input_value) {
+    _values(list, input_value);
+}
+
+/** @brief Set a list of string and an optional input value.
+*
+* @param[in] list        List of strings.
+* @param[in] list_index  Optional index in list to set input string, -1 to set input to empty string.
+*/
+void InputMenu::values(const StringVector& list, size_t list_index) { 
+    _values(list, list.size() > list_index ? list[list_index] : "");
+}
+
 /** @brief Set new menu list and optional input string.
 *
 * @param[in] menu_list    List of strings for the menu.
