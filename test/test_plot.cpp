@@ -129,7 +129,7 @@ plot::PointVector create_random_small(int maxy = 2'440) {
     return res;
 }
 
-/***
+/*
  *      _______        _
  *     |__   __|      | |
  *        | | ___  ___| |_

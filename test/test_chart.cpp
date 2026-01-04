@@ -487,7 +487,7 @@ void test10(chart::Chart* chart) {
     chart->init_new_data();
 }
 
-/***
+/*
  *      _______        _   
  *     |__   __|      | |  
  *        | | ___  ___| |_ 
