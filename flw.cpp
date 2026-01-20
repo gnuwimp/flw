@@ -6384,6 +6384,7 @@ public:
         auto multi = false;
         auto xpos  = 0;
         auto count = 0;
+        auto fixed = true;
         if (input == "Fl_Int_Input") {
             _input = new Fl_Int_Input(0, 0, 0, 0);
         }
@@ -6392,12 +6393,14 @@ public:
         }
         else if (input == "Fl_Multiline_Input") {
             _input = new Fl_Multiline_Input(0, 0, 0, 0);
+            fixed  = false;
             multi  = true;
         }
         else if (input == "Fl_Secret_Input") {
             _input = new Fl_Secret_Input(0, 0, 0, 0);
         }
         else {
+            fixed  = false;
             _input = new Fl_Input(0, 0, 0, 0);
         }
         util::icon(_icon, type, flw::PREF_FONTSIZE * 4);
@@ -6416,6 +6419,8 @@ public:
             }
             _input->value(value);
             _input->box(FL_BORDER_BOX);
+            _input->textfont(fixed == true ? flw::PREF_FIXED_FONT : flw::PREF_FONT);
+            _input->textsize(flw::PREF_FIXED_FONTSIZE);
         }
         else {
             _input->hide();
@@ -6533,8 +6538,46 @@ public:
         set_modal();
         resizable(_grid);
         util::labelfont(this);
-        util::center_window(this, priv::PARENT);
         _grid->do_layout();
+        {
+            fl_font(flw::PREF_FONT, flw::PREF_FIXED_FONTSIZE);
+            auto width  = 0;
+            auto height = 0;
+            for (const auto& line : flw::util::split_string(message, "\n")) {
+                auto tmp = fl_width(line.c_str());
+                if (tmp > _label->w() && tmp > width) {
+                    width = tmp;
+                }
+                height += fl_height();
+            }
+            if (width > _label->w()) {
+                w(w() + width - _label->w() + flw::PREF_FONTSIZE);
+                if (w() > Fl::w()) {
+                    w(Fl::w());
+                }
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+            if (height > _label->h()) {
+                h(h() + height - _label->h() + flw::PREF_FONTSIZE);
+                if (h() > Fl::h()) {
+                    h(Fl::h());
+                }
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+            if (_b5->visible() != 0 && _b5->x() < _label->x()) {
+                w(_b5->w() * 6);
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+            else if (_b4->visible() != 0 && _b4->x() < _label->x()) {
+                w(_b4->w() * 5);
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+        }
+        util::center_window(this, priv::PARENT);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgMsg*>(o);
@@ -7395,20 +7438,17 @@ public:
             for (const auto& string : _strings) {
                 _list->add(string.c_str());
                 if (string == selected_string) {
-                    r = f + 1;
+                    r = f;
                 }
                 f++;
             }
-            if (selected_string_index > 0 && selected_string_index <= (int) _strings.size()) {
-                _list->value(selected_string_index);
-                _list->middleline(selected_string_index);
-            }
-            else if (r > 0) {
-                _list->value(r);
-                _list->middleline(r);
+            if (selected_string_index >= 0 && selected_string_index < static_cast<int>(_strings.size())) {
+                _list->value(selected_string_index + 1);
+                _list->middleline(selected_string_index + 1);
             }
             else {
-                _list->value(1);
+                _list->value(r + 1);
+                _list->middleline(r + 1);
             }
         }
         _filter->take_focus();
@@ -7512,7 +7552,7 @@ int dlg::select_string(const std::string& title, const StringVector& list, int s
     return dlg.run();
 }
 int dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, 0, selected_row, fixed_font, W, H);
+    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 namespace priv {
@@ -10026,6 +10066,12 @@ std::string InputMenu::value() const {
 }
 void InputMenu::value(const std::string& string) {
     _input->value(string.c_str());
+}
+void InputMenu::values(const StringVector& list, const std::string& input_value) {
+    _values(list, input_value);
+}
+void InputMenu::values(const StringVector& list, size_t list_index) {
+    _values(list, list.size() > list_index ? list[list_index] : "");
 }
 void InputMenu::_values(const StringVector& menu_list, const std::string& input_value) {
     clear();
@@ -14483,7 +14529,7 @@ void Editor::_edit_show_dlg() {
     else if (rend == Type::LIST) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
-            auto row = dlg::select_string(table::EditListLabel.c_str(), choices, val);
+            auto row = dlg::select_string(table::EditListLabel, choices, val);
             if (row >= 0) {
                 const auto& string = choices[row];
                 if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
@@ -14495,7 +14541,7 @@ void Editor::_edit_show_dlg() {
     }
     else if (rend == Type::MTEXT) {
         auto val2 = val;
-        if (dlg::text_edit(table::EditTextLabel.c_str(), val2) == true) {
+        if (dlg::text_edit(table::EditTextLabel, val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
                 do_callback();
