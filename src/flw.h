@@ -296,7 +296,7 @@ namespace util {
     int64_t                     to_int(const std::string& string, int64_t def = 0);
     long long                   to_long(const std::string& string, long long def = 0);
     static inline std::string   to_string(const char* text)
-                                    { return text != nullptr ? text : ""; }
+                                    { return text != nullptr ? text : ""; } ///< @brief Return a std::string of c string. @param[in] text  C pointer, can be NULL.
     std::string                 trim(const std::string& string);
     void*                       zero_memory(char* mem, size_t size);
 
