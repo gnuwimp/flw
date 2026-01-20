@@ -165,7 +165,7 @@ datechooser: test_datechooser.exe
 
 #-------------------
 
-obj/test_dlg.o: test/test_dlg.cpp $(OBJ) src/icons.h
+obj/test_dlg.o: test/test_dlg.cpp $(OBJ) src/icons.h test/test.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_dlg.exe: obj/test_dlg.o $(OBJ)

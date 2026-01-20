@@ -5,8 +5,10 @@
 #define FLW_TEST_H
 
 const std::string THREE_LINE = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles";
-const std::string TWO_LINE = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune";
-const std::string LONG_LINE = "Whether 'tis nobler in the mind to suffer The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles, And by opposing end them? To die: to sleep; No more; and by a sleep to say we end The heart-ache and the thousand natural shocks That flesh is heir to, 'tis a consummation Devoutly to be wish'd. To die, to sleep";
+const std::string TWO_LINE   = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune";
+const std::string LONG_LINE  = "Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles";
+const std::string LONG_LINE2 = "Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troublesWhether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles";
+const std::string FIVE_LINE  = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles,\nIs sicklied o'er with the pale cast of thought,\nWith this regard their currents turn awry, And lose the name of action.--Soft you now!";
 
 const std::string HAMLET_LIST = R"(@l@bTo be, or not to be: that is the question:
 

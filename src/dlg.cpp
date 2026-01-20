@@ -754,6 +754,7 @@ public:
         auto multi = false;
         auto xpos  = 0;
         auto count = 0;
+        auto fixed = true;
 
         if (input == "Fl_Int_Input") {
             _input = new Fl_Int_Input(0, 0, 0, 0);
@@ -763,12 +764,14 @@ public:
         }
         else if (input == "Fl_Multiline_Input") {
             _input = new Fl_Multiline_Input(0, 0, 0, 0);
+            fixed  = false;
             multi  = true;
         }
         else if (input == "Fl_Secret_Input") {
             _input = new Fl_Secret_Input(0, 0, 0, 0);
         }
         else {
+            fixed  = false;
             _input = new Fl_Input(0, 0, 0, 0);
         }
 
@@ -797,6 +800,8 @@ public:
 
             _input->value(value);
             _input->box(FL_BORDER_BOX);
+            _input->textfont(fixed == true ? flw::PREF_FIXED_FONT : flw::PREF_FONT);
+            _input->textsize(flw::PREF_FIXED_FONTSIZE);
         }
         else {
             _input->hide();
@@ -942,8 +947,58 @@ public:
         set_modal();
         resizable(_grid);
         util::labelfont(this);
-        util::center_window(this, priv::PARENT);
         _grid->do_layout();
+
+        { // Try to resize label and window if it is to wide or if there are to many buttons (only valid for msg_ask()).
+            fl_font(flw::PREF_FONT, flw::PREF_FIXED_FONTSIZE);
+            auto width  = 0;
+            auto height = 0;
+
+            for (const auto& line : flw::util::split_string(message, "\n")) {
+                auto tmp = fl_width(line.c_str());
+
+                if (tmp > _label->w() && tmp > width) {
+                    width = tmp;
+                }
+
+                height += fl_height();
+            }
+
+            if (width > _label->w()) {
+                w(w() + width - _label->w() + flw::PREF_FONTSIZE);
+
+                if (w() > Fl::w()) {
+                    w(Fl::w());
+                }
+
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+
+            if (height > _label->h()) {
+                h(h() + height - _label->h() + flw::PREF_FONTSIZE);
+
+                if (h() > Fl::h()) {
+                    h(Fl::h());
+                }
+
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+
+            if (_b5->visible() != 0 && _b5->x() < _label->x()) {
+                w(_b5->w() * 6);
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+            else if (_b4->visible() != 0 && _b4->x() < _label->x()) {
+                w(_b4->w() * 5);
+                _grid->resize(0, 0, w(), h());
+                _grid->do_layout();
+            }
+        }
+
+        util::center_window(this, priv::PARENT);
     }
 
     /** @brief Callback for all widgets.
@@ -994,6 +1049,8 @@ public:
 
 /** @brief Show an text input dialog.
 *
+* It will try to increase window width and height if message is to large.\n
+*
 * @param[in]     title    Dialog title.
 * @param[in]     message  Message text.
 * @param[in,out] value    Text line to edit.
@@ -1017,7 +1074,8 @@ std::string dlg::input(const std::string& title, const std::string& message, std
 
 /** @brief Show an decimal input dialog.
 *
-* If the number is invalid, the input number will be returned.
+* It will try to increase window width and height if message is to large.\n
+* If the number is invalid, the input number will be returned.\n
 *
 * @param[in]     title    Dialog title.
 * @param[in]     message  Message text.
@@ -1048,7 +1106,8 @@ std::string dlg::input_double(const std::string& title, const std::string& messa
 
 /** @brief Show an integer input dialog.
 *
-* If the number is invalid, the input number will be returned.
+* It will try to increase window width and height if message is to large.\n
+* If the number is invalid, the input number will be returned.\n
 *
 * @param[in]     title    Dialog title.
 * @param[in]     message  Message text.
@@ -1075,6 +1134,8 @@ std::string dlg::input_int(const std::string& title, const std::string& message,
 /** @brief Show an multiline input dialog.
 *
 * Don't edit to many lines of text because there are no scrollbars.\n
+* It will try to increase window width and height if message is to large.\n
+*
 * @see To edit longer texts use dlg::text_edit()
 *
 * @param[in]     title    Dialog title.
@@ -1100,6 +1161,8 @@ std::string dlg::input_multi(const std::string& title, const std::string& messag
 
 /** @brief Show an secret text input dialog.
 *
+* It will try to increase window width and height if message is to large.\n
+*
 * @param[in]     title    Dialog title.
 * @param[in]     message  Message text.
 * @param[in,out] value    Secret text to edit.
@@ -1122,6 +1185,8 @@ std::string dlg::input_secret(const std::string& title, const std::string& messa
 }
 
 /** @brief Show an dialog with a message icon.
+*
+* It will try to increase window width and height if message is to large.\n
 *
 * @param[in] title    Dialog title.
 * @param[in] message  Message text.
@@ -1152,9 +1217,9 @@ void dlg::msg_alert(const std::string& title, const std::string& message, int W,
 /** @brief Show an dialog with a question icon.
 *
 * You can show 1 to 5 buttons to choose from.\n
-* If you use more than three buttons you must increase width and height.\n
-* @see dlg::button() on how to add a icon.\n
 * Any button label can be empty and it will be hidden.\n
+*
+* @see dlg::button() on how to add a icon.\n
 *
 * @param[in] title    Dialog title.
 * @param[in] message  Message text.
@@ -1175,7 +1240,7 @@ std::string dlg::msg_ask(const std::string& title, const std::string& message, c
     return dlg.run();
 }
 
-/** @brief Show an dialog with an error icon.
+/** @brief Show an dialog with an error icon.\n
 *
 * @param[in] title    Dialog title.
 * @param[in] message  Message text.

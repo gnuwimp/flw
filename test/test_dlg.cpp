@@ -211,17 +211,19 @@ void test_list() {
 //------------------------------------------------------------------------------
 void test_message(bool input) {
     if (input == false) {
-
         dlg::msg("flw::dlg::msg", TWO_LINE);
 
         dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
+        dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
         //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
+        //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE2);
 
         dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
 
         dlg::options(nullptr, true);
         FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "#One", "%Two", "!Three", "Four", "@Five", 54, 11))
+        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "#One", "%Two", "!Three", "Four", "@Five"))
+        //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "#One", "%Two", "!Three", "@Four", ""))
         FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
         FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
         FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE))
@@ -233,6 +235,8 @@ void test_message(bool input) {
     else {
         std::string value = "Hello World";
         FLW_PRINTV(dlg::input("flw::dlg::input", TWO_LINE, value), value)
+        //FLW_PRINTV(dlg::input("flw::dlg::input", LONG_LINE, value), value)
+        FLW_PRINTV(dlg::input("flw::dlg::input", FIVE_LINE, value), value)
 
         int64_t value2 = 12345678912345; (void) value2;
         FLW_PRINTV(dlg::input_int("flw::dlg::input_int", TWO_LINE, value2), value2)
@@ -242,6 +246,7 @@ void test_message(bool input) {
 
         std::string value4 = THREE_LINE + THREE_LINE + THREE_LINE;
         FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", TWO_LINE, value4), value4)
+        FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", LONG_LINE, value4), value4)
 
         std::string value5 = "Password";
         FLW_PRINTV(dlg::input_secret("flw::dlg::input_secret", TWO_LINE, value5), value5)
