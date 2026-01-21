@@ -1,5 +1,10 @@
-// Copyright gnuwimp@gmail.com
-// Released under the GNU General Public License v3.0
+/**
+* @file
+* @brief A date/time class.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
 
 #include "date.h"
 

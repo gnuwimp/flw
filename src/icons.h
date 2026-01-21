@@ -1,3 +1,11 @@
+/**
+* @file
+* @brief SVG Icons.
+*
+* @author gnuwimp@gmail.com
+* @copyright Released under the GNU General Public License v3.0
+*/
+
 #ifndef FLW_ICONS_H
 #define FLW_ICONS_H
 
