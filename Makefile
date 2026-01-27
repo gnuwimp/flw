@@ -21,18 +21,23 @@ OBJ = obj/date.o \
 	obj/chart.o \
 	obj/datechooser.o \
 	obj/dlg.o \
+	obj/fontdialog.o \
 	obj/gridgroup.o \
 	obj/inputmenu.o \
 	obj/lcddisplay.o \
 	obj/logdisplay.o \
 	obj/plot.o \
+	obj/postscript.o \
+	obj/progressdialog.o \
 	obj/recentmenu.o \
 	obj/scrollbrowser.o \
 	obj/splitgroup.o \
+	obj/svgbutton.o \
 	obj/table.o \
 	obj/tabledisplay.o \
 	obj/tableeditor.o \
 	obj/tabsgroup.o \
+	obj/theme.o \
 	obj/toolgroup.o \
 	obj/waitcursor.o \
 
@@ -67,7 +72,7 @@ obj:
 	mkdir obj
 
 doc: documentation/Doxyfile
-	cd documentation ; doxygen Doxyfile
+	cd documentation ; clear ; doxygen Doxyfile
 
 $(THEME_RESOURCE): res/theme.rc
 	windres res/theme.rc -O coff -o $(THEME_RESOURCE)
@@ -84,10 +89,13 @@ obj/chart.o: src/chart.cpp src/chart.h src/date.h src/flw.h
 obj/date.o: src/date.cpp src/date.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/datechooser.o: src/datechooser.cpp src/datechooser.h src/flw.h
+obj/datechooser.o: src/datechooser.cpp src/datechooser.h src/flw.h src/svgbutton.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/flw.h
+obj/dlg.o: src/dlg.cpp src/dlg.h src/datechooser.h src/gridgroup.h src/flw.h src/svgbutton.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/fontdialog.o: src/fontdialog.cpp src/fontdialog.h src/gridgroup.h src/flw.h src/svgbutton.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/file.o: src/file.cpp src/file.h
@@ -111,6 +119,12 @@ obj/logdisplay.o: src/logdisplay.cpp src/logdisplay.h src/dlg.h src/flw.h
 obj/plot.o: src/plot.cpp src/plot.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
+obj/postscript.o: src/postscript.cpp src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/progressdialog.o: src/progressdialog.cpp src/progressdialog.h src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
 obj/recentmenu.o: src/recentmenu.cpp src/recentmenu.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
@@ -118,6 +132,9 @@ obj/scrollbrowser.o: src/scrollbrowser.cpp src/scrollbrowser.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/splitgroup.o: src/splitgroup.cpp src/splitgroup.h src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/svgbutton.o: src/svgbutton.cpp src/svgbutton.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/table.o: src/table.cpp src/table.h src/tabledisplay.h  src/tableeditor.h src/flw.h
@@ -130,6 +147,9 @@ obj/tableeditor.o: src/tableeditor.cpp src/tableeditor.h src/tabledisplay.h src/
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/tabsgroup.o: src/tabsgroup.cpp src/tabsgroup.h src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/theme.o: src/theme.cpp src/theme.h src/svgbutton.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/toolgroup.o: src/toolgroup.cpp src/toolgroup.h src/flw.h
@@ -165,7 +185,7 @@ datechooser: test_datechooser.exe
 
 #-------------------
 
-obj/test_dlg.o: test/test_dlg.cpp $(OBJ) src/icons.h test/test.h
+obj/test_dlg.o: test/test_dlg.cpp $(OBJ) test/test.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 test_dlg.exe: obj/test_dlg.o $(OBJ)
@@ -314,7 +334,7 @@ tabsgroup: test_tabsgroup.exe
 obj/test_toolgroup.o: test/test_toolgroup.cpp $(OBJ)
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
-test_toolgroup.exe: obj/test_toolgroup.o $(OBJ) $(THEME_RESOURCE)
+test_toolgroup.exe: obj/test_toolgroup.o $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 toolgroup: test_toolgroup.exe

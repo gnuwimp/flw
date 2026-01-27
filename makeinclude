@@ -61,7 +61,7 @@ else ifeq ($(build), debug)
 	CFLAGS   += -O0 -g -DDEBUG
 	LDFLAGS  +=
 else ifeq ($(build), release)
-	CXXFLAGS += -O2 -DNDEBUG $(FLTO)
+	CXXFLAGS += -O2 -DNDEBUG $(FLTO) -Wno-unused-result
 	CFLAGS   += -O2 -DNDEBUG $(FLTO)
 	LDFLAGS  += $(FLTO)
 else ifeq ($(build), pgo1)
