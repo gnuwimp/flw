@@ -5,6 +5,7 @@
 
 #ifndef FLW_AMALGAM
     #include "logdisplay.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl.H>

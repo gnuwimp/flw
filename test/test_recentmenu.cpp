@@ -5,6 +5,7 @@
 
 #ifndef FLW_AMALGAM
     #include "recentmenu.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl_Double_Window.H>

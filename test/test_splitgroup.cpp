@@ -5,6 +5,7 @@
 
 #ifndef FLW_AMALGAM
     #include "splitgroup.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl.H>

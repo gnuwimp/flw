@@ -8,6 +8,7 @@ FL_EXPORT bool fl_disable_wayland = false;
 #ifndef FLW_AMALGAM
     #include "chart.h"
     #include "dlg.h"
+    #include "theme.h"
     #include "json.h"
 #endif
 
@@ -18,6 +19,7 @@ FL_EXPORT bool fl_disable_wayland = false;
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl.H>
+#include <FL/Fl_Preferences.H>
 
 using namespace flw;
 
@@ -142,20 +144,20 @@ chart::PointVector create_serie2(const char* start, const char* stop, double num
 
 //------------------------------------------------------------------------------
 void test1(
-    chart::Chart* chart, 
-    std::string main_label, 
-    std::string label, 
-    const double start, 
-    const double change, 
-    const chart::DateRange range, 
-    const chart::LineType type, 
-    Fl_Align align, 
-    const int tick, 
-    const int width, 
-    double min = INFINITY, 
-    double max = INFINITY, 
+    chart::Chart* chart,
+    std::string main_label,
+    std::string label,
+    const double start,
+    const double change,
+    const chart::DateRange range,
+    const chart::LineType type,
+    Fl_Align align,
+    const int tick,
+    const int width,
+    double min = INFINITY,
+    double max = INFINITY,
     double divide = 0.0) {
-    
+
     auto vec1  = create_serie1("20010101", "20191231", start, change, range, divide);
     auto line1 = chart::Line(vec1, label, type);
 
@@ -488,14 +490,14 @@ void test10(chart::Chart* chart) {
 }
 
 /*
- *      _______        _   
- *     |__   __|      | |  
- *        | | ___  ___| |_ 
+ *      _______        _
+ *     |__   __|      | |
+ *        | | ___  ___| |_
  *        | |/ _ \/ __| __|
- *        | |  __/\__ \ |_ 
+ *        | |  __/\__ \ |_
  *        |_|\___||___/\__|
- *                         
- *                         
+ *
+ *
  */
 
 //------------------------------------------------------------------------------
@@ -507,11 +509,14 @@ public:
     //--------------------------------------------------------------------------
     Test(int W, int H) : Fl_Double_Window(W, H, "test_chart.cpp") {
         end();
-
-        dlg::options(this);
+        resizable(this);
 
         menu  = new Fl_Menu_Bar(0, 0, 0, 0);
         chart = new chart::Chart();
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
 
         add(menu);
         add(chart);
@@ -519,7 +524,7 @@ public:
         menu->add("&Test/Autorun",                0, Test::CallbackAuto, this, FL_MENU_DIVIDER);
         menu->add("&Test/save",                   0, Test::CallbackSave, this);
         menu->add("&Test/Load",                   0, Test::CallbackLoad, this, FL_MENU_DIVIDER);
-        
+
         menu->add("&Test/" TEST_RANGE_DAY,        0, Test::CallbackTest, this);
         menu->add("&Test/" TEST_RANGE_WEEKDAY,    0, Test::CallbackTest, this);
         menu->add("&Test/" TEST_RANGE_FRIDAY,     0, Test::CallbackTest, this);
@@ -560,22 +565,17 @@ public:
         menu->add("&Settings/Alt Font 0.8",       0, Test::CallbackA08, this);
         menu->add("&Settings/Alt Font 1.0",       0, Test::CallbackA10, this, FL_MENU_DIVIDER);
         menu->add("&Settings/Debug",              0, Test::CallbackDebug, this);
-        
+
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
         menu::set_item(menu, "&Settings/srand(time)", true);
         //menu::set_item(menu, "&Settings/srand(666)", true); RAND = 666; TEST = TEST_RIGHT_10;
-        menu->textsize(flw::PREF_FONTSIZE);
         util::labelfont(this);
+        flw::PREF_WINDOW = this;
 
-        resizable(this);
         resize(300, 300, W, H);
         show();
         create_chart();
-
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
-        flw::theme::load_theme_from_pref(pref);
-        flw::theme::load_win_from_pref(pref, "gui.", this, true);
     }
 
     //--------------------------------------------------------------------------
@@ -584,7 +584,7 @@ public:
         flw::theme::save_theme_to_pref(pref);
         flw::theme::save_win_to_pref(pref, "gui.", this);
     }
-    
+
     //--------------------------------------------------------------------------
     static void Callback10(Fl_Widget*, void* v) {
         auto self = static_cast<Test*>(v);
@@ -715,13 +715,13 @@ public:
             else if (TEST == TEST_RIGHT_SMALL)      TEST = TEST_RIGHT_STEP;
             else if (TEST == TEST_RIGHT_STEP)       TEST = TEST_RIGHT_LEFT;
             else if (TEST == TEST_RIGHT_LEFT)       TEST = TEST_REF_ALL;
-            
+
             else if (TEST == TEST_REF_ALL)          TEST = TEST_REF_ALL_BLOCK;
             else if (TEST == TEST_REF_ALL_BLOCK)    TEST = TEST_REF_FRIDAY;
             else if (TEST == TEST_REF_FRIDAY)       TEST = TEST_REF_SUNDAY;
             else if (TEST == TEST_REF_SUNDAY)       TEST = TEST_REF_MONTH;
             else if (TEST == TEST_REF_MONTH)        TEST = TEST_AREA2;
-            
+
             else if (TEST == TEST_AREA2)            TEST = TEST_AREA3;
             else if (TEST == TEST_AREA3)            TEST = TEST_AREA4;
             else if (TEST == TEST_AREA4)            TEST = TEST_AREA5;
@@ -729,14 +729,14 @@ public:
 
             Fl::repeat_timeout(2.0, CallbackTimer, data);
         }
-    
+
         self->create_chart();
     }
 
     //--------------------------------------------------------------------------
     static void CallbackTheme(Fl_Widget*, void* v) {
         auto self = static_cast<Test*>(v);
-        dlg::theme(true, true);
+        flw::dlg::theme(true, true);
         self->update_pref();
     }
 
@@ -785,7 +785,7 @@ public:
         else if (TEST == TEST_AREA3)            test5(chart, "Three Chart Areas", 3);
         else if (TEST == TEST_AREA4)            test5(chart, "Four Chart Areas", 4);
         else if (TEST == TEST_AREA5)            test5(chart, "Five Chart Areas", 5);
-        
+
         else if (TEST == TEST_EMPTY)            { chart->set_main_label("Empty"); chart->init_new_data(); }
 
         chart->take_focus();

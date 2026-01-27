@@ -9,6 +9,7 @@ FL_EXPORT bool fl_disable_wayland = false;
     #include "datechooser.h"
     #include "dlg.h"
     #include "gridgroup.h"
+    #include "theme.h"
 #endif
 
 #include "icon.xpm"
@@ -134,7 +135,7 @@ public:
         resizable(this);
         size_range(64, 48);
         menu = nullptr;
-        dlg::options(this);
+        flw::PREF_WINDOW = this;
     }
 
     void create() {

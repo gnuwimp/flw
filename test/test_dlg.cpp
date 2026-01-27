@@ -7,14 +7,21 @@
     #include "datechooser.h"
     #include "dlg.h"
     #include "file.h"
+    #include "fontdialog.h"
+    #include "postscript.h"
+    #include "progressdialog.h"
+    #include "svgbutton.h"
     #include "tableeditor.h"
+    #include "theme.h"
     #include "waitcursor.h"
-    #include "icons.h"
 #endif
 
 #include "test.h"
 #include <FL/Fl.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
 #include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 
 using namespace flw;
 
@@ -37,7 +44,7 @@ void test_check() {
 void test_choice() {
     StringVector v = {"Hello", "World", "How", "Are", "You?"};
     auto v2 = util::split_string(HAMLET_TEXT, "\n");
-    
+
     //dlg::options(nullptr, true, true);
     printf("line %d was selected\n", dlg::select_choice("flw::dlg::select_choice", "Two line message.\nHello World.", v, 1));
     printf("line %d was selected\n", dlg::select_choice("flw::dlg::select_choice", "One line message.", v2));
@@ -48,7 +55,7 @@ void test_choice() {
 void test_date() {
     gnu::Date date = gnu::Date("31/12/1999");
 
-    if (dlg::date("flw::dlg::date", date)) {
+    if (flw::dlg::date("flw::dlg::date()", date)) {
         printf("flw::dlg::date=%s\n", date.format().c_str());
     }
     else {
@@ -61,9 +68,9 @@ void test_date() {
 //------------------------------------------------------------------------------
 void test_font() {
 #ifdef _WIN32
-    auto dlg = dlg::Font("Candara", 15, "flw::dlg::Font");
+    auto dlg = FontDialog("Candara", 15, "flw::FontDialog");
 #else
-    auto dlg = dlg::Font("Nimbus Sans", 15, "flw::dlg::Font");
+    auto dlg = FontDialog("Nimbus Sans", 15, "flw::FontDialog");
 #endif
     //dlg.deactivate_font();
     //dlg.deactivate_fontsize();
@@ -85,7 +92,7 @@ void test_font2() {
     Fl_Fontsize fontsize = 16;
     std::string fontname;
 
-    if (dlg::font(font, fontsize, fontname, false) == true) {
+    if (dlg::font("flw::dlg::font()", font, fontsize, fontname, false) == true) {
         printf("selected: font=%d, fontsize=%d, fontname=%s\n", font, fontsize, fontname.c_str());
     }
     else {
@@ -150,55 +157,25 @@ void test_html() {
 }
 
 //------------------------------------------------------------------------------
-void test_icons() {
-    auto size = flw::PREF_FONTSIZE * 8;
-    auto w    = size * 17;
-    auto h    = size * 5;
-    auto win  = Fl_Double_Window(0, 0, w, h);
-    auto b1   = new Fl_Button(0, 0, size, size, "ALERT");
-    auto b2   = new Fl_Button(size, 0, size, size, "CONFIRM");
-    auto b3   = new Fl_Button(size * 2, 0, size, size, "DEL");
-    auto b4   = new Fl_Button(size * 3, 0, size, size, "ERR");
-    auto b5   = new Fl_Button(size * 4, 0, size, size, "INFO");
-    auto b6   = new Fl_Button(size * 5, 0, size, size, "STOP");
-    auto b7   = new Fl_Button(size * 6, 0, size, size, "QUESTION");
-    auto b8   = new Fl_Button(size * 7, 0, size, size, "WARNING");
-    auto b9   = new Fl_Button(size * 8, 0, size, size, "PAUSE");
-    auto b10  = new Fl_Button(size * 9, 0, size, size, "BACK");
-    auto b11  = new Fl_Button(size * 10, 0, size, size, "FORWARD");
-    auto b12  = new Fl_Button(size * 11, 0, size, size, "CANCEL");
-    auto b13  = new Fl_Button(size * 12, 0, size, size, "PLAY");
-    auto b14  = new Fl_Button(size * 13, 0, size, size, "LEFT");
-    auto b15  = new Fl_Button(size * 14, 0, size, size, "RIGHT");
-    auto b16  = new Fl_Button(size * 15, 0, size, size, "UP");
-    auto b17  = new Fl_Button(size * 16, 0, size, size, "DOWN");
-    auto box  = new Fl_Box(w / 2 - 150, h / 2 - 150, 300, 300, "WARNING");
+void test_input() {
+    std::string value = "Hello World";
+    FLW_PRINTV(dlg::input("flw::dlg::input", TWO_LINE, value), value)
+    //FLW_PRINTV(dlg::input("flw::dlg::input", LONG_LINE, value), value)
+    FLW_PRINTV(dlg::input("flw::dlg::input", FIVE_LINE, value), value)
 
-    util::labelfont(&win);
-    util::icon(b1, flw::icons::ALERT, flw::PREF_FONTSIZE * 3);
-    util::icon(b2, flw::icons::CONFIRM, flw::PREF_FONTSIZE * 3);
-    util::icon(b3, flw::icons::DEL, flw::PREF_FONTSIZE * 3);
-    util::icon(b4, flw::icons::ERR, flw::PREF_FONTSIZE * 3);
-    util::icon(b5, flw::icons::INFO, flw::PREF_FONTSIZE * 3);
-    util::icon(b6, flw::icons::STOP, flw::PREF_FONTSIZE * 3);
-    util::icon(b7, flw::icons::QUESTION, flw::PREF_FONTSIZE * 3);
-    util::icon(b8, flw::icons::WARNING, flw::PREF_FONTSIZE * 3);
-    util::icon(b9, flw::icons::PAUSE, flw::PREF_FONTSIZE * 3);
-    util::icon(b10, flw::icons::BACK, flw::PREF_FONTSIZE * 3);
-    util::icon(b11, flw::icons::FORWARD, flw::PREF_FONTSIZE * 3);
-    util::icon(b12, flw::icons::CANCEL, flw::PREF_FONTSIZE * 3);
-    util::icon(b13, flw::icons::PLAY, flw::PREF_FONTSIZE * 3);
-    util::icon(b14, flw::icons::LEFT, flw::PREF_FONTSIZE * 3);
-    util::icon(b15, flw::icons::RIGHT, flw::PREF_FONTSIZE * 3);
-    util::icon(b16, flw::icons::UP, flw::PREF_FONTSIZE * 3);
-    util::icon(b17, flw::icons::DOWN, flw::PREF_FONTSIZE * 3);
-    util::icon(box, flw::icons::WARNING, flw::PREF_FONTSIZE * 7);
-    box->deactivate();
-    box->box(FL_BORDER_BOX);
+    int64_t value2 = 12345678912345; (void) value2;
+    FLW_PRINTV(dlg::input_int("flw::dlg::input_int", TWO_LINE, value2), value2)
 
-    util::center_window(&win);
-    win.show();
-    Fl::run();
+    double value3 = 123.456; (void) value3;
+    FLW_PRINTV(dlg::input_double("flw::dlg::input_double", TWO_LINE, value3), value3)
+
+    std::string value4 = THREE_LINE + THREE_LINE + THREE_LINE;
+    FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", TWO_LINE, value4), value4)
+    value4 = THREE_LINE + THREE_LINE + THREE_LINE;
+    FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", LONG_LINE, value4), value4)
+
+    std::string value5 = "Password";
+    FLW_PRINTV(dlg::input_secret("flw::dlg::input_secret", TWO_LINE, value5), value5)
 }
 
 //------------------------------------------------------------------------------
@@ -209,81 +186,29 @@ void test_list() {
 }
 
 //------------------------------------------------------------------------------
-void test_message(bool input) {
-    if (input == false) {
-        dlg::msg("flw::dlg::msg", TWO_LINE);
+void test_message() {
+    //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
+    //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE2);
 
-        dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
-        dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
-        //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
-        //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE2);
+    dlg::msg("flw::dlg::msg", TWO_LINE);
 
-        dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
+    dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
+    dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
+    dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
 
-        dlg::options(nullptr, true);
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "#One", "%Two", "!Three", "Four", "@Five"))
-        //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "#One", "%Two", "!Three", "@Four", ""))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
-        FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE))
-        dlg::options();
+    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
+    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "LEFT:LEFT", "RIGHT:RIGHT", "UP:!UP", "DOWN:DOWN", ""))
+    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "CANCEL:^CANCEL", "DEL:^DEL", "BACK:!^BACK", "No Dark Bg", "CONFIRM:^CONFIRM"))
+    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
+    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
+    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE))
 
-        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", TWO_LINE, "&One", "!&Two"))
-        FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", TWO_LINE))
-    }
-    else {
-        std::string value = "Hello World";
-        FLW_PRINTV(dlg::input("flw::dlg::input", TWO_LINE, value), value)
-        //FLW_PRINTV(dlg::input("flw::dlg::input", LONG_LINE, value), value)
-        FLW_PRINTV(dlg::input("flw::dlg::input", FIVE_LINE, value), value)
-
-        int64_t value2 = 12345678912345; (void) value2;
-        FLW_PRINTV(dlg::input_int("flw::dlg::input_int", TWO_LINE, value2), value2)
-
-        double value3 = 123.456; (void) value3;
-        FLW_PRINTV(dlg::input_double("flw::dlg::input_double", TWO_LINE, value3), value3)
-
-        std::string value4 = THREE_LINE + THREE_LINE + THREE_LINE;
-        FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", TWO_LINE, value4), value4)
-        FLW_PRINTV(dlg::input_multi("flw::dlg::input_multi", LONG_LINE, value4), value4)
-
-        std::string value5 = "Password";
-        FLW_PRINTV(dlg::input_secret("flw::dlg::input_secret", TWO_LINE, value5), value5)
-    }
+    FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", TWO_LINE, "&One", "!&Two"))
+    FLW_PRINTV(dlg::msg_warning("flw::dlg::msg_warning", TWO_LINE))
 }
 
 //------------------------------------------------------------------------------
-bool test_printa(void*, int pw, int ph, int page) {
-    char b[100];
-    snprintf(b, 100, "%d", page);
-
-    fl_font(FL_COURIER, 36);
-    fl_color(FL_BLACK);
-    fl_line_style(FL_SOLID, 1);
-    fl_rect(0, 0, pw, ph);
-    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
-
-    return true;
-}
-
-//------------------------------------------------------------------------------
-bool test_printb(void* data, int pw, int ph, int) {
-    auto c = static_cast<int*>(data);
-    char b[100];
-    snprintf(b, 100, "%d", *c);
-
-    fl_font(FL_COURIER, 36);
-    fl_color(FL_BLACK);
-    fl_line_style(FL_SOLID, 1);
-    fl_rect(0, 0, pw, ph);
-    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
-    (*c)--;
-    return *c > 0;
-}
-
-//------------------------------------------------------------------------------
-bool test_printc(void*, int pw, int ph, int page) {
+bool test_print_a(void*, int pw, int ph, unsigned page) {
     char b[100];
     snprintf(b, 100, "%d", page);
 
@@ -297,7 +222,21 @@ bool test_printc(void*, int pw, int ph, int page) {
 }
 
 //------------------------------------------------------------------------------
-bool test_printd(void*, int pw, int ph, int page) {
+bool test_print_b(void*, int pw, int ph, unsigned page) {
+    char b[100];
+    snprintf(b, 100, "%d", page);
+
+    fl_font(FL_COURIER, 36);
+    fl_color(FL_BLACK);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(0, 0, pw, ph);
+    fl_draw(b, 0, 0, pw, ph, FL_ALIGN_INSIDE | FL_ALIGN_CENTER, nullptr, 0);
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool test_print_c(void*, int pw, int ph, unsigned page) {
     char b[100];
     snprintf(b, 100, "%d", page);
 
@@ -311,19 +250,44 @@ bool test_printd(void*, int pw, int ph, int page) {
 }
 
 //------------------------------------------------------------------------------
-void test_print() {
-    int b = 33;
-    dlg::print("flw::dlg::print - Pages Between From And To", test_printa, nullptr, 5, 10);
-    dlg::print("flw::dlg::print - Many Pages", test_printb, &b);
-    dlg::print("flw::dlg::print - One Page", test_printc);
-    dlg::print("flw::dlg::print - Stop On Page 6", test_printd, nullptr, 1, 11);
+void test_print1() {
+    {
+        system("rm -f print_page_to_file.ps");
+        FLW_PRINT(postscript::print_page_to_file("print_page_to_file.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, test_print_a, nullptr));
+        system("okular print_page_to_file.ps");
+        
+        system("rm -f print_pages_to_file.ps");
+        FLW_PRINT(postscript::print_pages_to_file("print_pages_to_file.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, test_print_b, nullptr, 23, 35));
+        system("okular print_pages_to_file.ps");
+        
+        FLW_PRINT(postscript::print_pages_to_file("print_pages_to_file2.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, test_print_b, nullptr, 1, 0));
+    }
 }
 
 //------------------------------------------------------------------------------
-void test_print_text1() {
+void test_print2() {
+    {
+        system("rm -f output.ps");
+        dlg::print_page("flw::dlg::print - One Page", test_print_a);
+        system("okular output.ps");
+        
+        system("rm -f output.ps");
+        dlg::print_page("flw::dlg::print - Many Pages", test_print_b, nullptr, 10, 30);
+        system("okular output.ps");
+        
+        system("rm -f output.ps");
+        dlg::print_page("flw::dlg::print - Stop On Page 6", test_print_c, nullptr, 1, 11);
+        system("okular output.ps");
+    }
+}
+
+//------------------------------------------------------------------------------
+void test_print3() {
     auto r = 0;
 
     while (r >= 0) {
+        system("rm -f output.ps");
+        
     #ifdef _WIN32
         dlg::center_fl_message_dialog();
         r = fl_choice_n("%s", "Print Long Lines", "Print Hamlet", "Print UTF8", "Print some test texts.\nSome fonts might have issues.");
@@ -342,104 +306,100 @@ void test_print_text1() {
         else if (r == 1) p = dlg::print_text("flw::dlg::print_text", HAMLET_TEXT);
         else if (r == 2) p = dlg::print_text("flw::dlg::print_text", UTF8_TEXT);
 
-        if (p == true && r >= 0 && gnu::file::File(ps).size() > 0) {
-            auto f = system((std::string("evince ") + ps).c_str());
-            (void) f;
+        if (p == true && r >= 0) {
+            system("okular output.ps");
         }
     #endif
     }
 }
 
 //------------------------------------------------------------------------------
-void test_print_text2() {
+void test_print4() {
     {
-        //auto printer = util::PrintText("..", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
-        //FLW_PRINT(printer.print(HAMLET_TEXT))
-    }
-
-    {
-        auto printer = util::PrintText("print_hamlet.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
+        auto printer = postscript::PrintText("print_hamlet.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_LEFT, false, false, 0);
         printer.print(HAMLET_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_hamlet_center.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_CENTER, false, false, 0);
+        auto printer = postscript::PrintText("print_hamlet_center.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_CENTER, false, false, 0);
         printer.print(HAMLET_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_hamlet_right.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_RIGHT, false, true, 0);
+        auto printer = postscript::PrintText("print_hamlet_right.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_HELVETICA_ITALIC, 14, FL_ALIGN_RIGHT, false, true, 0);
         printer.print(HAMLET_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, false, true, 0);
+        auto printer = postscript::PrintText("print_long.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, false, true, 0);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_linenum.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, false, true, 4);
+        auto printer = postscript::PrintText("print_long_linenum.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, false, true, 4);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, false, 0);
+        auto printer = postscript::PrintText("print_long_wrapped.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, false, 0);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_border.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, true, 0);
+        auto printer = postscript::PrintText("print_long_wrapped_border.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, true, 0);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_a3.ps", Fl_Paged_Device::Page_Format::A3, Fl_Paged_Device::Page_Layout::REVERSED, FL_HELVETICA, 16, FL_ALIGN_LEFT, true, true, 0);
+        auto printer = postscript::PrintText("print_long_wrapped_a3.ps", Fl_Paged_Device::Page_Format::A3, Fl_Paged_Device::Page_Layout::REVERSED, FL_HELVETICA, 16, FL_ALIGN_LEFT, true, true, 0);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_a5.ps", Fl_Paged_Device::Page_Format::A5, Fl_Paged_Device::Page_Layout::LANDSCAPE, FL_TIMES_BOLD_ITALIC, 18, FL_ALIGN_LEFT, true, true, 0);
+        auto printer = postscript::PrintText("print_long_wrapped_a5.ps", Fl_Paged_Device::Page_Format::A5, Fl_Paged_Device::Page_Layout::LANDSCAPE, FL_TIMES_BOLD_ITALIC, 18, FL_ALIGN_LEFT, true, true, 0);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_border_linenum.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, true, 6);
+        auto printer = postscript::PrintText("print_long_wrapped_border_linenum.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_LEFT, true, true, 6);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_border_center.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_CENTER, true, true, 6);
+        auto printer = postscript::PrintText("print_long_wrapped_border_center.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, FL_ALIGN_CENTER, true, true, 6);
         printer.print(LONG_TEXT, 8);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_border_right.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 16, FL_ALIGN_RIGHT, true, true, 6);
+        auto printer = postscript::PrintText("print_long_wrapped_border_right.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 16, FL_ALIGN_RIGHT, true, true, 6);
         printer.print(LONG_TEXT, 8);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_border_linenum_24.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 24, FL_ALIGN_LEFT, true, true, 6);
+        auto printer = postscript::PrintText("print_long_wrapped_border_linenum_24.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 24, FL_ALIGN_LEFT, true, true, 6);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_long_wrapped_border_linenum_36.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 36, FL_ALIGN_LEFT, true, true, 6);
+        auto printer = postscript::PrintText("print_long_wrapped_border_linenum_36.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 36, FL_ALIGN_LEFT, true, true, 6);
         printer.print(LONG_TEXT);
     }
 
     {
-        auto printer = util::PrintText("print_utf8.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, false, false, 0);
+        auto printer = postscript::PrintText("print_utf8.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, FL_COURIER, 14, false, false, 0);
         printer.print(UTF8_TEXT);
     }
 }
 
 //------------------------------------------------------------------------------
-void test_print_text3() {
+void test_print5() {
     auto r  = 0;
     auto b1 = gnu::file::read("flw.h");
     auto b2 = gnu::file::read("flw.cpp");
 
     while (r >= 0 && b1.c_str() && b2.c_str()) {
+        system("rm -f output.ps");
+
     #ifdef _WIN32
         dlg::center_fl_message_dialog();
         r = fl_choice_n("%s", "flw.h", "flw.cpp", nullptr, "Print source code.");
@@ -456,9 +416,8 @@ void test_print_text3() {
         if (r == 0) p = dlg::print_text("flw::dlg::print_text", b1.c_str());
         else if (r == 1) p = dlg::print_text("flw::dlg::print_text", b2.c_str());
 
-        if (p == true && r >= 0 && gnu::file::File(ps).size() > 0) {
-            auto f = system((std::string("evince ") + ps).c_str());
-            (void) f;
+        if (p == true && r >= 0) {
+            system("okular output.ps");
         }
     #endif
     }
@@ -467,7 +426,7 @@ void test_print_text3() {
 //------------------------------------------------------------------------------
 void test_progress() {
     {
-        auto work  = dlg::Progress("flw::dlg::Progress with a single string message", true, true);
+        auto work  = ProgressDialog("flw::dlg::Progress with a single string message", true, true);
         auto start = util::clock();
 
         work.start();
@@ -484,7 +443,7 @@ void test_progress() {
     }
 
     {
-        auto work = dlg::Progress("flw::dlg::Progress with progress bar", true, true, 0.0, 0.0);
+        auto work = ProgressDialog("flw::dlg::Progress with progress bar", true, true, 0.0, 0.0);
         auto val  = 0.0;
 
         work.range(0.0, 100.0);
@@ -565,6 +524,52 @@ void test_slider() {
 }
 
 //------------------------------------------------------------------------------
+void test_svg() {
+    auto size = flw::PREF_FONTSIZE * 9;
+    auto w    = size * 10;
+    auto h    = size * 6;
+    auto win  = Fl_Double_Window(0, 0, w, h);
+
+    //SVGButton::SPACING = 0; // 8 is the default.
+
+    new SVGButton(size * 0, size * 0, size, size, "icons::ALERT",   icons::ALERT,   false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 1, size * 0, size, size, "icons::BACK",    icons::BACK,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 2, size * 0, size, size, "icons::CANCEL",  icons::CANCEL,  false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 3, size * 0, size, size, "icons::CONFIRM", icons::CONFIRM, false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 4, size * 0, size, size, "icons::DEL",     icons::DEL,     false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 5, size * 0, size, size, "icons::DOWN",    icons::DOWN,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 6, size * 0, size, size, "icons::EDIT",    icons::EDIT,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 7, size * 0, size, size, "icons::ERR",     icons::ERR,     false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 8, size * 0, size, size, "icons::FORWARD", icons::FORWARD, false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 9, size * 0, size, size, "icons::INFO",    icons::INFO,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    
+    new SVGButton(size * 0, size * 1, size, size, "icons::LEFT",    icons::LEFT,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 1, size * 1, size, size, "icons::PASSWORD",icons::PASSWORD,false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 2, size * 1, size, size, "icons::PAUSE",   icons::PAUSE,   false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 3, size * 1, size, size, "icons::PLAY",    icons::PLAY,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 4, size * 1, size, size, "icons::QUESTION",icons::QUESTION,false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 5, size * 1, size, size, "icons::RIGHT",   icons::RIGHT,   false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 6, size * 1, size, size, "icons::STOP",    icons::STOP,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 7, size * 1, size, size, "icons::UP",      icons::UP,      false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 8, size * 1, size, size, "icons::WARNING", icons::WARNING, false, true, SVGButton::Pos::ABOVE, 3.0);
+    
+    new SVGButton(size * 0, size * 2, size, size, "RIGHT",          icons::ALERT,   false, false, SVGButton::Pos::RIGHT, 4.0);
+    new SVGButton(size * 1, size * 2, size, size, "LEFT",           icons::ALERT,   false, false, SVGButton::Pos::LEFT, 4.0);
+    new SVGButton(size * 2, size * 2, size, size, "ABOVE",          icons::ALERT,   false, false, SVGButton::Pos::ABOVE, 4.0);
+    new SVGButton(size * 3, size * 2, size, size, "BELOW",          icons::ALERT,   false, false, SVGButton::Pos::BELOW, 4.0);
+    new SVGButton(size * 4, size * 2, size, size, "UNDER",          icons::ALERT,   false, false, SVGButton::Pos::UNDER, 4.0);
+    
+    auto b = new SVGButton(w / 2 - 150, h - 300, 300, 300, "WARNING", icons::WARNING, false, false, SVGButton::Pos::ABOVE, 7.0);
+
+    util::labelfont(&win);
+    b->deactivate();
+
+    util::center_window(&win);
+    win.show();
+    Fl::run();
+}
+
+//------------------------------------------------------------------------------
 void test_text() {
     dlg::text("flw::dlg::text", HAMLET_TEXT);
 
@@ -576,7 +581,7 @@ void test_text() {
 
 //------------------------------------------------------------------------------
 void test_theme() {
-    dlg::theme(true, true);
+    flw::dlg::theme(true, true);
 }
 
 //------------------------------------------------------------------------------
@@ -593,24 +598,27 @@ void test_wait() {
 //------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
     puts("run individual tests with");
-    puts("    check");
-    puts("    choice");
-    puts("    csv");
-    puts("    date");
-    puts("    font");
-    puts("    html");
-    puts("    list");
-    puts("    print");
-    puts("    print2");
-    puts("    print3");
-    puts("    print4");
-    puts("    progress");
-    puts("    pwd");
-    puts("    slider");
-    puts("    string");
-    puts("    text");
-    puts("    theme");
-    puts("    wait");
+    puts("    check      => flw::dlg::select_checkboxes()");
+    puts("    choice     => flw::dlg:select_choice()");
+    puts("    date       => flw::dlg::date()");
+    puts("    font       => flw::FontDialog");
+    puts("    html       => flw::dlg::html()");
+    puts("    inp        => flw::dlg::input()");
+    puts("    list       => flw::dlg::list()");
+    puts("    msg        => flw::dlg::msg()");
+    puts("    print1     => postscript::print_page_to_file()");
+    puts("    print2     => dlg::print_page()");
+    puts("    print3     => dlg::print_text()");
+    puts("    print4     => postscript::PrintText");
+    puts("    print5     => dlg::print_text(flw.c/.h)");
+    puts("    progress   => flw::ProgressDialog");
+    puts("    pwd        => flw::dlg::password...");
+    puts("    slider     => flw::dlg::slider()");
+    puts("    string     => flw::dlg::select_string()");
+    puts("    svg        => flw::SVGButton");
+    puts("    text       => flw::dlg::text()");
+    puts("    theme      => flw::dlg::theme()");
+    puts("    wait       => flw::WaitCursor");
     fflush(stdout);
 
     {
@@ -678,8 +686,8 @@ int main(int argc, const char** argv) {
             test_html();
         }
 
-        if (run == "" || run == "icons") {
-            test_icons();
+        if (run == "" || run == "inp" || run == "input") {
+            test_input();
         }
 
         if (run == "" || run == "list") {
@@ -687,27 +695,27 @@ int main(int argc, const char** argv) {
         }
 
         if (run == "" || run == "msg" || run == "message") {
-            test_message(false);
+            test_message();
         }
 
-        if (run == "" || run == "inp" || run == "input") {
-            test_message(true);
-        }
-
-        if (run == "" || run == "print")  {
-            test_print();
+        if (run == "print1")  {
+            test_print1();
         }
 
         if (run == "print2")  {
-            test_print_text1();
+            test_print2();
         }
 
         if (run == "print3")  {
-            test_print_text2();
+            test_print3();
         }
 
         if (run == "print4")  {
-            test_print_text3();
+            test_print4();
+        }
+
+        if (run == "print5")  {
+            test_print5();
         }
 
         if (run == "" || run == "progress")  {
@@ -724,6 +732,10 @@ int main(int argc, const char** argv) {
 
         if (run == "" || run == "string") {
             test_select_string();
+        }
+
+        if (run == "" || run == "svg") {
+            test_svg();
         }
 
         if (run == "" || run == "text") {

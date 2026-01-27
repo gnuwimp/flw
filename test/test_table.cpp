@@ -5,6 +5,7 @@
 
 #ifndef FLW_AMALGAM
     #include "table.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl.H>

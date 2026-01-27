@@ -6,6 +6,7 @@
 #ifndef FLW_AMALGAM
     #include "lcddisplay.h"
     #include "date.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl_Double_Window.H>

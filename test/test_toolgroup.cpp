@@ -4,6 +4,7 @@
 #include "flw.h"
 
 #ifndef FLW_AMALGAM
+    #include "theme.h"
     #include "toolgroup.h"
 #endif
 

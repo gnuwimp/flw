@@ -6,6 +6,7 @@
 #ifndef FLW_AMALGAM
     #include "gridgroup.h"
     #include "inputmenu.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl.H>

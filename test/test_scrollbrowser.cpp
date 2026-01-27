@@ -6,6 +6,7 @@
 #ifndef FLW_AMALGAM
     #include "gridgroup.h"
     #include "scrollbrowser.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl_Box.H>

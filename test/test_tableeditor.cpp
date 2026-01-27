@@ -5,6 +5,7 @@
 
 #ifndef FLW_AMALGAM
     #include "tableeditor.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl.H>

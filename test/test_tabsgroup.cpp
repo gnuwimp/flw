@@ -4,8 +4,9 @@
 #include "flw.h"
 
 #ifndef FLW_AMALGAM
-    #include "tabsgroup.h"
     #include "dlg.h"
+    #include "tabsgroup.h"
+    #include "theme.h"
 #endif
 
 //FL_EXPORT bool fl_disable_wayland = true;

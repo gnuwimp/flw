@@ -8,12 +8,14 @@ FL_EXPORT bool fl_disable_wayland = false;
 #ifndef FLW_AMALGAM
     #include "plot.h"
     #include "dlg.h"
+    #include "theme.h"
 #endif
 
 #include <FL/Fl.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
+#include <FL/Fl_Preferences.H>
 #include <assert.h>
 #include <time.h>
 
@@ -148,8 +150,15 @@ public:
 
     //--------------------------------------------------------------------------
     Test(int W, int H) : Fl_Double_Window(W, H, "test_plot.cpp") {
+        end();
+        resizable(this);
+        
         menu = new Fl_Menu_Bar(0, 0, 0, 0);
         plot = new plot::Plot(0, 0, W, H);
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_plot");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
 
         add(menu);
         add(plot);
@@ -186,15 +195,12 @@ public:
         menu->textfont(flw::PREF_FONT);
         menu->textsize(flw::PREF_FONTSIZE);
         menu::set_item(menu, "&Settings/srand(time)", true);
+        util::labelfont(this);
+        flw::PREF_WINDOW = this;
         create_plot();
 
-        resizable(this);
         resize(300, 100, W, H);
         show();
-
-        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_plot");
-        flw::theme::load_theme_from_pref(pref);
-        flw::theme::load_win_from_pref(pref, "gui.", this, true);
     }
 
     //--------------------------------------------------------------------------
@@ -292,7 +298,7 @@ public:
     //--------------------------------------------------------------------------
     static void CallbackTheme(Fl_Widget*, void* v) {
         auto self = static_cast<Test*>(v);
-        dlg::theme(true, true);
+        flw::dlg::theme(true, true);
         self->update_pref();
     }
 
@@ -362,7 +368,7 @@ public:
 
             vec.push_back(plot::Point(0, 8));
             vec.push_back(plot::Point(0, 8));
-            
+
             plot->add_line(plot::Line(vec, "LineType::VECTOR", plot::LineType::VECTOR, color::TEAL, 21));
             plot->yscale().set_custom_labels(create_custom_labels());
             plot->xscale().set_label("Custom _Y_ Labels");
@@ -375,7 +381,7 @@ public:
         else if (TEST == TEST_RANGE1) {
             auto vec1 = create_line(-10);
             auto vec2 = plot::Point::Modify(vec1, plot::Modifier::MULTIPLICATION, plot::Target::Y, -1.0);
-            
+
             plot->add_line(plot::Line(vec1, "LineType::LINE_WITH_SQUARE", plot::LineType::LINE_WITH_SQUARE, FL_BLUE, 2));
             plot->add_line(plot::Line(vec2, "Inverted Line", plot::LineType::LINE_DOT, FL_RED, 3));
             plot->xscale().set_label("X Label");
@@ -392,7 +398,7 @@ public:
             for (int f = 0; f < 50; f++) {
                 vec.push_back(plot::Point(rand() % maxx * 2 - maxx, rand() % maxy * 2 - maxy));
             }
-            
+
             plot->add_line(plot::Line(vec, "LineType::SQUARE", plot::LineType::SQUARE, color::TEAL, 7));
             plot->xscale().set_label(TEST_RANGE2);
             plot->xscale().set_color(color::CRIMSON);
@@ -458,7 +464,7 @@ public:
 
             vec.push_back(plot::Point(INFINITY, 0.0));
             vec.push_back(plot::Point(9323372036854775807.0, 0.0));
-            
+
             plot->add_line(plot::Line(vec, "LineType::LINE", plot::LineType::FILLED_CIRCLE, color::TEAL, 10));
             plot->xscale().set_label("");
             plot->xscale().set_color(FL_DARK_GREEN);
@@ -483,7 +489,7 @@ public:
             plot->xscale().set_color(color::CRIMSON);
             plot->yscale().set_label(TEST_REF1);
             plot->yscale().set_color(color::TEAL);
-            
+
             if (TEST == TEST_REF1) {
                 plot->set_label("Reference Values");
             }
@@ -551,7 +557,7 @@ public:
 
             vec.push_back(plot::Point(11.0, 0.0));
             vec.push_back(plot::Point(11.0, 0.0));
-            
+
             plot->add_line(plot::Line(vec, "LineType::VECTOR", plot::LineType::VECTOR, color::TEAL, 21));
             plot->xscale().set_label(TEST_VECTOR2);
             plot->xscale().set_color(color::CRIMSON);
