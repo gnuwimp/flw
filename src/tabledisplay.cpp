@@ -6,16 +6,17 @@
 * @copyright Released under the GNU General Public License v3.0
 */
 
-#include "tabledisplay.h"
-#include "gridgroup.h"
 #include "dlg.h"
+#include "gridgroup.h"
+#include "tabledisplay.h"
 
 // MKALGAM_ON
 
 #include <FL/Fl.H>
-#include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
+#include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Scrollbar.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 
@@ -35,7 +36,7 @@ static constexpr const char* HELP_TEXT = "Press CTRL + 'g' to show go to cell di
  *     |______|
  */
 
-/** @brief Scrollbar.
+/** @brief Scrollbar (private).
 * @private
 *
 */
@@ -74,7 +75,7 @@ public:
  *     |______|                                          |___/
  */
 
-/** @brief Goto cell dialog.
+/** @brief Goto cell dialog (private).
 * @private
 *
 */
@@ -187,7 +188,7 @@ public:
  *     |______|                                          |___/
  */
 
-/** @brief Find text dialog.
+/** @brief Find text dialog (private).
 * @private
 *
 */
@@ -209,10 +210,10 @@ public:
     Fl_Double_Window(0, 0, 10, 10, "Table - Find Text") {
         end();
 
-        _close  = new Fl_Button(0, 0, 0, 0, label::CLOSE.c_str());
+        _close  = new Fl_Button(0, 0, 0, 0, labels::CLOSE.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
-        _next   = new Fl_Return_Button(0, 0, 0, 0, label::NEXT.c_str());
-        _prev   = new Fl_Button(0, 0, 0, 0, label::PREV.c_str());
+        _next   = new Fl_Return_Button(0, 0, 0, 0, labels::NEXT.c_str());
+        _prev   = new Fl_Button(0, 0, 0, 0, labels::PREV.c_str());
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
         _repeat = true;
@@ -323,7 +324,7 @@ public:
                 col = 1;
             }
 
-            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), label::NO, label::YES) == label::YES) {
+            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the beginning?", find.c_str()), labels::NO, labels::YES) == labels::YES) {
                 col = row = 1;
                 goto AGAIN;
             }
@@ -346,7 +347,7 @@ public:
                 col = _table->columns();
             }
 
-            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), label::NO, label::YES) == label::YES) {
+            if (dlg::msg_ask("Table", util::format("Unable to find <%s>!\nWould you like to try again from the end?", find.c_str()), labels::NO, labels::YES) == labels::YES) {
                 row = _table->rows();
                 col = _table->columns();
                 goto AGAIN;

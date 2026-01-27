@@ -7,11 +7,12 @@
 */
 
 #include "toolgroup.h"
-#include "flw.h"
 
 // MKALGAM_ON
 
 namespace flw {
+namespace priv {
+
 /*
  *        _______          _  _____                        _____ _     _ _     _
  *       |__   __|        | |/ ____|                      / ____| |   (_) |   | |
@@ -27,8 +28,8 @@ namespace flw {
 * @private
 */
 struct _ToolGroupChild {
-    Fl_Widget*                  widget;
-    int                         size;
+    Fl_Widget*                  widget; // Child widget.
+    int                         size;   // Size iin font units.
 
     /** @brief Create new widget object.
     *
@@ -53,6 +54,8 @@ struct _ToolGroupChild {
     }
 };
 
+} // flw::priv
+} // flw
 
 /*
  *      _______          _  _____
@@ -73,7 +76,7 @@ struct _ToolGroupChild {
 * @param[in] H    Height.
 * @param[in] l    Optional label.
 */
-ToolGroup::ToolGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+flw::ToolGroup::ToolGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
@@ -85,7 +88,7 @@ ToolGroup::ToolGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
 /** @brief Delete all widget data.
 *
 */
-ToolGroup::~ToolGroup() {
+flw::ToolGroup::~ToolGroup() {
     clear();
 }
 
@@ -99,12 +102,12 @@ ToolGroup::~ToolGroup() {
 *
 * @return Input widget or NULL if it has been added already.
 */
-Fl_Widget* ToolGroup::add(Fl_Widget* widget, unsigned size) {
+Fl_Widget* flw::ToolGroup::add(Fl_Widget* widget, unsigned size) {
     if (find(widget) != children()) {
         return nullptr;
     }
 
-    _widgets.push_back(new _ToolGroupChild(widget, size));
+    _widgets.push_back(new priv::_ToolGroupChild(widget, size));
     Fl_Group::add(widget);
 
     return widget;
@@ -113,9 +116,9 @@ Fl_Widget* ToolGroup::add(Fl_Widget* widget, unsigned size) {
 /** @brief Delete all widgets.
 *
 */
-void ToolGroup::clear() {
+void flw::ToolGroup::clear() {
     for (auto v : _widgets) {
-        delete static_cast<_ToolGroupChild*>(v);
+        delete static_cast<priv::_ToolGroupChild*>(v);
     }
 
     _widgets.clear();
@@ -128,13 +131,13 @@ void ToolGroup::clear() {
 *
 * @return If found return input child widget, otherwise NULL.
 */
-Fl_Widget* ToolGroup::remove(Fl_Widget* widget) {
+Fl_Widget* flw::ToolGroup::remove(Fl_Widget* widget) {
     if (find(widget) == children()) {
         return nullptr;
     }
 
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
-        auto child = static_cast<_ToolGroupChild*>(*it);
+        auto child = static_cast<priv::_ToolGroupChild*>(*it);
 
         if (child->widget == widget) {
             Fl_Group::remove(widget);
@@ -150,17 +153,18 @@ Fl_Widget* ToolGroup::remove(Fl_Widget* widget) {
 
 /** @brief Remove child widget.
 *
-* @param[in] widget  Valid child widget.
+* @param[in] old_widget  Remove this widget.
+* @param[in] new_widget  Add this widget.
 *
-* @return If found return input child widget, otherwise NULL.
+* @return If old_widget is found and replaced return old_widget, otherwise NULL.
 */
-Fl_Widget* ToolGroup::replace(Fl_Widget* old_widget, Fl_Widget* new_widget) {
+Fl_Widget* flw::ToolGroup::replace(Fl_Widget* old_widget, Fl_Widget* new_widget) {
     if (find(old_widget) == children()) {
         return nullptr;
     }
 
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
-        auto child = static_cast<_ToolGroupChild*>(*it);
+        auto child = static_cast<priv::_ToolGroupChild*>(*it);
 
         if (child->widget == old_widget) {
             insert(*new_widget, old_widget);
@@ -177,7 +181,7 @@ Fl_Widget* ToolGroup::replace(Fl_Widget* old_widget, Fl_Widget* new_widget) {
 /** @brief Resize widget and all child widgets.
 *
 */
-void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
+void flw::ToolGroup::resize(const int X, const int Y, const int W, const int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
@@ -192,7 +196,7 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
     auto ypos     = Y;
 
     for (auto v : _widgets) {
-        auto child = static_cast<_ToolGroupChild*>(v);
+        auto child = static_cast<priv::_ToolGroupChild*>(v);
 
         last = child->widget;
 
@@ -209,7 +213,7 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
     }
 
     for (auto v : _widgets) {
-        auto child = static_cast<_ToolGroupChild*>(v);
+        auto child = static_cast<priv::_ToolGroupChild*>(v);
 
         if (child->widget != nullptr) {
             if (_pos == Pos::HORIZONTAL) {
@@ -250,9 +254,9 @@ void ToolGroup::resize(const int X, const int Y, const int W, const int H) {
 * @param[in] widget  Child widget.
 * @param[in] size    Widget size, number of font units, 0 for equal size.
 */
-void ToolGroup::size(Fl_Widget* widget, unsigned size) {
+void flw::ToolGroup::size(Fl_Widget* widget, unsigned size) {
     for (auto v : _widgets) {
-        auto child = static_cast<_ToolGroupChild*>(v);
+        auto child = static_cast<priv::_ToolGroupChild*>(v);
 
         if (child->widget == widget) {
             child->set(size);
@@ -265,20 +269,19 @@ void ToolGroup::size(Fl_Widget* widget, unsigned size) {
 *
 * All horizontal widget have same height.\n
 * All vertical widget have same width.\n
+*\n
+* If ToolGroup::expand_last() is true then last widget will use all available space.\n
 *
-* @param[in] widget  Child widget.
-* @param[in] size    Widget size, number of font units, 0 for equal size.
+* @param[in] size  Widget size, number of font units, 0 for equal size.
 */
-void ToolGroup::size(unsigned size) {
+void flw::ToolGroup::size(unsigned size) {
     for (auto v : _widgets) {
-        auto child = static_cast<_ToolGroupChild*>(v);
+        auto child = static_cast<priv::_ToolGroupChild*>(v);
 
         child->set(size);
     }
 
     do_layout();
 }
-
-} // flw
 
 // MKALGAM_OFF

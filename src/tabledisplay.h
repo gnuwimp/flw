@@ -15,7 +15,8 @@
 
 #include <map>
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Scrollbar.H>
+
+class Fl_Scrollbar;
 
 namespace flw {
 

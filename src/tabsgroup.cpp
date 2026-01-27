@@ -10,12 +10,13 @@
 
 // MKALGAM_ON
 
-#include <assert.h>
-#include <algorithm>
+#include <FL/Fl_Scroll.H>
 #include <FL/Fl_Toggle_Button.H>
 #include <FL/fl_draw.H>
+#include <algorithm>
 
 namespace flw {
+namespace priv {
 
 /*
  *        _______    _          _____                       ____        _   _
@@ -30,6 +31,7 @@ namespace flw {
 
 /** @brief Tab button.
 * @private
+*
 * It stores also its accompanying widget,
 */
 class _TabsGroupButton : public Fl_Toggle_Button {
@@ -43,7 +45,7 @@ public:
     * @param[in] dbox_type  Down box.
     * @param[in] color      Selection color.
     * @param[in] label      Label text.
-    * @param[in] widget     Child widget.
+    * @param[in] widget_    Child widget.
     * @param[in] o          Pointer to parent TabsGroup.
     */
     _TabsGroupButton(Fl_Boxtype box_type, Fl_Boxtype dbox_type, Fl_Color color, const std::string& label, Fl_Widget* widget_, void* o) :
@@ -92,6 +94,9 @@ public:
     }
 };
 
+} // flw::priv
+} // flw
+
 /*
  *      _______    _          _____
  *     |__   __|  | |        / ____|
@@ -113,13 +118,13 @@ public:
 * @param[in] H  Height.
 * @param[in] l  Optional label.
 */
-TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
 
     _scroll   = new Fl_Scrollbar(0, 0, 0, 0);
-    _tabs     = new _TabsGroup(0, 0, 0, 0);
+    _tabs     = new priv::_TabsGroup(0, 0, 0, 0);
     _active1  = -1;
     _active2  = -1;
     _color    = FL_SELECTION_COLOR;
@@ -131,8 +136,8 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _up_box   = FL_MAX_BOXTYPE;
     _visible  = 0;
     _w        = 0;
-    _width1   = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
-    _width2   = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
+    _width1   = flw::PREF_FONTSIZE * flw::TabsGroup::DEFAULT_VER_TAB_WIDTH;
+    _width2   = flw::TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
 
     _tabs->end();
     _tabs->add(_scroll);
@@ -153,14 +158,14 @@ TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
 *
 * @param[in] widget  Either button widget or its user widget.
 */
-void TabsGroup::_activate(Fl_Widget* widget) {
+void flw::TabsGroup::_activate(Fl_Widget* widget) {
     auto count   = 0;
     auto current = _active1;
 
     _active1 = -1;
 
     for (auto button : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(button);
+        auto b = static_cast<priv::_TabsGroupButton*>(button);
 
         if (b == widget || b->widget == widget) {
             _active1 = count;
@@ -214,7 +219,7 @@ void TabsGroup::_activate(Fl_Widget* widget) {
 *
 * @return Button or NULL.
 */
-Fl_Widget* TabsGroup::_active_button() {
+Fl_Widget* flw::TabsGroup::_active_button() {
     return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
         _widgets[_active1] :
         nullptr;
@@ -229,12 +234,12 @@ Fl_Widget* TabsGroup::_active_button() {
 * @param[in] after    Add widget after this, optional.
 * @param[in] tooltip  Tooltip, optional.
 */
-void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after, const std::string& tooltip) {
+void flw::TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after, const std::string& tooltip) {
     if (find(widget) != -1) {
         return;
     }
 
-    auto button = new _TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
+    auto button = new priv::_TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
     auto idx    = (after != nullptr) ? find(after) : static_cast<int>(_widgets.size());
 
     button->copy_tooltip(tooltip.c_str());
@@ -246,13 +251,13 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget
     }
     else {
         idx++;
-        auto b = static_cast<_TabsGroupButton*>(_widgets[idx]);
+        auto b = static_cast<priv::_TabsGroupButton*>(_widgets[idx]);
         Fl_Group::insert(*widget, b->widget);
         _tabs->insert(*button, b);
         _widgets.insert(_widgets.begin() + idx, button);
     }
 
-    TabsGroup::CallbackButton(button, this);
+    flw::TabsGroup::CallbackButton(button, this);
 }
 
 /** @brief Tab button has been activated so switch to new widget.
@@ -260,7 +265,7 @@ void TabsGroup::add(const std::string& label, Fl_Widget* widget, const Fl_Widget
 * @param[in] sender  Tab button.
 * @param[in] object  This object.
 */
-void TabsGroup::CallbackButton(Fl_Widget* sender, void* object) {
+void flw::TabsGroup::CallbackButton(Fl_Widget* sender, void* object) {
     static_cast<TabsGroup*>(object)->_activate(sender);
 }
 
@@ -269,7 +274,7 @@ void TabsGroup::CallbackButton(Fl_Widget* sender, void* object) {
 * @param[in] sender  Scrollbar button.
 * @param[in] object  This object.
 */
-void TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
+void flw::TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
     auto self = static_cast<TabsGroup*>(object);
 
     if (self->is_tabs_horizontal() ==  true) {
@@ -289,16 +294,16 @@ void TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
 *
 * @return Widget or NULL.
 */
-Fl_Widget* TabsGroup::child(int index) const {
+Fl_Widget* flw::TabsGroup::child(int index) const {
     return index >= 0 && index < static_cast<int>(_widgets.size()) ?
-        static_cast<_TabsGroupButton*>(_widgets[index])->widget :
+        static_cast<priv::_TabsGroupButton*>(_widgets[index])->widget :
         nullptr;
 }
 
 /** @brief Remove all widgets.
 *
 */
-void TabsGroup::clear() {
+void flw::TabsGroup::clear() {
     _active1 = -1;
     _active2 = -1;
 
@@ -320,7 +325,7 @@ void TabsGroup::clear() {
 *
 * @param[in] all  True to print child widgets.
 */
-void TabsGroup::debug(bool all) const {
+void flw::TabsGroup::debug(bool all) const {
 #ifdef DEBUG
     puts("------------------------------------------------------------");
     auto w = ((TabsGroup*) this)->_active_button();
@@ -346,7 +351,7 @@ void TabsGroup::debug(bool all) const {
 
         int f = 0;
         for (auto widget : _widgets) {
-            auto b = static_cast<_TabsGroupButton*>(widget);
+            auto b = static_cast<priv::_TabsGroupButton*>(widget);
             printf("%2d: %s\n", f++, b->label());
         }
     }
@@ -364,11 +369,11 @@ void TabsGroup::debug(bool all) const {
 *
 * @return Index or -1 if not found, 0 is the first widget.
 */
-int TabsGroup::find(const Fl_Widget* widget) const {
+int flw::TabsGroup::find(const Fl_Widget* widget) const {
     auto num = 0;
 
     for (const auto W : _widgets) {
-        const auto b = static_cast<_TabsGroupButton*>(W);
+        const auto b = static_cast<priv::_TabsGroupButton*>(W);
 
         if (b->widget == widget) {
             return num;
@@ -391,12 +396,12 @@ int TabsGroup::find(const Fl_Widget* widget) const {
 *
 * @return Either 1 from this widget or value from parent widget.
 */
-int TabsGroup::handle(int event) {
+int flw::TabsGroup::handle(int event) {
     if (is_tabs_vertical() == true) { // Only left/right mode can resize width by using mouse.
         if (event == FL_DRAG) {
             if (_drag == true) {
                 auto pos   = 0;
-                auto width = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
+                auto width = flw::PREF_FONTSIZE * flw::TabsGroup::MIN_WIDTH;
 
                 if (is_tabs_left() == true) {
                     pos = Fl::event_x() - x();
@@ -474,7 +479,7 @@ int TabsGroup::handle(int event) {
             tab = (tab == 0) ? 9 : tab - 1;
 
             if (tab < static_cast<int>(_widgets.size())) {
-                TabsGroup::CallbackButton(_widgets[tab], this);
+                flw::TabsGroup::CallbackButton(_widgets[tab], this);
             }
             return 1;
         }
@@ -488,7 +493,7 @@ int TabsGroup::handle(int event) {
             }
 
             auto tab = swap(_active1, _active1 - 1);
-            TabsGroup::CallbackButton(_widgets[tab], this);
+            flw::TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && shift == true && (key == FL_Right || key == FL_Down)) { // Move tab.
@@ -501,22 +506,22 @@ int TabsGroup::handle(int event) {
             }
 
             auto tab = swap(_active1, _active1 + 1);
-            TabsGroup::CallbackButton(_widgets[tab], this);
+            flw::TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && key == FL_Left) { // Switch tab.
             auto tab = (_active1 == 0) ? static_cast<int>(_widgets.size()) - 1 : _active1 - 1;
-            TabsGroup::CallbackButton(_widgets[tab], this);
+            flw::TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && key == FL_Right) { // Switch tab.
             auto tab = (_active1 == static_cast<int>(_widgets.size()) - 1) ? 0 : _active1 + 1;
-            TabsGroup::CallbackButton(_widgets[tab], this);
+            flw::TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
         else if (alt == true && (key == FL_Up || key == FL_Down)) { // Switch between last two tabs.
             auto tab = (_active2 == -1) ? _active1 : _active2;
-            TabsGroup::CallbackButton(_widgets[tab], this);
+            flw::TabsGroup::CallbackButton(_widgets[tab], this);
             return 1;
         }
     }
@@ -536,7 +541,7 @@ int TabsGroup::handle(int event) {
 *
 * @return Help text.
 */
-const char* TabsGroup::Help() {
+const char* flw::TabsGroup::Help() {
     static const char* const HELP =
     "Use alt + left/right to move between tabs.\n"
     "Use alt + up/down to jump between two last widgets.\n"
@@ -550,7 +555,7 @@ const char* TabsGroup::Help() {
 /** @brief Hide all tab buttons.
 *
 */
-void TabsGroup::hide_tabs() {
+void flw::TabsGroup::hide_tabs() {
     _tabs->hide();
     do_layout();
 }
@@ -564,12 +569,12 @@ void TabsGroup::hide_tabs() {
 * @param[in] before   Insert before this, optional.
 * @param[in] tooltip  Tab tooltip, optional.
 */
-void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before, const std::string& tooltip) {
+void flw::TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before, const std::string& tooltip) {
     if (find(widget) != -1) {
         return;
     }
 
-    auto button = new _TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
+    auto button = new priv::_TabsGroupButton(_up_box, _down_box, _color, label, widget, this);
     auto idx    = (before != nullptr) ? find(before) : 0;
 
     button->copy_tooltip(tooltip.c_str());
@@ -580,13 +585,13 @@ void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Wid
         _widgets.push_back(button);
     }
     else {
-        auto b = static_cast<_TabsGroupButton*>(_widgets[idx]);
+        auto b = static_cast<priv::_TabsGroupButton*>(_widgets[idx]);
         Fl_Group::insert(*widget, b->widget);
         _tabs->insert(*button, b);
         _widgets.insert(_widgets.begin() + idx, button);
     }
 
-    TabsGroup::CallbackButton(button, this);
+    flw::TabsGroup::CallbackButton(button, this);
     do_layout();
 }
 
@@ -596,12 +601,12 @@ void TabsGroup::insert(const std::string& label, Fl_Widget* widget, const Fl_Wid
 *
 * @return Removed child widget or NULL.
 */
-Fl_Widget* TabsGroup::remove(int index) {
+Fl_Widget* flw::TabsGroup::remove(int index) {
     if (index < 0 || index >= static_cast<int>(_widgets.size())) {
         return nullptr;
     }
 
-    auto button = static_cast<_TabsGroupButton*>(_widgets[index]);
+    auto button = static_cast<priv::_TabsGroupButton*>(_widgets[index]);
     auto res    = button->widget;
 
     _widgets.erase(_widgets.begin() + index);
@@ -617,7 +622,7 @@ Fl_Widget* TabsGroup::remove(int index) {
     }
 
     do_layout();
-    TabsGroup::CallbackButton(_active_button(), this);
+    flw::TabsGroup::CallbackButton(_active_button(), this);
 
     return res;
 }
@@ -625,7 +630,7 @@ Fl_Widget* TabsGroup::remove(int index) {
 /** @brief Resize group.
 *
 */
-void TabsGroup::resize(int X, int Y, int W, int H) {
+void flw::TabsGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (W == 0 || H == 0) {
@@ -653,8 +658,8 @@ void TabsGroup::resize(int X, int Y, int W, int H) {
 /** @brief Resize child widget (only the visible one).
 *
 */
-void TabsGroup::_resize_active_widget() {
-    auto but = static_cast<_TabsGroupButton*>(_active_button());
+void flw::TabsGroup::_resize_active_widget() {
+    auto but = static_cast<priv::_TabsGroupButton*>(_active_button());
 
     if (but == nullptr) {
         return;
@@ -669,18 +674,18 @@ void TabsGroup::_resize_active_widget() {
 /** @brief Resize tab buttons if they are on the left or right side.
 *
 */
-void TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
-    auto height = flw::PREF_FONTSIZE + TabsGroup::HEIGHT;
+void flw::TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
+    auto height = flw::PREF_FONTSIZE + flw::TabsGroup::HEIGHT;
     auto pack_h = (height + _space) * static_cast<int>(_widgets.size()) - _space;
     auto scroll = 0;
 
     _visible = static_cast<int>(H / (height + _space));
 
-    if (_width1 < flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) { // Set min size for widgets on the left.
-        _width1 = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
+    if (_width1 < flw::PREF_FONTSIZE * flw::TabsGroup::MIN_WIDTH) { // Set min size for widgets on the left.
+        _width1 = flw::PREF_FONTSIZE * flw::TabsGroup::MIN_WIDTH;
     }
-    else if (_width1 > W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH) { // Set min size for widgets on the right.
-        _width1 = W - flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH;
+    else if (_width1 > W - flw::PREF_FONTSIZE * flw::TabsGroup::MIN_WIDTH) { // Set min size for widgets on the right.
+        _width1 = W - flw::PREF_FONTSIZE * flw::TabsGroup::MIN_WIDTH;
     }
     if (pack_h > H) {
         auto size = static_cast<int>(_widgets.size() - _visible + 2);
@@ -723,7 +728,7 @@ void TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
     ypos += _tabs->y();
 
     for (auto widget : _widgets) {
-        auto b  = static_cast<_TabsGroupButton*>(widget);
+        auto b  = static_cast<priv::_TabsGroupButton*>(widget);
 
         b->tw = 0;
         b->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
@@ -748,19 +753,19 @@ void TabsGroup::_resize_left_right(int X, int Y, int W, int H) {
 /** @brief Resize tab buttons if they are on the top or bottom side.
 *
 */
-void TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
-    auto height = flw::PREF_FONTSIZE + TabsGroup::HEIGHT;
+void flw::TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
+    auto height = flw::PREF_FONTSIZE + flw::TabsGroup::HEIGHT;
     auto pack_w = 0;
     auto scroll = 0;
     auto width  = 0;
-    auto minw   = flw::PREF_FONTSIZE * TabsGroup::MIN_WIDTH + _space;
+    auto minw   = flw::PREF_FONTSIZE * flw::TabsGroup::MIN_WIDTH + _space;
     auto maxw   = flw::PREF_FONTSIZE * _width2 + _space;
 
     _visible = 0;
     fl_font(labelfont(), labelsize());
 
     for (auto widget : _widgets) { // Check if horizontal scrollbar has to be visible.
-        auto b  = static_cast<_TabsGroupButton*>(widget);
+        auto b  = static_cast<priv::_TabsGroupButton*>(widget);
         auto th = 0;
 
         b->tw = 0;
@@ -823,7 +828,7 @@ void TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
     xpos += _tabs->x();
 
     for (auto widget : _widgets) {
-        auto b  = static_cast<_TabsGroupButton*>(widget);
+        auto b  = static_cast<priv::_TabsGroupButton*>(widget);
 
         if (b->tw >= width) {
             b->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
@@ -852,7 +857,7 @@ void TabsGroup::_resize_top_bottom(int X, int Y, int W, int H) {
 /** @brief Show tab buttons.
 *
 */
-void TabsGroup::show_tabs() {
+void flw::TabsGroup::show_tabs() {
     _tabs->show();
     do_layout();
 }
@@ -865,7 +870,7 @@ void TabsGroup::show_tabs() {
 * @param[in] casecompare  True use case compare.
 *
 */
-void TabsGroup::sort(bool ascending, bool casecompare) {
+void flw::TabsGroup::sort(bool ascending, bool casecompare) {
     auto pack = const_cast<Fl_Widget**>(_tabs->array());
     auto butt = _active_button();
 
@@ -900,7 +905,7 @@ void TabsGroup::sort(bool ascending, bool casecompare) {
 *
 * @return Active index or -1.
 */
-int TabsGroup::swap(int from, int to) {
+int flw::TabsGroup::swap(int from, int to) {
     auto last = static_cast<int>(_widgets.size()) - 1;
 
     if (_widgets.size() < 2 || to < -1 || to > static_cast<int>(_widgets.size())) {
@@ -967,12 +972,12 @@ int TabsGroup::swap(int from, int to) {
 * @param[in] up_box    Use FL_MAX_BOXTYPE to reset to default.
 * @param[in] down_box  Use FL_MAX_BOXTYPE to reset to default.
 */
-void TabsGroup::tab_box(Fl_Boxtype up_box, Fl_Boxtype down_box) {
+void flw::TabsGroup::tab_box(Fl_Boxtype up_box, Fl_Boxtype down_box) {
     _up_box   = up_box;
     _down_box = down_box;
 
     for (auto widget : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(widget);
+        auto b = static_cast<priv::_TabsGroupButton*>(widget);
 
         if (_up_box == FL_MAX_BOXTYPE) {
             b->box(FL_THIN_UP_BOX);
@@ -994,11 +999,11 @@ void TabsGroup::tab_box(Fl_Boxtype up_box, Fl_Boxtype down_box) {
 *
 * @param[in] color  Color, if different than FL_SELECTION_COLOR it will not change when theme changes.
 */
-void TabsGroup::tab_color(Fl_Color color) {
+void flw::TabsGroup::tab_color(Fl_Color color) {
     _color = color;
 
     for (auto widget : _widgets) {
-        auto b = static_cast<_TabsGroupButton*>(widget);
+        auto b = static_cast<priv::_TabsGroupButton*>(widget);
         b->selection_color(_color);
     }
 }
@@ -1009,7 +1014,7 @@ void TabsGroup::tab_color(Fl_Color color) {
 *
 * @return Label string or empty string.
 */
-std::string TabsGroup::tab_label(const Fl_Widget* widget) {
+std::string flw::TabsGroup::tab_label(const Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num == -1) {
@@ -1024,7 +1029,7 @@ std::string TabsGroup::tab_label(const Fl_Widget* widget) {
 * @param[in] label   New label.
 * @param[in] widget  Child widget to set tab button label for.
 */
-void TabsGroup::tab_label(const std::string& label, Fl_Widget* widget) {
+void flw::TabsGroup::tab_label(const std::string& label, Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num == -1) {
@@ -1037,11 +1042,11 @@ void TabsGroup::tab_label(const std::string& label, Fl_Widget* widget) {
 /** @brief Set on which side the tab buttons should be.
 *
 * @param[in] pos    One of Pos values.
-* @param[in] space  Space between tab buttons (0 - TabsGroup::MAX_SPACE pixels).
+* @param[in] space  Space between tab buttons (0 - flw::TabsGroup::MAX_SPACE pixels).
 */
-void TabsGroup::tab_pos(Pos pos, int space) {
+void flw::TabsGroup::tab_pos(Pos pos, int space) {
     _tab_pos = pos;
-    _space   = (space >= 0 && space <= TabsGroup::MAX_SPACE) ? space : TabsGroup::DEFAULT_SPACE;
+    _space   = (space >= 0 && space <= flw::TabsGroup::MAX_SPACE) ? space : flw::TabsGroup::DEFAULT_SPACE;
 
     if (is_tabs_horizontal() == true) {
         _scroll->type(FL_HORIZONTAL);
@@ -1060,7 +1065,7 @@ void TabsGroup::tab_pos(Pos pos, int space) {
 *
 * @return Tooltip label.
 */
-std::string TabsGroup::tooltip(Fl_Widget* widget) const {
+std::string flw::TabsGroup::tooltip(Fl_Widget* widget) const {
     auto num = find(widget);
 
     if (num == -1) {
@@ -1075,7 +1080,7 @@ std::string TabsGroup::tooltip(Fl_Widget* widget) const {
 * @param[in] tooltip  New tooltip.
 * @param[in] widget   Child widget to set tab button tooltip for.
 */
-void TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
+void flw::TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
     auto num = find(widget);
 
     if (num == -1) {
@@ -1090,13 +1095,13 @@ void TabsGroup::tooltip(const std::string& tooltip, Fl_Widget* widget) {
 * @param[in] font      Font to use.
 * @param[in] fontsize  Size of font.
 */
-void TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
+void flw::TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
     _drag = false;
 
     labelfont(font);
     labelsize(fontsize);
-    _width1 = flw::PREF_FONTSIZE * TabsGroup::DEFAULT_VER_TAB_WIDTH;
-    _width2 = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
+    _width1 = flw::PREF_FONTSIZE * flw::TabsGroup::DEFAULT_VER_TAB_WIDTH;
+    _width2 = flw::TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH;
 
     for (auto widget : _widgets) {
         widget->labelfont(font);
@@ -1108,9 +1113,9 @@ void TabsGroup::update_pref(Fl_Font font, Fl_Fontsize fontsize) {
 *
 * @return Widget or NULL.
 */
-Fl_Widget* TabsGroup::value() const {
+Fl_Widget* flw::TabsGroup::value() const {
     return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
-        static_cast<_TabsGroupButton*>(_widgets[_active1])->widget :
+        static_cast<priv::_TabsGroupButton*>(_widgets[_active1])->widget :
         nullptr;
 }
 
@@ -1118,12 +1123,10 @@ Fl_Widget* TabsGroup::value() const {
 *
 * @param[in] num  Valid index.
 */
-void TabsGroup::value(int num) {
+void flw::TabsGroup::value(int num) {
     if (num >= 0 && num < static_cast<int>(_widgets.size())) {
         _activate(_widgets[num]);
     }
 }
-
-} // flw
 
 // MKALGAM_OFF

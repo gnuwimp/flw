@@ -14,23 +14,25 @@
 // MKALGAM_ON
 
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Input.H>
 #include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Input.H>
 
 namespace flw {
 
 /*
- *      _____                   _   __  __                  
- *     |_   _|                 | | |  \/  |                 
- *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _ 
+ *      _____                   _   __  __
+ *     |_   _|                 | | |  \/  |
+ *       | |  _ __  _ __  _   _| |_| \  / | ___ _ __  _   _
  *       | | | '_ \| '_ \| | | | __| |\/| |/ _ \ '_ \| | | |
  *      _| |_| | | | |_) | |_| | |_| |  | |  __/ | | | |_| |
  *     |_____|_| |_| .__/ \__,_|\__|_|  |_|\___|_| |_|\__,_|
- *                 | |                                      
- *                 |_|                                      
+ *                 | |
+ *                 |_|
  */
 
+namespace priv {
 class _InputMenu;
+}
 
 /** @brief Text input widget with a menu button with a history of values.
 *
@@ -44,12 +46,7 @@ class _InputMenu;
 */
 class InputMenu : public Fl_Group {
 public:
-                                InputMenu(const InputMenu&) = delete;
-                                InputMenu(InputMenu&&) = delete;
-    InputMenu&                  operator=(const InputMenu&) = delete;
-    InputMenu&                  operator=(InputMenu&&) = delete;
-
-    explicit                    InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+                                InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        clear();
     Fl_Input*                   input() ///< @brief Get input widget.
                                     { return reinterpret_cast<Fl_Input*>(_input); }
@@ -77,7 +74,7 @@ private:
     static void                 _CallbackInput(Fl_Widget*, void*);
     static void                 _CallbackMenu(Fl_Widget*, void*);
 
-    _InputMenu*                 _input; // Input widget.
+    priv::_InputMenu*           _input; // Input widget.
     Fl_Menu_Button*             _menu;  // Menu button with a list of values to select from.
 };
 

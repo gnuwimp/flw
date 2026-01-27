@@ -6,28 +6,17 @@
 * @copyright Released under the GNU General Public License v3.0
 */
 
-#include "logdisplay.h"
 #include "dlg.h"
 #include "json.h"
+#include "logdisplay.h"
+#include "theme.h"
 
 // MKALGAM_ON
 
-#include <assert.h>
-#include <FL/fl_ask.H>
 #include <FL/Fl_File_Chooser.H>
 
 namespace flw {
-
-/*
- *                 _            _
- *                (_)          | |
- *      _ __  _ __ ___   ____ _| |_ ___
- *     | '_ \| '__| \ \ / / _` | __/ _ \
- *     | |_) | |  | |\ V / (_| | ||  __/
- *     | .__/|_|  |_| \_/ \__,_|\__\___|
- *     | |
- *     |_|
- */
+namespace priv {
 
 Fl_Text_Display::Style_Table_Entry _LOGDISPLAY_STYLE_TABLE[] = {
     { FL_FOREGROUND_COLOR,  FL_COURIER,         14, 0, 0 },
@@ -429,6 +418,9 @@ static char* _logdisplay_win_to_unix(const char* string) {
     return res;
 }
 
+} // flw::priv
+} // flw
+
 /*
  *      _                 _____  _           _                _______
  *     | |               |  __ \(_)         | |            _ |__   __|
@@ -443,7 +435,7 @@ static char* _logdisplay_win_to_unix(const char* string) {
  /** @brief Create tmp struct.
 * @private
 */
-LogDisplay::Tmp::Tmp() {
+flw::LogDisplay::_Tmp::_Tmp() {
     buf  = nullptr;
     len  = 0;
     pos  = 0;
@@ -453,7 +445,7 @@ LogDisplay::Tmp::Tmp() {
 /** @brief
 * @private
 */
-LogDisplay::Tmp::~Tmp() {
+flw::LogDisplay::_Tmp::~_Tmp() {
     free(buf);
 }
 
@@ -476,7 +468,7 @@ LogDisplay::Tmp::~Tmp() {
 * @param[in] H  Height.
 * @param[in] l  Label.
 */
-LogDisplay::LogDisplay(int X, int Y, int W, int H, const char *l) : Fl_Text_Display(X, Y, W, H, l) {
+flw::LogDisplay::LogDisplay(int X, int Y, int W, int H, const char *l) : Fl_Text_Display(X, Y, W, H, l) {
     _buffer      = new Fl_Text_Buffer();
     _style       = new Fl_Text_Buffer();
     _lock_colors = false;
@@ -486,13 +478,13 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char *l) : Fl_Text_Disp
     linenumber_align(FL_ALIGN_RIGHT);
     linenumber_format("%5d");
     update_pref();
-    tooltip(_LOGDISPLAY_TOOLTIP.c_str());
+    tooltip(priv::_LOGDISPLAY_TOOLTIP.c_str());
 }
 
 /** @brief Free buffer.
 *
 */
-LogDisplay::~LogDisplay() {
+flw::LogDisplay::~LogDisplay() {
     buffer(nullptr);
     delete _buffer;
     delete _style;
@@ -502,8 +494,8 @@ LogDisplay::~LogDisplay() {
 /** @brief Start dialog to edit style string.
 *
 */
-void LogDisplay::edit_styles() {
-    auto json    = (_json == "") ? _LOGDISPLAY_JSON_EXAMPLE : _json;
+void flw::LogDisplay::edit_styles() {
+    auto json    = (_json == "") ? priv::_LOGDISPLAY_JSON_EXAMPLE : _json;
     auto changed = dlg::text_edit("LogDisplay - Edit JSON Style", json, 40, 50);
 
     if (changed == false) {
@@ -518,11 +510,11 @@ void LogDisplay::edit_styles() {
 * @param[in] next       Find next.
 * @param[in] force_ask  True to force showing dialog.
 */
-void LogDisplay::find(bool next, bool force_ask) {
+void flw::LogDisplay::find(bool next, bool force_ask) {
     if (_find == "" || force_ask) {
         auto answer = dlg::input("LogDisplay", "Enter search string.", _find);
 
-        if (answer == label::CANCEL || _find == "") {
+        if (answer == labels::CANCEL || _find == "") {
             return;
         }
     }
@@ -569,7 +561,7 @@ void LogDisplay::find(bool next, bool force_ask) {
 /** @brief Handle keyboard shortcuts.
 *
 */
-int LogDisplay::handle(int event) {
+int flw::LogDisplay::handle(int event) {
     if (event == FL_KEYBOARD) {
         auto key = Fl::event_key();
 
@@ -588,7 +580,7 @@ int LogDisplay::handle(int event) {
                 return 1;
             }
             else if (key == 'h') {
-                dlg::list("LogDisplay - Style Help", _LOGDISPLAY_HELP, false, 40, 30);
+                dlg::list("LogDisplay - Style Help", priv::_LOGDISPLAY_HELP, false, 40, 30);
                 return 1;
             }
         }
@@ -608,7 +600,7 @@ int LogDisplay::handle(int event) {
 * @param[in] row   Line number.
 * @param[in] line  Text line.
 */
-void LogDisplay::line_cb(size_t row, const std::string& line) {
+void flw::LogDisplay::line_cb(size_t row, const std::string& line) {
     (void) row;
     (void) line;
 }
@@ -627,7 +619,7 @@ void LogDisplay::line_cb(size_t row, const std::string& line) {
 * @param[in] stop       Stop pos.
 * @param[in] count      Number of stylings.
 */
-void LogDisplay::line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::Color color, bool inclusive, size_t start, size_t stop, size_t count)  {
+void flw::LogDisplay::line_custom_cb(size_t row, const std::string& line, const std::string& word1, const std::string& word2, LogDisplay::Color color, bool inclusive, size_t start, size_t stop, size_t count)  {
     (void) row;
     (void) line;
     (void) word1;
@@ -642,7 +634,7 @@ void LogDisplay::line_custom_cb(size_t row, const std::string& line, const std::
 /** @brief Save text to file.
 *
 */
-void LogDisplay::save_file() {
+void flw::LogDisplay::save_file() {
     auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
 
     if (filename != nullptr && _buffer->savefile(filename) != 0) {
@@ -742,11 +734,11 @@ void LogDisplay::save_file() {
 *
 * @param[in] json  JSON string.
 */
-void LogDisplay::style(const std::string& json) {
-    auto ds = (json != "") ? _logdisplay_parse_json(json) : std::vector<_LogDisplayStyle>();
+void flw::LogDisplay::style(const std::string& json) {
+    auto ds = (json != "") ? priv::_logdisplay_parse_json(json) : std::vector<priv::_LogDisplayStyle>();
 
     _json      = json;
-    _tmp       = new Tmp();
+    _tmp       = new _Tmp();
     _tmp->size = _buffer->length();
     _tmp->buf  = static_cast<char*>(calloc(_tmp->size + 1, 1));
 
@@ -766,16 +758,16 @@ void LogDisplay::style(const std::string& json) {
                 unlock_colors(); // Every text line starts with color unlocked.
 
                 for (const auto& d : ds) {
-                    if (d.style == _LogDisplayStyle::BETWEEN) {
+                    if (d.style == priv::_LogDisplayStyle::BETWEEN) {
                         style_range(line, d.word1, d.word2, d.inclusive, d.color);
                     }
-                    else if (d.style == _LogDisplayStyle::CUSTOM) {
+                    else if (d.style == priv::_LogDisplayStyle::CUSTOM) {
                         line_custom_cb(row, line, d.word1, d.word2, d.color, d.inclusive, d.start, d.stop, d.count);
                     }
-                    else if (d.style == _LogDisplayStyle::LINE) {
+                    else if (d.style == priv::_LogDisplayStyle::LINE) {
                         style_line(d.start, d.stop, d.color);
                     }
-                    else if (d.style == _LogDisplayStyle::LOCK) {
+                    else if (d.style == priv::_LogDisplayStyle::LOCK) {
                         if (d.on == true) {
                             lock_colors();
                         }
@@ -783,16 +775,16 @@ void LogDisplay::style(const std::string& json) {
                             unlock_colors();
                         }
                     }
-                    else if (d.style == _LogDisplayStyle::NUM) {
+                    else if (d.style == priv::_LogDisplayStyle::NUM) {
                         style_num(line, d.color, d.count);
                     }
-                    else if (d.style == _LogDisplayStyle::RANGE) {
+                    else if (d.style == priv::_LogDisplayStyle::RANGE) {
                         style_range(line, d.word1, d.word2, d.inclusive, d.color, d.count);
                     }
-                    else if (d.style == _LogDisplayStyle::RSTRING) {
+                    else if (d.style == priv::_LogDisplayStyle::RSTRING) {
                         style_rstring(line, d.word1, d.color, d.count);
                     }
-                    else if (d.style == _LogDisplayStyle::STRING) {
+                    else if (d.style == priv::_LogDisplayStyle::STRING) {
                         style_string(line, d.word1, d.color, d.count);
                     }
                 }
@@ -804,7 +796,7 @@ void LogDisplay::style(const std::string& json) {
         }
 
         _style->text(_tmp->buf);
-        highlight_data(_style, _LOGDISPLAY_STYLE_TABLE, sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]), static_cast<char>(Color::FOREGROUND), nullptr, 0);
+        highlight_data(_style, priv::_LOGDISPLAY_STYLE_TABLE, sizeof(priv::_LOGDISPLAY_STYLE_TABLE) / sizeof(priv::_LOGDISPLAY_STYLE_TABLE[0]), static_cast<char>(Color::FOREGROUND), nullptr, 0);
     }
 
     delete _tmp;
@@ -819,7 +811,7 @@ void LogDisplay::style(const std::string& json) {
 * @param[in] inclusive  True to use from start to stop, false from from + 1 to stop - 1.
 * @param[in] color      Color to use.
 */
-void LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color) {
+void flw::LogDisplay::style_between(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -845,7 +837,7 @@ void LogDisplay::style_between(const std::string& line, const std::string& word1
 * @param[in] stop   Stop index.
 * @param[in] color  Color value.
 */
-void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color color) {
+void flw::LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color color) {
     assert(_tmp);
 
     start += _tmp->pos;
@@ -866,7 +858,7 @@ void LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color color) 
 * @param[in] color  Color value.
 * @param[in] count  Max numbers of stylings.
 */
-void LogDisplay::style_num(const std::string& line, LogDisplay::Color color, size_t count) {
+void flw::LogDisplay::style_num(const std::string& line, LogDisplay::Color color, size_t count) {
     if (count == 0) {
         count = 999;
     }
@@ -890,7 +882,7 @@ void LogDisplay::style_num(const std::string& line, LogDisplay::Color color, siz
 * @param[in] color      Color value.
 * @param[in] count      Max number of stylings.
 */
-void LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color, size_t count) {
+void flw::LogDisplay::style_range(const std::string& line, const std::string& word1, const std::string& word2, bool inclusive, LogDisplay::Color color, size_t count) {
     if (word1 == "" || word2 == "") {
         return;
     }
@@ -933,7 +925,7 @@ void LogDisplay::style_range(const std::string& line, const std::string& word1, 
 * @param[in] color  Color value.
 * @param[in] count  Max number of stylings.
 */
-void LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
+void flw::LogDisplay::style_rstring(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -963,7 +955,7 @@ void LogDisplay::style_rstring(const std::string& line, const std::string& word1
 * @param[in] color  Color value.
 * @param[in] count  Max number of stylings.
 */
-void LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
+void flw::LogDisplay::style_string(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count) {
     if (word1 == "") {
         return;
     }
@@ -984,7 +976,7 @@ void LogDisplay::style_string(const std::string& line, const std::string& word1,
 /** @brief Updpate font preferences using flw::PREF_FIXED_FONT.
 *
 */
-void LogDisplay::update_pref() {
+void flw::LogDisplay::update_pref() {
     labelsize(flw::PREF_FIXED_FONTSIZE);
     linenumber_bgcolor(FL_BACKGROUND_COLOR);
     linenumber_fgcolor(FL_FOREGROUND_COLOR);
@@ -994,14 +986,14 @@ void LogDisplay::update_pref() {
     textfont(flw::PREF_FIXED_FONT);
     textsize(flw::PREF_FIXED_FONTSIZE);
 
-    for (size_t f = 0; f < sizeof(_LOGDISPLAY_STYLE_TABLE) / sizeof(_LOGDISPLAY_STYLE_TABLE[0]); f++) {
-        _LOGDISPLAY_STYLE_TABLE[f].size = flw::PREF_FIXED_FONTSIZE;
+    for (size_t f = 0; f < sizeof(priv::_LOGDISPLAY_STYLE_TABLE) / sizeof(priv::_LOGDISPLAY_STYLE_TABLE[0]); f++) {
+        priv::_LOGDISPLAY_STYLE_TABLE[f].size = flw::PREF_FIXED_FONTSIZE;
 
         if (theme::is_dark() == true) {
-            _LOGDISPLAY_STYLE_TABLE[f].bgcolor = FL_WHITE;
+            priv::_LOGDISPLAY_STYLE_TABLE[f].bgcolor = FL_WHITE;
         }
         else {
-            _LOGDISPLAY_STYLE_TABLE[f].bgcolor = fl_lighter(FL_GRAY);
+            priv::_LOGDISPLAY_STYLE_TABLE[f].bgcolor = fl_lighter(FL_GRAY);
         }
     }
 }
@@ -1010,11 +1002,11 @@ void LogDisplay::update_pref() {
 *
 * @param[in] text  Text to show.
 */
-void LogDisplay::value(const char* text) {
+void flw::LogDisplay::value(const char* text) {
     _buffer->text("");
     _style->text("");
 
-    auto win = _logdisplay_win_to_unix(text);
+    auto win = priv::_logdisplay_win_to_unix(text);
 
     if (win != nullptr) {
         _buffer->text(win);
@@ -1024,7 +1016,5 @@ void LogDisplay::value(const char* text) {
         _buffer->text(text);
     }
 }
-
-} // flw
 
 // MKALGAM_OFF

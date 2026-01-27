@@ -6,7 +6,6 @@
 * @copyright Released under the GNU General Public License v3.0
 */
 
-#include "flw.h"
 #include "splitgroup.h"
 
 // MKALGAM_ON

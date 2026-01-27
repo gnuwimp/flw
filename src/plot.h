@@ -13,8 +13,11 @@
 
 // MKALGAM_ON
 
+#include <cmath>
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Rect.H>
+
+class Fl_Menu_Button;
 
 namespace flw {
 
@@ -364,7 +367,7 @@ private:
     void                        _show_menu();
 
     static void                 _CallbackDebug(Fl_Widget*, void* widget);
-    static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
+    static bool                 _CallbackPrinter(void* data, int pw, int ph, unsigned page);
     static void                 _CallbackToggle(Fl_Widget*, void* widget);
 
     Fl_Menu_Button*             _menu;                  // Menu object.

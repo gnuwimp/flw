@@ -11,15 +11,15 @@
 
 #include "date.h"
 #include "gridgroup.h"
-#include "toolgroup.h"
 
 // MKALGAM_ON
 
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Button.H>
-#include <FL/Fl_Group.H>
+class Fl_Box;
+class Fl_Button;
 
 namespace flw {
+
+class ToolGroup;
 
 /*
  *      _____        _        _____ _
@@ -37,6 +37,9 @@ namespace flw {
 * User can navigate with mouse or arrow keys within a month.\n
 * Or use buttons to jump 1 month/1 year/10 years forward or backward in time.\n
 *
+* flw::dlg::date() creates and shows an dialog with a datechooser widget.\n
+*
+* @snippet dialog.cpp flw::dlg::date example
 * @image html date_dialog.png
 */
 class DateChooser : public GridGroup {
@@ -47,7 +50,6 @@ public:
     gnu::Date                   get() const;
     int                         handle(int event) override;
     void                        set(const gnu::Date& date);
-
 
 private:
     static void                 _Callback(Fl_Widget* w, void* o);
@@ -65,7 +67,10 @@ private:
     ToolGroup*                  _buttons;       // Toolbar for the buttobs.
 };
 
-}
+namespace dlg {
+    bool                        date(const std::string& title, gnu::Date& date, int W = 33, int H = 21);
+} // flw::dlg
+} // flw
 
 // MKALGAM_OFF
 

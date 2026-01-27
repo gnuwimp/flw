@@ -10,8 +10,8 @@
 
 // MKALGAM_ON
 
-#include <cstring>
 #include <cassert>
+#include <cstring>
 #include <ctime>
 
 namespace gnu {

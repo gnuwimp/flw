@@ -7,10 +7,11 @@
 */
 
 #include "chart.h"
-#include "flw.h"
-#include "file.h"
-#include "json.h"
 #include "dlg.h"
+#include "file.h"
+#include "gridgroup.h"
+#include "json.h"
+#include "postscript.h"
 #include "waitcursor.h"
 
 // MKALGAM_ON
@@ -19,7 +20,6 @@
 #include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Scrollbar.H>
-#include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
 #include <algorithm>
@@ -38,11 +38,12 @@ namespace chart {
  *     |_|
  */
 
-#define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 //#define _FLW_CHART_DEBUG(X) { X; }
+//#define _FLW_CHART_CLIP(X)
+
+#define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 #define _FLW_CHART_DEBUG(X)
 #define _FLW_CHART_CLIP(X) { X; }
-//#define _FLW_CHART_CLIP(X)
 
 static const char* const _LABEL_ADD_CSV         = "Add Line from CSV File...";
 static const char* const _LABEL_ADD_LINE        = "Create Line...";
@@ -85,7 +86,7 @@ static const char* const _LABEL_DEBUG_LINE      = "Print Visible Values";
  *     |______|                                       |_|
  */
 
-/** @brief Chart line settings dialog.
+/** @brief Chart line settings dialog (private).
 *
 * @private
 */
@@ -111,7 +112,7 @@ public:
         end();
 
         _align  = new Fl_Choice(0, 0, 0, 0, "Align");
-        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::label::CLOSE.c_str());
+        _close  = new Fl_Return_Button(0, 0, 0, 0, flw::labels::CLOSE.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
@@ -892,15 +893,15 @@ PointVector Point::Modify(const PointVector& in, Modifier modify, double value) 
             case Modifier::ADDITION:
                 res.push_back(Point(data.date, data.high + value, data.low + value, data.close + value));
                 break;
-            
+
             case Modifier::SUBTRACTION:
                 res.push_back(Point(data.date, data.high - value, data.low - value, data.close - value));
                 break;
-            
+
             case Modifier::MULTIPLICATION:
                 res.push_back(Point(data.date, data.high * value, data.low * value, data.close * value));
                 break;
-            
+
             case Modifier::DIVISION:
                 res.push_back(Point(data.date, data.high / value, data.low / value, data.close / value));
                 break;
@@ -1809,11 +1810,13 @@ void Chart::_calc_yscale() {
 * @param[in] data  Chart widget.
 * @param[in] pw    Page wisth.
 * @param[in] ph    Page height.
-* @param[in]       Page number, not used.
+* @param[in] page  Not used.
 *
 * @return Always false, stop printing.
 */
-bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
+bool Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
+    (void) page;
+
     auto widget = static_cast<Fl_Widget*>(data);
     auto rect   = Fl_Rect(widget);
 
@@ -1825,10 +1828,12 @@ bool Chart::_CallbackPrinter(void* data, int pw, int ph, int) {
 
 /** @brief Callback for horizontal scrollbar that scrolls the reference date vector.
 *
-* @param[in]         Sender, not used.
+* @param[in] na      Sender, not used.
 * @param[in] widget  Chart widget.
 */
-void Chart::_CallbackScrollbar(Fl_Widget*, void* widget) {
+void Chart::_CallbackScrollbar(Fl_Widget* na, void* widget) {
+    (void) na;
+
     auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init();
@@ -1871,7 +1876,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL) {
+        if (answer == flw::labels::CANCEL) {
             return false;
         }
         else if (days < 2 || days > 365) {
@@ -1900,7 +1905,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
+        if (answer == flw::labels::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1911,7 +1916,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto value  = 0.0;
         auto answer = flw::dlg::input_double("Chart", "Enter value.", value);
 
-        if (answer == flw::label::CANCEL || std::isinf(value) == true) {
+        if (answer == flw::labels::CANCEL || std::isinf(value) == true) {
             return false;
         }
 
@@ -1931,7 +1936,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto value  = 0.0;
         auto answer = flw::dlg::input_double("Chart", "Enter value.", value);
 
-        if (answer == flw::label::CANCEL || std::isinf(value) == true) {
+        if (answer == flw::labels::CANCEL || std::isinf(value) == true) {
             return false;
         }
         else if (fabs(value) < chart::MIN_VALUE) {
@@ -1947,7 +1952,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
+        if (answer == flw::labels::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1964,7 +1969,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
+        if (answer == flw::labels::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1975,7 +1980,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
+        if (answer == flw::labels::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -1995,7 +2000,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
+        if (answer == flw::labels::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -2006,7 +2011,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         auto days   = (int64_t) 14;
         auto answer = flw::dlg::input_int("Chart", "Enter number of days (2 - 365).", days);
 
-        if (answer == flw::label::CANCEL || days < 2 || days > 365) {
+        if (answer == flw::labels::CANCEL || days < 2 || days > 365) {
             return false;
         }
 
@@ -2786,8 +2791,8 @@ void Chart::_draw_ylabels(Area& area, Fl_Align align) {
 
 /** @brief Find current area below mouse cursor.
 *
-* @param[in] x  X pos.
-* @param[in] y Y pos.
+* @param[in] X  X pos.
+* @param[in] Y  Y pos.
 *
 * @return Area or nullptr.
 */
@@ -3020,7 +3025,7 @@ bool Chart::load_json() {
 * @return True if ok.
 */
 bool Chart::load_json(const std::string& filename) {
-    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart", "Illegal chart value at pos %u", (X)->pos()); reset(); return false; }
+    #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart", util::format("Illegal chart value at pos %u", (X)->pos())); reset(); return false; }
 
     _filename = "";
 
@@ -3048,7 +3053,7 @@ bool Chart::load_json(const std::string& filename) {
         if (j->name() == "flw::chart" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart", "Wrong chart version!\nI expected version %d but the json file had version %d!", static_cast<int>(j2->vn_i()), chart::VERSION); reset(); return false; }
+                    if (j2->vn_i() != chart::VERSION) { dlg::msg_alert("Chart", util::format("Wrong chart version!\nI expected version %d but the json file had version %d!", chart::VERSION, static_cast<int>(j2->vn_i()))); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true) {
                     set_main_label(j2->vs_u());
@@ -3218,7 +3223,7 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
 */
 void Chart::print_to_postscript() {
     _printing = true;
-    dlg::print("Chart", Chart::_CallbackPrinter, this, 1, 1);
+    dlg::print_page("Chart", Chart::_CallbackPrinter, this);
     _printing = false;
     redraw();
 }
@@ -3561,7 +3566,7 @@ void Chart::setup_clamp(bool min) {
     auto info   = util::format("Enter %s clamp value or press cancel to remove it for area %d.", (min == true) ? "min" : "max", area);
     auto answer = flw::dlg::input_double("Chart", info, value);
 
-    if (answer == flw::label::CANCEL) {
+    if (answer == flw::labels::CANCEL) {
         value = INFINITY;
     }
 
@@ -3713,7 +3718,7 @@ void Chart::setup_delete_lines() {
 void Chart::setup_label() {
     auto answer = dlg::input("Chart", "Enter label.", _label);
 
-    if (answer == flw::label::CANCEL) {
+    if (answer == flw::labels::CANCEL) {
         return;
     }
 

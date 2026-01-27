@@ -10,9 +10,9 @@
 
 // MKALGAM_ON
 
-#include <algorithm>
 
 namespace flw {
+namespace priv {
 
 static constexpr const char* _INPUTMENU_TOOLTIP = "Use up/down arrows to switch between previous values.\nPress ctrl + space to open menu button (if visible).";
 
@@ -27,9 +27,8 @@ static constexpr const char* _INPUTMENU_TOOLTIP = "Use up/down arrows to switch 
  *     |______|         |_|
  */
 
-
 /** @brief Input widget with extended keyboard handling.
-* @private.
+* @private
 */
 class _InputMenu : public Fl_Input {
 public:
@@ -91,6 +90,9 @@ public:
     }
 };
 
+} // flw::priv
+} // flw
+
 /*
  *      _____                   _   __  __
  *     |_   _|                 | | |  \/  |
@@ -113,10 +115,10 @@ public:
 * @param[in] H  Height.
 * @param[in] l  Optional label.
 */
-InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+flw::InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
 
-    _input = new flw::_InputMenu();
+    _input = new priv::_InputMenu();
     _menu  = new Fl_Menu_Button(0, 0, 0, 0);
 
     Fl_Group::add(_input);
@@ -125,8 +127,8 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
     _input->callback(InputMenu::_CallbackInput, this);
     _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
     _menu->callback(InputMenu::_CallbackMenu, this);
-    _menu->tooltip(_INPUTMENU_TOOLTIP);
-    tooltip(_INPUTMENU_TOOLTIP);
+    _menu->tooltip(priv::_INPUTMENU_TOOLTIP);
+    tooltip(priv::_INPUTMENU_TOOLTIP);
     update_pref();
     resize(X, Y, W, H);
 }
@@ -134,7 +136,7 @@ InputMenu::InputMenu(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
 /** @brief Popup menu buttom or do an callback.
 *
 */
-void InputMenu::_CallbackInput(Fl_Widget*, void* o) {
+void flw::InputMenu::_CallbackInput(Fl_Widget*, void* o) {
     auto self = static_cast<InputMenu*>(o);
 
     if (self->_input->show_menu == true) {
@@ -150,7 +152,7 @@ void InputMenu::_CallbackInput(Fl_Widget*, void* o) {
 /** @brief Menu has been selected so copy value from menu to input.
 *
 */
-void InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
+void flw::InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
     auto self  = static_cast<InputMenu*>(o);
     auto index = self->_menu->find_index(self->_menu->text());
 
@@ -165,7 +167,7 @@ void InputMenu::_CallbackMenu(Fl_Widget*, void* o) {
 /** @brief Clear all data.
 *
 */
-void InputMenu::clear() {
+void flw::InputMenu::clear() {
     _menu->clear();
     _input->history.clear();
     _input->index = -1;
@@ -175,7 +177,7 @@ void InputMenu::clear() {
 *
 * @return String vector.
 */
-flw::StringVector InputMenu::get_history() const {
+flw::StringVector flw::InputMenu::get_history() const {
     return _input->history;
 }
 
@@ -186,7 +188,7 @@ flw::StringVector InputMenu::get_history() const {
 * @param[in] string        String to insert.
 * @param[in] max_list_len  Max number of strings in menu.
 */
-void InputMenu::insert(const std::string& string, unsigned max_list_len) {
+void flw::InputMenu::insert(const std::string& string, unsigned max_list_len) {
     for (auto it = _input->history.begin(); it != _input->history.end(); ++it) {
         if (*it == string) {
             _input->history.erase(it);
@@ -218,7 +220,7 @@ void InputMenu::insert(const std::string& string, unsigned max_list_len) {
 * @param[in] W  Width.
 * @param[in] H  Height.
 */
-void InputMenu::resize(int X, int Y, int W, int H) {
+void flw::InputMenu::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (_menu->visible() != 0) {
@@ -238,7 +240,7 @@ void InputMenu::resize(int X, int Y, int W, int H) {
 * @param[in] text_font  New font for text input and menu.
 * @param[in] text_size  New font size text input and menu.
 */
-void InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+void flw::InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
     _input->textfont(text_font);
@@ -251,7 +253,7 @@ void InputMenu::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
 *
 * @return Input string.
 */
-std::string InputMenu::value() const {
+std::string flw::InputMenu::value() const {
     return flw::util::to_string(_input->value());
 }
 
@@ -259,7 +261,7 @@ std::string InputMenu::value() const {
 *
 * @param[in] string  String value.
 */
-void InputMenu::value(const std::string& string) {
+void flw::InputMenu::value(const std::string& string) {
     _input->value(string.c_str());
 }
 
@@ -268,7 +270,7 @@ void InputMenu::value(const std::string& string) {
 * @param[in] list         List of strings.
 * @param[in] input_value  Input string.
 */
-void InputMenu::values(const StringVector& list, const std::string& input_value) {
+void flw::InputMenu::values(const StringVector& list, const std::string& input_value) {
     _values(list, input_value);
 }
 
@@ -277,7 +279,7 @@ void InputMenu::values(const StringVector& list, const std::string& input_value)
 * @param[in] list        List of strings.
 * @param[in] list_index  Optional index in list to set input string, -1 to set input to empty string.
 */
-void InputMenu::values(const StringVector& list, size_t list_index) { 
+void flw::InputMenu::values(const StringVector& list, size_t list_index) {
     _values(list, list.size() > list_index ? list[list_index] : "");
 }
 
@@ -286,7 +288,7 @@ void InputMenu::values(const StringVector& list, size_t list_index) {
 * @param[in] menu_list    List of strings for the menu.
 * @param[in] input_value  Text input value.
 */
-void InputMenu::_values(const StringVector& menu_list, const std::string& input_value) {
+void flw::InputMenu::_values(const StringVector& menu_list, const std::string& input_value) {
     clear();
     _input->history = menu_list;
 
@@ -297,7 +299,5 @@ void InputMenu::_values(const StringVector& menu_list, const std::string& input_
     _input->value(input_value.c_str());
     _input->insert_position(input_value.length(), 0);
 }
-
-} // flw
 
 // MKALGAM_OFF

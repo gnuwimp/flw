@@ -9,9 +9,10 @@
 #ifndef FLW_SPLITGROUP_H
 #define FLW_SPLITGROUP_H
 
+#include "flw.h"
+
 // MKALGAM_ON
 
-#include <FL/Fl.H>
 #include <FL/Fl_Group.H>
 
 namespace flw {

@@ -7,17 +7,19 @@
 */
 
 #include "datechooser.h"
-#include "flw.h"
+#include "svgbutton.h"
+#include "toolgroup.h"
 
 // MKALGAM_ON
 
+#include <FL/Fl_Box.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Repeat_Button.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/fl_draw.H>
-#include <time.h>
 
 namespace flw {
+namespace priv {
 
 /*
  *           _____        _        _____ _                                _____
@@ -131,8 +133,8 @@ public:
 
             for (auto r = 1; r < 7; r++) {
                 for (auto c = 1; c < 8; c++) {
-                    auto x1 = (int) (x() + (c * cw));
-                    auto y1 = (int) (y() + (r * ch));
+                    auto x1 = static_cast<int>(x() + (c * cw));
+                    auto y1 = static_cast<int>(y() + (r * ch));
 
                     if (Fl::event_x() >= x1 && Fl::event_x() < x1 + cw && Fl::event_y() >= y1 && Fl::event_y() < y1 + ch) {
                         _row = r;
@@ -222,6 +224,108 @@ public:
 };
 
 /*
+ *           _____        _        _____ _                               _____  _
+ *          |  __ \      | |      / ____| |                             |  __ \| |
+ *          | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __| |  | | | __ _
+ *          | |  | |/ _` | __/ _ \ |    | '_ \ / _ \ / _ \/ __|/ _ \ '__| |  | | |/ _` |
+ *          | |__| | (_| | ||  __/ |____| | | | (_) | (_) \__ \  __/ |  | |__| | | (_| |
+ *          |_____/ \__,_|\__\___|\_____|_| |_|\___/ \___/|___/\___|_|  |_____/|_|\__, |
+ *      ______                                                                     __/ |
+ *     |______|                                                                   |___/
+ */
+
+/** @brief An date chooser dialog.
+*
+*/
+class _DateChooserDlg : public Fl_Double_Window {
+    gnu::Date&                  _value;         // In/out date value.
+    DateChooser*                _date_chooser;  // Date widget.
+    Fl_Button*                  _cancel;        // Cancel button.
+    SVGButton*                  _ok;            // Ok button.
+    GridGroup*                  _grid;          // Layout widget.
+    bool                        _res;           // Return value.
+    bool                        _run;           // Run flag.
+
+public:
+    /** @brief Create window.
+    *
+    * @param[in]      title  Dialog title.
+    * @param[in,out]  date   Date value.
+    * @param[in]      W      Width.
+    * @param[in]      H      Height.
+    */
+    _DateChooserDlg(const std::string& title, gnu::Date& date, int W, int H) :
+    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H),
+    _value(date) {
+        end();
+
+        _cancel       = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
+        _date_chooser = new DateChooser(0, 0, 0, 0);
+        _grid         = new GridGroup(0, 0, w(), h());
+        _ok           = new SVGButton(0, 0, 0, 0, labels::OK, icons::BACK, true);
+        _res          = false;
+        _run          = false;
+
+        _grid->add(_date_chooser,   0,   0,   0,  -6);
+        _grid->add(_cancel,       -34,  -5,  16,   4);
+        _grid->add(_ok,           -17,  -5,  16,   4);
+        add(_grid);
+
+        _cancel->callback(Callback, this);
+        _date_chooser->focus();
+        _date_chooser->set(_value);
+        _grid->do_layout();
+        _ok->callback(Callback, this);
+
+        util::labelfont(this);
+        callback(Callback, this);
+        copy_label(title.c_str());
+        resizable(_grid);
+        set_modal();
+    }
+
+    /** @brief Callback for all widgets.
+    *
+    */
+    static void Callback(Fl_Widget* w, void* o) {
+        auto self = static_cast<_DateChooserDlg*>(o);
+
+        if (w == self || w == self->_cancel) {
+            self->_run = false;
+            self->hide();
+        }
+        else if (w == self->_ok) {
+            self->_res = true;
+            self->_run = false;
+            self->hide();
+        }
+    }
+
+    /** @brief Run dialog.
+    *
+    */
+    bool run() {
+        _run = true;
+        util::center_window(this, flw::PREF_WINDOW);
+        show();
+
+        while (_run == true) {
+            Fl::wait();
+            Fl::flush();
+        }
+
+        if (_res == true) {
+            _value = _date_chooser->get();
+        }
+
+        return _res;
+    }
+};
+
+} // flw::priv
+} // flw
+
+/*
  *      _____        _        _____ _
  *     |  __ \      | |      / ____| |
  *     | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __
@@ -252,7 +356,7 @@ GridGroup(X, Y, W, H, l) {
     _b6          = new Fl_Repeat_Button(0, 0, 0, 0, "@|<");
     _b7          = new Fl_Repeat_Button(0, 0, 0, 0, "@>|");
     _buttons     = new ToolGroup();
-    _canvas      = new _DateChooserCanvas();
+    _canvas      = new priv::_DateChooserCanvas();
     _month_label = new Fl_Box(0, 0, 0, 0, "");
 
     gnu::Date date;
@@ -361,7 +465,7 @@ void flw::DateChooser::focus() {
 * @return Date object.
 */
 gnu::Date flw::DateChooser::get() const {
-    return static_cast<flw::_DateChooserCanvas*>(_canvas)->get();
+    return static_cast<priv::_DateChooserCanvas*>(_canvas)->get();
 }
 
 /** @brief Change current cell by keyboard.
@@ -394,7 +498,7 @@ int flw::DateChooser::handle(int event) {
 */
 void flw::DateChooser::set(const gnu::Date& date) {
     auto arg    = date;
-    auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
+    auto canvas = static_cast<priv::_DateChooserCanvas*>(_canvas);
 
     if (arg.is_invalid() == true) {
         arg = gnu::Date();
@@ -441,13 +545,35 @@ void flw::DateChooser::set(const gnu::Date& date) {
 *
 */
 void flw::DateChooser::_set_label() {
-    auto canvas = static_cast<flw::_DateChooserCanvas*>(_canvas);
+    auto canvas = static_cast<priv::_DateChooserCanvas*>(_canvas);
     auto date   = canvas->get();
     auto string = date.format(gnu::Date::Format::WEEKDAY_MONTH_YEAR);
 
     _month_label->copy_label(string.c_str());
 }
 
-} // flw
+/*
+ *          _ _
+ *         | | |
+ *       __| | | __ _
+ *      / _` | |/ _` |
+ *     | (_| | | (_| |
+ *      \__,_|_|\__, |
+ *               __/ |
+ *              |___/
+ */
+
+/** @brief Show an date chooser dialog.
+*
+* @param[in]     title   Dialog title.
+* @param[in,out] date    Input and output date.
+* @param[in]     W       Width in characters.
+* @param[in]     H       Height in characters.
+*
+* @return True if ok has been pressed and date has been updated.
+*/
+bool flw::dlg::date(const std::string& title, gnu::Date& date, int W, int H) {
+    return priv::_DateChooserDlg(title, date, W, H).run();
+}
 
 // MKALGAM_OFF

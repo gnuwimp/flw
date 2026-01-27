@@ -6,21 +6,22 @@
 * @copyright Released under the GNU General Public License v3.0
 */
 
-#include "plot.h"
-#include "flw.h"
-#include "file.h"
-#include "waitcursor.h"
-#include "json.h"
 #include "dlg.h"
+#include "file.h"
+#include "gridgroup.h"
+#include "json.h"
+#include "plot.h"
+#include "postscript.h"
+#include "waitcursor.h"
 
 // MKALGAM_ON
 
-#include <assert.h>
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Hor_Slider.H>
+#include <FL/Fl_Menu_Button.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Hor_Slider.H>
 
 namespace flw {
 namespace plot {
@@ -81,7 +82,7 @@ static const char* const _LABEL_DEBUG_LINE   = "Debug Line";
  *     |______|                                       |_|
  */
 
-/** @brief Chart line settings dialog.
+/** @brief Chart line settings dialog (private).
 *
 * @private
 */
@@ -105,7 +106,7 @@ public:
     _line(line) {
         end();
 
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::CLOSE.c_str());
+        _close  = new Fl_Return_Button(0, 0, 0, 0, labels::CLOSE.c_str());
         _color  = new Fl_Button(0, 0, 0, 0, "Color");
         _grid   = new GridGroup(0, 0, w(), h());
         _label  = new Fl_Input(0, 0, 0, 0, "Label");
@@ -882,11 +883,13 @@ void Plot::_calc_min_max() {
 * @param[in] data  Plot widget.
 * @param[in] pw    Page wisth.
 * @param[in] ph    Page height.
-* @param[in]       Page number, not used.
+* @param[in] page  Page number, not used.
 *
 * @return Always false, stop printing.
 */
-bool Plot::_CallbackPrinter(void* data, int pw, int ph, int) {
+bool Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
+    (void) page;
+
     auto widget = static_cast<Fl_Widget*>(data);
     auto rect   = Fl_Rect(widget);
 
@@ -929,7 +932,7 @@ bool Plot::create_line(Algorithm alg) {
         auto value  = 0.0;
         auto answer = flw::dlg::input_double("Plot", "Enter value.\nUse positive values for subtraction.", value);
 
-        if (answer == flw::label::CANCEL || std::isinf(value) == true) {
+        if (answer == flw::labels::CANCEL || std::isinf(value) == true) {
             return false;
         }
         else if (fabs(value) < plot::MIN_VALUE) {
@@ -1697,7 +1700,7 @@ bool Plot::load_json(const std::string& filename) {
         if (j->name() == "flw::plot" && j->is_object() == true) {
             for (const auto j2 : j->vo_to_va()) {
                 if (j2->name() == "version" && j2->is_number() == true) {
-                    if (j2->vn_i() != plot::VERSION) _FLW_PLOT_ERROR(j2)
+                    if (j2->vn_i() != plot::VERSION) { dlg::msg_alert("Chart", util::format("Wrong plot version!\nI expected version %d but the json file had version %d!", plot::VERSION, static_cast<int>(j2->vn_i()))); reset(); return false; }
                 }
                 else if (j2->name() == "label" && j2->is_string() == true)    set_label(j2->vs_u());
                 else if (j2->name() == "horizontal" && j2->is_bool() == true) set_hor_lines(j2->vb());
@@ -1809,7 +1812,7 @@ bool Plot::load_line_from_csv() {
 */
 void Plot::print_to_postscript() {
     _printing = true;
-    dlg::print("Plot", Plot::_CallbackPrinter, this, 1, 1);
+    dlg::print_page("Plot", Plot::_CallbackPrinter, this);
     _printing = false;
     redraw();
 }
@@ -2012,7 +2015,7 @@ void Plot::setup_clamp(Clamp clamp) {
 
     auto answer = flw::dlg::input_double("Plot", info, val);
 
-    if (answer == flw::label::CANCEL) {
+    if (answer == flw::labels::CANCEL) {
         val = INFINITY;
     }
 
@@ -2120,7 +2123,7 @@ void Plot::setup_label(Label val) {
             break;
     }
 
-    if (answer == flw::label::CANCEL) {
+    if (answer == flw::labels::CANCEL) {
         return;
     }
 

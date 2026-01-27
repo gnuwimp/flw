@@ -9,13 +9,16 @@
 #include "tableeditor.h"
 #include "datechooser.h"
 #include "dlg.h"
+#include "datechooser.h"
 #include "file.h"
 
 // MKALGAM_ON
 
 #include <errno.h>
+#include <cmath>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
+#include <FL/Fl_Color_Chooser.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Input_Choice.H>
@@ -23,7 +26,6 @@
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_draw.H>
-#include <FL/Fl_Color_Chooser.H>
 
 namespace flw {
 namespace table {

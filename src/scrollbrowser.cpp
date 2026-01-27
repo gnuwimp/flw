@@ -11,10 +11,13 @@
 // MKALGAM_ON
 
 namespace flw {
+namespace priv {
 
 static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy all Lines";
 static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
 static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu.";
+
+} // flw::priv
 
 /*
  *       _____                _ _ ____
@@ -45,10 +48,10 @@ ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* 
 
     scroll_lines(lines);
     static_cast<Fl_Group*>(this)->add(_menu);
-    _menu->add(_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
-    _menu->add(_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
+    _menu->add(priv::_SCROLLBROWSER_MENU_LINE.c_str(), 0, ScrollBrowser::Callback, this);
+    _menu->add(priv::_SCROLLBROWSER_MENU_ALL.c_str(), 0, ScrollBrowser::Callback, this);
     _menu->type(Fl_Menu_Button::POPUP3);
-    tooltip(_SCROLLBROWSER_TOOLTIP.c_str());
+    tooltip(priv::_SCROLLBROWSER_TOOLTIP.c_str());
     update_pref();
 }
 
@@ -63,12 +66,12 @@ void ScrollBrowser::Callback(Fl_Widget*, void* o) {
 
     clip.reserve(self->size() * 40 + 100);
 
-    if (label == _SCROLLBROWSER_MENU_LINE) {
+    if (label == priv::_SCROLLBROWSER_MENU_LINE) {
         if (self->value() > 0) {
             clip = util::remove_browser_format(util::to_string(self->text(self->value())));
         }
     }
-    else if (label == _SCROLLBROWSER_MENU_ALL) {
+    else if (label == priv::_SCROLLBROWSER_MENU_ALL) {
         for (auto f = 1; f <= self->size(); f++) {
             auto s = util::remove_browser_format(util::to_string(self->text(f)));
             clip += s;
@@ -82,7 +85,7 @@ void ScrollBrowser::Callback(Fl_Widget*, void* o) {
 }
 
 /** @brief Take care of scroll and menu events.
-* 
+*
 * Handle mouse wheel and keyboard scrolling.\n
 * Or show menu.\n
 *
@@ -90,6 +93,10 @@ void ScrollBrowser::Callback(Fl_Widget*, void* o) {
 int ScrollBrowser::handle(int event) {
     if (event == FL_MOUSEWHEEL) {
         if (_flag_move == true) {
+            #ifdef DEBUG
+                if (_scroll == 0) puts("warning: Scrollbrowser::scroll_lines() is 0");
+            #endif
+
             if (Fl::event_dy() > 0) {
                 topline(topline() + _scroll);
             }

@@ -331,7 +331,7 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
         }
         else {
             minus = plus = E = 0;
-            
+
             for (auto c : n2) {
                 minus += (c =='-');
                 plus  += (c =='+');
@@ -1238,7 +1238,6 @@ bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, u
 *
 * @param[in,out] sVal1              Name for object value, its memory will be deleted.
 * @param[in,out] sVal2              String object value, its memory will be deleted.
-* @param[in,out] nVal               Number value, it will be set to NAN.
 * @param[in]     ignore_duplicates  True to ignore duplicates.
 * @param[in]     pos                Pos in input data.
 *
@@ -1340,7 +1339,8 @@ const json::JS* json::JS::find(const std::string& name, bool rec) const {
 
 /** @brief Get value.
 *
-* @param[in] name  Name of value.
+* @param[in] name    Name of value.
+* @param[in] escape  True to escape name.
 *
 * @return Found value or NULL.
 */
@@ -1357,9 +1357,9 @@ const json::JS* json::JS::_get_value(const char* name, bool escape) const {
 
 /** @brief Make an array.
 *
-* @param[in] name  Name of value.
-* @param[in] js    Parent of new value.
-* @param[in] pos   Index in file.
+* @param[in] name    Name of value.
+* @param[in] parent  Parent of new value.
+* @param[in] pos     Index in file.
 *
 * @return Array value.
 */
@@ -1374,10 +1374,10 @@ json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
 
 /** @brief Make an bool.
 *
-* @param[in] name  Name of value.
-* @param[in] vb    Bool value.
-* @param[in] js    Parent of new value.
-* @param[in] pos   Index in file.
+* @param[in] name    Name of value.
+* @param[in] vb      Bool value.
+* @param[in] parent  Parent of new value.
+* @param[in] pos     Index in file.
 *
 * @return Bool value.
 */
@@ -1392,9 +1392,9 @@ json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned po
 
 /** @brief Make an null value.
 *
-* @param[in] name  Name of value.
-* @param[in] js    Parent of new value.
-* @param[in] pos   Index in file.
+* @param[in] name    Name of value.
+* @param[in] parent  Parent of new value.
+* @param[in] pos     Index in file.
 *
 * @return Null value.
 */
@@ -1404,10 +1404,10 @@ json::JS* json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
 
 /** @brief Make an number value.
 *
-* @param[in] name  Name of value.
-* @param[in] vn    Number value.
-* @param[in] js    Parent of new value.
-* @param[in] pos   Index in file.
+* @param[in] name    Name of value.
+* @param[in] vn      Number value.
+* @param[in] parent  Parent of new value.
+* @param[in] pos     Index in file.
 *
 * @return Nil value.
 */
@@ -1422,9 +1422,9 @@ json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigne
 
 /** @brief Make a object value.
 *
-* @param[in] name  Name of value.
-* @param[in] js    Parent of new value.
-* @param[in] pos   Index in file.
+* @param[in] name    Name of value.
+* @param[in] parent  Parent of new value.
+* @param[in] pos     Index in file.
 *
 * @return Object value.
 */
@@ -1438,10 +1438,10 @@ json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
 
 /** @brief Make a string.
 *
-* @param[in] name  Name of value.
-* @param[in] vs    String value.
-* @param[in] js    Parent of new value.
-* @param[in] pos   Index in file.
+* @param[in] name    Name of value.
+* @param[in] vs      String value.
+* @param[in] parent  Parent of new value.
+* @param[in] pos     Index in file.
 *
 * @return Nil value.
 */
@@ -1537,7 +1537,7 @@ std::string json::JS::to_string() const {
         snprintf(b, 400, ": %d children", static_cast<int>(size()));
         ret += b;
     }
-    
+
     if (_name != nullptr && *_name != 0) {
         return std::string(_name) + ": " + ret;
     }
@@ -1658,7 +1658,7 @@ std::string json::Builder::encode(ENCODE option) const {
     return j;
 }
 
-/** @brief End current node. 
+/** @brief End current node.
 *
 * @return Reference to this object.
 *

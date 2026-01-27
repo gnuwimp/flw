@@ -6,15 +6,17 @@
 * @copyright Released under the GNU General Public License v3.0
 */
 
-#ifndef FLW_TABSGROUP2_H
-#define FLW_TABSGROUP2_H
+#ifndef FLW_TABSGROUP_H
+#define FLW_TABSGROUP_H
 
 #include "flw.h"
 
 // MKALGAM_ON
 
-#include <FL/Fl_Flex.H>
-#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Rect.H>
+#include <FL/Fl_Group.H>
+
+class Fl_Scrollbar;
 
 namespace flw {
 
@@ -36,9 +38,13 @@ namespace flw {
 * Or use a shortcut key for the first 10 tabs (alt + 1-9/0).\n
 * Move tabs by using alt + shift + left/right.\n
 *\n
-* By default tabs are on the top.\n
+* By default tabs are horizontal on the top.\n
+*\n
 * If tabs are on the left or right side you can change the width by using the mouse.\n
+* If there are to many tabs the scrollbar will be show, either to the left of tabs or on the right side.\n
+*\n
 * Tab width on top/bottom has a max width, change that with TabsGroup::max_top_width()\n
+* If there are to many tabs the scrollbar will be show, either above the tabs or below.\n
 *\n
 * Do a resize after adding widgets by calling do_layout().\n
 *

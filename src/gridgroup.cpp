@@ -11,6 +11,7 @@
 // MKALGAM_ON
 
 namespace flw {
+namespace priv {
 
 /*
  *           _____      _     _  _____                        _____ _     _ _     _
@@ -74,6 +75,8 @@ struct _GridGroupChild {
     }
 };
 
+} // flw::priv
+
 /*
  *       _____      _     _  _____
  *      / ____|    (_)   | |/ ____|
@@ -108,7 +111,7 @@ GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
 */
 GridGroup::~GridGroup() {
     for (auto v : _widgets) {
-        delete static_cast<_GridGroupChild*>(v);
+        delete static_cast<priv::_GridGroupChild*>(v);
     }
 }
 
@@ -129,7 +132,7 @@ GridGroup::~GridGroup() {
 * @param[in] F       Use this widget for focus (this was added so InputMenu::input() would get focus).
 */
 void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
-    _widgets.push_back(new _GridGroupChild(widget, F, X, Y, W, H));
+    _widgets.push_back(new priv::_GridGroupChild(widget, F, X, Y, W, H));
     Fl_Group::add(widget);
 }
 
@@ -143,7 +146,7 @@ void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F)
     */
 void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     for (auto& v : _widgets) {
-        auto child = static_cast<_GridGroupChild*>(v);
+        auto child = static_cast<priv::_GridGroupChild*>(v);
 
         if (child->widget == widget) {
             child->adjust(L, R, T, B);
@@ -211,7 +214,7 @@ int GridGroup::handle(int event) {
 */
 void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
     for (auto& v : _widgets) {
-        auto child = static_cast<_GridGroupChild*>(v);
+        auto child = static_cast<priv::_GridGroupChild*>(v);
         auto g = child->widget->as_group();
 
         if (g == nullptr || child->focus != nullptr) {
@@ -240,7 +243,7 @@ void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
 */
 Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
-        auto child = static_cast<_GridGroupChild*>(*it);
+        auto child = static_cast<priv::_GridGroupChild*>(*it);
 
         if (child->widget == widget) {
             delete child;
@@ -274,7 +277,7 @@ void GridGroup::resize(int X, int Y, int W, int H) {
     int size = (_size > 0) ? _size : flw::PREF_FONTSIZE / 2;
 
     for (const auto& v : _widgets) {
-        auto child = static_cast<_GridGroupChild*>(v);
+        auto child = static_cast<priv::_GridGroupChild*>(v);
 
         if (child->widget != nullptr && child->widget->visible() != 0) {
             int widget_x  = 0;
@@ -341,7 +344,7 @@ void GridGroup::resize(int X, int Y, int W, int H) {
 */
 void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
     for (auto& v : _widgets) {
-        auto child = static_cast<_GridGroupChild*>(v);
+        auto child = static_cast<priv::_GridGroupChild*>(v);
 
         if (child->widget == widget) {
             child->set(X, Y, W, H);

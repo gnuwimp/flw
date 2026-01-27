@@ -13,6 +13,7 @@
 #include <FL/fl_draw.H>
 
 namespace flw {
+namespace priv {
 
 static const unsigned char _LCDNUMBER_SEGMENTS[0x29] = {
 //  MIDDLE 6      5      4      3      2      1
@@ -60,6 +61,9 @@ static const unsigned char _LCDNUMBER_SEGMENTS[0x29] = {
     0x00,                                           //  0x28
 };
 
+} // flw::priv
+} // flw
+
 /*
  *      _      _____ _____  _____  _           _
  *     | |    / ____|  __ \|  __ \(_)         | |
@@ -79,7 +83,7 @@ static const unsigned char _LCDNUMBER_SEGMENTS[0x29] = {
 * @param[in] H  Height.
 * @param[in] l  Label.
 */
-LCDDisplay::LCDDisplay(int X, int Y, int W, int H, const char *l) : Fl_Box(X, Y, W, H, l) {
+flw::LCDDisplay::LCDDisplay(int X, int Y, int W, int H, const char *l) : Fl_Box(X, Y, W, H, l) {
     _align     = FL_ALIGN_LEFT;
     _dot_size  = 6;
     _seg_color = FL_FOREGROUND_COLOR;
@@ -95,7 +99,7 @@ LCDDisplay::LCDDisplay(int X, int Y, int W, int H, const char *l) : Fl_Box(X, Y,
 /** @brief Draw widget.
 *
 */
-void LCDDisplay::draw() {
+void flw::LCDDisplay::draw() {
     Fl_Box::draw();
 
     int sw = 0;
@@ -142,7 +146,7 @@ void LCDDisplay::draw() {
             xx += (_dot_size + _unit_gap);
         }
         else if (c > 0x00 && c < 0x26) { // Draw numbers, letters and hyphen.
-            _draw(_LCDNUMBER_SEGMENTS[static_cast<size_t>(c)], xx, ty, _unit_w, _unit_h);
+            _draw(priv::_LCDNUMBER_SEGMENTS[static_cast<size_t>(c)], xx, ty, _unit_w, _unit_h);
             xx += (_unit_w + _unit_gap);
         }
         else {
@@ -154,10 +158,12 @@ void LCDDisplay::draw() {
 /** @brief Draw character.
 *
 * @param[in] a  Number with 7 bits, one for each segment.
-*
-* @return XXX.
+* @param[in] x  X pos.
+* @param[in] y  Y pos.
+* @param[in] w  Width.
+* @param[in] h  Height.
 */
-void LCDDisplay::_draw(unsigned a, int x, int y, int w, int h) {
+void flw::LCDDisplay::_draw(unsigned a, int x, int y, int w, int h) {
     int x0, y0, x1, y1, x2, y2, x3, y3;
     int h2     = h >> 1;
     int thick2 = _thick >> 1;
@@ -276,7 +282,7 @@ void LCDDisplay::_draw(unsigned a, int x, int y, int w, int h) {
 *
 * @param[in] value  String with "0-9", "a-z",  "A-Z" and "-.:".
 */
-void LCDDisplay::value(const std::string& value) {
+void flw::LCDDisplay::value(const std::string& value) {
     _value = "";
 
     for (auto c : value) {
@@ -305,7 +311,5 @@ void LCDDisplay::value(const std::string& value) {
 
     Fl::redraw();
 }
-
-} // flw
 
 // MKALGAM_OFF

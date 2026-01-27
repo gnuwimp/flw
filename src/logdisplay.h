@@ -9,10 +9,11 @@
 #ifndef FLW_LOGDISPLAY_H
 #define FLW_LOGDISPLAY_H
 
+#include "flw.h"
+
 // MKALGAM_ON
 
 #include <FL/Fl_Text_Display.H>
-#include <string>
 
 namespace flw {
 
@@ -117,16 +118,19 @@ protected:
 private:
     const char*                 _check_text(const char* text);
     char                        _style_char(size_t pos) const
-                                    { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; } ///< @brief Get character. @param[in] Valid index. @return Color code or 0 if index is out of range.
+                                    { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; } ///< @brief Get character. @param[in] pos  Valid index. @return Color code or 0 if index is out of range.
 
-    struct Tmp {
+    /** @brief Keep data while parsing (private).
+    * @private
+    */
+    struct _Tmp {
         char*                   buf;
         size_t                  len;
         size_t                  pos;
         size_t                  size;
 
-                                Tmp();
-                                ~Tmp();
+                                _Tmp();
+                                ~_Tmp();
     };
 
     Fl_Text_Buffer*             _buffer;
@@ -134,7 +138,7 @@ private:
     bool                        _lock_colors;
     std::string                 _json;
     Fl_Text_Buffer*             _style;
-    Tmp*                        _tmp;
+    _Tmp*                       _tmp;
 };
 
 }

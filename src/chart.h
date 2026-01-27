@@ -14,13 +14,13 @@
 
 // MKALGAM_ON
 
-#include <FL/Fl_Group.H>
-#include <FL/Fl_Menu_Button.H>
-#include <FL/Fl_Rect.H>
-#include <FL/Fl_Scrollbar.H>
+class Fl_Menu_Button;
+class Fl_Scrollbar;
+
 #include <cmath>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Rect.H>
 #include <optional>
-#include <vector>
 
 namespace flw {
 
@@ -477,7 +477,7 @@ private:
     bool                        _move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination = AreaNum::ONE);
     void                        _show_menu();
 
-    static bool                 _CallbackPrinter(void* data, int pw, int ph, int page);
+    static bool                 _CallbackPrinter(void* data, int pw, int ph, unsigned page);
     static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
 
     Area*                       _area;                  // Active area, set in handle() when area is clicked.

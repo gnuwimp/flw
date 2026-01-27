@@ -28,7 +28,7 @@ namespace flw {
  *                                      |_|            |___/
  */
 
-/** @brief A 7 segment number label widget.
+/** @brief A 7 segment label widget.
 *
 * Valid characters are:\n
 * 0123456789\n

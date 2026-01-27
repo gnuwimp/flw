@@ -18,16 +18,16 @@
 namespace flw {
 
 /*
- *      _______          _  _____                       
- *     |__   __|        | |/ ____|                      
- *        | | ___   ___ | | |  __ _ __ ___  _   _ _ __  
- *        | |/ _ \ / _ \| | | |_ | '__/ _ \| | | | '_ \ 
+ *      _______          _  _____
+ *     |__   __|        | |/ ____|
+ *        | | ___   ___ | | |  __ _ __ ___  _   _ _ __
+ *        | |/ _ \ / _ \| | | |_ | '__/ _ \| | | | '_ \
  *        | | (_) | (_) | | |__| | | | (_) | |_| | |_) |
- *        |_|\___/ \___/|_|\_____|_|  \___/ \__,_| .__/ 
- *                                               | |    
- *                                               |_|    
+ *        |_|\___/ \___/|_|\_____|_|  \___/ \__,_| .__/
+ *                                               | |
+ *                                               |_|
  */
- 
+
 /** @brief Toolbar group widget.
 *
 * Default layout is Pos::HORIZONTAL.\n
@@ -35,6 +35,9 @@ namespace flw {
 *\n
 * All child widgets have same height or width depending on layout.\n
 * Use 0 for size to have equal width/height.\n
+*\n
+*\n
+* Do a resize after adding widgets by calling do_layout().\n
 *
 * @snippet toolgroup.cpp flw::ToolGroup example
 * @image html toolgroup.png
