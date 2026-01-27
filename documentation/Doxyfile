@@ -524,7 +524,7 @@ EXTRACT_ALL            = YES
 # be included in the documentation.
 # The default value is: NO.
 
-EXTRACT_PRIVATE        = NO
+EXTRACT_PRIVATE        = YES
 
 # If the EXTRACT_PRIV_VIRTUAL tag is set to YES, documented private virtual
 # methods of a class will be included in the documentation.
@@ -931,7 +931,7 @@ WARN_LINE_FORMAT       = "at line $line of file $file"
 # specified the warning and error messages are written to standard output
 # (stdout).
 
-WARN_LOGFILE           =
+#WARN_LOGFILE           = doxygen.log
 
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
@@ -944,46 +944,58 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT = \
-../src/chart.cpp \
-../src/chart.h \
-../src/date.cpp \
 ../src/date.h \
-../src/datechooser.cpp \
-../src/datechooser.h \
-../src/dlg.cpp \
-../src/dlg.h \
-../src/file.cpp \
+../src/date.cpp \
 ../src/file.h \
-../src/flw.cpp \
-../src/flw.h \
-../src/gridgroup.cpp \
-../src/gridgroup.h \
-../src/inputmenu.cpp \
-../src/inputmenu.h \
-../src/json.cpp \
+../src/file.cpp \
 ../src/json.h \
-../src/lcddisplay.cpp \
+../src/json.cpp \
+../src/flw.h \
+../src/flw.cpp \
+../src/chart.h \
+../src/chart.cpp \
+../src/datechooser.h \
+../src/datechooser.cpp \
+../src/dlg.h \
+../src/dlg.cpp \
+../src/fontdialog.h \
+../src/fontdialog.cpp \
+../src/gridgroup.h \
+../src/gridgroup.cpp \
+../src/inputmenu.h \
+../src/inputmenu.cpp \
 ../src/lcddisplay.h \
-../src/logdisplay.cpp \
+../src/lcddisplay.cpp \
 ../src/logdisplay.h \
-../src/plot.cpp \
+../src/logdisplay.cpp \
 ../src/plot.h \
-../src/recentmenu.cpp \
+../src/plot.cpp \
+../src/postscript.h \
+../src/postscript.cpp \
+../src/progressdialog.h \
+../src/progressdialog.cpp \
 ../src/recentmenu.h \
-../src/scrollbrowser.cpp \
+../src/recentmenu.cpp \
 ../src/scrollbrowser.h \
-../src/splitgroup.cpp \
+../src/scrollbrowser.cpp \
 ../src/splitgroup.h \
-../src/table.cpp \
+../src/splitgroup.cpp \
+../src/svgbutton.h \
+../src/svgbutton.cpp \
 ../src/table.h \
-../src/tabledisplay.cpp \
+../src/table.cpp \
 ../src/tabledisplay.h \
-../src/tableeditor.cpp \
+../src/tabledisplay.cpp \
 ../src/tableeditor.h \
-../src/tabsgroup.cpp \
+../src/tableeditor.cpp \
 ../src/tabsgroup.h \
-../src/waitcursor.cpp \
+../src/tabsgroup.cpp \
+../src/toolgroup.h \
+../src/toolgroup.cpp \
+../src/theme.h \
+../src/theme.cpp \
 ../src/waitcursor.h \
+../src/waitcursor.cpp \
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
