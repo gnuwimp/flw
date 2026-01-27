@@ -7,22 +7,16 @@
 */
 
 #include "dlg.h"
-#include "icons.h"
+#include "gridgroup.h"
 #include "scrollbrowser.h"
-#include "datechooser.h"
+#include "svgbutton.h"
 
 // MKALGAM_ON
 
-#ifdef _WIN32
-    #include <windows.h>
-#else
-#endif
-
-#include <math.h>
+#include <cmath>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Help_View.H>
-#include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Hor_Value_Slider.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Multiline_Input.H>
@@ -31,242 +25,8 @@
 #include <FL/Fl_Scroll.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Editor.H>
-#include <FL/Fl_Tooltip.H>
 
 namespace flw {
-
-/** @brief Private code.
-*
-*/
-namespace priv {
-
-static Fl_Window*   PARENT              = nullptr;
-static bool         ACTIVE_BUTTON_COLOR = false;
-
-/* @private */ void _load_default();
-/* @private */ void _load_gleam();
-/* @private */ void _load_gleam_blue();
-/* @private */ void _load_gleam_dark();
-/* @private */ void _load_gleam_tan();
-/* @private */ void _load_gtk();
-/* @private */ void _load_gtk_blue();
-/* @private */ void _load_gtk_dark();
-/* @private */ void _load_gtk_tan();
-/* @private */ void _load_oxy();
-/* @private */ void _load_oxy_blue();
-/* @private */ void _load_oxy_tan();
-/* @private */ void _load_plastic();
-/* @private */ void _load_plastic_tan();
-/* @private */ void _scrollbar();
-
-/** @brief Initiate printer formats and layouts.
-*
-* @param[in] format  Choice widget with page names.
-* @param[in] layout  Choice widget with layout names.
-*/
-static void _init_printer_formats(Fl_Choice* format, Fl_Choice* layout) {
-    format->add("A0 Format");
-    format->add("A1 Format");
-    format->add("A2 Format");
-    format->add("A3 Format");
-    format->add("A4 Format");
-    format->add("A5 Format");
-    format->add("A6 Format");
-    format->add("A7 Format");
-    format->add("A8 Format");
-    format->add("A9 Format");
-    format->add("B0 Format");
-    format->add("B1 Format");
-    format->add("B2 Format");
-    format->add("B3 Format");
-    format->add("B4 Format");
-    format->add("B5 Format");
-    format->add("B6 Format");
-    format->add("B7 Format");
-    format->add("B8 Format");
-    format->add("B9 Format");
-    format->add("Executive Format");
-    format->add("Folio Format");
-    format->add("Ledger Format");
-    format->add("Legal Format");
-    format->add("Letter Format");
-    format->add("Tabloid Format");
-    format->tooltip("Select paper format.");
-    format->value(4);
-
-    layout->add("Portrait");
-    layout->add("Landscape");
-    layout->tooltip("Select paper layout.");
-    layout->value(0);
-}
-
-/*
- *           ____        _   _
- *          |  _ \      | | | |
- *          | |_) |_   _| |_| |_ ___  _ __
- *          |  _ <| | | | __| __/ _ \| '_ \
- *          | |_) | |_| | |_| || (_) | | | |
- *          |____/ \__,_|\__|\__\___/|_| |_|
- *      ______
- *     |______|
- */
-
-/** @brief A button for dialogs.
-*
-*/
-class _Button : public Fl_Button {
-    Fl_Color                    _color;     // Optional color.
-    bool                        _return;    // If true then it is and return button.
-    std::string                 _icon;      // Icon name.
-    std::string                 _label;     // Label without spaces that has been appended.
-
-public:
-    /** @brief Create button.
-    */
-    _Button(int X, int Y, int W, int H, const std::string& l, const std::string& icon, bool ret) : Fl_Button(X, Y, W, H) {
-        _return = ret;
-        _color  = -1;
-
-        set_icon(l, icon);
-    }
-
-    /** @brief Change background color if active.
-    */
-    void draw() override {
-        if (Fl::focus() == this && priv::ACTIVE_BUTTON_COLOR == true) {
-            if (_color == static_cast<Fl_Color>(-1)) {
-                color(fl_darker(FL_BACKGROUND_COLOR));
-            }
-            else {
-                color(_color);
-            }
-        }
-        else {
-            color(FL_BACKGROUND_COLOR);
-        }
-
-        Fl_Button::draw();
-    }
-
-    /** @brief Take care of enter presses.
-    */
-    int handle(int event) override {
-        if (_return == false) {
-        }
-        else if (event == FL_SHORTCUT && (Fl::event_key() == FL_Enter || Fl::event_key() == FL_KP_Enter)) {
-            simulate_key_action();
-            do_callback(FL_REASON_SELECTED);
-            return 1;
-        }
-
-        return Fl_Button::handle(event);
-    }
-
-    /** @brief Get icon name.
-    */
-    std::string icon() {
-        return _icon;
-    }
-
-    /** @brief Is this a return button?
-    */
-    bool is_return() {
-        return _return;
-    }
-
-    /** @brief Get icon name.
-    */
-    std::string label2() {
-        return _label;
-    }
-
-    /** @brief Set highlight color.
-    */
-    void set_color(Fl_Color color) {
-        _color = color;
-    }
-
-    /** @brief Set label and create optional icon.
-    */
-    void set_icon(const std::string& l, const std::string& icon) {
-        _icon = icon;
-
-        if (icon != "") {
-            copy_label((l + "  ").c_str());
-            util::icon(this, icon, flw::PREF_FIXED_FONTSIZE * 1.5);
-            align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | FL_ALIGN_TEXT_NEXT_TO_IMAGE);
-        }
-        else {
-            copy_label(l.c_str());
-            align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-        }
-    }
-
-    /** @brief Set return option.
-    */
-    void set_return(bool ret) {
-        _return = ret;
-    }
-};
-
-} // flw::priv
-
-/** @brief Create an button with an icon.
-*
-* Insert first in a label a "!" character first in label to use the icons::BACK icon.\n
-* Insert first in a label a "#" character first in label to use the icons::CANCEL icon.\n
-* Insert first in a label a "%" character first in label to use the icons::DEL icon.\n
-* Insert first in a label "@" character first in label to use the icons::CONFIRM icon.\n
-* Icon option character will be removed from the label.\n
-*
-* @param[in] X  X pos.
-* @param[in] Y  Y pos.
-* @param[in] W  Width.
-* @param[in] H  Height.
-* @param[in] l  Label.
-*
-* @see util::icon() to see how they look.\n
-*/
-Fl_Button* dlg::button(int X, int Y, int W, int H, const std::string& l) {
-    auto t  = util::trim(l);
-    auto l2 = t.c_str();
-
-    if (*l2 == 0) {
-        return new Fl_Button(X, Y, W, H);
-    }
-
-    const char* l3 = l2 + 1;
-
-    if (*l2 == '!') {
-        return new priv::_Button(X, Y, W, H, l3, icons::BACK, true);
-    }
-    else if (*l2 == '#') {
-        return new priv::_Button(X, Y, W, H, l3, icons::CANCEL, false);
-    }
-    else if (*l2 == '%') {
-        return new priv::_Button(X, Y, W, H, l3, icons::DEL, false);
-    }
-    else if (*l2 == '@') {
-        return new priv::_Button(X, Y, W, H, l3, icons::CONFIRM, false);
-    }
-    else {
-        return new priv::_Button(X, Y, W, H, l, "", false);
-    }
-}
-
-/** @brief Create an button with an icon.
-*
-* @param[in] X     X pos.
-* @param[in] Y     Y pos.
-* @param[in] W     Width.
-* @param[in] H     Height.
-* @param[in] l     Label.
-* @param[in] icon  Optional svg icon.
-* @param[in] ret   If true then it will be activated with enter.
-*/
-Fl_Button* dlg::button(int X, int Y, int W, int H, const std::string& l, const std::string& icon, bool ret) {
-    return new priv::_Button(X, Y, W, H, l, icon, ret);
-}
 
 /** @brief Put fl_message dialogs at the centre of the desktop.
 *
@@ -277,18 +37,6 @@ void dlg::center_fl_message_dialog() {
     fl_message_position(W / 2, H / 2, 1);
 }
 
-/** @brief Set dialog options.
-*
-* Some desktops can't place windows at a specific position.
-*
-* @param[in] parent               Center on this window, NULL to center on desktop.
-* @param[in] active_button_color  Change background color for active button.
-*/
-void dlg::options(Fl_Window* parent, bool active_button_color) {
-    priv::PARENT              = parent;
-    priv::ACTIVE_BUTTON_COLOR = active_button_color;
-}
-
 /** @brief Show an dialog with message and then exit the program.
 *
 * @param[in] message  Message string.
@@ -296,126 +44,6 @@ void dlg::options(Fl_Window* parent, bool active_button_color) {
 void dlg::panic(const std::string& message) {
     dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
     exit(1);
-}
-
-/*
- *           _____        _        _____ _                               _____  _
- *          |  __ \      | |      / ____| |                             |  __ \| |
- *          | |  | | __ _| |_ ___| |    | |__   ___   ___  ___  ___ _ __| |  | | | __ _
- *          | |  | |/ _` | __/ _ \ |    | '_ \ / _ \ / _ \/ __|/ _ \ '__| |  | | |/ _` |
- *          | |__| | (_| | ||  __/ |____| | | | (_) | (_) \__ \  __/ |  | |__| | | (_| |
- *          |_____/ \__,_|\__\___|\_____|_| |_|\___/ \___/|___/\___|_|  |_____/|_|\__, |
- *      ______                                                                     __/ |
- *     |______|                                                                   |___/
- */
-
-namespace priv {
-
-/** @brief An date chooser dialog.
-*
-*/
-class _DateChooserDlg : public Fl_Double_Window {
-    gnu::Date&                  _value;         // In/out date value.
-    DateChooser*                _date_chooser;  // Date widget.
-    Fl_Button*                  _cancel;        // Cancel button.
-    Fl_Button*                  _ok;            // Ok button.
-    GridGroup*                  _grid;          // Layout widget.
-    bool                        _res;           // Return value.
-    bool                        _run;           // Run flag.
-
-public:
-    /** @brief Create window.
-    *
-    * @param[in]      title  Dialog title.
-    * @param[in,out]  date   Date value.
-    * @param[in]      W      Width.
-    * @param[in]      H      Height.
-    */
-    _DateChooserDlg(const std::string& title, gnu::Date& date, int W, int H) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H),
-    _value(date) {
-        end();
-
-        _cancel       = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-        _date_chooser = new DateChooser(0, 0, 0, 0);
-        _grid         = new GridGroup(0, 0, w(), h());
-        _ok           = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
-        _res          = false;
-        _run          = false;
-
-        _grid->add(_date_chooser,   0,   0,   0,  -6);
-        _grid->add(_cancel,       -34,  -5,  16,   4);
-        _grid->add(_ok,           -17,  -5,  16,   4);
-        add(_grid);
-
-        _cancel->callback(Callback, this);
-        _date_chooser->focus();
-        _date_chooser->set(_value);
-        _grid->do_layout();
-        _ok->callback(Callback, this);
-
-        util::labelfont(this);
-        callback(Callback, this);
-        copy_label(title.c_str());
-        resizable(_grid);
-        set_modal();
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DateChooserDlg*>(o);
-
-        if (w == self || w == self->_cancel) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_ok) {
-            self->_res = true;
-            self->_run = false;
-            self->hide();
-        }
-    }
-
-    /** @brief Run dialog.
-    *
-    */
-    bool run() {
-        _run = true;
-        util::center_window(this, priv::PARENT);
-        show();
-
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-
-        if (_res == true) {
-            _value = _date_chooser->get();
-        }
-
-        return _res;
-    }
-};
-
-} // flw::priv
-
-/** @brief Show an date chooser dialog.
-*
-* @param[in]     title   Dialog title.
-* @param[in,out] date    Input and output date.
-* @param[in]     W       Width in characters.
-* @param[in]     H       Height in characters.
-*
-* @return True if ok has been pressed and date has been updated.
-*
-* @snippet dialog.cpp flw::dlg::date example
-* @image html date_dialog.png
-*/
-bool dlg::date(const std::string& title, gnu::Date& date, int W, int H) {
-    priv::_DateChooserDlg dlg(title, date, W, H);
-    return dlg.run();
 }
 
 /*
@@ -436,7 +64,7 @@ namespace priv {
 */
 class _DlgHtml : public Fl_Double_Window {
     Fl_Help_View*               _html;  // HTML widget.
-    Fl_Return_Button*           _close; // Close button.
+    SVGButton*                  _close; // Close button.
     GridGroup*                  _grid;  // layout widget.
     bool                        _run;   // Run flag.
 
@@ -452,7 +80,7 @@ public:
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
 
-        _close = new Fl_Return_Button(0, 0, 0, 0, label::CLOSE.c_str());
+        _close = new SVGButton(0, 0, 0, 0, labels::CLOSE, icons::BACK, true);
         _grid  = new GridGroup(0, 0, w(), h());
         _html  = new Fl_Help_View(0, 0, 0, 0);
         _run   = false;
@@ -472,7 +100,7 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -538,7 +166,7 @@ namespace priv {
 *
 */
 class _DlgList : public Fl_Double_Window {
-    Fl_Return_Button*           _close;     // Close button.
+    SVGButton*                  _close;     // Close button.
     GridGroup*                  _grid;      // Layout widget.
     ScrollBrowser*              _list;      // List widget.
     bool                        _run;       // Run flag.
@@ -559,7 +187,7 @@ public:
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
 
-        _close = new Fl_Return_Button(0, 0, 0, 0, label::CLOSE.c_str());
+        _close = new SVGButton(0, 0, 0, 0, labels::CLOSE, icons::BACK, true);
         _grid  = new GridGroup(0, 0, w(), h());
         _list  = new ScrollBrowser();
         _run   = false;
@@ -586,7 +214,7 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
 
         if (list.size() > 0) {
@@ -696,55 +324,55 @@ namespace priv {
 */
 class _DlgMsg : public Fl_Double_Window {
     Fl_Box*                     _label;     // Message label.
-    priv::_Button*              _b1;        // First button on the right.
-    priv::_Button*              _b2;        // Second button.
-    priv::_Button*              _b3;        // Third button.
-    priv::_Button*              _b4;        // Fourth button.
-    priv::_Button*              _b5;        // Fifth button.
+    SVGButton*                  _b1;        // First button on the right.
+    SVGButton*                  _b2;        // Second button.
+    SVGButton*                  _b3;        // Third button.
+    SVGButton*                  _b4;        // Fourth button.
+    SVGButton*                  _b5;        // Fifth button.
     Fl_Button*                  _icon;      // Icon label.
     Fl_Input*                   _input;     // Input widget.
     GridGroup*                  _grid;      // layout widget.
     bool                        _run;       // Run flag.
-    int                         _escape;    // > 1 and dialog can't be closed with escape.
+    int                         _escape;    // Number of visible buttons, > 1 and dialog can't be closed with escape.
     std::string                 _res;       // Used button label.
 
 public:
     /** @brief Create window.
     *
-    * @param[in] type   Type of dialog.
-    * @param[in] title  Dialog title.
-    * @param[in] text   Message text.
-    * @param[in] b1     right button label.
-    * @param[in] b2     Second button label.
-    * @param[in] b3     Third button label.
-    * @param[in] b4     Fourth button label.
-    * @param[in] b5     Fifth button label.
-    * @param[in] W      Width in characters.
-    * @param[in] H      Height in characters.
-    * @param[in] value  Optional input.
-    * @param[in] input  Input widget.
+    * @param[in] type     Type of dialog.
+    * @param[in] title    Dialog title.
+    * @param[in] message  Message text.
+    * @param[in] b1       Right button label.
+    * @param[in] b2       Second button label.
+    * @param[in] b3       Third button label.
+    * @param[in] b4       Fourth button label.
+    * @param[in] b5       Fifth button label.
+    * @param[in] W        Width in characters.
+    * @param[in] H        Height in characters.
+    * @param[in] value    Optional input.
+    * @param[in] input    Input widget.
     */
     _DlgMsg(
-        const std::string& type,
-        const std::string& title,
-        const std::string& message,
-        const std::string& b1,
-        const std::string& b2,
-        const std::string& b3,
-        const std::string& b4,
-        const std::string& b5,
-        int W,
-        int H,
-        const char* value = nullptr,
-        const std::string& input = ""
+        const std::string&  type,
+        const std::string&  title,
+        const std::string&  message,
+        const std::string&  b1,
+        const std::string&  b2,
+        const std::string&  b3,
+        const std::string&  b4,
+        const std::string&  b5,
+        int                 W,
+        int                 H,
+        const char*         value = nullptr,
+        const std::string&  input = ""
     ) : Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
 
-        _b1     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, b1));
-        _b2     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, b2));
-        _b3     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, b3));
-        _b4     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, b4));
-        _b5     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, b5));
+        _b1     = new SVGButton(0, 0, 0, 0, b1);
+        _b2     = new SVGButton(0, 0, 0, 0, b2);
+        _b3     = new SVGButton(0, 0, 0, 0, b3);
+        _b4     = new SVGButton(0, 0, 0, 0, b4);
+        _b5     = new SVGButton(0, 0, 0, 0, b5);
         _grid   = new GridGroup(0, 0, w(), h());
         _icon   = new Fl_Button(0, 0, 0, 0);
         _label  = new Fl_Box(0, 0, 0, 0);
@@ -754,24 +382,24 @@ public:
         auto multi = false;
         auto xpos  = 0;
         auto count = 0;
-        auto fixed = true;
+        auto fixed = false;
 
         if (input == "Fl_Int_Input") {
+            fixed  = true;
             _input = new Fl_Int_Input(0, 0, 0, 0);
         }
         else if (input == "Fl_Float_Input") {
+            fixed  = true;
             _input = new Fl_Float_Input(0, 0, 0, 0);
         }
         else if (input == "Fl_Multiline_Input") {
             _input = new Fl_Multiline_Input(0, 0, 0, 0);
-            fixed  = false;
             multi  = true;
         }
         else if (input == "Fl_Secret_Input") {
             _input = new Fl_Secret_Input(0, 0, 0, 0);
         }
         else {
-            fixed  = false;
             _input = new Fl_Input(0, 0, 0, 0);
         }
 
@@ -801,7 +429,7 @@ public:
             _input->value(value);
             _input->box(FL_BORDER_BOX);
             _input->textfont(fixed == true ? flw::PREF_FIXED_FONT : flw::PREF_FONT);
-            _input->textsize(flw::PREF_FIXED_FONTSIZE);
+            _input->textsize(flw::PREF_FONTSIZE);
         }
         else {
             _input->hide();
@@ -884,56 +512,58 @@ public:
 
         // Make sure return buttons has focus (this is a visual issue).
 
-        if (_b1->is_return() == true) {
+        if (_b1->has_return() == true) {
             _b1->take_focus();
         }
-        else if (_b2->is_return() == true) {
+        else if (_b2->has_return() == true) {
             _b2->take_focus();
         }
-        else if (_b3->is_return() == true) {
+        else if (_b3->has_return() == true) {
             _b3->take_focus();
         }
-        else if (_b4->is_return() == true) {
+        else if (_b4->has_return() == true) {
             _b4->take_focus();
         }
-        else if (_b5->is_return() == true) {
+        else if (_b5->has_return() == true) {
             _b5->take_focus();
         }
         else {
             _icon->take_focus();
         }
 
-        if (_escape == 1) {
-            // Only one button so turn off eventual highlight color.
-
-            _b1->set_color(FL_BACKGROUND_COLOR);
-            _b2->set_color(FL_BACKGROUND_COLOR);
-            _b3->set_color(FL_BACKGROUND_COLOR);
-            _b4->set_color(FL_BACKGROUND_COLOR);
-            _b5->set_color(FL_BACKGROUND_COLOR);
+        if (_escape == 1) { // Only one button so turn off eventual highlight color.
+            _b1->set_dark(false);
+            _b2->set_dark(false);
+            _b3->set_dark(false);
+            _b4->set_dark(false);
+            _b5->set_dark(false);
 
             // Make sure one button is a return button.
 
-            if (_b1->visible() != 0 && _b1->icon() == "") {
+            if (_b1->visible() != 0 && _b1->has_image() == false) {
                 _b1->set_icon(_b1->label(), icons::BACK);
                 _b1->set_return(true);
             }
-            else if (_b2->visible() != 0 && _b2->icon() == "") {
+            else if (_b2->visible() != 0 && _b2->has_image() == false) {
                 _b2->set_icon(_b2->label(), icons::BACK);
                 _b2->set_return(true);
             }
-            else if (_b3->visible() != 0 && _b3->icon() == "") {
+            else if (_b3->visible() != 0 && _b3->has_image() == false) {
                 _b3->set_icon(_b3->label(), icons::BACK);
                 _b3->set_return(true);
             }
-            else if (_b4->visible() != 0 && _b4->icon() == "") {
+            else if (_b4->visible() != 0 && _b4->has_image() == false) {
                 _b4->set_icon(_b4->label(), icons::BACK);
                 _b4->set_return(true);
             }
-            else if (_b5->visible() != 0 && _b5->icon() == "") {
+            else if (_b5->visible() != 0 && _b5->has_image() == false) {
                 _b5->set_icon(_b5->label(), icons::BACK);
                 _b5->set_return(true);
             }
+        }
+        else if (value != nullptr) { // Make ok button a return button (input dialogs have only cancel and ok).
+            _b1->set_icon(_b1->label(), icons::BACK);
+            _b1->set_return(true);
         }
 
         // Input widget alsways has the focus.
@@ -950,7 +580,7 @@ public:
         _grid->do_layout();
 
         { // Try to resize label and window if it is to wide or if there are to many buttons (only valid for msg_ask()).
-            fl_font(flw::PREF_FONT, flw::PREF_FIXED_FONTSIZE);
+            fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
             auto width  = 0;
             auto height = 0;
 
@@ -998,7 +628,7 @@ public:
             }
         }
 
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
     }
 
     /** @brief Callback for all widgets.
@@ -1057,15 +687,15 @@ public:
 * @param[in]     W        Width in characters.
 * @param[in]     H        Height in characters.
 *
-* @return flw::label::OK or flw::label::CANCEL.
+* @return flw::labels::OK or flw::labels::CANCEL.
 *
 * @image html dlg_input.png
 */
 std::string dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, label::OK, label::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
     auto res = dlg.run();
 
-    if (res == label::OK) {
+    if (res == labels::OK) {
         value = dlg.input();
     }
 
@@ -1083,16 +713,16 @@ std::string dlg::input(const std::string& title, const std::string& message, std
 * @param[in]     W        Width in characters.
 * @param[in]     H        Height in characters.
 *
-* @return flw::label::OK or flw::label::CANCEL.
+* @return flw::labels::OK or flw::labels::CANCEL.
 */
 std::string dlg::input_double(const std::string& title, const std::string& message, double& value, int W, int H) {
     char num[500];
     snprintf(num, 500, "%g", value);
 
-    priv::_DlgMsg dlg(icons::EDIT, title, message, label::OK, label::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
     auto res = dlg.run();
 
-    if (res == label::OK) {
+    if (res == labels::OK) {
         auto tmp = value;
         tmp = util::to_double(dlg.input());
 
@@ -1115,16 +745,16 @@ std::string dlg::input_double(const std::string& title, const std::string& messa
 * @param[in]     W        Width in characters.
 * @param[in]     H        Height in characters.
 *
-* @return flw::label::OK or flw::label::CANCEL.
+* @return flw::labels::OK or flw::labels::CANCEL.
 */
 std::string dlg::input_int(const std::string& title, const std::string& message, int64_t& value, int W, int H) {
     char num[100];
     snprintf(num, 100, "%lld", static_cast<long long int>(value));
 
-    priv::_DlgMsg dlg(icons::EDIT, title, message, label::OK, label::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
     auto res = dlg.run();
 
-    if (res == label::OK) {
+    if (res == labels::OK) {
         value = util::to_int(dlg.input(), value);
     }
 
@@ -1144,15 +774,15 @@ std::string dlg::input_int(const std::string& title, const std::string& message,
 * @param[in]     W        Width in characters.
 * @param[in]     H        Height in characters.
 *
-* @return flw::label::OK or flw::label::CANCEL.
+* @return flw::labels::OK or flw::labels::CANCEL.
 *
 * @image html dlg_input_multi.png
 */
 std::string dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, label::OK, label::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
     auto res = dlg.run();
 
-    if (res == label::OK) {
+    if (res == labels::OK) {
         value = dlg.input();
     }
 
@@ -1169,15 +799,15 @@ std::string dlg::input_multi(const std::string& title, const std::string& messag
 * @param[in]     W        Width in characters.
 * @param[in]     H        Height in characters.
 *
-* @return flw::label::OK or flw::label::CANCEL.
+* @return flw::labels::OK or flw::labels::CANCEL.
 *
 * @image html dlg_input_secret.png
 */
 std::string dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::PASSWORD, title, message, label::OK, label::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
+    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
     auto res = dlg.run();
 
-    if (res == label::OK) {
+    if (res == labels::OK) {
         value = dlg.input();
     }
 
@@ -1196,7 +826,7 @@ std::string dlg::input_secret(const std::string& title, const std::string& messa
 * @image html dlg_msg.png
 */
 void dlg::msg(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::INFO, title, message, label::CLOSE, "", "", "", "", W, H);
+    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 
@@ -1210,7 +840,7 @@ void dlg::msg(const std::string& title, const std::string& message, int W, int H
 * @image html dlg_msg_alert.png
 */
 void dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ALERT, title, message, label::CLOSE, "", "", "", "", W, H);
+    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 
@@ -1248,7 +878,7 @@ std::string dlg::msg_ask(const std::string& title, const std::string& message, c
 * @param[in] H        Height in characters.
 */
 void dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ERR, title, message, label::CLOSE, "", "", "", "", W, H);
+    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 
@@ -1299,7 +929,7 @@ public:
 private:
     Fl_Button*                  _browse;        // Browse file button.
     Fl_Button*                  _cancel;        // Cancel button.
-    Fl_Button*                  _close;         // Close button.
+    SVGButton*                  _close;         // Close button.
     Fl_Input*                   _file;          // File input.
     Fl_Input*                   _password1;     // Password input 1.
     Fl_Input*                   _password2;     // Password input 2 (confirm).
@@ -1320,9 +950,9 @@ public:
     Fl_Double_Window(0, 0, 10, 10) {
         end();
 
-        _browse    = new Fl_Button(0, 0, 0, 0, label::BROWSE.c_str());
-        _cancel    = new Fl_Button(0, 0, 0, 0);
-        _close     = new Fl_Return_Button(0, 0, 0, 0);
+        _browse    = new Fl_Button(0, 0, 0, 0, labels::BROWSE.c_str());
+        _cancel    = new Fl_Button(0, 0, 0, 0, "");
+        _close     = new SVGButton(0, 0, 0, 0, "", icons::BACK, true);
         _file      = new Fl_Output(0, 0, 0, 0, "Key file");
         _grid      = new GridGroup(0, 0, w(), h());
         _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
@@ -1341,9 +971,9 @@ public:
 
         _browse->callback(_DlgPassword::Callback, this);
         _cancel->callback(_DlgPassword::Callback, this);
-        _cancel->copy_label(label::CANCEL.c_str());
+        _cancel->copy_label(labels::CANCEL.c_str());
         _close->callback(_DlgPassword::Callback, this);
-        _close->copy_label(label::OK.c_str());
+        _close->copy_label(labels::OK.c_str());
         _close->deactivate();
         _file->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
         _file->textfont(flw::PREF_FIXED_FONT);
@@ -1386,7 +1016,7 @@ public:
         copy_label(title.c_str());
         size(W, H);
         set_modal();
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -1561,476 +1191,6 @@ bool dlg::password_and_file(const std::string& title, std::string& password, std
 }
 
 /*
- *           _____  _       _____      _       _
- *          |  __ \| |     |  __ \    (_)     | |
- *          | |  | | | __ _| |__) | __ _ _ __ | |_
- *          | |  | | |/ _` |  ___/ '__| | '_ \| __|
- *          | |__| | | (_| | |   | |  | | | | | |_
- *          |_____/|_|\__, |_|   |_|  |_|_| |_|\__|
- *      ______         __/ |
- *     |______|       |___/
- */
-
-namespace priv {
-
-/** @brief A print dialog.
-*
-*/
-class _DlgPrint : public Fl_Double_Window {
-    Fl_Button*                  _close;     // Close button.
-    Fl_Button*                  _file;      // Select destination file.
-    Fl_Button*                  _print;     // Print to file.
-    Fl_Choice*                  _format;    // Page format list.
-    Fl_Choice*                  _layout;    // Page layout list.
-    Fl_Hor_Slider*              _from;      // From page number.
-    Fl_Hor_Slider*              _to;        // To page number.
-    GridGroup*                  _grid;      // Layout widget.
-    PrintCallback               _cb;        // User callback for drawing a page.
-    bool                        _run;       // Run flag.
-    void*                       _data;      // User data.
-
-public:
-    /** @brief Create window.
-    *
-    * Only one of list and file can be used at the same time.
-    *
-    * @param[in] title   Dialog title.
-    * @param[in] cb      Callback drawing funtion.
-    * @param[in] data    Data for callback function.
-    * @param[in] from    From page number.
-    * @param[in] to      To page number.
-    */
-    _DlgPrint(const std::string& title, PrintCallback cb, void* data, int from, int to) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 18) {
-        end();
-
-        _close  = new Fl_Button(0, 0, 0, 0, label::CLOSE.c_str());
-        _file   = new Fl_Button(0, 0, 0, 0, "output.ps");
-        _format = new Fl_Choice(0, 0, 0, 0);
-        _from   = new Fl_Hor_Slider(0, 0, 0, 0);
-        _grid   = new GridGroup(0, 0, w(), h());
-        _layout = new Fl_Choice(0, 0, 0, 0);
-        _print  = new Fl_Button(0, 0, 0, 0, label::PRINT.c_str());
-        _to     = new Fl_Hor_Slider(0, 0, 0, 0);
-        _cb     = cb;
-        _data   = data;
-        _run    = false;
-
-        _grid->add(_from,     1,   3,  -1,   4);
-        _grid->add(_to,       1,  10,  -1,   4);
-        _grid->add(_format,   1,  15,  -1,   4);
-        _grid->add(_layout,   1,  20,  -1,   4);
-        _grid->add(_file,     1,  25,  -1,   4);
-        _grid->add(_print,  -34,  -5,  16,   4);
-        _grid->add(_close,  -17,  -5,  16,   4);
-        add(_grid);
-
-        util::labelfont(this);
-        _close->callback(_DlgPrint::Callback, this);
-        _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _file->callback(_DlgPrint::Callback, this);
-        _file->tooltip("Select output PostScript file.");
-        _format->textfont(flw::PREF_FONT);
-        _format->textsize(flw::PREF_FONTSIZE);
-        _from->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _from->callback(_DlgPrint::Callback, this);
-        _from->color(FL_BACKGROUND2_COLOR);
-        _from->range(from, to);
-        _from->precision(0);
-        _from->value(from);
-        _from->tooltip("Start page number.");
-        _layout->textfont(flw::PREF_FONT);
-        _layout->textsize(flw::PREF_FONTSIZE);
-        _print->callback(_DlgPrint::Callback, this);
-        _to->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _to->callback(_DlgPrint::Callback, this);
-        _to->color(FL_BACKGROUND2_COLOR);
-        _to->range(from, to);
-        _to->precision(0);
-        _to->value(to);
-        _to->tooltip("End page number.");
-
-        if (from < 1 || from > to) {
-            _from->deactivate();
-            _from->range(0, 1);
-            _from->value(0);
-            _to->deactivate();
-            _to->range(0, 1);
-            _to->value(0);
-        }
-        else if (from == to) {
-            _from->deactivate();
-            _to->deactivate();
-        }
-
-        priv::_init_printer_formats(_format, _layout);
-        _DlgPrint::Callback(_from, this);
-        _DlgPrint::Callback(_to, this);
-        callback(_DlgPrint::Callback, this);
-        copy_label(title.c_str());
-        set_modal();
-        resizable(_grid);
-        util::center_window(this, priv::PARENT);
-        _grid->do_layout();
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgPrint*>(o);
-
-        if (w == self || w == self->_close) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_file) {
-            auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
-
-            if (filename != nullptr) {
-                self->_file->copy_label(filename);
-            }
-        }
-        else if (w == self->_from || w == self->_to) {
-            auto l = util::format("%s page: %d", (w == self->_from) ? "From" : "To", (int) static_cast<Fl_Hor_Slider*>(w)->value());
-            w->copy_label(l.c_str());
-            self->redraw();
-        }
-        else if (w == self->_print) {
-            self->print();
-        }
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    void print() {
-        auto from   = static_cast<int>(_from->value());
-        auto to     = static_cast<int>(_to->value());
-        auto format = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
-        auto layout = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
-        auto file   = _file->label();
-        auto err    = (from == 0) ? util::print(file, format, layout, _cb, _data) : util::print(file, format, layout, _cb, _data, from, to);
-
-        if (err != "") {
-            dlg::msg_alert("Printing Error", util::format("Printing failed!\n%s", err.c_str()));
-            return;
-        }
-
-        _run = false;
-        hide();
-    }
-
-    /** @brief Run dialog.
-    *
-    */
-    void run() {
-        _run = true;
-        show();
-
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-    }
-};
-
-} // flw::priv
-
-/** @brief Show print dialog for custom drawings to postscript.
-*
-* Callback must be used for drawing.
-*
-* @param[in]  title  Dialog title.
-* @param[out] cb     Printer callback.
-* @param[out] data   Data for callback.
-* @param[out] from   From page.
-* @param[out] to     To Page.
-*
-* @snippet dialog.cpp flw::dlg::print example
-* @snippet dialog.cpp flw::dlg::print_callback example
-* @image html print_dialog.png
-*/
-void dlg::print(const std::string& title, PrintCallback cb, void* data, int from, int to) {
-    priv::_DlgPrint dlg(title, cb, data, from, to);
-    dlg.run();
-}
-
-/*
- *           _____  _       _____      _       _ _______        _
- *          |  __ \| |     |  __ \    (_)     | |__   __|      | |
- *          | |  | | | __ _| |__) | __ _ _ __ | |_ | | _____  _| |_
- *          | |  | | |/ _` |  ___/ '__| | '_ \| __|| |/ _ \ \/ / __|
- *          | |__| | | (_| | |   | |  | | | | | |_ | |  __/>  <| |_
- *          |_____/|_|\__, |_|   |_|  |_|_| |_|\__||_|\___/_/\_\\__|
- *      ______         __/ |
- *     |______|       |___/
- */
-
-namespace priv {
-
-/** @brief Print text dialog.
-*
-*/
-class _DlgPrintText : public Fl_Double_Window {
-    Fl_Box*                     _label;         // Label with information about the text.
-    Fl_Button*                  _close;         // Close button.
-    Fl_Button*                  _file;          // Select postscript result file.
-    Fl_Button*                  _fonts;         // Select font button.
-    Fl_Button*                  _print;         // Print text button.
-    Fl_Check_Button*            _border;        // Turn on printing a border around the page.
-    Fl_Check_Button*            _wrap;          // Wrap text lines option.
-    Fl_Choice*                  _align;         // Align text option.
-    Fl_Choice*                  _format;        // Page format.
-    Fl_Choice*                  _layout;        // Page layout.
-    Fl_Font                     _font;          // Font to use.
-    Fl_Fontsize                 _fontsize;      // Font size to use.
-    Fl_Hor_Slider*              _line;          // Line number width (optional).
-    Fl_Hor_Slider*              _tab;           // Replace tabs with spaces (optional).
-    GridGroup*                  _grid;          // Layout widget.
-    bool                        _ret;           // Return value.
-    bool                        _run;           // Run flag.
-    const StringVector&         _text;          // Text strings to print.
-    std::string                 _label2;        // Text info.
-
-public:
-    /** @brief Create window.
-    *
-    * @param[in] title   Dialog title.
-    * @param[in] text    Text to print.
-    */
-    _DlgPrintText(const std::string& title, const StringVector& text) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 34, flw::PREF_FONTSIZE * 35),
-    _text(text) {
-        end();
-
-        _align    = new Fl_Choice(0, 0, 0, 0);
-        _border   = new Fl_Check_Button(0, 0, 0, 0, "Print border");
-        _close    = new Fl_Button(0, 0, 0, 0, label::CLOSE.c_str());
-        _file     = new Fl_Button(0, 0, 0, 0, "output.ps");
-        _fonts    = new Fl_Button(0, 0, 0, 0, "Courier - 14");
-        _format   = new Fl_Choice(0, 0, 0, 0);
-        _grid     = new GridGroup(0, 0, w(), h());
-        _label    = new Fl_Box(0, 0, 0, 0);
-        _layout   = new Fl_Choice(0, 0, 0, 0);
-        _line     = new Fl_Hor_Slider(0, 0, 0, 0);
-        _print    = new Fl_Button(0, 0, 0, 0, label::PRINT.c_str());
-        _tab      = new Fl_Hor_Slider(0, 0, 0, 0);
-        _wrap     = new Fl_Check_Button(0, 0, 0, 0, "Wrap lines");
-        _ret      = false;
-        _run      = false;
-        _font     = FL_COURIER;
-        _fontsize = 14;
-
-        _grid->add(_border,   1,   1,  -1,   4);
-        _grid->add(_wrap,     1,   6,  -1,   4);
-        _grid->add(_line,     1,  13,  -1,   4);
-        _grid->add(_tab,      1,  20,  -1,   4);
-        _grid->add(_format,   1,  25,  -1,   4);
-        _grid->add(_layout,   1,  30,  -1,   4);
-        _grid->add(_align,    1,  35,  -1,   4);
-        _grid->add(_fonts,    1,  40,  -1,   4);
-        _grid->add(_file,     1,  45,  -1,   4);
-        _grid->add(_label,    1,  50,  -1,   13);
-        _grid->add(_print,  -34,  -5,  16,   4);
-        _grid->add(_close,  -17,  -5,  16,   4);
-        add(_grid);
-
-        util::labelfont(this);
-        _align->add("Left Align");
-        _align->add("Center Align");
-        _align->add("Right Align");
-        _align->tooltip("Line numbers are only used for left aligned text.");
-        _align->value(0);
-        _align->textfont(flw::PREF_FONT);
-        _align->textsize(flw::PREF_FONTSIZE);
-        _border->tooltip("Print line border around the print area.");
-        _close->callback(_DlgPrintText::Callback, this);
-        _file->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _file->callback(_DlgPrintText::Callback, this);
-        _file->tooltip("Select output PostScript file.");
-        _fonts->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _fonts->callback(_DlgPrintText::Callback, this);
-        _fonts->tooltip("Select font to use.");
-        _format->textfont(flw::PREF_FONT);
-        _format->textsize(flw::PREF_FONTSIZE);
-        _label->align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _label->box(FL_BORDER_BOX);
-        _label->box(FL_THIN_DOWN_BOX);
-        _layout->textfont(flw::PREF_FONT);
-        _layout->textsize(flw::PREF_FONTSIZE);
-        _line->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _line->callback(_DlgPrintText::Callback, this);
-        _line->color(FL_BACKGROUND2_COLOR);
-        _line->range(0, 6);
-        _line->precision(0);
-        _line->value(0);
-        _line->tooltip("Set minimum line number width.\nSet to 0 to disable.");
-        _print->callback(_DlgPrintText::Callback, this);
-        _tab->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
-        _tab->callback(_DlgPrintText::Callback, this);
-        _tab->color(FL_BACKGROUND2_COLOR);
-        _tab->range(0, 16);
-        _tab->precision(0);
-        _tab->value(0);
-        _tab->tooltip("Replace tabs with spaces.\nSet to 0 to disable.");
-        _wrap->tooltip("Wrap long lines or they will be clipped.");
-
-        priv::_init_printer_formats(_format, _layout);
-        _DlgPrintText::Callback(_line, this);
-        _DlgPrintText::Callback(_tab, this);
-        callback(_DlgPrintText::Callback, this);
-        copy_label(title.c_str());
-        set_modal();
-        resizable(_grid);
-        util::center_window(this, priv::PARENT);
-        _grid->do_layout();
-        set_label();
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgPrintText*>(o);
-
-        if (w == self || w == self->_close) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_file) {
-            auto filename = fl_file_chooser("Save To PostScript File", "PostScript Files (*.ps)\tAll Files (*)", self->_file->label());
-
-            if (filename != nullptr) {
-                self->_file->copy_label(filename);
-            }
-        }
-        else if (w == self->_fonts) {
-            auto dlg = dlg::Font(self->_font, self->_fontsize, "Select Print Font", true);
-
-            if (dlg.run() == true) {
-                auto l = util::format("%s - %d", dlg.fontname().c_str(), dlg.fontsize());
-                self->_fonts->copy_label(l.c_str());
-
-                self->_font     = dlg.font();
-                self->_fontsize = dlg.fontsize();
-            }
-        }
-        else if (w == self->_line) {
-            auto l = util::format("Line number: %d", (int) self->_line->value());
-            self->_line->copy_label(l.c_str());
-            self->redraw();
-        }
-        else if (w == self->_print) {
-            self->print();
-        }
-        else if (w == self->_tab) {
-            auto l = util::format("Tab replacement: %d", (int) self->_tab->value());
-            self->_tab->copy_label(l.c_str());
-            self->redraw();
-        }
-    }
-
-    /** @brief Run print.
-    *
-    */
-    void print() {
-        auto border  = _border->value();
-        auto wrap    = _wrap->value();
-        auto line    = static_cast<int>(_line->value());
-        auto tab     = static_cast<int>(_tab->value());
-        auto format  = static_cast<Fl_Paged_Device::Page_Format>(_format->value());
-        auto layout  = (_layout->value() == 0) ? Fl_Paged_Device::Page_Layout::PORTRAIT : Fl_Paged_Device::Page_Layout::LANDSCAPE;
-        auto align   = (_align->value() == 0) ? FL_ALIGN_LEFT : (_align->value() == 1) ? FL_ALIGN_CENTER : FL_ALIGN_RIGHT;
-        auto file    = _file->label();
-        auto printer = util::PrintText(file, format, layout, _font, _fontsize, align, wrap, border, line);
-        auto err     = printer.print(_text, tab);
-
-        if (err == "") {
-            auto s = _label2;
-            s += util::format("\n%d page%s was printed.", printer.page_count(), printer.page_count() > 1 ? "s" : "");
-            _label->copy_label(s.c_str());
-            _ret = true;
-        }
-        else {
-            auto s = _label2;
-            s += util::format("\nPrinting failed!\n%s", err.c_str());
-            _label->copy_label(s.c_str());
-            _ret = false;
-        }
-
-        redraw();
-    }
-
-    /** @brief Run dialog.
-    *
-    */
-    bool run() {
-        _run = true;
-        show();
-
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-
-        return _ret;
-    }
-
-    /** @brief Create and set text info.
-    *
-    */
-    void set_label() {
-        auto len = 0;
-
-        for (auto& s : _text) {
-            auto l = fl_utf_nb_char((unsigned char*) s.c_str(), (int) s.length());
-
-            if (l > len) {
-                len = l;
-            }
-        }
-
-        _label2 = util::format("Text contains %u lines.\nMax line length are %u characters.", (unsigned) _text.size(), (unsigned) len);
-        _label->copy_label(_label2.c_str());
-    }
-};
-
-} // flw::priv
-
-/** @brief Show print dialog for printing text to postscript.
-*
-* String will be splitted on "\n".
-*
-* @param[in]  title  Dialog title.
-* @param[out] text   Text string.
-*
-* @return True if printing was successful.
-*
-* @snippet dialog.cpp flw::dlg::print_text example
-* @image html print_text_dialog.png
-* @image html print_text.png
-*/
-bool dlg::print_text(const std::string& title, const std::string& text) {
-    auto lines = util::split_string(text, "\n");
-    priv::_DlgPrintText dlg(title, lines);
-
-    return dlg.run();
-}
-
-/** @brief Show print dialog for printing text to postscript.
-*
-* @param[in]  title  Dialog title.
-* @param[out] text   Text strings.
-*
-* @return True if printing was successful.
-*/
-bool dlg::print_text(const std::string& title, const StringVector& text) {
-    priv::_DlgPrintText dlg(title, text);
-    return dlg.run();
-}
-
-/*
  *           _____  _        _____      _           _    _____ _               _    ____
  *          |  __ \| |      / ____|    | |         | |  / ____| |             | |  |  _ \
  *          | |  | | | __ _| (___   ___| | ___  ___| |_| |    | |__   ___  ___| | _| |_) | _____  _____  ___
@@ -2049,15 +1209,15 @@ namespace priv {
 class _DlgSelectCheckBoxes : public Fl_Double_Window {
     Fl_Button*                  _all;           // Turn on all check buttons.
     Fl_Button*                  _cancel;        // Cancel dialog.
-    Fl_Button*                  _close;         // Close dialog.
     Fl_Button*                  _invert;        // Invert all check buttons.
     Fl_Button*                  _none;          // Uncheck all check buttons.
     Fl_Scroll*                  _scroll;        // Scroller for check buttons.
     GridGroup*                  _grid;          // Main layout widget.
-    const StringVector&         _labels;        // Labels for check buttons.
+    SVGButton*                  _close;         // Close dialog.
     WidgetVector                _checkbuttons;  // Vector with check buttons.
     bool                        _ret;           // Return value from run.
     bool                        _run;           // Run flag.
+    const StringVector&         _labels;        // Labels for check buttons.
 
 public:
     /** @brief Create window.
@@ -2071,8 +1231,8 @@ public:
         end();
 
         _all    = new Fl_Button(0, 0, 0, 0, "All On");
-        _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
+        _cancel = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
+        _close  = new SVGButton(0, 0, 0, 0, labels::OK, icons::BACK, true);
         _grid   = new GridGroup(0, 0, w(), h());
         _invert = new Fl_Button(0, 0, 0, 0, "Invert");
         _none   = new Fl_Button(0, 0, 0, 0, "All Off");
@@ -2107,7 +1267,7 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
     }
 
     /** @brief Callback for all widgets.
@@ -2215,16 +1375,16 @@ StringVector dlg::select_checkboxes(const std::string& title, const StringVector
 
 namespace priv {
 
-/** @brief A dialog with choice widget.
+/** @brief A dialog with a choice widget.
 * @private
 */
 class _DlgSelectChoice : public Fl_Double_Window {
     Fl_Box*                     _label;     // Message label.
-    priv::_Button*              _cancel;    // Cancel button.
-    priv::_Button*              _ok;        // Ok button.
+    Fl_Button*                  _cancel;    // Cancel button.
     Fl_Button*                  _icon;      // Icon label.
     Fl_Choice*                  _choice;    // Choice widget with user strings to select from.
     GridGroup*                  _grid;      // Layout widget.
+    SVGButton*                  _ok;        // Ok button.
     bool                        _run;       // Run flag.
     int                         _ret;       // Return value from run.
 
@@ -2232,6 +1392,7 @@ public:
     /** @brief Create window.
     *
     * @param[in] title     Dialog title.
+    * @param[in] message   Message string.
     * @param[in] strings   Strings for the choce widget.
     * @param[in] selected  Selected string index.
     */
@@ -2239,12 +1400,12 @@ public:
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 9.5) {
         end();
 
-        _cancel = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, label::CANCEL));
+        _cancel = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
         _choice = new Fl_Choice(0, 0, 0, 0);
         _grid   = new GridGroup(0, 0, w(), h());
         _icon   = new Fl_Button(0, 0, 0, 0);
         _label  = new Fl_Box(0, 0, 0, 0);
-        _ok     = static_cast<priv::_Button*>(dlg::button(0, 0, 0, 0, label::OK, icons::BACK, true));
+        _ok     = new SVGButton(0, 0, 0, 0, labels::OK, icons::BACK, true, false);
         _ret    = -1;
         _run    = false;
 
@@ -2260,7 +1421,6 @@ public:
         }
 
         _cancel->callback(_DlgSelectChoice::Callback, this);
-        _cancel->set_color(FL_BACKGROUND_COLOR);
         _choice->textfont(flw::PREF_FONT);
         _choice->textsize(flw::PREF_FONTSIZE);
         _choice->value(selected);
@@ -2270,14 +1430,13 @@ public:
         _label->copy_label(message.c_str());
         _label->box(FL_BORDER_BOX);
         _ok->callback(_DlgSelectChoice::Callback, this);
-        _ok->set_color(FL_BACKGROUND_COLOR);
 
         util::labelfont(this);
         callback(_DlgSelectChoice::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -2351,12 +1510,12 @@ namespace priv {
 */
 class _DlgSelectString : public Fl_Double_Window {
     Fl_Button*                  _cancel;        // Cancel dialog button.
-    Fl_Button*                  _close;         // Close dialog button.
     Fl_Input*                   _filter;        // Enter text to filter strings.
     GridGroup*                  _grid;          // Layout widget.
+    SVGButton*                  _select;        // Select string and close button.
     ScrollBrowser*              _list;          // String list widget.
-    const StringVector&         _strings;       // Input strings.
     bool                        _run;           // Run flag;
+    const StringVector&         _strings;       // Input strings.
 
 public:
     /** @brief Create window.
@@ -2374,26 +1533,26 @@ public:
     _strings(strings) {
         end();
 
-        _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::SELECT.c_str());
+        _cancel = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
         _filter = new Fl_Input(0, 0, 0, 0);
         _grid   = new GridGroup(0, 0, w(), h());
-        _list   = new ScrollBrowser(0, 0, 0, 0);
+        _list   = new ScrollBrowser(9, 0, 0, 0, 0);
+        _select = new SVGButton(0, 0, 0, 0, labels::SELECT, icons::BACK, true);
         _run    = false;
 
         _grid->add(_filter,   1,  1, -1,  4);
         _grid->add(_list,     1,  6, -1, -6);
         _grid->add(_cancel, -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_select, -17, -5, 16,  4);
         add(_grid);
 
         _cancel->callback(_DlgSelectString::Callback, this);
-        _close->callback(_DlgSelectString::Callback, this);
         _filter->callback(_DlgSelectString::Callback, this);
         _filter->tooltip("Enter text to filter rows that macthes the text.\nPress tab to switch focus between input and list widget.");
         _filter->when(FL_WHEN_CHANGED);
         _list->callback(_DlgSelectString::Callback, this);
         _list->tooltip("Use Page Up or Page Down in list to scroll faster,");
+        _select->callback(_DlgSelectString::Callback, this);
 
         if (fixed_font == true) {
             _filter->textfont(flw::PREF_FIXED_FONT);
@@ -2439,7 +1598,7 @@ public:
         activate_button();
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -2448,10 +1607,10 @@ public:
     */
     void activate_button() {
         if (_list->value() == 0) {
-            _close->deactivate();
+            _select->deactivate();
         }
         else {
-            _close->activate();
+            _select->activate();
         }
     }
 
@@ -2466,7 +1625,7 @@ public:
             self->_run = false;
             self->hide();
         }
-        else if (w == self->_close) {
+        else if (w == self->_select) {
             self->_run = false;
             self->hide();
         }
@@ -2477,7 +1636,7 @@ public:
         else if (w == self->_list) {
             self->activate_button();
 
-            if (Fl::event_clicks() > 0 && self->_close->active()) {
+            if (Fl::event_clicks() > 0 && self->_select->active()) {
                 Fl::event_clicks(0);
                 self->_run = false;
                 self->hide();
@@ -2622,9 +1781,9 @@ namespace priv {
 */
 class _DlgSlider : public Fl_Double_Window {
     Fl_Button*                  _cancel;    // Cancel button.
-    Fl_Button*                  _close;     // Close button.
     Fl_Hor_Value_Slider*        _slider;    // Number slider.
     GridGroup*                  _grid;      // Layout widget.
+    SVGButton*                  _ok;        // Close dialog and set new value.
     bool                        _ret;       // Return flag.
     bool                        _run;       // Run flag.
     double&                     _value;     // Number value.
@@ -2643,19 +1802,20 @@ public:
     _value(value) {
         end();
 
-        _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-        _slider = new Fl_Hor_Value_Slider(0, 0, 0, 0);
-        _close  = new Fl_Return_Button(0, 0, 0, 0, label::OK.c_str());
+        _cancel = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
+        _ok     = new SVGButton(0, 0, 0, 0, labels::OK, icons::BACK, true);
+        _slider = new Fl_Hor_Value_Slider(0, 0, 0, 0);
         _ret    = false;
         _run    = false;
 
         _grid->add(_slider,   1,  1, -1,  4);
         _grid->add(_cancel, -34, -5, 16,  4);
-        _grid->add(_close,  -17, -5, 16,  4);
+        _grid->add(_ok,     -17, -5, 16,  4);
         add(_grid);
 
         _cancel->callback(_DlgSlider::Callback, this);
+        _ok->callback(_DlgSlider::Callback, this);
         _slider->align(FL_ALIGN_LEFT    );
         _slider->callback(_DlgSlider::Callback, this);
         _slider->range(min, max);
@@ -2663,14 +1823,13 @@ public:
         _slider->step(step);
         _slider->textfont(flw::PREF_FONT);
         _slider->textsize(flw::PREF_FONTSIZE);
-        _close->callback(_DlgSlider::Callback, this);
 
         util::labelfont(this);
         callback(_DlgSlider::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
         _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
     }
@@ -2685,7 +1844,7 @@ public:
             self->_run = false;
             self->hide();
         }
-        else if (w == self->_close) {
+        else if (w == self->_ok) {
             self->_ret = true;
             self->_run = false;
             self->_value = self->_slider->value();
@@ -2747,11 +1906,11 @@ namespace priv {
 */
 class _DlgText : public Fl_Double_Window {
     Fl_Button*                  _cancel;    // Cancel button.
-    Fl_Button*                  _close;     // Close button.
     Fl_Button*                  _save;      // Save text button.
     Fl_Text_Buffer*             _buffer;    // Text buffer.
     Fl_Text_Display*            _text;      // Text display.
     GridGroup*                  _grid;      // Layout widget.
+    SVGButton*                  _close;     // Close/update button.
     bool                        _edit;      // Allow editing.
     bool                        _run;       // Run flag.
     char*                       _res;       // Result text.
@@ -2770,10 +1929,10 @@ public:
         end();
 
         _buffer = new Fl_Text_Buffer();
-        _cancel = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-        _close  = new Fl_Return_Button(0, 0, 0, 0, (edit == true) ? label::UPDATE.c_str() : label::CLOSE.c_str());
+        _cancel = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
+        _close  = new SVGButton(0, 0, 0, 0, (edit == true) ? labels::UPDATE : labels::CLOSE, icons::BACK, true);
         _grid   = new GridGroup(0, 0, w(), h());
-        _save   = new Fl_Button(0, 0, 0, 0, label::SAVE_DOT.c_str());
+        _save   = new Fl_Button(0, 0, 0, 0, labels::SAVE_DOT.c_str());
         _text   = (edit == false) ? new Fl_Text_Display(0, 0, 0, 0) : new Fl_Text_Editor(0, 0, 0, 0);
         _edit   = edit;
         _res    = nullptr;
@@ -2817,7 +1976,7 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, priv::PARENT);
+        util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -2909,836 +2068,6 @@ bool dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
     text = res;
     free(res);
     return true;
-}
-
-/*
- *           _____  _    _______ _
- *          |  __ \| |  |__   __| |
- *          | |  | | | __ _| |  | |__   ___ _ __ ___   ___
- *          | |  | | |/ _` | |  | '_ \ / _ \ '_ ` _ \ / _ \
- *          | |__| | | (_| | |  | | | |  __/ | | | | |  __/
- *          |_____/|_|\__, |_|  |_| |_|\___|_| |_| |_|\___|
- *      ______         __/ |
- *     |______|       |___/
- */
-
-namespace priv {
-
-/** @brief Select a theme dialog.
-*
-*/
-class _DlgTheme : public Fl_Double_Window {
-    Fl_Box*                     _fixed_label;   // Fixed font name and example.
-    Fl_Box*                     _font_label;    // Regular font name and example.
-    Fl_Browser*                 _theme;         // Theme list.
-    Fl_Button*                  _close;         // Close button.
-    Fl_Button*                  _fixedfont;     // Select fixed font.
-    Fl_Button*                  _font;          // Select regular font.
-    Fl_Check_Button*            _scale;         // Turn on/off FLTK scaling.
-    Fl_Slider*                  _scale_val;     // Scale value.
-    GridGroup*                  _grid;          // Layout widget.
-    bool                        _run;           // Run flag.
-    int                         _theme_row;     // Row index in theme list.
-
-public:
-    /** @brief Create window.
-    *
-    * @param[in] enable_font       Enable selecting regular font.
-    * @param[in] enable_fixedfont  Enable selecting fixed font.
-    */
-    _DlgTheme(bool enable_font, bool enable_fixedfont) :
-    Fl_Double_Window(0, 0, 10, 10, "Set Theme") {
-        end();
-
-        _close       = new Fl_Return_Button(0, 0, 0, 0, label::CLOSE.c_str());
-        _fixedfont   = new Fl_Button(0, 0, 0, 0, label::MONO.c_str());
-        _fixed_label = new Fl_Box(0, 0, 0, 0);
-        _font        = new Fl_Button(0, 0, 0, 0, label::REGULAR.c_str());
-        _font_label  = new Fl_Box(0, 0, 0, 0);
-        _grid        = new GridGroup(0, 0, w(), h());
-        _scale       = new Fl_Check_Button(0, 0, 0, 0, "!! Use Scaling");
-        _scale_val   = new Fl_Slider(0, 0, 0, 0);
-        _theme       = new Fl_Hold_Browser(0, 0, 0, 0);
-        _theme_row   = 0;
-        _run         = false;
-
-        _grid->add(_theme,         1,   1,  -1, -21);
-        _grid->add(_font_label,    1, -20,  -1,   4);
-        _grid->add(_fixed_label,   1, -15,  -1,   4);
-        _grid->add(_scale,         1, -10,  19,   4);
-        _grid->add(_scale_val,    25, -10,  -1,   4);
-        _grid->add(_font,        -51,  -5,  16,   4);
-        _grid->add(_fixedfont,   -34,  -5,  16,   4);
-        _grid->add(_close,       -17,  -5,  16,   4);
-        add(_grid);
-
-        if (enable_font == false) {
-          _font->deactivate();
-        }
-
-        if (enable_fixedfont == false) {
-          _fixedfont->deactivate();
-        }
-
-        _close->callback(_DlgTheme::Callback, this);
-        _fixed_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _fixed_label->box(FL_BORDER_BOX);
-        _fixed_label->color(FL_BACKGROUND2_COLOR);
-        _fixed_label->tooltip("Default fixed font.");
-        _fixedfont->callback(_DlgTheme::Callback, this);
-        _fixedfont->tooltip("Set default fixed font.");
-        _font->callback(_DlgTheme::Callback, this);
-        _font->tooltip("Set default font.");
-        _font_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-        _font_label->box(FL_BORDER_BOX);
-        _font_label->color(FL_BACKGROUND2_COLOR);
-        _font_label->tooltip("Default font.");
-        _scale->callback(_DlgTheme::Callback, this);
-        _scale->tooltip(
-            "Turn on/off FLTK scaling for HiDPI screens.\n"
-            "This work somewhat different depending on what desktop it is running on.\n"
-            "Save settings and restart application."
-        );
-        _scale->value(flw::PREF_SCALE_ON);
-        _scale_val->range(0.5, 2.0);
-        _scale_val->step(0.05);
-        _scale_val->value(flw::PREF_SCALE_VAL);
-        _scale_val->type(FL_HORIZONTAL);
-        _scale_val->callback(_DlgTheme::Callback, this);
-        _scale_val->align(FL_ALIGN_LEFT);
-        _scale_val->tooltip("Set scaling factor.");
-        _theme->box(FL_BORDER_BOX);
-        _theme->callback(_DlgTheme::Callback, this);
-        _theme->textfont(flw::PREF_FONT);
-
-        for (auto& name : flw::PREF_THEMES) {
-            _theme->add(name.c_str());
-        }
-
-        if (Fl::screen_scaling_supported() == 0) {
-            _scale->value(0);
-            _scale->deactivate();
-            _scale_val->deactivate();
-        }
-
-        _DlgTheme::Callback(_scale_val, this);
-        resizable(_grid);
-        callback(_DlgTheme::Callback, this);
-        set_modal();
-        update_pref();
-        util::center_window(this, priv::PARENT);
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgTheme*>(o);
-
-        if (w == self || w == self->_close) {
-            self->_run = false;
-            self->hide();
-        }
-        else if (w == self->_fixedfont) {
-            dlg::Font fd(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE, "Select Monospaced Font");
-
-            if (fd.run() == true) {
-                flw::PREF_FIXED_FONT     = fd.font();
-                flw::PREF_FIXED_FONTSIZE = fd.fontsize();
-                flw::PREF_FIXED_FONTNAME = fd.fontname();
-
-                if (self->_font->active() == 0) {
-                    flw::PREF_FONTSIZE = flw::PREF_FIXED_FONTSIZE;
-                }
-
-                self->update_pref();
-            }
-        }
-        else if (w == self->_font) {
-            dlg::Font fd(flw::PREF_FONT, flw::PREF_FONTSIZE, "Select Regular Font");
-
-            if (fd.run() == true) {
-                flw::PREF_FONT     = fd.font();
-                flw::PREF_FONTSIZE = fd.fontsize();
-                flw::PREF_FONTNAME = fd.fontname();
-                Fl_Tooltip::font(flw::PREF_FONT);
-                Fl_Tooltip::size(flw::PREF_FONTSIZE);
-
-                if (self->_fixedfont->active() == 0) {
-                    flw::PREF_FIXED_FONTSIZE = flw::PREF_FONTSIZE;
-                }
-
-                self->update_pref();
-
-                #if defined(__linux__)
-                    self->hide(); // !!! Wayland/KDE ignores resizing of window unless the windows does a hide and show, no idea why.
-                    self->show();
-                #endif
-            }
-        }
-        else if (w == self->_theme) {
-            auto row = self->_theme->value() - 1;
-
-            if (row == priv::THEME_GLEAM) {
-                priv::_load_gleam();
-            }
-            else if (row == priv::THEME_GLEAM_BLUE) {
-                priv::_load_gleam_blue();
-            }
-            else if (row == priv::THEME_GLEAM_DARK) {
-                priv::_load_gleam_dark();
-            }
-            else if (row == priv::THEME_GLEAM_TAN) {
-                priv::_load_gleam_tan();
-            }
-            else if (row == priv::THEME_GTK) {
-                priv::_load_gtk();
-            }
-            else if (row == priv::THEME_GTK_BLUE) {
-                priv::_load_gtk_blue();
-            }
-            else if (row == priv::THEME_GTK_DARK) {
-                priv::_load_gtk_dark();
-            }
-            else if (row == priv::THEME_GTK_TAN) {
-                priv::_load_gtk_tan();
-            }
-            else if (row == priv::THEME_OXY) {
-                priv::_load_oxy();
-            }
-            else if (row == priv::THEME_OXY_TAN) {
-                priv::_load_oxy_tan();
-            }
-            else if (row == priv::THEME_PLASTIC) {
-                priv::_load_plastic();
-            }
-            else if (row == priv::THEME_PLASTIC_TAN) {
-                priv::_load_plastic_tan();
-            }
-            else {
-                priv::_load_default();
-            }
-
-            self->update_pref();
-        }
-        else if (w == self->_scale) {
-            flw::PREF_SCALE_ON = self->_scale->value();
-        }
-        else if (w == self->_scale_val) {
-            flw::PREF_SCALE_VAL = self->_scale_val->value();
-            self->_scale_val->copy_label(util::format("%.2f", flw::PREF_SCALE_VAL).c_str());
-        }
-    }
-
-    /** @brief Run dialog.
-    *
-    */
-    void run() {
-        _run = true;
-        show();
-
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-    }
-
-    /** @brief Update widget fonts and looks.
-    *
-    */
-    void update_pref() {
-        size(flw::PREF_FONTSIZE * 30, flw::PREF_FONTSIZE * 32);
-        _grid->resize(0, 0, w(), h());
-
-        Fl_Tooltip::font(flw::PREF_FONT);
-        Fl_Tooltip::size(flw::PREF_FONTSIZE);
-        util::labelfont(this);
-        _font_label->copy_label(util::format("%s - %d", flw::PREF_FONTNAME.c_str(), flw::PREF_FONTSIZE).c_str());
-        _fixed_label->copy_label(util::format("%s - %d", flw::PREF_FIXED_FONTNAME.c_str(), flw::PREF_FIXED_FONTSIZE).c_str());
-        _fixed_label->labelfont(flw::PREF_FIXED_FONT);
-        _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
-        _theme->textfont(flw::PREF_FONT);
-        _theme->textsize(flw::PREF_FONTSIZE);
-        priv::_scrollbar();
-
-        for (int f = 0; f < priv::THEME_NIL; f++) {
-            if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
-                _theme->value(f + 1);
-                break;
-            }
-        }
-
-        Fl::redraw();
-    }
-};
-
-} // flw::priv
-
-/** @brief Show a theme and font selection dialog.
-*
-* Current theme is selected.\n
-* Following font values are updated.\n
-* flw::PREF_FONT.\n
-* flw::PREF_FONTSIZE.\n
-* flw::PREF_FONTNAME.\n
-* flw::PREF_FIXED_FONT.\n
-* flw::PREF_FIXED_FONTSIZE.\n
-* flw::PREF_FIXED_FONTNAME.\n
-* flw::PREF_SCALE_ON.\n
-* flw::PREF_SCALE_VAL.\n
-*
-* @param[in] enable_font       Enable selecting regular font.
-* @param[in] enable_fixedfont  Enable selecting fixed font.
-*
-* @snippet dialog.cpp flw::dlg::theme example
-* @image html theme_dialog.png
-*/
-void dlg::theme(bool enable_font, bool enable_fixedfont) {
-    auto dlg = priv::_DlgTheme(enable_font, enable_fixedfont);
-    dlg.run();
-}
-
-/*
- *           ______          _   _           _          _
- *          |  ____|        | | | |         | |        | |
- *          | |__ ___  _ __ | |_| |     __ _| |__   ___| |
- *          |  __/ _ \| '_ \| __| |    / _` | '_ \ / _ \ |
- *          | | | (_) | | | | |_| |___| (_| | |_) |  __/ |
- *          |_|  \___/|_| |_|\__|______\__,_|_.__/ \___|_|
- *      ______
- *     |______|
- */
-
-namespace priv {
-
-static const std::string _FONTDIALOG_LABEL = R"(
-ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
-abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
-–—‘“”„†•…‰™œŠŸž€ ΑΒΓΔΩαβγδω АБВГДабвгд
-∀∂∈ℝ∧∪≡∞ ↑↗↨↻⇣ ┐┼╔╘░►☺♀ ﬁ�⑀₂ἠḂӥẄɐː⍎אԱა
-
-japanese: こんにちは世界
-korean: 안녕하세요 세계
-tibetan: ཨོཾ་མ་ཎི་པདྨེ་ཧཱུྃ
-greek: Γειά σου Κόσμε
-ukrainian: Привіт Світ
-thai: สวัสดีชาวโลก
-amharic: ሰላም ልዑል
-braille: ⡌⠁⠧⠑ ⠼⠁⠒  ⡍⠜⠇⠑⠹⠰⠎ ⡣⠕⠌
-math: ∮ E⋅da = Q,  n → ∞, ∑ f(i) 2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ
-
-“There is nothing else than now.
-There is neither yesterday, certainly,
-nor is there any tomorrow.
-How old must you be before you know that?
-There is only now, and if now is only two days,
-then two days is your life and everything in it will be in proportion.
-This is how you live a life in two days.
-And if you stop complaining and asking for what you never will get,
-you will have a good life.
-A good life is not measured by any biblical span.”
-― Ernest Hemingway, For Whom the Bell Tolls
-)";
-
-/** @brief Example text for current font.
-*
-*/
-class _FontLabel : public Fl_Box {
-public:
-    int font;
-    int size;
-
-    /** @brief
-    */
-    _FontLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
-        font = FL_HELVETICA;
-        size = 14;
-
-        align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-        box(FL_BORDER_BOX);
-        color(FL_BACKGROUND2_COLOR);
-    }
-
-    /** @brief
-    */
-    void draw() override {
-        draw_box();
-        fl_font((Fl_Font) font, size);
-        fl_color(FL_FOREGROUND_COLOR);
-        fl_draw(label(), x() + 3, y() + 3, w() - 6, h() - 6, align());
-    }
-};
-
-} // flw::priv
-
-/*
- *      ______          _
- *     |  ____|        | |
- *     | |__ ___  _ __ | |_
- *     |  __/ _ \| '_ \| __|
- *     | | | (_) | | | | |_
- *     |_|  \___/|_| |_|\__|
- *
- *
- */
-
-/** @brief Create font dialog.
-*
-* @param[in] font              Selected font.
-* @param[in] fontsize          Font size.
-* @param[in] title             Dialog title.
-* @param[in] limit_to_default  Set to true to only display the default FLTK fonts.
-*/
-dlg::Font::Font(Fl_Font font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
-    _create(font, "", fontsize, title, limit_to_default);
-}
-
-/** @brief Create font dialog.
-*
-* @param[in] font              Selected font name.
-* @param[in] fontsize          Font size.
-* @param[in] title             Dialog title.
-* @param[in] limit_to_default  Set to true to only display the default FLTK fonts.
-*/
-dlg::Font::Font(const std::string& font, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 64, flw::PREF_FONTSIZE * 36) {
-    _create(0, font, fontsize, title, limit_to_default);
-}
-
-/** @brief Activate select button.
-*
-*/
-void dlg::Font::_activate() {
-    if (_fonts->value() == 0 || _sizes->value() == 0 || (_fonts->active() == 0 && _sizes->active() == 0)) {
-        _select->deactivate();
-    }
-    else {
-        _select->activate();
-    }
-}
-
-/** @brief Callbakc for all widgets.
-*
-* @param[in] w  Widget.
-* @param[in] p  Font.
-*/
-void dlg::Font::Callback(Fl_Widget* w, void* o) {
-    auto self = static_cast<Font*>(o);
-
-    if (w == self || w == self->_cancel) {
-        self->_run = false;
-        self->hide();
-    }
-    else if (w == self->_fonts) {
-        auto row = self->_fonts->value();
-
-        if (row > 0) {
-            static_cast<priv::_FontLabel*>(self->_label)->font = row - 1;
-        }
-
-        self->_activate();
-        Fl::redraw();
-    }
-    else if (w == self->_select) {
-        auto row1 = self->_fonts->value();
-        auto row2 = self->_sizes->value();
-
-        if (row1 > 0 && row2 > 0) {
-            row1--;
-
-            self->_fontname = util::remove_browser_format(util::to_string(flw::PREF_FONTNAMES[row1]));
-            self->_font     = row1;
-            self->_fontsize = row2 + 5;
-            self->_ret      = true;
-            self->_run      = false;
-
-            self->hide();
-        }
-    }
-    else if (w == self->_sizes) {
-        auto row = self->_sizes->value();
-
-        if (row > 0) {
-            static_cast<priv::_FontLabel*>(self->_label)->size = row + 5;
-        }
-
-        self->_activate();
-        Fl::redraw();
-    }
-}
-
-/** @brief Create font dialog.
-*
-* @param[in] font              Selected font.
-* @param[in] fontname          Font name.
-* @param[in] fontsize          Font size.
-* @param[in] title             Sample text.
-* @param[in] limit_to_default  Set to true to only display the default FLTK font.
-*/
-void dlg::Font::_create(Fl_Font font, const std::string& fontname, Fl_Fontsize fontsize, const std::string& title, bool limit_to_default) {
-    end();
-
-    _cancel   = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-    _fonts    = new ScrollBrowser(12);
-    _grid     = new GridGroup();
-    _label    = new priv::_FontLabel(0, 0, 0, 0);
-    _select   = new Fl_Button(0, 0, 0, 0, label::SELECT.c_str());
-    _sizes    = new ScrollBrowser(6);
-    _font     = -1;
-    _fontsize = -1;
-    _ret      = false;
-    _run      = false;
-
-    _grid->add(_fonts,    1,   1,  50,  -6);
-    _grid->add(_sizes,   52,   1,  12,  -6);
-    _grid->add(_label,   65,   1,  -1,  -6);
-    _grid->add(_cancel, -34,  -5,  16,   4);
-    _grid->add(_select, -17,  -5,  16,   4);
-    add(_grid);
-
-    _cancel->callback(Font::Callback, this);
-    _cancel->labelfont(flw::PREF_FONT);
-    _cancel->labelsize(flw::PREF_FONTSIZE);
-    _fonts->box(FL_BORDER_BOX);
-    _fonts->callback(Font::Callback, this);
-    _fonts->textsize(flw::PREF_FONTSIZE);
-    _fonts->when(FL_WHEN_CHANGED);
-    static_cast<priv::_FontLabel*>(_label)->font = font;
-    static_cast<priv::_FontLabel*>(_label)->size = fontsize;
-    _select->callback(Font::Callback, this);
-    _select->labelfont(flw::PREF_FONT);
-    _select->labelsize(flw::PREF_FONTSIZE);
-    _sizes->box(FL_BORDER_BOX);
-    _sizes->callback(Font::Callback, this);
-    _sizes->textsize(flw::PREF_FONTSIZE);
-    _sizes->when(FL_WHEN_CHANGED);
-
-    theme::load_fonts();
-
-    auto count = 0;
-
-    for (auto name : flw::PREF_FONTNAMES) {
-        if (limit_to_default == true && count == 12) {
-            break;
-        }
-
-        _fonts->add(name);
-        count++;
-    }
-
-    for (auto f = 6; f <= 72; f++) {
-        char buf[50];
-        snprintf(buf, 50, "@r%2d  ", f);
-        _sizes->add(buf);
-    }
-
-    if (fontsize >= 6 && fontsize <= 72) {
-        _sizes->value(fontsize - 5);
-        _sizes->middleline(fontsize - 5);
-        static_cast<priv::_FontLabel*>(_label)->font = fontsize;
-    }
-    else {
-        _sizes->value(14 - 5);
-        _sizes->middleline(14 - 5);
-        static_cast<priv::_FontLabel*>(_label)->font = 14;
-    }
-
-    if (fontname != "") {
-        _select_name(fontname);
-    }
-    else if (font >= 0 && font < _fonts->size()) {
-        _fonts->value(font + 1);
-        _fonts->middleline(font + 1);
-        static_cast<priv::_FontLabel*>(_label)->font = font;
-    }
-    else {
-        _fonts->value(1);
-        _fonts->middleline(1);
-    }
-
-    resizable(_grid);
-    copy_label(title.c_str());
-    callback(Font::Callback, this);
-    set_modal();
-    _fonts->take_focus();
-    _grid->resize(0, 0, w(), h());
-}
-
-/** @brief Show dialog.
-*
-* @return True if select button has been pressed.
-*/
-bool dlg::Font::run() {
-    _ret = false;
-    _run = true;
-
-    _activate();
-    util::center_window(this, priv::PARENT);
-    show();
-
-    while (_run == true) {
-        Fl::wait();
-        Fl::flush();
-    }
-
-    return _ret;
-}
-
-/** @brief Try to select font by using the name.
-*
-* If font cant be found then the first font is selected.
-*
-* @param[in] fontname  Name of font to select.
-*/
-void dlg::Font::_select_name(const std::string& fontname) {
-    auto count = 1;
-
-    for (auto f : flw::PREF_FONTNAMES) {
-        auto font_without_style = util::remove_browser_format(util::to_string(f));
-
-        if (fontname == font_without_style) {
-            _fonts->value(count);
-            _fonts->middleline(count);
-            static_cast<priv::_FontLabel*>(_label)->font = count - 1;
-            return;
-        }
-
-        count++;
-    }
-
-    _fonts->value(1);
-    static_cast<priv::_FontLabel*>(_label)->font = 0;
-}
-
-/** @brief Show font dialog.
-*
-* Input values are not update if user press cancel.
-*
-* @param[in,out] font              Font index.
-* @param[in,out] fontsize          Font size.
-* @param[out]    fontname          Font name.
-* @param[in]     limit_to_default  True to use only FLTK fonts.
-*
-* @return True if user selected a font.
-*
-* @snippet dialog.cpp flw::dlg::font example
-* @image html font_dialog.png
-*/
-bool dlg::font(Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
-    auto dlg = dlg::Font(font, fontsize, "Select Font", limit_to_default);
-
-    if (dlg.run() == false) {
-        return false;
-    }
-
-    font     = dlg.font();
-    fontsize = dlg.fontsize();
-    fontname = dlg.fontname();
-
-    return true;
-}
-
-/*
- *      _____
- *     |  __ \
- *     | |__) | __ ___   __ _ _ __ ___  ___ ___
- *     |  ___/ '__/ _ \ / _` | '__/ _ \/ __/ __|
- *     | |   | | | (_) | (_| | | |  __/\__ \__ \
- *     |_|   |_|  \___/ \__, |_|  \___||___/___/
- *                       __/ |
- *                      |___/
- */
-
-/** @brief Create progress dialog.
-*
-* But dont show it.\n
-* If min and max progress values are equal then the progress bar will be hidden.\n
-*
-* @param[in] title   Title string.
-* @param[in] cancel  True to enable cancel button.
-* @param[in] pause   True to enable pause button.
-* @param[in] min     Min progress bar value.
-* @param[in] max     Max progress bar value.
-*/
-dlg::Progress::Progress(const std::string& title, bool cancel, bool pause, double min, double max) :
-Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * 40, flw::PREF_FONTSIZE * 12) {
-    end();
-
-    _cancel   = new Fl_Button(0, 0, 0, 0, label::CANCEL.c_str());
-    _grid     = new GridGroup(0, 0, w(), h());
-    _label    = new Fl_Hold_Browser(0, 0, 0, 0);
-    _pause    = new Fl_Toggle_Button(0, 0, 0, 0, "&Pause");
-    _progress = new Fl_Hor_Fill_Slider(0, 0, 0, 0);
-    _ret      = true;
-    _last     = 0;
-
-    _grid->add(_label,     1,   1,  -1, -11);
-    _grid->add(_progress,  1, -10,  -1,   4);
-    _grid->add(_pause,   -34,  -5,  16,   4);
-    _grid->add(_cancel,  -17,  -5,  16,   4);
-    add(_grid);
-    range(min, max);
-
-    _cancel->callback(Progress::Callback, this);
-    _label->box(FL_BORDER_BOX);
-    _label->textfont(flw::PREF_FONT);
-    _label->textsize(flw::PREF_FONTSIZE);
-    _pause->callback(Progress::Callback, this);
-
-    if (cancel == false) {
-        _cancel->deactivate();
-    }
-
-    if (pause == false) {
-        _pause->deactivate();
-    }
-
-    util::labelfont(this);
-    callback(Progress::Callback, this);
-    copy_label(title.c_str());
-    set_modal();
-    resizable(_grid);
-    _grid->resize(0, 0, w(), h());
-}
-
-/** @brief Callback for widgets.
-*
-* Pause is running a loop until it has unpaused.
-*
-* @param[in] w  Widget that caused callback.
-* @param[in] o  Progress.
-*/
-void dlg::Progress::Callback(Fl_Widget* w, void* o) {
-    auto self = static_cast<Progress*>(o);
-
-    if (w == self) {
-    }
-    else if (w == self->_cancel) {
-        self->_ret = false;
-    }
-    else if (w == self->_pause) {
-        bool cancel = self->_cancel->active();
-        self->_cancel->deactivate();
-
-        while (self->_pause->value() != 0) {
-            util::sleep(20);
-            Fl::check();
-        }
-
-        if (cancel == true) {
-            self->_cancel->activate();
-        }
-    }
-}
-
-/** @brief Set new progress bar range.
-*
-* @param[in] min     Min progress bar value.
-* @param[in] max     Max progress bar value.
-*/
-void dlg::Progress::range(double min, double max) {
-    if (min < max && fabs(max - min) > 0.001) {
-        _progress->show();
-        _progress->range(min, max);
-        _progress->value(min);
-        _grid->resize(_label, 1, 1, -1, -11);
-    }
-    else {
-        _progress->hide();
-        _grid->resize(_label, 1, 1, -1, -6);
-    }
-}
-
-/** @brief Show window centered.
-*
-* If parent is NULL then windows is centered on screen.\n
-* Otherwise it is centered on parent window.
-* Some window managers might ignore window positions.
-*/
-void dlg::Progress::start() {
-    util::center_window(this, priv::PARENT);
-    Fl_Double_Window::show();
-}
-
-/** @brief Update work dialog window.
-*
-* @param[in] value     Progress bar value.
-* @param[in] messages  Message list.
-* @param[in] milli     Milliseconds between updating the window.
-*
-* @return False is cancel has been pressed, otherwise true.
-*/
-bool dlg::Progress::update(double value, const StringVector& messages, unsigned milli) {
-    auto now = static_cast<unsigned>(util::milliseconds());
-
-    if (now - _last > milli) {
-        _progress->value(value);
-        _label->clear();
-
-        for (const auto& s : messages) {
-            _label->add(s.c_str());
-        }
-
-        _last = now;
-        Fl::check();
-        Fl::flush();
-    }
-
-    return _ret;
-}
-
-/** @brief Update work dialog window.
-*
-* @param[in] messages  Message list.
-* @param[in] milli     Milliseconds between updating the window.
-*
-* @return False is cancel has been pressed, otherwise true.
-*/
-bool dlg::Progress::update(const StringVector& messages, unsigned milli) {
-    return update(0.0, messages, milli);
-}
-
-/** @brief Update work dialog window.
-*
-* @param[in] value    Progress bar value.
-* @param[in] message  Message string.
-* @param[in] milli    Milliseconds between updating the window.
-*
-* @return False is cancel has been pressed, otherwise true.
-*/
-bool dlg::Progress::update(double value, const std::string& message, unsigned milli) {
-    auto messages = std::vector<std::string>();
-    messages.push_back(message);
-
-    return update(value, messages, milli);
-}
-
-/** @brief Update work dialog window.
-*
-* @param[in] message  Message string.
-* @param[in] milli    Milliseconds between updating the window.
-*
-* @return False is cancel has been pressed, otherwise true.
-*/
-bool dlg::Progress::update(const std::string& message, unsigned milli) {
-    return update(0.0, message, milli);
-}
-
-/** @brief Set progress bar value.
-*
-* @param[in] value  Number from progress min to progress max.
-*/
-void dlg::Progress::value(double value) {
-    if (value < _progress->minimum()) {
-        _progress->value(_progress->minimum());
-    }
-    else if (value > _progress->maximum()) {
-        _progress->value(_progress->maximum());
-    }
-    else {
-        _progress->value(value);
-    }
 }
 
 } // flw
