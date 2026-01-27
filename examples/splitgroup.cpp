@@ -9,8 +9,8 @@ int main() {
 
     // [flw::SplitGroup example]
 
-    auto* win   = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::SplitGroup");
-    auto* split = new flw::SplitGroup(0, 0, 640, 480);
+    auto win   = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::SplitGroup");
+    auto split = new flw::SplitGroup(0, 0, 640, 480);
 
     // Add left widget.
     split->add(new Fl_Button(0, 0, 0, 0, "Swap"), true);

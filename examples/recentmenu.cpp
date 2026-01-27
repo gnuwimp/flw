@@ -13,7 +13,7 @@ int main() {
 
     auto pref   = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "example_recentmenu");
     auto win    = new Fl_Window(Fl::w() / 2 - 320, Fl::h() / 2 - 240, 640, 480, "flw::RecentMenu");
-    auto menu   = new Fl_Menu_Bar(0, 0, 640, 28);   
+    auto menu   = new Fl_Menu_Bar(0, 0, 640, 28);
     auto recent = new flw::util::RecentMenu(menu, [](Fl_Widget*, void* o) {
         // Callback for an item in recent menu.
         puts(static_cast<Fl_Menu_Bar*>(o)->text());

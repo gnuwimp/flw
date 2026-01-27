@@ -30,7 +30,7 @@ int main() {
     input2->values(list, 4);
 
     // Insert new strings when enter is pressed.
-    input2->callback([](Fl_Widget* w, void*) { 
+    input2->callback([](Fl_Widget* w, void*) {
         auto i = (flw::InputMenu*) w;
         i->insert(i->value(), 5);
     });

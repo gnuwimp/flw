@@ -22,6 +22,7 @@ all: flw.o \
 	table.exe \
 	tableeditor.exe \
 	tabsgroup.exe \
+	toolgroup.exe \
 
 #-------------------------------------------------------------------------------
 
@@ -73,7 +74,7 @@ tableeditor.exe: tableeditor.cpp flw.o
 tabsgroup.exe: tabsgroup.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
-workdialog.exe: workdialog.cpp flw.o
+toolgroup.exe: toolgroup.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 #-------------------------------------------------------------------------------
@@ -83,45 +84,47 @@ clean:
 
 #-------------------------------------------------------------------------------
 
-run_file: file.exe
+file: file.exe
 	./file.exe
 
-run_json: json.exe
+json: json.exe
 	./json.exe
 
-run_chart: chart.exe
+chart: chart.exe
 	./chart.exe
 
-run_dialog: dialog.exe
+dialog: dialog.exe
 	./dialog.exe
 
-run_gridgroup: gridgroup.exe
+gridgroup: gridgroup.exe
 	./gridgroup.exe
 
-run_inputmenu: inputmenu.exe
+inputmenu: inputmenu.exe
 	./inputmenu.exe
 
-run_lcddisplay: lcddisplay.exe
+lcddisplay: lcddisplay.exe
 	./lcddisplay.exe
 
-run_logdisplay: logdisplay.exe
+logdisplay: logdisplay.exe
 	./logdisplay.exe
 
-run_plot: plot.exe
+plot: plot.exe
 	./plot.exe
 
-run_recentmenu: recentmenu.exe
+recentmenu: recentmenu.exe
 	./recentmenu.exe
 
-run_splitgroup: splitgroup.exe
+splitgroup: splitgroup.exe
 	./splitgroup.exe
 
-run_table: table.exe
+table: table.exe
 	./table.exe
 
-run_tableeditor: tableeditor.exe
+tableeditor: tableeditor.exe
 	./tableeditor.exe
 
-run_tabsgroup: tabsgroup.exe
+tabsgroup: tabsgroup.exe
 	./tabsgroup.exe
 
+toolgroup: toolgroup.exe
+	./toolgroup.exe

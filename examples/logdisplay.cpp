@@ -55,13 +55,13 @@ static const std::string JSON = R"([
 ]
 )";
 
-    auto* win = new Fl_Window(Fl::w() / 2 - 650, Fl::h() / 2 - 150, 1300, 300, "flw::LogDisplay");
-    auto* log = new flw::LogDisplay(0, 0, 1300, 300);
+    auto win = new Fl_Window(Fl::w() / 2 - 650, Fl::h() / 2 - 150, 1300, 300, "flw::LogDisplay");
+    auto log = new flw::LogDisplay(0, 0, 1300, 300);
 
-    log->box(FL_BORDER_BOX);    
-    log->value(TEXT);    
-    log->style(JSON);    
-    
+    log->box(FL_BORDER_BOX);
+    log->value(TEXT);
+    log->style(JSON);
+
     win->resizable(log);
     win->show();
     Fl::run();

@@ -10,13 +10,13 @@ void date_example() {
     auto date = gnu::Date("31/12/1999");
 
     if (flw::dlg::date("flw::dlg::date()", date) == true) {
-        printf("flw::dlg::date = %s\n", date.format(gnu::Date::Format::ISO_LONG).c_str());
+        printf("Date = %s\n", date.format(gnu::Date::Format::ISO_LONG).c_str());
     }
     else {
         printf("No date was selected\n");
     }
 /*
-flw::dlg::date = 1999-12-31
+Date = 1999-12-31
 */
 
     // [flw::dlg::date example]
@@ -24,10 +24,10 @@ flw::dlg::date = 1999-12-31
 
 //------------------------------------------------------------------------------
 void font_example1() {
-    // [flw::dlg::Font example]
+    // [flw::FontDialog example]
 
     // Create and run font dialog.
-    auto font = flw::dlg::Font(FL_HELVETICA, 14);
+    auto font = flw::FontDialog(FL_HELVETICA, 14);
 
     if (font.run() == true) {
         printf("font=%d, fontsize=%d, fontname=%s\n", font.font(),  font.fontsize(), font.fontname().c_str());
@@ -40,7 +40,7 @@ void font_example1() {
         printf("no font selected\n");
     }
 
-    // [flw::dlg::Font example]
+    // [flw::FontDialog example]
 }
 
 //------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ void font_example2() {
     auto fontsize = 14;
     auto fontname = std::string();
 
-    if (flw::dlg::font(font, fontsize, fontname) == true) {
+    if (flw::dlg::font("flw::dlg::font()", font, fontsize, fontname) == true) {
         printf("font=%d, fontsize=%d, fontname=%s\n", font,  fontsize, fontname.c_str());
 
         // Set global regular font.
@@ -106,7 +106,7 @@ void password_example() {
 }
 
 //------------------------------------------------------------------------------
-// [flw::dlg::print_callback example]
+// [flw::dlg::print_page_callback example]
 bool print_callback(void*, int pw, int ph, int page) {
     char b[100];
     snprintf(b, 100, "%d", page);
@@ -120,16 +120,16 @@ bool print_callback(void*, int pw, int ph, int page) {
     // Print only until page 5.
     return page < 5;
 }
-// [flw::dlg::print_callback example]
+// [flw::dlg::print_page_callback example]
 
 //------------------------------------------------------------------------------
 void print_example1() {
-    // [flw::dlg::print example]
+    // [flw::dlg::print_page example]
 
     // Print pages using a user callback for drawing.
-    flw::dlg::print("flw::dlg::print() - Print User Callback", print_callback, nullptr, 1, 10);
+    flw::dlg::print_page("flw::dlg::print_page() - Print User Callback", print_callback, nullptr, 1, 10);
 
-    // [flw::dlg::print example]
+    // [flw::dlg::print_page example]
 }
 
 //------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ And by opposing end them? To die: to sleep;
 
 //------------------------------------------------------------------------------
 void print_example3() {
-    // [flw::PrintText example]
+    // [flw::postscript::PrintText example]
 
 const std::string TEXT = R"(To be, or not to be: that is the question:
 Whether 'tis nobler in the mind to suffer
@@ -164,7 +164,7 @@ And by opposing end them? To die: to sleep;
 )";
 
     // Create printer object.
-    auto printer = flw::util::PrintText(
+    auto printer = flw::postscript::PrintText(
         "text.ps",                                  // Output file.
         Fl_Paged_Device::Page_Format::A4,           // A4 page format.
         Fl_Paged_Device::Page_Layout::PORTRAIT,     // Portrait format.
@@ -179,14 +179,14 @@ And by opposing end them? To die: to sleep;
     // Now print to file.
     printer.print(TEXT);
 
-    // [flw::PrintText example]
+    // [flw::postscript::PrintText example]
 }
 
 //------------------------------------------------------------------------------
 void progress_example() {
-    // [flw::dlg::Progress example]
+    // [flw::ProgressDialog example]
 
-    auto progress = flw::dlg::Progress("flw::dlg::Progress Example", true, true, 0.0, 100.0);
+    auto progress = flw::ProgressDialog("flw::ProgressDialog Example", true, true, 0.0, 100.0);
     auto count    = 0.0;
 
     progress.start();
@@ -210,7 +210,7 @@ void progress_example() {
         printf("aborted at %.1f\n", progress.value());
     }
 
-    // [flw::dlg::Progress example]
+    // [flw::ProgressDialog example]
 }
 
 //------------------------------------------------------------------------------
