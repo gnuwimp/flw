@@ -157,8 +157,7 @@ public:
         plot = new plot::Plot(0, 0, W, H);
 
         auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_plot");
-        flw::theme::load_theme_from_pref(pref);
-        flw::theme::load_win_from_pref(pref, "gui.", this, true);
+        theme::load_theme_from_pref(pref);
 
         add(menu);
         add(plot);
@@ -199,15 +198,15 @@ public:
         flw::PREF_WINDOW = this;
         create_plot();
 
-        resize(300, 100, W, H);
         show();
+        theme::load_win_from_pref(pref, "gui.", this, true);
     }
 
     //--------------------------------------------------------------------------
     ~Test() {
         auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_plot");
-        flw::theme::save_theme_to_pref(pref);
-        flw::theme::save_win_to_pref(pref, "gui.", this);
+        theme::save_theme_to_pref(pref);
+        theme::save_win_to_pref(pref, "gui.", this);
     }
 
     //--------------------------------------------------------------------------
@@ -594,8 +593,8 @@ public:
 
 //------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
-    if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("oxy");
+    if (theme::parse(argc, argv) == false) {
+        theme::load("oxy");
     }
 
     Test win(1200, 800);

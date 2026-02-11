@@ -515,8 +515,7 @@ public:
         chart = new chart::Chart();
 
         auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
-        flw::theme::load_theme_from_pref(pref);
-        flw::theme::load_win_from_pref(pref, "gui.", this, true);
+        theme::load_theme_from_pref(pref);
 
         add(menu);
         add(chart);
@@ -573,16 +572,16 @@ public:
         util::labelfont(this);
         flw::PREF_WINDOW = this;
 
-        resize(300, 300, W, H);
         show();
         create_chart();
+        theme::load_win_from_pref(pref, "gui.", this, true);
     }
 
     //--------------------------------------------------------------------------
     ~Test() {
         auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_chart");
-        flw::theme::save_theme_to_pref(pref);
-        flw::theme::save_win_to_pref(pref, "gui.", this);
+        theme::save_theme_to_pref(pref);
+        theme::save_win_to_pref(pref, "gui.", this);
     }
 
     //--------------------------------------------------------------------------
@@ -736,7 +735,7 @@ public:
     //--------------------------------------------------------------------------
     static void CallbackTheme(Fl_Widget*, void* v) {
         auto self = static_cast<Test*>(v);
-        flw::dlg::theme(true, true);
+        dlg::theme(true, true);
         self->update_pref();
     }
 
@@ -813,8 +812,8 @@ public:
 
 //------------------------------------------------------------------------------
 int main(int argc, const char** argv) {
-    if (flw::theme::parse(argc, argv) == false) {
-        flw::theme::load("oxy");
+    if (theme::parse(argc, argv) == false) {
+        theme::load("oxy");
     }
 
     //Fl::screen_scale(0, 1.0);

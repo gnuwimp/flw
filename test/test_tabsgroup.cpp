@@ -353,6 +353,7 @@ public:
         b14->callback(Test2::Callback, this);
         b16->callback(Test2::Callback, this);
         b17->callback(Test2::Callback, this);
+        tabs->callback(Test2::Callback, this);
         tabs->disable_keyboard();
         tabs->enable_keyboard();
         //tabs->max_top_width(5);
@@ -371,7 +372,11 @@ public:
 
     //------------------------------------------------------------------------------
     static void Callback(Fl_Widget* w, void*) {
-        if (w == TEST2->b1) {
+        if (w == TEST2->tabs) {
+            auto tabs = (TabsGroup*) w;
+            printf("callback with reason %d, label = %s\n", Fl::callback_reason(), tabs->tab_label().c_str());
+        }
+        else if (w == TEST2->b1) {
             TEST2->create(32, "add last", false);
             //TEST2->create(4, "add last", true);
         }
