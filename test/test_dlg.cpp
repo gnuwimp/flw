@@ -190,14 +190,14 @@ void test_message() {
     //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
     //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE2);
 
-    dlg::msg("flw::dlg::msg", TWO_LINE);
+    //dlg::msg("flw::dlg::msg", TWO_LINE);
 
-    dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
-    dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
-    dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
+    //dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
+    //dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
+    //dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
 
-    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
-    FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "LEFT:LEFT", "RIGHT:RIGHT", "UP:!UP", "DOWN:DOWN", ""))
+    //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
+    //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "LEFT:LEFT", "RIGHT:RIGHT", "UP:!UP", "DOWN:DOWN", ""))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "CANCEL:^CANCEL", "DEL:^DEL", "BACK:!^BACK", "No Dark Bg", "CONFIRM:^CONFIRM"))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
@@ -606,11 +606,11 @@ int main(int argc, const char** argv) {
     puts("    inp        => flw::dlg::input()");
     puts("    list       => flw::dlg::list()");
     puts("    msg        => flw::dlg::msg()");
-    puts("    print1     => postscript::print_page_to_file()");
-    puts("    print2     => dlg::print_page()");
-    puts("    print3     => dlg::print_text()");
-    puts("    print4     => postscript::PrintText");
-    puts("    print5     => dlg::print_text(flw.c/.h)");
+    puts("    print1     => flw::postscript::print_page_to_file()");
+    puts("    print2     => flw::dlg::print_page()");
+    puts("    print3     => flw::dlg::print_text()");
+    puts("    print4     => flw::postscript::PrintText");
+    puts("    print5     => flw::dlg::print_text(flw.c/.h)");
     puts("    progress   => flw::ProgressDialog");
     puts("    pwd        => flw::dlg::password...");
     puts("    slider     => flw::dlg::slider()");

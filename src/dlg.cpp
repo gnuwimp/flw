@@ -27,24 +27,7 @@
 #include <FL/Fl_Text_Editor.H>
 
 namespace flw {
-
-/** @brief Put fl_message dialogs at the centre of the desktop.
-*
-*/
-void dlg::center_fl_message_dialog() {
-    int X, Y, W, H;
-    Fl::screen_xywh(X, Y, W, H);
-    fl_message_position(W / 2, H / 2, 1);
-}
-
-/** @brief Show an dialog with message and then exit the program.
-*
-* @param[in] message  Message string.
-*/
-void dlg::panic(const std::string& message) {
-    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
-    exit(1);
-}
+namespace priv {
 
 /*
  *           _____  _       _    _ _             _
@@ -57,7 +40,6 @@ void dlg::panic(const std::string& message) {
  *     |______|       |___/
  */
 
-namespace priv {
 
 /** @brief HTML dialog.
 * @private
@@ -130,25 +112,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show a html view dialog.
-*
-* Only basic html 2 tags are supported.
-*
-* @param[in] title   Dialog title.
-* @param[in] text    HTML text.
-* @param[in] W       Width in characters.
-* @param[in] H       Height in characters.
-*
-* @snippet dialog.cpp flw::dlg::html example
-* @image html html_dialog.png
-*/
-void dlg::html(const std::string& title, const std::string& text, int W, int H) {
-    priv::_DlgHtml dlg(title, text, W, H);
-    dlg.run();
-}
-
 /*
  *           _____  _       _      _     _
  *          |  __ \| |     | |    (_)   | |
@@ -159,8 +122,6 @@ void dlg::html(const std::string& title, const std::string& text, int W, int H) 
  *      ______         __/ |
  *     |______|       |___/
  */
-
-namespace priv {
 
 /** @brief Dialog with a browser list widget.
 *
@@ -253,59 +214,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show a dialog with a list of strings.
-*
-* @see Fl_Browser::format_char() for formatting characters.\n
-*
-* @param[in] title       Dialog title.
-* @param[in] list        List of strings.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
-*
-* @snippet dialog.cpp flw::dlg::list example
-* @image html list_dialog.png
-*/
-void dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, list, "", fixed_font, W, H);
-    dlg.run();
-}
-
-/** @brief Show a dialog with a browser/list widget.
-*
-* @see Fl_Browser::format_char() for formatting characters.\n
-* This function splits a string on newline.\n
-*
-* @param[in] title       Dialog title.
-* @param[in] list        String list.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
-*/
-void dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
-    priv::_DlgList dlg(title, list2, "", fixed_font, W, H);
-    dlg.run();
-}
-
-/** @brief Show a dialog with a browser/list widget.
-*
-* @see Fl_Browser::format_char() for formatting characters.\n
-* This function loads a list of string from a file.\n
-*
-* @param[in] title       Dialog title.
-* @param[in] file        Filename to load.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
-*/
-void dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, W, H);
-    dlg.run();
-}
-
 /*
  *           _____  _       __  __
  *          |  __ \| |     |  \/  |
@@ -316,8 +224,6 @@ void dlg::list_file(const std::string& title, const std::string& file, bool fixe
  *      ______         __/ |            __/ |
  *     |______|       |___/            |___/
  */
-
-namespace priv {
 
 /** @brief Message dialog.
 * @private
@@ -675,232 +581,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show an text input dialog.
-*
-* It will try to increase window width and height if message is to large.\n
-*
-* @param[in]     title    Dialog title.
-* @param[in]     message  Message text.
-* @param[in,out] value    Text line to edit.
-* @param[in]     W        Width in characters.
-* @param[in]     H        Height in characters.
-*
-* @return flw::labels::OK or flw::labels::CANCEL.
-*
-* @image html dlg_input.png
-*/
-std::string dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
-    auto res = dlg.run();
-
-    if (res == labels::OK) {
-        value = dlg.input();
-    }
-
-    return res;
-}
-
-/** @brief Show an decimal input dialog.
-*
-* It will try to increase window width and height if message is to large.\n
-* If the number is invalid, the input number will be returned.\n
-*
-* @param[in]     title    Dialog title.
-* @param[in]     message  Message text.
-* @param[in,out] value    Decimal number to edit.
-* @param[in]     W        Width in characters.
-* @param[in]     H        Height in characters.
-*
-* @return flw::labels::OK or flw::labels::CANCEL.
-*/
-std::string dlg::input_double(const std::string& title, const std::string& message, double& value, int W, int H) {
-    char num[500];
-    snprintf(num, 500, "%g", value);
-
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
-    auto res = dlg.run();
-
-    if (res == labels::OK) {
-        auto tmp = value;
-        tmp = util::to_double(dlg.input());
-
-        if (std::isinf(tmp) == false) {
-            value = tmp;
-        }
-    }
-
-    return res;
-}
-
-/** @brief Show an integer input dialog.
-*
-* It will try to increase window width and height if message is to large.\n
-* If the number is invalid, the input number will be returned.\n
-*
-* @param[in]     title    Dialog title.
-* @param[in]     message  Message text.
-* @param[in,out] value    Integer number to edit.
-* @param[in]     W        Width in characters.
-* @param[in]     H        Height in characters.
-*
-* @return flw::labels::OK or flw::labels::CANCEL.
-*/
-std::string dlg::input_int(const std::string& title, const std::string& message, int64_t& value, int W, int H) {
-    char num[100];
-    snprintf(num, 100, "%lld", static_cast<long long int>(value));
-
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
-    auto res = dlg.run();
-
-    if (res == labels::OK) {
-        value = util::to_int(dlg.input(), value);
-    }
-
-    return res;
-}
-
-/** @brief Show an multiline input dialog.
-*
-* Don't edit to many lines of text because there are no scrollbars.\n
-* It will try to increase window width and height if message is to large.\n
-*
-* @see To edit longer texts use dlg::text_edit()
-*
-* @param[in]     title    Dialog title.
-* @param[in]     message  Message text.
-* @param[in,out] value    Multi line text to edit.
-* @param[in]     W        Width in characters.
-* @param[in]     H        Height in characters.
-*
-* @return flw::labels::OK or flw::labels::CANCEL.
-*
-* @image html dlg_input_multi.png
-*/
-std::string dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
-    auto res = dlg.run();
-
-    if (res == labels::OK) {
-        value = dlg.input();
-    }
-
-    return res;
-}
-
-/** @brief Show an secret text input dialog.
-*
-* It will try to increase window width and height if message is to large.\n
-*
-* @param[in]     title    Dialog title.
-* @param[in]     message  Message text.
-* @param[in,out] value    Secret text to edit.
-* @param[in]     W        Width in characters.
-* @param[in]     H        Height in characters.
-*
-* @return flw::labels::OK or flw::labels::CANCEL.
-*
-* @image html dlg_input_secret.png
-*/
-std::string dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
-    auto res = dlg.run();
-
-    if (res == labels::OK) {
-        value = dlg.input();
-    }
-
-    return res;
-}
-
-/** @brief Show an dialog with a message icon.
-*
-* It will try to increase window width and height if message is to large.\n
-*
-* @param[in] title    Dialog title.
-* @param[in] message  Message text.
-* @param[in] W        Width in characters.
-* @param[in] H        Height in characters.
-*
-* @image html dlg_msg.png
-*/
-void dlg::msg(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
-    dlg.run();
-}
-
-/** @brief Show an dialog with an alert icon.
-*
-* @param[in] title    Dialog title.
-* @param[in] message  Message text.
-* @param[in] W        Width in characters.
-* @param[in] H        Height in characters.
-*
-* @image html dlg_msg_alert.png
-*/
-void dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
-    dlg.run();
-}
-
-/** @brief Show an dialog with a question icon.
-*
-* You can show 1 to 5 buttons to choose from.\n
-* Any button label can be empty and it will be hidden.\n
-*
-* @see dlg::button() on how to add a icon.\n
-*
-* @param[in] title    Dialog title.
-* @param[in] message  Message text.
-* @param[in] b1       First button label on the right side.
-* @param[in] b2       Second button label.
-* @param[in] b3       Third button label.
-* @param[in] b4       Fourth button label.
-* @param[in] b5       Fifth button label.
-* @param[in] W        Width in characters.
-* @param[in] H        Height in characters.
-*
-* @return Activated button label without the optional icon character.
-*
-* @image html dlg_msg_ask.png
-*/
-std::string dlg::msg_ask(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, const std::string& b3, const std::string& b4, const std::string& b5, int W, int H) {
-    priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
-    return dlg.run();
-}
-
-/** @brief Show an dialog with an error icon.\n
-*
-* @param[in] title    Dialog title.
-* @param[in] message  Message text.
-* @param[in] W        Width in characters.
-* @param[in] H        Height in characters.
-*/
-void dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
-    dlg.run();
-}
-
-/** @brief Show an dialog with a warning icon and 1 or more buttons.
-*
-* @see dlg::button() on how to add a icon.\n
-* Any button label can be empty and it will be hidden.\n
-*
-* @param[in] title    Dialog title.
-* @param[in] message  Message text.
-* @param[in] b1       Right button label.
-* @param[in] b2       Left button label.
-* @param[in] W        Width in characters.
-* @param[in] H        Height in characters.
-*
-* @return Activated button label without the optional icon character.
-*/
-std::string dlg::msg_warning(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, int W, int H) {
-    priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
-    return dlg.run();
-}
-
 /*
  *           _____  _       _____                                    _
  *          |  __ \| |     |  __ \                                  | |
@@ -912,31 +592,34 @@ std::string dlg::msg_warning(const std::string& title, const std::string& messag
  *     |______|       |___/
  */
 
-namespace priv {
-
 /** @brief A password dialog.
 *
 */
 class _DlgPassword : public Fl_Double_Window {
 public:
+    /** @brief Dialog has four different views.
+    *
+    */
     enum class Mode {
-                                PASSWORD,
-                                PASSWORD_CONFIRM,
-                                PASSWORD_CONFIRM_WITH_FILE,
-                                PASSWORD_WITH_FILE,
+                                PASSWORD,                       ///< @brief Show only one password input.
+                                PASSWORD_CONFIRM,               ///< @brief Show two inputs, password must be the same to enable ok button.
+                                PASSWORD_CONFIRM_WITH_FILE,     ///< @brief Two inputs and one file input.
+                                PASSWORD_WITH_FILE,             ///< @brief One input and one file input.
     };
 
 private:
-    Fl_Button*                  _browse;        // Browse file button.
-    Fl_Button*                  _cancel;        // Cancel button.
-    SVGButton*                  _close;         // Close button.
-    Fl_Input*                   _file;          // File input.
-    Fl_Input*                   _password1;     // Password input 1.
-    Fl_Input*                   _password2;     // Password input 2 (confirm).
-    GridGroup*                  _grid;          // Layout widget.
-    Mode                        _mode;          // There are 4 modes.
-    bool                        _ret;           // Return value.
-    bool                        _run;           // Run flag.
+    Fl_Button*                  _browse;        ///< @brief Browse file button.
+    Fl_Button*                  _cancel;        ///< @brief Cancel button.
+    Fl_Button*                  _show;          ///< @brief Toggle show password button.
+    Fl_Box*                     _caps;          ///< @brief Show caps on text.
+    Fl_Input*                   _file;          ///< @brief File input.
+    Fl_Input*                   _password1;     ///< @brief Password input 1.
+    Fl_Input*                   _password2;     ///< @brief Password input 2 (confirm).
+    GridGroup*                  _grid;          ///< @brief Layout widget.
+    SVGButton*                  _close;         ///< @brief Close button.
+    Mode                        _mode;          ///< @brief There are 4 modes.
+    bool                        _ret;           ///< @brief Return value.
+    bool                        _run;           ///< @brief Run flag.
 
 public:
     /** @brief Create window.
@@ -952,11 +635,13 @@ public:
 
         _browse    = new Fl_Button(0, 0, 0, 0, labels::BROWSE.c_str());
         _cancel    = new Fl_Button(0, 0, 0, 0, "");
+        _caps      = new Fl_Box(0, 0, 0, 0, "");
         _close     = new SVGButton(0, 0, 0, 0, "", icons::BACK, true);
         _file      = new Fl_Output(0, 0, 0, 0, "Key file");
         _grid      = new GridGroup(0, 0, w(), h());
         _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
         _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
+        _show      = new Fl_Button(0, 0, 0, 0, "&Show");
         _mode      = mode;
         _ret       = false;
         _run       = false;
@@ -964,14 +649,19 @@ public:
         _grid->add(_password1,  1,   3,  -1,  4);
         _grid->add(_password2,  1,  10,  -1,  4);
         _grid->add(_file,       1,  17,  -1,  4);
-        _grid->add(_browse,   -51,  -5,  16,  4);
+        _grid->add(_caps,       1,  -5,  10,  4);
+        _grid->add(_browse,   -68,  -5,  16,  4);
+        _grid->add(_show,     -51,  -5,  16,  4);
         _grid->add(_cancel,   -34,  -5,  16,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
 
         _browse->callback(_DlgPassword::Callback, this);
+        _browse->tooltip("Show file dialog and select a key file.");
         _cancel->callback(_DlgPassword::Callback, this);
         _cancel->copy_label(labels::CANCEL.c_str());
+        _caps->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        _caps->labelcolor(FL_DARK_RED);
         _close->callback(_DlgPassword::Callback, this);
         _close->copy_label(labels::OK.c_str());
         _close->deactivate();
@@ -989,19 +679,23 @@ public:
         _password2->textfont(flw::PREF_FIXED_FONT);
         _password2->textsize(flw::PREF_FONTSIZE);
         _password2->when(FL_WHEN_CHANGED);
+        _show->callback(_DlgPassword::Callback, this);
+        _show->tooltip("Show or hide password.");
 
-        auto W = flw::PREF_FONTSIZE * 40;
+        auto W = flw::PREF_FONTSIZE * 42;
         auto H = flw::PREF_FONTSIZE * 13.5;
 
         if (_mode == Mode::PASSWORD) {
             _password2->hide();
             _browse->hide();
             _file->hide();
+            W = flw::PREF_FONTSIZE * 40;
             H = flw::PREF_FONTSIZE * 6.5;
         }
         else if (_mode == Mode::PASSWORD_CONFIRM) {
             _browse->hide();
             _file->hide();
+            W = flw::PREF_FONTSIZE * 40;
             H = flw::PREF_FONTSIZE * 10;
         }
         else if (_mode == Mode::PASSWORD_WITH_FILE) {
@@ -1031,6 +725,11 @@ public:
             self->_run = false;
             self->hide();
         }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->_run = false;
+            self->hide();
+        }
         else if (w == self->_password1) {
             self->check();
         }
@@ -1049,10 +748,21 @@ public:
 
             self->check();
         }
-        else if (w == self->_close) {
-            self->_ret = true;
-            self->_run = false;
-            self->hide();
+        else if (w == self->_show) {
+            if (self->_show->label() == std::string("&Hide")) {
+                self->_show->label("&Show");
+                self->_password1->input_type(FL_SECRET_INPUT);
+                self->_password2->input_type(FL_SECRET_INPUT);
+                self->_password1->take_focus();
+            }
+            else {
+                self->_show->label("&Hide");
+                self->_password1->input_type(FL_NORMAL_INPUT);
+                self->_password2->input_type(FL_NORMAL_INPUT);
+                self->_password1->take_focus();
+            }
+
+            Fl::redraw();
         }
     }
 
@@ -1063,6 +773,13 @@ public:
         auto p1 = _password1->value();
         auto p2 = _password2->value();
         auto f  = _file->value();
+
+        if (Fl::event_state() & FL_CAPS_LOCK) {
+            _caps->label("Caps On");
+        }
+        else {
+            _caps->label("");
+        }
 
         if (_mode == Mode::PASSWORD) {
             if (strlen(p1) > 0) {
@@ -1129,67 +846,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Get password from user.
-*
-* @param[in]  title     Dialog title.
-* @param[out] password  User password.
-*
-* @return True if ok has been pressed and password argument has been set.
-*/
-bool dlg::password(const std::string& title, std::string& password) {
-    std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD);
-    return dlg.run(password, file);
-}
-
-/** @brief Get confirmed password from user.
-*
-* @param[in]  title     Dialog title.
-* @param[out] password  User password.
-*
-* @return True if ok has been pressed and password argument has been set.
-*/
-bool dlg::password_confirm(const std::string& title, std::string& password) {
-    std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
-    return dlg.run(password, file);
-}
-
-/** @brief Get confirmed password and optional key file from user.
-*
-* Passwords can be empty if a file has been choosen.
-*
-* @param[in]  title     Dialog title.
-* @param[out] password  User password.
-* @param[out] file      User file.
-*
-* @return True if ok has been pressed and password and/or file argument has been set.
-*
-* @snippet dialog.cpp flw::dlg::password example
-* @image html password_dialog.png
-*/
-bool dlg::password_confirm_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
-    return dlg.run(password, file);
-}
-
-/** @brief Get password and optional key file from user.
-*
-* Password can be empty if a file has been choosen.
-*
-* @param[in]  title     Dialog title.
-* @param[out] password  User password.
-* @param[out] file      User file.
-*
-* @return True if ok has been pressed and password and/or file argument has been set.
-*/
-bool dlg::password_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
-    return dlg.run(password, file);
-}
-
 /*
  *           _____  _        _____      _           _    _____ _               _    ____
  *          |  __ \| |      / ____|    | |         | |  / ____| |             | |  |  _ \
@@ -1200,8 +856,6 @@ bool dlg::password_and_file(const std::string& title, std::string& password, std
  *      ______         __/ |
  *     |______|       |___/
  */
-
-namespace priv {
 
 /** @brief A dialog with check buttons.
 * @private
@@ -1341,27 +995,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show a dialog with checkboxes.
-*
-* Each string in string list should start with a '0' or '1' which indicates if it should be checked or not.\n
-* Then after '0/1' comes the label.\n
-* Example: "1Hello World" for an checked item with label "Hello World".\n
-*
-* @param[in] title   Dialog title.
-* @param[in] list    List with strings for the check buttons.
-*
-* @return If 'Ok' has been pressed it will return the new list with current checks or an empty vector if canceled.
-*
-* @snippet dialog.cpp flw::dlg::select_checkboxes example
-* @image html select_checkboxes_dialog.png
-*/
-StringVector dlg::select_checkboxes(const std::string& title, const StringVector& list) {
-    priv::_DlgSelectCheckBoxes dlg(title, list);
-    return dlg.run();
-}
-
 /*
  *           _____  _        _____      _           _    _____ _           _
  *          |  __ \| |      / ____|    | |         | |  / ____| |         (_)
@@ -1372,8 +1005,6 @@ StringVector dlg::select_checkboxes(const std::string& title, const StringVector
  *      ______         __/ |
  *     |______|       |___/
  */
-
-namespace priv {
 
 /** @brief A dialog with a choice widget.
 * @private
@@ -1473,25 +1104,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show a dialog with a choice widget that contains input strings to select from.
-*
-* @param[in] title     Dialog title.
-* @param[in] message   Message string.
-* @param[in] list      List with strings.
-* @param[in] selected  Index in string list to select.
-*
-* @return Selected index or -1.
-*
-* @snippet dialog.cpp flw::dlg::select_choice example
-* @image html select_choice_dialog.png
-*/
-int dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
-    priv::_DlgSelectChoice dlg(title, message, list, selected);
-    return dlg.run();
-}
-
 /*
  *           _____  _        _____      _           _    _____ _        _
  *          |  __ \| |      / ____|    | |         | |  / ____| |      (_)
@@ -1502,8 +1114,6 @@ int dlg::select_choice(const std::string& title, const std::string& message, con
  *      ______         __/ |                                                     __/ |
  *     |______|       |___/                                                     |___/
  */
-
-namespace priv {
 
 /** @brief Dialog with a list of string to select from.
 *
@@ -1720,49 +1330,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show a dialog with strings to select from.
-*
-* There is also an input widget to filter strings in list.\n
-* The returned index is always the original index in input vector.\n
-*
-* @param[in] title         Dialog title.
-* @param[in] list          Vector with strings.
-* @param[in] selected_row  Selected row in vector.
-* @param[in] fixed_font    True to use a fixed font.
-* @param[in] W             Width in characters.
-* @param[in] H             Height in characters.
-*
-* @return Selected index in input vector.
-*/
-int dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
-    return dlg.run();
-}
-
-/** @brief Show a dialog with strings to select from.
-*
-* There is also an input widget to filter strings in list.\n
-* The returned index is always the original index in input vector.\n
-*
-* @param[in] title         Dialog title.
-* @param[in] list          Vector with strings.
-* @param[in] selected_row  Selected row in vector.
-* @param[in] fixed_font    True to use a fixed font.
-* @param[in] W             Width in characters.
-* @param[in] H             Height in characters.
-*
-* @return Selected index in input vector.
-*
-* @snippet dialog.cpp flw::dlg::select example
-* @image html select_string_dialog.png
-*/
-int dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
-    return dlg.run();
-}
-
 /*
  *           _____  _        _____ _ _     _
  *          |  __ \| |      / ____| (_)   | |
@@ -1773,8 +1340,6 @@ int dlg::select_string(const std::string& title, const StringVector& list, const
  *      ______         __/ |
  *     |______|       |___/
  */
-
-namespace priv {
 
 /** @brief Set a number dialog that uses a slider.
 *
@@ -1868,26 +1433,6 @@ public:
     }
 };
 
-} // flw::priv
-
-/** @brief Show a dialog and set a number with a slider.
-*
-* @param[in]     title   Dialog title.
-* @param[in]     min     Minimum value.
-* @param[in]     max     Maximum value.
-* @param[in,out] value   Start value.
-* @param[in]     step    Step between every slider change.
-*
-* @return True if ok has been pressed and value has been updated.
-*
-* @snippet dialog.cpp flw::dlg::slider example
-* @image html slider_dialog.png
-*/
-bool dlg::slider(const std::string& title, double min, double max, double& value, double step) {
-    priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
-    return dlg.run();
-}
-
 /*
  *           _____  _    _______        _
  *          |  __ \| |  |__   __|      | |
@@ -1898,8 +1443,6 @@ bool dlg::slider(const std::string& title, double min, double max, double& value
  *      ______         __/ |
  *     |______|       |___/
  */
-
-namespace priv {
 
 /** @brief Show text in a dialog.
 *
@@ -2032,6 +1575,464 @@ public:
 };
 
 } // flw::priv
+} // flw
+
+/*
+ *       __ _                 _ _
+ *      / _| |         _ _   | | |
+ *     | |_| |_      _(_|_)__| | | __ _
+ *     |  _| \ \ /\ / /   / _` | |/ _` |
+ *     | | | |\ V  V / _ | (_| | | (_| |
+ *     |_| |_| \_/\_/ (_|_)__,_|_|\__, |
+ *                                 __/ |
+ *                                |___/
+ */
+
+/** @brief Show a html view dialog.
+*
+* Only basic html 2 tags are supported.
+*
+* @param[in] title   Dialog title.
+* @param[in] text    HTML text.
+* @param[in] W       Width in characters.
+* @param[in] H       Height in characters.
+*
+* @snippet dialog.cpp flw::dlg::html example
+* @image html html_dialog.png
+*/
+void flw::dlg::html(const std::string& title, const std::string& text, int W, int H) {
+    priv::_DlgHtml dlg(title, text, W, H);
+    dlg.run();
+}
+
+/** @brief Show a dialog with a list of strings.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] list        List of strings.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*
+* @snippet dialog.cpp flw::dlg::list example
+* @image html list_dialog.png
+*/
+void flw::dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
+    priv::_DlgList dlg(title, list, "", fixed_font, W, H);
+    dlg.run();
+}
+
+/** @brief Show a dialog with a browser/list widget.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+* This function splits a string on newline.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] list        String list.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*/
+void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    priv::_DlgList dlg(title, list2, "", fixed_font, W, H);
+    dlg.run();
+}
+
+/** @brief Show a dialog with a browser/list widget.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+* This function loads a list of string from a file.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] file        Filename to load.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*/
+void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
+    priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, W, H);
+    dlg.run();
+}
+
+/** @brief Show an text input dialog.
+*
+* It will try to increase window width and height if message is to large.\n
+*
+* @param[in]     title    Dialog title.
+* @param[in]     message  Message text.
+* @param[in,out] value    Text line to edit.
+* @param[in]     W        Width in characters.
+* @param[in]     H        Height in characters.
+*
+* @return flw::labels::OK or flw::labels::CANCEL.
+*
+* @image html dlg_input.png
+*/
+std::string flw::dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
+    auto res = dlg.run();
+
+    if (res == labels::OK) {
+        value = dlg.input();
+    }
+
+    return res;
+}
+
+/** @brief Show an decimal input dialog.
+*
+* It will try to increase window width and height if message is to large.\n
+* If the number is invalid, the input number will be returned.\n
+*
+* @param[in]     title    Dialog title.
+* @param[in]     message  Message text.
+* @param[in,out] value    Decimal number to edit.
+* @param[in]     W        Width in characters.
+* @param[in]     H        Height in characters.
+*
+* @return flw::labels::OK or flw::labels::CANCEL.
+*/
+std::string flw::dlg::input_double(const std::string& title, const std::string& message, double& value, int W, int H) {
+    char num[500];
+    snprintf(num, 500, "%g", value);
+
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
+    auto res = dlg.run();
+
+    if (res == labels::OK) {
+        auto tmp = value;
+        tmp = util::to_double(dlg.input());
+
+        if (std::isinf(tmp) == false) {
+            value = tmp;
+        }
+    }
+
+    return res;
+}
+
+/** @brief Show an integer input dialog.
+*
+* It will try to increase window width and height if message is to large.\n
+* If the number is invalid, the input number will be returned.\n
+*
+* @param[in]     title    Dialog title.
+* @param[in]     message  Message text.
+* @param[in,out] value    Integer number to edit.
+* @param[in]     W        Width in characters.
+* @param[in]     H        Height in characters.
+*
+* @return flw::labels::OK or flw::labels::CANCEL.
+*/
+std::string flw::dlg::input_int(const std::string& title, const std::string& message, int64_t& value, int W, int H) {
+    char num[100];
+    snprintf(num, 100, "%lld", static_cast<long long int>(value));
+
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
+    auto res = dlg.run();
+
+    if (res == labels::OK) {
+        value = util::to_int(dlg.input(), value);
+    }
+
+    return res;
+}
+
+/** @brief Show an multiline input dialog.
+*
+* Don't edit to many lines of text because there are no scrollbars.\n
+* It will try to increase window width and height if message is to large.\n
+*
+* @see To edit longer texts use dlg::text_edit()
+*
+* @param[in]     title    Dialog title.
+* @param[in]     message  Message text.
+* @param[in,out] value    Multi line text to edit.
+* @param[in]     W        Width in characters.
+* @param[in]     H        Height in characters.
+*
+* @return flw::labels::OK or flw::labels::CANCEL.
+*
+* @image html dlg_input_multi.png
+*/
+std::string flw::dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
+    auto res = dlg.run();
+
+    if (res == labels::OK) {
+        value = dlg.input();
+    }
+
+    return res;
+}
+
+/** @brief Show an secret text input dialog.
+*
+* It will try to increase window width and height if message is to large.\n
+*
+* @param[in]     title    Dialog title.
+* @param[in]     message  Message text.
+* @param[in,out] value    Secret text to edit.
+* @param[in]     W        Width in characters.
+* @param[in]     H        Height in characters.
+*
+* @return flw::labels::OK or flw::labels::CANCEL.
+*
+* @image html dlg_input_secret.png
+*/
+std::string flw::dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
+    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
+    auto res = dlg.run();
+
+    if (res == labels::OK) {
+        value = dlg.input();
+    }
+
+    return res;
+}
+
+/** @brief Show an dialog with a message icon.
+*
+* It will try to increase window width and height if message is to large.\n
+*
+* @param[in] title    Dialog title.
+* @param[in] message  Message text.
+* @param[in] W        Width in characters.
+* @param[in] H        Height in characters.
+*
+* @image html dlg_msg.png
+*/
+void flw::dlg::msg(const std::string& title, const std::string& message, int W, int H) {
+    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
+    dlg.run();
+}
+
+/** @brief Show an dialog with an alert icon.
+*
+* @param[in] title    Dialog title.
+* @param[in] message  Message text.
+* @param[in] W        Width in characters.
+* @param[in] H        Height in characters.
+*
+* @image html dlg_msg_alert.png
+*/
+void flw::dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
+    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
+    dlg.run();
+}
+
+/** @brief Show an dialog with a question icon.
+*
+* You can show 1 to 5 buttons to choose from.\n
+* Any button label can be empty and it will be hidden.\n
+*
+* @see dlg::button() on how to add a icon.\n
+*
+* @param[in] title    Dialog title.
+* @param[in] message  Message text.
+* @param[in] b1       First button label on the right side.
+* @param[in] b2       Second button label.
+* @param[in] b3       Third button label.
+* @param[in] b4       Fourth button label.
+* @param[in] b5       Fifth button label.
+* @param[in] W        Width in characters.
+* @param[in] H        Height in characters.
+*
+* @return Activated button label without the optional icon character.
+*
+* @image html dlg_msg_ask.png
+*/
+std::string flw::dlg::msg_ask(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, const std::string& b3, const std::string& b4, const std::string& b5, int W, int H) {
+    priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
+    return dlg.run();
+}
+
+/** @brief Show an dialog with an error icon.\n
+*
+* @param[in] title    Dialog title.
+* @param[in] message  Message text.
+* @param[in] W        Width in characters.
+* @param[in] H        Height in characters.
+*/
+void flw::dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
+    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
+    dlg.run();
+}
+
+/** @brief Show an dialog with a warning icon and 1 or more buttons.
+*
+* @see dlg::button() on how to add a icon.\n
+* Any button label can be empty and it will be hidden.\n
+*
+* @param[in] title    Dialog title.
+* @param[in] message  Message text.
+* @param[in] b1       Right button label.
+* @param[in] b2       Left button label.
+* @param[in] W        Width in characters.
+* @param[in] H        Height in characters.
+*
+* @return Activated button label without the optional icon character.
+*/
+std::string flw::dlg::msg_warning(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, int W, int H) {
+    priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
+    return dlg.run();
+}
+
+/** @brief Get password from user.
+*
+* @param[in]  title     Dialog title.
+* @param[out] password  User password.
+*
+* @return True if ok has been pressed and password argument has been set.
+*/
+bool flw::dlg::password(const std::string& title, std::string& password) {
+    std::string file;
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD);
+    return dlg.run(password, file);
+}
+
+/** @brief Get confirmed password from user.
+*
+* @param[in]  title     Dialog title.
+* @param[out] password  User password.
+*
+* @return True if ok has been pressed and password argument has been set.
+*/
+bool flw::dlg::password_confirm(const std::string& title, std::string& password) {
+    std::string file;
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
+    return dlg.run(password, file);
+}
+
+/** @brief Get confirmed password and optional key file from user.
+*
+* Passwords can be empty if a file has been choosen.
+*
+* @param[in]  title     Dialog title.
+* @param[out] password  User password.
+* @param[out] file      User file.
+*
+* @return True if ok has been pressed and password and/or file argument has been set.
+*
+* @snippet dialog.cpp flw::dlg::password example
+* @image html password_dialog.png
+*/
+bool flw::dlg::password_confirm_and_file(const std::string& title, std::string& password, std::string& file) {
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
+    return dlg.run(password, file);
+}
+
+/** @brief Get password and optional key file from user.
+*
+* Password can be empty if a file has been choosen.
+*
+* @param[in]  title     Dialog title.
+* @param[out] password  User password.
+* @param[out] file      User file.
+*
+* @return True if ok has been pressed and password and/or file argument has been set.
+*/
+bool flw::dlg::password_and_file(const std::string& title, std::string& password, std::string& file) {
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
+    return dlg.run(password, file);
+}
+
+/** @brief Show a dialog with checkboxes.
+*
+* Each string in string list should start with a '0' or '1' which indicates if it should be checked or not.\n
+* Then after '0/1' comes the label.\n
+* Example: "1Hello World" for an checked item with label "Hello World".\n
+*
+* @param[in] title   Dialog title.
+* @param[in] list    List with strings for the check buttons.
+*
+* @return If 'Ok' has been pressed it will return the new list with current checks or an empty vector if canceled.
+*
+* @snippet dialog.cpp flw::dlg::select_checkboxes example
+* @image html select_checkboxes_dialog.png
+*/
+flw::StringVector flw::dlg::select_checkboxes(const std::string& title, const StringVector& list) {
+    priv::_DlgSelectCheckBoxes dlg(title, list);
+    return dlg.run();
+}
+
+/** @brief Show a dialog with a choice widget that contains input strings to select from.
+*
+* @param[in] title     Dialog title.
+* @param[in] message   Message string.
+* @param[in] list      List with strings.
+* @param[in] selected  Index in string list to select.
+*
+* @return Selected index or -1.
+*
+* @snippet dialog.cpp flw::dlg::select_choice example
+* @image html select_choice_dialog.png
+*/
+int flw::dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
+    priv::_DlgSelectChoice dlg(title, message, list, selected);
+    return dlg.run();
+}
+
+/** @brief Show a dialog with strings to select from.
+*
+* There is also an input widget to filter strings in list.\n
+* The returned index is always the original index in input vector.\n
+*
+* @param[in] title         Dialog title.
+* @param[in] list          Vector with strings.
+* @param[in] selected_row  Selected row in vector.
+* @param[in] fixed_font    True to use a fixed font.
+* @param[in] W             Width in characters.
+* @param[in] H             Height in characters.
+*
+* @return Selected index in input vector.
+*/
+int flw::dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
+    priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
+    return dlg.run();
+}
+
+/** @brief Show a dialog with strings to select from.
+*
+* There is also an input widget to filter strings in list.\n
+* The returned index is always the original index in input vector.\n
+*
+* @param[in] title         Dialog title.
+* @param[in] list          Vector with strings.
+* @param[in] selected_row  Selected row in vector.
+* @param[in] fixed_font    True to use a fixed font.
+* @param[in] W             Width in characters.
+* @param[in] H             Height in characters.
+*
+* @return Selected index in input vector.
+*
+* @snippet dialog.cpp flw::dlg::select example
+* @image html select_string_dialog.png
+*/
+int flw::dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
+    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
+    return dlg.run();
+}
+
+/** @brief Show a dialog and set a number with a slider.
+*
+* @param[in]     title   Dialog title.
+* @param[in]     min     Minimum value.
+* @param[in]     max     Maximum value.
+* @param[in,out] value   Start value.
+* @param[in]     step    Step between every slider change.
+*
+* @return True if ok has been pressed and value has been updated.
+*
+* @snippet dialog.cpp flw::dlg::slider example
+* @image html slider_dialog.png
+*/
+bool flw::dlg::slider(const std::string& title, double min, double max, double& value, double step) {
+    priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
+    return dlg.run();
+}
 
 /** @brief Show text in a dialog.
 *
@@ -2040,7 +2041,7 @@ public:
 * @param[in] W       Width in characters.
 * @param[in] H       Height in characters.
 */
-void dlg::text(const std::string& title, const std::string& text, int W, int H) {
+void flw::dlg::text(const std::string& title, const std::string& text, int W, int H) {
     priv::_DlgText dlg(title.c_str(), text.c_str(), false, W, H);
     dlg.run();
 }
@@ -2057,7 +2058,7 @@ void dlg::text(const std::string& title, const std::string& text, int W, int H) 
 * @snippet dialog.cpp flw::dlg::text_edit example
 * @image html text_edit_dialog.png
 */
-bool dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
+bool flw::dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
     auto dlg = priv::_DlgText(title.c_str(), text.c_str(), true, W, H);
     auto res = dlg.run();
 
@@ -2070,6 +2071,22 @@ bool dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
     return true;
 }
 
-} // flw
+/** @brief Put fl_message dialogs at the centre of the desktop.
+*
+*/
+void flw::dlg::center_fl_message_dialog() {
+    int X, Y, W, H;
+    Fl::screen_xywh(X, Y, W, H);
+    fl_message_position(W / 2, H / 2, 1);
+}
+
+/** @brief Show an dialog with message and then exit the program.
+*
+* @param[in] message  Message string.
+*/
+void flw::dlg::panic(const std::string& message) {
+    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
+    exit(1);
+}
 
 // MKALGAM_OFF
