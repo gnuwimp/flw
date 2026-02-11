@@ -8,6 +8,7 @@
 
 #include "dlg.h"
 #include "gridgroup.h"
+#include "svgbutton.h"
 #include "tabledisplay.h"
 
 // MKALGAM_ON
@@ -17,35 +18,36 @@
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Scrollbar.H>
+#include <FL/Fl_Tooltip.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 
 namespace flw {
-namespace table {
+namespace priv {
 
-static constexpr const char* HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
+static constexpr const char* _TABLE_HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
 
 /*
- *            _____                _ _ _
- *           / ____|              | | | |
- *          | (___   ___ _ __ ___ | | | |__   __ _ _ __
- *           \___ \ / __| '__/ _ \| | | '_ \ / _` | '__|
- *           ____) | (__| | | (_) | | | |_) | (_| | |
- *          |_____/ \___|_|  \___/|_|_|_.__/ \__,_|_|
+ *        _______    _     _       _____                _ _ _
+ *       |__   __|  | |   | |     / ____|              | | | |
+ *          | | __ _| |__ | | ___| (___   ___ _ __ ___ | | | |__   __ _ _ __
+ *          | |/ _` | '_ \| |/ _ \\___ \ / __| '__/ _ \| | | '_ \ / _` | '__|
+ *          | | (_| | |_) | |  __/____) | (__| | | (_) | | | |_) | (_| | |
+ *          |_|\__,_|_.__/|_|\___|_____/ \___|_|  \___/|_|_|_.__/ \__,_|_|
  *      ______
  *     |______|
  */
 
-/** @brief Scrollbar (private).
+/** @brief Scrollbar.
 * @private
 *
 */
-class _Scrollbar : public Fl_Scrollbar {
+class _TableScrollbar : public Fl_Scrollbar {
 public:
     /** @brief
     *
     */
-    _Scrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
+    _TableScrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
     }
 
     /** @brief
@@ -65,32 +67,32 @@ public:
 };
 
 /*
- *           _____       _        _____  _       _
- *          / ____|     | |      |  __ \(_)     | |
- *         | |  __  ___ | |_ ___ | |  | |_  __ _| | ___   __ _
- *         | | |_ |/ _ \| __/ _ \| |  | | |/ _` | |/ _ \ / _` |
- *         | |__| | (_) | || (_) | |__| | | (_| | | (_) | (_| |
- *          \_____|\___/ \__\___/|_____/|_|\__,_|_|\___/ \__, |
- *      ______                                            __/ |
- *     |______|                                          |___/
+ *        _______    _     _       _____       _        _____  _       _
+ *       |__   __|  | |   | |     / ____|     | |      |  __ \(_)     | |
+ *          | | __ _| |__ | | ___| |  __  ___ | |_ ___ | |  | |_  __ _| | ___   __ _
+ *          | |/ _` | '_ \| |/ _ \ | |_ |/ _ \| __/ _ \| |  | | |/ _` | |/ _ \ / _` |
+ *          | | (_| | |_) | |  __/ |__| | (_) | || (_) | |__| | | (_| | | (_) | (_| |
+ *          |_|\__,_|_.__/|_|\___|\_____|\___/ \__\___/|_____/|_|\__,_|_|\___/ \__, |
+ *      ______                                                                  __/ |
+ *     |______|                                                                |___/
  */
 
-/** @brief Goto cell dialog (private).
+/** @brief Goto cell dialog.
 * @private
 *
 */
-class _GotoDialog : public Fl_Double_Window {
-    Fl_Int_Input*                   _row;   // Row number input.
-    Fl_Int_Input*                   _col;   // Column number input.
-    GridGroup*                      _grid;  // Layout widget.
-    bool                            _ret;   // Return value.
-    bool                            _run;   // Run condition.
+class _TableGotoDialog : public Fl_Double_Window {
+    Fl_Int_Input*                   _row;   ///< @brief Row number input.
+    Fl_Int_Input*                   _col;   ///< @brief Column number input.
+    GridGroup*                      _grid;  ///< @brief Layout widget.
+    bool                            _ret;   ///< @brief Return value.
+    bool                            _run;   ///< @brief Run condition.
 
 public:
     /** @brief
     *
     */
-    _GotoDialog(int row, int col) :
+    _TableGotoDialog(int row, int col) :
     Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
         end();
 
@@ -105,13 +107,13 @@ public:
         add(_grid);
 
         _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-        _row->callback(_GotoDialog::Callback, this);
+        _row->callback(priv::_TableGotoDialog::Callback, this);
         _row->labelsize(flw::PREF_FONTSIZE);
         _row->textfont(flw::PREF_FIXED_FONT);
         _row->textsize(flw::PREF_FONTSIZE);
         _row->when(FL_WHEN_ENTER_KEY_ALWAYS);
         _col->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-        _col->callback(_GotoDialog::Callback, this);
+        _col->callback(priv::_TableGotoDialog::Callback, this);
         _col->labelsize(flw::PREF_FONTSIZE);
         _col->textfont(flw::PREF_FIXED_FONT);
         _col->textsize(flw::PREF_FONTSIZE);
@@ -123,7 +125,7 @@ public:
         sprintf(b, "%d", col > 0 ? col : 1);
         _col->value(b);
 
-        callback(_GotoDialog::Callback, this);
+        callback(priv::_TableGotoDialog::Callback, this);
         set_modal();
         resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
@@ -133,7 +135,7 @@ public:
     *
     */
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_GotoDialog*>(o);
+        auto self = static_cast<priv::_TableGotoDialog*>(o);
 
         if (w == self) {
             self->_run = false;
@@ -178,41 +180,41 @@ public:
 };
 
 /*
- *           ______ _           _ _____  _       _
- *          |  ____(_)         | |  __ \(_)     | |
- *          | |__   _ _ __   __| | |  | |_  __ _| | ___   __ _
- *          |  __| | | '_ \ / _` | |  | | |/ _` | |/ _ \ / _` |
- *          | |    | | | | | (_| | |__| | | (_| | | (_) | (_| |
- *          |_|    |_|_| |_|\__,_|_____/|_|\__,_|_|\___/ \__, |
- *      ______                                            __/ |
- *     |______|                                          |___/
+ *        _______    _     _      ______ _           _ _____  _       _
+ *       |__   __|  | |   | |    |  ____(_)         | |  __ \(_)     | |
+ *          | | __ _| |__ | | ___| |__   _ _ __   __| | |  | |_  __ _| | ___   __ _
+ *          | |/ _` | '_ \| |/ _ \  __| | | '_ \ / _` | |  | | |/ _` | |/ _ \ / _` |
+ *          | | (_| | |_) | |  __/ |    | | | | | (_| | |__| | | (_| | | (_) | (_| |
+ *          |_|\__,_|_.__/|_|\___|_|    |_|_| |_|\__,_|_____/|_|\__,_|_|\___/ \__, |
+ *      ______                                                                 __/ |
+ *     |______|                                                               |___/
  */
 
-/** @brief Find text dialog (private).
+/** @brief Find text dialog.
 * @private
 *
 */
-class _FindDialog : public Fl_Double_Window {
-    Fl_Input*                   _find;      // Find input.
-    Fl_Button*                  _next;      // Jump to next find.
-    Fl_Button*                  _prev;      // Jump to prev find.
-    Fl_Button*                  _close;     // Close dialog.
-    GridGroup*                  _grid;      // Layout widget.
-    Display*                    _table;     // Display widget.
-    bool                        _repeat;    // True to repeat.
-    bool                        _run;       // Run condition.
+class _TableFindDialog : public Fl_Double_Window {
+    Fl_Input*                   _find;      ///< @brief Find input.
+    SVGButton*                  _next;      ///< @brief Jump to next find.
+    Fl_Button*                  _prev;      ///< @brief Jump to prev find.
+    Fl_Button*                  _close;     ///< @brief Close dialog.
+    GridGroup*                  _grid;      ///< @brief Layout widget.
+    table::Display*             _table;     ///< @brief Display widget.
+    bool                        _repeat;    ///< @brief True to repeat.
+    bool                        _run;       ///< @brief Run condition.
 
 public:
     /** @brief
     *
     */
-    _FindDialog(Display* table) :
+    _TableFindDialog(flw::table::Display* table) :
     Fl_Double_Window(0, 0, 10, 10, "Table - Find Text") {
         end();
 
         _close  = new Fl_Button(0, 0, 0, 0, labels::CLOSE.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
-        _next   = new Fl_Return_Button(0, 0, 0, 0, labels::NEXT.c_str());
+        _next   = new SVGButton(0, 0, 0, 0, labels::NEXT, flw::icons::BACK, true);
         _prev   = new Fl_Button(0, 0, 0, 0, labels::PREV.c_str());
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
@@ -225,21 +227,21 @@ public:
         _grid->add(_close,  -17, -5,  16,   4);
         add(_grid);
 
-        _close->callback(_FindDialog::Callback, this);
+        _close->callback(priv::_TableFindDialog::Callback, this);
         _close->labelsize(flw::PREF_FONTSIZE);
-        _next->callback(_FindDialog::Callback, this);
+        _next->callback(priv::_TableFindDialog::Callback, this);
         _next->labelsize(flw::PREF_FONTSIZE);
-        _prev->callback(_FindDialog::Callback, this);
+        _prev->callback(priv::_TableFindDialog::Callback, this);
         _prev->labelsize(flw::PREF_FONTSIZE);
         _find->align(FL_ALIGN_LEFT);
-        _find->callback(_FindDialog::Callback, this);
+        _find->callback(priv::_TableFindDialog::Callback, this);
         _find->labelsize(flw::PREF_FONTSIZE);
         _find->textfont(flw::PREF_FIXED_FONT);
         _find->textsize(flw::PREF_FONTSIZE);
         _find->value(_table->_find.c_str());
         _find->when(FL_WHEN_ENTER_KEY_ALWAYS);
 
-        callback(_FindDialog::Callback, this);
+        callback(priv::_TableFindDialog::Callback, this);
         set_modal();
         resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 6);
@@ -249,7 +251,7 @@ public:
     *
     */
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_FindDialog*>(o);
+        auto self = static_cast<priv::_TableFindDialog*>(o);
 
         if (w == self) {
             self->_run = false;
@@ -373,6 +375,9 @@ public:
     }
 };
 
+} // flw::priv
+} // flw
+
 /*
  *      _____  _           _
  *     |  __ \(_)         | |
@@ -392,11 +397,11 @@ public:
 * @param[in] H  Height.
 * @param[in] l  Optional label.
 */
-Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+flw::table::Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
 
-    _hor  = new _Scrollbar(0, 0, 0, 0);
-    _ver  = new _Scrollbar(0, 0, 0, 0);
+    _hor  = new priv::_TableScrollbar(0, 0, 0, 0);
+    _ver  = new priv::_TableScrollbar(0, 0, 0, 0);
     _edit = nullptr;
 
     add(_ver);
@@ -410,9 +415,9 @@ Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, 
 
     resizable(nullptr);
     box(FL_BORDER_BOX);
-    color(FL_BACKGROUND_COLOR);
+    color(FL_BACKGROUND2_COLOR);
     selection_color(FL_SELECTION_COLOR);
-    tooltip(table::HELP_TEXT);
+    tooltip(priv::_TABLE_HELP_TEXT);
     clip_children(1);
     util::labelfont(this);
     reset();
@@ -424,7 +429,7 @@ Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, 
 * @param[in] col   Column number.
 * @param[in] show  True to show cell.
 */
-void Display::active_cell(int row, int col, bool show) {
+void flw::table::Display::active_cell(int row, int col, bool show) {
     auto send = false;
 
     if (_rows == 0 || row < 1 || row > _rows || _cols == 0 || col < 1 || col > _cols) {
@@ -441,7 +446,6 @@ void Display::active_cell(int row, int col, bool show) {
 
     if (send == true) {
         _set_event(_curr_row, _curr_col, Event::CURSOR);
-        do_callback();
     }
 
     redraw();
@@ -454,7 +458,7 @@ void Display::active_cell(int row, int col, bool show) {
 /** @brief Callback for vertical scrollbar
 *
 */
-void Display::_CallbackVer(Fl_Widget*, void* o) {
+void flw::table::Display::_CallbackVer(Fl_Widget*, void* o) {
     auto table = static_cast<Display*>(o);
 
     table->_start_col = table->_hor->value();
@@ -464,7 +468,7 @@ void Display::_CallbackVer(Fl_Widget*, void* o) {
 /** @brief Callback for horizontal scrollbar
 *
 */
-void Display::_CallbackHor(Fl_Widget*, void* o) {
+void flw::table::Display::_CallbackHor(Fl_Widget*, void* o) {
     auto table = static_cast<Display*>(o);
 
     table->_start_row = table->_ver->value();
@@ -477,7 +481,7 @@ void Display::_CallbackHor(Fl_Widget*, void* o) {
 *
 * @return Cell height.
 */
-int Display::_cell_height(int Y) {
+int flw::table::Display::_cell_height(int Y) {
     auto y2 = y() + h() - _hor->h();
 
     if (Y + _height >= y2) {
@@ -495,7 +499,7 @@ int Display::_cell_height(int Y) {
 *
 * @return Cell width.
 */
-int Display::_cell_width(int col, int X) {
+int flw::table::Display::_cell_width(int col, int X) {
     auto cw  = cell_width(col);
     auto min = _height;
 
@@ -523,7 +527,7 @@ int Display::_cell_width(int col, int X) {
 /** @brief Copy string from cell to clipboard.
 *
 */
-void Display::cmd_copy() {
+void flw::table::Display::cmd_copy() {
     auto val = cell_value(_curr_row, _curr_col);
     Fl::copy(val.c_str(), static_cast<int>(val.length()), 1);
 }
@@ -531,16 +535,16 @@ void Display::cmd_copy() {
 /** @brief Display find dialog and search for a string.
 *
 */
-void Display::cmd_find() {
-    auto dlg = _FindDialog(this);
+void flw::table::Display::cmd_find() {
+    auto dlg = priv::_TableFindDialog(this);
     dlg.run(window());
 }
 
 /** @brief Display goto cell dialog.
 *
 */
-void Display::cmd_goto() {
-    auto dlg = _GotoDialog(_curr_row, _curr_col);
+void flw::table::Display::cmd_goto() {
+    auto dlg = priv::_TableGotoDialog(_curr_row, _curr_col);
 
     if (dlg.run(window()) == true) {
         active_cell(dlg.row(), dlg.col(), true);
@@ -550,7 +554,7 @@ void Display::cmd_goto() {
 /** @brief Print debug info to stdout.
 *
 */
-void Display::debug() const {
+void flw::table::Display::debug() const {
 #ifdef DEBUG
     printf("flw::Display:\n");
     printf("    rows            = %4d\n", _rows);
@@ -579,25 +583,26 @@ void Display::debug() const {
 /** @brief Draw all cells.
 *
 */
-void Display::draw() {
+void flw::table::Display::draw() {
     if (_edit != nullptr) { // Have to be resized before parent drawing.
         _edit->resize(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
 
+    fl_line_style(0);
     _update_scrollbars();
     Fl_Group::draw();
 
     if (_ver->visible() != 0 && _hor->visible() != 0) {
-        fl_push_clip(x() + 1, y() + 1, w() - 2 - _ver->w(), h() - 2 - _hor->h());
+        fl_push_clip(x(), y(), w() - _ver->w() - 1, h() - _hor->h() - 1);
     }
     else if (_ver->visible() != 0) {
-        fl_push_clip(x() + 1, y() + 1, w() - 2 - _ver->w(), h() - 2);
+        fl_push_clip(x(), y(), w() - _ver->w() - 1, h());
     }
     else if (_hor->visible() != 0) {
-        fl_push_clip(x() + 1, y() + 1, w() - 2, h() - 2 - _hor->h());
+        fl_push_clip(x(), y(), w(), h() - _hor->h() - 1);
     }
     else {
-        fl_push_clip(x() + 1, y() + 1, w() - 2, h() - 2);
+        fl_push_clip(x(), y(), w(), h());
     }
 
     auto w1 = w() - _ver->w();
@@ -619,11 +624,13 @@ void Display::draw() {
     }
 
     if (_edit != nullptr) { // Make sure border are consistent around edit widget.
-        fl_color(fl_lighter(FL_FOREGROUND_COLOR));
+        fl_color(FL_FOREGROUND_COLOR);
         fl_rect(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
 
     fl_pop_clip();
+    fl_line_style(0);
+    fl_rect(x(), y(), w(), h(), FL_FOREGROUND_COLOR);
 }
 
 /** @brief Draw one cell
@@ -638,49 +645,50 @@ void Display::draw() {
 * @param[in] hor      Draw horizontal line.
 * @param[in] current  True if cell is the current cell.
 */
-void Display::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
-    fl_push_clip(X, Y, W + 1, H);
+void flw::table::Display::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+    auto align     = cell_align(row, col);
+    auto textcolor = cell_textcolor(row, col);
+    auto textfont  = cell_textfont(row, col);
+    auto textsize  = cell_textsize(row, col);
+    auto val       = cell_value(row, col);
+    auto space     = (align & FL_ALIGN_RIGHT) ? 6 : 4;
 
-    auto align    = cell_align(row, col);
-    auto textfont = cell_textfont(row, col);
-    auto textsize = cell_textsize(row, col);
-    auto val      = cell_value(row, col);
-    auto space    = (align & FL_ALIGN_RIGHT) ? 6 : 4;
+    align |= FL_ALIGN_CLIP;
 
-    if (row > 0 && col > 0) { // Draw normal cell.
-        auto color     = cell_color(row, col);
-        auto textcolor = cell_textcolor(row, col);
+    if (row < 0 || col < 0) {
+    }
+    else if (row == 0 || col == 0) { // Draw header cell.
+        fl_rectf(X, Y, W, H, FL_DARK1);
+        fl_rect(X, Y, W + 1, H + 1, FL_DARK3);
+
+        fl_color(textcolor);
+        fl_font(textfont, textsize);
+        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
+    }
+    else { // Draw normal cell.
+        auto color = cell_color(row, col);
 
         if (current == true) {
             color     = selection_color();
-            textcolor = fl_contrast(FL_FOREGROUND_COLOR, color);
+            textcolor = fl_contrast(textcolor, color);
         }
 
         fl_color(color);
-        fl_rectf(X + 1, Y, W + 1, H);
+        fl_rectf(X + 1, Y + 1, W - 1, H - 1);
         fl_font(textfont, textsize);
         fl_color(textcolor);
         _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
-        fl_color(FL_DARK3);
 
-        if (ver == true) {
-            fl_line(X, Y, X, Y + H);
-            fl_line(X + W, Y, X + W, Y + H);
+        if (ver == true || (col == _cols && hor == true)) { // Skip last vertical only if there are no lines at all.
+            fl_color(FL_DARK1);
+            fl_line(X + W, Y + 1, X + W, Y + H);
         }
 
-        if (hor == true) {
-            fl_line(X, Y, X + W, Y);
-            fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
+        if (hor == true || (row == _rows && ver == true)) { // Skip last horizontal only if there are no lines at all.
+            fl_color(FL_DARK1);
+            fl_line(X+1, Y + H, X + W, Y + H);
         }
     }
-    else { // Draw header cell.
-        fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
-        fl_font(textfont, textsize);
-        fl_color(FL_FOREGROUND_COLOR);
-        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
-    }
-
-    fl_pop_clip();
 }
 
 /** @brief Draw a row.
@@ -690,28 +698,28 @@ void Display::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver,
 * @param[in] Y    Y pos.
 * @param[in] H    Cell height.
 */
-void Display::_draw_row(int row, int W, int Y, int H) {
+void flw::table::Display::_draw_row(int row, int W, int Y, int H) {
     auto x1 = x();
     auto x2 = x() + W;
 
-    for (auto c = (_show_row_header ? 0 : _start_col); c <= _cols; c++) {
-        auto cw = _cell_width(c, x1);
+    for (auto col = (_show_row_header ? 0 : _start_col); col <= _cols; col++) {
+        auto cw = _cell_width(col, x1);
 
-        if (row > 0 && c > 0 && row == _curr_row && c == _curr_col) {
+        if (row > 0 && col > 0 && row == _curr_row && col == _curr_col) {
             _current_cell[0] = x1;
             _current_cell[1] = Y;
             _current_cell[2] = cw;
             _current_cell[3] = H;
 
             if (_edit == nullptr) {
-                _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != Select::NO);
+                _draw_cell(row, col, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != Select::NO);
             }
         }
         else if (row > 0 && row == _curr_row && _select == Select::ROW) {
-            _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, true);
+            _draw_cell(row, col, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, true);
         }
         else {
-            _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, false);
+            _draw_cell(row, col, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, false);
         }
 
         x1 += cw;
@@ -719,8 +727,8 @@ void Display::_draw_row(int row, int W, int Y, int H) {
         if (x1 >= x2) {
             break;
         }
-        else if (c == 0) { // After header start with first used column.
-            c = _start_col - 1;
+        else if (col == 0) { // After header start with first used column.
+            col = _start_col - 1;
         }
     }
 
@@ -735,7 +743,7 @@ void Display::_draw_row(int row, int W, int Y, int H) {
 * @param[in] H       Height.
 * @param[in] align   Align text option.
 */
-void Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
+void flw::table::Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
     if (align == FL_ALIGN_CENTER || align == FL_ALIGN_RIGHT) {
         if (fl_width(string) > W) {
             align = FL_ALIGN_LEFT;
@@ -751,7 +759,7 @@ void Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Alig
 *
 * @return 1 if event is handled, 0 if not.
 */
-int Display::_ev_keyboard_down(bool only_append_insert) {
+int flw::table::Display::_ev_keyboard_down(bool only_append_insert) {
     auto key   = Fl::event_key();
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
@@ -763,17 +771,14 @@ int Display::_ev_keyboard_down(bool only_append_insert) {
         }
         else if (cmd == true && key == 'a') {
             _set_event(_curr_row, _curr_col, (shift == true) ? Event::APPEND_COLUMN : Event::APPEND_ROW);
-            do_callback();
             return 1;
         }
         else if (cmd == true && key == 'i') {
             _set_event(_curr_row, _curr_col, (shift == true) ? Event::INSERT_COLUMN : Event::INSERT_ROW);
-            do_callback();
             return 1;
         }
         else if (cmd == true && key == 'd') {
             _set_event(_curr_row, _curr_col, (shift == true) ? Event::DELETE_COLUMN : Event::DELETE_ROW);
-            do_callback();
             return 1;
         }
     }
@@ -849,17 +854,14 @@ int Display::_ev_keyboard_down(bool only_append_insert) {
     }
     else if (cmd == true && key == 'a') {
         _set_event(_curr_row, _curr_col, (shift == true) ? Event::APPEND_COLUMN : Event::APPEND_ROW);
-        do_callback();
         return 1;
     }
     else if (cmd == true && key == 'i') {
         _set_event(_curr_row, _curr_col, (shift == true) ? Event::INSERT_COLUMN : Event::INSERT_ROW);
-        do_callback();
         return 1;
     }
     else if (cmd == true && key == 'd') {
         _set_event(_curr_row, _curr_col, (shift == true) ? Event::DELETE_COLUMN : Event::DELETE_ROW);
-        do_callback();
         return 1;
     }
 
@@ -870,9 +872,9 @@ int Display::_ev_keyboard_down(bool only_append_insert) {
 *
 * If drag is under way return 1.
 *
-* @return 1 if event is handled, 0 if not.
+* @return 0 or 1 if event is handled, 2 to send event to parent.
 */
-int Display::_ev_mouse_click () {
+int flw::table::Display::_ev_mouse_click () {
     if (Fl::event_button1() && _drag == true) {
         return 1;
     }
@@ -888,27 +890,25 @@ int Display::_ev_mouse_click () {
         Fl::focus(this);
     }
 
-    if (r == 0 && c >= 1) { // Mouse click on top header cells
+    if (r == 0 && c >= 1) { // Mouse click on top header cells.
         _set_event(r, c, (Fl::event_ctrl() != 0) ? Event::COLUMN_CTRL : Event::COLUMN);
-        do_callback();
     }
-    else if (c == 0 && r >= 1) { // Mouse click on left header cells
+    else if (c == 0 && r >= 1) { // Mouse click on left header cells.
         _set_event(r, c, (Fl::event_ctrl() != 0) ? Event::ROW_CTRL : Event::ROW);
-        do_callback();
     }
-    else if (r == -1 || c == -1) { // Mouse click outside cell
-        if (r == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar
+    else if (r == -1 || c == -1) { // Mouse click outside cell.
+        if (r == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) { // Don't deselect if clicked on scrollbar.
             ;
         }
-        else if (c == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar
+        else if (c == -1 && _ver->visible() != 0 && Fl::event_x() >= _ver->x()) { // Don't deselect if clicked on scrollbar.
             ;
         }
-        else { // If clicked in whitespace then deselect cell
+        else { // If clicked in whitespace then deselect cell.
             active_cell(-1, -1);
             return 0;
         }
     }
-    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != Select::NO) { // Set new current cell and send event
+    else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != Select::NO) { // Set new current cell and send event.
         active_cell(r, c);
     }
 
@@ -921,7 +921,7 @@ int Display::_ev_mouse_click () {
 *
 * @return Return 2.
 */
-int Display::_ev_mouse_drag() {
+int flw::table::Display::_ev_mouse_drag() {
     if (_drag == false) {
         return 2;
     }
@@ -957,13 +957,13 @@ int Display::_ev_mouse_drag() {
 *
 * @return 0, 1 and 2.
 */
-int Display::_ev_mouse_move() {
+int flw::table::Display::_ev_mouse_move() {
     auto mx = Fl::event_x();
-    auto x1 = x() + (_show_row_header ? _cell_width(0) : 0);
+    auto x1 = x() + (_show_row_header == true ? _cell_width(0) : 0);
     auto x2 = x() + w() - _ver->w();
 
-    if (_resize) {
-        if (_show_row_header && mx > (x1 - 3) && mx < (x1 + 4)) {
+    if (_resize == true) {
+        if (_show_row_header == true && mx > (x1 - 3) && mx < (x1 + 4)) {
             _resize_col = 0;
             _drag       = true;
 
@@ -977,7 +977,7 @@ int Display::_ev_mouse_move() {
                 if (x1 >= x2) {
                     break;
                 }
-                else if (mx > (x1 - 3) && mx < (x1 + 4)) { // Change cursor to show that it is possible to change column width
+                else if (mx > (x1 - 3) && mx < (x1 + 4)) { // Change cursor to show that it is possible to change column width.
                     _resize_col = c;
                     _drag       = true;
 
@@ -988,7 +988,7 @@ int Display::_ev_mouse_move() {
         }
     }
 
-    if (_drag == true) { // Set cursor to the default cursor only if it was set to another cursor before
+    if (_drag == true) { // Set cursor to the default cursor only if it was set to another cursor before.
         _drag = false;
         fl_cursor(FL_CURSOR_DEFAULT);
     }
@@ -1002,14 +1002,14 @@ int Display::_ev_mouse_move() {
 * @param[out] row  Row index.
 * @param[out] col  Column index.
 */
-void Display::_get_cell_below_mouse(int& row, int& col) {
+void flw::table::Display::_get_cell_below_mouse(int& row, int& col) {
     row = -1;
     col = -1;
 
     auto my = Fl::event_y();
     auto mx = Fl::event_x();
 
-    if (!((_ver->visible() != 0 && mx >= _ver->x()) || (_hor->visible() != 0 && my >= _hor->y()))) { // Dont click on scrollbars
+    if (!((_ver->visible() != 0 && mx >= _ver->x()) || (_hor->visible() != 0 && my >= _hor->y()))) { // Don't click on scrollbars.
         if (_show_col_header == true && (my - y()) < _height) {
             row = 0;
         }
@@ -1039,6 +1039,7 @@ void Display::_get_cell_below_mouse(int& row, int& col) {
 
             for (auto c = _start_col; c <= _cols; c++) {
                 auto cw = _cell_width(c);
+
                 if (x1 > x2) {
                     break;
                 }
@@ -1059,7 +1060,7 @@ void Display::_get_cell_below_mouse(int& row, int& col) {
 *
 * @return 1 if event is handled, 0 if not.
 */
-int Display::handle(int event) {
+int flw::table::Display::handle(int event) {
     auto ret = 2;
 
     if (_rows > 0 && _cols > 0) {
@@ -1102,7 +1103,7 @@ int Display::handle(int event) {
 * @param[in] row  Show row header.
 * @param[in] col  Show column header.
 */
-void Display::header(bool row, bool col) {
+void flw::table::Display::header(bool row, bool col) {
     _show_row_header = row;
     _show_col_header = col;
     redraw();
@@ -1113,7 +1114,7 @@ void Display::header(bool row, bool col) {
 * @param[in] ver  Show vertical lines.
 * @param[in] hor  Show horizontal lines.
 */
-void Display::lines(bool ver, bool hor) {
+void flw::table::Display::lines(bool ver, bool hor) {
     _show_ver_lines = ver;
     _show_hor_lines = hor;
     redraw();
@@ -1123,7 +1124,7 @@ void Display::lines(bool ver, bool hor) {
 *
 * @param[in] move  Move option.
 */
-void Display::_move_cursor(Move move) {
+void flw::table::Display::_move_cursor(Move move) {
     if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != Select::NO) {
         auto r     = _curr_row;
         auto c     = _curr_col;
@@ -1227,7 +1228,7 @@ void Display::_move_cursor(Move move) {
 * Headers, lines, resizing and expanding are off.\n
 * Append shortcuts are disabled.\n
 */
-void Display::reset() {
+void flw::table::Display::reset() {
     _cols            = 0;
     _curr_col        = -1;
     _curr_row        = -1;
@@ -1259,12 +1260,27 @@ void Display::reset() {
     redraw();
 }
 
+/** @brief Set event and also call callbacks and flw::table::Display::cell_event().
+*
+* @param[in] row    Row index.
+* @param[in] col    Column index.
+* @param[in] event  Event number.
+*/
+void flw::table::Display::_set_event(int row, int col, Event event) {
+    _event_row = row;
+    _event_col = col;
+    _event     = event;
+
+    do_callback();
+    cell_event(row, col, event);
+}
+
 /** @brief Show cell.
 *
 * @param[in] row  Row index.
 * @param[in] col  Column index.
 */
-void Display::show_cell(int row, int col) {
+void flw::table::Display::show_cell(int row, int col) {
     if (_rows > 0 && row > 0 && row <= _rows) {
         auto rc = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
 
@@ -1315,7 +1331,7 @@ void Display::show_cell(int row, int col) {
 * @param[in] rows  Number of rows.
 * @param[in] cols  Number of columns.
 */
-void Display::size(int rows, int cols) {
+void flw::table::Display::size(int rows, int cols) {
     if (rows < 0 || _cols < 0) {
         return;
     }
@@ -1328,14 +1344,13 @@ void Display::size(int rows, int cols) {
     _start_col = 1;
 
     _set_event(_curr_row, _curr_col, Event::SIZE);
-    do_callback();
     redraw();
 }
 
 /** @brief Show/hide scrollbars and fix size.
 *
 */
-void Display::_update_scrollbars() {
+void flw::table::Display::_update_scrollbars() {
     if (_rows > 0 && _cols > 0) {
         if (_disable_hor == true) {
             _hor->hide();
@@ -1415,8 +1430,5 @@ void Display::_update_scrollbars() {
     _ver->Fl_Valuator::value(_start_row);
     _hor->Fl_Valuator::value(_start_col);
 }
-
-} // table
-} // flw
 
 // MKALGAM_OFF

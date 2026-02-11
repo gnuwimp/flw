@@ -20,6 +20,10 @@ class Fl_Scrollbar;
 
 namespace flw {
 
+namespace priv {
+    class _TableFindDialog;
+}
+
 /** @brief Table widgets.
 *
 */
@@ -41,7 +45,7 @@ enum class Select {
 enum class Event {
     UNDEFINED,      ///< @brief No event.
     CHANGED,        ///< @brief Data has been changed.
-    CURSOR,         ///< @brief Cursor has been moved (cell has been changed).
+    CURSOR,         ///< @brief Cursor has been moved (current cell has been changed).
     COLUMN,         ///< @brief Column header has been clicked.
     COLUMN_CTRL,    ///< @brief Column header has been clicked and ctrl key has been pressed.
     ROW,            ///< @brief Row header has been clicked.
@@ -79,7 +83,7 @@ enum class Event {
 * To enable column resizing, values sent to Display::cell_width(int col, int width) must be stored.\n
 */
 class Display : public Fl_Group {
-    friend class _FindDialog;
+    friend class priv::_TableFindDialog;
 
 public:
     explicit                    Display(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
@@ -88,6 +92,8 @@ public:
                                         { (void) row; (void) col; return FL_ALIGN_LEFT; } ///< @brief Get alignment for cell.
     virtual Fl_Color            cell_color(int row, int col)
                                         { (void) row; (void) col; return FL_BACKGROUND2_COLOR; } ///< @brief Get background color for cell.
+    virtual void                cell_event(int row, int col, Event event)
+                                        { (void) row; (void) col; (void) event; } ///< @brief Alternative callback for events.
     virtual Fl_Color            cell_textcolor(int row, int col)
                                     { (void) row; (void) col; return FL_FOREGROUND_COLOR; } ///< @brief Get text color for cell.
     virtual Fl_Font             cell_textfont(int row, int col)
@@ -172,39 +178,38 @@ protected:
                                     { return cell_value(row, col); } ///< @brief Get value from cell that is used for dearching text.
     void                        _move_cursor(Move move);
     void                        _update_scrollbars();
-    void                        _set_event(int row, int col, Event event)
-                                    { _event_row = row; _event_col = col; _event = event; } ///< @brief Set event.
+    void                        _set_event(int row, int col, Event event);
 
     static void                 _CallbackHor(Fl_Widget* w, void* v);
     static void                 _CallbackVer(Fl_Widget* w, void* v);
 
-    Event                       _event;                 // Last event value
-    Select                      _select;                // Select mode.
-    Fl_Scrollbar*               _hor;                   // Horizontal scrollbar.
-    Fl_Scrollbar*               _ver;                   // Vertical scrollbar.
-    Fl_Widget*                  _edit;                  // Current edit widget, no widget is created in Display, only in Editor.
-    std::string                 _find;                  // Last find string.
-    bool                        _disable_hor;           // True to disable horizontal scrollbar.
-    bool                        _disable_ver;           // True to disable vertical scrollbar.
-    bool                        _drag;                  // True if mouse drag is active.
-    bool                        _enable_keys;           // Enable append/insert/delete shortcuts.
-    bool                        _expand;                // Expand last column.
-    bool                        _resize;                // Resize columns.
-    bool                        _show_col_header;       // Show column header.
-    bool                        _show_hor_lines;        // Show horizontal lines.
-    bool                        _show_row_header;       // Show row header.
-    bool                        _show_ver_lines;        // Show vertical lines.
-    int                         _cols;                  // Number of columns.
-    int                         _curr_col;              // Current column.
-    int                         _curr_row;              // Current row.
-    int                         _current_cell[4];       // Size and pos of current cell.
-    int                         _event_col;             // Event column.
-    int                         _event_row;             // Event row.
-    int                         _height;                // Row height.
-    int                         _resize_col;            // Which column to resize.
-    int                         _rows;                  // Number of rows.
-    int                         _start_col;             // First visible column.
-    int                         _start_row;             // First visible row.
+    Event                       _event;                 ///< @brief Last event value
+    Select                      _select;                ///< @brief Select mode.
+    Fl_Scrollbar*               _hor;                   ///< @brief Horizontal scrollbar.
+    Fl_Scrollbar*               _ver;                   ///< @brief Vertical scrollbar.
+    Fl_Widget*                  _edit;                  ///< @brief Current edit widget, no widget is created in Display, only in Editor.
+    std::string                 _find;                  ///< @brief Last find string.
+    bool                        _disable_hor;           ///< @brief True to disable horizontal scrollbar.
+    bool                        _disable_ver;           ///< @brief True to disable vertical scrollbar.
+    bool                        _drag;                  ///< @brief True if mouse drag is active.
+    bool                        _enable_keys;           ///< @brief Enable append/insert/delete shortcuts.
+    bool                        _expand;                ///< @brief Expand last column.
+    bool                        _resize;                ///< @brief Resize columns.
+    bool                        _show_col_header;       ///< @brief Show column header.
+    bool                        _show_hor_lines;        ///< @brief Show horizontal lines.
+    bool                        _show_row_header;       ///< @brief Show row header.
+    bool                        _show_ver_lines;        ///< @brief Show vertical lines.
+    int                         _cols;                  ///< @brief Number of columns.
+    int                         _curr_col;              ///< @brief Current column.
+    int                         _curr_row;              ///< @brief Current row.
+    int                         _current_cell[4];       ///< @brief Size and pos of current cell.
+    int                         _event_col;             ///< @brief Event column.
+    int                         _event_row;             ///< @brief Event row.
+    int                         _height;                ///< @brief Row height.
+    int                         _resize_col;            ///< @brief Which column to resize.
+    int                         _rows;                  ///< @brief Number of rows.
+    int                         _start_col;             ///< @brief First visible column.
+    int                         _start_row;             ///< @brief First visible row.
 };
 
 } // table

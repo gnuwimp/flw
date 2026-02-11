@@ -22,7 +22,8 @@ namespace table {
 enum class Format {
     DEFAULT,        ///< @brief Use default format for current type.
     INT_DEF,        ///< @brief Default integer.
-    INT_SEP,        ///< @brief Integer separator.
+    INT_SEP1,       ///< @brief Space as thousand separator.
+    INT_SEP2,       ///< @brief Single quote as thousand separator.
     DEC_DEF,        ///< @brief Default number.
     DEC_0,          ///< @brief 0 decimals.
     DEC_1,          ///< @brief 1 decimals.
@@ -36,8 +37,8 @@ enum class Format {
     DATE_DEF,       ///< @brief Default date, "YYYY-MM-DD".
     DATE_WORLD,     ///< @brief World date, "DD/MM/YYYY".
     DATE_US,        ///< @brief US date, "MM/DD/YYYY".
-    SECRET_DEF,     ///< @brief Password with stars.
-    SECRET_DOT,     ///< @brief Password with dots.
+    SECRET_DEF,     ///< @brief Password with dots.
+    SECRET_STAR,    ///< @brief Password with stars.
 };
 
 /** @brief All data types.
@@ -69,7 +70,11 @@ extern std::string EditDirLabel;
 extern std::string EditFileLabel;
 extern std::string EditListLabel;
 extern std::string EditTextLabel;
+
 std::string format_slider(double val, double min, double max, double step);
+std::string format_slider2(int64_t val, int64_t min, int64_t max, int64_t step);
+double      get_slider(const std::string& slider_string, double def = 0.0);
+int64_t     get_slider2(const std::string& slider_string, int64_t def = 0);
 
 /*
  *      ______    _ _ _
@@ -105,6 +110,7 @@ public:
                                     { (void) row; (void) col; return false; } ///< @brief Is cell editable?
     virtual Format              cell_format(int row, int col)
                                     { (void) row; (void) col; return Format::DEFAULT; } ///< @brief Draw options for Editor::Type.
+    Fl_Color                    cell_textcolor(int row, int col) override;
     virtual Type                cell_type(int row, int col)
                                     { (void) row; (void) col; return Type::TEXT; } ///< @brief Type of value.
     virtual bool                cell_value(int row, int col, const std::string& value)
@@ -112,6 +118,10 @@ public:
     void                        cmd_cut();
     void                        cmd_delete();
     void                        cmd_paste();
+    bool                        draw_inactive_lighter() const
+                                    { return _ro; }
+    void                        draw_inactive_lighter(bool ro)
+                                    { _ro = ro; }
     int                         handle(int event) override;
     void                        reset() override;
 
@@ -127,9 +137,10 @@ protected:
     int                         _ev_paste();
     std::string                 _get_find_value(int row, int col) override;
 
-    Fl_Widget*                  _edit2;         // Only used for Type::INPUT_CHOICE/Fl_Input_Choice editing and for focus reason.
-    Fl_Widget*                  _edit3;         // Only used for Type::INPUT_CHOICE/Fl_Input_Choice editing and for focus reason.
-    bool                        _force_events;  // True to force events even if value has not changed.
+    Fl_Widget*                  _edit2;         ///< @brief Only used for Type::INPUT_CHOICE/Fl_Input_Choice editing and for focus reason.
+    Fl_Widget*                  _edit3;         ///< @brief Only used for Type::INPUT_CHOICE/Fl_Input_Choice editing and for focus reason.
+    bool                        _force_events;  ///< @brief True to force events even if value has not changed.
+    bool                        _ro;            ///< @brief True to turn on lighter text for read only cells, unless cell_textcolor() is overriden.
 };
 
 } // table

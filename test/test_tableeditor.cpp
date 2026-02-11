@@ -11,7 +11,6 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <stdarg.h>
 
 using namespace flw;
 
@@ -30,18 +29,18 @@ For in that sleep of death what dreams may come
 When we have shuffled off this mortal coil,
 )";
 
-#define ROWS 2000
-#define COLS 100
+#define ROWS 2'000
+#define COLS   100
 
 /*
- *      _______        _ _______    _     _      
- *     |__   __|      | |__   __|  | |   | |     
- *        | | ___  ___| |_ | | __ _| |__ | | ___ 
+ *      _______        _ _______    _     _
+ *     |__   __|      | |__   __|  | |   | |
+ *        | | ___  ___| |_ | | __ _| |__ | | ___
  *        | |/ _ \/ __| __|| |/ _` | '_ \| |/ _ \
  *        | |  __/\__ \ |_ | | (_| | |_) | |  __/
  *        |_|\___||___/\__||_|\__,_|_.__/|_|\___|
- *                                               
- *                                               
+ *
+ *
  */
 
 //----------------------------------------------------------------------------------
@@ -50,9 +49,11 @@ public:
     flw::StringVector   choices;
     int                 widths[COLS + 1];
     std::string         values[ROWS + 1][COLS + 1];
-    table::Format       dec[ROWS + 1];
+    int                 start_free;
 
     TestTable() : Editor() {
+        start_free = 17;
+
         choices.push_back("Baalberith");
         choices.push_back("Balaam");
         choices.push_back("Baphomet");
@@ -76,6 +77,10 @@ public:
         choices.push_back("Typhon");
         choices.push_back("Yen-lo-Wang");
 
+        for (int c = start_free; c <= COLS; c++) {
+            values[0][c] = util::format("Col %d", c);
+        }
+
         values[0][0]  = "0,0";
         values[0][1]  = "TEXT";
         values[0][2]  = "INTEGER";
@@ -92,54 +97,40 @@ public:
         values[0][13] = "DATE";
         values[0][14] = "LIST";
         values[0][15] = "MTEXT";
-
-        for (int c = 16; c <= COLS; c++) {
-            values[0][c] = util::format("Col %d", c);
-        }
-
-        for (int c = 0; c <= COLS; c++) {
-            widths[c] = labelsize() * 10;
-        }
+        values[0][16] = "VSLIDER";
+        values[0][start_free + 1] = "READONLY";
 
         for (int r = 1; r <= ROWS; r++) {
             values[r][0]  = util::format("%d", r);
             values[r][1]  = util::format("Hello %d", r);
-            values[r][2]  = "6666";
-            values[r][3]  = util::format("%.19Lf", (long double) (100000.0) / (long double) 3.1);
-            values[r][4]  = "1";
+            values[r][2]  = util::format("%d", rand() % 1'000'000);
+            values[r][3]  = util::format("%f", (double) (rand() % 100'000) * 3.456321);
+            if (rand() % 10 == 0) values[r][3] = "inf";
+            values[r][4]  = rand() % 2 == 1 ? "1" : "0";
+            if (rand() % 2 == 0) values[r][4] += values[r][1];
             values[r][5]  = "Password";
             values[r][6]  = (r % 2 == 0) ? "Moloch" : "Beelzebub";
             values[r][7]  = (r % 2 == 0) ? "Behemoth" : "Marduk";
-            values[r][8]  = table::format_slider(rand() % 10000, 0, 10000, 20);
-            values[r][9]  = table::format_slider(rand() % 5000 - rand() % 5000, -5000, 1000, 10);
-            values[r][10] = util::format("%d", rand() % 256);
+            values[r][8]  = table::format_slider(rand() % 10, -10, 10, 0.1);
+            values[r][9]  = table::format_slider2((rand() % 1'000) * 1'000'000, -1'000'000'000, 1'000'000'000, 1'000'000);
+#ifdef _WIN32
+            values[r][10] = util::format("%u", rand() * rand() * 4);
+#else
+            values[r][10] = util::format("%u", rand() * 2);
+#endif
             values[r][11] = "Makefile";
             values[r][12] = "obj";
             values[r][13] = util::format("2001-%02d-%02d", rand() % 11 + 1, rand() % 27 + 1);
             values[r][14] = (r % 2 == 0) ? "Coyote" : "Shaitan";
             values[r][15] = HAMLET_TEXT;
-        }
-
-        auto c = 0;
-        for (int r = 1; r <= ROWS; r++) {
-            if      (c == 0) dec[r] = table::Format::DEFAULT;
-            else if (c == 1) dec[r] = table::Format::DEC_0;
-            else if (c == 2) dec[r] = table::Format::DEC_1;
-            else if (c == 3) dec[r] = table::Format::DEC_2;
-            else if (c == 4) dec[r] = table::Format::DEC_3;
-            else if (c == 5) dec[r] = table::Format::DEC_4;
-            else if (c == 6) dec[r] = table::Format::DEC_5;
-            else if (c == 7) dec[r] = table::Format::DEC_6;
-            else if (c == 8) dec[r] = table::Format::DEC_7;
-            else if (c == 9) {
-                dec[r] = table::Format::DEC_8;
-                c = -1;
-            }
-
-            c++;
+            values[r][16] = table::format_slider(rand() % 10, 0.0, 10.0, 0.01);
+            
+            values[r][18] = util::format("%04d - %04d", r, 18);
         }
 
         size(ROWS, COLS);
+        resize_col();
+        draw_inactive_lighter(true);
          //selection_color(FL_RED);
          //set_height(72);
          //set_height(18);
@@ -154,23 +145,20 @@ public:
             return FL_ALIGN_RIGHT;
         }
         else if (col == 4) {
-            if (row == 1) {
-                return FL_ALIGN_LEFT;
-            }
-            else if (row == 2) {
-                return FL_ALIGN_CENTER;
-            }
-            else if (row == 3) {
+            if (row % 3 == 0) {
                 return FL_ALIGN_RIGHT;
             }
-            else {
+            else if (row % 2 == 0) {
                 return FL_ALIGN_CENTER;
             }
+            else {
+                return FL_ALIGN_LEFT;
+            }
         }
-        else if (col == 9) {
+        else if (col == 9 || col == 16) {
             return FL_ALIGN_RIGHT;
         }
-        else if (col == 16) {
+        else if (col == start_free) {
             return FL_ALIGN_CENTER;
         }
 
@@ -187,14 +175,9 @@ public:
 
     //------------------------------------------------------------------------------
     Fl_Color cell_color(int row, int col) override {
-        if (col == 4) {
+        if (col == 4 || col == 9 || col == start_free) {
             return FL_YELLOW;
-        }
-        else if (col == 9) {
-            return FL_RED;
-        }
-        else if (col == 17) {
-            return FL_YELLOW;
+            //return FL_BACKGROUND2_COLOR;
         }
         else {
             return table::Display::cell_color(row, col);
@@ -205,7 +188,7 @@ public:
     bool cell_edit(int row, int col) override {
         (void) row;
 
-        if (col == 18) {
+        if (col == start_free + 1) {
             return false;
         }
 
@@ -215,19 +198,32 @@ public:
     //------------------------------------------------------------------------------
     table::Format cell_format(int row, int col) override {
         if (col == 2 && row % 2 == 0) {
-            return table::Format::INT_SEP;
+            return table::Format::INT_SEP1;
+            //return table::Format::DEFAULT;
+        }
+        else if (col == 2 && row % 3 == 0) {
+            return table::Format::INT_SEP2;
+            //return table::Format::DEFAULT;
         }
         else if (col == 3) {
-            return dec[row];
-        }
-        else if (col == 5 && row % 2 == 0) {
-            return table::Format::SECRET_DOT;
-        }
-        else if (col == 9 && row % 2 == 0) {
             return table::Format::DEC_3;
+        }
+        else if (col == 5) {
+            if (row % 2 == 0) return table::Format::SECRET_DEF;
+            else if (row % 3 == 0) return table::Format::SECRET_STAR;
+            else return table::Format::DEFAULT;
+        }
+        else if (col == 8) {
+            return table::Format::DEC_1;
+        }
+        else if (col == 9) {
+            return table::Format::INT_SEP2;
         }
         else if (col == 13 && row % 2 == 0) {
             return table::Format::DATE_WORLD;
+        }
+        else if (col == 16) {
+            return table::Format::DEC_2;
         }
         else {
             return table::Format::DEFAULT;
@@ -236,10 +232,9 @@ public:
 
     //------------------------------------------------------------------------------
     Fl_Color cell_textcolor(int row, int col) override {
-        if (row == this->row() && col == column()) {
-            return table::Display::cell_textcolor(row, col);
-        }
-        else if (col == 1) {
+        //return FL_DARK_RED;
+
+        if (col == 1) {
             return FL_GREEN;
         }
         else if (col == 6) {
@@ -248,18 +243,29 @@ public:
         else if (col == 7) {
             return FL_GREEN;
         }
+        else if (col == 8) {
+            return FL_DARK_GREEN;
+        }
         else if (col == 9) {
             return FL_BLUE;
         }
+        else if (col == 16) {
+            return FL_DARK_RED;
+        }
         else {
-            return table::Display::cell_textcolor(row, col);
+            return table::Editor::cell_textcolor(row, col);
         }
     }
 
     //------------------------------------------------------------------------------
     Fl_Font cell_textfont(int row, int col) override {
+        //return FL_COURIER_BOLD_ITALIC;
+
         if (col == 2 || col == 3) {
-            return FL_COURIER;
+            return flw::PREF_FIXED_FONT;
+        }
+        else if (col == 8 || col == 9 || col == 16) {
+            return flw::PREF_FIXED_FONT + FL_BOLD;
         }
         else {
             return table::Display::cell_textfont(row, col);
@@ -268,11 +274,17 @@ public:
 
     //------------------------------------------------------------------------------
     Fl_Fontsize cell_textsize(int row, int col) override {
-        if (col > 50) {
+        if (col == 2 || col == 3 || col == 8 || col == 9 || col == 16) {
+            return flw::PREF_FIXED_FONTSIZE;
+        }
+        else if (col > 50) {
             return flw::PREF_FONTSIZE * 1.5;
         }
-        else if (col > 15) {
-            return flw::PREF_FONTSIZE * 0.5;
+        else if (col == 18) {
+            return table::Display::cell_textsize(row, col);
+        }
+        else if (col >= start_free) {
+            return 10;
         }
         else {
             return table::Display::cell_textsize(row, col);
@@ -326,6 +338,9 @@ public:
         else if (col == 15) {
             return table::Type::MTEXT;
         }
+        else if (col == 16) {
+            return table::Type::VSLIDER;
+        }
         else {
             return Editor::cell_type(row, col);
         }
@@ -338,8 +353,8 @@ public:
 
     //------------------------------------------------------------------------------
     bool cell_value(int row, int col, const std::string& value) override {
-        if (col == 9) {
-            printf("cell_value(9): %f\n", atof(value.c_str()));
+        if (col == 8 || col == 9 || col == 16) {
+            printf("cell_value(%d): %f\n", col, atof(value.c_str()));
             fflush(stdout);
         }
 
@@ -360,19 +375,26 @@ public:
     void cell_width(int col, int width) override {
         widths[col] = width;
     }
+
+    //------------------------------------------------------------------------------
+    void resize_col() {
+        for (int c = 0; c <= COLS; c++) {
+            widths[c] = flw::PREF_FONTSIZE * 10;
+        }
+    }
 };
 
 /*
- *      _______        _   
- *     |__   __|      | |  
- *        | | ___  ___| |_ 
+ *      _______        _
+ *     |__   __|      | |
+ *        | | ___  ___| |_
  *        | |/ _ \/ __| __|
- *        | |  __/\__ \ |_ 
+ *        | |  __/\__ \ |_
  *        |_|\___||___/\__|
- *                         
- *                         
+ *
+ *
  */
- 
+
 //----------------------------------------------------------------------------------
 class Test : public Fl_Double_Window {
 public:
@@ -381,8 +403,15 @@ public:
 
     //------------------------------------------------------------------------------
     Test() : Fl_Double_Window(1200, 800, "test_tableeditor.cpp") {
+        end();
+        resizable(this);
+
         bar   = new Fl_Menu_Bar(0, 0, 0, 0);
         table = new TestTable();
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_tableeditor");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
 
         bar->add("Size/10 rows && 5 columns", 0, Test::CallbackShrink, this);
         bar->add("Size/Clear", 0, Test::CallbackClear, this);
@@ -414,6 +443,10 @@ public:
         bar->add("Scrollbar/Both", 0, CallbackScrollbar, this, FL_MENU_RADIO);
 
         bar->add("Debug/Table", 0, CallbackDebug, this);
+        bar->add("Theme", 0, Test::CallbackTheme, this);
+
+        add(bar);
+        add(table);
 
         table->header(true, true);
         table->lines(true, true);
@@ -434,20 +467,16 @@ public:
          //bar->hide();
          //table->lines(false, false);
 
-        resizable(this);
         resize(x(), y(), w(), h());
         size_range(64, 48);
-        bar->textfont(flw::PREF_FONT);
-        bar->textsize(flw::PREF_FONTSIZE);
-        util::labelfont(this);
+        update_pref();
     }
 
-    //------------------------------------------------------------------------------
-    void resize(int X, int Y, int W, int H) {
-        Fl_Double_Window::resize(X, Y, W, H);
-        bar->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
-        table->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
-         //table->resize(100, 100, W - 200, H - 200);
+    //--------------------------------------------------------------------------
+    ~Test() {
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_tableeditor");
+        flw::theme::save_theme_to_pref(pref);
+        flw::theme::save_win_to_pref(pref, "gui.", this);
     }
 
     //------------------------------------------------------------------------------
@@ -516,7 +545,7 @@ public:
     //------------------------------------------------------------------------------
     static void CallbackDebug(Fl_Widget*, void* v) {
         Test* w = (Test*) v;
-        
+
         w->table->debug();
     }
 
@@ -639,17 +668,42 @@ public:
 
         w->table->size(10, 5);
     }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTheme(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::dlg::theme(true, true);
+        self->update_pref();
+    }
+
+    //------------------------------------------------------------------------------
+    void resize(int X, int Y, int W, int H) {
+        Fl_Double_Window::resize(X, Y, W, H);
+        bar->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
+        table->resize(0, flw::PREF_FONTSIZE * 2, W, H - flw::PREF_FONTSIZE * 2);
+         //table->resize(100, 100, W - 200, H - 200);
+    }
+
+    //--------------------------------------------------------------------------
+    void update_pref() {
+        util::labelfont(this);
+        bar->textfont(flw::PREF_FONT);
+        bar->textsize(flw::PREF_FONTSIZE);
+        table->resize_col();
+        resize(x(), y(), w(), h());
+        Fl::redraw();
+    }
 };
 
 /*
- *                      _       
- *                     (_)      
- *      _ __ ___   __ _ _ _ __  
- *     | '_ ` _ \ / _` | | '_ \ 
+ *                      _
+ *                     (_)
+ *      _ __ ___   __ _ _ _ __
+ *     | '_ ` _ \ / _` | | '_ \
  *     | | | | | | (_| | | | | |
  *     |_| |_| |_|\__,_|_|_| |_|
- *                              
- *                              
+ *
+ *
  */
 
 //----------------------------------------------------------------------------------

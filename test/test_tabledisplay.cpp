@@ -12,11 +12,11 @@
 #include <FL/Fl_Color_Chooser.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <stdarg.h>
 
 using namespace flw;
 
-#define ROWS 10'000
+//#define ROWS 10'000
+#define ROWS 100
 #define COLS 100
 
 /*
@@ -48,13 +48,8 @@ public:
         //header(true, false);
         //header(false, false);
         //lines(false, false);
-
-        widths[0] = flw::PREF_FONTSIZE * 8;
-
-        for (auto f = 1; f <= ROWS; f++) {
-            widths[f] = flw::PREF_FONTSIZE * 12;
-        }
-
+        tooltip("A tooltip for table widget.");
+        resize_col();
         size(ROWS, COLS);
     }
 
@@ -93,7 +88,20 @@ public:
     //------------------------------------------------------------------------------
     Fl_Color cell_textcolor(int row, int col) override {
         if (col == 0) {
-            return Display::cell_textcolor(row, col);
+            if (row % 5 == 0) {
+                return FL_BLUE;
+            }
+            else {
+                return Display::cell_textcolor(row, col);
+            }
+        }
+        else if (row == 0) {
+            if (col % 5 == 0) {
+                return FL_RED;
+            }
+            else {
+                return Display::cell_textcolor(row, col);
+            }
         }
         else if (row == this->row() && col == column()) {
             return Display::cell_textcolor(row, col);
@@ -156,6 +164,15 @@ public:
     void cell_width(int col, int width) override {
         widths[col] = width;
     }
+
+    //------------------------------------------------------------------------------
+    void resize_col() {
+        widths[0] = flw::PREF_FONTSIZE * 8;
+
+        for (auto f = 1; f <= ROWS; f++) {
+            widths[f] = flw::PREF_FONTSIZE * 12;
+        }
+    }
 };
 
 /*
@@ -177,8 +194,15 @@ class Test : public Fl_Double_Window {
 public:
     //------------------------------------------------------------------------------
     Test() : Fl_Double_Window(1200, 800, "test_tabledisplay.cpp") {
+        end();
+        resizable(this);
+
         bar   = new Fl_Menu_Bar(0, 0, 0, 0);
         table = new TestTable(Test::Callback);
+
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_tabledisplay");
+        flw::theme::load_theme_from_pref(pref);
+        flw::theme::load_win_from_pref(pref, "gui.", this, true);
 
         bar->add("Select/Select::NO", 0, CallbackSelect, this, FL_MENU_RADIO);
         bar->add("Select/Select::CELL", 0, CallbackSelect, this, FL_MENU_RADIO | FL_MENU_VALUE);
@@ -206,10 +230,13 @@ public:
         bar->add("Scrollbar/Both", 0, CallbackScrollbar, this, FL_MENU_RADIO);
         
         bar->add("Debug/Table", 0, CallbackDebug, this);
+        bar->add("Theme", 0, Test::CallbackTheme, this);
 
         //bar->add("Debug/Remove all rows", 0, CallbackDebugRemoveAllRows, this);
 
-        flw::menu::setonly_item(bar, "Header/Both");
+        flw::menu::setonly_item(bar, "Header/Both");        add(bar);
+        add(table);
+
         flw::menu::setonly_item(bar, "Lines/Both");
         flw::menu::setonly_item(bar, "Resize/Yes");
         flw::menu::setonly_item(bar, "Expand Last Col/No");
@@ -218,20 +245,18 @@ public:
 
         //bar->hide();
 
-        resizable(this);
         size_range(64, 48);
         resize(x(), y(), w(), h());
         bar->textfont(flw::PREF_FONT);
         bar->textsize(flw::PREF_FONTSIZE);
-        util::labelfont(this);
+        update_pref();
     }
 
-    //------------------------------------------------------------------------------
-    void resize(int X, int Y, int W, int H) override {
-        auto b = 0;
-        Fl_Double_Window::resize(X, Y, W, H);
-        bar->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
-        table->resize(b, flw::PREF_FONTSIZE * 2 + b, W - b * 2, H - flw::PREF_FONTSIZE * 2 - b * 2);
+    //--------------------------------------------------------------------------
+    ~Test() {
+        auto pref = Fl_Preferences(Fl_Preferences::USER, "gnuwimp_test", "test_tabledisplay");
+        flw::theme::save_theme_to_pref(pref);
+        flw::theme::save_win_to_pref(pref, "gui.", this);
     }
 
     //------------------------------------------------------------------------------
@@ -404,6 +429,32 @@ public:
         }
 
         w->table->redraw();
+    }
+
+    //--------------------------------------------------------------------------
+    static void CallbackTheme(Fl_Widget*, void* v) {
+        auto self = static_cast<Test*>(v);
+        flw::dlg::theme(true, true);
+        self->update_pref();
+    }
+
+    //------------------------------------------------------------------------------
+    void resize(int X, int Y, int W, int H) override {
+        auto b = 0;
+        Fl_Double_Window::resize(X, Y, W, H);
+        bar->resize(0, 0, W, flw::PREF_FONTSIZE * 2);
+        table->resize(b, flw::PREF_FONTSIZE * 2 + b, W - b * 2, H - flw::PREF_FONTSIZE * 2 - b * 2);
+         //table->resize(100, 100, W - 200, H - 200);
+    }
+
+    //--------------------------------------------------------------------------
+    void update_pref() {
+        util::labelfont(this);
+        bar->textfont(flw::PREF_FONT);
+        bar->textsize(flw::PREF_FONTSIZE);
+        table->resize_col();
+        resize(x(), y(), w(), h());
+        Fl::redraw();
     }
 };
 

@@ -22,41 +22,209 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Input_Choice.H>
+#include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_draw.H>
 
 namespace flw {
-namespace table {
+namespace priv {
 
-static const std::string DEC_SMALL      = "-";
-static const std::string DEC_MEDIUM     = "--";
-static const std::string DEC_LARGE      = "---";
-static const std::string INC_SMALL      = "+";
-static const std::string INC_MEDIUM     = "++";
-static const std::string INC_LARGE      = "+++";
-std::string              EditColorLabel = "Table - Set Color";
-std::string              EditDateLabel  = "Table - Select Date";
-std::string              EditDirLabel   = "Table - Select Directory";
-std::string              EditFileLabel  = "Table - Select File";
-std::string              EditListLabel  = "Table - Select String";
-std::string              EditTextLabel  = "Table - Edit Text";
+static const std::string _TABLE_DEC_SMALL  = "-";
+static const std::string _TABLE_DEC_MEDIUM = "--";
+static const std::string _TABLE_DEC_LARGE  = "---";
+static const std::string _TABLE_INC_SMALL  = "+";
+static const std::string _TABLE_INC_MEDIUM = "++";
+static const std::string _TABLE_INC_LARGE  = "+++";
 
-/** @brief Format a 4 number string for the slider widgets.
+/** @brief Return number of decimals from settings.
+*
+* @param[in] format  Number format.
+*
+* @return -1 to 8.
+*/
+static int _table_decimals(table::Format format) {
+    if (format == flw::table::Format::DEC_1) {
+        return 1;
+    }
+    else if (format == flw::table::Format::DEC_2) {
+        return 2;
+    }
+    else if (format == flw::table::Format::DEC_3) {
+        return 3;
+    }
+    else if (format == flw::table::Format::DEC_4) {
+        return 4;
+    }
+    else if (format == flw::table::Format::DEC_5) {
+        return 5;
+    }
+    else if (format == flw::table::Format::DEC_6) {
+        return 6;
+    }
+    else if (format == flw::table::Format::DEC_7) {
+        return 7;
+    }
+    else if (format == flw::table::Format::DEC_8) {
+        return 8;
+    }
+    else if (format == flw::table::Format::DEFAULT || format == flw::table::Format::DEC_DEF) {
+        return -1;
+    }
+    else {
+        return 0;
+    }
+}
+
+/** @brief Return number of decimals from settings.
+*
+* @param[in] val     Number as a string.
+* @param[in] format  Number format.
+*
+* @return -1 to 8.
+*/
+static std::string _table_format_number(const std::string& val, table::Format format) {
+    char tmp[500];
+
+    if (format == flw::table::Format::DEFAULT || format == flw::table::Format::INT_DEF) {
+        auto num = util::to_int(val);
+        snprintf(tmp, 500, "%lld", static_cast<long long int>(num));
+        return tmp;
+    }
+    else if (format == flw::table::Format::INT_SEP1) {
+        auto num = util::to_int(val);
+        return util::format_int(num);
+    }
+    else if (format == flw::table::Format::INT_SEP2) {
+        auto num = util::to_int(val);
+        return util::format_int(num, '\'');
+    }
+    else {
+        auto dec = priv::_table_decimals(format);
+        auto num = util::to_double(val);
+
+        if (std::isinf(num) == true) {
+            return "inf";
+        }
+        else if (dec == -1) {
+            snprintf(tmp, 500, "%f", num);
+        }
+        else {
+            snprintf(tmp, 500, "%.*f", dec, num);
+        }
+
+        return tmp;
+    }
+}
+
+/** @brief Get max width of two numbers.
+*
+* It uses current font settings.
+*
+* @param[in] n1        Value 1.
+* @param[in] n2        Value 2.
+* @param[in] decimals  Decomals to use.
+*
+* @return Length in pixels.
+*/
+static double _table_max_num_length(double n1, double n2, int decimals) {
+    char tmp[500];
+    int  l1 = 0;
+    int  l2 = 0;
+
+    if (decimals >= 0 && decimals <= 8) {
+        snprintf(tmp, 500, "%.*f", decimals, n1);
+        l1 = fl_width(tmp);
+
+        snprintf(tmp, 500, "%.*f", decimals, n2);
+        l2 = fl_width(tmp);
+    }
+    else {
+        snprintf(tmp, 500, "%f", n1);
+        l1 = fl_width(tmp);
+
+        snprintf(tmp, 500, "%f", n2);
+        l2 = fl_width(tmp);
+    }
+
+    return l1 > l2 ? l1 : l2;
+}
+
+} // flw::priv
+} // flw
+
+std::string flw::table::EditColorLabel = "Table - Set Color";
+std::string flw::table::EditDateLabel  = "Table - Select Date";
+std::string flw::table::EditDirLabel   = "Table - Select Directory";
+std::string flw::table::EditFileLabel  = "Table - Select File";
+std::string flw::table::EditListLabel  = "Table - Select String";
+std::string flw::table::EditTextLabel  = "Table - Edit Text";
+
+/** @brief Format a string with 4 numbers for the slider widgets.
 *
 * @param[in] val   Current value.
 * @param[in] min   Min value.
 * @param[in] max   Max value.
 * @param[in] step  Step value.
 *
-* @return String with numbers ex. "12.5000 10.0000 20.0000 1.0000".
+* @return String with numbers ex. "12.500000 10.000000 20.000000 1.000000".
 */
-std::string format_slider(double val, double min, double max, double step) {
-    static char result[2000];
+std::string flw::table::format_slider(double val, double min, double max, double step) {
+    char result[2000];
 
-    snprintf(result, 2000, "%.4f %.4f %.4f %.4f", val, min, max, step);
+    snprintf(result, 2000, "%f %f %f %f", val, min, max, step);
     return result;
+}
+
+/** @brief Format a string with 4 numbers for the slider widgets.
+*
+* @param[in] val   Current value.
+* @param[in] min   Min value.
+* @param[in] max   Max value.
+* @param[in] step  Step value.
+*
+* @return String with numbers ex. "12 10 20 1".
+*/
+std::string flw::table::format_slider2(int64_t val, int64_t min, int64_t max, int64_t step) {
+    char result[2000];
+
+    snprintf(result, 2000, "%lld %lld %lld %lld", static_cast<long long>(val), static_cast<long long>(min), static_cast<long long>(max), static_cast<long long>(step));
+    return result;
+}
+
+/** @brief Get slider value.
+*
+* @param[in] slider_string  A correct 4 number string.
+* @param[in] def            Default number for input error.
+*
+* @return First number or default number.
+*/
+double flw::table::get_slider(const std::string& slider_string, double def) {
+    double nums[4];
+
+    if (util::to_doubles(slider_string, nums, 4) != 4) {
+        return def;
+    }
+
+    return nums[0];
+}
+
+/** @brief Get slider value.
+*
+* @param[in] slider_string  A correct 4 number string.
+* @param[in] def            Default number for input error.
+*
+* @return First number or default number.
+*/
+int64_t flw::table::get_slider2(const std::string& slider_string, int64_t def) {
+    double nums[4];
+
+    if (util::to_doubles(slider_string, nums, 4) != 4) {
+        return def;
+    }
+
+    return static_cast<int64_t>(nums[0]);
 }
 
 /*
@@ -78,14 +246,32 @@ std::string format_slider(double val, double min, double max, double step) {
 * @param[in] H  Height.
 * @param[in] l  Optional label.
 */
-Editor::Editor(int X, int Y, int W, int H, const char* l) : Display(X, Y, W, H, l) {
-    Editor::reset();
+flw::table::Editor::Editor(int X, int Y, int W, int H, const char* l) : Display(X, Y, W, H, l) {
+    flw::table::Editor::reset();
+}
+
+/** @brief Get text color for cell.
+*
+* If Editor::draw_readonly_lighter() is turned on it will return a lighter font for cells that are readonly.
+*
+* @param[in] row  Row number.
+* @param[in] col  Column number.
+*
+* @return Text color.
+*/
+Fl_Color flw::table::Editor::cell_textcolor(int row, int col) {
+    if (_ro == true && row > 0 && col > 0 && cell_edit(row, col) == false) {
+        return fl_inactive(FL_FOREGROUND_COLOR);
+    }
+    else {
+        return Display::cell_textcolor(row, col);
+    }
 }
 
 /** @brief Delete value and copy value to clipboard.
 *
 */
-void Editor::cmd_cut() {
+void flw::table::Editor::cmd_cut() {
     auto val = cell_value(_curr_row, _curr_col);
 
     Fl::copy(val.c_str(), static_cast<int>(val.length()), 1);
@@ -98,7 +284,7 @@ void Editor::cmd_cut() {
 * Empty string or 0 for numbers and so on.\n
 *
 */
-void Editor::cmd_delete() {
+void flw::table::Editor::cmd_delete() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
 
@@ -143,7 +329,6 @@ void Editor::cmd_delete() {
 
             if (set == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
                 redraw();
             }
         }
@@ -153,7 +338,7 @@ void Editor::cmd_delete() {
 /** @brief Paste value from clipboard into current cell.
 *
 */
-void Editor::cmd_paste() {
+void flw::table::Editor::cmd_paste() {
     Fl::paste(*this, 1);
 }
 
@@ -169,62 +354,51 @@ void Editor::cmd_paste() {
 * @param[in] hor      Draw horizontal line.
 * @param[in] current  True if cell is the current cell.
 */
-void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
-    fl_push_clip(X, Y, W + 1, H);
+void flw::table::Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+    auto align      = cell_align(row, col);
+    auto textcolor  = cell_textcolor(row, col);
+    auto textcolor2 = cell_textcolor(row, col);
+    auto textfont   = cell_textfont(row, col);
+    auto textsize   = cell_textsize(row, col);
+    auto val        = cell_value(row, col);
+    auto space      = 6;
 
-    auto align     = cell_align(row, col);
-    auto textcolor = cell_textcolor(row, col);
-    auto textfont  = cell_textfont(row, col);
-    auto textsize  = cell_textsize(row, col);
-    auto val       = cell_value(row, col);
+    align |= FL_ALIGN_CLIP;
 
     if (row < 0 || col < 0) {
     }
     else if (row == 0 || col == 0) { // Draw header cell.
-        fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
+        fl_rectf(X, Y, W, H, FL_DARK1);
+        fl_rect(X, Y, W + 1, H + 1, FL_DARK3);
+
+        fl_color(textcolor);
         fl_font(textfont, textsize);
-        fl_color(FL_FOREGROUND_COLOR);
-        _draw_text(val.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
+        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
     }
     else { // Draw normal cell.
         auto format = cell_format(row, col);
         auto type   = cell_type(row, col);
         auto color  = cell_color(row, col);
-        char buffer[100];
 
         if (current == true) {
             color     = selection_color();
             textcolor = fl_contrast(FL_FOREGROUND_COLOR, color);
+
         }
 
-        fl_rectf(X + 1, Y, W + 1, H, color);
+        if (color != FL_BACKGROUND2_COLOR) {
+            fl_rectf(X + 1, Y + 1, W - 1, H - 1, color);
+        }
 
         if (type == Type::SECRET) {
             fl_font(textfont, textsize);
             fl_color(textcolor);
 
-            if (format == Format::SECRET_DOT) {
+            if (format == Format::DEFAULT || format == Format::SECRET_DEF) {
                 fl_draw("••••••", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
-            else {
+            else if (format == Format::SECRET_STAR) {
                 fl_draw("******", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
-            }
-        }
-        else if (type == Type::SLIDER) {
-            double nums[4];
-
-            if (util::to_doubles(val, nums, 4) == 4) {
-                auto range = 0.0;
-
-                if ((nums[2] - nums[1]) > 0.0001) {
-                    range = (nums[0] - nums[1]) / (nums[2] - nums[1]);
-                }
-
-                auto width = static_cast<int>(range * (W - 3));
-
-                if (width > 0) {
-                    fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, width, H - 3, textcolor);
-                }
             }
         }
         else if (type == Type::COLOR) {
@@ -253,86 +427,57 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
 
-            if (align == FL_ALIGN_RIGHT) {
-                x_1 = X + W - bw - 6;
+            fl_font(textfont, textsize);
+            fl_color(textcolor);
+
+            if (align & FL_ALIGN_RIGHT) {
+                x_1 = X + W - bw - space;
+
+                if (val.length() > 1) { // Draw optional label that is after the first "0" or "1" in value.
+                    _draw_text(val.c_str() + 1, X + space, Y + 2, W - space * 3 - bw, H - 4, align | FL_ALIGN_RIGHT);
+                }
             }
-            else if (align == FL_ALIGN_CENTER) {
+            else if (align & FL_ALIGN_LEFT) {
+                x_1 = X + space;
+
+                if (val.length() > 1) { // Draw optional label that is after the first "0" or "1" in value.
+                    _draw_text(val.c_str() + 1, x_1 + bw + space, Y + 2, W - space * 3 - bw, H - 4, align | FL_ALIGN_LEFT);
+                }
+            }
+            else { // A checkbox in the center has no optional label.
                 x_1 = X + (W / 2) - (bw / 2);
             }
-            else if (align == FL_ALIGN_LEFT) {
-                x_1 = X + 6;
-            }
 
-            fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_WHITE);
+            fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_BACKGROUND2_COLOR);
 
             if (*val.c_str() == '1') {
                 Fl_Rect r(x_1, y_1, bw - 1, bw - 1);
                 fl_draw_check(r, selection_color());
             }
         }
-        else if (type == Type::INTEGER) {
-            auto num = util::to_int(val, 0);
-
+        else if (type == Type::INTEGER || type == Type::NUMBER || type == Type::VSLIDER) {
+            auto s = priv::_table_format_number(val, format);
             fl_font(textfont, textsize);
             fl_color(textcolor);
-
-            if (format == Format::INT_SEP) {
-                auto s = util::format_int(num);
-                _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
-            }
-            else {
-                snprintf(buffer, 100, "%lld", (long long int) num);
-                _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
-            }
+            _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
-        else if (type == Type::NUMBER || type == Type::VSLIDER) {
-            auto num = util::to_double(val);
+        else if (type == Type::SLIDER) {
+            double nums[4];
 
-            if (type == Type::VSLIDER) {
-                double nums[1];
+            if (util::to_doubles(val, nums, 4) == 4) {
+                auto range = 0.0;
+                auto diff  = nums[2] - nums[1];
 
-                if (util::to_doubles(val, nums, 1) == 1) {
-                    num = nums[0];
+                if (diff > 0.0001) {
+                    range = (nums[0] - nums[1]) / diff;
+                }
+
+                auto width = static_cast<int>(range * (W - 3));
+
+                if (width > 0) {
+                    fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, width, H - 3, textcolor2);
                 }
             }
-
-            if (std::isinf(num) == true) {
-                snprintf(buffer, 100, "%s", "inf");
-            }
-            else if (format == Format::DEC_0) {
-                snprintf(buffer, 100, "%.0f", num);
-            }
-            else if (format == Format::DEC_1) {
-                snprintf(buffer, 100, "%.1f", num);
-            }
-            else if (format == Format::DEC_2) {
-                snprintf(buffer, 100, "%.2f", num);
-            }
-            else if (format == Format::DEC_3) {
-                snprintf(buffer, 100, "%.3f", num);
-            }
-            else if (format == Format::DEC_4) {
-                snprintf(buffer, 100, "%.4f", num);
-            }
-            else if (format == Format::DEC_5) {
-                snprintf(buffer, 100, "%.5f", num);
-            }
-            else if (format == Format::DEC_6) {
-                snprintf(buffer, 100, "%.6f", num);
-            }
-            else if (format == Format::DEC_7) {
-                snprintf(buffer, 100, "%.7f", num);
-            }
-            else if (format == Format::DEC_8) {
-                snprintf(buffer, 100, "%.8f", num);
-            }
-            else {
-                snprintf(buffer, 100, "%f", num);
-            }
-
-            fl_font(textfont, textsize);
-            fl_color(textcolor);
-            _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
         }
         else if (type == Type::MTEXT) {
             auto tmp = std::string();
@@ -365,30 +510,27 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             _draw_text(val.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
 
-        fl_color(FL_DARK3);
-
-        if (ver == true) {
-            fl_line(X, Y, X, Y + H);
-            fl_line(X + W, Y, X + W, Y + H);
+        if (ver == true || (col == _cols && hor == true)) { // Skip last vertical only if there are no lines at all.
+            fl_color(FL_DARK1);
+            fl_line(X + W, Y + 1, X + W, Y + H);
         }
 
-        if (hor == true) {
-            fl_line(X, Y, X + W, Y);
-            fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
+        if (hor == true || (row == _rows && ver == true)) { // Skip last horizontal only if there are no lines at all.
+            fl_color(FL_DARK1);
+            fl_line(X+1, Y + H, X + W, Y + H);
         }
     }
-
-    fl_pop_clip();
 }
 
 /** @brief Create edit widget.
 *
+* Created widget is resized in table::Display::Display::draw().\n
+* And only exists as long it has the focus.\n
 */
-void Editor::_edit_create() {
+void flw::table::Editor::_edit_create() {
     auto rend      = cell_type(_curr_row, _curr_col);
     auto align     = cell_align(_curr_row, _curr_col);
-    auto color     = cell_color(_curr_row, _curr_col);
-    auto textcolor = FL_FOREGROUND_COLOR;
+    auto format    = cell_format(_curr_row, _curr_col);
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
     auto val       = cell_value(_curr_row, _curr_col);
@@ -415,9 +557,7 @@ void Editor::_edit_create() {
 
         w->align(align);
         w->box(FL_BORDER_BOX);
-        w->color(color);
         w->labelsize(textsize);
-        w->textcolor(textcolor);
         w->textfont(textfont);
         w->textsize(textsize);
         w->value(val.c_str());
@@ -429,44 +569,64 @@ void Editor::_edit_create() {
         auto w = new Fl_Check_Button(0, 0, 0, 0);
 
         w->box(FL_BORDER_BOX);
-        w->color(color);
-        w->labelcolor(textcolor);
         w->labelsize(textsize);
         w->value(*val.c_str() == '1' ? 1 : 0);
+        w->box(FL_BORDER_BOX);
+
+        if (val.length() > 1) {
+            w->copy_label(val.c_str() + 1);
+        }
 
         _edit = w;
     }
     else if (rend == Type::SLIDER) {
-        auto w = (Fl_Slider*) nullptr;
+        auto w = (Fl_Value_Slider*) nullptr;
         double nums[4];
 
         if (util::to_doubles(val, nums, 4) == 4) {
-            w = new Fl_Slider(0, 0, 0, 0);
-            w->color(color);
-            w->selection_color(textcolor);
+            w = new Fl_Value_Slider(0, 0, 200, 20);
+            w->color(FL_BACKGROUND2_COLOR);
+            w->selection_color(FL_BACKGROUND_COLOR);
             w->range(nums[1], nums[2]);
             w->step(nums[3]);
             w->value(nums[0]);
             w->type(FL_HOR_FILL_SLIDER);
             w->box(FL_BORDER_BOX);
+            w->textfont(textfont);
+            w->textsize(textsize);
+            fl_font(textfont, textsize);
+
+            auto width = priv::_table_max_num_length(nums[1], nums[2], priv::_table_decimals(format));
+
+            if (width > w->value_width() - 4) {
+                w->value_width(width + 8);
+            }
 
             _edit = w;
         }
     }
     else if (rend == Type::VSLIDER) {
-        auto w = (Fl_Slider*) nullptr;
+        auto w = (Fl_Value_Slider*) nullptr;
         double nums[4];
 
         if (util::to_doubles(val, nums, 4) == 4) {
-            w = new Fl_Value_Slider(0, 0, 0, 0);
-            w->color(color);
-            w->selection_color(textcolor);
+            w = new Fl_Value_Slider(0, 0, 200, 20);
+            w->color(FL_BACKGROUND2_COLOR);
+            w->selection_color(FL_BACKGROUND_COLOR);
             w->range(nums[1], nums[2]);
             w->step(nums[3]);
             w->value(nums[0]);
-            w->type(FL_HOR_FILL_SLIDER);
+            w->type(FL_HOR_SLIDER);
             w->box(FL_BORDER_BOX);
-            static_cast<Fl_Value_Slider*>(w)->textsize(textsize * 0.8);
+            w->textfont(textfont);
+            w->textsize(textsize);
+            fl_font(textfont, textsize);
+
+            auto width = priv::_table_max_num_length(nums[1], nums[2], priv::_table_decimals(format));
+
+            if (width > w->value_width() - 4) {
+                w->value_width(width + 8);
+            }
 
             _edit = w;
         }
@@ -480,7 +640,6 @@ void Editor::_edit_create() {
 
             w->align(align);
             w->box(FL_BORDER_BOX);
-            w->down_box(FL_BORDER_BOX);
             w->labelsize(textsize);
             w->textfont(textfont);
             w->textsize(textsize);
@@ -505,9 +664,7 @@ void Editor::_edit_create() {
         if (choices.size() > 0) {
             auto w = new Fl_Input_Choice(0, 0, 0, 0);
 
-            w->box(FL_NO_BOX);
-            w->down_box(FL_BORDER_BOX);
-            w->input()->box(FL_BORDER_BOX);
+            w->box(FL_BORDER_BOX);
             w->input()->textfont(textfont);
             w->input()->textsize(textsize);
             w->labelsize(textsize);
@@ -549,7 +706,7 @@ void Editor::_edit_create() {
 *
 * @param[in] key  Value size change hint.
 */
-void Editor::_edit_quick(const std::string& key) {
+void flw::table::Editor::_edit_quick(const std::string& key) {
     auto rend = cell_type(_curr_row, _curr_col);
     auto val  = cell_value(_curr_row, _curr_col);
     char buffer[100];
@@ -557,22 +714,22 @@ void Editor::_edit_quick(const std::string& key) {
     if (rend == Type::INTEGER) {
         auto num = util::to_int(val, 0);
 
-        if (key == table::INC_SMALL) {
+        if (key == priv::_TABLE_INC_SMALL) {
             num++;
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             num += 10;
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             num += 100;
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             num--;
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             num -= 10;
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             num -= 100;
         }
 
@@ -580,7 +737,6 @@ void Editor::_edit_quick(const std::string& key) {
 
         if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::NUMBER) {
@@ -589,22 +745,22 @@ void Editor::_edit_quick(const std::string& key) {
         if (std::isinf(num) == true) {
             num = 0.0;
         }
-        else if (key == table::INC_SMALL) {
+        else if (key == priv::_TABLE_INC_SMALL) {
             num += 0.1;
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             num += 1.0;
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             num += 10.0;
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             num -= 0.1;
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             num -= 1.0;
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             num -= 10.0;
         }
 
@@ -612,28 +768,27 @@ void Editor::_edit_quick(const std::string& key) {
 
         if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::COLOR) {
         auto color = static_cast<int>(util::to_int(val, 0));
 
-        if (key == table::INC_SMALL) {
+        if (key == priv::_TABLE_INC_SMALL) {
             color++;
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             color += 8;
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             color += 24;
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             color--;
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             color -= 8;
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             color -= 24;
         }
 
@@ -642,28 +797,27 @@ void Editor::_edit_quick(const std::string& key) {
 
         if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::DATE) {
         auto date = gnu::Date(val);
 
-        if (key == table::INC_SMALL) {
+        if (key == priv::_TABLE_INC_SMALL) {
             date.add_days(1);
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             date.add_months(1);
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             date.add_years(1);
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             date.add_days(-1);
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             date.add_months(-1);
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             date.add_years(-1);
         }
 
@@ -671,29 +825,28 @@ void Editor::_edit_quick(const std::string& key) {
 
         if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::SLIDER || rend == Type::VSLIDER) {
         double nums[4];
 
         if (util::to_doubles(val, nums, 4) == 4) {
-            if (key == table::INC_SMALL) {
+            if (key == priv::_TABLE_INC_SMALL) {
                 nums[0] += nums[3];
             }
-            else if (key == table::INC_MEDIUM) {
+            else if (key == priv::_TABLE_INC_MEDIUM) {
                 nums[0] += (nums[3] * 10);
             }
-            else if (key == table::INC_LARGE) {
+            else if (key == priv::_TABLE_INC_LARGE) {
                 nums[0] += (nums[3] * 100);
             }
-            else if (key == table::DEC_SMALL) {
+            else if (key == priv::_TABLE_DEC_SMALL) {
                 nums[0] -= nums[3];
             }
-            else if (key == table::DEC_MEDIUM) {
+            else if (key == priv::_TABLE_DEC_MEDIUM) {
                 nums[0] -= (nums[3] * 10);
             }
-            else if (key == table::DEC_LARGE) {
+            else if (key == priv::_TABLE_DEC_LARGE) {
                 nums[0] -= (nums[3] * 100);
             }
 
@@ -708,7 +861,6 @@ void Editor::_edit_quick(const std::string& key) {
 
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
         }
     }
@@ -717,7 +869,7 @@ void Editor::_edit_quick(const std::string& key) {
 /** @brief Show edit dialog.
 *
 */
-void Editor::_edit_show_dlg() {
+void flw::table::Editor::_edit_show_dlg() {
     auto rend = cell_type(_curr_row, _curr_col);
     auto val  = cell_value(_curr_row, _curr_col);
 
@@ -737,7 +889,6 @@ void Editor::_edit_show_dlg() {
 
             if ((_force_events == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
         }
 
@@ -747,7 +898,6 @@ void Editor::_edit_show_dlg() {
 
         if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::DIR) {
@@ -755,7 +905,6 @@ void Editor::_edit_show_dlg() {
 
         if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::DATE) {
@@ -766,7 +915,6 @@ void Editor::_edit_show_dlg() {
 
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::LIST) {
@@ -780,7 +928,6 @@ void Editor::_edit_show_dlg() {
 
                 if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
                     _set_event(_curr_row, _curr_col, Event::CHANGED);
-                    do_callback();
                 }
             }
         }
@@ -791,7 +938,6 @@ void Editor::_edit_show_dlg() {
         if (dlg::text_edit(table::EditTextLabel, val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
         }
     }
@@ -801,7 +947,7 @@ void Editor::_edit_show_dlg() {
 *
 * @param[in] key  If set then do an quick edit.
 */
-void Editor::_edit_start(const std::string& key) {
+void flw::table::Editor::_edit_start(const std::string& key) {
     if (_select != Select::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
         Fl::event_clicks(0);
         Fl::event_is_click(0);
@@ -831,7 +977,7 @@ void Editor::_edit_start(const std::string& key) {
 *
 * @param[in] save  True to try to send data to cell_value().
 */
-void Editor::_edit_stop(bool save) {
+void flw::table::Editor::_edit_stop(bool save) {
     if (_edit != nullptr) {
         auto type = cell_type(_curr_row, _curr_col);
         auto val  = cell_value(_curr_row, _curr_col);
@@ -867,18 +1013,19 @@ void Editor::_edit_stop(bool save) {
             }
             else if (type == Type::BOOLEAN) {
                 auto button = static_cast<Fl_Check_Button*>(_edit);
+                auto label  = util::to_string(button->label());
                 auto val2   = std::string("0");
 
                 if (button->value() != 0) {
                     val2 = "1";
                 }
 
-                if (val == val2) {
+                if (*val.c_str() == *val2.c_str()) {
                     stop = true;
                     save = false;
                 }
                 else {
-                    stop = cell_value(_curr_row, _curr_col, val2);
+                    stop = cell_value(_curr_row, _curr_col, val2 + label);
                 }
             }
             else if (type == Type::SLIDER || type == Type::VSLIDER) {
@@ -933,7 +1080,6 @@ void Editor::_edit_stop(bool save) {
 
             if (_force_events == true || save == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
 
             Fl::check();
@@ -955,7 +1101,7 @@ void Editor::_edit_stop(bool save) {
 *
 * @return 1 if event was used or 0.
 */
-int Editor::_ev_keyboard_down2() {
+int flw::table::Editor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -994,28 +1140,28 @@ int Editor::_ev_keyboard_down2() {
             cmd_paste();
             return 1;
         }
-        else if (alt == true && shift == true && (key == '+' || text == table::INC_SMALL || key == FL_KP + '+')) { // !!! Problems with shift as it changes key depending on layout.
-            _edit_start(table::INC_LARGE);
+        else if (alt == true && shift == true && (key == '+' || text == priv::_TABLE_INC_SMALL || key == FL_KP + '+')) { // !!! Problems with shift as it changes key depending on layout.
+            _edit_start(priv::_TABLE_INC_LARGE);
             return 1;
         }
-        else if (alt == true && (key == '+' || text == table::INC_SMALL || key == FL_KP + '+')) {
-            _edit_start(table::INC_MEDIUM);
+        else if (alt == true && (key == '+' || text == priv::_TABLE_INC_SMALL || key == FL_KP + '+')) {
+            _edit_start(priv::_TABLE_INC_MEDIUM);
             return 1;
         }
-        else if (key == '+' || text == table::INC_SMALL || key == FL_KP + '+') {
-            _edit_start(table::INC_SMALL);
+        else if (key == '+' || text == priv::_TABLE_INC_SMALL || key == FL_KP + '+') {
+            _edit_start(priv::_TABLE_INC_SMALL);
             return 1;
         }
-        else if (alt == true && shift == true && (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-')) { // !!! Problems with shift as it changes key depending on layout.
-            _edit_start(table::DEC_LARGE);
+        else if (alt == true && shift == true && (key == '-' || text == priv::_TABLE_DEC_SMALL || key == FL_KP + '-')) { // !!! Problems with shift as it changes key depending on layout.
+            _edit_start(priv::_TABLE_DEC_LARGE);
             return 1;
         }
-        else if (alt == true && (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-')) {
-            _edit_start(table::DEC_MEDIUM);
+        else if (alt == true && (key == '-' || text == priv::_TABLE_DEC_SMALL || key == FL_KP + '-')) {
+            _edit_start(priv::_TABLE_DEC_MEDIUM);
             return 1;
         }
-        else if (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-') {
-            _edit_start(table::DEC_SMALL);
+        else if (key == '-' || text == priv::_TABLE_DEC_SMALL || key == FL_KP + '-') {
+            _edit_start(priv::_TABLE_DEC_SMALL);
             return 1;
         }
     }
@@ -1027,7 +1173,7 @@ int Editor::_ev_keyboard_down2() {
 *
 * @return 1 if used or 2.
 */
-int Editor::_ev_mouse_click2() {
+int flw::table::Editor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -1053,7 +1199,7 @@ int Editor::_ev_mouse_click2() {
 *
 * @return Always 1?
 */
-int Editor::_ev_paste() {
+int flw::table::Editor::_ev_paste() {
     auto text = util::to_string(Fl::event_text());
 
     if (_curr_row > 0 && _curr_col > 0 && text != "") {
@@ -1139,7 +1285,6 @@ int Editor::_ev_paste() {
 
         if ((_force_events == true || val != text) && cell_value(_curr_row, _curr_col, text) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
             redraw();
         }
     }
@@ -1154,7 +1299,7 @@ int Editor::_ev_paste() {
 *
 * @return Cell string or first number in case of SLIDER types.
 */
-std::string Editor::_get_find_value(int row, int col) {
+std::string flw::table::Editor::_get_find_value(int row, int col) {
     auto type = cell_type(row, col);
     auto val  = cell_value(row, col);
 
@@ -1175,7 +1320,7 @@ std::string Editor::_get_find_value(int row, int col) {
 *
 * @return 1 if event is handled, 0 if not.
 */
-int Editor::handle(int event) {
+int flw::table::Editor::handle(int event) {
     auto ret = 2;
 
     if (_rows > 0 && _cols > 0) {
@@ -1208,15 +1353,13 @@ int Editor::handle(int event) {
 /** @brief Clear all values.
 *
 */
-void Editor::reset() {
+void flw::table::Editor::reset() {
     Display::reset();
 
-    _force_events = false;
     _edit2        = nullptr;
     _edit3        = nullptr;
+    _force_events = false;
+    _ro           = false;
 }
-
-} // table
-} // flw
 
 // MKALGAM_OFF
