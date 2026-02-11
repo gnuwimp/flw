@@ -261,7 +261,7 @@ namespace util {
     std::string                 format(const char* format, ...);
     std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
-    bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size);
+    bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned size);
     bool                        is_empty(const std::string& string);
     void                        labelfont(Fl_Widget* widget, Fl_Font font = flw::PREF_FONT, int size = flw::PREF_FONTSIZE);
     int64_t                     microseconds();

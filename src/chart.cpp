@@ -25,18 +25,7 @@
 #include <algorithm>
 
 namespace flw {
-namespace chart {
-
-/*
- *                 _            _
- *                (_)          | |
- *      _ __  _ __ ___   ____ _| |_ ___
- *     | '_ \| '__| \ \ / / _` | __/ _ \
- *     | |_) | |  | |\ V / (_| | ||  __/
- *     | .__/|_|  |_| \_/ \__,_|\__\___|
- *     | |
- *     |_|
- */
+namespace priv {
 
 //#define _FLW_CHART_DEBUG(X) { X; }
 //#define _FLW_CHART_CLIP(X)
@@ -45,54 +34,54 @@ namespace chart {
 #define _FLW_CHART_DEBUG(X)
 #define _FLW_CHART_CLIP(X) { X; }
 
-static const char* const _LABEL_ADD_CSV         = "Add Line from CSV File...";
-static const char* const _LABEL_ADD_LINE        = "Create Line...";
-static const char* const _LABEL_CLEAR           = "Clear Chart";
-static const char* const _LABEL_LOAD_JSON       = "Load Chart from JSON...";
-static const char* const _LABEL_PRINT           = "Print to PostScript File...";
-static const char* const _LABEL_SAVE_CSV        = "Save Line to CSV...";
-static const char* const _LABEL_SAVE_JSON       = "Save Chart to JSON...";
-static const char* const _LABEL_SAVE_PNG        = "Save to PNG File...";
-static const char* const _LABEL_SETUP_AREA      = "Number of Areas...";
-static const char* const _LABEL_SETUP_DELETE    = "Delete Lines...";
-static const char* const _LABEL_SETUP_LABEL     = "Label...";
-static const char* const _LABEL_SETUP_LINE      = "Line Properties...";
-static const char* const _LABEL_SETUP_MAX_CLAMP = "Set Max Clamp...";
-static const char* const _LABEL_SETUP_MIN_CLAMP = "Set Min Clamp...";
-static const char* const _LABEL_SETUP_MOVE      = "Move Lines...";
-static const char* const _LABEL_SETUP_RANGE     = "Date Range...";
-static const char* const _LABEL_SETUP_SHOW      = "Show or Hide Lines...";
-static const char* const _LABEL_SHOW_HLINES     = "Show Horizontal Lines";
-static const char* const _LABEL_SHOW_LABELS     = "Show Line Labels";
-static const char* const _LABEL_SHOW_VLINES     = "Show Vertical Lines";
-static const int         _MIN_MARGIN            =  3;
-static const int         _MIN_AREA_SIZE         = 10;
-static const int         _TICK_SIZE             =  4;
-static const std::string _LABEL_SYMBOL          = "@-> ";
+static const char* const _CHART_LABEL_ADD_CSV         = "Add Line from CSV File...";
+static const char* const _CHART_LABEL_ADD_LINE        = "Create Line...";
+static const char* const _CHART_LABEL_CLEAR           = "Clear Chart";
+static const char* const _CHART_LABEL_LOAD_JSON       = "Load Chart from JSON...";
+static const char* const _CHART_LABEL_PRINT           = "Print to PostScript File...";
+static const char* const _CHART_LABEL_SAVE_CSV        = "Save Line to CSV...";
+static const char* const _CHART_LABEL_SAVE_JSON       = "Save Chart to JSON...";
+static const char* const _CHART_LABEL_SAVE_PNG        = "Save to PNG File...";
+static const char* const _CHART_LABEL_SETUP_AREA      = "Number of Areas...";
+static const char* const _CHART_LABEL_SETUP_DELETE    = "Delete Lines...";
+static const char* const _CHART_LABEL_SETUP_LABEL     = "Label...";
+static const char* const _CHART_LABEL_SETUP_LINE      = "Line Properties...";
+static const char* const _CHART_LABEL_SETUP_MAX_CLAMP = "Set Max Clamp...";
+static const char* const _CHART_LABEL_SETUP_MIN_CLAMP = "Set Min Clamp...";
+static const char* const _CHART_LABEL_SETUP_MOVE      = "Move Lines...";
+static const char* const _CHART_LABEL_SETUP_RANGE     = "Date Range...";
+static const char* const _CHART_LABEL_SETUP_SHOW      = "Show or Hide Lines...";
+static const char* const _CHART_LABEL_SHOW_HLINES     = "Show Horizontal Lines";
+static const char* const _CHART_LABEL_SHOW_LABELS     = "Show Line Labels";
+static const char* const _CHART_LABEL_SHOW_VLINES     = "Show Vertical Lines";
+static const int         _CHART_MIN_MARGIN            =  3;
+static const int         _CHART_MIN_AREA_SIZE         = 10;
+static const int         _CHART_TICK_SIZE             =  4;
+static const std::string _CHART_LABEL_SYMBOL          = "@-> ";
 
 #ifdef DEBUG
-static const char* const _LABEL_DEBUG           = "Debug Chart";
-static const char* const _LABEL_DEBUG_LINE      = "Print Visible Values";
+static const char* const _CHART_LABEL_DEBUG           = "Debug Chart";
+static const char* const _CHART_LABEL_DEBUG_LINE      = "Print Visible Values";
 #endif
 
 /*
- *           _      _             _____      _
- *          | |    (_)           / ____|    | |
- *          | |     _ _ __   ___| (___   ___| |_ _   _ _ __
- *          | |    | | '_ \ / _ \\___ \ / _ \ __| | | | '_ \
- *          | |____| | | | |  __/____) |  __/ |_| |_| | |_) |
- *          |______|_|_| |_|\___|_____/ \___|\__|\__,_| .__/
- *      ______                                        | |
- *     |______|                                       |_|
+ *           _____ _                _   _      _             _____      _               
+ *          / ____| |              | | | |    (_)           / ____|    | |              
+ *         | |    | |__   __ _ _ __| |_| |     _ _ __   ___| (___   ___| |_ _   _ _ __  
+ *         | |    | '_ \ / _` | '__| __| |    | | '_ \ / _ \\___ \ / _ \ __| | | | '_ \ 
+ *         | |____| | | | (_| | |  | |_| |____| | | | |  __/____) |  __/ |_| |_| | |_) |
+ *          \_____|_| |_|\__,_|_|   \__|______|_|_| |_|\___|_____/ \___|\__|\__,_| .__/ 
+ *      ______                                                                   | |    
+ *     |______|                                                                  |_|    
  */
 
-/** @brief Chart line settings dialog (private).
+/** @brief Chart line settings dialog.
 *
 * @private
 */
-class _LineSetup : public Fl_Double_Window {
+class _ChartLineSetup : public Fl_Double_Window {
 public:
-    Line&                       _line;
+    chart::Line&                _line;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _align;
@@ -106,7 +95,7 @@ public:
     /** @brief Create dialog but don't show it.
     *
     */
-    _LineSetup(Fl_Window* parent, Line& line) :
+    _ChartLineSetup(Fl_Window* parent, chart::Line& line) :
     Fl_Double_Window(0, 0, 10, 10, "Chart - Line Properties"),
     _line(line) {
         end();
@@ -133,9 +122,9 @@ public:
         _align->add("Right");
         _align->textfont(flw::PREF_FONT);
         _align->textsize(flw::PREF_FONTSIZE);
-        _close->callback(_LineSetup::Callback, this);
+        _close->callback(_ChartLineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
-        _color->callback(_LineSetup::Callback, this);
+        _color->callback(_ChartLineSetup::Callback, this);
         _label->textfont(flw::PREF_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
         _type->add("Line");
@@ -149,7 +138,7 @@ public:
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
-        _width->callback(_LineSetup::Callback, this);
+        _width->callback(_ChartLineSetup::Callback, this);
         _width->precision(0);
         _width->range(1, chart::MAX_LINE_WIDTH);
         _width->value(_line.width());
@@ -157,12 +146,12 @@ public:
 
         resizable(_grid);
         util::labelfont(this);
-        callback(_LineSetup::Callback, this);
+        callback(_ChartLineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
-        _LineSetup::Callback(_width, this);
+        _ChartLineSetup::Callback(_width, this);
         update_widgets();
     }
 
@@ -170,7 +159,7 @@ public:
     *
     */
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_LineSetup*>(o);
+        auto self = static_cast<_ChartLineSetup*>(o);
 
         if (w == self) {
         }
@@ -210,14 +199,14 @@ public:
         _line.set_width(_width->value());
         _line.set_color(_color->color());
 
-        if (_type->value() == 0)      _line.set_type(LineType::LINE);
-        else if (_type->value() == 1) _line.set_type(LineType::LINE_DOT);
-        else if (_type->value() == 2) _line.set_type(LineType::BAR);
-        else if (_type->value() == 3) _line.set_type(LineType::BAR_CLAMP);
-        else if (_type->value() == 4) _line.set_type(LineType::BAR_HLC);
-        else if (_type->value() == 5) _line.set_type(LineType::HORIZONTAL);
-        else if (_type->value() == 6) _line.set_type(LineType::EXPAND_HORIZONTAL_ALL);
-        else if (_type->value() == 7) _line.set_type(LineType::EXPAND_HORIZONTAL_FIRST);
+        if (_type->value() == 0)      _line.set_type(chart::LineType::LINE);
+        else if (_type->value() == 1) _line.set_type(chart::LineType::LINE_DOT);
+        else if (_type->value() == 2) _line.set_type(chart::LineType::BAR);
+        else if (_type->value() == 3) _line.set_type(chart::LineType::BAR_CLAMP);
+        else if (_type->value() == 4) _line.set_type(chart::LineType::BAR_HLC);
+        else if (_type->value() == 5) _line.set_type(chart::LineType::HORIZONTAL);
+        else if (_type->value() == 6) _line.set_type(chart::LineType::EXPAND_HORIZONTAL_ALL);
+        else if (_type->value() == 7) _line.set_type(chart::LineType::EXPAND_HORIZONTAL_FIRST);
 
         if (_align->value() == 0) _line.set_align(FL_ALIGN_LEFT);
         else                      _line.set_align(FL_ALIGN_RIGHT);
@@ -229,21 +218,24 @@ public:
     void update_widgets() {
         _label->value(_line.label().c_str());
         _color->color(_line.color());
-        _LineSetup::Callback(_width, this);
+        _ChartLineSetup::Callback(_width, this);
 
-        if (_line.type() == LineType::LINE)                         _type->value(0);
-        else if (_line.type() == LineType::LINE_DOT)                _type->value(1);
-        else if (_line.type() == LineType::BAR)                     _type->value(2);
-        else if (_line.type() == LineType::BAR_CLAMP)               _type->value(3);
-        else if (_line.type() == LineType::BAR_HLC)                 _type->value(4);
-        else if (_line.type() == LineType::HORIZONTAL)              _type->value(5);
-        else if (_line.type() == LineType::EXPAND_HORIZONTAL_ALL)   _type->value(6);
-        else if (_line.type() == LineType::EXPAND_HORIZONTAL_FIRST) _type->value(7);
+        if (_line.type() == chart::LineType::LINE)                         _type->value(0);
+        else if (_line.type() == chart::LineType::LINE_DOT)                _type->value(1);
+        else if (_line.type() == chart::LineType::BAR)                     _type->value(2);
+        else if (_line.type() == chart::LineType::BAR_CLAMP)               _type->value(3);
+        else if (_line.type() == chart::LineType::BAR_HLC)                 _type->value(4);
+        else if (_line.type() == chart::LineType::HORIZONTAL)              _type->value(5);
+        else if (_line.type() == chart::LineType::EXPAND_HORIZONTAL_ALL)   _type->value(6);
+        else if (_line.type() == chart::LineType::EXPAND_HORIZONTAL_FIRST) _type->value(7);
 
         if (_line.align() == FL_ALIGN_LEFT) _align->value(0);
         else                                _align->value(1);
     }
 };
+
+} // flw::priv
+} // flw
 
 /*
  *
@@ -258,14 +250,14 @@ public:
 
 /** @brief Add one chart line.
 *
-* Max Area::MAX_LINES lines.
+* Max flw::chart::Area::MAX_LINES lines.
 *
 * @param[in] chart_line  Line object.
 *
 * @return True if added. false if there are to many already.
 */
-bool Area::add_line(const Line& chart_line) {
-    if (_lines.size() >= Area::MAX_LINES) {
+bool flw::chart::Area::add_line(const Line& chart_line) {
+    if (_lines.size() >= flw::chart::Area::MAX_LINES) {
         return false;
     }
 
@@ -279,7 +271,7 @@ bool Area::add_line(const Line& chart_line) {
 *
 * @return Value or nullopt.
 */
-std::optional<double> Area::clamp_max() const {
+std::optional<double> flw::chart::Area::clamp_max() const {
     if (std::isfinite(_clamp_max) == true) {
         return _clamp_max;
     }
@@ -291,7 +283,7 @@ std::optional<double> Area::clamp_max() const {
 *
 * @return Value or nullopt.
 */
-std::optional<double> Area::clamp_min() const {
+std::optional<double> flw::chart::Area::clamp_min() const {
     if (std::isfinite(_clamp_min) == true) {
         return _clamp_min;
     }
@@ -301,12 +293,12 @@ std::optional<double> Area::clamp_min() const {
 
 /** @brief Print debug info to terminal.
 */
-void Area::debug() const {
+void flw::chart::Area::debug() const {
 #ifdef DEBUG
     printf("\t--------------------------------------\n");
     printf("\tArea: %d\n", static_cast<int>(_area));
 
-    if (_percent >= chart::_MIN_AREA_SIZE) {
+    if (_percent >= priv::_CHART_MIN_AREA_SIZE) {
         printf("\t\tx, y:       %12d, %4d\n", _rect.x(), _rect.y());
         printf("\t\tw, h:       %12d, %4d\n", _rect.w(), _rect.h());
         printf("\t\tclamp_max:  %18.4f\n", _clamp_max);
@@ -332,7 +324,7 @@ void Area::debug() const {
 *
 * @param[in] index  Line index.
 */
-void Area::delete_line(size_t index) {
+void flw::chart::Area::delete_line(size_t index) {
     size_t count = 0;
 
     for (auto it = _lines.begin(); it != _lines.end(); ++it) {
@@ -356,7 +348,7 @@ void Area::delete_line(size_t index) {
 /** @brief Reset all data and values to default value.
 *
 */
-void Area::reset() {
+void flw::chart::Area::reset() {
     _clamp_max = INFINITY;
     _clamp_min = INFINITY;
     _percent   = 0;
@@ -372,7 +364,7 @@ void Area::reset() {
 *
 * @return Line or NULL.
 */
-Line* Area::selected_line() {
+flw::chart::Line* flw::chart::Area::selected_line() {
     if (_selected >= _lines.size()) {
         return nullptr;
     }
@@ -394,7 +386,7 @@ Line* Area::selected_line() {
 /** @brief Create empty point.
 *
 */
-Point::Point() {
+flw::chart::Point::Point() {
     high = low = close = 0.0;
 }
 
@@ -403,7 +395,7 @@ Point::Point() {
 * @param[in] date   Valid date.
 * @param[in] value  Y value for high, low and close.
 */
-Point::Point(const std::string& date, double value) {
+flw::chart::Point::Point(const std::string& date, double value) {
     auto valid_date = gnu::Date(date.c_str());
 
     if (std::isfinite(value) == true &&
@@ -428,7 +420,7 @@ Point::Point(const std::string& date, double value) {
 * @param[in] low    Low Y value.
 * @param[in] close  Close Y value.
 */
-Point::Point(const std::string& date, double high, double low, double close) {
+flw::chart::Point::Point(const std::string& date, double high, double low, double close) {
     auto valid_date = gnu::Date(date.c_str());
 
     if (std::isfinite(high) == true &&
@@ -474,7 +466,7 @@ Point::Point(const std::string& date, double high, double low, double close) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::ATR(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::ATR(const PointVector& in, size_t days) {
     PointVector res;
 
     if (days > 1 && days < in.size()) {
@@ -532,7 +524,7 @@ PointVector Point::ATR(const PointVector& in, size_t days) {
 *
 * @return Result vector with Point objects.
 */
-size_t Point::BinarySearch(const PointVector& in, const Point& key) {
+size_t flw::chart::Point::BinarySearch(const PointVector& in, const Point& key) {
     auto it = std::lower_bound(in.begin(), in.end(), key);
 
     if (it == in.end() || *it != key) {
@@ -552,7 +544,7 @@ size_t Point::BinarySearch(const PointVector& in, const Point& key) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block) {
+flw::chart::PointVector flw::chart::Point::DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block) {
     auto       month   = -1;
     auto       current = gnu::Date(start_date.c_str());
     auto const stop    = gnu::Date(stop_date.c_str());
@@ -629,7 +621,7 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::DayToMonth(const PointVector& in, bool sum) {
+flw::chart::PointVector flw::chart::Point::DayToMonth(const PointVector& in, bool sum) {
     size_t          f = 0;
     PointVector res;
     Point       current;
@@ -691,7 +683,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum) {
+flw::chart::PointVector flw::chart::Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum) {
     size_t          f = 0;
     PointVector res;
     Point       current;
@@ -758,7 +750,7 @@ PointVector Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool
 /** @brief Print value.
 *
 */
-void Point::debug() const {
+void flw::chart::Point::debug() const {
 #ifdef DEBUG
     printf("%s, %20.8f, %20.8f, %20.8f\n", date.c_str(), high, low, close);
 #endif
@@ -768,7 +760,7 @@ void Point::debug() const {
 *
 * @param[in] in  Vector with Point objects.
 */
-void Point::Debug(const PointVector& in) {
+void flw::chart::Point::Debug(const PointVector& in) {
 #ifdef DEBUG
     printf("\nPointVector(%u)\n", static_cast<unsigned>(in.size()));
 
@@ -789,7 +781,7 @@ void Point::Debug(const PointVector& in) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::ExponentialMovingAverage(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::ExponentialMovingAverage(const PointVector& in, size_t days) {
     PointVector res;
 
     if (days > 1 && days < in.size()) {
@@ -826,7 +818,7 @@ PointVector Point::ExponentialMovingAverage(const PointVector& in, size_t days) 
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::Fixed(const PointVector& in, double value) {
+flw::chart::PointVector flw::chart::Point::Fixed(const PointVector& in, double value) {
     PointVector res;
 
     for (const auto& data : in) {
@@ -843,7 +835,7 @@ PointVector Point::Fixed(const PointVector& in, double value) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) {
+flw::chart::PointVector flw::chart::Point::LoadCSV(const std::string& filename, const std::string& sep) {
     auto buf = gnu::file::read(filename);
 
     if (buf.size() < 10) {
@@ -881,7 +873,7 @@ PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) 
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::Modify(const PointVector& in, Modifier modify, double value) {
+flw::chart::PointVector flw::chart::Point::Modify(const PointVector& in, Modifier modify, double value) {
     PointVector res;
 
     if (fabs(value) < chart::MIN_VALUE) {
@@ -918,7 +910,7 @@ PointVector Point::Modify(const PointVector& in, Modifier modify, double value) 
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::Momentum(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::Momentum(const PointVector& in, size_t days) {
     size_t          start = days - 1;
     PointVector res;
 
@@ -942,7 +934,7 @@ PointVector Point::Momentum(const PointVector& in, size_t days) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::MovingAverage(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::MovingAverage(const PointVector& in, size_t days) {
     PointVector res;
 
     if (days > 1 && days < in.size()) {
@@ -982,7 +974,7 @@ PointVector Point::MovingAverage(const PointVector& in, size_t days) {
 *
 * @return String value, one of ("DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC").
 */
-std::string Point::RangeToString(DateRange range) {
+std::string flw::chart::Point::RangeToString(DateRange range) {
     static const std::string NAMES[] = { "DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC", "", };
     return NAMES[static_cast<unsigned>(range)];
 }
@@ -994,7 +986,7 @@ std::string Point::RangeToString(DateRange range) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::RSI(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::RSI(const PointVector& in, size_t days) {
     PointVector res;
 
     if (days > 1 && days < in.size()) {
@@ -1041,7 +1033,7 @@ PointVector Point::RSI(const PointVector& in, size_t days) {
 *
 * @return True if ok.
 */
-bool Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
+bool flw::chart::Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
     std::string csv;
 
     csv.reserve(in.size() * 40 + 256);
@@ -1062,7 +1054,7 @@ bool Point::SaveCSV(const PointVector& in, const std::string& filename, const st
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::StdDev(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::StdDev(const PointVector& in, size_t days) {
     PointVector res;
 
     if (days > 1 && days < in.size()) {
@@ -1108,7 +1100,7 @@ PointVector Point::StdDev(const PointVector& in, size_t days) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::Stochastics(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::Stochastics(const PointVector& in, size_t days) {
     double          high = 0.0;
     double          low  = 0.0;
     PointVector res;
@@ -1153,7 +1145,7 @@ PointVector Point::Stochastics(const PointVector& in, size_t days) {
 *
 * @return Range value or DateRange::DAY for invalid input string.
 */
-DateRange  Point::StringToRange(const std::string& range) {
+flw::chart::DateRange flw::chart::Point::StringToRange(const std::string& range) {
     if (range == "WEEKDAY")     return DateRange::WEEKDAY;
     else if (range == "FRIDAY") return DateRange::FRIDAY;
     else if (range == "SUNDAY") return DateRange::SUNDAY;
@@ -1181,7 +1173,7 @@ DateRange  Point::StringToRange(const std::string& range) {
 * @param[in] label  Line label.
 * @param[in] type   Line type.
 */
-Line::Line(const PointVector& data, const std::string& label, LineType type) {
+flw::chart::Line::Line(const PointVector& data, const std::string& label, LineType type) {
     reset();
     set_data(data);
     set_label(label);
@@ -1192,7 +1184,7 @@ Line::Line(const PointVector& data, const std::string& label, LineType type) {
 *
 * @param[in] num  Line index.
 */
-void Line::debug(size_t num) const {
+void flw::chart::Line::debug(size_t num) const {
 #ifdef DEBUG
     printf("\t\t---------------------------------------------\n");
     printf("\t\tLine: %u\n", static_cast<unsigned>(num));
@@ -1220,7 +1212,7 @@ void Line::debug(size_t num) const {
 /** @brief Clear all data.
 *
 */
-void Line::reset() {
+void flw::chart::Line::reset() {
     _data.clear();
 
     _align   = FL_ALIGN_LEFT;
@@ -1240,7 +1232,7 @@ void Line::reset() {
 *
 * @return Input chart line.
 */
-Line&  Line::set_type_from_string(const std::string&  val) {
+flw::chart::Line& flw::chart::Line::set_type_from_string(const std::string&  val) {
     if (val == "LINE_DOT")                     _type = LineType::LINE_DOT;
     else if (val == "BAR")                     _type = LineType::BAR;
     else if (val == "BAR_CLAMP")               _type = LineType::BAR_CLAMP;
@@ -1258,7 +1250,7 @@ Line&  Line::set_type_from_string(const std::string&  val) {
 *
 * @return Line type name, one of ("LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST").
 */
-std::string Line::type_to_string() const {
+std::string flw::chart::Line::type_to_string() const {
     static const std::string NAMES[] = { "LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST", "", };
     return NAMES[static_cast<unsigned>(_type)];
 }
@@ -1277,7 +1269,7 @@ std::string Line::type_to_string() const {
 /** @brief Create a chart scale.
 *
 */
-Scale::Scale() {
+flw::chart::Scale::Scale() {
     reset();
 }
 
@@ -1287,7 +1279,7 @@ Scale::Scale() {
 *
 * @return Width in pixels.
 */
-int Scale::calc_margin() {
+int flw::chart::Scale::calc_margin() {
     if (diff() < chart::MIN_VALUE) {
         return 0;
     }
@@ -1307,7 +1299,7 @@ int Scale::calc_margin() {
 *
 * @param[in] height  Chart area height in pixels.
 */
-void Scale::calc_tick(int height) {
+void flw::chart::Scale::calc_tick(int height) {
     const double RANGE  = diff();
     int          kludge = 0;
 
@@ -1364,7 +1356,7 @@ void Scale::calc_tick(int height) {
 *
 * @param[in] name  Scale name.
 */
-void Scale::debug(const char* name) const {
+void flw::chart::Scale::debug(const char* name) const {
 #ifdef DEBUG
     printf("\t\t---------------------------------------------\n");
     printf("\t\tScale: %s\n", name);
@@ -1385,7 +1377,7 @@ void Scale::debug(const char* name) const {
 *
 * @return Diff value or 0.0 for invalid values.
 */
-double Scale::diff() const {
+double flw::chart::Scale::diff() const {
     if (std::isfinite(_min) == false || std::isfinite(_max) == false) {
         return 0.0;
     }
@@ -1396,7 +1388,7 @@ double Scale::diff() const {
 /** @brief Increase and decrease min and max scale values.
 *
 */
-void Scale::fix_height() {
+void flw::chart::Scale::fix_height() {
     if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < chart::MIN_VALUE) {
         if (_min >= 0.0) {
             _min *= 0.9;
@@ -1418,7 +1410,7 @@ void Scale::fix_height() {
 *
 * @return Value or std::nullopt if value is isfinite.
 */
-std::optional<double> Scale::max() const {
+std::optional<double> flw::chart::Scale::max() const {
     if (std::isfinite(_max) == true) {
         return _max;
     }
@@ -1430,7 +1422,7 @@ std::optional<double> Scale::max() const {
 *
 * @return Value or std::nullopt if value is isfinite.
 */
-std::optional<double> Scale::min() const {
+std::optional<double> flw::chart::Scale::min() const {
     if (std::isfinite(_min) == true) {
         return _min;
     }
@@ -1441,7 +1433,7 @@ std::optional<double> Scale::min() const {
 /** @brief Clear all values.
 *
 */
-void Scale::reset() {
+void flw::chart::Scale::reset() {
     _min   = INFINITY;
     _max   = INFINITY;
     _tick  = 0.0;
@@ -1467,7 +1459,7 @@ void Scale::reset() {
 * @param[in] H  Height.
 * @param[in] l  Label.
 */
-Chart::Chart(int X, int Y, int W, int H, const char* l) :
+flw::chart::Chart::Chart(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14),
 _CW(14) {
@@ -1493,32 +1485,32 @@ _CW(14) {
     _scroll->type(FL_HORIZONTAL);
     _scroll->callback(Chart::_CallbackScrollbar, this);
 
-    _menu->add(_LABEL_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_LABEL_CLEAR,            0, _FLW_CHART_CB(reset()));
-    _menu->add(_LABEL_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
-    _menu->add(_LABEL_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
-    _menu->add(_LABEL_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_LINE,       0, _FLW_CHART_CB(setup_line()));
-    _menu->add(_LABEL_SETUP_MIN_CLAMP,  0, _FLW_CHART_CB(setup_clamp(true)));
-    _menu->add(_LABEL_SETUP_MAX_CLAMP,  0, _FLW_CHART_CB(setup_clamp(false)));
-    _menu->add(_LABEL_SETUP_SHOW,       0, _FLW_CHART_CB(setup_show_or_hide_lines()));
-    _menu->add(_LABEL_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
-    _menu->add(_LABEL_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
-    _menu->add(_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_line_to_csv()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_line_from_csv()));
-    _menu->add(_LABEL_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
-    _menu->add(_LABEL_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
-    _menu->add(_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
+    _menu->add(priv::_CHART_LABEL_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_CHART_LABEL_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_CHART_LABEL_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_CLEAR,            0, _FLW_CHART_CB(reset()));
+    _menu->add(priv::_CHART_LABEL_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
+    _menu->add(priv::_CHART_LABEL_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
+    _menu->add(priv::_CHART_LABEL_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_SETUP_LINE,       0, _FLW_CHART_CB(setup_line()));
+    _menu->add(priv::_CHART_LABEL_SETUP_MIN_CLAMP,  0, _FLW_CHART_CB(setup_clamp(true)));
+    _menu->add(priv::_CHART_LABEL_SETUP_MAX_CLAMP,  0, _FLW_CHART_CB(setup_clamp(false)));
+    _menu->add(priv::_CHART_LABEL_SETUP_SHOW,       0, _FLW_CHART_CB(setup_show_or_hide_lines()));
+    _menu->add(priv::_CHART_LABEL_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
+    _menu->add(priv::_CHART_LABEL_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
+    _menu->add(priv::_CHART_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_line_to_csv()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_line_from_csv()));
+    _menu->add(priv::_CHART_LABEL_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
+    _menu->add(priv::_CHART_LABEL_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
+    _menu->add(priv::_CHART_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #ifdef DEBUG
-    _menu->add(_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_DEBUG,            0, _FLW_CHART_CB(debug()));
-    _menu->add(_LABEL_DEBUG_LINE,       0, _FLW_CHART_CB(debug_line()));
+    _menu->add(priv::_CHART_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_DEBUG,            0, _FLW_CHART_CB(debug()));
+    _menu->add(priv::_CHART_LABEL_DEBUG_LINE,       0, _FLW_CHART_CB(debug_line()));
 #else
-    _menu->add(_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
+    _menu->add(priv::_CHART_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #endif
 
     _menu->type(Fl_Menu_Button::POPUP3);
@@ -1538,7 +1530,7 @@ _CW(14) {
 /** @brief Calculate area height for all areas.
 *
 */
-void Chart::_calc_area_height() {
+void flw::chart::Chart::_calc_area_height() {
     auto last   = 0;
     auto addh   = 0;
     auto height = 0;
@@ -1550,7 +1542,7 @@ void Chart::_calc_area_height() {
     for (size_t f = 1; f <= static_cast<size_t>(AreaNum::LAST); f++) {
         const auto& area = _areas[f];
 
-        if (area.percent() >= chart::_MIN_AREA_SIZE) {
+        if (area.percent() >= priv::_CHART_MIN_AREA_SIZE) {
             height -= flw::PREF_FIXED_FONTSIZE;
         }
     }
@@ -1562,7 +1554,7 @@ void Chart::_calc_area_height() {
         auto& prev = _areas[f - 1];
         auto& area = _areas[f];
 
-        if (area.percent() >= chart::_MIN_AREA_SIZE) {
+        if (area.percent() >= priv::_CHART_MIN_AREA_SIZE) {
             area.rect().y(prev.rect().y() + prev.rect().h() + _CH);
             area.rect().h(static_cast<int>((_areas[f].percent() / 100.0) * height));
             addh += static_cast<int>(prev.rect().h());
@@ -1578,7 +1570,7 @@ void Chart::_calc_area_height() {
 /** @brief Calculate area width, same for all areas.
 *
 */
-void Chart::_calc_area_width() {
+void flw::chart::Chart::_calc_area_width() {
     const double width = w() - (_margin_left * _CH + _margin_right * _CH);
 
     _ticks = static_cast<int>(width / _tick_width);
@@ -1613,7 +1605,7 @@ void Chart::_calc_area_width() {
 *
 * It takes min and max date from all areas and all lines.
 */
-void Chart::_calc_dates() {
+void flw::chart::Chart::_calc_dates() {
     std::string min;
     std::string max;
 
@@ -1650,7 +1642,7 @@ void Chart::_calc_dates() {
 /** @brief Calculate margins on left and right side.
 *
 */
-void Chart::_calc_margins() {
+void flw::chart::Chart::_calc_margins() {
     auto left  = 0;
     auto right = 0;
 
@@ -1708,7 +1700,7 @@ void Chart::_calc_margins() {
 * These are recalculated when data are scrolled.\n
 * Clamp values does override dataset.\n
 */
-void Chart::_calc_ymin_ymax() {
+void flw::chart::Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
         auto min_clamp = area.clamp_min();
         auto max_clamp = area.clamp_max();
@@ -1798,7 +1790,7 @@ void Chart::_calc_ymin_ymax() {
 /** @brief Calculate y scales for left and right sides and for all chjart areas.
 *
 */
-void Chart::_calc_yscale() {
+void flw::chart::Chart::_calc_yscale() {
     for (auto& area : _areas) {
         area.left_scale().calc_tick(area.rect().h());
         area.right_scale().calc_tick(area.rect().h());
@@ -1814,7 +1806,7 @@ void Chart::_calc_yscale() {
 *
 * @return Always false, stop printing.
 */
-bool Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
+bool flw::chart::Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
     (void) page;
 
     auto widget = static_cast<Fl_Widget*>(data);
@@ -1831,7 +1823,7 @@ bool Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
 * @param[in] na      Sender, not used.
 * @param[in] widget  Chart widget.
 */
-void Chart::_CallbackScrollbar(Fl_Widget* na, void* widget) {
+void flw::chart::Chart::_CallbackScrollbar(Fl_Widget* na, void* widget) {
     (void) na;
 
     auto self = static_cast<Chart*>(widget);
@@ -1848,12 +1840,12 @@ void Chart::_CallbackScrollbar(Fl_Widget* na, void* widget) {
 *
 * @return True if a new chart line was added.
 */
-bool Chart::create_line(Algorithm formula, bool support) {
+bool flw::chart::Chart::create_line(Algorithm formula, bool support) {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         dlg::msg_alert("Chart", "Area or line has not been selected!");
         return false;
     }
-    else if (_area->size() >= Area::MAX_LINES) {
+    else if (_area->size() >= flw::chart::Area::MAX_LINES) {
         dlg::msg_alert("Chart", "Max supported line count reached!");
         return false;
     }
@@ -2034,7 +2026,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     }
 
     line1.set_data(vec1).set_label(label1).set_type(type1).set_align(line0->align()).set_color(FL_BLUE);
-    _LineSetup(top_window(), line1).run();
+    priv::_ChartLineSetup(top_window(), line1).run();
     _area->add_line(line1);
 
     if (vec2.size() > 0) {
@@ -2058,7 +2050,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
 *
 * @param[in] ctrl  Is ctrl key pressed?.
 */
-void Chart::_create_tooltip(bool ctrl) {
+void flw::chart::Chart::_create_tooltip(bool ctrl) {
     int         X   = Fl::event_x();
     int         Y   = Fl::event_y();
     std::string old = _tooltip;
@@ -2154,7 +2146,7 @@ void Chart::_create_tooltip(bool ctrl) {
 *
 * It prints also for all Areas and chart lines.
 */
-void Chart::debug() const {
+void flw::chart::Chart::debug() const {
 #ifdef DEBUG
     Point first, last, start, end;
 
@@ -2209,7 +2201,7 @@ void Chart::debug() const {
 /** @brief Print chart data for current line and only for current view.
 *
 */
-void Chart::debug_line() const {
+void flw::chart::Chart::debug_line() const {
 #ifdef DEBUG
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return;
@@ -2257,7 +2249,7 @@ void Chart::debug_line() const {
 /** @brief Draw chart.
 *
 */
-void Chart::draw() {
+void flw::chart::Chart::draw() {
 #ifdef DEBUG
      //auto t = util::milliseconds();
 #endif
@@ -2282,7 +2274,7 @@ void Chart::draw() {
     _FLW_CHART_CLIP(fl_pop_clip())
 
     for (auto& area : _areas) {
-        if (area.percent() >= chart::_MIN_AREA_SIZE) {
+        if (area.percent() >= priv::_CHART_MIN_AREA_SIZE) {
             _FLW_CHART_CLIP(fl_push_clip(x(), y(), w(), h() - _scroll->h()))
             _draw_ver_lines(area);
             _draw_ylabels(area, FL_ALIGN_LEFT);
@@ -2310,7 +2302,7 @@ void Chart::draw() {
 /** @brief Draw main label at top of the widget.
 *
 */
-void Chart::_draw_label() {
+void flw::chart::Chart::_draw_label() {
     if (_label == "") {
         return;
     }
@@ -2325,7 +2317,7 @@ void Chart::_draw_label() {
 *
 * @param[in] area  Area with lines.
 */
-void Chart::_draw_lines(Area& area) {
+void flw::chart::Chart::_draw_lines(Area& area) {
     for (const auto& line : area.lines()) {
         const auto& scale = (line.align() == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale();
 
@@ -2423,7 +2415,7 @@ void Chart::_draw_lines(Area& area) {
 *
 * @param[in] area  Area with line labels.
 */
-void Chart::_draw_line_labels(Area& area) {
+void flw::chart::Chart::_draw_line_labels(Area& area) {
     if (_labels == false) {
         return;
     }
@@ -2444,7 +2436,7 @@ void Chart::_draw_line_labels(Area& area) {
     for (const auto& line : area.lines()) { // Calc max width of line labels.
         int  ws    = 0;
         int  hs    = 0;
-        auto label = _LABEL_SYMBOL + line.label();
+        auto label = priv::_CHART_LABEL_SYMBOL + line.label();
 
         fl_measure(label.c_str(), ws, hs);
 
@@ -2491,7 +2483,7 @@ void Chart::_draw_line_labels(Area& area) {
         size_t line_c = 0;
 
         for (auto& line : area.lines()) {
-            auto const label = (area.selected() == line_c++) ? _LABEL_SYMBOL + line.label() : line.label();
+            auto const label = (area.selected() == line_c++) ? priv::_CHART_LABEL_SYMBOL + line.label() : line.label();
 
             fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
 
@@ -2514,7 +2506,7 @@ void Chart::_draw_line_labels(Area& area) {
 /** @brief Draw tooltip with date and y value.
 *
 */
-void Chart::_draw_tooltip() {
+void flw::chart::Chart::_draw_tooltip() {
     if (_tooltip == "" || _area == nullptr) {
         return;
     }
@@ -2561,7 +2553,7 @@ void Chart::_draw_tooltip() {
 *
 * @param[in] area  Current area.
 */
-void Chart::_draw_ver_lines(Area& area) {
+void flw::chart::Chart::_draw_ver_lines(Area& area) {
     if (_vertical == false) {
         return;
     }
@@ -2569,7 +2561,7 @@ void Chart::_draw_ver_lines(Area& area) {
     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
     fl_line_style(FL_SOLID, 1);
 
-    for (size_t i = 0; i < Chart::MAX_VLINES; i++) {
+    for (size_t i = 0; i < flw::chart::Chart::MAX_VLINES; i++) {
         if (_ver_pos[i] < 0) {
             break;
         }
@@ -2582,7 +2574,7 @@ void Chart::_draw_ver_lines(Area& area) {
 *
 * And also save x pos for vertical lines.
 */
-void Chart::_draw_xlabels() {
+void flw::chart::Chart::_draw_xlabels() {
     fl_color(labelcolor());
     fl_line_style(FL_SOLID, 1);
 
@@ -2707,19 +2699,19 @@ void Chart::_draw_xlabels() {
 
             month = 4;
             fl_font(flw::PREF_FIXED_FONT, _CH);
-            fl_draw(buffer1, x1 - ADJUST, Y1 + _CH + chart::_TICK_SIZE * 2, ADJUST * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-            _FLW_CHART_DEBUG(fl_rect(x1 - ADJUST, Y1 + _CH + chart::_TICK_SIZE * 2, ADJUST * 2, _CH))
+            fl_draw(buffer1, x1 - ADJUST, Y1 + _CH + priv::_CHART_TICK_SIZE * 2, ADJUST * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            _FLW_CHART_DEBUG(fl_rect(x1 - ADJUST, Y1 + _CH + priv::_CHART_TICK_SIZE * 2, ADJUST * 2, _CH))
             x_last = x1 + ADJUST * 2 + _CW;
         }
 
-        if (*buffer2 != 0 && (cw2 * 2 + chart::_TICK_SIZE) < _tick_width) { // Draw second x label (day/week/hour/minute/second).
+        if (*buffer2 != 0 && (cw2 * 2 + priv::_CHART_TICK_SIZE) < _tick_width) { // Draw second x label (day/week/hour/minute/second).
             fl_font(flw::PREF_FIXED_FONT, CH2);
-            fl_draw(buffer2, x1 - cw2, Y1 + chart::_TICK_SIZE * 2, cw2 * 2, CH2, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-            _FLW_CHART_DEBUG(fl_rect(x1 - cw2, Y1 + chart::_TICK_SIZE * 2, cw2 * 2, CH2))
+            fl_draw(buffer2, x1 - cw2, Y1 + priv::_CHART_TICK_SIZE * 2, cw2 * 2, CH2, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            _FLW_CHART_DEBUG(fl_rect(x1 - cw2, Y1 + priv::_CHART_TICK_SIZE * 2, cw2 * 2, CH2))
             month = 1;
         }
 
-        fl_line(x1, Y1, x1, Y1 + chart::_TICK_SIZE * month);
+        fl_line(x1, Y1, x1, Y1 + priv::_CHART_TICK_SIZE * month);
 
         if (addv == true && ver_c < static_cast<int>(Chart::MAX_VLINES - 1)) { // Save x pos for vertical lines.
             _ver_pos[ver_c++] = x1;
@@ -2737,7 +2729,7 @@ void Chart::_draw_xlabels() {
 * @param[in] area   Current area.
 * @param[in] align  Which side to draw on, FL_ALIGN_LEFT or FL_ALIGN_RIGHT.
 */
-void Chart::_draw_ylabels(Area& area, Fl_Align align) {
+void flw::chart::Chart::_draw_ylabels(Area& area, Fl_Align align) {
     Scale& scale = (align == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale();
 
     if (scale.diff() < 0.0 || scale.pixel() * scale.tick() < 1.0) {
@@ -2746,12 +2738,12 @@ void Chart::_draw_ylabels(Area& area, Fl_Align align) {
 
     fl_font(flw::PREF_FIXED_FONT, _CH);
 
-    const int    TICK3  = chart::_TICK_SIZE * 3;
+    const int    TICK3  = priv::_CHART_TICK_SIZE * 3;
     const double Y_INC  = (scale.pixel() * scale.tick());
     const double Y_FR   = util::count_decimals(scale.tick());
     const int    CH     = _CH / 2;
     const int    WIDTH  = (align == FL_ALIGN_LEFT ? area.rect().x() - TICK3 : w() - area.rect().r() - TICK3 - 1);
-    const int    X1     = (align == FL_ALIGN_LEFT ? x() + chart::_TICK_SIZE : 0);
+    const int    X1     = (align == FL_ALIGN_LEFT ? x() + priv::_CHART_TICK_SIZE : 0);
     double       y1     = area.rect().b();
     double       y_last = 10'000;
     double       y_val  = scale.min().value();
@@ -2764,24 +2756,24 @@ void Chart::_draw_ylabels(Area& area, Fl_Align align) {
             if (align == FL_ALIGN_LEFT) {
                 const int R = x() + area.rect().x();
                 fl_color(labelcolor());
-                fl_line(R - chart::_TICK_SIZE, Y2, R, Y2);
+                fl_line(R - priv::_CHART_TICK_SIZE, Y2, R, Y2);
                 fl_draw(LABEL.c_str(), X1 + 1, Y2 - CH, WIDTH, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
                 _FLW_CHART_DEBUG(fl_rect(X1 + 1, Y2 - CH, WIDTH, _CH))
             }
             else {
                 const int R = x() + area.rect().r();
                 fl_color(labelcolor());
-                fl_line(R, Y2, R + chart::_TICK_SIZE, Y2);
-                fl_draw(LABEL.c_str(), R + chart::_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                _FLW_CHART_DEBUG(fl_rect(R + chart::_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH))
+                fl_line(R, Y2, R + priv::_CHART_TICK_SIZE, Y2);
+                fl_draw(LABEL.c_str(), R + priv::_CHART_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                _FLW_CHART_DEBUG(fl_rect(R + priv::_CHART_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH))
             }
 
-            if (_horizontal == true && Y2 > y() + area.rect().y() + chart::_TICK_SIZE) {
+            if (_horizontal == true && Y2 > y() + area.rect().y() + priv::_CHART_TICK_SIZE) {
                 fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
                 fl_line(x() + area.rect().x(), Y2, x() + area.rect().r(), Y2);
             }
 
-            y_last = y1 - _CH - chart::_TICK_SIZE;
+            y_last = y1 - _CH - priv::_CHART_TICK_SIZE;
         }
 
         y1    -= Y_INC;
@@ -2796,7 +2788,7 @@ void Chart::_draw_ylabels(Area& area, Fl_Align align) {
 *
 * @return Area or nullptr.
 */
-Area* Chart::_get_active_area(int X, int Y) {
+flw::chart::Area* flw::chart::Chart::_get_active_area(int X, int Y) {
     for (auto& area : _areas) {
         if (area.percent() >= 10 &&
             X >= x() + area.rect().x() &&
@@ -2821,7 +2813,7 @@ Area* Chart::_get_active_area(int X, int Y) {
 *
 * @return 1 or 0.
 */
-int Chart::handle(int event) {
+int flw::chart::Chart::handle(int event) {
     static bool LEFT = false; // Disable dragging with middle mouse button.
 
     if (event == FL_PUSH) {
@@ -2921,7 +2913,7 @@ int Chart::handle(int event) {
                 }
             }
 
-            Chart::_CallbackScrollbar(0, this);
+            flw::chart::Chart::_CallbackScrollbar(0, this);
             Fl::event_clicks(0);
             return 1;
         }
@@ -2934,7 +2926,7 @@ int Chart::handle(int event) {
 *
 * @param[in] calc_dates  True to generatee new rerence date serie.
 */
-void Chart::_init(bool calc_dates) {
+void flw::chart::Chart::_init(bool calc_dates) {
 #ifdef DEBUG
 //     auto t = util::microseconds();
 #endif
@@ -2948,8 +2940,8 @@ void Chart::_init(bool calc_dates) {
         WaitCursor wc;
 
         _calc_dates();
-        _margin_left  = chart::_MIN_MARGIN;
-        _margin_right = chart::_MIN_MARGIN;
+        _margin_left  = priv::_CHART_MIN_MARGIN;
+        _margin_right = priv::_CHART_MIN_MARGIN;
         kludge++;
     }
 
@@ -2981,7 +2973,7 @@ void Chart::_init(bool calc_dates) {
 * @return Vector with strings like "1Label".
 */
 //
-StringVector Chart::_label_array(const Area& area, LabelType labeltype) const {
+flw::StringVector flw::chart::Chart::_label_array(const Area& area, LabelType labeltype) const {
     auto res = StringVector();
 
     for (const auto& l : area.lines()) {
@@ -3006,9 +2998,9 @@ StringVector Chart::_label_array(const Area& area, LabelType labeltype) const {
 
 /** @brief Show file dialog and select a json file.
 *
-* @return False for no file or return value from Chart::load_json(std::string).
+* @return False for no file or return value from flw::chart::Chart::load_json(std::string).
 */
-bool Chart::load_json() {
+bool flw::chart::Chart::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
 
     if (util::is_empty(filename) == true) {
@@ -3024,7 +3016,7 @@ bool Chart::load_json() {
 *
 * @return True if ok.
 */
-bool Chart::load_json(const std::string& filename) {
+bool flw::chart::Chart::load_json(const std::string& filename) {
     #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart", util::format("Illegal chart value at pos %u", (X)->pos())); reset(); return false; }
 
     _filename = "";
@@ -3151,8 +3143,8 @@ bool Chart::load_json(const std::string& filename) {
 *
 * @return True if a line has been added to current area.
 */
-bool Chart::load_line_from_csv() {
-    if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
+bool flw::chart::Chart::load_line_from_csv() {
+    if (_area == nullptr || _area->size() >= flw::chart::Area::MAX_LINES) {
         dlg::msg_alert("Chart", "Max line count reached!");
         return false;
     }
@@ -3173,7 +3165,7 @@ bool Chart::load_line_from_csv() {
     auto line = Line(vec, filename);
 
     line.set_color(FL_BLUE);
-    _LineSetup(top_window(), line).run();
+    priv::_ChartLineSetup(top_window(), line).run();
     _area->add_line(line);
     init_new_data();
 
@@ -3189,7 +3181,7 @@ bool Chart::load_line_from_csv() {
 *
 * @return True if ok.
 */
-bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination) {
+bool flw::chart::Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination) {
     if (area == nullptr || index >= area->size()) {
         return false;
     }
@@ -3221,9 +3213,9 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
 /** @brief Print view to postscript.
 *
 */
-void Chart::print_to_postscript() {
+void flw::chart::Chart::print_to_postscript() {
     _printing = true;
-    dlg::print_page("Chart", Chart::_CallbackPrinter, this);
+    dlg::print_page("Chart", flw::chart::Chart::_CallbackPrinter, this);
     _printing = false;
     redraw();
 }
@@ -3231,7 +3223,7 @@ void Chart::print_to_postscript() {
 /** @brief Clear all data.
 *
 */
-void Chart::reset() {
+void flw::chart::Chart::reset() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
 
     _block_dates.clear();
@@ -3248,8 +3240,8 @@ void Chart::reset() {
     _bottom_space = 0;
     _date_start   = 0;
     _filename     = "";
-    _margin_left  = chart::_MIN_MARGIN;
-    _margin_right = chart::_MIN_MARGIN;
+    _margin_left  = priv::_CHART_MIN_MARGIN;
+    _margin_right = priv::_CHART_MIN_MARGIN;
     _old          = Fl_Rect();
     _printing     = false;
     _ticks        = 0;
@@ -3275,7 +3267,7 @@ void Chart::reset() {
 * @param[in] W  Width.
 * @param[in] H  Height.
 */
-void Chart::resize(int X, int Y, int W, int H) {
+void flw::chart::Chart::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {
         return;
     }
@@ -3290,7 +3282,7 @@ void Chart::resize(int X, int Y, int W, int H) {
 *
 * @return True if ok.
 */
-bool Chart::save_json() {
+bool flw::chart::Chart::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
 
     if (util::is_empty(filename) == true) {
@@ -3307,7 +3299,7 @@ bool Chart::save_json() {
 *
 * @return True if ok.
 */
-bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
+bool flw::chart::Chart::save_json(const std::string& filename, double max_diff_high_low) {
     auto wc  = WaitCursor();
     auto jsb = gnu::json::Builder();
 
@@ -3393,7 +3385,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
 *
 * @return True if a file was saved.
 */
-bool Chart::save_line_to_csv() {
+bool flw::chart::Chart::save_line_to_csv() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return false;
     }
@@ -3441,7 +3433,7 @@ bool Chart::save_line_to_csv() {
 *
 * @return True if ok.
 */
-bool Chart::save_png() {
+bool flw::chart::Chart::save_png() {
     return util::png_save(top_window(), "", x() + 1,  y() + 1,  w() - 2,  h() - _scroll->h() - 1);
 }
 
@@ -3457,7 +3449,7 @@ bool Chart::save_png() {
 *
 * @return True if ok.
 */
-bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsigned area4, unsigned area5) {
+bool flw::chart::Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsigned area4, unsigned area5) {
     _area = nullptr;
 
     _areas[0].set_percent(100);
@@ -3504,7 +3496,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
 /** @brief Show and dialog and select an area layout.
 *
 */
-void Chart::setup_area() {
+void flw::chart::Chart::setup_area() {
     auto list = StringVector() = {"One", "Two Equal Size", "Two (60%, 40%)", "Three Equal Size", "Three (50%, 25%, 25%)", "Four Equal Size", "Four (40%, 20%, 20%, 20%)", "Five Equal Size", "Five (40%, 15%, 15%, 15%, 15%)"};
 
     switch (dlg::select_choice("Chart", "Select number of chart areas", list, 0)) {
@@ -3555,7 +3547,7 @@ void Chart::setup_area() {
 *
 * @param[in] min  True to set min clamp value or false for max value.
 */
-void Chart::setup_clamp(bool min) {
+void flw::chart::Chart::setup_clamp(bool min) {
     if (_area == nullptr) {
         return;
     }
@@ -3583,12 +3575,12 @@ void Chart::setup_clamp(bool min) {
 /** @brief Create a line from an existing line.
 *
 */
-void Chart::setup_create_line() {
+void flw::chart::Chart::setup_create_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         dlg::msg_alert("Chart", "Area or line has not been selected!");
         return;
     }
-    else if (_area->size() >= Area::MAX_LINES) {
+    else if (_area->size() >= flw::chart::Area::MAX_LINES) {
         dlg::msg_alert("Chart", "Max line count reached!");
         return;
     }
@@ -3675,7 +3667,7 @@ void Chart::setup_create_line() {
 /** @brief Show an dialog for creating new date serie with different date range.
 *
 */
-void Chart::setup_date_range() {
+void flw::chart::Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
     auto sel  = dlg::select_choice("Chart", "Select date tange type.", list, static_cast<int>(_date_range));
 
@@ -3690,7 +3682,7 @@ void Chart::setup_date_range() {
 /** @brief Show an dialog to select lines to delete.
 *
 */
-void Chart::setup_delete_lines() {
+void flw::chart::Chart::setup_delete_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
@@ -3715,7 +3707,7 @@ void Chart::setup_delete_lines() {
 /** @brief Ask user for main chart label.
 *
 */
-void Chart::setup_label() {
+void flw::chart::Chart::setup_label() {
     auto answer = dlg::input("Chart", "Enter label.", _label);
 
     if (answer == flw::labels::CANCEL) {
@@ -3728,21 +3720,21 @@ void Chart::setup_label() {
 /** @brief Show property dialog for current line in current area.
 *
 */
-void Chart::setup_line() {
+void flw::chart::Chart::setup_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return;
     }
 
     auto line = const_cast<Line*>(_area->selected_line());
 
-    _LineSetup(top_window(), *line).run();
+    priv::_ChartLineSetup(top_window(), *line).run();
     init_new_data();
 }
 
 /** @brief Show an dialog to move lines between areas.
 *
 */
-void Chart::setup_move_lines() {
+void flw::chart::Chart::setup_move_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
@@ -3774,7 +3766,7 @@ void Chart::setup_move_lines() {
 /** @brief Show an dialog for showing or hiding lines.
 *
 */
-void Chart::setup_show_or_hide_lines() {
+void flw::chart::Chart::setup_show_or_hide_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
@@ -3801,10 +3793,10 @@ void Chart::setup_show_or_hide_lines() {
 * Show/hide vertical lines.
 * Show/hide horizontal lines.
 */
-void Chart::setup_view_options() {
-    _labels     = menu::item_value(_menu, _LABEL_SHOW_LABELS);
-    _vertical   = menu::item_value(_menu, _LABEL_SHOW_VLINES);
-    _horizontal = menu::item_value(_menu, _LABEL_SHOW_HLINES);
+void flw::chart::Chart::setup_view_options() {
+    _labels     = menu::item_value(_menu, priv::_CHART_LABEL_SHOW_LABELS);
+    _vertical   = menu::item_value(_menu, priv::_CHART_LABEL_SHOW_VLINES);
+    _horizontal = menu::item_value(_menu, priv::_CHART_LABEL_SHOW_HLINES);
 
     redraw();
 }
@@ -3812,45 +3804,45 @@ void Chart::setup_view_options() {
 /** @brief Show menu
 *
 */
-void Chart::_show_menu() {
+void flw::chart::Chart::_show_menu() {
     if (_disable_menu == true) {
         return;
     }
 
-    menu::enable_item(_menu, _LABEL_ADD_CSV, false);
-    menu::enable_item(_menu, _LABEL_ADD_LINE, false);
-    menu::enable_item(_menu, _LABEL_SAVE_CSV, false);
-    menu::enable_item(_menu, _LABEL_SETUP_DELETE, false);
-    menu::enable_item(_menu, _LABEL_SETUP_LINE, false);
-    menu::enable_item(_menu, _LABEL_SETUP_MAX_CLAMP, false);
-    menu::enable_item(_menu, _LABEL_SETUP_MIN_CLAMP, false);
-    menu::enable_item(_menu, _LABEL_SETUP_MOVE, false);
-    menu::enable_item(_menu, _LABEL_SETUP_SHOW, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_ADD_CSV, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_ADD_LINE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SAVE_CSV, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_DELETE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_LINE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MAX_CLAMP, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MIN_CLAMP, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MOVE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_SHOW, false);
 #ifdef DEBUG
-    menu::enable_item(_menu, _LABEL_DEBUG_LINE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_DEBUG_LINE, false);
 #endif
 
-    menu::set_item(_menu, _LABEL_SHOW_HLINES, _horizontal);
-    menu::set_item(_menu, _LABEL_SHOW_LABELS, _labels);
-    menu::set_item(_menu, _LABEL_SHOW_VLINES, _vertical);
+    menu::set_item(_menu, priv::_CHART_LABEL_SHOW_HLINES, _horizontal);
+    menu::set_item(_menu, priv::_CHART_LABEL_SHOW_LABELS, _labels);
+    menu::set_item(_menu, priv::_CHART_LABEL_SHOW_VLINES, _vertical);
 
     if (_area != nullptr) {
-        menu::enable_item(_menu, _LABEL_ADD_CSV, true);
+        menu::enable_item(_menu, priv::_CHART_LABEL_ADD_CSV, true);
 
         if (_area->size() > 0) {
-            menu::enable_item(_menu, _LABEL_SETUP_DELETE, true);
-            menu::enable_item(_menu, _LABEL_SETUP_MOVE, true);
-            menu::enable_item(_menu, _LABEL_SETUP_SHOW, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_DELETE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MOVE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_SHOW, true);
         }
 
         if (_area->selected_line() != nullptr && _area->selected_line()->size() > 0) {
-            menu::enable_item(_menu, _LABEL_ADD_LINE, true);
-            menu::enable_item(_menu, _LABEL_SAVE_CSV, true);
-            menu::enable_item(_menu, _LABEL_SETUP_LINE, true);
-            menu::enable_item(_menu, _LABEL_SETUP_MAX_CLAMP, true);
-            menu::enable_item(_menu, _LABEL_SETUP_MIN_CLAMP, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_ADD_LINE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SAVE_CSV, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_LINE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MAX_CLAMP, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MIN_CLAMP, true);
 #ifdef DEBUG
-            menu::enable_item(_menu, _LABEL_DEBUG_LINE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_DEBUG_LINE, true);
 #endif
         }
     }
@@ -3861,12 +3853,9 @@ void Chart::_show_menu() {
 /** @brief Update font properties
 *
 */
-void Chart::update_pref() {
+void flw::chart::Chart::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
 }
-
-} // chart
-} // flw
 
 // MKALGAM_OFF

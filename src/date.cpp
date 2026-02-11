@@ -16,6 +16,11 @@
 
 namespace gnu {
 
+/** @brief Private code in gnu.
+*
+*/
+namespace priv {
+
 /*
  *      _____      _            _
  *     |  __ \    (_)          | |
@@ -51,7 +56,7 @@ static int _date_days_in_month(int year, int month) {
 /** @brief Create date fields from unix time.
 *
 */
-static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
+static void _date_from_time(int64_t seconds, gnu::Date::UTC utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
     year = month = day = 1;
     hour = min = sec = 0;
 
@@ -60,7 +65,7 @@ static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& mont
     }
 
     time_t    rawtime  = seconds;
-    const tm* timeinfo = (utc == Date::UTC::ON) ? gmtime(&rawtime) : localtime(&rawtime);
+    const tm* timeinfo = (utc == gnu::Date::UTC::ON) ? gmtime(&rawtime) : localtime(&rawtime);
 
     if (timeinfo == nullptr) {
         return;
@@ -77,7 +82,7 @@ static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& mont
 /** @brief Get day of week.
 *
 */
-static Date::Day _date_weekday(int year, int month, int day) {
+static gnu::Date::Day _date_weekday(int year, int month, int day) {
     if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days_in_month(year, month)) {
         int start = 0;
         int y1    = year - 1;
@@ -97,7 +102,7 @@ static Date::Day _date_weekday(int year, int month, int day) {
                 start += days;
             }
             else {
-                return Date::Day::INVALID;
+                return gnu::Date::Day::INVALID;
             }
         }
 
@@ -113,14 +118,14 @@ static Date::Day _date_weekday(int year, int month, int day) {
         }
 
         if (start < 1 || start > 7) {
-            return Date::Day::INVALID;
+            return gnu::Date::Day::INVALID;
         }
         else {
             return (Date::Day) start;
         }
     }
 
-    return Date::Day::INVALID;
+    return gnu::Date::Day::INVALID;
 }
 
 /** @brief Check if date is an leap year.
@@ -138,6 +143,9 @@ static bool _date_is_leapyear(int year) {
     }
 }
 
+} // gnu::priv
+} // gnu
+
 /*
  *      _____        _
  *     |  __ \      | |
@@ -153,10 +161,10 @@ static bool _date_is_leapyear(int year) {
 *
 * @param[in] utc  Use UTC.
 */
-Date::Date(Date::UTC utc) {
+gnu::Date::Date(Date::UTC utc) {
     int y, m, d, ho, mi, se;
     _year = _month = _day = _hour = _min = _sec = 0;
-    _date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
+    priv::_date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
     set(y, m, d, ho, mi, se);
 }
 
@@ -172,7 +180,7 @@ Date::Date(Date::UTC utc) {
 * @param[in] min    Minute from 0 - 59.
 * @param[in] sec    Second from 0 - 59.
 */
-Date::Date(int year, int month, int day, int hour, int min, int sec) {
+gnu::Date::Date(int year, int month, int day, int hour, int min, int sec) {
     _year = _month = _day = _hour = _min = _sec = 0;
     set(year, month, day, hour, min, sec);
 }
@@ -182,9 +190,9 @@ Date::Date(int year, int month, int day, int hour, int min, int sec) {
 * @param[in] unix_time  Seconds since 1970.
 * @param[in] utc        Use UTC.
 */
-Date::Date(int64_t unix_time, Date::UTC utc) {
+gnu::Date::Date(int64_t unix_time, gnu::Date::UTC utc) {
     int y, m, d, ho, mi, se;
-    _date_from_time(unix_time, utc, y, m, d, ho, mi, se);
+    priv::_date_from_time(unix_time, utc, y, m, d, ho, mi, se);
     set(y, m, d, ho, mi, se);
 }
 
@@ -207,7 +215,7 @@ Date::Date(int64_t unix_time, Date::UTC utc) {
 * @param[in] date  Date string.
 * @param[in] us    US date or world date.
 */
-Date::Date(const std::string& date, Date::US us) {
+gnu::Date::Date(const std::string& date, gnu::Date::US us) {
     _year = _month = _day = _hour = _min = _sec = 0;
     set(date, us);
 }
@@ -218,12 +226,12 @@ Date::Date(const std::string& date, Date::US us) {
 *
 * @return True if changed.
 */
-bool Date::add_days(const int days) {
+bool gnu::Date::add_days(const int days) {
     if (days == 0) {
         return 0;
     }
 
-    int daym = _date_days_in_month(_year, _month);
+    int daym = priv::_date_days_in_month(_year, _month);
 
     if (daym == 0) {
         return false;
@@ -249,7 +257,7 @@ bool Date::add_days(const int days) {
                 }
             }
 
-            d = _date_days_in_month(y, m);
+            d = priv::_date_days_in_month(y, m);
 
             if (d == 0) {
                 return false;
@@ -268,7 +276,7 @@ bool Date::add_days(const int days) {
                 }
             }
 
-            daym = _date_days_in_month(y, m);
+            daym = priv::_date_days_in_month(y, m);
 
             if (daym == 0) {
                 return false;
@@ -289,7 +297,7 @@ bool Date::add_days(const int days) {
 *
 * @return True if changed.
 */
-bool Date::add_months(const int months) {
+bool gnu::Date::add_months(const int months) {
     if (months == 0) {
         return false;
     }
@@ -319,7 +327,7 @@ bool Date::add_months(const int months) {
         }
     }
 
-    const int days = _date_days_in_month(y, m);
+    const int days = priv::_date_days_in_month(y, m);
 
     if (days <= 0) {
         return false;
@@ -341,7 +349,7 @@ bool Date::add_months(const int months) {
 *
 * @return True if changed.
 */
-bool Date::add_seconds(const int64_t seconds) {
+bool gnu::Date::add_seconds(const int64_t seconds) {
     if (seconds == 0) {
         return false;
     }
@@ -406,7 +414,7 @@ bool Date::add_seconds(const int64_t seconds) {
 *
 * @return 1, 0, -1.
 */
-int Date::compare(const Date& other, Compare flag) const {
+int gnu::Date::compare(const Date& other, Compare flag) const {
     if (_year < other._year) {
         return -1;
     }
@@ -464,24 +472,24 @@ int Date::compare(const Date& other, Compare flag) const {
 *
 * @return 1 - 31.
 */
-int Date::days_in_month() const {
-    return _date_days_in_month(_year, _month);
+int gnu::Date::days_in_month() const {
+    return priv::_date_days_in_month(_year, _month);
 }
 
 /** @brief Get number of days so far into current year.
 *
 * @return 1 - 366.
 */
-int Date::days_into_year() const {
+int gnu::Date::days_into_year() const {
     auto res  = 0;
-    auto leap = _date_is_leapyear(_year);
+    auto leap = priv::_date_is_leapyear(_year);
 
     for (auto m = 1; m < _month && m < 13; m++) {
         if (leap) {
-            res += _DATE_DAYS_MONTH_LEAP[m];
+            res += priv::_DATE_DAYS_MONTH_LEAP[m];
         }
         else {
-            res += _DATE_DAYS_MONTH[m];
+            res += priv::_DATE_DAYS_MONTH[m];
         }
     }
 
@@ -491,7 +499,7 @@ int Date::days_into_year() const {
 /** @brief Print date string.
 *
 */
-void Date::debug() const {
+void gnu::Date::debug() const {
 #ifdef DEBUG
     printf("Date| %s\n", format(Format::ISO_TIME_LONG).c_str());
     fflush(stdout);
@@ -504,7 +512,7 @@ void Date::debug() const {
 *
 * @return Day count.
 */
-int Date::diff_days(const Date& date) const {
+int gnu::Date::diff_days(const Date& date) const {
     Date d(date);
     int  res = 0;
 
@@ -530,7 +538,7 @@ int Date::diff_days(const Date& date) const {
 *
 * @return Month count.
 */
-int Date::diff_months(const Date& date) const {
+int gnu::Date::diff_months(const Date& date) const {
     Date d(date);
     int  res = 0;
 
@@ -556,7 +564,7 @@ int Date::diff_months(const Date& date) const {
 *
 * @return Seconds count.
 */
-int64_t Date::diff_seconds(const Date& date) const {
+int64_t gnu::Date::diff_seconds(const Date& date) const {
     int64_t unix1 = time();
     int64_t unix2 = date.time();
 
@@ -573,7 +581,7 @@ int64_t Date::diff_seconds(const Date& date) const {
 *
 * @return Formatted string.
 */
-std::string Date::format(Format format) const {
+std::string gnu::Date::format(Format format) const {
     char tmp[100];
     int  n = 0;
 
@@ -637,24 +645,24 @@ std::string Date::format(Format format) const {
 *
 * @return True for leap year.
 */
-bool Date::is_leapyear() const {
-    return _date_is_leapyear(_year);
+bool gnu::Date::is_leapyear() const {
+    return priv::_date_is_leapyear(_year);
 }
 
 /** @brief Get month name.
 *
 * @return English month name.
 */
-const char* Date::month_name() const {
-    return _DATE_MONTHS[(int) _month];
+const char* gnu::Date::month_name() const {
+    return priv::_DATE_MONTHS[(int) _month];
 }
 
 /** @brief Get short month name.
 *
 * @return English month name using three letters.
 */
-const char* Date::month_name_short() const {
-    return _DATE_MONTHS_SHORT[(int) _month];
+const char* gnu::Date::month_name_short() const {
+    return priv::_DATE_MONTHS_SHORT[(int) _month];
 }
 
 /** @brief Copy date.
@@ -663,7 +671,7 @@ const char* Date::month_name_short() const {
 *
 * @return This object.
 */
-Date& Date::set(const Date& date) {
+gnu::Date& gnu::Date::set(const Date& date) {
     _year  = date._year;
     _month = date._month;
     _day   = date._day;
@@ -681,7 +689,7 @@ Date& Date::set(const Date& date) {
 *
 * @return This object.
 */
-Date& Date::set(const std::string& date, Date::US us) {
+gnu::Date& gnu::Date::set(const std::string& date, gnu::Date::US us) {
     auto str1 = date.c_str();
     auto len1 = static_cast<int>(date.length());
     auto str2 = strstr(str1, " ");
@@ -858,10 +866,10 @@ Date& Date::set(const std::string& date, Date::US us) {
 *
 * @return This date.
 */
-Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
+gnu::Date& gnu::Date::set(int year, int month, int day, int hour, int min, int sec) {
     if (year < 1 || year > 9999 ||
         month < 1 || month > 12 ||
-        day < 1 || day > _date_days_in_month(year, month) ||
+        day < 1 || day > priv::_date_days_in_month(year, month) ||
         hour < 0 || hour > 23 ||
         min < 0 || min > 59 ||
         sec < 0 || sec > 59) {
@@ -885,8 +893,8 @@ Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
 *
 * @return This date.
 */
-Date& Date::set_day(int day) {
-    if (day > 0 && day <= _date_days_in_month(_year, _month)) {
+gnu::Date& gnu::Date::set_day(int day) {
+    if (day > 0 && day <= priv::_date_days_in_month(_year, _month)) {
         _day = day;
     }
 
@@ -899,7 +907,7 @@ Date& Date::set_day(int day) {
 *
 * @return This date.
 */
-Date& Date::set_hour(int hour) {
+gnu::Date& gnu::Date::set_hour(int hour) {
     if (hour >= 0 && hour <= 23) {
         _hour = hour;
     }
@@ -913,7 +921,7 @@ Date& Date::set_hour(int hour) {
 *
 * @return This date.
 */
-Date& Date::set_minute(int min) {
+gnu::Date& gnu::Date::set_minute(int min) {
     if (min >= 0 && min <= 59) {
         _min = min;
     }
@@ -927,9 +935,9 @@ Date& Date::set_minute(int min) {
 *
 * @return This date.
 */
-Date& Date::set_month(int month) {
+gnu::Date& gnu::Date::set_month(int month) {
     if (_day >= 1 &&
-        _day <= _date_days_in_month(_year, month) &&
+        _day <= priv::_date_days_in_month(_year, month) &&
         month >= 1 && month <= 12) {
         _month = month;
     }
@@ -943,7 +951,7 @@ Date& Date::set_month(int month) {
 *
 * @return This date.
 */
-Date& Date::set_second(int sec) {
+gnu::Date& gnu::Date::set_second(int sec) {
     if (sec >= 0 && sec <= 59) {
         _sec = sec;
     }
@@ -957,7 +965,7 @@ Date& Date::set_second(int sec) {
 *
 * @return This date.
 */
-Date& Date::set_weekday(Date::Day day) {
+gnu::Date& gnu::Date::set_weekday(Date::Day day) {
     if (weekday() < day) {
         while (weekday() < day) {
             add_days(1);
@@ -978,7 +986,7 @@ Date& Date::set_weekday(Date::Day day) {
 *
 * @return This date.
 */
-Date& Date::set_year(int year) {
+gnu::Date& gnu::Date::set_year(int year) {
     if (year >= 1 && year <= 9999) {
         _year = year;
     }
@@ -990,7 +998,7 @@ Date& Date::set_year(int year) {
 *
 * @return Seconds or -1 for any error.
 */
-int64_t Date::time() const {
+int64_t gnu::Date::time() const {
     tm t;
 
     if (_year < 1970) {
@@ -1011,19 +1019,19 @@ int64_t Date::time() const {
 *
 * @return 1 - 53, 0 for error.
 */
-int Date::week() const {
-    Date::Day wday  = _date_weekday(_year, _month, _day);
-    Date::Day wday1 = _date_weekday(_year, 1, 1);
+int gnu::Date::week() const {
+    gnu::Date::Day wday  = priv::_date_weekday(_year, _month, _day);
+    gnu::Date::Day wday1 = priv::_date_weekday(_year, 1, 1);
 
-    if (wday != Date::Day::INVALID && wday1 != Date::Day::INVALID) {
+    if (wday != gnu::Date::Day::INVALID && wday1 != gnu::Date::Day::INVALID) {
         auto w     = 0;
         auto y1    = _year - 1;
-        auto leap  = _date_is_leapyear(_year);
-        auto leap1 = _date_is_leapyear(y1);
+        auto leap  = priv::_date_is_leapyear(_year);
+        auto leap1 = priv::_date_is_leapyear(y1);
         auto yday  = days_into_year();
 
-        if (yday <= (8 - (int) wday1) && wday1 > Date::Day::THURSDAY) {
-            if (wday1 == Date::Day::FRIDAY || (wday1 == Date::Day::SATURDAY && leap1)) {
+        if (yday <= (8 - (int) wday1) && wday1 > gnu::Date::Day::THURSDAY) {
+            if (wday1 == gnu::Date::Day::FRIDAY || (wday1 == gnu::Date::Day::SATURDAY && leap1)) {
                 w = 53;
             }
             else {
@@ -1040,7 +1048,7 @@ int Date::week() const {
                 days = yday + (7 - (int) wday) + ((int) wday1 - 1);
                 days = days / 7;
 
-                if (wday1 > Date::Day::THURSDAY) {
+                if (wday1 > gnu::Date::Day::THURSDAY) {
                     days--;
                 }
 
@@ -1060,26 +1068,24 @@ int Date::week() const {
 *
 * @return Weekday or Day:::INVALID.
 */
-Date::Day Date::weekday() const {
-    return _date_weekday(_year, _month, _day);
+gnu::Date::Day gnu::Date::weekday() const {
+    return priv::_date_weekday(_year, _month, _day);
 }
 
 /** @brief Get current weekday as an English name.
 *
 * @return Weekday name or empty string for any error.
 */
-const char* Date::weekday_name() const {
-    return _DATE_WEEKDAYS[(int) _date_weekday(_year, _month, _day)];
+const char* gnu::Date::weekday_name() const {
+    return priv::_DATE_WEEKDAYS[static_cast<int>(priv::_date_weekday(_year, _month, _day))];
 }
 
 /** @brief Get current weekday as an three letter name.
 *
 * @return Weekday name or empty string for any error.
 */
-const char* Date::weekday_name_short() const {
-    return _DATE_WEEKDAYS_SHORT[(int) _date_weekday(_year, _month, _day)];
+const char* gnu::Date::weekday_name_short() const {
+    return priv::_DATE_WEEKDAYS_SHORT[static_cast<int>(priv::_date_weekday(_year, _month, _day))];
 }
-
-} // gnu
 
 // MKALGAM_OFF

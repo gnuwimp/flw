@@ -34,7 +34,7 @@ namespace json {
 /** @brief JSON data types.
 *
 */
-enum class TYPE : uint8_t {
+enum class Type : uint8_t {
                                 OBJECT,     ///< @brief Object node.
                                 ARRAY,      ///< @brief Array node
                                 STRING,     ///< @brief Plain string.
@@ -47,7 +47,7 @@ enum class TYPE : uint8_t {
 /** @brief Encoding options.
 *
 */
-enum class ENCODE : uint8_t {
+enum class Encode : uint8_t {
                                 DEFAULT,    ///< @brief Indentation.
                                 TRIM,       ///< @brief No indentation.
                                 FLAT,       ///< @brief No indentation and no newlines.
@@ -63,7 +63,7 @@ typedef std::vector<JS*> JSArray;
 size_t                          count_utf8(const char* p);
 JS                              decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
 JS                              decode(const std::string& json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
-std::string                     encode(const JS& js, ENCODE option = ENCODE::DEFAULT);
+std::string                     encode(const JS& js, Encode option = Encode::DEFAULT);
 std::string                     escape(const char* string);
 std::string                     format_number(double f, bool E = false);
 std::string                     unescape(const char* string);
@@ -89,7 +89,7 @@ std::string                     unescape(const char* string);
 class JS {
     friend class                Builder;
     friend JS                   decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check);
-    friend std::string          encode(const JS* js, ENCODE option);
+    friend std::string          encode(const JS* js, Encode option);
 
 public:
                                 JS(const JS&) = delete;
@@ -99,40 +99,40 @@ public:
                                 JS(JS&& other);
                                 ~JS();
     JS&                         operator=(JS&&);
-    bool                        operator==(TYPE type) const
+    bool                        operator==(Type type) const
                                     { return _type == type; } ///< @brief Compare type.
-    bool                        operator!=(TYPE type) const
+    bool                        operator!=(Type type) const
                                     { return _type != type; } ///< @brief Compare type.
     const JS*                   operator[](const std::string& name) const
                                     { return _get_value(name.c_str(), true); } ///< @brief Get named child value from object. @param[in] name  Object name.
     const JS*                   operator[](size_t index) const
-                                    { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; } ///< @brief Get child value from array. @param[in] index  Array index.
+                                    { return (_type == Type::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; } ///< @brief Get child value from array. @param[in] index  Array index.
     void                        debug() const;
     std::string                 err() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; } ///< @brief Error string.
+                                    { return (_type == Type::ERR) ? _vs : ""; } ///< @brief Error string.
     const char*                 err_c() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; } ///< @brief Error string.
+                                    { return (_type == Type::ERR) ? _vs : ""; } ///< @brief Error string.
     const JS*                   find(const std::string& name, bool rec = false) const;
     const JS*                   get(const std::string& name, bool escape_name = true) const
                                     { return _get_value(name.c_str(), escape_name); } ///< @brief Get named child value from object.
     const JS*                   get(size_t index) const
                                     { return (*this) [index]; } ///< @brief Get child value from array.
     bool                        has_err() const
-                                    { return _type == TYPE::ERR; } ///< @brief Has node error?
+                                    { return _type == Type::ERR; } ///< @brief Has node error?
     bool                        has_inline() const
                                     { return _inl; } ///< @brief Is inline on?
     bool                        is_array() const
-                                    { return _type == TYPE::ARRAY; } ///< @brief Is value an array?
+                                    { return _type == Type::ARRAY; } ///< @brief Is value an array?
     bool                        is_bool() const
-                                    { return _type == TYPE::BOOL; } ///< @brief Is value a bool?
+                                    { return _type == Type::BOOL; } ///< @brief Is value a bool?
     bool                        is_null() const
-                                    { return _type == TYPE::NIL; } ///< @brief Is value a null?
+                                    { return _type == Type::NIL; } ///< @brief Is value a null?
     bool                        is_number() const
-                                    { return _type == TYPE::NUMBER; } ///< @brief Is value a number?
+                                    { return _type == Type::NUMBER; } ///< @brief Is value a number?
     bool                        is_object() const
-                                    { return _type == TYPE::OBJECT; } ///< @brief Is value an object?
+                                    { return _type == Type::OBJECT; } ///< @brief Is value an object?
     bool                        is_string() const
-                                    { return _type == TYPE::STRING; } ///< @brief Is value a a string?
+                                    { return _type == Type::STRING; } ///< @brief Is value a a string?
     std::string                 name() const
                                     { return (_name != nullptr) ? _name : ""; } ///< @brief Name of value.
     const char*                 name_c() const
@@ -146,27 +146,27 @@ public:
     size_t                      size() const
                                     { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; } ///< @brief Size of array or object.
     std::string                 to_string() const;
-    TYPE                        type() const
+    Type                        type() const
                                     { return _type; } ///< @brief Type of value.
     std::string                 type_name() const
-                                    { return TYPE_NAMES[static_cast<unsigned>(_type)]; } ///< @brief Type name for this value.
+                                    { return Type_NAMES[static_cast<unsigned>(_type)]; } ///< @brief Type name for this value.
     const JSArray*              va() const
-                                    { return (_type == TYPE::ARRAY) ? _va : nullptr; } ///< @brief Array node or NULL.
+                                    { return (_type == Type::ARRAY) ? _va : nullptr; } ///< @brief Array node or NULL.
     bool                        vb() const
-                                    { assert(_type == TYPE::BOOL); return (_type == TYPE::BOOL) ? _vb : false; } ///< @brief Bool value or false.
+                                    { assert(_type == Type::BOOL); return (_type == Type::BOOL) ? _vb : false; } ///< @brief Bool value or false.
     double                      vn() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? _vn : 0.0; } ///< @brief Number value or 0.0.
+                                    { assert(_type == Type::NUMBER); return (_type == Type::NUMBER) ? _vn : 0.0; } ///< @brief Number value or 0.0.
     long long int               vn_i() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? (long long int) _vn : 0; } ///< @brief Number value as integer or 0.
+                                    { assert(_type == Type::NUMBER); return (_type == Type::NUMBER) ? (long long int) _vn : 0; } ///< @brief Number value as integer or 0.
     const JSObject*             vo() const
-                                    { return (_type == TYPE::OBJECT) ? _vo : nullptr; } ///< @brief Object value or NULL.
+                                    { return (_type == Type::OBJECT) ? _vo : nullptr; } ///< @brief Object value or NULL.
     const JSArray               vo_to_va() const;
     std::string                 vs() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; } ///< @brief String value or "".
+                                    { assert(_type == Type::STRING); return (_type == Type::STRING) ? _vs : ""; } ///< @brief String value or "".
     const char*                 vs_c() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; } ///< @brief String value or "".
+                                    { assert(_type == Type::STRING); return (_type == Type::STRING) ? _vs : ""; } ///< @brief String value or "".
     std::string                 vs_u() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? json::unescape(_vs) : ""; } ///< @brief Unescaped string value or "".
+                                    { assert(_type == Type::STRING); return (_type == Type::STRING) ? json::unescape(_vs) : ""; } ///< @brief Unescaped string value or "".
 
     static inline ssize_t       Count()
                                     { return JS::COUNT; } ///< @brief Number of allocated values
@@ -192,12 +192,12 @@ private:
     static JS*                  _MakeObject(const char* name, JS* parent, unsigned pos);
     static JS*                  _MakeString(const char* name, const char* vs, JS* parent, unsigned pos);
 
-    static constexpr const char* TYPE_NAMES[10] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "ERR", "", ""};
+    static constexpr const char* Type_NAMES[10] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "ERR", "", ""};
     static ssize_t              COUNT;
     static ssize_t              MAX;
 
     bool                        _inl;       // To create values inline without newlines.
-    TYPE                        _type;      // JSON type.
+    Type                        _type;      // JSON type.
     uint32_t                    _pos;       // Position in json buffer.
     JS*                         _parent;    // Parent of value.
     char*                       _name;      // Name of json value.
@@ -239,7 +239,7 @@ public:
     Builder&                    add(JS* json);
     void                        clear()
                                     { delete _root; _root = _current = nullptr; _name = ""; } ///< @brief Delete all values.
-    std::string                 encode(ENCODE option = ENCODE::DEFAULT) const;
+    std::string                 encode(Encode option = Encode::DEFAULT) const;
     Builder&                    end();
     const JS*                   root() const
                                     { return _root; } ///< @brief Get root value.

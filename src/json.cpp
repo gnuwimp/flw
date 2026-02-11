@@ -20,7 +20,7 @@
 #include <climits>
 
 namespace gnu {
-namespace json {
+namespace priv {
 
 /*
  *                 _            _
@@ -33,7 +33,7 @@ namespace json {
  *     |_|
  */
 
-#define _GNU_JSON_ERROR(X,Y) _format_error(__LINE__, static_cast<unsigned>(X), Y)
+#define _GNU_JSON_ERROR(X,Y) priv::_json_format_error(__LINE__, static_cast<unsigned>(X), Y)
 #define _GNU_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
 
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
@@ -43,17 +43,17 @@ static const char* const _JSON_BOM = "\xef\xbb\xbf";
 * @param[in] js  JSON node.
 * @param[in] t   Indendtation string.
 */
-static void _debug(const JS* js, std::string t) {
+static void _json_debug(const json::JS* js, std::string t) {
     if (js->is_array() == true) {
         printf("%sARRAY(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
         t += "\t";
-        for (const auto js2 : *js->va()) _debug(js2, t);
+        for (const auto js2 : *js->va()) _json_debug(js2, t);
         t.pop_back();
     }
     else if (js->is_object() == true) {
         printf("%sOBJECT(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
         t += "\t";
-        for (auto js2 : *js->vo()) _debug(js2.second, t);
+        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
         t.pop_back();
     }
     else if (js->is_null()) printf("%s%s(%u, %p): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c());
@@ -71,13 +71,13 @@ static void _debug(const JS* js, std::string t) {
 *
 * @return Encoded string.
 */
-static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
+static std::string _json_encode(const json::JS& js, bool ignore_name, json::Encode option) {
     static const std::string QUOTE = "\"";
 
     std::string res;
-    std::string arr    = (option == ENCODE::DEFAULT) ? "\": [" : "\":[";
-    std::string obj    = (option == ENCODE::DEFAULT) ? "\": {" : "\":{";
-    std::string name1  = (option == ENCODE::DEFAULT) ? "\": " : "\":";
+    std::string arr    = (option == json::Encode::DEFAULT) ? "\": [" : "\":[";
+    std::string obj    = (option == json::Encode::DEFAULT) ? "\": {" : "\":{";
+    std::string name1  = (option == json::Encode::DEFAULT) ? "\": " : "\":";
     bool        object = (js.parent() != nullptr && js.parent()->is_object() == true);
 
     if (js.is_array() == true) {
@@ -125,32 +125,32 @@ static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
 * @param[in]     comma   True to add comma.
 * @param[in]     option  Whitespace option.
 */
-static void _encode_inline(const JS& js, std::string& j, bool comma, ENCODE option) {
+static void _json_encode_inline(const json::JS& js, std::string& j, bool comma, json::Encode option) {
     std::string c = (comma == true) ? "," : "";
     size_t      f = 0;
 
     if (js.is_array() == true) {
-        j += json::_encode(js, false, option);
+        j += priv::_json_encode(js, false, option);
 
         for (const auto n : *js.va()) {
-            json::_encode_inline(*n, j, f < (js.va()->size() - 1), option);
+            priv::_json_encode_inline(*n, j, f < (js.va()->size() - 1), option);
             f++;
         }
 
         j += "]" + c;
     }
     else if (js.is_object() == true) {
-        j += json::_encode(js, false, option);
+        j += priv::_json_encode(js, false, option);
 
         for (const auto& n : *js.vo()) {
-            json::_encode_inline(*n.second, j, f < (js.vo()->size() - 1), option);
+            priv::_json_encode_inline(*n.second, j, f < (js.vo()->size() - 1), option);
             f++;
         }
 
         j += "}" + c;
     }
     else {
-        j += json::_encode(js, false, option) + c;
+        j += priv::_json_encode(js, false, option) + c;
     }
 }
 
@@ -162,31 +162,31 @@ static void _encode_inline(const JS& js, std::string& j, bool comma, ENCODE opti
 * @param[in]     comma   True to add comma.
 * @param[in]     option  Whitespace option.
 */
-static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma, ENCODE option) {
+static void _json_encode_all(const json::JS& js, std::string& j, std::string& t, bool comma, json::Encode option) {
     std::string c = (comma == true) ? "," : "";
-    std::string n = (option == ENCODE::FLAT) ? "" : "\n";
+    std::string n = (option == json::Encode::FLAT) ? "" : "\n";
     size_t      f = 0;
 
     if (js.is_array() == true) {
-        j += t + json::_encode(js, j == "", option);
+        j += t + priv::_json_encode(js, j == "", option);
 
         if (js.has_inline() == false && js.size() > 0) {
             j += n;
         }
 
         for (const auto n2 : *js.va()) {
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t += "\t";
             }
 
             if (js.has_inline() == true) {
-                json::_encode_inline(*n2, j, f < (js.va()->size() - 1), option);
+                priv::_json_encode_inline(*n2, j, f < (js.va()->size() - 1), option);
             }
             else {
-                json::_encode_all(*n2, j, t, f < (js.va()->size() - 1), option);
+                priv::_json_encode_all(*n2, j, t, f < (js.va()->size() - 1), option);
             }
 
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t.pop_back();
             }
 
@@ -201,25 +201,25 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
         }
     }
     else if (js.is_object() == true) {
-        j += t + json::_encode(js, j == "", option);
+        j += t + priv::_json_encode(js, j == "", option);
 
         if (js.has_inline() == false && js.size() > 0) {
             j += n;
         }
 
         for (const auto& n2 : *js.vo()) {
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t += "\t";
             }
 
             if (js.has_inline() == true) {
-                json::_encode_inline(*n2.second, j, f < (js.vo()->size() - 1), option);
+                priv::_json_encode_inline(*n2.second, j, f < (js.vo()->size() - 1), option);
             }
             else {
-                json::_encode_all(*n2.second, j, t, f < (js.vo()->size() - 1), option);
+                priv::_json_encode_all(*n2.second, j, t, f < (js.vo()->size() - 1), option);
             }
 
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t.pop_back();
             }
 
@@ -234,7 +234,7 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
         }
     }
     else {
-        j += t + json::_encode(js, false, option) + c + n;
+        j += t + priv::_json_encode(js, false, option) + c + n;
     }
 }
 
@@ -246,7 +246,7 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
 *
 * @return Error string.
 */
-static std::string _format_error(unsigned source, unsigned pos, unsigned line) {
+static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
     char buf[256];
     snprintf(buf, 256, "Error: invalid json (%u) at pos %u and line %u", source, pos, line);
     return buf;
@@ -254,14 +254,14 @@ static std::string _format_error(unsigned source, unsigned pos, unsigned line) {
 
 /** @brief Convert string to number.
 *
-* @param[in]     json  JSON string.
-* @param[in]     len   JSON string length.
-* @param[in,out] pos   Position in json string.
-* @param[in,out] val   Result number, contains NAN for any failure.
+* @param[in]     json   JSON string.
+* @param[in]     len    JSON string length.
+* @param[in,out] pos    Position in json string.
+* @param[in,out] nVal   Result number, contains NAN for any failure.
 *
 * @return True if ok.
 */
-static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
+static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
     bool        res = false;
     std::string n1;
     std::string n2;
@@ -382,12 +382,12 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
 * @param[in]     json              JSON string.
 * @param[in]     len               JSON string length.
 * @param[in,out] pos               Position in json string.
-* @param[in,out] sval1             Result string if it is NULL.
-* @param[in,out] sval2             Result string if it is NULL but sval1 is not NULL.
+* @param[in,out] sVal1             Result string if it is NULL.
+* @param[in,out] sVal2             Result string if it is NULL but sval1 is not NULL.
 *
 * @return True if any of result strings have been set.
 */
-static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
+static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
     std::string str   = "";
     bool        term  = false;
     unsigned    c     = 0;
@@ -445,6 +445,7 @@ static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, s
     return true;
 }
 
+} // gnu::json
 } // json
 
 /*
@@ -464,7 +465,7 @@ static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, s
 *
 * @return Number of characters or 0 if empty or it has invalid characters.
 */
-size_t json::count_utf8(const char* p) {
+size_t gnu::json::count_utf8(const char* p) {
     auto count = (size_t) 0;
     auto f     = (size_t) 0;
     auto u     = reinterpret_cast<const unsigned char*>(p);
@@ -510,9 +511,9 @@ size_t json::count_utf8(const char* p) {
 * @param[in] ignore_duplicates      True to ignore duplicate names.
 * @param[in] ignore_utf_check       True to skip basic utf8 check.
 *
-* @return Root JSON node, type will be set to TYPE::ERR for any error.
+* @return Root JSON node, type will be set to Type::ERR for any error.
 */
-json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+gnu::json::JS gnu::json::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
     auto ret     = JS();                // Return value.
     auto tmp     = JS();                // Temporary working root
     auto colon   = 0;                   // Colon counter.
@@ -530,11 +531,11 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
     auto sVal2   = (char*) nullptr;     // JSON String value.
 
     try {
-        tmp._type = TYPE::ARRAY;
+        tmp._type = Type::ARRAY;
         tmp._va   = new JSArray();
         current   = &tmp;
 
-        if (strncmp(json, _JSON_BOM, 3) == 0) {
+        if (strncmp(json, priv::_JSON_BOM, 3) == 0) {
             pos1 += 3;
         }
 
@@ -556,7 +557,7 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                     posn = pos1;
                 }
 
-                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) {
+                if (priv::_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) {
                     throw _GNU_JSON_ERROR(start, line);
                 }
 
@@ -588,7 +589,7 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
             else if ((c >= '0' && c <= '9') || c == '-') { // Parse number.
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
 
-                if (_parse_number(json, len, pos1, nVal) == false) {
+                if (priv::_json_parse_number(json, len, pos1, nVal) == false) {
                     throw _GNU_JSON_ERROR(start, line);
                 }
                 else if (comma > 0 && current->size() == 0) {
@@ -812,33 +813,33 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
         else if (tmp.size() != 1) { // Root value can have only one value.
             throw _GNU_JSON_ERROR(len, 1);
         }
-        else if (tmp[0]->_type == TYPE::ARRAY) { // Child is array so set result value.
-            ret._type = TYPE::ARRAY;
+        else if (tmp[0]->_type == Type::ARRAY) { // Child is array so set result value.
+            ret._type = Type::ARRAY;
             ret._va = tmp[0]->_va;
             ret._set_child_parent_to_me();
-            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
+            const_cast<JS*>(tmp[0])->_type = Type::NIL;
         }
-        else if (tmp[0]->_type == TYPE::OBJECT) { // Child is object so set result value.
-            ret._type = TYPE::OBJECT;
+        else if (tmp[0]->_type == Type::OBJECT) { // Child is object so set result value.
+            ret._type = Type::OBJECT;
             ret._vo = tmp[0]->_vo;
             ret._set_child_parent_to_me();
-            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
+            const_cast<JS*>(tmp[0])->_type = Type::NIL;
         }
-        else if (tmp[0]->_type == TYPE::BOOL) { // Only one boolean.
-            ret._type = TYPE::BOOL;
+        else if (tmp[0]->_type == Type::BOOL) { // Only one boolean.
+            ret._type = Type::BOOL;
             ret._vb   = tmp[0]->_vb;
         }
-        else if (tmp[0]->_type == TYPE::NUMBER) { // Only one number.
-            ret._type = TYPE::NUMBER;
+        else if (tmp[0]->_type == Type::NUMBER) { // Only one number.
+            ret._type = Type::NUMBER;
             ret._vn   = tmp[0]->_vn;
         }
-        else if (tmp[0]->_type == TYPE::STRING) { // Only one string.
-            ret._type = TYPE::STRING;
+        else if (tmp[0]->_type == Type::STRING) { // Only one string.
+            ret._type = Type::STRING;
             ret._vs   = tmp[0]->_vs;
-            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
+            const_cast<JS*>(tmp[0])->_type = Type::NIL;
         }
-        else if (tmp[0]->_type == TYPE::NIL) { // Only one null value.
-            ret._type = TYPE::NIL;
+        else if (tmp[0]->_type == Type::NIL) { // Only one null value.
+            ret._type = Type::NIL;
         }
         else {
             throw _GNU_JSON_ERROR(0, 1);
@@ -859,9 +860,9 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
 * @param[in] ignore_duplicates      True to ignore duplicate names.
 * @param[in] ignore_utf_check       True to skip basic utf8 check.
 *
-* @return Root JSON node, type will be set to TYPE::ERR for any error.
+* @return Root JSON node, type will be set to Type::ERR for any error.
 */
-json::JS json::decode(const std::string& json, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+gnu::json::JS gnu::json::decode(const std::string& json, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
     return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check);
 }
 
@@ -872,16 +873,16 @@ json::JS json::decode(const std::string& json, bool ignore_trailing_comma, bool 
 *
 * @return JSON string.
 */
-std::string json::encode(const JS& js, ENCODE option) {
+std::string gnu::json::encode(const JS& js, Encode option) {
     std::string t;
     std::string j;
 
     try {
         if (js.is_array() == true || js.is_object() == true) {
-            json::_encode_all(js, j, t, false, option);
+            priv::_json_encode_all(js, j, t, false, option);
         }
         else {
-            j = json::_encode(js, true, option);
+            j = priv::_json_encode(js, true, option);
         }
     }
     catch (const std::string& e) {
@@ -897,7 +898,7 @@ std::string json::encode(const JS& js, ENCODE option) {
 *
 * @return Escaped string.
 */
-std::string json::escape(const char* string) {
+std::string gnu::json::escape(const char* string) {
     std::string res;
     res.reserve(strlen(string) + 5);
 
@@ -942,7 +943,7 @@ std::string json::escape(const char* string) {
 *
 * @return Converted number.
 */
-std::string json::format_number(double f, bool E) {
+std::string gnu::json::format_number(double f, bool E) {
     double ABS = fabs(f);
     double MIN = (ABS >= static_cast<double>(LLONG_MAX)) ? 0.0 : ABS - static_cast<int64_t>(ABS);
     size_t n   = 0;
@@ -990,7 +991,7 @@ std::string json::format_number(double f, bool E) {
 *
 * @return Unescaped string.
 */
-std::string json::unescape(const char* string) {
+std::string gnu::json::unescape(const char* string) {
     std::string res;
     res.reserve(strlen(string));
 
@@ -1030,14 +1031,14 @@ std::string json::unescape(const char* string) {
  *
  */
 
-ssize_t json::JS::COUNT = 0;
-ssize_t json::JS::MAX   = 0;
+ssize_t gnu::json::JS::COUNT = 0;
+ssize_t gnu::json::JS::MAX   = 0;
 
 /** @brief Create new empty object.
 *
-* The type is set to TYPE::NIL.
+* The type is set to Type::NIL.
 */
-json::JS::JS() {
+gnu::json::JS::JS() {
     JS::COUNT++;
 
     if (JS::COUNT > JS::MAX) {
@@ -1048,7 +1049,7 @@ json::JS::JS() {
     _name   = nullptr;
     _parent = nullptr;
     _pos    = 0;
-    _type   = TYPE::NIL;
+    _type   = Type::NIL;
     _va     = nullptr;
 }
 
@@ -1058,7 +1059,7 @@ json::JS::JS() {
 * @param[in] parent  Parent object.
 * @param[in] pos     Position in input string.
 */
-json::JS::JS(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS::JS(const char* name, JS* parent, unsigned pos) {
     JS::COUNT++;
 
     if (JS::COUNT > JS::MAX) {
@@ -1069,7 +1070,7 @@ json::JS::JS(const char* name, JS* parent, unsigned pos) {
     _name   = (name != nullptr) ? strdup(name) : nullptr;
     _parent = parent;
     _pos    = pos;
-    _type   = TYPE::NIL;
+    _type   = Type::NIL;
     _va     = nullptr;
 }
 
@@ -1077,7 +1078,7 @@ json::JS::JS(const char* name, JS* parent, unsigned pos) {
 *
 * @param[in] other  Object to move.
 */
-json::JS::JS(JS&& other) {
+gnu::json::JS::JS(JS&& other) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
 
@@ -1087,23 +1088,23 @@ json::JS::JS(JS&& other) {
     _pos    = other._pos;
     _type   = other._type;
 
-    if (other._type == TYPE::ARRAY) {
+    if (other._type == Type::ARRAY) {
         _va = other._va;
     }
-    else if (other._type == TYPE::OBJECT) {
+    else if (other._type == Type::OBJECT) {
         _vo = other._vo;
     }
-    else if (other._type == TYPE::BOOL) {
+    else if (other._type == Type::BOOL) {
         _vb = other._vb;
     }
-    else if (other._type == TYPE::STRING) {
+    else if (other._type == Type::STRING) {
         _vs = other._vs;
     }
-    else if (other._type == TYPE::NUMBER) {
+    else if (other._type == Type::NUMBER) {
         _vn = other._vn;
     }
 
-    other._type = TYPE::NIL;
+    other._type = Type::NIL;
     other._name = nullptr;
 
     _set_child_parent_to_me();
@@ -1112,7 +1113,7 @@ json::JS::JS(JS&& other) {
 /** @brief Delete memory.
 *
 */
-json::JS::~JS() {
+gnu::json::JS::~JS() {
     JS::COUNT--;
     _clear(true);
 }
@@ -1123,7 +1124,7 @@ json::JS::~JS() {
 *
 * @return This object.
 */
-json::JS& json::JS::operator=(JS&& other) {
+gnu::json::JS& gnu::json::JS::operator=(JS&& other) {
     _clear(true);
 
     _inl    = other._inl;
@@ -1132,23 +1133,23 @@ json::JS& json::JS::operator=(JS&& other) {
     _pos    = other._pos;
     _type   = other._type;
 
-    if (other._type == TYPE::ARRAY) {
+    if (other._type == Type::ARRAY) {
         _va = other._va;
     }
-    else if (other._type == TYPE::OBJECT) {
+    else if (other._type == Type::OBJECT) {
         _vo = other._vo;
     }
-    else if (other._type == TYPE::BOOL) {
+    else if (other._type == Type::BOOL) {
         _vb = other._vb;
     }
-    else if (other._type == TYPE::STRING) {
+    else if (other._type == Type::STRING) {
         _vs = other._vs;
     }
-    else if (other._type == TYPE::NUMBER) {
+    else if (other._type == Type::NUMBER) {
         _vn = other._vn;
     }
 
-    other._type = TYPE::NIL;
+    other._type = Type::NIL;
     other._name = nullptr;
 
     _set_child_parent_to_me();
@@ -1165,7 +1166,7 @@ json::JS& json::JS::operator=(JS&& other) {
 *
 * @return True if ok.
 */
-bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
     if (is_array() == true) {
@@ -1190,7 +1191,7 @@ bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned 
 *
 * @return True if ok.
 */
-bool json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
     if (is_array() == true) {
@@ -1216,7 +1217,7 @@ bool json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
 *
 * @return True if ok.
 */
-bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
     if (is_array() == true && std::isnan(nVal) == false) {
@@ -1243,7 +1244,7 @@ bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, u
 *
 * @return True if ok.
 */
-bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
     bool res = false;
 
     if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
@@ -1267,7 +1268,7 @@ bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, u
 *
 * @param[in] name  True to delete name also.
 */
-void json::JS::_clear(bool name) {
+void gnu::json::JS::_clear(bool name) {
     if (is_array() == true) {
         for (auto js : *_va) {
             delete js;
@@ -1294,7 +1295,7 @@ void json::JS::_clear(bool name) {
         _name = nullptr;
     }
 
-    _type   = TYPE::NIL;
+    _type   = Type::NIL;
     _vb     = false;
     _parent = nullptr;
 }
@@ -1302,21 +1303,21 @@ void json::JS::_clear(bool name) {
 /** @brief Print debug info.
 *
 */
-void json::JS::debug() const {
+void gnu::json::JS::debug() const {
     std::string t;
-    _debug(this, t);
+    priv::_json_debug(this, t);
 }
 
 /** @brief Find named JSON object.
 *
-* This instance must be an object (TYPE::OBJECT).
+* This instance must be an object (Type::OBJECT).
 *
 * @param[in] name  Name to search for.
 * @param[in] rec   True to search recursive.
 *
 * @return Found node or NULL.
 */
-const json::JS* json::JS::find(const std::string& name, bool rec) const {
+const gnu::json::JS* gnu::json::JS::find(const std::string& name, bool rec) const {
     if (is_object() == false) {
         return nullptr;
     }
@@ -1344,7 +1345,7 @@ const json::JS* json::JS::find(const std::string& name, bool rec) const {
 *
 * @return Found value or NULL.
 */
-const json::JS* json::JS::_get_value(const char* name, bool escape) const {
+const gnu::json::JS* gnu::json::JS::_get_value(const char* name, bool escape) const {
     if (is_object() == false) {
         return nullptr;
     }
@@ -1363,10 +1364,10 @@ const json::JS* json::JS::_get_value(const char* name, bool escape) const {
 *
 * @return Array value.
 */
-json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
 
-    r->_type = TYPE::ARRAY;
+    r->_type = Type::ARRAY;
     r->_va   = new JSArray();
 
     return r;
@@ -1381,10 +1382,10 @@ json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
 *
 * @return Bool value.
 */
-json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
 
-    r->_type = TYPE::BOOL;
+    r->_type = Type::BOOL;
     r->_vb   = vb;
 
     return r;
@@ -1398,7 +1399,7 @@ json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned po
 *
 * @return Null value.
 */
-json::JS* json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
     return new JS(name, parent, pos);
 }
 
@@ -1411,10 +1412,10 @@ json::JS* json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
 *
 * @return Nil value.
 */
-json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
 
-    r->_type = TYPE::NUMBER;
+    r->_type = Type::NUMBER;
     r->_vn   = vn;
 
     return r;
@@ -1428,9 +1429,9 @@ json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigne
 *
 * @return Object value.
 */
-json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
-    r->_type = TYPE::OBJECT;
+    r->_type = Type::OBJECT;
     r->_vo   = new JSObject();
 
     return r;
@@ -1445,10 +1446,10 @@ json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
 *
 * @return Nil value.
 */
-json::JS* json::JS::_MakeString(const char* name, const char* vs, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeString(const char* name, const char* vs, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
 
-    r->_type = TYPE::STRING;
+    r->_type = Type::STRING;
     r->_vs   = strdup(vs);
 
     return r;
@@ -1458,11 +1459,11 @@ json::JS* json::JS::_MakeString(const char* name, const char* vs, JS* parent, un
 *
 * @param[in] err  Message.
 */
-void json::JS::_set_err(const std::string& err) {
+void gnu::json::JS::_set_err(const std::string& err) {
     _clear(true);
 
     _vs   = strdup(err.c_str());
-    _type = TYPE::ERR;
+    _type = Type::ERR;
 }
 
 /** @brief Set value in object.
@@ -1475,7 +1476,7 @@ void json::JS::_set_err(const std::string& err) {
 *
 * @return True if ok.
 */
-bool json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
+bool gnu::json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
     if (is_object() == false) {
         return false;
     }
@@ -1500,7 +1501,7 @@ bool json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
 /** @brief Set parent for all children thi this.
 *
 */
-void json::JS::_set_child_parent_to_me() {
+void gnu::json::JS::_set_child_parent_to_me() {
     if (is_array() == true) {
         for (auto o : *_va) {
             o->_parent = this;
@@ -1517,23 +1518,23 @@ void json::JS::_set_child_parent_to_me() {
 *
 * @return String description, not a real json value.
 */
-std::string json::JS::to_string() const {
+std::string gnu::json::JS::to_string() const {
     std::string ret = type_name();
     char b[400];
 
-    if (_type == TYPE::NUMBER) {
+    if (_type == Type::NUMBER) {
         snprintf(b, 400, ": %f", _vn);
         ret += b;
     }
-    else if (_type == TYPE::STRING) {
+    else if (_type == Type::STRING) {
         ret += ": ";
         ret += _vs;
     }
-    else if (_type == TYPE::BOOL) {
+    else if (_type == Type::BOOL) {
         ret += ": ";
         ret += _vb ? "true" : "false";
     }
-    else if (_type == TYPE::ARRAY || _type == TYPE::OBJECT) {
+    else if (_type == Type::ARRAY || _type == Type::OBJECT) {
         snprintf(b, 400, ": %d children", static_cast<int>(size()));
         ret += b;
     }
@@ -1550,10 +1551,10 @@ std::string json::JS::to_string() const {
 *
 * @return JSON array.
 */
-const json::JSArray json::JS::vo_to_va() const {
+const gnu::json::JSArray gnu::json::JS::vo_to_va() const {
     JSArray res;
 
-    if (_type != TYPE::OBJECT) {
+    if (_type != Type::OBJECT) {
         return res;
     }
 
@@ -1583,7 +1584,7 @@ const json::JSArray json::JS::vo_to_va() const {
 *
 * @throws std::string exception on error.
 */
-json::Builder& json::Builder::add(JS* js) {
+gnu::json::Builder& gnu::json::Builder::add(JS* js) {
     auto name = js->name();
 
     if (_current == nullptr) {
@@ -1603,7 +1604,7 @@ json::Builder& json::Builder::add(JS* js) {
                 delete js;
                 throw std::string("Error: values added to array are nameless <" + name + ">.");
             }
-            else if (*js == TYPE::ARRAY || *js == TYPE::OBJECT) {
+            else if (*js == Type::ARRAY || *js == Type::OBJECT) {
                 _current->_va->push_back(js);
                 _current = js;
             }
@@ -1641,7 +1642,7 @@ json::Builder& json::Builder::add(JS* js) {
 *
 * @throws std::string exception on error.
 */
-std::string json::Builder::encode(ENCODE option) const {
+std::string gnu::json::Builder::encode(Encode option) const {
     if (_root == nullptr) {
         throw std::string("Error: empty json.");
     }
@@ -1664,7 +1665,7 @@ std::string json::Builder::encode(ENCODE option) const {
 *
 * @throws std::string exception on error.
 */
-json::Builder& json::Builder::end() {
+gnu::json::Builder& gnu::json::Builder::end() {
     if (_current == nullptr) {
         throw std::string("Error: empty json.");
     }
@@ -1684,9 +1685,9 @@ json::Builder& json::Builder::end() {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeArray(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeArray(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::ARRAY;
+    r->_type = Type::ARRAY;
     r->_va   = new JSArray();
 
     return r;
@@ -1699,9 +1700,9 @@ json::JS* json::Builder::MakeArray(const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeArrayInline(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::ARRAY;
+    r->_type = Type::ARRAY;
     r->_va   = new JSArray();
     r->_inl  = true;
 
@@ -1716,9 +1717,9 @@ json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeBool(bool vb, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::BOOL;
+    r->_type = Type::BOOL;
     r->_vb   = vb;
 
     return r;
@@ -1731,9 +1732,9 @@ json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeNull(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeNull(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::NIL;
+    r->_type = Type::NIL;
 
     return r;
 }
@@ -1746,9 +1747,9 @@ json::JS* json::Builder::MakeNull(const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeNumber(double vn, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeNumber(double vn, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::NUMBER;
+    r->_type = Type::NUMBER;
     r->_vn   = vn;
 
     return r;
@@ -1761,9 +1762,9 @@ json::JS* json::Builder::MakeNumber(double vn, const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeObject(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeObject(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::OBJECT;
+    r->_type = Type::OBJECT;
     r->_vo   = new JSObject();
 
     return r;
@@ -1776,9 +1777,9 @@ json::JS* json::Builder::MakeObject(const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeObjectInline(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::OBJECT;
+    r->_type = Type::OBJECT;
     r->_vo   = new JSObject();
     r->_inl  = true;
 
@@ -1793,9 +1794,9 @@ json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeString(const char* vs, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::STRING;
+    r->_type = Type::STRING;
     r->_vs   = strdup((escape == true) ? json::escape(vs).c_str() : vs);
 
     return r;
@@ -1809,10 +1810,8 @@ json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escap
 *
 * @return New value.
 */
-json::JS* json::Builder::MakeString(const std::string& vs, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeString(const std::string& vs, const char* name, bool escape) {
     return Builder::MakeString(vs.c_str(), name, escape);
 }
-
-} // flw
 
 // MKALGAM_OFF

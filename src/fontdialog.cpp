@@ -19,14 +19,14 @@
 #include <FL/fl_draw.H>
 
 /*
- *           ______          _   _           _          _
- *          |  ____|        | | | |         | |        | |
- *          | |__ ___  _ __ | |_| |     __ _| |__   ___| |
- *          |  __/ _ \| '_ \| __| |    / _` | '_ \ / _ \ |
- *          | | | (_) | | | | |_| |___| (_| | |_) |  __/ |
- *          |_|  \___/|_| |_|\__|______\__,_|_.__/ \___|_|
- *      ______
- *     |______|
+ *           ______          _   _____  _       _             _           _          _
+ *          |  ____|        | | |  __ \(_)     | |           | |         | |        | |
+ *          | |__ ___  _ __ | |_| |  | |_  __ _| | ___   __ _| |     __ _| |__   ___| |
+ *          |  __/ _ \| '_ \| __| |  | | |/ _` | |/ _ \ / _` | |    / _` | '_ \ / _ \ |
+ *          | | | (_) | | | | |_| |__| | | (_| | | (_) | (_| | |___| (_| | |_) |  __/ |
+ *          |_|  \___/|_| |_|\__|_____/|_|\__,_|_|\___/ \__, |______\__,_|_.__/ \___|_|
+ *      ______                                           __/ |
+ *     |______|                                         |___/
  */
 
 namespace flw {
@@ -64,14 +64,14 @@ A good life is not measured by any biblical span.”
 /** @brief Example text for current font.
 *
 */
-class _FontLabel : public Fl_Box {
+class _FontDialogLabel : public Fl_Box {
 public:
     int font;
     int size;
 
     /** @brief
     */
-    _FontLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
+    _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
         font = FL_HELVETICA;
         size = 14;
 
@@ -184,7 +184,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row = self->_fonts->value();
 
         if (row > 0) {
-            static_cast<priv::_FontLabel*>(self->_label)->font = row - 1;
+            static_cast<priv::_FontDialogLabel*>(self->_label)->font = row - 1;
         }
 
         self->_activate();
@@ -210,7 +210,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
         auto row = self->_sizes->value();
 
         if (row > 0) {
-            static_cast<priv::_FontLabel*>(self->_label)->size = row + 5;
+            static_cast<priv::_FontDialogLabel*>(self->_label)->size = row + 5;
         }
 
         self->_activate();
@@ -232,7 +232,7 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     _cancel   = new SVGButton(0, 0, 0, 0, labels::CANCEL);
     _fonts    = new ScrollBrowser(12);
     _grid     = new GridGroup();
-    _label    = new priv::_FontLabel(0, 0, 0, 0);
+    _label    = new priv::_FontDialogLabel(0, 0, 0, 0);
     _select   = new SVGButton(0, 0, 0, 0, labels::SELECT, icons::BACK, true);
     _sizes    = new ScrollBrowser(6);
     _font     = -1;
@@ -254,8 +254,8 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     _fonts->callback(FontDialog::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
-    static_cast<priv::_FontLabel*>(_label)->font = font;
-    static_cast<priv::_FontLabel*>(_label)->size = fontsize;
+    static_cast<priv::_FontDialogLabel*>(_label)->font = font;
+    static_cast<priv::_FontDialogLabel*>(_label)->size = fontsize;
     _select->callback(FontDialog::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
@@ -286,12 +286,12 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
         _sizes->middleline(fontsize - 5);
-        static_cast<priv::_FontLabel*>(_label)->font = fontsize;
+        static_cast<priv::_FontDialogLabel*>(_label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
         _sizes->middleline(14 - 5);
-        static_cast<priv::_FontLabel*>(_label)->font = 14;
+        static_cast<priv::_FontDialogLabel*>(_label)->font = 14;
     }
 
     if (fontname != "") {
@@ -300,7 +300,7 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
         _fonts->middleline(font + 1);
-        static_cast<priv::_FontLabel*>(_label)->font = font;
+        static_cast<priv::_FontDialogLabel*>(_label)->font = font;
     }
     else {
         _fonts->value(1);
@@ -350,7 +350,7 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
-            static_cast<priv::_FontLabel*>(_label)->font = count - 1;
+            static_cast<priv::_FontDialogLabel*>(_label)->font = count - 1;
             return;
         }
 
@@ -358,7 +358,7 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
     }
 
     _fonts->value(1);
-    static_cast<priv::_FontLabel*>(_label)->font = 0;
+    static_cast<priv::_FontDialogLabel*>(_label)->font = 0;
 }
 
 /** @brief Create and show font dialog.

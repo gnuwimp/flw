@@ -35,38 +35,31 @@
 #endif
 
 namespace gnu {
-namespace file {
 
-/*
- *                 _            _
- *                (_)          | |
- *      _ __  _ __ ___   ____ _| |_ ___
- *     | '_ \| '__| \ \ / / _` | __/ _ \
- *     | |_) | |  | |\ V / (_| | ||  __/
- *     | .__/|_|  |_| \_/ \__,_|\__\___|
- *     | |
- *     |_|
- */
+/** @brief Private code in gnu.
+*
+*/
+namespace priv {
 
-static std::string          _STDOUT_NAME = "";
-static std::string          _STDERR_NAME = "";
+static std::string          _FILE_STDOUT_NAME = "";
+static std::string          _FILE_STDERR_NAME = "";
 
 #ifdef _WIN32
-static char*                _from_wide(const wchar_t* wstring);
-static int64_t              _time(FILETIME* ft);
-static wchar_t*             _to_wide(const char* string);
+static char*                _file_from_wide(const wchar_t* wstring);
+static int64_t              _file_time(FILETIME* ft);
+static wchar_t*             _file_to_wide(const char* string);
 #endif
 
-static Buf                  _close_redirect(int type);
-static bool                 _open_redirect(int type);
-static unsigned             _rand();
-static void                 _read(const std::string& path, Buf& buf);
-static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _read_dir_rec(Files& res, Files& files);
-static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
-static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
-static std::string          _to_absolute_path(const std::string& filename, bool realpath);
+static file::Buf            _file_close_redirect(int type);
+static bool                 _file_open_redirect(int type);
+static unsigned             _file_rand();
+static void                 _file_read(const std::string& path, file::Buf& buf);
+static std::string&         _file_replace_all(std::string& string, const std::string& find, const std::string& replace);
+static void                 _file_read_dir_rec(file::Files& res, file::Files& files);
+static std::string&         _file_replace_all(std::string& string, const std::string& find, const std::string& replace);
+static void                 _file_split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
+static std::string          _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+static std::string          _file_to_absolute_path(const std::string& filename, bool realpath);
 
 /** @brief Close redirect.
 *
@@ -74,21 +67,21 @@ static std::string          _to_absolute_path(const std::string& filename, bool 
 *
 * @return Read bytes from file.
 */
-static Buf _close_redirect(int type) {
+static file::Buf _file_close_redirect(int type) {
     std::string fname;
     FILE* fhandle;
 
     if (type == 2) {
-        if (_STDERR_NAME == "") return Buf();
-        fname = _STDERR_NAME;
+        if (priv::_FILE_STDERR_NAME == "") return file::Buf();
+        fname = priv::_FILE_STDERR_NAME;
         fhandle = stderr;
-        _STDERR_NAME = "";
+        priv::_FILE_STDERR_NAME = "";
     }
     else {
-        if (_STDOUT_NAME == "") return Buf();
-        fname = _STDOUT_NAME;
+        if (priv::_FILE_STDOUT_NAME == "") return file::Buf();
+        fname = priv::_FILE_STDOUT_NAME;
         fhandle = stdout;
-        _STDOUT_NAME = "";
+        priv::_FILE_STDOUT_NAME = "";
     }
 
 #ifdef _WIN32
@@ -113,7 +106,7 @@ static Buf _close_redirect(int type) {
 *
 * @return UTF string, delete with free().
 */
-static char* _from_wide(const wchar_t* wstring) {
+static char* _file_from_wide(const wchar_t* wstring) {
     auto out_len = WideCharToMultiByte(CP_UTF8, 0, wstring, -1, nullptr, 0, nullptr, nullptr);
     auto out     = file::allocate(nullptr, out_len + 1);
 
@@ -131,25 +124,25 @@ static char* _from_wide(const wchar_t* wstring) {
 *
 * @return True if ok.
 */
-static bool _open_redirect(int type) {
+static bool _file_open_redirect(int type) {
     bool res = false;
     std::string fname;
     FILE* fhandle = nullptr;
 
     if (type == 2) {
-        if (_STDERR_NAME != "") return res;
-        fname = _STDERR_NAME = file::tmp_file("stderr_").filename();
+        if (priv::_FILE_STDERR_NAME != "") return res;
+        fname = priv::_FILE_STDERR_NAME = file::tmp_file("stderr_").filename();
         fhandle = stderr;
     }
     else {
-        if (_STDOUT_NAME != "") return res;
-        fname = _STDOUT_NAME = file::tmp_file("stdout_").filename();
+        if (priv::_FILE_STDOUT_NAME != "") return res;
+        fname = priv::_FILE_STDOUT_NAME = file::tmp_file("stdout_").filename();
         fhandle = stdout;
     }
 
 #ifdef _WIN32
-        auto wpath = file::_to_wide(fname.c_str());
-        auto wmode = file::_to_wide("wb");
+        auto wpath = priv::_file_to_wide(fname.c_str());
+        auto wmode = priv::_file_to_wide("wb");
 
         res = _wfreopen(wpath, wmode, fhandle) != nullptr;
         free(wpath);
@@ -159,10 +152,10 @@ static bool _open_redirect(int type) {
 #endif
 
     if (res == false && type == 1) {
-        _STDOUT_NAME = "";
+        priv::_FILE_STDOUT_NAME = "";
     }
     else if (res == false && type == 2) {
-        _STDERR_NAME = "";
+        priv::_FILE_STDERR_NAME = "";
     }
 
     return res;
@@ -172,7 +165,7 @@ static bool _open_redirect(int type) {
 *
 * @return Random number.
 */
-static unsigned _rand() {
+static unsigned _file_rand() {
     static bool INIT = false;
 
     if (INIT == false) {
@@ -194,10 +187,10 @@ static unsigned _rand() {
 * @param[in] path  File path.
 * @param[in] buf   Result buffer.
 */
-static void _read(const std::string& path, Buf& buf) {
+static void _file_read(const std::string& path, file::Buf& buf) {
     assert(buf.c_str() == nullptr && buf.size() == 0);
 
-    File file(path);
+    file::File file(path);
 
     if (file.is_file() == false || static_cast<long long unsigned int>(file.size()) > SSIZE_MAX) {
         return;
@@ -231,13 +224,13 @@ static void _read(const std::string& path, Buf& buf) {
 * @param[in] res    Result vector.
 * @param[in] files  Files from current directory.
 */
-static void _read_dir_rec(Files& res, Files& files) {
+static void _file_read_dir_rec(file::Files& res, file::Files& files) {
     for (auto& file : files) {
         res.push_back(file);
 
         if (file.is_dir() == true && file.is_link() == false) {
             auto v = file::read_dir(file.filename());
-            file::_read_dir_rec(res, v);
+            priv::_file_read_dir_rec(res, v);
         }
     }
 }
@@ -251,7 +244,7 @@ static void _read_dir_rec(Files& res, Files& files) {
 * @return Input string.
 */
 
-static std::string& _replace_all(std::string& string, const std::string& find, const std::string& replace) {
+static std::string& _file_replace_all(std::string& string, const std::string& find, const std::string& replace) {
     if (find.empty() == true) {
         return string;
     }
@@ -273,7 +266,7 @@ static std::string& _replace_all(std::string& string, const std::string& find, c
 * @param[in] name      Result name + ext.
 * @param[in] ext       Extension only.
 */
-static void _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext) {
+static void _file_split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext) {
     path = "";
     name = "";
     ext  = "";
@@ -297,16 +290,16 @@ static void _split_paths(const std::string& filename, std::string& path, std::st
 
     if (pos1 != std::string::npos) {
         if (filename.length() != 3) {
-            path = file::_substr(filename, 0, pos1);
+            path = priv::_file_substr(filename, 0, pos1);
         }
 
-        name = file::_substr(filename, pos1 + 1);
+        name = priv::_file_substr(filename, pos1 + 1);
     }
 
     auto pos2 = name.find_last_of('.');
 
     if (pos2 != std::string::npos && pos2 != 0) {
-        ext = file::_substr(name, pos2 + 1);
+        ext = priv::_file_substr(name, pos2 + 1);
     }
 
     if (path.back() == ':') {
@@ -318,21 +311,21 @@ static void _split_paths(const std::string& filename, std::string& path, std::st
 
     if (pos1 != std::string::npos) {
         if (pos1 > 0) {
-            path = file::_substr(filename, 0, pos1);
+            path = priv::_file_substr(filename, 0, pos1);
         }
         else if (filename != "/") {
             path = "/";
         }
 
         if (filename != "/") {
-            name = file::_substr(filename, pos1 + 1);
+            name = priv::_file_substr(filename, pos1 + 1);
         }
     }
 
     auto pos2 = filename.find_last_of('.');
 
     if (pos2 != std::string::npos && pos2 > pos1 + 1) {
-        ext = file::_substr(filename, pos2 + 1);
+        ext = priv::_file_substr(filename, pos2 + 1);
     }
 #endif
 }
@@ -345,9 +338,13 @@ static void _split_paths(const std::string& filename, std::string& path, std::st
 *
 * @return Replaced string.
 */
-static std::string _substr(const std::string& in, std::string::size_type pos, std::string::size_type count) {
-    try { return in.substr(pos, count); }
-    catch(...) { return ""; }
+static std::string _file_substr(const std::string& string, std::string::size_type pos, std::string::size_type count) {
+    try {
+        return string.substr(pos, count);
+    }
+    catch(...) {
+        return "";
+    }
 }
 
 #ifdef _WIN32
@@ -357,7 +354,7 @@ static std::string _substr(const std::string& in, std::string::size_type pos, st
 *
 * @return Seconds.
 */
-static int64_t _time(FILETIME* ft) {
+static int64_t _file_time(FILETIME* ft) {
     int64_t res = static_cast<int64_t>(ft->dwHighDateTime) << 32 | static_cast<int64_t>(ft->dwLowDateTime);
     res = res / 10000000;
     res = res - 11644473600;
@@ -372,7 +369,7 @@ static int64_t _time(FILETIME* ft) {
 *
 * @return Absolute path.
 */
-static std::string _to_absolute_path(const std::string& filename, bool realpath) {
+static std::string _file_to_absolute_path(const std::string& filename, bool realpath) {
     std::string res;
     auto name = filename;
 
@@ -390,7 +387,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
         return name;
     }
     else if (name.size() < 2 || name[1] != ':') {
-        auto work = File(file::work_dir());
+        auto work = file::File(file::work_dir());
 
         res = work.filename();
         res += "\\";
@@ -400,14 +397,14 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
         res = name;
     }
 
-    file::_replace_all(res, "\\", "/");
+    priv::_file_replace_all(res, "\\", "/");
 
     auto len = res.length();
-    file::_replace_all(res, "//", "/");
+    priv::_file_replace_all(res, "//", "/");
 
     while (len > res.length()) {
         len = res.length();
-        file::_replace_all(res, "//", "/");
+        priv::_file_replace_all(res, "//", "/");
     }
 
     while (res.size() > 3 && res.back() == '/') {
@@ -415,7 +412,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     }
 #else
     if (name[0] != '/') {
-        auto work = File(file::work_dir());
+        auto work = file::File(file::work_dir());
         res = work.filename();
         res += "/";
         res += name;
@@ -425,11 +422,11 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     }
 
     auto len = res.length();
-    file::_replace_all(res, "//", "/");
+    priv::_file_replace_all(res, "//", "/");
 
     while (len > res.length()) {
         len = res.length();
-        file::_replace_all(res, "//", "/");
+        priv::_file_replace_all(res, "//", "/");
     }
 
     while (res.size() > 1 && res.back() == '/') {
@@ -447,7 +444,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
 *
 * @return Wide character string, delete with free().
 */
-static wchar_t* _to_wide(const char* string) {
+static wchar_t* _file_to_wide(const char* string) {
     auto out_len = MultiByteToWideChar(CP_UTF8, 0, string , -1, nullptr , 0);
     auto out     = reinterpret_cast<wchar_t*>(file::allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
 
@@ -456,6 +453,9 @@ static wchar_t* _to_wide(const char* string) {
     return out;
 }
 #endif
+
+} // gnu::priv
+} // gnu
 
 /*
  *       __ _ _
@@ -480,7 +480,7 @@ static wchar_t* _to_wide(const char* string) {
 *
 * @throws std::string exception on error.
 */
-char* allocate(char* resize_or_null, size_t size) {
+char* gnu::file::allocate(char* resize_or_null, size_t size) {
     void* res = nullptr;
 
     if (resize_or_null == nullptr) {
@@ -503,14 +503,14 @@ char* allocate(char* resize_or_null, size_t size) {
 *
 * @return Canonical file name.
 */
-File canonical(const std::string& path) {
+gnu::file::File gnu::file::canonical(const std::string& path) {
 #if defined(_WIN32)
     wchar_t wres[PATH_MAX];
-    auto    wpath = file::_to_wide(path.c_str());
+    auto    wpath = priv::_file_to_wide(path.c_str());
     auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
 
     if (len > 0 && len < PATH_MAX) {
-        auto cpath = file::_from_wide(wres);
+        auto cpath = priv::_file_from_wide(wres);
         auto res   = File(cpath);
 
         free(cpath);
@@ -537,9 +537,9 @@ File canonical(const std::string& path) {
 *
 * @return True if ok.
 */
-bool chdir(const std::string& path) {
+bool gnu::file::chdir(const std::string& path) {
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     auto res   = _wchdir(wpath);
 
     free(wpath);
@@ -555,7 +555,7 @@ bool chdir(const std::string& path) {
 *
 * @return A copy of input filename or a filename without illegal characters.
 */
-std::string check_filename(const std::string& name) {
+std::string gnu::file::check_filename(const std::string& name) {
     static const std::string ILLEGAL = "<>:\"/\\|?*\n\t\r";
     std::string res;
 
@@ -575,7 +575,7 @@ std::string check_filename(const std::string& name) {
 *
 * @return True if ok.
 */
-bool chmod(const std::string& path, int mode) {
+bool gnu::file::chmod(const std::string& path, int mode) {
     auto res = false;
 
     if (mode < 0) {
@@ -583,7 +583,7 @@ bool chmod(const std::string& path, int mode) {
     }
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
 
     res = SetFileAttributesW(wpath, mode);
     free(wpath);
@@ -601,11 +601,11 @@ bool chmod(const std::string& path, int mode) {
 *
 * @return True if ok.
 */
-bool chtime(const std::string& path, int64_t time) {
+bool gnu::file::chtime(const std::string& path, int64_t time) {
     auto res = false;
 
 #ifdef _WIN32
-    auto wpath  = file::_to_wide(path.c_str());
+    auto wpath  = priv::_file_to_wide(path.c_str());
     auto handle = CreateFileW(wpath, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (handle != INVALID_HANDLE_VALUE) {
@@ -639,16 +639,16 @@ bool chtime(const std::string& path, int64_t time) {
 *
 * @return Data from stderr.
 */
-Buf close_stderr() {
-    return file::_close_redirect(2);
+gnu::file::Buf gnu::file::close_stderr() {
+    return priv::_file_close_redirect(2);
 }
 
 /** @brief Close redirect.
 *
 * @return Data from stdout.
 */
-Buf close_stdout() {
-    return file::_close_redirect(1);
+gnu::file::Buf gnu::file::close_stdout() {
+    return priv::_file_close_redirect(1);
 }
 
 /** @brief Copy file.
@@ -661,7 +661,7 @@ Buf close_stdout() {
 *
 * @return True if ok.
 */
-bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
+bool gnu::file::copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
 #ifdef DEBUG
     static const size_t BUF_SIZE = 1024;
 #else
@@ -733,7 +733,7 @@ bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void*
 *
 * @return Checksum.
 */
-uint64_t fletcher64(const char* buffer, size_t buffer_size) {
+uint64_t gnu::file::fletcher64(const char* buffer, size_t buffer_size) {
     if (buffer == nullptr || buffer_size == 0) {
         return 0;
     }
@@ -772,7 +772,7 @@ uint64_t fletcher64(const char* buffer, size_t buffer_size) {
 *
 * @param[in,out] file  File handle.
 */
-void flush(FILE* file) {
+void gnu::file::flush(FILE* file) {
     if (file != nullptr) {
 #ifdef _WIN32
         auto handle = (HANDLE) _get_osfhandle(_fileno(file));
@@ -791,13 +791,13 @@ void flush(FILE* file) {
 *
 * @return Home directory or work/current directory for any failure.
 */
-File home_dir() {
+gnu::file::File gnu::file::home_dir() {
 
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX];
 
     if (SHGetFolderPathW(nullptr, CSIDL_PROFILE, nullptr, 0, wpath) == S_OK) {
-        auto path = file::_from_wide(wpath);
+        auto path = priv::_file_from_wide(wpath);
         auto res = File(path);
         free(path);
         return res;
@@ -820,7 +820,7 @@ File home_dir() {
 *
 * @return True if directory is circular.
 */
-bool is_circular(const std::string& path) {
+bool gnu::file::is_circular(const std::string& path) {
     auto file = File(path, false);
 
     if (file.type() != Type::DIR || file.is_link() == false) {
@@ -839,9 +839,9 @@ bool is_circular(const std::string& path) {
 *
 * @return Destination link name, if not an link it will return canonicalized path.
 */
-File linkname(const std::string& path) {
+gnu::file::File gnu::file::linkname(const std::string& path) {
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     auto hpath = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hpath == INVALID_HANDLE_VALUE) {
@@ -861,7 +861,7 @@ File linkname(const std::string& path) {
 
     GetFinalPathNameByHandleW(hpath, rpath, hlen, FILE_NAME_OPENED);
 
-    auto upath = file::_from_wide(rpath);
+    auto upath = priv::_file_from_wide(rpath);
     auto res   = File(upath, true);
 
     CloseHandle(hpath);
@@ -898,11 +898,11 @@ File linkname(const std::string& path) {
 *
 * @return True if ok.
 */
-bool mkdir(const std::string& path) {
+bool gnu::file::mkdir(const std::string& path) {
     bool res = false;
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
 
     res = _wmkdir(wpath) == 0;
     free(wpath);
@@ -921,12 +921,12 @@ bool mkdir(const std::string& path) {
 *
 * @return File handle or NULL.
 */
-FILE* open(const std::string& path, const std::string& mode) {
+FILE* gnu::file::open(const std::string& path, const std::string& mode) {
     FILE* res = nullptr;
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
-    auto wmode = file::_to_wide(mode.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
+    auto wmode = priv::_file_to_wide(mode.c_str());
 
     res = _wfopen(wpath, wmode);
     free(wpath);
@@ -965,12 +965,12 @@ std::string os() {
 *
 * @return File handle or NULL.
 */
-FILE* popen(const std::string& cmd, bool write) {
+FILE* gnu::file::popen(const std::string& cmd, bool write) {
     FILE* file = nullptr;
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(cmd.c_str());
-    auto wmode = file::_to_wide(write ? "wb" : "rb");
+    auto wpath = priv::_file_to_wide(cmd.c_str());
+    auto wmode = priv::_file_to_wide(write ? "wb" : "rb");
 
     file = _wpopen(wpath, wmode);
     free(wpath);
@@ -990,9 +990,9 @@ FILE* popen(const std::string& cmd, bool write) {
 *
 * @return Read data or empty for any error.
 */
-Buf read(const std::string& path) {
+gnu::file::Buf gnu::file::read(const std::string& path) {
     Buf buf;
-    file::_read(path, buf);
+    priv::_file_read(path, buf);
     return buf;
 }
 
@@ -1003,9 +1003,9 @@ Buf read(const std::string& path) {
 *
 * @return Read data or empty for any error.
 */
-Buf* read2(const std::string& path) {
+gnu::file::Buf* gnu::file::read2(const std::string& path) {
     auto buf = new Buf();
-    file::_read(path, *buf);
+    priv::_file_read(path, *buf);
     return buf;
 }
 
@@ -1015,7 +1015,7 @@ Buf* read2(const std::string& path) {
 *
 * @return Vector with files.
 */
-Files read_dir(const std::string& path) {
+gnu::file::Files gnu::file::read_dir(const std::string& path) {
     auto file = File(path, false);
     auto res  = Files();
 
@@ -1024,7 +1024,7 @@ Files read_dir(const std::string& path) {
     }
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(file.filename().c_str());
+    auto wpath = priv::_file_to_wide(file.filename().c_str());
     auto dirp  = _wopendir(wpath);
     auto sep   = '/';
 
@@ -1036,7 +1036,7 @@ Files read_dir(const std::string& path) {
         auto entry = _wreaddir(dirp);
 
         while (entry != nullptr) {
-            auto cpath = file::_from_wide(entry->d_name);
+            auto cpath = priv::_file_from_wide(entry->d_name);
 
             if (strcmp(cpath, ".") != 0 && strcmp(cpath, "..") != 0) {
                 auto name = (file.name() == ".") ? file.path() + sep + cpath : file.filename() + sep + cpath;
@@ -1080,11 +1080,11 @@ Files read_dir(const std::string& path) {
 *
 * @return Vector with files.
 */
-Files read_dir_rec(const std::string& path) {
+gnu::file::Files gnu::file::read_dir_rec(const std::string& path) {
     auto res   = Files();
     auto files = file::read_dir(path);
 
-    file::_read_dir_rec(res, files);
+    priv::_file_read_dir_rec(res, files);
     return res;
 }
 
@@ -1092,16 +1092,16 @@ Files read_dir_rec(const std::string& path) {
 *
 * @return True if ok.
 */
-bool redirect_stderr() {
-    return _open_redirect(2);
+bool gnu::file::redirect_stderr() {
+    return priv::_file_open_redirect(2);
 }
 
 /** @brief Redirecting stdout to file.
 *
 * @return True if ok.
 */
-bool redirect_stdout() {
-    return _open_redirect(1);
+bool gnu::file::redirect_stdout() {
+    return priv::_file_open_redirect(1);
 }
 
 /** @brief Remove file or directory.
@@ -1110,7 +1110,7 @@ bool redirect_stdout() {
 *
 * @return True if deleted, missing file or failure will return false.
 */
-bool remove(const std::string& path) {
+bool gnu::file::remove(const std::string& path) {
     auto f = File(path);
 
     if (f.type() == Type::MISSING && f.is_link() == false) {
@@ -1120,7 +1120,7 @@ bool remove(const std::string& path) {
     auto res = false;
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
 
     if (f.type() == Type::DIR) {
         res = RemoveDirectoryW(wpath);
@@ -1165,7 +1165,7 @@ bool remove(const std::string& path) {
 *
 * @return True if deleted, missing file or failure will return false.
 */
-bool remove_rec(const std::string& path) {
+bool gnu::file::remove_rec(const std::string& path) {
     auto file = File(path, true);
 
     if (file == file::home_dir() || file.path() == "") {
@@ -1190,7 +1190,7 @@ bool remove_rec(const std::string& path) {
 *
 * @return True if ok.
 */
-bool rename(const std::string& from, const std::string& to) {
+bool gnu::file::rename(const std::string& from, const std::string& to) {
     auto res    = false;
     auto from_f = File(from);
     auto to_f   = File(to);
@@ -1200,8 +1200,8 @@ bool rename(const std::string& from, const std::string& to) {
     }
 
 #ifdef _WIN32
-    auto wfrom = file::_to_wide(from_f.filename().c_str());
-    auto wto   = file::_to_wide(to_f.filename().c_str());
+    auto wfrom = priv::_file_to_wide(from_f.filename().c_str());
+    auto wto   = priv::_file_to_wide(to_f.filename().c_str());
 
     if (to_f.type() == Type::DIR) {
         file::remove_rec(to_f.filename());
@@ -1235,9 +1235,9 @@ bool rename(const std::string& from, const std::string& to) {
 *
 * @return Return code from process or 1 for error.
 */
-int run(const std::string& cmd, bool background, bool hide_win32_window) {
+int gnu::file::run(const std::string& cmd, bool background, bool hide_win32_window) {
 #ifdef _WIN32
-    wchar_t*            cmd_w = file::_to_wide(cmd.c_str());
+    wchar_t*            cmd_w = priv::_file_to_wide(cmd.c_str());
     STARTUPINFOW        startup_info;
     PROCESS_INFORMATION process_info;
 
@@ -1282,11 +1282,11 @@ int run(const std::string& cmd, bool background, bool hide_win32_window) {
 *
 * @return Tmp path.
 */
-File tmp_dir() {
+gnu::file::File gnu::file::tmp_dir() {
     try {
 #if defined(_WIN32)
         auto path = std::filesystem::temp_directory_path();
-        auto utf  = file::_from_wide(path.c_str());
+        auto utf  = priv::_file_from_wide(path.c_str());
         auto res = File(utf);
         free(utf);
         return res;
@@ -1307,9 +1307,9 @@ File tmp_dir() {
 *
 * @return Tmp path.
 */
-File tmp_file(const std::string& prepend) {
+gnu::file::File gnu::file::tmp_file(const std::string& prepend) {
     char buf[100];
-    snprintf(buf, 100, "%u", file::_rand());
+    snprintf(buf, 100, "%u", priv::_file_rand());
     std::string res = prepend + buf;
     return File(tmp_dir().filename() + "/" + res);
 }
@@ -1318,12 +1318,12 @@ File tmp_file(const std::string& prepend) {
 *
 * @return Working directory or "." for any error.
 */
-File work_dir() {
+gnu::file::File gnu::file::work_dir() {
 #ifdef _WIN32
     auto wpath = _wgetcwd(nullptr, 0);
 
     if (wpath != nullptr) {
-        auto path = file::_from_wide(wpath);
+        auto path = priv::_file_from_wide(wpath);
         auto res  = File(path);
 
         free(wpath);
@@ -1354,7 +1354,7 @@ File work_dir() {
 *
 * @return True if ok.
 */
-bool write(const std::string& path, const char* buffer, size_t size, bool flush) {
+bool gnu::file::write(const std::string& path, const char* buffer, size_t size, bool flush) {
     if (File(path).type() == Type::DIR) {
         return false;
     }
@@ -1395,7 +1395,7 @@ bool write(const std::string& path, const char* buffer, size_t size, bool flush)
 *
 * @return True if ok.
 */
-bool write(const std::string& path, const Buf& buf, bool flush) {
+bool gnu::file::write(const std::string& path, const Buf& buf, bool flush) {
     return write(path, buf.c_str(), buf.size(), flush);
 }
 
@@ -1419,7 +1419,7 @@ bool write(const std::string& path, const Buf& buf, bool flush) {
 *
 * @throws std::string exception on error.
 */
-Buf::Buf(size_t size) {
+gnu::file::Buf::Buf(size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf(): size out of range");
     }
@@ -1438,7 +1438,7 @@ Buf::Buf(size_t size) {
 *
 * @throws std::string exception on error.
 */
-Buf::Buf(const char* buffer, size_t size) {
+gnu::file::Buf::Buf(const char* buffer, size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf(): size out of range");
     }
@@ -1464,7 +1464,7 @@ Buf::Buf(const char* buffer, size_t size) {
 *
 * @throws std::string exception on error.
 */
-Buf::Buf(const Buf& b) {
+gnu::file::Buf::Buf(const Buf& b) {
     if (b._str == nullptr) {
         _str  = nullptr;
         _size = 0;
@@ -1484,7 +1484,7 @@ Buf::Buf(const Buf& b) {
 *
 * @return True if equal, same size and equal bytes.
 */
-bool Buf::operator==(const Buf& other) const {
+bool gnu::file::Buf::operator==(const Buf& other) const {
     return _str != nullptr && _size == other._size && std::memcmp(_str, other._str, _size) == 0;
 }
 
@@ -1500,7 +1500,7 @@ bool Buf::operator==(const Buf& other) const {
 *
 * @throws std::string exception on error.
 */
-Buf& Buf::add(const char* buffer, size_t size) {
+gnu::file::Buf& gnu::file::Buf::add(const char* buffer, size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf:add(): size out of range");
     }
@@ -1532,7 +1532,7 @@ Buf& Buf::add(const char* buffer, size_t size) {
 *
 * @return An array with 257 values, value [256] contains byte count for the longest line.
 */
-std::array<size_t, 257> Buf::Count(const char* buffer, size_t size) {
+std::array<size_t, 257> gnu::file::Buf::Count(const char* buffer, size_t size) {
     size_t max_line     = 0;
     size_t current_line = 0;
     auto   count        = std::array<size_t, 257>{0};
@@ -1577,7 +1577,7 @@ std::array<size_t, 257> Buf::Count(const char* buffer, size_t size) {
 *
 * @throws std::string exception on error.
 */
-Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
+gnu::file::Buf gnu::file::Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf::InsertCR(): size out of range");
     }
@@ -1645,7 +1645,7 @@ Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
 *
 * @throws std::string exception on error.
 */
-Buf Buf::RemoveCR(const char* buffer, size_t size) {
+gnu::file::Buf gnu::file::Buf::RemoveCR(const char* buffer, size_t size) {
     auto res = Buf(size);
 
     for (size_t f = 0, e = 0; f < size; f++) {
@@ -1674,7 +1674,7 @@ Buf Buf::RemoveCR(const char* buffer, size_t size) {
 *
 * @throws std::string exception on error.
 */
-Buf& Buf::set(const char* buffer, size_t size) {
+gnu::file::Buf& gnu::file::Buf::set(const char* buffer, size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf:set(): size out of range");
     }
@@ -1704,7 +1704,7 @@ Buf& Buf::set(const char* buffer, size_t size) {
 *
 * @return True if ok.
 */
-bool Buf::write(const std::string& path, bool flush) const {
+bool gnu::file::Buf::write(const std::string& path, bool flush) const {
     return file::write(path, _str, _size, flush);
 }
 
@@ -1727,7 +1727,7 @@ bool Buf::write(const std::string& path, bool flush) const {
 * @param[in] path      File path.
 * @param[in] realpath  True to find the canonical path to the file.
 */
-File::File(const std::string& path, bool realpath) {
+gnu::file::File::File(const std::string& path, bool realpath) {
     _ctime = -1;
     _link  = false;
     _mode  = -1;
@@ -1736,15 +1736,15 @@ File::File(const std::string& path, bool realpath) {
     _type  = Type::MISSING;
 
     if (path != "") {
-        _filename = file::_to_absolute_path(path, realpath);
-        file::_split_paths(_filename, _path, _name, _ext);
+        _filename = priv::_file_to_absolute_path(path, realpath);
+        priv::_file_split_paths(_filename, _path, _name, _ext);
     }
     else {
         return;
     }
 
 #ifdef _WIN32
-    auto wpath = file::_to_wide(_filename.c_str());
+    auto wpath = priv::_file_to_wide(_filename.c_str());
 
     WIN32_FILE_ATTRIBUTE_DATA attr;
 
@@ -1758,8 +1758,8 @@ File::File(const std::string& path, bool realpath) {
             _size = (attr.nFileSizeHigh * 4294967296) + attr.nFileSizeLow;
         }
 
-        _mtime = file::_time(&attr.ftLastWriteTime);
-        _ctime = file::_time(&attr.ftCreationTime);
+        _mtime = priv::_file_time(&attr.ftLastWriteTime);
+        _ctime = priv::_file_time(&attr.ftCreationTime);
 
         if (attr.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             _link = true;
@@ -1774,15 +1774,15 @@ File::File(const std::string& path, bool realpath) {
                 FILETIME ftLastWriteTime;
 
                 if (GetFileTime(handle, &ftCreationTime, &ftLastAccessTime, &ftLastWriteTime) != 0) {
-                    _mtime = file::_time(&ftLastWriteTime);
-                    _ctime = file::_time(&ftCreationTime);
+                    _mtime = priv::_file_time(&ftLastWriteTime);
+                    _ctime = priv::_file_time(&ftCreationTime);
                 }
 
                 CloseHandle(handle);
 
                 if (realpath == true) {
                     _filename = file::linkname(_filename).filename();
-                    file::_split_paths(_filename, _path, _name, _ext);
+                    priv::_file_split_paths(_filename, _path, _name, _ext);
                 }
             }
             else {
@@ -1842,7 +1842,7 @@ File::File(const std::string& path, bool realpath) {
 *
 * @return Name without extension.
 */
-std::string File::name_without_ext() const {
+std::string gnu::file::File::name_without_ext() const {
     try {
         if (_type != Type::DIR) {
             auto dot = _name.find_last_of(".");
@@ -1864,7 +1864,7 @@ std::string File::name_without_ext() const {
 *
 * @return String with name and size.
 */
-std::string File::to_string(bool short_version) const {
+std::string gnu::file::File::to_string(bool short_version) const {
     char tmp[PATH_MAX + 100];
     int n = 0;
 
@@ -1897,12 +1897,9 @@ std::string File::to_string(bool short_version) const {
 *
 * @return "Missing", Directory", "File" or "Other".
 */
-std::string File::type_name() const {
+std::string gnu::file::File::type_name() const {
     static std::string NAMES[] = { "Missing", "Directory", "File", "Other", "", };
     return NAMES[static_cast<size_t>(_type)];
 }
-
-} // file
-} // gnu
 
 // MKALGAM_OFF

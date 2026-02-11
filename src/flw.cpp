@@ -11,23 +11,21 @@
 
 // MKALGAM_ON
 
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_PNG_Image.H>
+#include <FL/Fl_Rect.H>
+#include <FL/Fl_SVG_Image.H>
+#include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdarg>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/fl_ask.H>
-#include <FL/Fl_SVG_Image.H>
 
 #ifdef _WIN32
     #include <windows.h>
 #else
     #include <unistd.h>
-#endif
-
-#ifdef FLW_USE_PNG
-    #include <FL/Fl_PNG_Image.H>
-    #include <FL/fl_draw.H>
 #endif
 
 /*
@@ -595,7 +593,7 @@ namespace priv {
 *
 * @return Menu item or NULL.
 */
-static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
+static Fl_Menu_Item* _menu_item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
     const Fl_Menu_Item* item;
 
     if (v == nullptr) {
@@ -623,7 +621,7 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) 
 * @param[in] value  On or off.
 */
 void flw::menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
 
     if (item == nullptr) {
         return;
@@ -645,7 +643,7 @@ void flw::menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
 * @return Item or NULL.
 */
 Fl_Menu_Item* flw::menu::get_item(Fl_Menu_* menu, const char* text) {
-    return flw::priv::_item(menu, text);
+    return priv::_menu_item(menu, text);
 }
 
 /** @brief Get menu item.
@@ -656,7 +654,7 @@ Fl_Menu_Item* flw::menu::get_item(Fl_Menu_* menu, const char* text) {
 * @return Item or NULL.
 */
 Fl_Menu_Item* flw::menu::get_item(Fl_Menu_* menu, void* v) {
-    return flw::priv::_item(menu, nullptr, v);
+    return priv::_menu_item(menu, nullptr, v);
 }
 
 /** @brief Get checked menu value.
@@ -667,7 +665,7 @@ Fl_Menu_Item* flw::menu::get_item(Fl_Menu_* menu, void* v) {
 * @return True or false.
 */
 bool flw::menu::item_value(Fl_Menu_* menu, const char* text) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
 
     if (item == nullptr) {
         return false;
@@ -683,7 +681,7 @@ bool flw::menu::item_value(Fl_Menu_* menu, const char* text) {
 * @param[in] value  On or off.
 */
 void flw::menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
 
     if (item == nullptr) {
         return;
@@ -703,7 +701,7 @@ void flw::menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
 * @param[in] text   Menu item label.
 */
 void flw::menu::setonly_item(Fl_Menu_* menu, const char* text) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
 
     if (item == nullptr) {
         return;
@@ -1009,13 +1007,13 @@ std::string flw::util::format_int(int64_t num, char del) {
 *
 * @param[in] widget     Widget to set icon for.
 * @param[in] svg_image  Valid svg image.
-* @param[in] max_size   Max image size (from 16 - 4096).
+* @param[in] size       Max image size (from 12 - 4096).
 *
 * @return True if icon was created and set.
 *
 * @image html icons.png
 */
-bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size) {
+bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned size) {
     if (svg_image.length() < 40) {
         return false;
     }
@@ -1025,7 +1023,7 @@ bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned m
     if (svg == nullptr) {
         return false;
     }
-    else if (max_size < 16 || max_size > 4096) {
+    else if (size < 12 || size > 4096) {
         delete svg;
         return false;
     }
@@ -1033,9 +1031,9 @@ bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned m
     auto image   = svg->copy();
     auto deimage = image->copy();
 
-    image->scale(max_size, max_size);
+    image->scale(size, size);
     deimage->inactive();
-    deimage->scale(max_size, max_size);
+    deimage->scale(size, size);
     widget->bind_image(image);
     widget->bind_deimage(deimage);
     widget->bind_image(1);
@@ -1151,9 +1149,8 @@ int32_t flw::util::milliseconds() {
 #endif
 }
 
-/** @brief
+/** @brief Save window to an png file.
 *
-* Must be compiled with FLW_USE_PNG flag and linked with fltk images (fltk-config --ldflags --use-images).\n
 * If filename is empty, user will be asked for the name.\n
 * If coordinates are 0 it will use all widget.\n
 * Might look fuzzy if FLTK scaling is turned on.\
@@ -1170,7 +1167,6 @@ int32_t flw::util::milliseconds() {
 bool flw::util::png_save(Fl_Window* window, const std::string& opt_name, int X, int Y, int W, int H) {
     auto res = false;
 
-#ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
 
     if (filename != nullptr) {
@@ -1204,15 +1200,6 @@ bool flw::util::png_save(Fl_Window* window, const std::string& opt_name, int X, 
             fl_alert("%s", "Error: failed to grab image!");
         }
     }
-#else
-    (void) opt_name;
-    (void) window;
-    (void) X;
-    (void) Y;
-    (void) W;
-    (void) H;
-    fl_alert("Error: flw has not been compiled with FLW_USE_PNG flag!");
-#endif
 
     return res;
 }

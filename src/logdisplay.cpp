@@ -380,7 +380,7 @@ static std::vector<_LogDisplayStyle> _logdisplay_parse_json(const std::string& j
     return res;
 }
 
-/** @brief Returns new converted buffer if it does contain \r.
+/** @brief Returns new converted buffer if it does contain \\r.
 *
 * Otherwise it returns nullptr.
 */

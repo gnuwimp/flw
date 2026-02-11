@@ -116,8 +116,13 @@ public:
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs();
     void                        sort(bool ascending = true, bool casecompare = false);
+    Fl_Widget*                  tab(int index) const
+                                    { return child(index); } ///< @brief Return tab widgets. @param[in] index  Child index. @return Widget or NULL.
+    int                         tabs() const
+                                    { return children(); } ///< @brief Return number of child widgets (tab buttons are not included).
     void                        tab_box(Fl_Boxtype up_box = FL_MAX_BOXTYPE, Fl_Boxtype down_box = FL_MAX_BOXTYPE);
     void                        tab_color(Fl_Color color = FL_SELECTION_COLOR);
+    std::string                 tab_label();
     std::string                 tab_label(const Fl_Widget* widget);
     void                        tab_label(const std::string& label, Fl_Widget* widget);
     Pos                         tab_pos() const
@@ -130,7 +135,7 @@ public:
     Fl_Widget*                  value() const;
     void                        value(int num);
     void                        value(Fl_Widget* widget)
-                                    { _activate(widget); } ///< @brief Activate and show button and child widget.
+                                    { _activate(widget); } ///< @brief Activate and show button and child widget. @param[in] widget  Set current widget, can be NULL.
 
     static void                 CallbackButton(Fl_Widget* sender, void* object);
     static void                 CallbackScrollbar(Fl_Widget* sender, void* object);

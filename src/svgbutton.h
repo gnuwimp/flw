@@ -34,7 +34,7 @@ namespace flw {
 * Turn on SVGButton::set_return() property to make the button the default which can be activated with enter key.\n
 * Set only one button to be the return button.\n
 *\n
-* By default the image will be sized 1.5 * flw::PREF_FONTSIZE.\n
+* By default the image will be sized 1.4 * flw::PREF_FONTSIZE.\n
 * Image should be square.\n
 *
 * @see flw::icons
@@ -57,7 +57,7 @@ public:
     };
 
                                 SVGButton(int X, int Y, int W, int H, const std::string& l);
-                                SVGButton(int X, int Y, int W, int H, const std::string& l, const std::string& svg, bool ret = false, bool dark = false, Pos pos = Pos::RIGHT, double size = 1.5);
+                                SVGButton(int X, int Y, int W, int H, const std::string& l, const std::string& svg, bool ret = false, bool dark = false, Pos pos = Pos::RIGHT, double size = 1.3);
     void                        draw() override;
     int                         handle(int event) override;
     bool                        has_dark() const
@@ -68,7 +68,7 @@ public:
                                     { return _return; } ///< @brief Return true if button can be activated with enter key.
     void                        set_dark(bool value)
                                     { _dark = value; } ///< @brief Set active property.
-    bool                        set_icon(const std::string& l, const std::string& svg_image, Pos pos = Pos::RIGHT, double size = 1.5);
+    bool                        set_icon(const std::string& l, const std::string& svg_image, Pos pos = Pos::RIGHT, double size = 1.3);
     void                        set_return(bool value)
                                     { _return = value; } ///< @brief Set return property.
 

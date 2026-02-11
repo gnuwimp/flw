@@ -10,9 +10,6 @@
 
 // MKALGAM_ON
 
-namespace flw {
-namespace util {
-
 /*
  *      _____                     _   __  __
  *     |  __ \                   | | |  \/  |
@@ -38,7 +35,7 @@ namespace util {
 * @param[in] base_label   Base label, default "&File/Open recent".
 * @param[in] clear_label  Clear label, default "/Clear" which ends up in "&File/Open recent/Clear".
 */
-RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, const std::string& base_label, const std::string& clear_label) {
+flw::util::RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, const std::string& base_label, const std::string& clear_label) {
     _menu     = menu;
     _callback = callback;
     _base     = base_label;
@@ -54,7 +51,7 @@ RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, co
 * @param[in] item    String to add, if empty all items will be deleted.
 * @param[in] append  True to append, false to insert.
 */
-void RecentMenu::_add(const std::string& item, bool append) {
+void flw::util::RecentMenu::_add(const std::string& item, bool append) {
     if (item == "") {
         _items.clear();
     }
@@ -86,7 +83,7 @@ void RecentMenu::_add(const std::string& item, bool append) {
 *
 * @return Number of items.
 */
-size_t RecentMenu::_add_string(StringVector& items, size_t max_size, const std::string& string) {
+size_t flw::util::RecentMenu::_add_string(StringVector& items, size_t max_size, const std::string& string) {
     for (auto it = items.begin(); it != items.end(); ++it) {
         if (*it == string) {
             items.erase(it);
@@ -107,7 +104,7 @@ size_t RecentMenu::_add_string(StringVector& items, size_t max_size, const std::
 *
 * @param[in] o  This object.
 */
-void RecentMenu::_Callback(Fl_Widget*, void* o) {
+void flw::util::RecentMenu::_Callback(Fl_Widget*, void* o) {
     static_cast<RecentMenu*>(o)->_add("", false);
 }
 
@@ -119,7 +116,7 @@ void RecentMenu::_Callback(Fl_Widget*, void* o) {
 *
 * @return Number of items.
 */
-size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const std::string& string) {
+size_t flw::util::RecentMenu::_insert_string(StringVector& items, size_t max_size, const std::string& string) {
     for (auto it = items.begin(); it != items.end(); ++it) {
         if (*it == string) {
             items.erase(it);
@@ -140,7 +137,7 @@ size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const st
 *
 * @param[in] names  Vector with menu strings.
 */
-void RecentMenu::items(const StringVector& names) {
+void flw::util::RecentMenu::items(const StringVector& names) {
     auto res = StringVector();
 
     for (const auto& name : names) {
@@ -156,7 +153,7 @@ void RecentMenu::items(const StringVector& names) {
 * @param[in] pref       Application preference.
 * @param[in] base_name  Base name in preference.
 */
-void RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
+void flw::util::RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
     auto index = 1;
     char buffer[1000];
 
@@ -181,7 +178,7 @@ void RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
 * @param[in] pref       Application preference.
 * @param[in] base_name  Base name in preference.
 */
-void RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
+void flw::util::RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
     auto index = 1;
 
     for (const auto& s : _items) {
@@ -190,8 +187,5 @@ void RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
 
     pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), "");
 }
-
-} // util
-} // flw
 
 // MKALGAM_OFF

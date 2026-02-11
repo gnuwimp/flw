@@ -108,7 +108,7 @@ flw::SVGButton::SVGButton(int X, int Y, int W, int H, const std::string& l) : Fl
 * @param[in] ret   True to make button an default button.
 * @param[in] dark  True to mark draw button with darker background color.
 * @param[in] pos   Where to put the image.
-* @param[in] size  Size (1.5 - 5.0) which will be multiplied with flw::PREF_FONTSIZE.
+* @param[in] size  Size (1.0 - 5.0) which will be multiplied with flw::PREF_FONTSIZE (icon can not be less than 12 pixels).
 */
 flw::SVGButton::SVGButton(
     int                 X,
@@ -164,7 +164,7 @@ int flw::SVGButton::handle(int event) {
 * @param[in] l     Label string.
 * @param[in] svg   SVG string.
 * @param[in] pos   Where to put the image.
-* @param[in] size  Size (1.5 - 5.0) which will be multiplied with flw::PREF_FONTSIZE.
+* @param[in] size  Size (1.0 - 5.0) which will be multiplied with flw::PREF_FONTSIZE (icon can not be less than 12 pixels).
 *
 * @return True if icon was set.
 */
@@ -186,16 +186,16 @@ bool flw::SVGButton::set_icon(const std::string& l, const std::string& svg, Pos 
         al = FL_ALIGN_IMAGE_BACKDROP;
     }
 
-    if (size < 1.5) {
-        size = 1.5;
+    if (size < 1.0) {
+        size = 1.0;
     }
-
-    if (size > 5.0) {
+    else if (size > 5.0) {
         size = 5.0;
     }
 
     if (svg != "") {
         if (util::icon(this, svg, flw::PREF_FONTSIZE * size) == true) {
+        //if (util::icon(this, svg, 12) == true) {
             align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | al);
             label_image_spacing(SVGButton::SPACING);
             return true;

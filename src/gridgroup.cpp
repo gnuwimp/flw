@@ -76,6 +76,7 @@ struct _GridGroupChild {
 };
 
 } // flw::priv
+} // flw
 
 /*
  *       _____      _     _  _____
@@ -96,7 +97,7 @@ struct _GridGroupChild {
 * @param[in] H  Height.
 * @param[in] l  Optional label.
 */
-GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+flw::GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
@@ -109,7 +110,7 @@ GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y,
 * GridGroup deleted child data.\n
 * Parent Fl_Group delete all child widgets.\n
 */
-GridGroup::~GridGroup() {
+flw::GridGroup::~GridGroup() {
     for (auto v : _widgets) {
         delete static_cast<priv::_GridGroupChild*>(v);
     }
@@ -119,7 +120,7 @@ GridGroup::~GridGroup() {
 *
 * X and Y can use negative values.\n
 * Then it will calculate positions from right side or from the bottom.\n
-* With default values GridGroup::add(WIDGET, 1, 1, 10, 4) will resize widget to (14/2, 14/2, 14 / 2 * 10, 14 / 2 * 4)\n
+* With default values flw::GridGroup::add(WIDGET, 1, 1, 10, 4) will resize widget to (14/2, 14/2, 14 / 2 * 10, 14 / 2 * 4)\n
 * \n
 * W and H can use negative values.\n
 * Then it will adjust width or height from right side or from the bottom.\n
@@ -131,7 +132,7 @@ GridGroup::~GridGroup() {
 * @param[in] H       Height in grid coordinates.
 * @param[in] F       Use this widget for focus (this was added so InputMenu::input() would get focus).
 */
-void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
+void flw::GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
     _widgets.push_back(new priv::_GridGroupChild(widget, F, X, Y, W, H));
     Fl_Group::add(widget);
 }
@@ -144,7 +145,7 @@ void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F)
 * @param[in] T       Top side.
 * @param[in] B       Bottom side.
     */
-void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
+void flw::GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     for (auto& v : _widgets) {
         auto child = static_cast<priv::_GridGroupChild*>(v);
 
@@ -163,7 +164,7 @@ void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
 *
 * Use this method, not Fl_Group::clear().
 */
-void GridGroup::clear() {
+void flw::GridGroup::clear() {
     _widgets.clear();
     Fl_Group::clear();
 }
@@ -176,7 +177,7 @@ void GridGroup::clear() {
 *
 * @return 1 if new widget gets the focus.
 */
-int GridGroup::handle(int event) {
+int flw::GridGroup::handle(int event) {
     if (event == FL_KEYDOWN && Fl::event_key() == FL_Tab) {
         if (children() > 0) {
             Fl_Widget* first   = nullptr;
@@ -212,7 +213,7 @@ int GridGroup::handle(int event) {
 * @param[out] first  Set last active widget.
 * @param[out] last   Set first active widget.
 */
-void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
+void flw::GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
     for (auto& v : _widgets) {
         auto child = static_cast<priv::_GridGroupChild*>(v);
         auto g = child->widget->as_group();
@@ -241,7 +242,7 @@ void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
 *
 * @return If input widget is found then it is returned or nullptr.
 */
-Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
+Fl_Widget* flw::GridGroup::remove(Fl_Widget* widget) {
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
         auto child = static_cast<priv::_GridGroupChild*>(*it);
 
@@ -254,7 +255,7 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
     }
 
 #ifdef DEBUG
-    fprintf(stderr, "Error: GridGroup::remove can't find widget!\n");
+    fprintf(stderr, "Error: flw::GridGroup::remove can't find widget!\n");
 #endif
 
     return nullptr;
@@ -267,7 +268,7 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
 * @param[in] W  Width.
 * @param[in] H  Height.
 */
-void GridGroup::resize(int X, int Y, int W, int H) {
+void flw::GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
 
     if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
@@ -342,7 +343,7 @@ void GridGroup::resize(int X, int Y, int W, int H) {
 * @param[in] W       Width in grid coordinates.
 * @param[in] H       height in grid coordinates.
 */
-void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
+void flw::GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
     for (auto& v : _widgets) {
         auto child = static_cast<priv::_GridGroupChild*>(v);
 
@@ -356,7 +357,5 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
     fprintf(stderr, "Error: flw::GridGroup::resize() failed to find widget (label=%s)!\n", widget->label());
 #endif
 }
-
-} // flw
 
 // MKALGAM_OFF

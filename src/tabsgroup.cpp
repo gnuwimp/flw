@@ -156,11 +156,16 @@ flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(
 
 /** @brief Activate and show button and child widget.
 *
-* @param[in] widget  Either button widget or its user widget.
+* @param[in] widget  Either button widget or its user widget, can be NULL.
 */
 void flw::TabsGroup::_activate(Fl_Widget* widget) {
+    if (widget == nullptr) {
+        return;
+    }
+
     auto count   = 0;
     auto current = _active1;
+    auto shown   = true;
 
     _active1 = -1;
 
@@ -168,6 +173,8 @@ void flw::TabsGroup::_activate(Fl_Widget* widget) {
         auto b = static_cast<priv::_TabsGroupButton*>(button);
 
         if (b == widget || b->widget == widget) {
+            shown = b->widget->visible();
+
             _active1 = count;
             _active2 = (current != _active1) ? current : _active2;
             b->value(1);
@@ -213,6 +220,10 @@ void flw::TabsGroup::_activate(Fl_Widget* widget) {
 
     _resize_active_widget();
     Fl::redraw();
+
+    if (shown == false) {
+        do_callback(FL_REASON_SELECTED);
+    }
 }
 
 /** @brief Get active tab button.
@@ -288,14 +299,14 @@ void flw::TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
     self->_tabs->redraw_label(); //!!! Fixes failed button redraws.
 }
 
-/** @brief Get child widget.
+/** @brief Get tab widget.
 *
 * @param[in] index  Child index.
 *
 * @return Widget or NULL.
 */
 Fl_Widget* flw::TabsGroup::child(int index) const {
-    return index >= 0 && index < static_cast<int>(_widgets.size()) ?
+    return (index >= 0 && index < static_cast<int>(_widgets.size())) ?
         static_cast<priv::_TabsGroupButton*>(_widgets[index])->widget :
         nullptr;
 }
@@ -1006,6 +1017,14 @@ void flw::TabsGroup::tab_color(Fl_Color color) {
         auto b = static_cast<priv::_TabsGroupButton*>(widget);
         b->selection_color(_color);
     }
+}
+
+/** @brief Get current tab button label.
+*
+* @return Label string or empty string.
+*/
+std::string flw::TabsGroup::tab_label() {
+    return tab_label(value());
 }
 
 /** @brief Get tab button label.

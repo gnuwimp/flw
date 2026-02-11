@@ -24,71 +24,60 @@
 #include <FL/fl_show_colormap.H>
 
 namespace flw {
-namespace plot {
+namespace priv {
 
-/*
- *                 _            _
- *                (_)          | |
- *      _ __  _ __ ___   ____ _| |_ ___
- *     | '_ \| '__| \ \ / / _` | __/ _ \
- *     | |_) | |  | |\ V / (_| | ||  __/
- *     | .__/|_|  |_| \_/ \__,_|\__\___|
- *     | |
- *     |_|
- */
-
-#define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 //#define _FLW_PLOT_DEBUG(X) { X; }
+//#define _FLW_PLOT_CLIP(X)
 #define _FLW_PLOT_DEBUG(X)
 #define _FLW_PLOT_CLIP(X) { X; }
-//#define _FLW_PLOT_CLIP(X)
+#define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
 
-static const char* const _LABEL_ADD_LINE     = "Create Line...";
-static const char* const _LABEL_CLEAR        = "Clear Plot";
-static const char* const _LABEL_LOAD_CVS     = "Add Line from CVS...";
-static const char* const _LABEL_LOAD_JSON    = "Load plot from JSON...";
-static const char* const _LABEL_PRINT        = "Print to PostScript File...";
-static const char* const _LABEL_SAVE_CVS     = "Save Line to CVS...";
-static const char* const _LABEL_SAVE_JSON    = "Save Plot to JSON...";
-static const char* const _LABEL_SAVE_PNG     = "Save to PNG File...";
-static const char* const _LABEL_SETUP_DELETE = "Delete Lines...";
-static const char* const _LABEL_SETUP_HLINES = "Show Horizontal Lines";
-static const char* const _LABEL_SETUP_LABEL  = "Label...";
-static const char* const _LABEL_SETUP_LABELS = "Show Line Labels";
-static const char* const _LABEL_SETUP_LINE   = "Line Properties...";
-static const char* const _LABEL_SETUP_MAXX   = "Set Max X...";
-static const char* const _LABEL_SETUP_MAXY   = "Set Max Y...";
-static const char* const _LABEL_SETUP_MINX   = "Set Min X...";
-static const char* const _LABEL_SETUP_MINY   = "Set Min Y...";
-static const char* const _LABEL_SETUP_SHOW   = "Show or Hide Lines...";
-static const char* const _LABEL_SETUP_VLINES = "Show Vertical Lines";
-static const char* const _LABEL_SETUP_XLABEL = "X Label...";
-static const char* const _LABEL_SETUP_YLABEL = "Y Label...";
-static const int         _TICK_SIZE     = 4;
+static const char* const _PLOT_LABEL_ADD_LINE     = "Create Line...";
+static const char* const _PLOT_LABEL_CLEAR        = "Clear Plot";
+static const char* const _PLOT_LABEL_LOAD_CVS     = "Add Line from CVS...";
+static const char* const _PLOT_LABEL_LOAD_JSON    = "Load plot from JSON...";
+static const char* const _PLOT_LABEL_PRINT        = "Print to PostScript File...";
+static const char* const _PLOT_LABEL_SAVE_CVS     = "Save Line to CVS...";
+static const char* const _PLOT_LABEL_SAVE_JSON    = "Save Plot to JSON...";
+static const char* const _PLOT_LABEL_SAVE_PNG     = "Save to PNG File...";
+static const char* const _PLOT_LABEL_SETUP_DELETE = "Delete Lines...";
+static const char* const _PLOT_LABEL_SETUP_HLINES = "Show Horizontal Lines";
+static const char* const _PLOT_LABEL_SETUP_LABEL  = "Label...";
+static const char* const _PLOT_LABEL_SETUP_LABELS = "Show Line Labels";
+static const char* const _PLOT_LABEL_SETUP_LINE   = "Line Properties...";
+static const char* const _PLOT_LABEL_SETUP_MAXX   = "Set Max X...";
+static const char* const _PLOT_LABEL_SETUP_MAXY   = "Set Max Y...";
+static const char* const _PLOT_LABEL_SETUP_MINX   = "Set Min X...";
+static const char* const _PLOT_LABEL_SETUP_MINY   = "Set Min Y...";
+static const char* const _PLOT_LABEL_SETUP_SHOW   = "Show or Hide Lines...";
+static const char* const _PLOT_LABEL_SETUP_VLINES = "Show Vertical Lines";
+static const char* const _PLOT_LABEL_SETUP_XLABEL = "X Label...";
+static const char* const _PLOT_LABEL_SETUP_YLABEL = "Y Label...";
+static const int         _PLOT_TICK_SIZE          = 4;
 
 #ifdef DEBUG
-static const char* const _LABEL_DEBUG        = "Debug";
-static const char* const _LABEL_DEBUG_LINE   = "Debug Line";
+static const char* const _PLOT_LABEL_DEBUG        = "Debug";
+static const char* const _PLOT_LABEL_DEBUG_LINE   = "Debug Line";
 #endif
 
 /*
- *           _      _             _____      _
- *          | |    (_)           / ____|    | |
- *          | |     _ _ __   ___| (___   ___| |_ _   _ _ __
- *          | |    | | '_ \ / _ \\___ \ / _ \ __| | | | '_ \
- *          | |____| | | | |  __/____) |  __/ |_| |_| | |_) |
- *          |______|_|_| |_|\___|_____/ \___|\__|\__,_| .__/
- *      ______                                        | |
- *     |______|                                       |_|
+ *           _____  _       _   _      _             _____      _               
+ *          |  __ \| |     | | | |    (_)           / ____|    | |              
+ *          | |__) | | ___ | |_| |     _ _ __   ___| (___   ___| |_ _   _ _ __  
+ *          |  ___/| |/ _ \| __| |    | | '_ \ / _ \\___ \ / _ \ __| | | | '_ \ 
+ *          | |    | | (_) | |_| |____| | | | |  __/____) |  __/ |_| |_| | |_) |
+ *          |_|    |_|\___/ \__|______|_|_| |_|\___|_____/ \___|\__|\__,_| .__/ 
+ *      ______                                                           | |    
+ *     |______|                                                          |_|    
  */
 
-/** @brief Chart line settings dialog (private).
+/** @brief Plot line settings dialog.
 *
 * @private
 */
-class _LineSetup : public Fl_Double_Window {
+class _PlotLineSetup : public Fl_Double_Window {
 public:
-    Line&                       _line;
+    plot::Line&                 _line;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _type;
@@ -101,7 +90,7 @@ public:
     /** @brief Create dialog but don't show it.
     *
     */
-    _LineSetup(Fl_Window* parent, Line& line) :
+    _PlotLineSetup(Fl_Window* parent, plot::Line& line) :
     Fl_Double_Window(0, 0, 10, 10, "Plot - Line Properties"),
     _line(line) {
         end();
@@ -122,9 +111,9 @@ public:
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
 
-        _close->callback(_LineSetup::Callback, this);
+        _close->callback(_PlotLineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
-        _color->callback(_LineSetup::Callback, this);
+        _color->callback(_PlotLineSetup::Callback, this);
         _label->textfont(flw::PREF_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
         _type->add("Line");
@@ -138,7 +127,7 @@ public:
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
-        _width->callback(_LineSetup::Callback, this);
+        _width->callback(_PlotLineSetup::Callback, this);
         _width->precision(0);
         _width->range(0, plot::MAX_LINE_WIDTH);
         _width->value(_line.width());
@@ -146,12 +135,12 @@ public:
 
         resizable(_grid);
         util::labelfont(this);
-        callback(_LineSetup::Callback, this);
+        callback(_PlotLineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 14 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
-        _LineSetup::Callback(_width, this);
+        _PlotLineSetup::Callback(_width, this);
         update_widgets();
     }
 
@@ -159,7 +148,7 @@ public:
     *
     */
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_LineSetup*>(o);
+        auto self = static_cast<_PlotLineSetup*>(o);
 
         if (w == self) {
         }
@@ -199,14 +188,14 @@ public:
         _line.set_width(_width->value());
         _line.set_color(_color->color());
 
-        if (_type->value() == 0)      _line.set_type(LineType::LINE);
-        else if (_type->value() == 1) _line.set_type(LineType::LINE_DASH);
-        else if (_type->value() == 2) _line.set_type(LineType::LINE_DOT);
-        else if (_type->value() == 3) _line.set_type(LineType::LINE_WITH_SQUARE);
-        else if (_type->value() == 4) _line.set_type(LineType::VECTOR);
-        else if (_type->value() == 5) _line.set_type(LineType::CIRCLE);
-        else if (_type->value() == 6) _line.set_type(LineType::FILLED_CIRCLE);
-        else if (_type->value() == 7) _line.set_type(LineType::SQUARE);
+        if (_type->value() == 0)      _line.set_type(plot::LineType::LINE);
+        else if (_type->value() == 1) _line.set_type(plot::LineType::LINE_DASH);
+        else if (_type->value() == 2) _line.set_type(plot::LineType::LINE_DOT);
+        else if (_type->value() == 3) _line.set_type(plot::LineType::LINE_WITH_SQUARE);
+        else if (_type->value() == 4) _line.set_type(plot::LineType::VECTOR);
+        else if (_type->value() == 5) _line.set_type(plot::LineType::CIRCLE);
+        else if (_type->value() == 6) _line.set_type(plot::LineType::FILLED_CIRCLE);
+        else if (_type->value() == 7) _line.set_type(plot::LineType::SQUARE);
     }
 
     /** @brief Update widgets with plot line data.
@@ -215,18 +204,21 @@ public:
     void update_widgets() {
         _label->value(_line.label().c_str());
         _color->color(_line.color());
-        _LineSetup::Callback(_width, this);
+        _PlotLineSetup::Callback(_width, this);
 
-        if (_line.type() == LineType::LINE)                  _type->value(0);
-        else if (_line.type() == LineType::LINE_DASH)        _type->value(1);
-        else if (_line.type() == LineType::LINE_DOT)         _type->value(2);
-        else if (_line.type() == LineType::LINE_WITH_SQUARE) _type->value(3);
-        else if (_line.type() == LineType::VECTOR)           _type->value(4);
-        else if (_line.type() == LineType::CIRCLE)           _type->value(5);
-        else if (_line.type() == LineType::FILLED_CIRCLE)    _type->value(6);
-        else if (_line.type() == LineType::SQUARE)           _type->value(7);
+        if (_line.type() == plot::LineType::LINE)                  _type->value(0);
+        else if (_line.type() == plot::LineType::LINE_DASH)        _type->value(1);
+        else if (_line.type() == plot::LineType::LINE_DOT)         _type->value(2);
+        else if (_line.type() == plot::LineType::LINE_WITH_SQUARE) _type->value(3);
+        else if (_line.type() == plot::LineType::VECTOR)           _type->value(4);
+        else if (_line.type() == plot::LineType::CIRCLE)           _type->value(5);
+        else if (_line.type() == plot::LineType::FILLED_CIRCLE)    _type->value(6);
+        else if (_line.type() == plot::LineType::SQUARE)           _type->value(7);
     }
 };
+
+} // flw::priv
+} // flw
 
 /*
  *      _____      _       _
@@ -246,7 +238,7 @@ public:
 * @param[in] X  X value.
 * @param[in] Y  Y value.
 */
-Point::Point(double X, double Y) {
+flw::plot::Point::Point(double X, double Y) {
     x = y = INFINITY;
 
     if (std::isfinite(X) == true &&
@@ -263,7 +255,7 @@ Point::Point(double X, double Y) {
 *
 * @param[in] i  Array index (< 0 == not printed).
 */
-void Point::debug(int i) const {
+void flw::plot::Point::debug(int i) const {
 #ifdef DEBUG
     auto X = gnu::json::format_number(x);
     auto Y = gnu::json::format_number(y);
@@ -283,7 +275,7 @@ void Point::debug(int i) const {
 *
 * @param[in] in  Vector with Point objects.
 */
-void Point::Debug(const PointVector& in) {
+void flw::plot::Point::Debug(const PointVector& in) {
 #ifdef DEBUG
     printf("\nPointVector(%u)\n", static_cast<unsigned>(in.size()));
 
@@ -306,7 +298,7 @@ void Point::Debug(const PointVector& in) {
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) {
+flw::plot::PointVector flw::plot::Point::LoadCSV(const std::string& filename, const std::string& sep) {
     auto buf = gnu::file::read(filename);
 
     if (buf.size() < 3) {
@@ -342,7 +334,7 @@ PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) 
 *
 * @return True if values not INFINITY.
 */
-bool Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y) {
+bool flw::plot::Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y) {
     bool init = false;
 
     min_x = max_x = min_y = max_y = INFINITY;
@@ -386,7 +378,7 @@ bool Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& 
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value) {
+flw::plot::PointVector flw::plot::Point::Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value) {
     PointVector res;
 
     if (fabs(value) < plot::MIN_VALUE || fabs(value) > plot::MAX_VALUE) {
@@ -456,7 +448,7 @@ PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Ta
 *
 * @return True if ok.
 */
-bool Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
+bool flw::plot::Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
     std::string csv;
 
     csv.reserve(in.size() * 20 + 256);
@@ -476,7 +468,7 @@ bool Point::SaveCSV(const PointVector& in, const std::string& filename, const st
 *
 * @return Result vector with Point objects.
 */
-PointVector Point::Swap(const PointVector& in) {
+flw::plot::PointVector flw::plot::Point::Swap(const PointVector& in) {
     PointVector res;
 
     for (const auto& data : in) {
@@ -500,7 +492,7 @@ PointVector Point::Swap(const PointVector& in) {
 /** @brief Create a empty plot line.
 *
 */
-Line::Line() {
+flw::plot::Line::Line() {
     reset();
 }
 
@@ -512,7 +504,7 @@ Line::Line() {
 * @param[in] color   Line color.
 * @param[in] width   Line width.
 */
-Line::Line(const PointVector& data, const std::string& label, LineType type, Fl_Color color, unsigned width) {
+flw::plot::Line::Line(const PointVector& data, const std::string& label, LineType type, Fl_Color color, unsigned width) {
     _color   = color;
     _data    = data;
     _label   = label;
@@ -524,10 +516,10 @@ Line::Line(const PointVector& data, const std::string& label, LineType type, Fl_
 /** @brief Print debug info to stdout.
 *
 */
-void Line::debug() const {
+void flw::plot::Line::debug() const {
 #ifdef DEBUG
     double minx, maxx, miny, maxy;
-    Point::MinMax(_data, minx, maxx, miny, maxy);
+    flw::plot::Point::MinMax(_data, minx, maxx, miny, maxy);
 
     printf("\t------------------------------------------\n");
     printf("\tLine:\n");
@@ -549,7 +541,7 @@ void Line::debug() const {
 /** @brief Clear all data.
 *
 */
-void Line::reset() {
+void flw::plot::Line::reset() {
     _color   = FL_BLUE;
     _label   = "";
     _rect    = Fl_Rect();
@@ -568,7 +560,7 @@ void Line::reset() {
 *
 * @return Input plot line.
 */
-Line& Line::set_type_from_string(const std::string& val) {
+flw::plot::Line& flw::plot::Line::set_type_from_string(const std::string& val) {
     if (val == "LINE_DASH")             _type = LineType::LINE_DASH;
     else if (val == "LINE_DOT")         _type = LineType::LINE_DOT;
     else if (val == "LINE_WITH_SQUARE") _type = LineType::LINE_WITH_SQUARE;
@@ -585,7 +577,7 @@ Line& Line::set_type_from_string(const std::string& val) {
 *
 * @return Line type name, one of ("LINE", "LINE_DASH", "LINE_DOT", "LINE_WITH_SQUARE", "VECTOR", "CIRCLE", "FILLED_CIRCLE", "SQUARE", "", "").
 */
-std::string Line::type_to_string() const {
+std::string flw::plot::Line::type_to_string() const {
     static const std::string NAMES[] = { "LINE", "LINE_DASH", "LINE_DOT", "LINE_WITH_SQUARE", "VECTOR", "CIRCLE", "FILLED_CIRCLE", "SQUARE", "", "", };
     return NAMES[static_cast<size_t>(_type)];
 }
@@ -605,7 +597,7 @@ std::string Line::type_to_string() const {
 *
 * @param[in] pixels  Pixel count.
 */
-void Scale::calc_tick(double pixels) {
+void flw::plot::Scale::calc_tick(double pixels) {
     _tick  = 0.0;
     _pixel = 0.0;
     _fr    = 0;
@@ -667,7 +659,7 @@ void Scale::calc_tick(double pixels) {
 *
 * @param[in] s  Label.
 */
-void Scale::debug(const char* s) const {
+void flw::plot::Scale::debug(const char* s) const {
 #ifdef DEBUG
     printf("\t------------------------------------------\n");
     printf("\tScale: %s\n", s);
@@ -692,7 +684,7 @@ void Scale::debug(const char* s) const {
 * @param[in] cw      Width of one character.
 * @param[in] custom  True to measure custom labels.
 */
-void Scale::measure_labels(int cw, bool custom) {
+void flw::plot::Scale::measure_labels(int cw, bool custom) {
     if (_labels.size() > 0 && custom == true) {
         _lwidth = 0;
 
@@ -716,7 +708,7 @@ void Scale::measure_labels(int cw, bool custom) {
 /** @brief Clera all data.
 *
 */
-void Scale::reset() {
+void flw::plot::Scale::reset() {
     _color  = FL_FOREGROUND_COLOR;
     _fr     = 0;
     _label  = "";
@@ -747,7 +739,7 @@ void Scale::reset() {
 * @param[in] H  Height.
 * @param[in] l  Label.
 */
-Plot::Plot(int X, int Y, int W, int H, const char* l) :
+flw::plot::Plot::Plot(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14), _CW(14) {
     end();
@@ -765,33 +757,33 @@ _CH(14), _CW(14) {
     _menu = new Fl_Menu_Button(0, 0, 0, 0);
     add(_menu);
 
-    _menu->add(_LABEL_SETUP_LABELS,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SETUP_HLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SETUP_VLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_LABEL_CLEAR,         0, _FLW_PLOT_CB(reset()));
-    _menu->add(_LABEL_SETUP_LABEL,   0, _FLW_PLOT_CB(setup_label(plot::Label::MAIN)));
-    _menu->add(_LABEL_SETUP_XLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::X)));
-    _menu->add(_LABEL_SETUP_YLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::Y)));
-    _menu->add(_LABEL_SETUP_MINX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINX)));
-    _menu->add(_LABEL_SETUP_MAXX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXX)));
-    _menu->add(_LABEL_SETUP_MINY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINY)));
-    _menu->add(_LABEL_SETUP_MAXY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXY)), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_LINE,    0, _FLW_PLOT_CB(setup_line()));
-    _menu->add(_LABEL_ADD_LINE,      0, _FLW_PLOT_CB(setup_create_line()));
-    _menu->add(_LABEL_LOAD_CVS,      0, _FLW_PLOT_CB(load_line_from_csv()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_SHOW,    0, _FLW_PLOT_CB(setup_show_or_hide_lines()));
-    _menu->add(_LABEL_SETUP_DELETE,  0, _FLW_PLOT_CB(setup_delete_lines()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SAVE_CVS,      0, _FLW_PLOT_CB(save_line_to_csv()));
-    _menu->add(_LABEL_SAVE_JSON,     0, _FLW_PLOT_CB(save_json()));
-    _menu->add(_LABEL_LOAD_JSON,     0, _FLW_PLOT_CB(load_json()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_PRINT,         0, _FLW_PLOT_CB(print_to_postscript()));
-    _menu->add(_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
+    _menu->add(priv::_PLOT_LABEL_SETUP_LABELS,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_PLOT_LABEL_SETUP_HLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_PLOT_LABEL_SETUP_VLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_CLEAR,         0, _FLW_PLOT_CB(reset()));
+    _menu->add(priv::_PLOT_LABEL_SETUP_LABEL,   0, _FLW_PLOT_CB(setup_label(plot::Label::MAIN)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_XLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::X)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_YLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::Y)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MINX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINX)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MAXX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXX)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MINY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINY)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MAXY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXY)), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_SETUP_LINE,    0, _FLW_PLOT_CB(setup_line()));
+    _menu->add(priv::_PLOT_LABEL_ADD_LINE,      0, _FLW_PLOT_CB(setup_create_line()));
+    _menu->add(priv::_PLOT_LABEL_LOAD_CVS,      0, _FLW_PLOT_CB(load_line_from_csv()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_SETUP_SHOW,    0, _FLW_PLOT_CB(setup_show_or_hide_lines()));
+    _menu->add(priv::_PLOT_LABEL_SETUP_DELETE,  0, _FLW_PLOT_CB(setup_delete_lines()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_SAVE_CVS,      0, _FLW_PLOT_CB(save_line_to_csv()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_JSON,     0, _FLW_PLOT_CB(save_json()));
+    _menu->add(priv::_PLOT_LABEL_LOAD_JSON,     0, _FLW_PLOT_CB(load_json()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_PRINT,         0, _FLW_PLOT_CB(print_to_postscript()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
 #ifdef DEBUG
-    _menu->add(_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_DEBUG,         0, _FLW_PLOT_CB(debug()));
-    _menu->add(_LABEL_DEBUG_LINE,    0, _FLW_PLOT_CB(debug_line()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_DEBUG,         0, _FLW_PLOT_CB(debug()));
+    _menu->add(priv::_PLOT_LABEL_DEBUG_LINE,    0, _FLW_PLOT_CB(debug_line()));
 #else
-    _menu->add(_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
 
@@ -807,7 +799,7 @@ _CH(14), _CW(14) {
 *
 * @return True if added.
 */
-bool Plot::add_line(const Line& line) {
+bool flw::plot::Plot::add_line(const Line& line) {
     if (_lines.size() >= plot::MAX_LINES) {
         return false;
     }
@@ -820,7 +812,7 @@ bool Plot::add_line(const Line& line) {
 /** @brief Calc min and max X/Y values for all lines and all points.
 *
 */
-void Plot::_calc_min_max() {
+void flw::plot::Plot::_calc_min_max() {
     _x.reset_min_max();
     _y.reset_min_max();
 
@@ -887,7 +879,7 @@ void Plot::_calc_min_max() {
 *
 * @return Always false, stop printing.
 */
-bool Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
+bool flw::plot::Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
     (void) page;
 
     auto widget = static_cast<Fl_Widget*>(data);
@@ -906,7 +898,7 @@ bool Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
 *
 * @return True if a new line was added.
 */
-bool Plot::create_line(Algorithm alg) {
+bool flw::plot::Plot::create_line(Algorithm alg) {
     if (_selected_line >= _lines.size()) {
         dlg::msg_alert("Plot", "Line has not been selected!");
         return false;
@@ -942,11 +934,11 @@ bool Plot::create_line(Algorithm alg) {
 
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
         ans    = dlg::select_choice("Plot", "Select target.", list, 0);
-        vec1   = Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
+        vec1   = flw::plot::Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
     else if (alg == Algorithm::SWAP) {
-        vec1   = Point::Swap(line0.data());
+        vec1   = flw::plot::Point::Swap(line0.data());
         label1 = util::format("%s swapped X/Y", line0.label().c_str());
     }
 
@@ -957,7 +949,7 @@ bool Plot::create_line(Algorithm alg) {
 
     auto line1 = Line(vec1, label1);
 
-    _LineSetup(top_window(), line1).run();
+    priv::_PlotLineSetup(top_window(), line1).run();
     _lines.push_back(line1);
     init_new_data();
 
@@ -970,7 +962,7 @@ bool Plot::create_line(Algorithm alg) {
 *
 * @return String vector.
 */
-StringVector Plot::_create_check_labels(bool def) const {
+flw::StringVector flw::plot::Plot::_create_check_labels(bool def) const {
     StringVector res;
 
     for (const auto& l : _lines) {
@@ -987,7 +979,7 @@ StringVector Plot::_create_check_labels(bool def) const {
 * Either by using mouse cursor position.\n
 * Or the actual point below mouse cursor.\n
 */
-void Plot::_create_tooltip() {
+void flw::plot::Plot::_create_tooltip() {
     const int   X   = Fl::event_x();
     const int   Y   = Fl::event_y();
     std::string old = _tooltip;
@@ -1045,7 +1037,7 @@ void Plot::_create_tooltip() {
 /** @brief Print debug info to stdout.
 *
 */
-void Plot::debug() const {
+void flw::plot::Plot::debug() const {
 #ifdef DEBUG
     printf("\n-----------------------------------------------------\n");
     printf("Plot:\n");
@@ -1078,13 +1070,13 @@ void Plot::debug() const {
 /** @brief Print debug info for current selected line.
 *
 */
-void Plot::debug_line() const {
+void flw::plot::Plot::debug_line() const {
 #ifdef DEBUG
     if (_selected_line >= _lines.size()) {
         return;
     }
 
-    Point::Debug(_lines[_selected_line].data());
+    flw::plot::Point::Debug(_lines[_selected_line].data());
 #endif
 }
 
@@ -1092,7 +1084,7 @@ void Plot::debug_line() const {
 *
 * @param[in] index  Line vector index.
 */
-void Plot::delete_line(size_t index) {
+void flw::plot::Plot::delete_line(size_t index) {
     size_t count = 0;
 
     for (auto it = _lines.begin(); it != _lines.end(); ++it) {
@@ -1116,7 +1108,7 @@ void Plot::delete_line(size_t index) {
 /** @brief Draw plot widget.
 *
 */
-void Plot::draw() {
+void flw::plot::Plot::draw() {
 #ifdef DEBUG
      //auto t = util::milliseconds();
 #endif
@@ -1179,7 +1171,7 @@ DRAW_RECTANGLE:
 /** @brief Draw all labels.
 *
 */
-void Plot::_draw_labels() {
+void flw::plot::Plot::_draw_labels() {
     const int CH = _CH / 2;
 
     if (_x.label() != "") {
@@ -1215,7 +1207,7 @@ void Plot::_draw_labels() {
 /** @brief Draw all line labels.
 *
 */
-void Plot::_draw_line_labels() {
+void flw::plot::Plot::_draw_line_labels() {
     static const std::string SYMBOL = "@-> ";
 
     if (_labels == false) {
@@ -1269,7 +1261,7 @@ void Plot::_draw_line_labels() {
 /** @brief Draw all plot lines.
 *
 */
-void Plot::_draw_lines() {
+void flw::plot::Plot::_draw_lines() {
     const int X1     = _area.x();
     const int Y1     = _area.b() - 1;
     size_t    line_c = -1;
@@ -1364,7 +1356,7 @@ void Plot::_draw_lines() {
 /** @brief Draw tooltip rectangle with text.
 *
 */
-void Plot::_draw_tooltip() {
+void flw::plot::Plot::_draw_tooltip() {
     if (_tooltip == "") {
         return;
     }
@@ -1409,7 +1401,7 @@ void Plot::_draw_tooltip() {
 /** @brief Draw x labels.
 *
 */
-void Plot::_draw_xlabels() {
+void flw::plot::Plot::_draw_xlabels() {
     fl_font(flw::PREF_FIXED_FONT, _CH);
 
     double       x1     = _area.x();
@@ -1433,10 +1425,10 @@ void Plot::_draw_xlabels() {
                 fl_line(x1, _area.y() + 1, x1, _area.b() - 2);
             }
 
-            _FLW_PLOT_DEBUG(fl_rect(x1 - TW, Y + _TICK_SIZE * 2, TW * 2, _CH, FL_FOREGROUND_COLOR))
+            _FLW_PLOT_DEBUG(fl_rect(x1 - TW, Y + priv::_PLOT_TICK_SIZE * 2, TW * 2, _CH, FL_FOREGROUND_COLOR))
             fl_color(FL_FOREGROUND_COLOR);
-            fl_line(x1, Y, x1, Y + _TICK_SIZE);
-            fl_draw(label.c_str(), x1 - TW, Y + _TICK_SIZE * 2, TW * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            fl_line(x1, Y, x1, Y + priv::_PLOT_TICK_SIZE);
+            fl_draw(label.c_str(), x1 - TW, Y + priv::_PLOT_TICK_SIZE * 2, TW * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
             x_last = x1 + TW + _CH;
         }
 
@@ -1448,7 +1440,7 @@ void Plot::_draw_xlabels() {
 /** @brief Draw custom x labels.
 *
 */
-void Plot::_draw_xlabels_custom() {
+void flw::plot::Plot::_draw_xlabels_custom() {
     fl_color(FL_FOREGROUND_COLOR);
     fl_font(flw::PREF_FIXED_FONT, _CH);
 
@@ -1466,12 +1458,12 @@ void Plot::_draw_xlabels_custom() {
             const int   X     = _area.x() + static_cast<int>((data.x - _x.min()) * _x.pixel());
             const int   W     = label.length() * _CW / 2;
 
-            fl_line(X, _area.b(), X, _area.b() + _TICK_SIZE);
+            fl_line(X, _area.b(), X, _area.b() + priv::_PLOT_TICK_SIZE);
 
             if (X - W >= x_last && label != "") {
-                _FLW_PLOT_DEBUG(fl_rect(X - W, _area.b() + _TICK_SIZE * 2, W * 2, _CH))
-                fl_draw(label.c_str(), X - W, _area.b() + _TICK_SIZE * 2, W * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                x_last = X + W + _TICK_SIZE;
+                _FLW_PLOT_DEBUG(fl_rect(X - W, _area.b() + priv::_PLOT_TICK_SIZE * 2, W * 2, _CH))
+                fl_draw(label.c_str(), X - W, _area.b() + priv::_PLOT_TICK_SIZE * 2, W * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                x_last = X + W + priv::_PLOT_TICK_SIZE;
             }
         }
     }
@@ -1480,11 +1472,11 @@ void Plot::_draw_xlabels_custom() {
 /** @brief Draw y labels.
 *
 */
-void Plot::_draw_ylabels() {
+void flw::plot::Plot::_draw_ylabels() {
     fl_font(flw::PREF_FIXED_FONT, _CH);
 
     const int X      = x() + (_y.label() != "" ? _CH * 2 : 0);
-    const int W      = _area.x() - X - _TICK_SIZE * 3;
+    const int W      = _area.x() - X - priv::_PLOT_TICK_SIZE * 3;
     const int CH     = _CH / 2;
     double    y1     = _area.b() - 1.0;
     double    y_tick = _y.tick();
@@ -1506,10 +1498,10 @@ void Plot::_draw_ylabels() {
             }
 
             fl_color(FL_FOREGROUND_COLOR);
-            fl_line(_area.x(), y1, _area.x() - _TICK_SIZE, y1);
-            fl_draw(label.c_str(), X + _TICK_SIZE, y1 - CH, W, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-            _FLW_PLOT_DEBUG(fl_rect(X + _TICK_SIZE, y1 - CH, W, _CH, FL_FOREGROUND_COLOR))
-            y_last = y1 - _CH - _TICK_SIZE;
+            fl_line(_area.x(), y1, _area.x() - priv::_PLOT_TICK_SIZE, y1);
+            fl_draw(label.c_str(), X + priv::_PLOT_TICK_SIZE, y1 - CH, W, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+            _FLW_PLOT_DEBUG(fl_rect(X + priv::_PLOT_TICK_SIZE, y1 - CH, W, _CH, FL_FOREGROUND_COLOR))
+            y_last = y1 - _CH - priv::_PLOT_TICK_SIZE;
         }
 
         y1    -= y_inc;
@@ -1520,12 +1512,12 @@ void Plot::_draw_ylabels() {
 /** @brief Draw custom y labels.
 *
 */
-void Plot::_draw_ylabels_custom() {
+void flw::plot::Plot::_draw_ylabels_custom() {
     fl_color(FL_FOREGROUND_COLOR);
     fl_font(flw::PREF_FIXED_FONT, _CH);
 
-    const int  X       = x() + (_y.label() != "" ? _CH * 2 : _TICK_SIZE);
-    const int  W       = _area.x() - X - _TICK_SIZE * 3;
+    const int  X       = x() + (_y.label() != "" ? _CH * 2 : priv::_PLOT_TICK_SIZE);
+    const int  W       = _area.x() - X - priv::_PLOT_TICK_SIZE * 3;
     const int  CH      = fl_height() / 2;
     size_t     label_c = 0;
     size_t     data_c  = 0;
@@ -1540,12 +1532,12 @@ void Plot::_draw_ylabels_custom() {
             const int   Y     = _area.b() - 1 - static_cast<int>((data.y - _y.min()) * _y.pixel());
             std::string label = _y.custom_labels()[label_c++];
 
-            fl_line(_area.x(), Y, _area.x() - _TICK_SIZE, Y);
+            fl_line(_area.x(), Y, _area.x() - priv::_PLOT_TICK_SIZE, Y);
 
             if (y_last > Y && label != "") {
-                fl_draw(label.c_str(), X + _TICK_SIZE, Y - CH, W, fl_height(), FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                _FLW_PLOT_DEBUG(fl_rect(X + _TICK_SIZE, Y - CH, W, fl_height(), FL_FOREGROUND_COLOR))
-                y_last = Y - fl_height() - _TICK_SIZE;
+                fl_draw(label.c_str(), X + priv::_PLOT_TICK_SIZE, Y - CH, W, fl_height(), FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                _FLW_PLOT_DEBUG(fl_rect(X + priv::_PLOT_TICK_SIZE, Y - CH, W, fl_height(), FL_FOREGROUND_COLOR))
+                y_last = Y - fl_height() - priv::_PLOT_TICK_SIZE;
             }
         }
     }
@@ -1561,7 +1553,7 @@ void Plot::_draw_ylabels_custom() {
 *
 * @return 1 or 0.
 */
-int Plot::handle(int event) {
+int flw::plot::Plot::handle(int event) {
     if (event == FL_PUSH) {
         auto b = Fl::event_button();
 
@@ -1616,12 +1608,12 @@ int Plot::handle(int event) {
 *
 * @param[in] new_data  Set to true if new data has been added.
 */
-void Plot::_init(bool new_data) {
+void flw::plot::Plot::_init(bool new_data) {
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     *const_cast<int*>(&_CW) = fl_width("X");
     *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
 
-    if (new_data == true) { // Call Scale::calc() twice when new data has changed, first with default width.
+    if (new_data == true) { // Call flw::plot::Scale::calc() twice when new data has changed, first with default width.
         _calc_min_max();
         _x.calc_tick(w() - _CH * 6);
         _y.calc_tick(h() - _CH * 6);
@@ -1630,7 +1622,7 @@ void Plot::_init(bool new_data) {
     }
 
     auto move_x   = (_y.label() != "") ? _CH * 2 : 0;
-    auto shrink_h = (_x.label() != "") ? _CH * 2 + _TICK_SIZE * 2 : _CH;
+    auto shrink_h = (_x.label() != "") ? _CH * 2 + priv::_PLOT_TICK_SIZE * 2 : _CH;
 
     _area.x(x() + (_CH * 2) + _y.label_width() + move_x);
     _area.w(w() - (_area.x() - x()) - _CH * 2);
@@ -1653,7 +1645,7 @@ void Plot::_init(bool new_data) {
 *
 * @return True if ok.
 */
-bool Plot::load_json() {
+bool flw::plot::Plot::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
 
     if (util::is_empty(filename) == true) {
@@ -1669,7 +1661,7 @@ bool Plot::load_json() {
 *
 * @return True if ok.
 */
-bool Plot::load_json(const std::string& filename) {
+bool flw::plot::Plot::load_json(const std::string& filename) {
 #define _FLW_PLOT_ERROR(X) { dlg::msg_alert("Plot", util::format("Illegal plot value at pos %u", (X)->pos())); reset(); return false; }
     _filename = "";
 
@@ -1780,7 +1772,7 @@ bool Plot::load_json(const std::string& filename) {
 *
 * @return True if ok.
 */
-bool Plot::load_line_from_csv() {
+bool flw::plot::Plot::load_line_from_csv() {
     if (_lines.size() >= plot::MAX_LINES) {
         dlg::msg_alert("Plot", "Max line count reached!");
         return false;
@@ -1792,7 +1784,7 @@ bool Plot::load_line_from_csv() {
         return false;
     }
 
-    auto vec = Point::LoadCSV(filename);
+    auto vec = flw::plot::Point::LoadCSV(filename);
 
     if (vec.size() == 0) {
         dlg::msg_alert("Plot", "To few data values!");
@@ -1800,7 +1792,7 @@ bool Plot::load_line_from_csv() {
     }
 
     auto line = Line(vec, filename);
-    _LineSetup(top_window(), line).run();
+    priv::_PlotLineSetup(top_window(), line).run();
     _lines.push_back(line);
     init_new_data();
 
@@ -1810,9 +1802,9 @@ bool Plot::load_line_from_csv() {
 /** @brief Print view to postscript.
 *
 */
-void Plot::print_to_postscript() {
+void flw::plot::Plot::print_to_postscript() {
     _printing = true;
-    dlg::print_page("Plot", Plot::_CallbackPrinter, this);
+    dlg::print_page("Plot", flw::plot::Plot::_CallbackPrinter, this);
     _printing = false;
     redraw();
 }
@@ -1820,7 +1812,7 @@ void Plot::print_to_postscript() {
 /** @brief Clear all data.
 *
 */
-void Plot::reset() {
+void flw::plot::Plot::reset() {
     *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
     *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
 
@@ -1853,7 +1845,7 @@ void Plot::reset() {
 * @param[in] W  Width.
 * @param[in] H  Height.
 */
-void Plot::resize(int X, int Y, int W, int H) {
+void flw::plot::Plot::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {
         return;
     }
@@ -1867,7 +1859,7 @@ void Plot::resize(int X, int Y, int W, int H) {
 *
 * @return True if ok.
 */
-bool Plot::save_json() {
+bool flw::plot::Plot::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
 
     if (util::is_empty(filename) == true) {
@@ -1883,7 +1875,7 @@ bool Plot::save_json() {
 *
 * @return True if ok.
 */
-bool Plot::save_json(const std::string& filename) {
+bool flw::plot::Plot::save_json(const std::string& filename) {
     auto wc  = WaitCursor();
     auto jsb = gnu::json::Builder();
 
@@ -1961,7 +1953,7 @@ bool Plot::save_json(const std::string& filename) {
 *
 * @return True if a file was saved.
 */
-bool Plot::save_line_to_csv() {
+bool flw::plot::Plot::save_line_to_csv() {
     if (_lines.size() == 0 || _selected_line >= _lines.size()) {
         return false;
     }
@@ -1972,14 +1964,14 @@ bool Plot::save_line_to_csv() {
         return false;
     }
 
-    return Point::SaveCSV(_lines[_selected_line].data(), filename);
+    return flw::plot::Point::SaveCSV(_lines[_selected_line].data(), filename);
 }
 
 /** @brief Save view to an png file.
 *
 * @return True if ok.
 */
-bool Plot::save_png() {
+bool flw::plot::Plot::save_png() {
     return flw::util::png_save(window(), "", x(),  y(),  w(),  h());
 }
 
@@ -1987,7 +1979,7 @@ bool Plot::save_png() {
 *
 * @param[in] clamp  What clamp value to set.
 */
-void Plot::setup_clamp(Clamp clamp) {
+void flw::plot::Plot::setup_clamp(Clamp clamp) {
     double      val = 0.0;
     std::string info;
 
@@ -2043,7 +2035,7 @@ void Plot::setup_clamp(Clamp clamp) {
 /** @brief Show dialog to add a new line using current selected line.
 *
 */
-void Plot::setup_create_line() {
+void flw::plot::Plot::setup_create_line() {
     if (_selected_line >= _lines.size()) {
         dlg::msg_alert("Plot", "Select a line first!");
         return;
@@ -2075,7 +2067,7 @@ void Plot::setup_create_line() {
 /** @brief Show an dialog to select lines to delete.
 *
 */
-void Plot::setup_delete_lines() {
+void flw::plot::Plot::setup_delete_lines() {
     if (_lines.size() == 0) {
         return;
     }
@@ -2103,7 +2095,7 @@ void Plot::setup_delete_lines() {
 *
 * @param[in] val  What label to set.
 */
-void Plot::setup_label(Label val) {
+void flw::plot::Plot::setup_label(Label val) {
     std::string l, answer;
 
     switch (val) {
@@ -2147,21 +2139,21 @@ void Plot::setup_label(Label val) {
 /** @brief Show and property dialog for current line.
 *
 */
-void Plot::setup_line() {
+void flw::plot::Plot::setup_line() {
     if (_lines.size() == 0 || _selected_line >= _lines.size()) {
         return;
     }
 
     auto& line = _lines[_selected_line];
 
-    _LineSetup(top_window(), line).run();
+    priv::_PlotLineSetup(top_window(), line).run();
     redraw();
 }
 
 /** @brief Show an dialog for showing or hiding lines.
 *
 */
-void Plot::setup_show_or_hide_lines() {
+void flw::plot::Plot::setup_show_or_hide_lines() {
     if (_lines.size() == 0) {
         return;
     }
@@ -2186,10 +2178,10 @@ void Plot::setup_show_or_hide_lines() {
 * Show/hide vertical lines.
 * Show/hide horizontal lines.
 */
-void Plot::setup_view_options() {
-    _labels     = menu::item_value(_menu, _LABEL_SETUP_LABELS);
-    _horizontal = menu::item_value(_menu, _LABEL_SETUP_HLINES);
-    _vertical   = menu::item_value(_menu, _LABEL_SETUP_VLINES);
+void flw::plot::Plot::setup_view_options() {
+    _labels     = menu::item_value(_menu, priv::_PLOT_LABEL_SETUP_LABELS);
+    _horizontal = menu::item_value(_menu, priv::_PLOT_LABEL_SETUP_HLINES);
+    _vertical   = menu::item_value(_menu, priv::_PLOT_LABEL_SETUP_VLINES);
 
     redraw();
 }
@@ -2197,36 +2189,36 @@ void Plot::setup_view_options() {
 /** @brief Show menu
 *
 */
-void Plot::_show_menu() {
+void flw::plot::Plot::_show_menu() {
     if (_disable_menu == true) {
         return;
     }
 
-    menu::set_item(_menu, _LABEL_SETUP_LABELS, _labels);
-    menu::set_item(_menu, _LABEL_SETUP_HLINES, _horizontal);
-    menu::set_item(_menu, _LABEL_SETUP_VLINES, _vertical);
+    menu::set_item(_menu, priv::_PLOT_LABEL_SETUP_LABELS, _labels);
+    menu::set_item(_menu, priv::_PLOT_LABEL_SETUP_HLINES, _horizontal);
+    menu::set_item(_menu, priv::_PLOT_LABEL_SETUP_VLINES, _vertical);
 
     if (_lines.size() == 0) {
-        menu::enable_item(_menu, _LABEL_ADD_LINE, false);
-        menu::enable_item(_menu, _LABEL_SAVE_CVS, false);
-        menu::enable_item(_menu, _LABEL_SETUP_DELETE, false);
-        menu::enable_item(_menu, _LABEL_SETUP_LINE, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXX, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXY, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MINX, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MINY, false);
-        menu::enable_item(_menu, _LABEL_SETUP_SHOW, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_ADD_LINE, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SAVE_CVS, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_DELETE, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_LINE, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXX, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXY, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINX, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINY, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_SHOW, false);
     }
     else {
-        menu::enable_item(_menu, _LABEL_ADD_LINE, true);
-        menu::enable_item(_menu, _LABEL_SAVE_CVS, true);
-        menu::enable_item(_menu, _LABEL_SETUP_DELETE, true);
-        menu::enable_item(_menu, _LABEL_SETUP_LINE, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXX, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXY, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MINX, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MINY, true);
-        menu::enable_item(_menu, _LABEL_SETUP_SHOW, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_ADD_LINE, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SAVE_CVS, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_DELETE, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_LINE, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXX, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXY, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINX, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINY, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_SHOW, true);
     }
 
     _menu->popup();
@@ -2235,12 +2227,9 @@ void Plot::_show_menu() {
 /** @brief Update font properties
 *
 */
-void Plot::update_pref() {
+void flw::plot::Plot::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
 }
-
-} // plot
-} // flw
 
 // MKALGAM_OFF

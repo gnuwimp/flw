@@ -18,6 +18,7 @@ static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
 static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu.";
 
 } // flw::priv
+} // flw
 
 /*
  *       _____                _ _ ____
@@ -39,7 +40,7 @@ static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the men
 * @param[in] H      Height.
 * @param[in] l      Optional label.
 */
-ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
+flw::ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
     end();
 
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
@@ -58,7 +59,7 @@ ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* 
 /** @brief Callback form the menu.
 *
 */
-void ScrollBrowser::Callback(Fl_Widget*, void* o) {
+void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     auto self  = static_cast<ScrollBrowser*>(o);
     auto txt   = self->_menu->text();
     auto label = std::string((txt != nullptr) ? txt : "");
@@ -90,7 +91,7 @@ void ScrollBrowser::Callback(Fl_Widget*, void* o) {
 * Or show menu.\n
 *
 */
-int ScrollBrowser::handle(int event) {
+int flw::ScrollBrowser::handle(int event) {
     if (event == FL_MOUSEWHEEL) {
         if (_flag_move == true) {
             #ifdef DEBUG
@@ -162,7 +163,7 @@ int ScrollBrowser::handle(int event) {
 * @param[in] text_font  Text font fo the list, label and menu.
 * @param[in] text_size  Text size for the list, label and menu.
 */
-void ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
     textfont(text_font);
@@ -170,7 +171,5 @@ void ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     _menu->textfont(text_font);
     _menu->textsize(text_size);
 }
-
-} //flw
 
 // MKALGAM_OFF
