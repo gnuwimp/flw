@@ -35,7 +35,7 @@ using namespace flw;
 
 class Scale : public Fl_Box {
 public:
-    bool labels = false;
+    bool labels = true;
     
     Scale() : Fl_Box(0, 0, 0, 0) {
         box(FL_BORDER_BOX);
@@ -47,7 +47,7 @@ public:
         auto H = (double) (h() - 2) / 24.0;
         auto Y = y() + 1;
 
-        for (auto f = 0; f < 24; f++) {
+        for (auto f = 0; f <= 24; f++) {
             char t[30];
             unsigned char r, g, b;
             Fl::get_color(32 + f, r, g, b);
@@ -341,6 +341,7 @@ public:
         file->callback(CallbackFile);
         full->callback(CallbackFullscreen);
         labels->callback(CallbackLabels, this);
+        labels->value(scale->labels);
         slider->type(4);
         theme->callback(CallbackTheme);
         theme->tooltip("Select a theme.");

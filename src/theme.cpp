@@ -23,8 +23,6 @@
 
 #ifdef _WIN32
     #include <FL/x.H>
-#else
-    //#include <unistd.h>
 #endif
 
 namespace flw {
@@ -37,7 +35,7 @@ static bool          _THEME_IS_DARK     = false;
 static bool          _THEME_SAVED_COLOR = false;
 static int           _THEME_SCROLLSIZE  = Fl::scrollbar_size();
 
-const StringVector _PREF_THEMES = { // Must be synced with flw::PREF_THEMES.
+const StringVector _THEME_ALT = { // Must be synced with flw::PREF_THEMES.
     "default",
     "gleam",
     "blue_gleam",
@@ -53,21 +51,21 @@ const StringVector _PREF_THEMES = { // Must be synced with flw::PREF_THEMES.
     "tan_plastic",
 };
 
-enum {
-    THEME_DEFAULT,
-    THEME_GLEAM,
-    THEME_GLEAM_BLUE,
-    THEME_GLEAM_DARK,
-    THEME_GLEAM_TAN,
-    THEME_GTK,
-    THEME_GTK_BLUE,
-    THEME_GTK_DARK,
-    THEME_GTK_TAN,
-    THEME_OXY,
-    THEME_OXY_TAN,
-    THEME_PLASTIC,
-    THEME_PLASTIC_TAN,
-    THEME_NIL,
+enum { // Must be synced with flw::PREF_THEMES.
+    _THEME_DEFAULT,
+    _THEME_GLEAM,
+    _THEME_GLEAM_BLUE,
+    _THEME_GLEAM_DARK,
+    _THEME_GLEAM_TAN,
+    _THEME_GTK,
+    _THEME_GTK_BLUE,
+    _THEME_GTK_DARK,
+    _THEME_GTK_TAN,
+    _THEME_OXY,
+    _THEME_OXY_TAN,
+    _THEME_PLASTIC,
+    _THEME_PLASTIC_TAN,
+    _THEME_NIL,
 };
 
 /** @brief Create additional colors.
@@ -76,7 +74,7 @@ enum {
 *
 * @param[in] dark  True if a dark theme has been requested.
 */
-static void _additional_colors(bool dark) {
+static void _theme_additional_colors(bool dark) {
     color::BEIGE            = fl_rgb_color(245, 245, 220);
     color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
     color::CRIMSON          = fl_rgb_color(220,  20,  60);
@@ -120,57 +118,47 @@ static void _additional_colors(bool dark) {
 
 /** @brief Set blue colors.
 */
-static void _blue_colors() {
-    Fl::set_color(0,   228, 228, 228);  // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    79,  86,  94);  // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,   108, 113, 125);  // FL_INACTIVE_COLOR
-    Fl::set_color(15,  241, 196,  126); // FL_SELECTION_COLOR
-    Fl::set_color(56,    0,   0,   0);  // FL_BLACK
-    Fl::background(48, 56, 65);
+static void _theme_blue_colors() {
+    Fl::set_color ( 0, 255, 255, 255);  // FL_FOREGROUND_COLOR
+    Fl::set_color ( 7,  79,  86,  94);  // FL_BACKGROUND2_COLOR
+    Fl::set_color ( 8, 108, 113, 125);  // FL_INACTIVE_COLOR
+    Fl::set_color (15, 172, 140,  90);  // FL_SELECTION_COLOR
+    Fl::background(36,  44,  53);
 
     unsigned char r = 0;
-    unsigned char g = 0;
-    unsigned char b = 0;
+    unsigned char g = 9;
+    unsigned char b = 18;
 
-    for (int f = 32; f < 49; f++) {
+    Fl::set_color(32, r, g, b);
+
+    for (int f = 33; f < 49; f++) {
+        r += 2;
+        g += 2;
+        b += 2;
         Fl::set_color(f, r, g, b);
-
-        if (f == 32) {
-            r = 0;
-            g = 9;
-            b = 18;
-        }
-        else {
-            r += 2 + (f < 44);
-            g += 2 + (f < 44);
-            b += 2 + (f < 44);
-        }
     }
 }
 
 /** @brief Set dark colors.
 */
-static void _dark_colors() {
-    Fl::set_color(0,   200, 200, 200); // FL_FOREGROUND_COLOR
-    Fl::set_color(7,    64,  64,  64); // FL_BACKGROUND2_COLOR
-    Fl::set_color(8,   100, 100, 100); // FL_INACTIVE_COLOR
-    Fl::set_color(15,  177, 227, 177); // FL_SELECTION_COLOR
-    Fl::set_color(56,    0,   0,   0); // FL_BLACK
-    Fl::set_color(49, 43, 43, 43);
-    Fl::background(43, 43, 43);
+static void _theme_dark_colors() {
+    Fl::set_color ( 0, 255, 255, 255); // FL_FOREGROUND_COLOR
+    Fl::set_color ( 7,  64,  64,  64); // FL_BACKGROUND2_COLOR
+    Fl::set_color ( 8, 100, 100, 100); // FL_INACTIVE_COLOR
+    Fl::set_color (15, 107, 138, 107); // FL_SELECTION_COLOR
+    Fl::background(36,  36,  36);
 
     unsigned char c = 0;
 
     for (int f = 32; f < 49; f++) {
         Fl::set_color(f, c, c, c);
         c += 2;
-        if (f > 40) c++;
     }
 }
 
 /** @brief Make default colors darker (for dark themes).
 */
-static void _make_default_colors_darker() {
+static void _theme_make_default_colors_darker() {
     Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
     Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
     Fl::set_color(FL_RED, fl_darker(Fl::get_color(FL_RED)));
@@ -187,33 +175,37 @@ static void _make_default_colors_darker() {
 
 /** @brief Restore original colors.
 */
-static void _restore_colors() {
-    if (priv::_THEME_SAVED_COLOR == true) {
-        for (int f = 0; f < 256; f++) {
-            Fl::set_color(f, priv::_THEME_OLD_R[f], priv::_THEME_OLD_G[f], priv::_THEME_OLD_B[f]);
-        }
+static void _theme_restore_colors() {
+    if (priv::_THEME_SAVED_COLOR == false) {
+        return;
+    }
+
+    for (int f = 0; f < 256; f++) {
+        Fl::set_color(f, priv::_THEME_OLD_R[f], priv::_THEME_OLD_G[f], priv::_THEME_OLD_B[f]);
     }
 }
 
 /** @brief Set colors so they can be restored later.
 */
-static void _save_colors() {
-    if (priv::_THEME_SAVED_COLOR == false) {
-        for (int f = 0; f < 256; f++) {
-            unsigned char r1, g1, b1;
-            Fl::get_color(f, r1, g1, b1);
-            priv::_THEME_OLD_R[f] = r1;
-            priv::_THEME_OLD_G[f] = g1;
-            priv::_THEME_OLD_B[f] = b1;
-        }
-
-        priv::_THEME_SAVED_COLOR = true;
+static void _theme_save_colors() {
+    if (priv::_THEME_SAVED_COLOR == true) {
+        return;
     }
+
+    for (int f = 0; f < 256; f++) {
+        unsigned char r1, g1, b1;
+        Fl::get_color(f, r1, g1, b1);
+        priv::_THEME_OLD_R[f] = r1;
+        priv::_THEME_OLD_G[f] = g1;
+        priv::_THEME_OLD_B[f] = b1;
+    }
+
+    priv::_THEME_SAVED_COLOR = true;
 }
 
 /** @brief Set tan colors.
 */
-static void _tan_colors() {
+static void _theme_tan_colors() {
     Fl::set_color(0,     0,   0,   0); // FL_FOREGROUND_COLOR
     Fl::set_color(7,   255, 255, 255); // FL_BACKGROUND2_COLOR
     Fl::set_color(8,    85,  85,  85); // FL_INACTIVE_COLOR
@@ -224,195 +216,195 @@ static void _tan_colors() {
 /** @brief Load default theme.
 * @private
 */
-void _load_default() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_default() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("none");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_DEFAULT];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_DEFAULT];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load gleam theme.
 * @private
 */
-void _load_gleam() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_gleam() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load blue gleam theme.
 * @private
 */
-void _load_gleam_blue() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_blue_colors();
-    priv::_additional_colors(true);
+void _theme_load_gleam_blue() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_blue_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 101, 117, 125);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_BLUE];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM_BLUE];
     priv::_THEME_IS_DARK = true;
 }
 
 /** @brief Load dark gleam theme.
 * @private
 */
-void _load_gleam_dark() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_dark_colors();
-    priv::_additional_colors(true);
+void _theme_load_gleam_dark() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_dark_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 112, 112, 112);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_DARK];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM_DARK];
     priv::_THEME_IS_DARK = true;
 }
 
 /** @brief Load tan gleam theme.
 * @private
 */
-void _load_gleam_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_gleam_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM_TAN];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load gtk theme.
 * @private
 */
-void _load_gtk() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_gtk() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load blue gtk theme.
 * @private
 */
-void _load_gtk_blue() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_blue_colors();
-    priv::_additional_colors(true);
+void _theme_load_gtk_blue() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_blue_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 101, 117, 125);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_BLUE];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK_BLUE];
     priv::_THEME_IS_DARK = true;
 }
 
 /** @brief Load dark gtk theme.
 * @private
 */
-void _load_gtk_dark() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_dark_colors();
-    priv::_additional_colors(true);
+void _theme_load_gtk_dark() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_dark_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 112, 112, 112);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_DARK];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK_DARK];
     priv::_THEME_IS_DARK = true;
 }
 
 /** @brief Load tan gtk theme.
 * @private
 */
-void _load_gtk_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_gtk_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK_TAN];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load oxy theme.
 * @private
 */
-void _load_oxy() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_oxy() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_OXY];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_OXY];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load tan oxy theme.
 * @private
 */
-void _load_oxy_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_oxy_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_OXY_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_OXY_TAN];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load plastic theme.
 * @private
 */
-void _load_plastic() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_plastic() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_PLASTIC];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_PLASTIC];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Load tan plastic theme.
 * @private
 */
-void _load_plastic_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_plastic_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_PLASTIC_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_PLASTIC_TAN];
     priv::_THEME_IS_DARK = false;
 }
 
 /** @brief Set scrollbar size.
 * @private
 */
-void _scrollbar() {
+void _theme_scrollbar() {
     if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
-        auto f = (double) flw::PREF_FONTSIZE / 14.0;
-        auto s = (int) (f * priv::_THEME_SCROLLSIZE);
+        auto f = static_cast<double>(flw::PREF_FONTSIZE / 14.0);
+        auto s = static_cast<int>(f * priv::_THEME_SCROLLSIZE);
         Fl::scrollbar_size(s);
     }
     else if (priv::_THEME_SCROLLSIZE > 0) {
@@ -586,44 +578,44 @@ public:
         else if (w == self->_theme) {
             auto row = self->_theme->value() - 1;
 
-            if (row == priv::THEME_GLEAM) {
-                priv::_load_gleam();
+            if (row == priv::_THEME_GLEAM) {
+                priv::_theme_load_gleam();
             }
-            else if (row == priv::THEME_GLEAM_BLUE) {
-                priv::_load_gleam_blue();
+            else if (row == priv::_THEME_GLEAM_BLUE) {
+                priv::_theme_load_gleam_blue();
             }
-            else if (row == priv::THEME_GLEAM_DARK) {
-                priv::_load_gleam_dark();
+            else if (row == priv::_THEME_GLEAM_DARK) {
+                priv::_theme_load_gleam_dark();
             }
-            else if (row == priv::THEME_GLEAM_TAN) {
-                priv::_load_gleam_tan();
+            else if (row == priv::_THEME_GLEAM_TAN) {
+                priv::_theme_load_gleam_tan();
             }
-            else if (row == priv::THEME_GTK) {
-                priv::_load_gtk();
+            else if (row == priv::_THEME_GTK) {
+                priv::_theme_load_gtk();
             }
-            else if (row == priv::THEME_GTK_BLUE) {
-                priv::_load_gtk_blue();
+            else if (row == priv::_THEME_GTK_BLUE) {
+                priv::_theme_load_gtk_blue();
             }
-            else if (row == priv::THEME_GTK_DARK) {
-                priv::_load_gtk_dark();
+            else if (row == priv::_THEME_GTK_DARK) {
+                priv::_theme_load_gtk_dark();
             }
-            else if (row == priv::THEME_GTK_TAN) {
-                priv::_load_gtk_tan();
+            else if (row == priv::_THEME_GTK_TAN) {
+                priv::_theme_load_gtk_tan();
             }
-            else if (row == priv::THEME_OXY) {
-                priv::_load_oxy();
+            else if (row == priv::_THEME_OXY) {
+                priv::_theme_load_oxy();
             }
-            else if (row == priv::THEME_OXY_TAN) {
-                priv::_load_oxy_tan();
+            else if (row == priv::_THEME_OXY_TAN) {
+                priv::_theme_load_oxy_tan();
             }
-            else if (row == priv::THEME_PLASTIC) {
-                priv::_load_plastic();
+            else if (row == priv::_THEME_PLASTIC) {
+                priv::_theme_load_plastic();
             }
-            else if (row == priv::THEME_PLASTIC_TAN) {
-                priv::_load_plastic_tan();
+            else if (row == priv::_THEME_PLASTIC_TAN) {
+                priv::_theme_load_plastic_tan();
             }
             else {
-                priv::_load_default();
+                priv::_theme_load_default();
             }
 
             self->update_pref();
@@ -666,9 +658,9 @@ public:
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textfont(flw::PREF_FONT);
         _theme->textsize(flw::PREF_FONTSIZE);
-        priv::_scrollbar();
+        priv::_theme_scrollbar();
 
-        for (int f = 0; f < priv::THEME_NIL; f++) {
+        for (int f = 0; f < priv::_THEME_NIL; f++) {
             if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
                 _theme->value(f + 1);
                 break;
@@ -729,10 +721,10 @@ Fl_Color flw::color::VIOLET           = fl_rgb_color(238, 130, 238);
 * @return True for dark theme.
 */
 bool flw::theme::is_dark() {
-    if (flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GLEAM_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GLEAM_DARK] ||
-        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GTK_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GTK_DARK]) {
+    if (flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GLEAM_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GLEAM_DARK] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GTK_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GTK_DARK]) {
         return true;
     }
     else {
@@ -774,50 +766,50 @@ bool flw::theme::load(const std::string& name) {
         priv::_THEME_SCROLLSIZE = Fl::scrollbar_size();
     }
 
-    if (name == flw::PREF_THEMES[priv::THEME_DEFAULT] || name == priv::_PREF_THEMES[priv::THEME_DEFAULT]) {
-        priv::_load_default();
+    if (name == flw::PREF_THEMES[priv::_THEME_DEFAULT] || name == priv::_THEME_ALT[priv::_THEME_DEFAULT]) {
+        priv::_theme_load_default();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM] || name == priv::_PREF_THEMES[priv::THEME_GLEAM]) {
-        priv::_load_gleam();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM] || name == priv::_THEME_ALT[priv::_THEME_GLEAM]) {
+        priv::_theme_load_gleam();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_BLUE] || name == priv::_PREF_THEMES[priv::THEME_GLEAM_BLUE]) {
-        priv::_load_gleam_blue();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM_BLUE] || name == priv::_THEME_ALT[priv::_THEME_GLEAM_BLUE]) {
+        priv::_theme_load_gleam_blue();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_DARK] || name == priv::_PREF_THEMES[priv::THEME_GLEAM_DARK]) {
-        priv::_load_gleam_dark();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM_DARK] || name == priv::_THEME_ALT[priv::_THEME_GLEAM_DARK]) {
+        priv::_theme_load_gleam_dark();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_TAN] || name == priv::_PREF_THEMES[priv::THEME_GLEAM_TAN]) {
-        priv::_load_gleam_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM_TAN] || name == priv::_THEME_ALT[priv::_THEME_GLEAM_TAN]) {
+        priv::_theme_load_gleam_tan();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK] || name == priv::_PREF_THEMES[priv::THEME_GTK]) {
-        priv::_load_gtk();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK] || name == priv::_THEME_ALT[priv::_THEME_GTK]) {
+        priv::_theme_load_gtk();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK_BLUE] || name == priv::_PREF_THEMES[priv::THEME_GTK_BLUE]) {
-        priv::_load_gtk_blue();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK_BLUE] || name == priv::_THEME_ALT[priv::_THEME_GTK_BLUE]) {
+        priv::_theme_load_gtk_blue();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK_DARK] || name == priv::_PREF_THEMES[priv::THEME_GTK_DARK]) {
-        priv::_load_gtk_dark();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK_DARK] || name == priv::_THEME_ALT[priv::_THEME_GTK_DARK]) {
+        priv::_theme_load_gtk_dark();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK_TAN] || name == priv::_PREF_THEMES[priv::THEME_GTK_TAN]) {
-        priv::_load_gtk_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK_TAN] || name == priv::_THEME_ALT[priv::_THEME_GTK_TAN]) {
+        priv::_theme_load_gtk_tan();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_OXY] || name == priv::_PREF_THEMES[priv::THEME_OXY]) {
-        priv::_load_oxy();
+    else if (name == flw::PREF_THEMES[priv::_THEME_OXY] || name == priv::_THEME_ALT[priv::_THEME_OXY]) {
+        priv::_theme_load_oxy();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_OXY_TAN] || name == priv::_PREF_THEMES[priv::THEME_OXY_TAN]) {
-        priv::_load_oxy_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_OXY_TAN] || name == priv::_THEME_ALT[priv::_THEME_OXY_TAN]) {
+        priv::_theme_load_oxy_tan();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_PLASTIC] || name == priv::_PREF_THEMES[priv::THEME_PLASTIC]) {
-        priv::_load_plastic();
+    else if (name == flw::PREF_THEMES[priv::_THEME_PLASTIC] || name == priv::_THEME_ALT[priv::_THEME_PLASTIC]) {
+        priv::_theme_load_plastic();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_PLASTIC_TAN] || name == priv::_PREF_THEMES[priv::THEME_PLASTIC_TAN]) {
-        priv::_load_plastic_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_PLASTIC_TAN] || name == priv::_THEME_ALT[priv::_THEME_PLASTIC_TAN]) {
+        priv::_theme_load_plastic_tan();
     }
     else {
         return false;
     }
 
-    priv::_scrollbar();
+    priv::_theme_scrollbar();
     return true;
 }
 
@@ -1006,7 +998,7 @@ double flw::theme::load_theme_from_pref(Fl_Preferences& pref, unsigned screen_nu
     load(buffer);
     Fl_Tooltip::font(flw::PREF_FONT);
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
-    priv::_scrollbar();
+    priv::_theme_scrollbar();
 
     auto so = 0;
     auto sv = 0.0;
