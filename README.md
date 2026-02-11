@@ -20,22 +20,24 @@ independent of flw and FLTK and can be used stand-alone.
 All files (except lcddisplay.h, lcddisplay.cpp) are released under the [GNU General Public License v3.0](LICENSE).
 
 Widget classes:
-* flw::chart::Chart - Chart widget with dates/numbers.
 * flw::DateChooser - Show month date view.
 * flw::FontDialog - A dialog for selecting font and font size.
 * flw::GridGroup - A layout widget using a grid.
 * flw::InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list.
 * flw::LCDDisplay - 7 segment display.
-* flw::plot::Plot - A simple numerical chart widget.
 * flw::ProgressDialog - A dialog with a message list and a progress bar for time consuming work.
 * flw::ScrollBrowser - Scroll faster and let user copy a line to clipboard.
+* flw::SettingsDialog - A dialog for application settings.
 * flw::SplitGroup - A layout widget for two widgets that can be resized with mouse.
-* flw::table::Table - A table editor with built in storage.
-* flw::table::TableDisplay - Show data in a grid.
-* flw::table::TableEditor - Edit data in a grid.
 * flw::ToolGroup - A layout widget for a horizontal or vertical group of widgets.
 * flw::TabsGroup - A tabbed layout widget that can have tabs at every direction. Tabs can be moved or selected with keyboard shortcuts.
 * flw::SVGButton - A button that can load icons from an svg image.
+* flw::chart::Chart - Chart widget with dates/numbers.
+* flw::plot::Plot - A simple numerical chart widget.
+* flw::table::TableDisplay - Show data in a grid.
+* flw::table::TableEditor - Edit data in a grid.
+* flw::table::Table - A table editor with built in storage.
+* flw::table::SettingsTable - A table for SettingsDialog.
 
 Dialog functions:
 * flw::dlg::font() - A dialog for selecting font and font size.
@@ -98,3 +100,6 @@ Chart widget<br>
 
 Plot widget<br>
 <img src="documentation/images/plot.png"/>
+
+Settings dialog<br>
+<img src="documentation/images/settingsdialog.png"/>

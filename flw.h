@@ -1,7 +1,5 @@
 // Copyright gnuwimp@gmail.com
 // Released under the GNU General Public License v3.0
-// Optional compile flags:
-// -DFLW_USE_PNG
 #ifndef FLW_H
 #define FLW_H
 #include <cstdint>
@@ -336,7 +334,7 @@ private:
 #include <vector>
 namespace gnu {
 namespace json {
-enum class TYPE : uint8_t {
+enum class Type : uint8_t {
                                 OBJECT,
                                 ARRAY,
                                 STRING,
@@ -345,7 +343,7 @@ enum class TYPE : uint8_t {
                                 NIL,
                                 ERR,
 };
-enum class ENCODE : uint8_t {
+enum class Encode : uint8_t {
                                 DEFAULT,
                                 TRIM,
                                 FLAT,
@@ -357,14 +355,14 @@ typedef std::vector<JS*> JSArray;
 size_t                          count_utf8(const char* p);
 JS                              decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
 JS                              decode(const std::string& json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
-std::string                     encode(const JS& js, ENCODE option = ENCODE::DEFAULT);
+std::string                     encode(const JS& js, Encode option = Encode::DEFAULT);
 std::string                     escape(const char* string);
 std::string                     format_number(double f, bool E = false);
 std::string                     unescape(const char* string);
 class JS {
     friend class                Builder;
     friend JS                   decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check);
-    friend std::string          encode(const JS* js, ENCODE option);
+    friend std::string          encode(const JS* js, Encode option);
 public:
                                 JS(const JS&) = delete;
     JS&                         operator=(const JS&) = delete;
@@ -372,40 +370,40 @@ public:
                                 JS(JS&& other);
                                 ~JS();
     JS&                         operator=(JS&&);
-    bool                        operator==(TYPE type) const
+    bool                        operator==(Type type) const
                                     { return _type == type; }
-    bool                        operator!=(TYPE type) const
+    bool                        operator!=(Type type) const
                                     { return _type != type; }
     const JS*                   operator[](const std::string& name) const
                                     { return _get_value(name.c_str(), true); }
     const JS*                   operator[](size_t index) const
-                                    { return (_type == TYPE::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
+                                    { return (_type == Type::ARRAY && index < _va->size()) ? (*_va)[index] : nullptr; }
     void                        debug() const;
     std::string                 err() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; }
+                                    { return (_type == Type::ERR) ? _vs : ""; }
     const char*                 err_c() const
-                                    { return (_type == TYPE::ERR) ? _vs : ""; }
+                                    { return (_type == Type::ERR) ? _vs : ""; }
     const JS*                   find(const std::string& name, bool rec = false) const;
     const JS*                   get(const std::string& name, bool escape_name = true) const
                                     { return _get_value(name.c_str(), escape_name); }
     const JS*                   get(size_t index) const
                                     { return (*this) [index]; }
     bool                        has_err() const
-                                    { return _type == TYPE::ERR; }
+                                    { return _type == Type::ERR; }
     bool                        has_inline() const
                                     { return _inl; }
     bool                        is_array() const
-                                    { return _type == TYPE::ARRAY; }
+                                    { return _type == Type::ARRAY; }
     bool                        is_bool() const
-                                    { return _type == TYPE::BOOL; }
+                                    { return _type == Type::BOOL; }
     bool                        is_null() const
-                                    { return _type == TYPE::NIL; }
+                                    { return _type == Type::NIL; }
     bool                        is_number() const
-                                    { return _type == TYPE::NUMBER; }
+                                    { return _type == Type::NUMBER; }
     bool                        is_object() const
-                                    { return _type == TYPE::OBJECT; }
+                                    { return _type == Type::OBJECT; }
     bool                        is_string() const
-                                    { return _type == TYPE::STRING; }
+                                    { return _type == Type::STRING; }
     std::string                 name() const
                                     { return (_name != nullptr) ? _name : ""; }
     const char*                 name_c() const
@@ -419,27 +417,27 @@ public:
     size_t                      size() const
                                     { return (is_array() == true) ? _va->size() : (is_object() == true) ? _vo->size() : 0; }
     std::string                 to_string() const;
-    TYPE                        type() const
+    Type                        type() const
                                     { return _type; }
     std::string                 type_name() const
-                                    { return TYPE_NAMES[static_cast<unsigned>(_type)]; }
+                                    { return Type_NAMES[static_cast<unsigned>(_type)]; }
     const JSArray*              va() const
-                                    { return (_type == TYPE::ARRAY) ? _va : nullptr; }
+                                    { return (_type == Type::ARRAY) ? _va : nullptr; }
     bool                        vb() const
-                                    { assert(_type == TYPE::BOOL); return (_type == TYPE::BOOL) ? _vb : false; }
+                                    { assert(_type == Type::BOOL); return (_type == Type::BOOL) ? _vb : false; }
     double                      vn() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? _vn : 0.0; }
+                                    { assert(_type == Type::NUMBER); return (_type == Type::NUMBER) ? _vn : 0.0; }
     long long int               vn_i() const
-                                    { assert(_type == TYPE::NUMBER); return (_type == TYPE::NUMBER) ? (long long int) _vn : 0; }
+                                    { assert(_type == Type::NUMBER); return (_type == Type::NUMBER) ? (long long int) _vn : 0; }
     const JSObject*             vo() const
-                                    { return (_type == TYPE::OBJECT) ? _vo : nullptr; }
+                                    { return (_type == Type::OBJECT) ? _vo : nullptr; }
     const JSArray               vo_to_va() const;
     std::string                 vs() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; }
+                                    { assert(_type == Type::STRING); return (_type == Type::STRING) ? _vs : ""; }
     const char*                 vs_c() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? _vs : ""; }
+                                    { assert(_type == Type::STRING); return (_type == Type::STRING) ? _vs : ""; }
     std::string                 vs_u() const
-                                    { assert(_type == TYPE::STRING); return (_type == TYPE::STRING) ? json::unescape(_vs) : ""; }
+                                    { assert(_type == Type::STRING); return (_type == Type::STRING) ? json::unescape(_vs) : ""; }
     static inline ssize_t       Count()
                                     { return JS::COUNT; }
     static inline ssize_t       Max()
@@ -461,11 +459,11 @@ private:
     static JS*                  _MakeNumber(const char* name, double vn, JS* parent, unsigned pos);
     static JS*                  _MakeObject(const char* name, JS* parent, unsigned pos);
     static JS*                  _MakeString(const char* name, const char* vs, JS* parent, unsigned pos);
-    static constexpr const char* TYPE_NAMES[10] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "ERR", "", ""};
+    static constexpr const char* Type_NAMES[10] = { "OBJECT", "ARRAY", "STRING", "NUMBER", "BOOL", "NIL", "ERR", "", ""};
     static ssize_t              COUNT;
     static ssize_t              MAX;
     bool                        _inl;
-    TYPE                        _type;
+    Type                        _type;
     uint32_t                    _pos;
     JS*                         _parent;
     char*                       _name;
@@ -488,7 +486,7 @@ public:
     Builder&                    add(JS* json);
     void                        clear()
                                     { delete _root; _root = _current = nullptr; _name = ""; }
-    std::string                 encode(ENCODE option = ENCODE::DEFAULT) const;
+    std::string                 encode(Encode option = Encode::DEFAULT) const;
     Builder&                    end();
     const JS*                   root() const
                                     { return _root; }
@@ -659,7 +657,7 @@ namespace util {
     std::string                 format(const char* format, ...);
     std::string                 format_double(double num, int decimals = 0, char del = ' ');
     std::string                 format_int(int64_t num, char del = ' ');
-    bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size);
+    bool                        icon(Fl_Widget* widget, const std::string& svg_image, unsigned size);
     bool                        is_empty(const std::string& string);
     void                        labelfont(Fl_Widget* widget, Fl_Font font = flw::PREF_FONT, int size = flw::PREF_FONTSIZE);
     int64_t                     microseconds();
@@ -704,6 +702,154 @@ private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
     VoidVector                  _widgets;
     int                         _size;
+};
+}
+#include <FL/Fl_Rect.H>
+#include <FL/Fl_Group.H>
+class Fl_Scrollbar;
+namespace flw {
+class TabsGroup : public Fl_Group {
+public:
+    static const int            DEFAULT_SPACE             =  2;
+    static const int            DEFAULT_MAX_HOR_TAB_WIDTH = 12;
+    static const int            DEFAULT_VER_TAB_WIDTH     = 12;
+    static const int            HEIGHT                    =  8;
+    static const int            MAX_SPACE                 = 20;
+    static const int            MIN_WIDTH                 =  4;
+    enum class Pos {
+                                TOP,
+                                BOTTOM,
+                                LEFT,
+                                RIGHT,
+                                TOP2,
+                                BOTTOM2,
+                                LEFT2,
+                                RIGHT2,
+                                LAST = RIGHT2,
+    };
+    explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr, const std::string& tooltip = "");
+    void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
+                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); }
+    Fl_Widget*                  child(int index) const;
+    int                         children() const
+                                    { return static_cast<int>(_widgets.size()); }
+    void                        clear();
+    void                        debug(bool all = true) const;
+    void                        disable_keyboard()
+                                    { _keyboard = false; }
+    void                        do_layout()
+                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
+    void                        enable_keyboard()
+                                    { _keyboard = true; }
+    int                         find(const Fl_Widget* widget) const;
+    int                         handle(int event) override;
+    void                        hide_tabs();
+    void                        insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before = nullptr, const std::string& tooltip = "");
+    bool                        is_tabs_bottom() const
+                                    { return _tab_pos == Pos::BOTTOM || _tab_pos == Pos::BOTTOM2; }
+    bool                        is_tabs_left() const
+                                    { return _tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2; }
+    bool                        is_tabs_horizontal() const
+                                    { return _tab_pos == Pos::TOP || _tab_pos == Pos::TOP2 || _tab_pos == Pos::BOTTOM || _tab_pos == Pos::BOTTOM2; }
+    bool                        is_tabs_right() const
+                                    { return _tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2; }
+    bool                        is_tabs_top() const
+                                    { return _tab_pos == Pos::TOP || _tab_pos == Pos::TOP2; }
+    bool                        is_tabs_visible() const
+                                    { return _tabs->visible(); }
+    bool                        is_tabs_vertical() const
+                                    { return _tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2 || _tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2; }
+    void                        max_top_width(unsigned characters = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH)
+                                    { if (characters >= TabsGroup::MIN_WIDTH && characters <= 100) _width2 = characters; }
+    Fl_Widget*                  remove(int index);
+    Fl_Widget*                  remove(Fl_Widget* widget)
+                                    { return TabsGroup::remove(find(widget)); }
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        show_tabs();
+    void                        sort(bool ascending = true, bool casecompare = false);
+    Fl_Widget*                  tab(int index) const
+                                    { return child(index); }
+    int                         tabs() const
+                                    { return children(); }
+    void                        tab_box(Fl_Boxtype up_box = FL_MAX_BOXTYPE, Fl_Boxtype down_box = FL_MAX_BOXTYPE);
+    void                        tab_color(Fl_Color color = FL_SELECTION_COLOR);
+    std::string                 tab_label();
+    std::string                 tab_label(const Fl_Widget* widget);
+    void                        tab_label(const std::string& label, Fl_Widget* widget);
+    Pos                         tab_pos() const
+                                    { return _tab_pos; }
+    void                        tab_pos(Pos pos, int space = TabsGroup::DEFAULT_SPACE);
+    int                         swap(int from, int to);
+    std::string                 tooltip(Fl_Widget* widget) const;
+    void                        tooltip(const std::string& label, Fl_Widget* widget);
+    void                        update_pref(Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
+    Fl_Widget*                  value() const;
+    void                        value(int num);
+    void                        value(Fl_Widget* widget)
+                                    { _activate(widget); }
+    static void                 CallbackButton(Fl_Widget* sender, void* object);
+    static void                 CallbackScrollbar(Fl_Widget* sender, void* object);
+    static const char*          Help();
+private:
+    void                        _activate(Fl_Widget* widget);
+    Fl_Widget*                  _active_button();
+    void                        _resize_active_widget();
+    void                        _resize_left_right(int X, int Y, int W, int H);
+    void                        _resize_top_bottom(int X, int Y, int W, int H);
+    Fl_Boxtype                  _down_box;
+    Fl_Boxtype                  _up_box;
+    Fl_Color                    _color;
+    Fl_Group*                   _tabs;
+    Fl_Rect                     _area;
+    Fl_Scrollbar*               _scroll;
+    Pos                         _tab_pos;
+    WidgetVector                _widgets;
+    bool                        _keyboard;
+    bool                        _drag;
+    int                         _active1;
+    int                         _active2;
+    int                         _e;
+    int                         _n;
+    int                         _s;
+    int                         _space;
+    int                         _visible;
+    int                         _w;
+    int                         _width1;
+    int                         _width2;
+};
+}
+#include <FL/Fl_Group.H>
+namespace flw {
+class ToolGroup : public Fl_Group {
+public:
+    enum class Pos {
+                                HORIZONTAL,
+                                VERTICAL,
+    };
+                                ToolGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
+                                ~ToolGroup();
+    Fl_Widget*                  add(Fl_Widget* widget, unsigned size = 0);
+    void                        clear();
+    void                        do_layout()
+                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
+    bool                        expand_last() const
+                                    { return _expand; }
+    void                        expand_last(bool value)
+                                    { _expand = value; do_layout(); }
+    Pos                         pos() const
+                                    { return _pos; }
+    void                        pos(Pos pos)
+                                    { _pos = pos; do_layout(); }
+    Fl_Widget*                  remove(Fl_Widget* widget);
+    Fl_Widget*                  replace(Fl_Widget* old_widget, Fl_Widget* new_widget);
+    void                        resize(int X, int Y, int W, int H) override;
+    void                        size(Fl_Widget* widget, unsigned size);
+    void                        size(unsigned size);
+private:
+    Pos                         _pos;
+    VoidVector                  _widgets;
+    bool                        _expand;
 };
 }
 class Fl_Menu_Button;
@@ -1793,6 +1939,34 @@ private:
     int                         _scroll;
 };
 }
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Double_Window.H>
+namespace flw {
+namespace table {
+class SettingsTable;
+}
+class SettingsDialog : public Fl_Double_Window {
+public:
+                                SettingsDialog(const std::string& title, int W = 45, int H = 34);
+    void                        add_page(const std::string& label, table::SettingsTable* table, table::SettingsTable* after = nullptr);
+    void                        insert_page(const std::string& label, table::SettingsTable* table, table::SettingsTable* before = nullptr);
+    void                        message(const std::string& msg, Fl_Color color = FL_FOREGROUND_COLOR);
+    table::SettingsTable*       page(int num);
+    bool                        run();
+private:
+    static void                 Callback(Fl_Widget* w, void* o);
+    Fl_Box*                     _label;
+    Fl_Button*                  _cancel;
+    Fl_Button*                  _ok;
+    Fl_Button*                  _reset;
+    Fl_Button*                  _undo;
+    GridGroup*                  _grid;
+    TabsGroup*                  _tabs;
+    bool                        _ret;
+    bool                        _run;
+};
+}
 #include <FL/Fl_Group.H>
 namespace flw {
 class SplitGroup : public Fl_Group {
@@ -1846,7 +2020,7 @@ public:
                                 UNDER,
     };
                                 SVGButton(int X, int Y, int W, int H, const std::string& l);
-                                SVGButton(int X, int Y, int W, int H, const std::string& l, const std::string& svg, bool ret = false, bool dark = false, Pos pos = Pos::RIGHT, double size = 1.5);
+                                SVGButton(int X, int Y, int W, int H, const std::string& l, const std::string& svg, bool ret = false, bool dark = false, Pos pos = Pos::RIGHT, double size = 1.3);
     void                        draw() override;
     int                         handle(int event) override;
     bool                        has_dark() const
@@ -1857,7 +2031,7 @@ public:
                                     { return _return; }
     void                        set_dark(bool value)
                                     { _dark = value; }
-    bool                        set_icon(const std::string& l, const std::string& svg_image, Pos pos = Pos::RIGHT, double size = 1.5);
+    bool                        set_icon(const std::string& l, const std::string& svg_image, Pos pos = Pos::RIGHT, double size = 1.3);
     void                        set_return(bool value)
                                     { _return = value; }
 private:
@@ -1869,6 +2043,9 @@ private:
 #include <FL/Fl_Group.H>
 class Fl_Scrollbar;
 namespace flw {
+namespace priv {
+    class _TableFindDialog;
+}
 namespace table {
 enum class Select {
     NO,
@@ -1892,7 +2069,7 @@ enum class Event {
     DELETE_COLUMN,
 };
 class Display : public Fl_Group {
-    friend class _FindDialog;
+    friend class priv::_TableFindDialog;
 public:
     explicit                    Display(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        active_cell(int row = -1, int col = -1, bool show = false);
@@ -1900,6 +2077,8 @@ public:
                                         { (void) row; (void) col; return FL_ALIGN_LEFT; }
     virtual Fl_Color            cell_color(int row, int col)
                                         { (void) row; (void) col; return FL_BACKGROUND2_COLOR; }
+    virtual void                cell_event(int row, int col, Event event)
+                                        { (void) row; (void) col; (void) event; }
     virtual Fl_Color            cell_textcolor(int row, int col)
                                     { (void) row; (void) col; return FL_FOREGROUND_COLOR; }
     virtual Fl_Font             cell_textfont(int row, int col)
@@ -1982,8 +2161,7 @@ protected:
                                     { return cell_value(row, col); }
     void                        _move_cursor(Move move);
     void                        _update_scrollbars();
-    void                        _set_event(int row, int col, Event event)
-                                    { _event_row = row; _event_col = col; _event = event; }
+    void                        _set_event(int row, int col, Event event);
     static void                 _CallbackHor(Fl_Widget* w, void* v);
     static void                 _CallbackVer(Fl_Widget* w, void* v);
     Event                       _event;
@@ -2021,7 +2199,8 @@ namespace table {
 enum class Format {
     DEFAULT,
     INT_DEF,
-    INT_SEP,
+    INT_SEP1,
+    INT_SEP2,
     DEC_DEF,
     DEC_0,
     DEC_1,
@@ -2036,7 +2215,7 @@ enum class Format {
     DATE_WORLD,
     DATE_US,
     SECRET_DEF,
-    SECRET_DOT,
+    SECRET_STAR,
 };
 enum class Type {
     TEXT,
@@ -2062,6 +2241,9 @@ extern std::string EditFileLabel;
 extern std::string EditListLabel;
 extern std::string EditTextLabel;
 std::string format_slider(double val, double min, double max, double step);
+std::string format_slider2(int64_t val, int64_t min, int64_t max, int64_t step);
+double      get_slider(const std::string& slider_string, double def = 0.0);
+int64_t     get_slider2(const std::string& slider_string, int64_t def = 0);
 class Editor : public Display {
     using Display::cell_value;
 public:
@@ -2074,6 +2256,7 @@ public:
                                     { (void) row; (void) col; return false; }
     virtual Format              cell_format(int row, int col)
                                     { (void) row; (void) col; return Format::DEFAULT; }
+    Fl_Color                    cell_textcolor(int row, int col) override;
     virtual Type                cell_type(int row, int col)
                                     { (void) row; (void) col; return Type::TEXT; }
     virtual bool                cell_value(int row, int col, const std::string& value)
@@ -2081,6 +2264,10 @@ public:
     void                        cmd_cut();
     void                        cmd_delete();
     void                        cmd_paste();
+    bool                        draw_inactive_lighter() const
+                                    { return _ro; }
+    void                        draw_inactive_lighter(bool ro)
+                                    { _ro = ro; }
     int                         handle(int event) override;
     void                        reset() override;
 protected:
@@ -2097,11 +2284,13 @@ protected:
     Fl_Widget*                  _edit2;
     Fl_Widget*                  _edit3;
     bool                        _force_events;
+    bool                        _ro;
 };
 }
 }
 #include <string>
 namespace flw {
+class SettingsDialog;
 namespace table {
 class Table : public Editor {
     friend class                _TableChoice;
@@ -2125,7 +2314,7 @@ public:
     Format                      cell_format(int row, int col) override
                                     { return static_cast<Format>(_get_int(_cell_format, row, col, static_cast<int>(Format::DEFAULT))); }
     void                        cell_format(int row, int col, Format value)
-                                    { _set_int(_cell_format, row, col, (int) value); }
+                                    { _set_int(_cell_format, row, col, static_cast<int>(value)); }
     Type                        cell_type(int row, int col) override
                                     { return static_cast<Type>(_get_int(_cell_type, row, col, static_cast<int>(Type::TEXT))); }
     void                        cell_type(int row, int col, Type type)
@@ -2162,117 +2351,20 @@ protected:
     StringHash                  _cell_width;
     StringVector                _cell_choices;
 };
-}
-}
-#include <FL/Fl_Rect.H>
-#include <FL/Fl_Group.H>
-class Fl_Scrollbar;
-namespace flw {
-class TabsGroup : public Fl_Group {
+class SettingsTable : public Table {
 public:
-    static const int            DEFAULT_SPACE             =  2;
-    static const int            DEFAULT_MAX_HOR_TAB_WIDTH = 12;
-    static const int            DEFAULT_VER_TAB_WIDTH     = 12;
-    static const int            HEIGHT                    =  8;
-    static const int            MAX_SPACE                 = 20;
-    static const int            MIN_WIDTH                 =  4;
-    enum class Pos {
-                                TOP,
-                                BOTTOM,
-                                LEFT,
-                                RIGHT,
-                                TOP2,
-                                BOTTOM2,
-                                LEFT2,
-                                RIGHT2,
-                                LAST = RIGHT2,
-    };
-    explicit                    TabsGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        add(const std::string& label, Fl_Widget* widget, const Fl_Widget* after =  nullptr, const std::string& tooltip = "");
-    void                        border(int n = 0, int s = 0, int w = 0, int e = 0)
-                                    { _n = n; _s = s; _w = w; _e = e; do_layout(); }
-    Fl_Widget*                  child(int index) const;
-    int                         children() const
-                                    { return static_cast<int>(_widgets.size()); }
-    void                        clear();
-    void                        debug(bool all = true) const;
-    void                        disable_keyboard()
-                                    { _keyboard = false; }
-    void                        do_layout()
-                                    { TabsGroup::resize(x(), y(), w(), h()); Fl::redraw(); }
-    void                        enable_keyboard()
-                                    { _keyboard = true; }
-    int                         find(const Fl_Widget* widget) const;
-    int                         handle(int event) override;
-    void                        hide_tabs();
-    void                        insert(const std::string& label, Fl_Widget* widget, const Fl_Widget* before = nullptr, const std::string& tooltip = "");
-    bool                        is_tabs_bottom() const
-                                    { return _tab_pos == Pos::BOTTOM || _tab_pos == Pos::BOTTOM2; }
-    bool                        is_tabs_left() const
-                                    { return _tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2; }
-    bool                        is_tabs_horizontal() const
-                                    { return _tab_pos == Pos::TOP || _tab_pos == Pos::TOP2 || _tab_pos == Pos::BOTTOM || _tab_pos == Pos::BOTTOM2; }
-    bool                        is_tabs_right() const
-                                    { return _tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2; }
-    bool                        is_tabs_top() const
-                                    { return _tab_pos == Pos::TOP || _tab_pos == Pos::TOP2; }
-    bool                        is_tabs_visible() const
-                                    { return _tabs->visible(); }
-    bool                        is_tabs_vertical() const
-                                    { return _tab_pos == Pos::LEFT || _tab_pos == Pos::LEFT2 || _tab_pos == Pos::RIGHT || _tab_pos == Pos::RIGHT2; }
-    void                        max_top_width(unsigned characters = TabsGroup::DEFAULT_MAX_HOR_TAB_WIDTH)
-                                    { if (characters >= TabsGroup::MIN_WIDTH && characters <= 100) _width2 = characters; }
-    Fl_Widget*                  remove(int index);
-    Fl_Widget*                  remove(Fl_Widget* widget)
-                                    { return TabsGroup::remove(find(widget)); }
-    void                        resize(int X, int Y, int W, int H) override;
-    void                        show_tabs();
-    void                        sort(bool ascending = true, bool casecompare = false);
-    void                        tab_box(Fl_Boxtype up_box = FL_MAX_BOXTYPE, Fl_Boxtype down_box = FL_MAX_BOXTYPE);
-    void                        tab_color(Fl_Color color = FL_SELECTION_COLOR);
-    std::string                 tab_label(const Fl_Widget* widget);
-    void                        tab_label(const std::string& label, Fl_Widget* widget);
-    Pos                         tab_pos() const
-                                    { return _tab_pos; }
-    void                        tab_pos(Pos pos, int space = TabsGroup::DEFAULT_SPACE);
-    int                         swap(int from, int to);
-    std::string                 tooltip(Fl_Widget* widget) const;
-    void                        tooltip(const std::string& label, Fl_Widget* widget);
-    void                        update_pref(Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
-    Fl_Widget*                  value() const;
-    void                        value(int num);
-    void                        value(Fl_Widget* widget)
-                                    { _activate(widget); }
-    static void                 CallbackButton(Fl_Widget* sender, void* object);
-    static void                 CallbackScrollbar(Fl_Widget* sender, void* object);
-    static const char*          Help();
+                                SettingsTable(int rows);
+    virtual void                get_data() = 0;
+    void                        message(const std::string& msg, Fl_Color color = FL_FOREGROUND_COLOR);
+    virtual void                set_data() = 0;
+    virtual void                set_def_data() = 0;
+    void                        set_dialog(SettingsDialog* dlg)
+                                    { _dlg = dlg; }
+    virtual std::string         validate_data(int& row) = 0;
 private:
-    void                        _activate(Fl_Widget* widget);
-    Fl_Widget*                  _active_button();
-    void                        _resize_active_widget();
-    void                        _resize_left_right(int X, int Y, int W, int H);
-    void                        _resize_top_bottom(int X, int Y, int W, int H);
-    Fl_Boxtype                  _down_box;
-    Fl_Boxtype                  _up_box;
-    Fl_Color                    _color;
-    Fl_Group*                   _tabs;
-    Fl_Rect                     _area;
-    Fl_Scrollbar*               _scroll;
-    Pos                         _tab_pos;
-    WidgetVector                _widgets;
-    bool                        _keyboard;
-    bool                        _drag;
-    int                         _active1;
-    int                         _active2;
-    int                         _e;
-    int                         _n;
-    int                         _s;
-    int                         _space;
-    int                         _visible;
-    int                         _w;
-    int                         _width1;
-    int                         _width2;
+    SettingsDialog*             _dlg;
 };
+}
 }
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl_Rect.H>
@@ -2314,39 +2406,6 @@ namespace theme {
 namespace dlg {
     void                        theme(bool enable_font = false, bool enable_fixedfont = false);
 }
-}
-#include <FL/Fl_Group.H>
-namespace flw {
-class ToolGroup : public Fl_Group {
-public:
-    enum class Pos {
-                                HORIZONTAL,
-                                VERTICAL,
-    };
-                                ToolGroup(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-                                ~ToolGroup();
-    Fl_Widget*                  add(Fl_Widget* widget, unsigned size = 0);
-    void                        clear();
-    void                        do_layout()
-                                    { resize(x(), y(), w(), h()); Fl::redraw(); }
-    bool                        expand_last() const
-                                    { return _expand; }
-    void                        expand_last(bool value)
-                                    { _expand = value; do_layout(); }
-    Pos                         pos() const
-                                    { return _pos; }
-    void                        pos(Pos pos)
-                                    { _pos = pos; do_layout(); }
-    Fl_Widget*                  remove(Fl_Widget* widget);
-    Fl_Widget*                  replace(Fl_Widget* old_widget, Fl_Widget* new_widget);
-    void                        resize(int X, int Y, int W, int H) override;
-    void                        size(Fl_Widget* widget, unsigned size);
-    void                        size(unsigned size);
-private:
-    Pos                         _pos;
-    VoidVector                  _widgets;
-    bool                        _expand;
-};
 }
 namespace flw {
 class WaitCursor {

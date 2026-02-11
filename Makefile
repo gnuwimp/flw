@@ -1,7 +1,6 @@
 include makeinclude
 
 CXXFLAGS += $(FLTK_CXXFLAGS)
-CXXFLAGS += -DFLW_USE_PNG
 LDFLAGS  += $(FLTK_IMAGE_LDFLAGS)
 INC       = -Isrc
 
@@ -31,6 +30,7 @@ OBJ = obj/date.o \
 	obj/progressdialog.o \
 	obj/recentmenu.o \
 	obj/scrollbrowser.o \
+	obj/settingsdialog.o \
 	obj/splitgroup.o \
 	obj/svgbutton.o \
 	obj/table.o \
@@ -58,6 +58,7 @@ all: obj \
 	test_plot.exe \
 	test_recentmenu.exe \
 	test_scrollbrowser.exe \
+	test_settingsdialog.exe \
 	test_splitgroup.exe \
 	test_table.exe \
 	test_tabledisplay.exe \
@@ -129,6 +130,9 @@ obj/recentmenu.o: src/recentmenu.cpp src/recentmenu.h src/flw.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/scrollbrowser.o: src/scrollbrowser.cpp src/scrollbrowser.h src/flw.h
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+obj/settingsdialog.o: src/settingsdialog.cpp src/flw.h src/svgbutton.h
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 obj/splitgroup.o: src/splitgroup.cpp src/splitgroup.h src/flw.h
@@ -284,6 +288,17 @@ test_scrollbrowser.exe: obj/test_scrollbrowser.o $(OBJ)
 
 scrollbrowser: test_scrollbrowser.exe
 	./test_scrollbrowser.exe $(arg)
+
+#-------------------
+
+obj/test_settingsdialog.o: test/test_settingsdialog.cpp $(OBJ)
+	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
+
+test_settingsdialog.exe: obj/test_settingsdialog.o $(OBJ)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+settingsdialog: test_settingsdialog.exe
+	./test_settingsdialog.exe $(arg)
 
 #-------------------
 

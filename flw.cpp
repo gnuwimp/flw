@@ -5,6 +5,7 @@
 #include <cstring>
 #include <ctime>
 namespace gnu {
+namespace priv {
 static int          _DATE_DAYS_MONTH[]      = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 static int          _DATE_DAYS_MONTH_LEAP[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 static const char*  _DATE_WEEKDAYS[]        = {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""};
@@ -20,14 +21,14 @@ static int _date_days_in_month(int year, int month) {
     }
     return _DATE_DAYS_MONTH[month];
 }
-static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
+static void _date_from_time(int64_t seconds, gnu::Date::UTC utc, int& year, int& month, int& day, int& hour, int& min, int& sec) {
     year = month = day = 1;
     hour = min = sec = 0;
     if (seconds < 0) {
         return;
     }
     time_t    rawtime  = seconds;
-    const tm* timeinfo = (utc == Date::UTC::ON) ? gmtime(&rawtime) : localtime(&rawtime);
+    const tm* timeinfo = (utc == gnu::Date::UTC::ON) ? gmtime(&rawtime) : localtime(&rawtime);
     if (timeinfo == nullptr) {
         return;
     }
@@ -38,7 +39,7 @@ static void _date_from_time(int64_t seconds, Date::UTC utc, int& year, int& mont
     min   = timeinfo->tm_min;
     sec   = timeinfo->tm_sec;
 }
-static Date::Day _date_weekday(int year, int month, int day) {
+static gnu::Date::Day _date_weekday(int year, int month, int day) {
     if (year > 0 && year < 10000 && month > 0 && month < 13 && day > 0 && day <= _date_days_in_month(year, month)) {
         int start = 0;
         int y1    = year - 1;
@@ -55,7 +56,7 @@ static Date::Day _date_weekday(int year, int month, int day) {
                 start += days;
             }
             else {
-                return Date::Day::INVALID;
+                return gnu::Date::Day::INVALID;
             }
         }
         start = start % 7;
@@ -67,13 +68,13 @@ static Date::Day _date_weekday(int year, int month, int day) {
             }
         }
         if (start < 1 || start > 7) {
-            return Date::Day::INVALID;
+            return gnu::Date::Day::INVALID;
         }
         else {
             return (Date::Day) start;
         }
     }
-    return Date::Day::INVALID;
+    return gnu::Date::Day::INVALID;
 }
 static bool _date_is_leapyear(int year) {
     if (year < 1 || year > 9999) {
@@ -86,30 +87,32 @@ static bool _date_is_leapyear(int year) {
        return false;
     }
 }
-Date::Date(Date::UTC utc) {
+}
+}
+gnu::Date::Date(Date::UTC utc) {
     int y, m, d, ho, mi, se;
     _year = _month = _day = _hour = _min = _sec = 0;
-    _date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
+    priv::_date_from_time(::time(nullptr), utc, y, m, d, ho, mi, se);
     set(y, m, d, ho, mi, se);
 }
-Date::Date(int year, int month, int day, int hour, int min, int sec) {
+gnu::Date::Date(int year, int month, int day, int hour, int min, int sec) {
     _year = _month = _day = _hour = _min = _sec = 0;
     set(year, month, day, hour, min, sec);
 }
-Date::Date(int64_t unix_time, Date::UTC utc) {
+gnu::Date::Date(int64_t unix_time, gnu::Date::UTC utc) {
     int y, m, d, ho, mi, se;
-    _date_from_time(unix_time, utc, y, m, d, ho, mi, se);
+    priv::_date_from_time(unix_time, utc, y, m, d, ho, mi, se);
     set(y, m, d, ho, mi, se);
 }
-Date::Date(const std::string& date, Date::US us) {
+gnu::Date::Date(const std::string& date, gnu::Date::US us) {
     _year = _month = _day = _hour = _min = _sec = 0;
     set(date, us);
 }
-bool Date::add_days(const int days) {
+bool gnu::Date::add_days(const int days) {
     if (days == 0) {
         return 0;
     }
-    int daym = _date_days_in_month(_year, _month);
+    int daym = priv::_date_days_in_month(_year, _month);
     if (daym == 0) {
         return false;
     }
@@ -128,7 +131,7 @@ bool Date::add_days(const int days) {
                     return false;
                 }
             }
-            d = _date_days_in_month(y, m);
+            d = priv::_date_days_in_month(y, m);
             if (d == 0) {
                 return false;
             }
@@ -143,7 +146,7 @@ bool Date::add_days(const int days) {
                     return false;
                 }
             }
-            daym = _date_days_in_month(y, m);
+            daym = priv::_date_days_in_month(y, m);
             if (daym == 0) {
                 return false;
             }
@@ -154,7 +157,7 @@ bool Date::add_days(const int days) {
     _day   = d;
     return true;
 }
-bool Date::add_months(const int months) {
+bool gnu::Date::add_months(const int months) {
     if (months == 0) {
         return false;
     }
@@ -178,7 +181,7 @@ bool Date::add_months(const int months) {
             }
         }
     }
-    const int days = _date_days_in_month(y, m);
+    const int days = priv::_date_days_in_month(y, m);
     if (days <= 0) {
         return false;
     }
@@ -189,7 +192,7 @@ bool Date::add_months(const int months) {
     }
     return true;
 }
-bool Date::add_seconds(const int64_t seconds) {
+bool gnu::Date::add_seconds(const int64_t seconds) {
     if (seconds == 0) {
         return false;
     }
@@ -233,7 +236,7 @@ bool Date::add_seconds(const int64_t seconds) {
     _sec  = s;
     return true;
 }
-int Date::compare(const Date& other, Compare flag) const {
+int gnu::Date::compare(const Date& other, Compare flag) const {
     if (_year < other._year) {
         return -1;
     }
@@ -280,29 +283,29 @@ int Date::compare(const Date& other, Compare flag) const {
     }
     return 0;
 }
-int Date::days_in_month() const {
-    return _date_days_in_month(_year, _month);
+int gnu::Date::days_in_month() const {
+    return priv::_date_days_in_month(_year, _month);
 }
-int Date::days_into_year() const {
+int gnu::Date::days_into_year() const {
     auto res  = 0;
-    auto leap = _date_is_leapyear(_year);
+    auto leap = priv::_date_is_leapyear(_year);
     for (auto m = 1; m < _month && m < 13; m++) {
         if (leap) {
-            res += _DATE_DAYS_MONTH_LEAP[m];
+            res += priv::_DATE_DAYS_MONTH_LEAP[m];
         }
         else {
-            res += _DATE_DAYS_MONTH[m];
+            res += priv::_DATE_DAYS_MONTH[m];
         }
     }
     return res + _day;
 }
-void Date::debug() const {
+void gnu::Date::debug() const {
 #ifdef DEBUG
     printf("Date| %s\n", format(Format::ISO_TIME_LONG).c_str());
     fflush(stdout);
 #endif
 }
-int Date::diff_days(const Date& date) const {
+int gnu::Date::diff_days(const Date& date) const {
     Date d(date);
     int  res = 0;
     if (compare(d, Compare::YYYYMMDD) < 0) {
@@ -319,7 +322,7 @@ int Date::diff_days(const Date& date) const {
     }
     return res;
 }
-int Date::diff_months(const Date& date) const {
+int gnu::Date::diff_months(const Date& date) const {
     Date d(date);
     int  res = 0;
     if (compare(d, Compare::YYYYMM) < 0) {
@@ -336,7 +339,7 @@ int Date::diff_months(const Date& date) const {
     }
     return res;
 }
-int64_t Date::diff_seconds(const Date& date) const {
+int64_t gnu::Date::diff_seconds(const Date& date) const {
     int64_t unix1 = time();
     int64_t unix2 = date.time();
     if (unix1 >= 0 && unix2 >= 0) {
@@ -344,7 +347,7 @@ int64_t Date::diff_seconds(const Date& date) const {
     }
     return 0;
 }
-std::string Date::format(Format format) const {
+std::string gnu::Date::format(Format format) const {
     char tmp[100];
     int  n = 0;
     if (format == Format::ISO) {
@@ -400,16 +403,16 @@ std::string Date::format(Format format) const {
     }
     return tmp;
 }
-bool Date::is_leapyear() const {
-    return _date_is_leapyear(_year);
+bool gnu::Date::is_leapyear() const {
+    return priv::_date_is_leapyear(_year);
 }
-const char* Date::month_name() const {
-    return _DATE_MONTHS[(int) _month];
+const char* gnu::Date::month_name() const {
+    return priv::_DATE_MONTHS[(int) _month];
 }
-const char* Date::month_name_short() const {
-    return _DATE_MONTHS_SHORT[(int) _month];
+const char* gnu::Date::month_name_short() const {
+    return priv::_DATE_MONTHS_SHORT[(int) _month];
 }
-Date& Date::set(const Date& date) {
+gnu::Date& gnu::Date::set(const Date& date) {
     _year  = date._year;
     _month = date._month;
     _day   = date._day;
@@ -418,7 +421,7 @@ Date& Date::set(const Date& date) {
     _sec   = date._sec;
     return *this;
 }
-Date& Date::set(const std::string& date, Date::US us) {
+gnu::Date& gnu::Date::set(const std::string& date, gnu::Date::US us) {
     auto str1 = date.c_str();
     auto len1 = static_cast<int>(date.length());
     auto str2 = strstr(str1, " ");
@@ -566,10 +569,10 @@ Date& Date::set(const std::string& date, Date::US us) {
     }
     return *this;
 }
-Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
+gnu::Date& gnu::Date::set(int year, int month, int day, int hour, int min, int sec) {
     if (year < 1 || year > 9999 ||
         month < 1 || month > 12 ||
-        day < 1 || day > _date_days_in_month(year, month) ||
+        day < 1 || day > priv::_date_days_in_month(year, month) ||
         hour < 0 || hour > 23 ||
         min < 0 || min > 59 ||
         sec < 0 || sec > 59) {
@@ -585,39 +588,39 @@ Date& Date::set(int year, int month, int day, int hour, int min, int sec) {
         return *this;
     }
 }
-Date& Date::set_day(int day) {
-    if (day > 0 && day <= _date_days_in_month(_year, _month)) {
+gnu::Date& gnu::Date::set_day(int day) {
+    if (day > 0 && day <= priv::_date_days_in_month(_year, _month)) {
         _day = day;
     }
     return *this;
 }
-Date& Date::set_hour(int hour) {
+gnu::Date& gnu::Date::set_hour(int hour) {
     if (hour >= 0 && hour <= 23) {
         _hour = hour;
     }
     return *this;
 }
-Date& Date::set_minute(int min) {
+gnu::Date& gnu::Date::set_minute(int min) {
     if (min >= 0 && min <= 59) {
         _min = min;
     }
     return *this;
 }
-Date& Date::set_month(int month) {
+gnu::Date& gnu::Date::set_month(int month) {
     if (_day >= 1 &&
-        _day <= _date_days_in_month(_year, month) &&
+        _day <= priv::_date_days_in_month(_year, month) &&
         month >= 1 && month <= 12) {
         _month = month;
     }
     return *this;
 }
-Date& Date::set_second(int sec) {
+gnu::Date& gnu::Date::set_second(int sec) {
     if (sec >= 0 && sec <= 59) {
         _sec = sec;
     }
     return *this;
 }
-Date& Date::set_weekday(Date::Day day) {
+gnu::Date& gnu::Date::set_weekday(Date::Day day) {
     if (weekday() < day) {
         while (weekday() < day) {
             add_days(1);
@@ -630,13 +633,13 @@ Date& Date::set_weekday(Date::Day day) {
     }
     return *this;
 }
-Date& Date::set_year(int year) {
+gnu::Date& gnu::Date::set_year(int year) {
     if (year >= 1 && year <= 9999) {
         _year = year;
     }
     return *this;
 }
-int64_t Date::time() const {
+int64_t gnu::Date::time() const {
     tm t;
     if (_year < 1970) {
         return -1;
@@ -650,17 +653,17 @@ int64_t Date::time() const {
     t.tm_sec  = _sec;
     return mktime(&t);
 }
-int Date::week() const {
-    Date::Day wday  = _date_weekday(_year, _month, _day);
-    Date::Day wday1 = _date_weekday(_year, 1, 1);
-    if (wday != Date::Day::INVALID && wday1 != Date::Day::INVALID) {
+int gnu::Date::week() const {
+    gnu::Date::Day wday  = priv::_date_weekday(_year, _month, _day);
+    gnu::Date::Day wday1 = priv::_date_weekday(_year, 1, 1);
+    if (wday != gnu::Date::Day::INVALID && wday1 != gnu::Date::Day::INVALID) {
         auto w     = 0;
         auto y1    = _year - 1;
-        auto leap  = _date_is_leapyear(_year);
-        auto leap1 = _date_is_leapyear(y1);
+        auto leap  = priv::_date_is_leapyear(_year);
+        auto leap1 = priv::_date_is_leapyear(y1);
         auto yday  = days_into_year();
-        if (yday <= (8 - (int) wday1) && wday1 > Date::Day::THURSDAY) {
-            if (wday1 == Date::Day::FRIDAY || (wday1 == Date::Day::SATURDAY && leap1)) {
+        if (yday <= (8 - (int) wday1) && wday1 > gnu::Date::Day::THURSDAY) {
+            if (wday1 == gnu::Date::Day::FRIDAY || (wday1 == gnu::Date::Day::SATURDAY && leap1)) {
                 w = 53;
             }
             else {
@@ -675,7 +678,7 @@ int Date::week() const {
             else {
                 days = yday + (7 - (int) wday) + ((int) wday1 - 1);
                 days = days / 7;
-                if (wday1 > Date::Day::THURSDAY) {
+                if (wday1 > gnu::Date::Day::THURSDAY) {
                     days--;
                 }
                 w = days;
@@ -687,15 +690,14 @@ int Date::week() const {
     }
     return 0;
 }
-Date::Day Date::weekday() const {
-    return _date_weekday(_year, _month, _day);
+gnu::Date::Day gnu::Date::weekday() const {
+    return priv::_date_weekday(_year, _month, _day);
 }
-const char* Date::weekday_name() const {
-    return _DATE_WEEKDAYS[(int) _date_weekday(_year, _month, _day)];
+const char* gnu::Date::weekday_name() const {
+    return priv::_DATE_WEEKDAYS[static_cast<int>(priv::_date_weekday(_year, _month, _day))];
 }
-const char* Date::weekday_name_short() const {
-    return _DATE_WEEKDAYS_SHORT[(int) _date_weekday(_year, _month, _day)];
-}
+const char* gnu::Date::weekday_name_short() const {
+    return priv::_DATE_WEEKDAYS_SHORT[static_cast<int>(priv::_date_weekday(_year, _month, _day))];
 }
 #include <algorithm>
 #include <filesystem>
@@ -715,38 +717,38 @@ const char* Date::weekday_name_short() const {
     #define PATH_MAX 1050
 #endif
 namespace gnu {
-namespace file {
-static std::string          _STDOUT_NAME = "";
-static std::string          _STDERR_NAME = "";
+namespace priv {
+static std::string          _FILE_STDOUT_NAME = "";
+static std::string          _FILE_STDERR_NAME = "";
 #ifdef _WIN32
-static char*                _from_wide(const wchar_t* wstring);
-static int64_t              _time(FILETIME* ft);
-static wchar_t*             _to_wide(const char* string);
+static char*                _file_from_wide(const wchar_t* wstring);
+static int64_t              _file_time(FILETIME* ft);
+static wchar_t*             _file_to_wide(const char* string);
 #endif
-static Buf                  _close_redirect(int type);
-static bool                 _open_redirect(int type);
-static unsigned             _rand();
-static void                 _read(const std::string& path, Buf& buf);
-static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _read_dir_rec(Files& res, Files& files);
-static std::string&         _replace_all(std::string& string, const std::string& find, const std::string& replace);
-static void                 _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
-static std::string          _substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
-static std::string          _to_absolute_path(const std::string& filename, bool realpath);
-static Buf _close_redirect(int type) {
+static file::Buf            _file_close_redirect(int type);
+static bool                 _file_open_redirect(int type);
+static unsigned             _file_rand();
+static void                 _file_read(const std::string& path, file::Buf& buf);
+static std::string&         _file_replace_all(std::string& string, const std::string& find, const std::string& replace);
+static void                 _file_read_dir_rec(file::Files& res, file::Files& files);
+static std::string&         _file_replace_all(std::string& string, const std::string& find, const std::string& replace);
+static void                 _file_split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext);
+static std::string          _file_substr(const std::string& in, std::string::size_type pos, std::string::size_type size = std::string::npos);
+static std::string          _file_to_absolute_path(const std::string& filename, bool realpath);
+static file::Buf _file_close_redirect(int type) {
     std::string fname;
     FILE* fhandle;
     if (type == 2) {
-        if (_STDERR_NAME == "") return Buf();
-        fname = _STDERR_NAME;
+        if (priv::_FILE_STDERR_NAME == "") return file::Buf();
+        fname = priv::_FILE_STDERR_NAME;
         fhandle = stderr;
-        _STDERR_NAME = "";
+        priv::_FILE_STDERR_NAME = "";
     }
     else {
-        if (_STDOUT_NAME == "") return Buf();
-        fname = _STDOUT_NAME;
+        if (priv::_FILE_STDOUT_NAME == "") return file::Buf();
+        fname = priv::_FILE_STDOUT_NAME;
         fhandle = stdout;
-        _STDOUT_NAME = "";
+        priv::_FILE_STDOUT_NAME = "";
     }
 #ifdef _WIN32
     fflush(fhandle);
@@ -761,30 +763,30 @@ static Buf _close_redirect(int type) {
     return res;
 }
 #ifdef _WIN32
-static char* _from_wide(const wchar_t* wstring) {
+static char* _file_from_wide(const wchar_t* wstring) {
     auto out_len = WideCharToMultiByte(CP_UTF8, 0, wstring, -1, nullptr, 0, nullptr, nullptr);
     auto out     = file::allocate(nullptr, out_len + 1);
     WideCharToMultiByte(CP_UTF8, 0, wstring, -1, (LPSTR) out, out_len, nullptr, nullptr);
     return (char*) out;
 }
 #endif
-static bool _open_redirect(int type) {
+static bool _file_open_redirect(int type) {
     bool res = false;
     std::string fname;
     FILE* fhandle = nullptr;
     if (type == 2) {
-        if (_STDERR_NAME != "") return res;
-        fname = _STDERR_NAME = file::tmp_file("stderr_").filename();
+        if (priv::_FILE_STDERR_NAME != "") return res;
+        fname = priv::_FILE_STDERR_NAME = file::tmp_file("stderr_").filename();
         fhandle = stderr;
     }
     else {
-        if (_STDOUT_NAME != "") return res;
-        fname = _STDOUT_NAME = file::tmp_file("stdout_").filename();
+        if (priv::_FILE_STDOUT_NAME != "") return res;
+        fname = priv::_FILE_STDOUT_NAME = file::tmp_file("stdout_").filename();
         fhandle = stdout;
     }
 #ifdef _WIN32
-        auto wpath = file::_to_wide(fname.c_str());
-        auto wmode = file::_to_wide("wb");
+        auto wpath = priv::_file_to_wide(fname.c_str());
+        auto wmode = priv::_file_to_wide("wb");
         res = _wfreopen(wpath, wmode, fhandle) != nullptr;
         free(wpath);
         free(wmode);
@@ -792,14 +794,14 @@ static bool _open_redirect(int type) {
         res = freopen(fname.c_str(), "wb", fhandle) != nullptr;
 #endif
     if (res == false && type == 1) {
-        _STDOUT_NAME = "";
+        priv::_FILE_STDOUT_NAME = "";
     }
     else if (res == false && type == 2) {
-        _STDERR_NAME = "";
+        priv::_FILE_STDERR_NAME = "";
     }
     return res;
 }
-static unsigned _rand() {
+static unsigned _file_rand() {
     static bool INIT = false;
     if (INIT == false) {
         srand(time(nullptr));
@@ -812,9 +814,9 @@ static unsigned _rand() {
         return rand();
     }
 }
-static void _read(const std::string& path, Buf& buf) {
+static void _file_read(const std::string& path, file::Buf& buf) {
     assert(buf.c_str() == nullptr && buf.size() == 0);
-    File file(path);
+    file::File file(path);
     if (file.is_file() == false || static_cast<long long unsigned int>(file.size()) > SSIZE_MAX) {
         return;
     }
@@ -836,16 +838,16 @@ static void _read(const std::string& path, Buf& buf) {
     fclose(handle);
     buf.grab(out, file.size());
 }
-static void _read_dir_rec(Files& res, Files& files) {
+static void _file_read_dir_rec(file::Files& res, file::Files& files) {
     for (auto& file : files) {
         res.push_back(file);
         if (file.is_dir() == true && file.is_link() == false) {
             auto v = file::read_dir(file.filename());
-            file::_read_dir_rec(res, v);
+            priv::_file_read_dir_rec(res, v);
         }
     }
 }
-static std::string& _replace_all(std::string& string, const std::string& find, const std::string& replace) {
+static std::string& _file_replace_all(std::string& string, const std::string& find, const std::string& replace) {
     if (find.empty() == true) {
         return string;
     }
@@ -856,7 +858,7 @@ static std::string& _replace_all(std::string& string, const std::string& find, c
     }
     return string;
 }
-static void _split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext) {
+static void _file_split_paths(const std::string& filename, std::string& path, std::string& name, std::string& ext) {
     path = "";
     name = "";
     ext  = "";
@@ -874,13 +876,13 @@ static void _split_paths(const std::string& filename, std::string& path, std::st
     auto pos1 = filename.find_last_of(sep);
     if (pos1 != std::string::npos) {
         if (filename.length() != 3) {
-            path = file::_substr(filename, 0, pos1);
+            path = priv::_file_substr(filename, 0, pos1);
         }
-        name = file::_substr(filename, pos1 + 1);
+        name = priv::_file_substr(filename, pos1 + 1);
     }
     auto pos2 = name.find_last_of('.');
     if (pos2 != std::string::npos && pos2 != 0) {
-        ext = file::_substr(name, pos2 + 1);
+        ext = priv::_file_substr(name, pos2 + 1);
     }
     if (path.back() == ':') {
         path += sep;
@@ -890,34 +892,38 @@ static void _split_paths(const std::string& filename, std::string& path, std::st
     auto pos1 = filename.find_last_of('/');
     if (pos1 != std::string::npos) {
         if (pos1 > 0) {
-            path = file::_substr(filename, 0, pos1);
+            path = priv::_file_substr(filename, 0, pos1);
         }
         else if (filename != "/") {
             path = "/";
         }
         if (filename != "/") {
-            name = file::_substr(filename, pos1 + 1);
+            name = priv::_file_substr(filename, pos1 + 1);
         }
     }
     auto pos2 = filename.find_last_of('.');
     if (pos2 != std::string::npos && pos2 > pos1 + 1) {
-        ext = file::_substr(filename, pos2 + 1);
+        ext = priv::_file_substr(filename, pos2 + 1);
     }
 #endif
 }
-static std::string _substr(const std::string& in, std::string::size_type pos, std::string::size_type count) {
-    try { return in.substr(pos, count); }
-    catch(...) { return ""; }
+static std::string _file_substr(const std::string& string, std::string::size_type pos, std::string::size_type count) {
+    try {
+        return string.substr(pos, count);
+    }
+    catch(...) {
+        return "";
+    }
 }
 #ifdef _WIN32
-static int64_t _time(FILETIME* ft) {
+static int64_t _file_time(FILETIME* ft) {
     int64_t res = static_cast<int64_t>(ft->dwHighDateTime) << 32 | static_cast<int64_t>(ft->dwLowDateTime);
     res = res / 10000000;
     res = res - 11644473600;
     return res;
 }
 #endif
-static std::string _to_absolute_path(const std::string& filename, bool realpath) {
+static std::string _file_to_absolute_path(const std::string& filename, bool realpath) {
     std::string res;
     auto name = filename;
 #ifdef _WIN32
@@ -934,7 +940,7 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
         return name;
     }
     else if (name.size() < 2 || name[1] != ':') {
-        auto work = File(file::work_dir());
+        auto work = file::File(file::work_dir());
         res = work.filename();
         res += "\\";
         res += name;
@@ -942,19 +948,19 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     else {
         res = name;
     }
-    file::_replace_all(res, "\\", "/");
+    priv::_file_replace_all(res, "\\", "/");
     auto len = res.length();
-    file::_replace_all(res, "//", "/");
+    priv::_file_replace_all(res, "//", "/");
     while (len > res.length()) {
         len = res.length();
-        file::_replace_all(res, "//", "/");
+        priv::_file_replace_all(res, "//", "/");
     }
     while (res.size() > 3 && res.back() == '/') {
         res.pop_back();
     }
 #else
     if (name[0] != '/') {
-        auto work = File(file::work_dir());
+        auto work = file::File(file::work_dir());
         res = work.filename();
         res += "/";
         res += name;
@@ -963,10 +969,10 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
         res = name;
     }
     auto len = res.length();
-    file::_replace_all(res, "//", "/");
+    priv::_file_replace_all(res, "//", "/");
     while (len > res.length()) {
         len = res.length();
-        file::_replace_all(res, "//", "/");
+        priv::_file_replace_all(res, "//", "/");
     }
     while (res.size() > 1 && res.back() == '/') {
         res.pop_back();
@@ -975,14 +981,16 @@ static std::string _to_absolute_path(const std::string& filename, bool realpath)
     return (realpath == true) ? file::canonical(res).filename() : res;
 }
 #ifdef _WIN32
-static wchar_t* _to_wide(const char* string) {
+static wchar_t* _file_to_wide(const char* string) {
     auto out_len = MultiByteToWideChar(CP_UTF8, 0, string , -1, nullptr , 0);
     auto out     = reinterpret_cast<wchar_t*>(file::allocate(nullptr, out_len * sizeof(wchar_t) + sizeof(wchar_t)));
     MultiByteToWideChar(CP_UTF8, 0, string , -1, out, out_len);
     return out;
 }
 #endif
-char* allocate(char* resize_or_null, size_t size) {
+}
+}
+char* gnu::file::allocate(char* resize_or_null, size_t size) {
     void* res = nullptr;
     if (resize_or_null == nullptr) {
         res = calloc(size, 1);
@@ -995,13 +1003,13 @@ char* allocate(char* resize_or_null, size_t size) {
     }
     return (char*) res;
 }
-File canonical(const std::string& path) {
+gnu::file::File gnu::file::canonical(const std::string& path) {
 #if defined(_WIN32)
     wchar_t wres[PATH_MAX];
-    auto    wpath = file::_to_wide(path.c_str());
+    auto    wpath = priv::_file_to_wide(path.c_str());
     auto    len   = GetFullPathNameW(wpath, PATH_MAX, wres, nullptr);
     if (len > 0 && len < PATH_MAX) {
-        auto cpath = file::_from_wide(wres);
+        auto cpath = priv::_file_from_wide(wres);
         auto res   = File(cpath);
         free(cpath);
         free(wpath);
@@ -1018,9 +1026,9 @@ File canonical(const std::string& path) {
     return File(res);
 #endif
 }
-bool chdir(const std::string& path) {
+bool gnu::file::chdir(const std::string& path) {
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     auto res   = _wchdir(wpath);
     free(wpath);
     return res == 0;
@@ -1028,7 +1036,7 @@ bool chdir(const std::string& path) {
     return ::chdir(path.c_str()) == 0;
 #endif
 }
-std::string check_filename(const std::string& name) {
+std::string gnu::file::check_filename(const std::string& name) {
     static const std::string ILLEGAL = "<>:\"/\\|?*\n\t\r";
     std::string res;
     for (auto& c : name) {
@@ -1038,13 +1046,13 @@ std::string check_filename(const std::string& name) {
     }
     return res;
 }
-bool chmod(const std::string& path, int mode) {
+bool gnu::file::chmod(const std::string& path, int mode) {
     auto res = false;
     if (mode < 0) {
         return false;
     }
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     res = SetFileAttributesW(wpath, mode);
     free(wpath);
 #else
@@ -1052,10 +1060,10 @@ bool chmod(const std::string& path, int mode) {
 #endif
     return res;
 }
-bool chtime(const std::string& path, int64_t time) {
+bool gnu::file::chtime(const std::string& path, int64_t time) {
     auto res = false;
 #ifdef _WIN32
-    auto wpath  = file::_to_wide(path.c_str());
+    auto wpath  = priv::_file_to_wide(path.c_str());
     auto handle = CreateFileW(wpath, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (handle != INVALID_HANDLE_VALUE) {
         FILETIME ftLastAccessTime;
@@ -1078,13 +1086,13 @@ bool chtime(const std::string& path, int64_t time) {
 #endif
     return res;
 }
-Buf close_stderr() {
-    return file::_close_redirect(2);
+gnu::file::Buf gnu::file::close_stderr() {
+    return priv::_file_close_redirect(2);
 }
-Buf close_stdout() {
-    return file::_close_redirect(1);
+gnu::file::Buf gnu::file::close_stdout() {
+    return priv::_file_close_redirect(1);
 }
-bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
+bool gnu::file::copy(const std::string& from, const std::string& to, CallbackCopy cb, void* data, bool flush) {
 #ifdef DEBUG
     static const size_t BUF_SIZE = 1024;
 #else
@@ -1133,7 +1141,7 @@ bool copy(const std::string& from, const std::string& to, CallbackCopy cb, void*
     file::chmod(to, file1.mode());
     return true;
 }
-uint64_t fletcher64(const char* buffer, size_t buffer_size) {
+uint64_t gnu::file::fletcher64(const char* buffer, size_t buffer_size) {
     if (buffer == nullptr || buffer_size == 0) {
         return 0;
     }
@@ -1159,7 +1167,7 @@ uint64_t fletcher64(const char* buffer, size_t buffer_size) {
     }
     return (sum2 << 32) | sum1;
 }
-void flush(FILE* file) {
+void gnu::file::flush(FILE* file) {
     if (file != nullptr) {
 #ifdef _WIN32
         auto handle = (HANDLE) _get_osfhandle(_fileno(file));
@@ -1171,11 +1179,11 @@ void flush(FILE* file) {
 #endif
     }
 }
-File home_dir() {
+gnu::file::File gnu::file::home_dir() {
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX];
     if (SHGetFolderPathW(nullptr, CSIDL_PROFILE, nullptr, 0, wpath) == S_OK) {
-        auto path = file::_from_wide(wpath);
+        auto path = priv::_file_from_wide(wpath);
         auto res = File(path);
         free(path);
         return res;
@@ -1188,7 +1196,7 @@ File home_dir() {
 #endif
     return work_dir();
 }
-bool is_circular(const std::string& path) {
+bool gnu::file::is_circular(const std::string& path) {
     auto file = File(path, false);
     if (file.type() != Type::DIR || file.is_link() == false) {
         return false;
@@ -1196,9 +1204,9 @@ bool is_circular(const std::string& path) {
     auto l = file.linkname().filename() + "/";
     return file.filename().find(l) == 0;
 }
-File linkname(const std::string& path) {
+gnu::file::File gnu::file::linkname(const std::string& path) {
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     auto hpath = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (hpath == INVALID_HANDLE_VALUE) {
         free(wpath);
@@ -1212,7 +1220,7 @@ File linkname(const std::string& path) {
     }
     auto rpath = static_cast<wchar_t*>(malloc(sizeof(wchar_t) * hlen + 10));
     GetFinalPathNameByHandleW(hpath, rpath, hlen, FILE_NAME_OPENED);
-    auto upath = file::_from_wide(rpath);
+    auto upath = priv::_file_from_wide(rpath);
     auto res   = File(upath, true);
     CloseHandle(hpath);
     free(wpath);
@@ -1235,10 +1243,10 @@ File linkname(const std::string& path) {
     }
 #endif
 }
-bool mkdir(const std::string& path) {
+bool gnu::file::mkdir(const std::string& path) {
     bool res = false;
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     res = _wmkdir(wpath) == 0;
     free(wpath);
 #else
@@ -1246,11 +1254,11 @@ bool mkdir(const std::string& path) {
 #endif
     return res;
 }
-FILE* open(const std::string& path, const std::string& mode) {
+FILE* gnu::file::open(const std::string& path, const std::string& mode) {
     FILE* res = nullptr;
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
-    auto wmode = file::_to_wide(mode.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
+    auto wmode = priv::_file_to_wide(mode.c_str());
     res = _wfopen(wpath, wmode);
     free(wpath);
     free(wmode);
@@ -1272,11 +1280,11 @@ std::string os() {
     return "unknown";
 #endif
 }
-FILE* popen(const std::string& cmd, bool write) {
+FILE* gnu::file::popen(const std::string& cmd, bool write) {
     FILE* file = nullptr;
 #ifdef _WIN32
-    auto wpath = file::_to_wide(cmd.c_str());
-    auto wmode = file::_to_wide(write ? "wb" : "rb");
+    auto wpath = priv::_file_to_wide(cmd.c_str());
+    auto wmode = priv::_file_to_wide(write ? "wb" : "rb");
     file = _wpopen(wpath, wmode);
     free(wpath);
     free(wmode);
@@ -1286,24 +1294,24 @@ FILE* popen(const std::string& cmd, bool write) {
 #endif
     return file;
 }
-Buf read(const std::string& path) {
+gnu::file::Buf gnu::file::read(const std::string& path) {
     Buf buf;
-    file::_read(path, buf);
+    priv::_file_read(path, buf);
     return buf;
 }
-Buf* read2(const std::string& path) {
+gnu::file::Buf* gnu::file::read2(const std::string& path) {
     auto buf = new Buf();
-    file::_read(path, *buf);
+    priv::_file_read(path, *buf);
     return buf;
 }
-Files read_dir(const std::string& path) {
+gnu::file::Files gnu::file::read_dir(const std::string& path) {
     auto file = File(path, false);
     auto res  = Files();
     if (file.type() != Type::DIR || file::is_circular(path) == true) {
         return res;
     }
 #ifdef _WIN32
-    auto wpath = file::_to_wide(file.filename().c_str());
+    auto wpath = priv::_file_to_wide(file.filename().c_str());
     auto dirp  = _wopendir(wpath);
     auto sep   = '/';
     if (file.filename().find("\\\\") == 0) {
@@ -1312,7 +1320,7 @@ Files read_dir(const std::string& path) {
     if (dirp != nullptr) {
         auto entry = _wreaddir(dirp);
         while (entry != nullptr) {
-            auto cpath = file::_from_wide(entry->d_name);
+            auto cpath = priv::_file_from_wide(entry->d_name);
             if (strcmp(cpath, ".") != 0 && strcmp(cpath, "..") != 0) {
                 auto name = (file.name() == ".") ? file.path() + sep + cpath : file.filename() + sep + cpath;
                 res.push_back(File(name));
@@ -1340,26 +1348,26 @@ Files read_dir(const std::string& path) {
     std::sort(res.begin(), res.end());
     return res;
 }
-Files read_dir_rec(const std::string& path) {
+gnu::file::Files gnu::file::read_dir_rec(const std::string& path) {
     auto res   = Files();
     auto files = file::read_dir(path);
-    file::_read_dir_rec(res, files);
+    priv::_file_read_dir_rec(res, files);
     return res;
 }
-bool redirect_stderr() {
-    return _open_redirect(2);
+bool gnu::file::redirect_stderr() {
+    return priv::_file_open_redirect(2);
 }
-bool redirect_stdout() {
-    return _open_redirect(1);
+bool gnu::file::redirect_stdout() {
+    return priv::_file_open_redirect(1);
 }
-bool remove(const std::string& path) {
+bool gnu::file::remove(const std::string& path) {
     auto f = File(path);
     if (f.type() == Type::MISSING && f.is_link() == false) {
         return false;
     }
     auto res = false;
 #ifdef _WIN32
-    auto wpath = file::_to_wide(path.c_str());
+    auto wpath = priv::_file_to_wide(path.c_str());
     if (f.type() == Type::DIR) {
         res = RemoveDirectoryW(wpath);
     }
@@ -1390,7 +1398,7 @@ bool remove(const std::string& path) {
 #endif
     return res;
 }
-bool remove_rec(const std::string& path) {
+bool gnu::file::remove_rec(const std::string& path) {
     auto file = File(path, true);
     if (file == file::home_dir() || file.path() == "") {
         return false;
@@ -1402,7 +1410,7 @@ bool remove_rec(const std::string& path) {
     }
     return file::remove(path);
 }
-bool rename(const std::string& from, const std::string& to) {
+bool gnu::file::rename(const std::string& from, const std::string& to) {
     auto res    = false;
     auto from_f = File(from);
     auto to_f   = File(to);
@@ -1410,8 +1418,8 @@ bool rename(const std::string& from, const std::string& to) {
         return false;
     }
 #ifdef _WIN32
-    auto wfrom = file::_to_wide(from_f.filename().c_str());
-    auto wto   = file::_to_wide(to_f.filename().c_str());
+    auto wfrom = priv::_file_to_wide(from_f.filename().c_str());
+    auto wto   = priv::_file_to_wide(to_f.filename().c_str());
     if (to_f.type() == Type::DIR) {
         file::remove_rec(to_f.filename());
         res = MoveFileExW(wfrom, wto, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
@@ -1432,9 +1440,9 @@ bool rename(const std::string& from, const std::string& to) {
 #endif
     return res;
 }
-int run(const std::string& cmd, bool background, bool hide_win32_window) {
+int gnu::file::run(const std::string& cmd, bool background, bool hide_win32_window) {
 #ifdef _WIN32
-    wchar_t*            cmd_w = file::_to_wide(cmd.c_str());
+    wchar_t*            cmd_w = priv::_file_to_wide(cmd.c_str());
     STARTUPINFOW        startup_info;
     PROCESS_INFORMATION process_info;
     ZeroMemory(&startup_info, sizeof(STARTUPINFOW));
@@ -1466,11 +1474,11 @@ int run(const std::string& cmd, bool background, bool hide_win32_window) {
     return system(cmd2.c_str());
 #endif
 }
-File tmp_dir() {
+gnu::file::File gnu::file::tmp_dir() {
     try {
 #if defined(_WIN32)
         auto path = std::filesystem::temp_directory_path();
-        auto utf  = file::_from_wide(path.c_str());
+        auto utf  = priv::_file_from_wide(path.c_str());
         auto res = File(utf);
         free(utf);
         return res;
@@ -1485,17 +1493,17 @@ File tmp_dir() {
     }
     return file::work_dir();
 }
-File tmp_file(const std::string& prepend) {
+gnu::file::File gnu::file::tmp_file(const std::string& prepend) {
     char buf[100];
-    snprintf(buf, 100, "%u", file::_rand());
+    snprintf(buf, 100, "%u", priv::_file_rand());
     std::string res = prepend + buf;
     return File(tmp_dir().filename() + "/" + res);
 }
-File work_dir() {
+gnu::file::File gnu::file::work_dir() {
 #ifdef _WIN32
     auto wpath = _wgetcwd(nullptr, 0);
     if (wpath != nullptr) {
-        auto path = file::_from_wide(wpath);
+        auto path = priv::_file_from_wide(wpath);
         auto res  = File(path);
         free(wpath);
         free(path);
@@ -1511,7 +1519,7 @@ File work_dir() {
 #endif
     return File(".");
 }
-bool write(const std::string& path, const char* buffer, size_t size, bool flush) {
+bool gnu::file::write(const std::string& path, const char* buffer, size_t size, bool flush) {
     if (File(path).type() == Type::DIR) {
         return false;
     }
@@ -1535,17 +1543,17 @@ bool write(const std::string& path, const char* buffer, size_t size, bool flush)
     }
     return true;
 }
-bool write(const std::string& path, const Buf& buf, bool flush) {
+bool gnu::file::write(const std::string& path, const Buf& buf, bool flush) {
     return write(path, buf.c_str(), buf.size(), flush);
 }
-Buf::Buf(size_t size) {
+gnu::file::Buf::Buf(size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf(): size out of range");
     }
     _str = file::allocate(nullptr, size + 1);
     _size = size;
 }
-Buf::Buf(const char* buffer, size_t size) {
+gnu::file::Buf::Buf(const char* buffer, size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf(): size out of range");
     }
@@ -1559,7 +1567,7 @@ Buf::Buf(const char* buffer, size_t size) {
         std::memcpy(_str, buffer, size);
     }
 }
-Buf::Buf(const Buf& b) {
+gnu::file::Buf::Buf(const Buf& b) {
     if (b._str == nullptr) {
         _str  = nullptr;
         _size = 0;
@@ -1570,10 +1578,10 @@ Buf::Buf(const Buf& b) {
         std::memcpy(_str, b._str, b._size);
     }
 }
-bool Buf::operator==(const Buf& other) const {
+bool gnu::file::Buf::operator==(const Buf& other) const {
     return _str != nullptr && _size == other._size && std::memcmp(_str, other._str, _size) == 0;
 }
-Buf& Buf::add(const char* buffer, size_t size) {
+gnu::file::Buf& gnu::file::Buf::add(const char* buffer, size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf:add(): size out of range");
     }
@@ -1594,7 +1602,7 @@ Buf& Buf::add(const char* buffer, size_t size) {
     }
     return *this;
 }
-std::array<size_t, 257> Buf::Count(const char* buffer, size_t size) {
+std::array<size_t, 257> gnu::file::Buf::Count(const char* buffer, size_t size) {
     size_t max_line     = 0;
     size_t current_line = 0;
     auto   count        = std::array<size_t, 257>{0};
@@ -1617,7 +1625,7 @@ std::array<size_t, 257> Buf::Count(const char* buffer, size_t size) {
     count[256] = max_line;
     return count;
 }
-Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
+gnu::file::Buf gnu::file::Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf::InsertCR(): size out of range");
     }
@@ -1663,7 +1671,7 @@ Buf Buf::InsertCR(const char* buffer, size_t size, bool dos, bool trailing) {
     }
     return Buf::Grab(res, res_pos);
 }
-Buf Buf::RemoveCR(const char* buffer, size_t size) {
+gnu::file::Buf gnu::file::Buf::RemoveCR(const char* buffer, size_t size) {
     auto res = Buf(size);
     for (size_t f = 0, e = 0; f < size; f++) {
         auto c = buffer[f];
@@ -1676,7 +1684,7 @@ Buf Buf::RemoveCR(const char* buffer, size_t size) {
     }
     return res;
 }
-Buf& Buf::set(const char* buffer, size_t size) {
+gnu::file::Buf& gnu::file::Buf::set(const char* buffer, size_t size) {
     if (size == (size_t) -1) {
         throw std::string("error: gnu::file::Buf:set(): size out of range");
     }
@@ -1695,10 +1703,10 @@ Buf& Buf::set(const char* buffer, size_t size) {
     }
     return *this;
 }
-bool Buf::write(const std::string& path, bool flush) const {
+bool gnu::file::Buf::write(const std::string& path, bool flush) const {
     return file::write(path, _str, _size, flush);
 }
-File::File(const std::string& path, bool realpath) {
+gnu::file::File::File(const std::string& path, bool realpath) {
     _ctime = -1;
     _link  = false;
     _mode  = -1;
@@ -1706,14 +1714,14 @@ File::File(const std::string& path, bool realpath) {
     _size  = -1;
     _type  = Type::MISSING;
     if (path != "") {
-        _filename = file::_to_absolute_path(path, realpath);
-        file::_split_paths(_filename, _path, _name, _ext);
+        _filename = priv::_file_to_absolute_path(path, realpath);
+        priv::_file_split_paths(_filename, _path, _name, _ext);
     }
     else {
         return;
     }
 #ifdef _WIN32
-    auto wpath = file::_to_wide(_filename.c_str());
+    auto wpath = priv::_file_to_wide(_filename.c_str());
     WIN32_FILE_ATTRIBUTE_DATA attr;
     if (GetFileAttributesExW(wpath, GetFileExInfoStandard, &attr) != 0) {
         if (attr.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
@@ -1724,8 +1732,8 @@ File::File(const std::string& path, bool realpath) {
             _type = Type::FILE;
             _size = (attr.nFileSizeHigh * 4294967296) + attr.nFileSizeLow;
         }
-        _mtime = file::_time(&attr.ftLastWriteTime);
-        _ctime = file::_time(&attr.ftCreationTime);
+        _mtime = priv::_file_time(&attr.ftLastWriteTime);
+        _ctime = priv::_file_time(&attr.ftCreationTime);
         if (attr.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             _link = true;
             HANDLE handle = CreateFileW(wpath, 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, NULL);
@@ -1735,13 +1743,13 @@ File::File(const std::string& path, bool realpath) {
                 FILETIME ftLastAccessTime;
                 FILETIME ftLastWriteTime;
                 if (GetFileTime(handle, &ftCreationTime, &ftLastAccessTime, &ftLastWriteTime) != 0) {
-                    _mtime = file::_time(&ftLastWriteTime);
-                    _ctime = file::_time(&ftCreationTime);
+                    _mtime = priv::_file_time(&ftLastWriteTime);
+                    _ctime = priv::_file_time(&ftCreationTime);
                 }
                 CloseHandle(handle);
                 if (realpath == true) {
                     _filename = file::linkname(_filename).filename();
-                    file::_split_paths(_filename, _path, _name, _ext);
+                    priv::_file_split_paths(_filename, _path, _name, _ext);
                 }
             }
             else {
@@ -1787,7 +1795,7 @@ File::File(const std::string& path, bool realpath) {
         _ext = "";
     }
 }
-std::string File::name_without_ext() const {
+std::string gnu::file::File::name_without_ext() const {
     try {
         if (_type != Type::DIR) {
             auto dot = _name.find_last_of(".");
@@ -1801,7 +1809,7 @@ std::string File::name_without_ext() const {
         return _name;
     }
 }
-std::string File::to_string(bool short_version) const {
+std::string gnu::file::File::to_string(bool short_version) const {
     char tmp[PATH_MAX + 100];
     int n = 0;
     if (short_version == true) {
@@ -1826,32 +1834,30 @@ std::string File::to_string(bool short_version) const {
     }
     return (n > 0 && n < PATH_MAX + 100) ? tmp : "";
 }
-std::string File::type_name() const {
+std::string gnu::file::File::type_name() const {
     static std::string NAMES[] = { "Missing", "Directory", "File", "Other", "", };
     return NAMES[static_cast<size_t>(_type)];
-}
-}
 }
 #include <cmath>
 #include <cstdint>
 #include <errno.h>
 #include <climits>
 namespace gnu {
-namespace json {
-#define _GNU_JSON_ERROR(X,Y) _format_error(__LINE__, static_cast<unsigned>(X), Y)
+namespace priv {
+#define _GNU_JSON_ERROR(X,Y) priv::_json_format_error(__LINE__, static_cast<unsigned>(X), Y)
 #define _GNU_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
 static const char* const _JSON_BOM = "\xef\xbb\xbf";
-static void _debug(const JS* js, std::string t) {
+static void _json_debug(const json::JS* js, std::string t) {
     if (js->is_array() == true) {
         printf("%sARRAY(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
         t += "\t";
-        for (const auto js2 : *js->va()) _debug(js2, t);
+        for (const auto js2 : *js->va()) _json_debug(js2, t);
         t.pop_back();
     }
     else if (js->is_object() == true) {
         printf("%sOBJECT(%u, %u, %p, %p): \"%s\"\n", t.c_str(), js->pos(), static_cast<unsigned>(js->size()), js, js->parent(), js->name().c_str());
         t += "\t";
-        for (auto js2 : *js->vo()) _debug(js2.second, t);
+        for (auto js2 : *js->vo()) _json_debug(js2.second, t);
         t.pop_back();
     }
     else if (js->is_null()) printf("%s%s(%u, %p): \"%s\"\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c());
@@ -1860,12 +1866,12 @@ static void _debug(const JS* js, std::string t) {
     else if (js->is_bool()) printf("%s%s(%u, %p): \"%s\": %s\n", t.c_str(), js->type_name().c_str(), js->pos(), js->parent(), js->name_c(), js->vb() ? "true" : "false");
     fflush(stdout);
 }
-static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
+static std::string _json_encode(const json::JS& js, bool ignore_name, json::Encode option) {
     static const std::string QUOTE = "\"";
     std::string res;
-    std::string arr    = (option == ENCODE::DEFAULT) ? "\": [" : "\":[";
-    std::string obj    = (option == ENCODE::DEFAULT) ? "\": {" : "\":{";
-    std::string name1  = (option == ENCODE::DEFAULT) ? "\": " : "\":";
+    std::string arr    = (option == json::Encode::DEFAULT) ? "\": [" : "\":[";
+    std::string obj    = (option == json::Encode::DEFAULT) ? "\": {" : "\":{";
+    std::string name1  = (option == json::Encode::DEFAULT) ? "\": " : "\":";
     bool        object = (js.parent() != nullptr && js.parent()->is_object() == true);
     if (js.is_array() == true) {
         if (object == false || ignore_name == true) {
@@ -1900,49 +1906,49 @@ static std::string _encode(const JS& js, bool ignore_name, ENCODE option) {
     }
     return res;
 }
-static void _encode_inline(const JS& js, std::string& j, bool comma, ENCODE option) {
+static void _json_encode_inline(const json::JS& js, std::string& j, bool comma, json::Encode option) {
     std::string c = (comma == true) ? "," : "";
     size_t      f = 0;
     if (js.is_array() == true) {
-        j += json::_encode(js, false, option);
+        j += priv::_json_encode(js, false, option);
         for (const auto n : *js.va()) {
-            json::_encode_inline(*n, j, f < (js.va()->size() - 1), option);
+            priv::_json_encode_inline(*n, j, f < (js.va()->size() - 1), option);
             f++;
         }
         j += "]" + c;
     }
     else if (js.is_object() == true) {
-        j += json::_encode(js, false, option);
+        j += priv::_json_encode(js, false, option);
         for (const auto& n : *js.vo()) {
-            json::_encode_inline(*n.second, j, f < (js.vo()->size() - 1), option);
+            priv::_json_encode_inline(*n.second, j, f < (js.vo()->size() - 1), option);
             f++;
         }
         j += "}" + c;
     }
     else {
-        j += json::_encode(js, false, option) + c;
+        j += priv::_json_encode(js, false, option) + c;
     }
 }
-static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma, ENCODE option) {
+static void _json_encode_all(const json::JS& js, std::string& j, std::string& t, bool comma, json::Encode option) {
     std::string c = (comma == true) ? "," : "";
-    std::string n = (option == ENCODE::FLAT) ? "" : "\n";
+    std::string n = (option == json::Encode::FLAT) ? "" : "\n";
     size_t      f = 0;
     if (js.is_array() == true) {
-        j += t + json::_encode(js, j == "", option);
+        j += t + priv::_json_encode(js, j == "", option);
         if (js.has_inline() == false && js.size() > 0) {
             j += n;
         }
         for (const auto n2 : *js.va()) {
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t += "\t";
             }
             if (js.has_inline() == true) {
-                json::_encode_inline(*n2, j, f < (js.va()->size() - 1), option);
+                priv::_json_encode_inline(*n2, j, f < (js.va()->size() - 1), option);
             }
             else {
-                json::_encode_all(*n2, j, t, f < (js.va()->size() - 1), option);
+                priv::_json_encode_all(*n2, j, t, f < (js.va()->size() - 1), option);
             }
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t.pop_back();
             }
             f++;
@@ -1955,21 +1961,21 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
         }
     }
     else if (js.is_object() == true) {
-        j += t + json::_encode(js, j == "", option);
+        j += t + priv::_json_encode(js, j == "", option);
         if (js.has_inline() == false && js.size() > 0) {
             j += n;
         }
         for (const auto& n2 : *js.vo()) {
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t += "\t";
             }
             if (js.has_inline() == true) {
-                json::_encode_inline(*n2.second, j, f < (js.vo()->size() - 1), option);
+                priv::_json_encode_inline(*n2.second, j, f < (js.vo()->size() - 1), option);
             }
             else {
-                json::_encode_all(*n2.second, j, t, f < (js.vo()->size() - 1), option);
+                priv::_json_encode_all(*n2.second, j, t, f < (js.vo()->size() - 1), option);
             }
-            if (option == ENCODE::DEFAULT) {
+            if (option == json::Encode::DEFAULT) {
                 t.pop_back();
             }
             f++;
@@ -1982,15 +1988,15 @@ static void _encode_all(const JS& js, std::string& j, std::string& t, bool comma
         }
     }
     else {
-        j += t + json::_encode(js, false, option) + c + n;
+        j += t + priv::_json_encode(js, false, option) + c + n;
     }
 }
-static std::string _format_error(unsigned source, unsigned pos, unsigned line) {
+static std::string _json_format_error(unsigned source, unsigned pos, unsigned line) {
     char buf[256];
     snprintf(buf, 256, "Error: invalid json (%u) at pos %u and line %u", source, pos, line);
     return buf;
 }
-static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
+static bool _json_parse_number(const char* json, size_t len, size_t& pos, double& nVal) {
     bool        res = false;
     std::string n1;
     std::string n2;
@@ -2088,7 +2094,7 @@ static bool _parse_number(const char* json, size_t len, size_t& pos, double& nVa
     pos--;
     return res;
 }
-static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
+static bool _json_parse_string(bool ignore_utf_check, const char* json, size_t len, size_t& pos, char** sVal1, char** sVal2) {
     std::string str   = "";
     bool        term  = false;
     unsigned    c     = 0;
@@ -2137,7 +2143,8 @@ static bool _parse_string(bool ignore_utf_check, const char* json, size_t len, s
     return true;
 }
 }
-size_t json::count_utf8(const char* p) {
+}
+size_t gnu::json::count_utf8(const char* p) {
     auto count = (size_t) 0;
     auto f     = (size_t) 0;
     auto u     = reinterpret_cast<const unsigned char*>(p);
@@ -2171,7 +2178,7 @@ size_t json::count_utf8(const char* p) {
     }
     return count;
 }
-json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+gnu::json::JS gnu::json::decode(const char* json, size_t len, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
     auto ret     = JS();
     auto tmp     = JS();
     auto colon   = 0;
@@ -2188,10 +2195,10 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
     auto sVal1   = (char*) nullptr;
     auto sVal2   = (char*) nullptr;
     try {
-        tmp._type = TYPE::ARRAY;
+        tmp._type = Type::ARRAY;
         tmp._va   = new JSArray();
         current   = &tmp;
-        if (strncmp(json, _JSON_BOM, 3) == 0) {
+        if (strncmp(json, priv::_JSON_BOM, 3) == 0) {
             pos1 += 3;
         }
         while (pos1 < len) {
@@ -2209,7 +2216,7 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
                 if (sVal1 == nullptr) {
                     posn = pos1;
                 }
-                if (_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) {
+                if (priv::_json_parse_string(ignore_utf_check, json, len, pos1, &sVal1, &sVal2) == false) {
                     throw _GNU_JSON_ERROR(start, line);
                 }
                 auto add_object = (current->is_object() == true && sVal2 != nullptr);
@@ -2235,7 +2242,7 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
             }
             else if ((c >= '0' && c <= '9') || c == '-') {
                 pos2 = (sVal1 == nullptr) ? pos1 : posn;
-                if (_parse_number(json, len, pos1, nVal) == false) {
+                if (priv::_json_parse_number(json, len, pos1, nVal) == false) {
                     throw _GNU_JSON_ERROR(start, line);
                 }
                 else if (comma > 0 && current->size() == 0) {
@@ -2438,33 +2445,33 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
         else if (tmp.size() != 1) {
             throw _GNU_JSON_ERROR(len, 1);
         }
-        else if (tmp[0]->_type == TYPE::ARRAY) {
-            ret._type = TYPE::ARRAY;
+        else if (tmp[0]->_type == Type::ARRAY) {
+            ret._type = Type::ARRAY;
             ret._va = tmp[0]->_va;
             ret._set_child_parent_to_me();
-            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
+            const_cast<JS*>(tmp[0])->_type = Type::NIL;
         }
-        else if (tmp[0]->_type == TYPE::OBJECT) {
-            ret._type = TYPE::OBJECT;
+        else if (tmp[0]->_type == Type::OBJECT) {
+            ret._type = Type::OBJECT;
             ret._vo = tmp[0]->_vo;
             ret._set_child_parent_to_me();
-            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
+            const_cast<JS*>(tmp[0])->_type = Type::NIL;
         }
-        else if (tmp[0]->_type == TYPE::BOOL) {
-            ret._type = TYPE::BOOL;
+        else if (tmp[0]->_type == Type::BOOL) {
+            ret._type = Type::BOOL;
             ret._vb   = tmp[0]->_vb;
         }
-        else if (tmp[0]->_type == TYPE::NUMBER) {
-            ret._type = TYPE::NUMBER;
+        else if (tmp[0]->_type == Type::NUMBER) {
+            ret._type = Type::NUMBER;
             ret._vn   = tmp[0]->_vn;
         }
-        else if (tmp[0]->_type == TYPE::STRING) {
-            ret._type = TYPE::STRING;
+        else if (tmp[0]->_type == Type::STRING) {
+            ret._type = Type::STRING;
             ret._vs   = tmp[0]->_vs;
-            const_cast<JS*>(tmp[0])->_type = TYPE::NIL;
+            const_cast<JS*>(tmp[0])->_type = Type::NIL;
         }
-        else if (tmp[0]->_type == TYPE::NIL) {
-            ret._type = TYPE::NIL;
+        else if (tmp[0]->_type == Type::NIL) {
+            ret._type = Type::NIL;
         }
         else {
             throw _GNU_JSON_ERROR(0, 1);
@@ -2476,18 +2483,18 @@ json::JS json::decode(const char* json, size_t len, bool ignore_trailing_comma, 
     }
     return ret;
 }
-json::JS json::decode(const std::string& json, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
+gnu::json::JS gnu::json::decode(const std::string& json, bool ignore_trailing_comma, bool ignore_duplicates, bool ignore_utf_check) {
     return decode(json.c_str(), json.length(), ignore_trailing_comma, ignore_duplicates, ignore_utf_check);
 }
-std::string json::encode(const JS& js, ENCODE option) {
+std::string gnu::json::encode(const JS& js, Encode option) {
     std::string t;
     std::string j;
     try {
         if (js.is_array() == true || js.is_object() == true) {
-            json::_encode_all(js, j, t, false, option);
+            priv::_json_encode_all(js, j, t, false, option);
         }
         else {
-            j = json::_encode(js, true, option);
+            j = priv::_json_encode(js, true, option);
         }
     }
     catch (const std::string& e) {
@@ -2495,7 +2502,7 @@ std::string json::encode(const JS& js, ENCODE option) {
     }
     return j;
 }
-std::string json::escape(const char* string) {
+std::string gnu::json::escape(const char* string) {
     std::string res;
     res.reserve(strlen(string) + 5);
     while (*string != 0) {
@@ -2528,7 +2535,7 @@ std::string json::escape(const char* string) {
     }
     return res;
 }
-std::string json::format_number(double f, bool E) {
+std::string gnu::json::format_number(double f, bool E) {
     double ABS = fabs(f);
     double MIN = (ABS >= static_cast<double>(LLONG_MAX)) ? 0.0 : ABS - static_cast<int64_t>(ABS);
     size_t n   = 0;
@@ -2562,7 +2569,7 @@ std::string json::format_number(double f, bool E) {
     }
     return s;
 }
-std::string json::unescape(const char* string) {
+std::string gnu::json::unescape(const char* string) {
     std::string res;
     res.reserve(strlen(string));
     while (*string != 0) {
@@ -2586,9 +2593,9 @@ std::string json::unescape(const char* string) {
     }
     return res;
 }
-ssize_t json::JS::COUNT = 0;
-ssize_t json::JS::MAX   = 0;
-json::JS::JS() {
+ssize_t gnu::json::JS::COUNT = 0;
+ssize_t gnu::json::JS::MAX   = 0;
+gnu::json::JS::JS() {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) {
         JS::MAX = JS::COUNT;
@@ -2597,10 +2604,10 @@ json::JS::JS() {
     _name   = nullptr;
     _parent = nullptr;
     _pos    = 0;
-    _type   = TYPE::NIL;
+    _type   = Type::NIL;
     _va     = nullptr;
 }
-json::JS::JS(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS::JS(const char* name, JS* parent, unsigned pos) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) {
         JS::MAX = JS::COUNT;
@@ -2609,10 +2616,10 @@ json::JS::JS(const char* name, JS* parent, unsigned pos) {
     _name   = (name != nullptr) ? strdup(name) : nullptr;
     _parent = parent;
     _pos    = pos;
-    _type   = TYPE::NIL;
+    _type   = Type::NIL;
     _va     = nullptr;
 }
-json::JS::JS(JS&& other) {
+gnu::json::JS::JS(JS&& other) {
     JS::COUNT++;
     if (JS::COUNT > JS::MAX) JS::MAX = JS::COUNT;
     _inl    = other._inl;
@@ -2620,57 +2627,57 @@ json::JS::JS(JS&& other) {
     _parent = other._parent;
     _pos    = other._pos;
     _type   = other._type;
-    if (other._type == TYPE::ARRAY) {
+    if (other._type == Type::ARRAY) {
         _va = other._va;
     }
-    else if (other._type == TYPE::OBJECT) {
+    else if (other._type == Type::OBJECT) {
         _vo = other._vo;
     }
-    else if (other._type == TYPE::BOOL) {
+    else if (other._type == Type::BOOL) {
         _vb = other._vb;
     }
-    else if (other._type == TYPE::STRING) {
+    else if (other._type == Type::STRING) {
         _vs = other._vs;
     }
-    else if (other._type == TYPE::NUMBER) {
+    else if (other._type == Type::NUMBER) {
         _vn = other._vn;
     }
-    other._type = TYPE::NIL;
+    other._type = Type::NIL;
     other._name = nullptr;
     _set_child_parent_to_me();
 }
-json::JS::~JS() {
+gnu::json::JS::~JS() {
     JS::COUNT--;
     _clear(true);
 }
-json::JS& json::JS::operator=(JS&& other) {
+gnu::json::JS& gnu::json::JS::operator=(JS&& other) {
     _clear(true);
     _inl    = other._inl;
     _name   = other._name;
     _parent = other._parent;
     _pos    = other._pos;
     _type   = other._type;
-    if (other._type == TYPE::ARRAY) {
+    if (other._type == Type::ARRAY) {
         _va = other._va;
     }
-    else if (other._type == TYPE::OBJECT) {
+    else if (other._type == Type::OBJECT) {
         _vo = other._vo;
     }
-    else if (other._type == TYPE::BOOL) {
+    else if (other._type == Type::BOOL) {
         _vb = other._vb;
     }
-    else if (other._type == TYPE::STRING) {
+    else if (other._type == Type::STRING) {
         _vs = other._vs;
     }
-    else if (other._type == TYPE::NUMBER) {
+    else if (other._type == Type::NUMBER) {
         _vn = other._vn;
     }
-    other._type = TYPE::NIL;
+    other._type = Type::NIL;
     other._name = nullptr;
     _set_child_parent_to_me();
     return *this;
 }
-bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned pos) {
     bool res = false;
     if (is_array() == true) {
         _va->push_back(JS::_MakeBool("", b, this, pos));
@@ -2683,7 +2690,7 @@ bool json::JS::_add_bool(char** sVal1, bool b, bool ignore_duplicates, unsigned 
     *sVal1 = nullptr;
     return res;
 }
-bool json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
     bool res = false;
     if (is_array() == true) {
         _va->push_back(JS::_MakeNull("", this, pos));
@@ -2696,7 +2703,7 @@ bool json::JS::_add_null(char** sVal1, bool ignore_duplicates, unsigned pos) {
     *sVal1 = nullptr;
     return res;
 }
-bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, unsigned pos) {
     bool res = false;
     if (is_array() == true && std::isnan(nVal) == false) {
         _va->push_back(JS::_MakeNumber("", nVal, this, pos));
@@ -2710,7 +2717,7 @@ bool json::JS::_add_number(char** sVal1, double& nVal, bool ignore_duplicates, u
     nVal = NAN;
     return res;
 }
-bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
+bool gnu::json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, unsigned pos) {
     bool res = false;
     if (is_array() == true && *sVal1 != nullptr && *sVal2 == nullptr) {
         _va->push_back(JS::_MakeString("", *sVal1, this, pos));
@@ -2725,7 +2732,7 @@ bool json::JS::_add_string(char** sVal1, char** sVal2, bool ignore_duplicates, u
     *sVal2 = nullptr;
     return res;
 }
-void json::JS::_clear(bool name) {
+void gnu::json::JS::_clear(bool name) {
     if (is_array() == true) {
         for (auto js : *_va) {
             delete js;
@@ -2748,15 +2755,15 @@ void json::JS::_clear(bool name) {
         free(_name);
         _name = nullptr;
     }
-    _type   = TYPE::NIL;
+    _type   = Type::NIL;
     _vb     = false;
     _parent = nullptr;
 }
-void json::JS::debug() const {
+void gnu::json::JS::debug() const {
     std::string t;
-    _debug(this, t);
+    priv::_json_debug(this, t);
 }
-const json::JS* json::JS::find(const std::string& name, bool rec) const {
+const gnu::json::JS* gnu::json::JS::find(const std::string& name, bool rec) const {
     if (is_object() == false) {
         return nullptr;
     }
@@ -2773,7 +2780,7 @@ const json::JS* json::JS::find(const std::string& name, bool rec) const {
     }
     return nullptr;
 }
-const json::JS* json::JS::_get_value(const char* name, bool escape) const {
+const gnu::json::JS* gnu::json::JS::_get_value(const char* name, bool escape) const {
     if (is_object() == false) {
         return nullptr;
     }
@@ -2781,45 +2788,45 @@ const json::JS* json::JS::_get_value(const char* name, bool escape) const {
     auto find1 = _vo->find(key);
     return (find1 != _vo->end()) ? find1->second : nullptr;
 }
-json::JS* json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeArray(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
-    r->_type = TYPE::ARRAY;
+    r->_type = Type::ARRAY;
     r->_va   = new JSArray();
     return r;
 }
-json::JS* json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeBool(const char* name, bool vb, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
-    r->_type = TYPE::BOOL;
+    r->_type = Type::BOOL;
     r->_vb   = vb;
     return r;
 }
-json::JS* json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeNull(const char* name, JS* parent, unsigned pos) {
     return new JS(name, parent, pos);
 }
-json::JS* json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeNumber(const char* name, double vn, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
-    r->_type = TYPE::NUMBER;
+    r->_type = Type::NUMBER;
     r->_vn   = vn;
     return r;
 }
-json::JS* json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeObject(const char* name, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
-    r->_type = TYPE::OBJECT;
+    r->_type = Type::OBJECT;
     r->_vo   = new JSObject();
     return r;
 }
-json::JS* json::JS::_MakeString(const char* name, const char* vs, JS* parent, unsigned pos) {
+gnu::json::JS* gnu::json::JS::_MakeString(const char* name, const char* vs, JS* parent, unsigned pos) {
     auto r   = new JS(name, parent, pos);
-    r->_type = TYPE::STRING;
+    r->_type = Type::STRING;
     r->_vs   = strdup(vs);
     return r;
 }
-void json::JS::_set_err(const std::string& err) {
+void gnu::json::JS::_set_err(const std::string& err) {
     _clear(true);
     _vs   = strdup(err.c_str());
-    _type = TYPE::ERR;
+    _type = Type::ERR;
 }
-bool json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
+bool gnu::json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
     if (is_object() == false) {
         return false;
     }
@@ -2836,7 +2843,7 @@ bool json::JS::_set_value(const char* name, JS* js, bool ignore_duplicates) {
     (*_vo)[name] = js;
     return true;
 }
-void json::JS::_set_child_parent_to_me() {
+void gnu::json::JS::_set_child_parent_to_me() {
     if (is_array() == true) {
         for (auto o : *_va) {
             o->_parent = this;
@@ -2848,22 +2855,22 @@ void json::JS::_set_child_parent_to_me() {
         }
     }
 }
-std::string json::JS::to_string() const {
+std::string gnu::json::JS::to_string() const {
     std::string ret = type_name();
     char b[400];
-    if (_type == TYPE::NUMBER) {
+    if (_type == Type::NUMBER) {
         snprintf(b, 400, ": %f", _vn);
         ret += b;
     }
-    else if (_type == TYPE::STRING) {
+    else if (_type == Type::STRING) {
         ret += ": ";
         ret += _vs;
     }
-    else if (_type == TYPE::BOOL) {
+    else if (_type == Type::BOOL) {
         ret += ": ";
         ret += _vb ? "true" : "false";
     }
-    else if (_type == TYPE::ARRAY || _type == TYPE::OBJECT) {
+    else if (_type == Type::ARRAY || _type == Type::OBJECT) {
         snprintf(b, 400, ": %d children", static_cast<int>(size()));
         ret += b;
     }
@@ -2874,9 +2881,9 @@ std::string json::JS::to_string() const {
         return ret;
     }
 }
-const json::JSArray json::JS::vo_to_va() const {
+const gnu::json::JSArray gnu::json::JS::vo_to_va() const {
     JSArray res;
-    if (_type != TYPE::OBJECT) {
+    if (_type != Type::OBJECT) {
         return res;
     }
     for (auto& m : *_vo) {
@@ -2884,7 +2891,7 @@ const json::JSArray json::JS::vo_to_va() const {
     }
     return res;
 }
-json::Builder& json::Builder::add(JS* js) {
+gnu::json::Builder& gnu::json::Builder::add(JS* js) {
     auto name = js->name();
     if (_current == nullptr) {
         if (name != "") {
@@ -2902,7 +2909,7 @@ json::Builder& json::Builder::add(JS* js) {
                 delete js;
                 throw std::string("Error: values added to array are nameless <" + name + ">.");
             }
-            else if (*js == TYPE::ARRAY || *js == TYPE::OBJECT) {
+            else if (*js == Type::ARRAY || *js == Type::OBJECT) {
                 _current->_va->push_back(js);
                 _current = js;
             }
@@ -2930,7 +2937,7 @@ json::Builder& json::Builder::add(JS* js) {
     }
     return *this;
 }
-std::string json::Builder::encode(ENCODE option) const {
+std::string gnu::json::Builder::encode(Encode option) const {
     if (_root == nullptr) {
         throw std::string("Error: empty json.");
     }
@@ -2943,7 +2950,7 @@ std::string json::Builder::encode(ENCODE option) const {
     }
     return j;
 }
-json::Builder& json::Builder::end() {
+gnu::json::Builder& gnu::json::Builder::end() {
     if (_current == nullptr) {
         throw std::string("Error: empty json.");
     }
@@ -2953,74 +2960,72 @@ json::Builder& json::Builder::end() {
     _current = _current->parent();
     return *this;
 }
-json::JS* json::Builder::MakeArray(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeArray(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::ARRAY;
+    r->_type = Type::ARRAY;
     r->_va   = new JSArray();
     return r;
 }
-json::JS* json::Builder::MakeArrayInline(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeArrayInline(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::ARRAY;
+    r->_type = Type::ARRAY;
     r->_va   = new JSArray();
     r->_inl  = true;
     return r;
 }
-json::JS* json::Builder::MakeBool(bool vb, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeBool(bool vb, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::BOOL;
+    r->_type = Type::BOOL;
     r->_vb   = vb;
     return r;
 }
-json::JS* json::Builder::MakeNull(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeNull(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::NIL;
+    r->_type = Type::NIL;
     return r;
 }
-json::JS* json::Builder::MakeNumber(double vn, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeNumber(double vn, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::NUMBER;
+    r->_type = Type::NUMBER;
     r->_vn   = vn;
     return r;
 }
-json::JS* json::Builder::MakeObject(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeObject(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::OBJECT;
+    r->_type = Type::OBJECT;
     r->_vo   = new JSObject();
     return r;
 }
-json::JS* json::Builder::MakeObjectInline(const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeObjectInline(const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::OBJECT;
+    r->_type = Type::OBJECT;
     r->_vo   = new JSObject();
     r->_inl  = true;
     return r;
 }
-json::JS* json::Builder::MakeString(const char* vs, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeString(const char* vs, const char* name, bool escape) {
     auto r   = new JS((escape == true) ? json::escape(name).c_str() : name);
-    r->_type = TYPE::STRING;
+    r->_type = Type::STRING;
     r->_vs   = strdup((escape == true) ? json::escape(vs).c_str() : vs);
     return r;
 }
-json::JS* json::Builder::MakeString(const std::string& vs, const char* name, bool escape) {
+gnu::json::JS* gnu::json::Builder::MakeString(const std::string& vs, const char* name, bool escape) {
     return Builder::MakeString(vs.c_str(), name, escape);
 }
-}
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_PNG_Image.H>
+#include <FL/Fl_Rect.H>
+#include <FL/Fl_SVG_Image.H>
+#include <FL/fl_ask.H>
+#include <FL/fl_draw.H>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdarg>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/fl_ask.H>
-#include <FL/Fl_SVG_Image.H>
 #ifdef _WIN32
     #include <windows.h>
 #else
     #include <unistd.h>
-#endif
-#ifdef FLW_USE_PNG
-    #include <FL/Fl_PNG_Image.H>
-    #include <FL/fl_draw.H>
 #endif
 namespace flw {
 std::vector<char*>  PREF_FONTNAMES;
@@ -3430,7 +3435,7 @@ std::string flw::labels::UPDATE   = "&Update";
 std::string flw::labels::YES      = "&Yes";
 namespace flw {
 namespace priv {
-static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
+static Fl_Menu_Item* _menu_item(Fl_Menu_* menu, const char* text, void* v = nullptr) {
     const Fl_Menu_Item* item;
     if (v == nullptr) {
         assert(menu && text);
@@ -3447,7 +3452,7 @@ static Fl_Menu_Item* _item(Fl_Menu_* menu, const char* text, void* v = nullptr) 
 }
 }
 void flw::menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
     if (item == nullptr) {
         return;
     }
@@ -3459,20 +3464,20 @@ void flw::menu::enable_item(Fl_Menu_* menu, const char* text, bool value) {
     }
 }
 Fl_Menu_Item* flw::menu::get_item(Fl_Menu_* menu, const char* text) {
-    return flw::priv::_item(menu, text);
+    return priv::_menu_item(menu, text);
 }
 Fl_Menu_Item* flw::menu::get_item(Fl_Menu_* menu, void* v) {
-    return flw::priv::_item(menu, nullptr, v);
+    return priv::_menu_item(menu, nullptr, v);
 }
 bool flw::menu::item_value(Fl_Menu_* menu, const char* text) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
     if (item == nullptr) {
         return false;
     }
     return item->value();
 }
 void flw::menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
     if (item == nullptr) {
         return;
     }
@@ -3484,7 +3489,7 @@ void flw::menu::set_item(Fl_Menu_* menu, const char* text, bool value) {
     }
 }
 void flw::menu::setonly_item(Fl_Menu_* menu, const char* text) {
-    auto item = flw::priv::_item(menu, text);
+    auto item = priv::_menu_item(menu, text);
     if (item == nullptr) {
         return;
     }
@@ -3666,7 +3671,7 @@ std::string flw::util::format_int(int64_t num, char del) {
     std::reverse(r.begin(), r.end());
     return r;
 }
-bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned max_size) {
+bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned size) {
     if (svg_image.length() < 40) {
         return false;
     }
@@ -3674,15 +3679,15 @@ bool flw::util::icon(Fl_Widget* widget, const std::string& svg_image, unsigned m
     if (svg == nullptr) {
         return false;
     }
-    else if (max_size < 16 || max_size > 4096) {
+    else if (size < 12 || size > 4096) {
         delete svg;
         return false;
     }
     auto image   = svg->copy();
     auto deimage = image->copy();
-    image->scale(max_size, max_size);
+    image->scale(size, size);
     deimage->inactive();
-    deimage->scale(max_size, max_size);
+    deimage->scale(size, size);
     widget->bind_image(image);
     widget->bind_deimage(deimage);
     widget->bind_image(1);
@@ -3760,7 +3765,6 @@ int32_t flw::util::milliseconds() {
 }
 bool flw::util::png_save(Fl_Window* window, const std::string& opt_name, int X, int Y, int W, int H) {
     auto res = false;
-#ifdef FLW_USE_PNG
     auto filename = (opt_name == "") ? fl_file_chooser("Save To PNG File", "All Files (*)\tPNG Files (*.png)", "") : opt_name.c_str();
     if (filename != nullptr) {
         window->make_current();
@@ -3788,15 +3792,6 @@ bool flw::util::png_save(Fl_Window* window, const std::string& opt_name, int X, 
             fl_alert("%s", "Error: failed to grab image!");
         }
     }
-#else
-    (void) opt_name;
-    (void) window;
-    (void) X;
-    (void) Y;
-    (void) W;
-    (void) H;
-    fl_alert("Error: flw has not been compiled with FLW_USE_PNG flag!");
-#endif
     return res;
 }
 std::string flw::util::remove_browser_format(const std::string& text) {
@@ -3967,41 +3962,41 @@ void* flw::util::zero_memory(char* mem, size_t size) {
 #include <FL/fl_show_colormap.H>
 #include <algorithm>
 namespace flw {
-namespace chart {
+namespace priv {
 #define _FLW_CHART_CB(X)        [](Fl_Widget*, void* o) { static_cast<Chart*>(o)->X; }, this
 #define _FLW_CHART_DEBUG(X)
 #define _FLW_CHART_CLIP(X) { X; }
-static const char* const _LABEL_ADD_CSV         = "Add Line from CSV File...";
-static const char* const _LABEL_ADD_LINE        = "Create Line...";
-static const char* const _LABEL_CLEAR           = "Clear Chart";
-static const char* const _LABEL_LOAD_JSON       = "Load Chart from JSON...";
-static const char* const _LABEL_PRINT           = "Print to PostScript File...";
-static const char* const _LABEL_SAVE_CSV        = "Save Line to CSV...";
-static const char* const _LABEL_SAVE_JSON       = "Save Chart to JSON...";
-static const char* const _LABEL_SAVE_PNG        = "Save to PNG File...";
-static const char* const _LABEL_SETUP_AREA      = "Number of Areas...";
-static const char* const _LABEL_SETUP_DELETE    = "Delete Lines...";
-static const char* const _LABEL_SETUP_LABEL     = "Label...";
-static const char* const _LABEL_SETUP_LINE      = "Line Properties...";
-static const char* const _LABEL_SETUP_MAX_CLAMP = "Set Max Clamp...";
-static const char* const _LABEL_SETUP_MIN_CLAMP = "Set Min Clamp...";
-static const char* const _LABEL_SETUP_MOVE      = "Move Lines...";
-static const char* const _LABEL_SETUP_RANGE     = "Date Range...";
-static const char* const _LABEL_SETUP_SHOW      = "Show or Hide Lines...";
-static const char* const _LABEL_SHOW_HLINES     = "Show Horizontal Lines";
-static const char* const _LABEL_SHOW_LABELS     = "Show Line Labels";
-static const char* const _LABEL_SHOW_VLINES     = "Show Vertical Lines";
-static const int         _MIN_MARGIN            =  3;
-static const int         _MIN_AREA_SIZE         = 10;
-static const int         _TICK_SIZE             =  4;
-static const std::string _LABEL_SYMBOL          = "@-> ";
+static const char* const _CHART_LABEL_ADD_CSV         = "Add Line from CSV File...";
+static const char* const _CHART_LABEL_ADD_LINE        = "Create Line...";
+static const char* const _CHART_LABEL_CLEAR           = "Clear Chart";
+static const char* const _CHART_LABEL_LOAD_JSON       = "Load Chart from JSON...";
+static const char* const _CHART_LABEL_PRINT           = "Print to PostScript File...";
+static const char* const _CHART_LABEL_SAVE_CSV        = "Save Line to CSV...";
+static const char* const _CHART_LABEL_SAVE_JSON       = "Save Chart to JSON...";
+static const char* const _CHART_LABEL_SAVE_PNG        = "Save to PNG File...";
+static const char* const _CHART_LABEL_SETUP_AREA      = "Number of Areas...";
+static const char* const _CHART_LABEL_SETUP_DELETE    = "Delete Lines...";
+static const char* const _CHART_LABEL_SETUP_LABEL     = "Label...";
+static const char* const _CHART_LABEL_SETUP_LINE      = "Line Properties...";
+static const char* const _CHART_LABEL_SETUP_MAX_CLAMP = "Set Max Clamp...";
+static const char* const _CHART_LABEL_SETUP_MIN_CLAMP = "Set Min Clamp...";
+static const char* const _CHART_LABEL_SETUP_MOVE      = "Move Lines...";
+static const char* const _CHART_LABEL_SETUP_RANGE     = "Date Range...";
+static const char* const _CHART_LABEL_SETUP_SHOW      = "Show or Hide Lines...";
+static const char* const _CHART_LABEL_SHOW_HLINES     = "Show Horizontal Lines";
+static const char* const _CHART_LABEL_SHOW_LABELS     = "Show Line Labels";
+static const char* const _CHART_LABEL_SHOW_VLINES     = "Show Vertical Lines";
+static const int         _CHART_MIN_MARGIN            =  3;
+static const int         _CHART_MIN_AREA_SIZE         = 10;
+static const int         _CHART_TICK_SIZE             =  4;
+static const std::string _CHART_LABEL_SYMBOL          = "@-> ";
 #ifdef DEBUG
-static const char* const _LABEL_DEBUG           = "Debug Chart";
-static const char* const _LABEL_DEBUG_LINE      = "Print Visible Values";
+static const char* const _CHART_LABEL_DEBUG           = "Debug Chart";
+static const char* const _CHART_LABEL_DEBUG_LINE      = "Print Visible Values";
 #endif
-class _LineSetup : public Fl_Double_Window {
+class _ChartLineSetup : public Fl_Double_Window {
 public:
-    Line&                       _line;
+    chart::Line&                _line;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _align;
@@ -4011,7 +4006,7 @@ public:
     GridGroup*                  _grid;
     bool                        _run;
 public:
-    _LineSetup(Fl_Window* parent, Line& line) :
+    _ChartLineSetup(Fl_Window* parent, chart::Line& line) :
     Fl_Double_Window(0, 0, 10, 10, "Chart - Line Properties"),
     _line(line) {
         end();
@@ -4035,9 +4030,9 @@ public:
         _align->add("Right");
         _align->textfont(flw::PREF_FONT);
         _align->textsize(flw::PREF_FONTSIZE);
-        _close->callback(_LineSetup::Callback, this);
+        _close->callback(_ChartLineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
-        _color->callback(_LineSetup::Callback, this);
+        _color->callback(_ChartLineSetup::Callback, this);
         _label->textfont(flw::PREF_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
         _type->add("Line");
@@ -4051,23 +4046,23 @@ public:
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
-        _width->callback(_LineSetup::Callback, this);
+        _width->callback(_ChartLineSetup::Callback, this);
         _width->precision(0);
         _width->range(1, chart::MAX_LINE_WIDTH);
         _width->value(_line.width());
         _width->tooltip("Max Line Width.");
         resizable(_grid);
         util::labelfont(this);
-        callback(_LineSetup::Callback, this);
+        callback(_ChartLineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 16 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
-        _LineSetup::Callback(_width, this);
+        _ChartLineSetup::Callback(_width, this);
         update_widgets();
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_LineSetup*>(o);
+        auto self = static_cast<_ChartLineSetup*>(o);
         if (w == self) {
         }
         else if (w == self->_color) {
@@ -4096,58 +4091,60 @@ public:
         _line.set_label(_label->value());
         _line.set_width(_width->value());
         _line.set_color(_color->color());
-        if (_type->value() == 0)      _line.set_type(LineType::LINE);
-        else if (_type->value() == 1) _line.set_type(LineType::LINE_DOT);
-        else if (_type->value() == 2) _line.set_type(LineType::BAR);
-        else if (_type->value() == 3) _line.set_type(LineType::BAR_CLAMP);
-        else if (_type->value() == 4) _line.set_type(LineType::BAR_HLC);
-        else if (_type->value() == 5) _line.set_type(LineType::HORIZONTAL);
-        else if (_type->value() == 6) _line.set_type(LineType::EXPAND_HORIZONTAL_ALL);
-        else if (_type->value() == 7) _line.set_type(LineType::EXPAND_HORIZONTAL_FIRST);
+        if (_type->value() == 0)      _line.set_type(chart::LineType::LINE);
+        else if (_type->value() == 1) _line.set_type(chart::LineType::LINE_DOT);
+        else if (_type->value() == 2) _line.set_type(chart::LineType::BAR);
+        else if (_type->value() == 3) _line.set_type(chart::LineType::BAR_CLAMP);
+        else if (_type->value() == 4) _line.set_type(chart::LineType::BAR_HLC);
+        else if (_type->value() == 5) _line.set_type(chart::LineType::HORIZONTAL);
+        else if (_type->value() == 6) _line.set_type(chart::LineType::EXPAND_HORIZONTAL_ALL);
+        else if (_type->value() == 7) _line.set_type(chart::LineType::EXPAND_HORIZONTAL_FIRST);
         if (_align->value() == 0) _line.set_align(FL_ALIGN_LEFT);
         else                      _line.set_align(FL_ALIGN_RIGHT);
     }
     void update_widgets() {
         _label->value(_line.label().c_str());
         _color->color(_line.color());
-        _LineSetup::Callback(_width, this);
-        if (_line.type() == LineType::LINE)                         _type->value(0);
-        else if (_line.type() == LineType::LINE_DOT)                _type->value(1);
-        else if (_line.type() == LineType::BAR)                     _type->value(2);
-        else if (_line.type() == LineType::BAR_CLAMP)               _type->value(3);
-        else if (_line.type() == LineType::BAR_HLC)                 _type->value(4);
-        else if (_line.type() == LineType::HORIZONTAL)              _type->value(5);
-        else if (_line.type() == LineType::EXPAND_HORIZONTAL_ALL)   _type->value(6);
-        else if (_line.type() == LineType::EXPAND_HORIZONTAL_FIRST) _type->value(7);
+        _ChartLineSetup::Callback(_width, this);
+        if (_line.type() == chart::LineType::LINE)                         _type->value(0);
+        else if (_line.type() == chart::LineType::LINE_DOT)                _type->value(1);
+        else if (_line.type() == chart::LineType::BAR)                     _type->value(2);
+        else if (_line.type() == chart::LineType::BAR_CLAMP)               _type->value(3);
+        else if (_line.type() == chart::LineType::BAR_HLC)                 _type->value(4);
+        else if (_line.type() == chart::LineType::HORIZONTAL)              _type->value(5);
+        else if (_line.type() == chart::LineType::EXPAND_HORIZONTAL_ALL)   _type->value(6);
+        else if (_line.type() == chart::LineType::EXPAND_HORIZONTAL_FIRST) _type->value(7);
         if (_line.align() == FL_ALIGN_LEFT) _align->value(0);
         else                                _align->value(1);
     }
 };
-bool Area::add_line(const Line& chart_line) {
-    if (_lines.size() >= Area::MAX_LINES) {
+}
+}
+bool flw::chart::Area::add_line(const Line& chart_line) {
+    if (_lines.size() >= flw::chart::Area::MAX_LINES) {
         return false;
     }
     _lines.push_back(chart_line);
     Fl::redraw();
     return true;
 }
-std::optional<double> Area::clamp_max() const {
+std::optional<double> flw::chart::Area::clamp_max() const {
     if (std::isfinite(_clamp_max) == true) {
         return _clamp_max;
     }
     return std::nullopt;
 }
-std::optional<double> Area::clamp_min() const {
+std::optional<double> flw::chart::Area::clamp_min() const {
     if (std::isfinite(_clamp_min) == true) {
         return _clamp_min;
     }
     return std::nullopt;
 }
-void Area::debug() const {
+void flw::chart::Area::debug() const {
 #ifdef DEBUG
     printf("\t--------------------------------------\n");
     printf("\tArea: %d\n", static_cast<int>(_area));
-    if (_percent >= chart::_MIN_AREA_SIZE) {
+    if (_percent >= priv::_CHART_MIN_AREA_SIZE) {
         printf("\t\tx, y:       %12d, %4d\n", _rect.x(), _rect.y());
         printf("\t\tw, h:       %12d, %4d\n", _rect.w(), _rect.h());
         printf("\t\tclamp_max:  %18.4f\n", _clamp_max);
@@ -4165,7 +4162,7 @@ void Area::debug() const {
     }
 #endif
 }
-void Area::delete_line(size_t index) {
+void flw::chart::Area::delete_line(size_t index) {
     size_t count = 0;
     for (auto it = _lines.begin(); it != _lines.end(); ++it) {
         if (index == count) {
@@ -4181,7 +4178,7 @@ void Area::delete_line(size_t index) {
         count++;
     }
 }
-void Area::reset() {
+void flw::chart::Area::reset() {
     _clamp_max = INFINITY;
     _clamp_min = INFINITY;
     _percent   = 0;
@@ -4191,16 +4188,16 @@ void Area::reset() {
     _right.reset();
     _lines.clear();
 }
-Line* Area::selected_line() {
+flw::chart::Line* flw::chart::Area::selected_line() {
     if (_selected >= _lines.size()) {
         return nullptr;
     }
     return &_lines[_selected];
 }
-Point::Point() {
+flw::chart::Point::Point() {
     high = low = close = 0.0;
 }
-Point::Point(const std::string& date, double value) {
+flw::chart::Point::Point(const std::string& date, double value) {
     auto valid_date = gnu::Date(date.c_str());
     if (std::isfinite(value) == true &&
         fabs(value) < chart::MAX_VALUE &&
@@ -4212,7 +4209,7 @@ Point::Point(const std::string& date, double value) {
         high = low = close = 0.0;
     }
 }
-Point::Point(const std::string& date, double high, double low, double close) {
+flw::chart::Point::Point(const std::string& date, double high, double low, double close) {
     auto valid_date = gnu::Date(date.c_str());
     if (std::isfinite(high) == true &&
         std::isfinite(low) == true &&
@@ -4245,7 +4242,7 @@ Point::Point(const std::string& date, double high, double low, double close) {
         this->high = this->low = this->close = 0.0;
     }
 }
-PointVector Point::ATR(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::ATR(const PointVector& in, size_t days) {
     PointVector res;
     if (days > 1 && days < in.size()) {
         double tot        = 0.0;
@@ -4287,7 +4284,7 @@ PointVector Point::ATR(const PointVector& in, size_t days) {
     }
     return res;
 }
-size_t Point::BinarySearch(const PointVector& in, const Point& key) {
+size_t flw::chart::Point::BinarySearch(const PointVector& in, const Point& key) {
     auto it = std::lower_bound(in.begin(), in.end(), key);
     if (it == in.end() || *it != key) {
         return static_cast<size_t>(-1);
@@ -4296,7 +4293,7 @@ size_t Point::BinarySearch(const PointVector& in, const Point& key) {
         return std::distance(in.begin(), it);
     }
 }
-PointVector Point::DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block) {
+flw::chart::PointVector flw::chart::Point::DateSerie(const std::string& start_date, const std::string& stop_date, DateRange range, const PointVector& block) {
     auto       month   = -1;
     auto       current = gnu::Date(start_date.c_str());
     auto const stop    = gnu::Date(stop_date.c_str());
@@ -4356,7 +4353,7 @@ PointVector Point::DateSerie(const std::string& start_date, const std::string& s
     }
     return res;
 }
-PointVector Point::DayToMonth(const PointVector& in, bool sum) {
+flw::chart::PointVector flw::chart::Point::DayToMonth(const PointVector& in, bool sum) {
     size_t          f = 0;
     PointVector res;
     Point       current;
@@ -4402,7 +4399,7 @@ PointVector Point::DayToMonth(const PointVector& in, bool sum) {
     }
     return res;
 }
-PointVector Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum) {
+flw::chart::PointVector flw::chart::Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool sum) {
     size_t          f = 0;
     PointVector res;
     Point       current;
@@ -4454,12 +4451,12 @@ PointVector Point::DayToWeek(const PointVector& in, gnu::Date::Day weekday, bool
     }
     return res;
 }
-void Point::debug() const {
+void flw::chart::Point::debug() const {
 #ifdef DEBUG
     printf("%s, %20.8f, %20.8f, %20.8f\n", date.c_str(), high, low, close);
 #endif
 }
-void Point::Debug(const PointVector& in) {
+void flw::chart::Point::Debug(const PointVector& in) {
 #ifdef DEBUG
     printf("\nPointVector(%u)\n", static_cast<unsigned>(in.size()));
     for (const auto& data : in) {
@@ -4470,7 +4467,7 @@ void Point::Debug(const PointVector& in) {
     (void) in;
 #endif
 }
-PointVector Point::ExponentialMovingAverage(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::ExponentialMovingAverage(const PointVector& in, size_t days) {
     PointVector res;
     if (days > 1 && days < in.size()) {
         double sma   = 0.0;
@@ -4495,14 +4492,14 @@ PointVector Point::ExponentialMovingAverage(const PointVector& in, size_t days) 
     }
     return res;
 }
-PointVector Point::Fixed(const PointVector& in, double value) {
+flw::chart::PointVector flw::chart::Point::Fixed(const PointVector& in, double value) {
     PointVector res;
     for (const auto& data : in) {
         res.push_back(Point(data.date, value));
     }
     return res;
 }
-PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) {
+flw::chart::PointVector flw::chart::Point::LoadCSV(const std::string& filename, const std::string& sep) {
     auto buf = gnu::file::read(filename);
     if (buf.size() < 10) {
         return PointVector();
@@ -4525,7 +4522,7 @@ PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) 
     }
     return res;
 }
-PointVector Point::Modify(const PointVector& in, Modifier modify, double value) {
+flw::chart::PointVector flw::chart::Point::Modify(const PointVector& in, Modifier modify, double value) {
     PointVector res;
     if (fabs(value) < chart::MIN_VALUE) {
         return res;
@@ -4548,7 +4545,7 @@ PointVector Point::Modify(const PointVector& in, Modifier modify, double value) 
     }
     return res;
 }
-PointVector Point::Momentum(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::Momentum(const PointVector& in, size_t days) {
     size_t          start = days - 1;
     PointVector res;
     if (days > 1 && days < in.size()) {
@@ -4560,7 +4557,7 @@ PointVector Point::Momentum(const PointVector& in, size_t days) {
     }
     return res;
 }
-PointVector Point::MovingAverage(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::MovingAverage(const PointVector& in, size_t days) {
     PointVector res;
     if (days > 1 && days < in.size()) {
         size_t count = 0;
@@ -4588,11 +4585,11 @@ PointVector Point::MovingAverage(const PointVector& in, size_t days) {
     }
     return res;
 }
-std::string Point::RangeToString(DateRange range) {
+std::string flw::chart::Point::RangeToString(DateRange range) {
     static const std::string NAMES[] = { "DAY", "WEEKDAY", "FRIDAY", "SUNDAY", "MONTH", "HOUR", "MIN", "SEC", "", };
     return NAMES[static_cast<unsigned>(range)];
 }
-PointVector Point::RSI(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::RSI(const PointVector& in, size_t days) {
     PointVector res;
     if (days > 1 && days < in.size()) {
         double avg_gain = 0.0;
@@ -4624,7 +4621,7 @@ PointVector Point::RSI(const PointVector& in, size_t days) {
     }
     return res;
 }
-bool Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
+bool flw::chart::Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
     std::string csv;
     csv.reserve(in.size() * 40 + 256);
     for (const auto& data : in) {
@@ -4634,7 +4631,7 @@ bool Point::SaveCSV(const PointVector& in, const std::string& filename, const st
     }
     return gnu::file::write(filename, csv.c_str(), csv.size());
 }
-PointVector Point::StdDev(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::StdDev(const PointVector& in, size_t days) {
     PointVector res;
     if (days > 1 && days < in.size()) {
         size_t    count = 0;
@@ -4663,7 +4660,7 @@ PointVector Point::StdDev(const PointVector& in, size_t days) {
     }
     return res;
 }
-PointVector Point::Stochastics(const PointVector& in, size_t days) {
+flw::chart::PointVector flw::chart::Point::Stochastics(const PointVector& in, size_t days) {
     double          high = 0.0;
     double          low  = 0.0;
     PointVector res;
@@ -4693,7 +4690,7 @@ PointVector Point::Stochastics(const PointVector& in, size_t days) {
     }
     return res;
 }
-DateRange  Point::StringToRange(const std::string& range) {
+flw::chart::DateRange flw::chart::Point::StringToRange(const std::string& range) {
     if (range == "WEEKDAY")     return DateRange::WEEKDAY;
     else if (range == "FRIDAY") return DateRange::FRIDAY;
     else if (range == "SUNDAY") return DateRange::SUNDAY;
@@ -4703,13 +4700,13 @@ DateRange  Point::StringToRange(const std::string& range) {
     else if (range == "SEC")    return DateRange::SEC;
     else                        return DateRange::DAY;
 }
-Line::Line(const PointVector& data, const std::string& label, LineType type) {
+flw::chart::Line::Line(const PointVector& data, const std::string& label, LineType type) {
     reset();
     set_data(data);
     set_label(label);
     set_type(type);
 }
-void Line::debug(size_t num) const {
+void flw::chart::Line::debug(size_t num) const {
 #ifdef DEBUG
     printf("\t\t---------------------------------------------\n");
     printf("\t\tLine: %u\n", static_cast<unsigned>(num));
@@ -4731,7 +4728,7 @@ void Line::debug(size_t num) const {
     (void) num;
 #endif
 }
-void Line::reset() {
+void flw::chart::Line::reset() {
     _data.clear();
     _align   = FL_ALIGN_LEFT;
     _color   = FL_FOREGROUND_COLOR;
@@ -4741,7 +4738,7 @@ void Line::reset() {
     _visible = true;
     _width   = 1;
 }
-Line&  Line::set_type_from_string(const std::string&  val) {
+flw::chart::Line& flw::chart::Line::set_type_from_string(const std::string&  val) {
     if (val == "LINE_DOT")                     _type = LineType::LINE_DOT;
     else if (val == "BAR")                     _type = LineType::BAR;
     else if (val == "BAR_CLAMP")               _type = LineType::BAR_CLAMP;
@@ -4753,14 +4750,14 @@ Line&  Line::set_type_from_string(const std::string&  val) {
     else                                       _type = LineType::LINE;
     return *this;
 }
-std::string Line::type_to_string() const {
+std::string flw::chart::Line::type_to_string() const {
     static const std::string NAMES[] = { "LINE", "LINE_DOT", "BAR", "BAR_CLAMP", "BAR_HLC", "HORIZONTAL", "EXPAND_VERTICAL", "EXPAND_HORIZONTAL_ALL", "EXPAND_HORIZONTAL_FIRST", "", };
     return NAMES[static_cast<unsigned>(_type)];
 }
-Scale::Scale() {
+flw::chart::Scale::Scale() {
     reset();
 }
-int Scale::calc_margin() {
+int flw::chart::Scale::calc_margin() {
     if (diff() < chart::MIN_VALUE) {
         return 0;
     }
@@ -4769,7 +4766,7 @@ int Scale::calc_margin() {
     std::string  max = util::format_double(_max, fr, '\'');
     return (min.length() > max.length()) ? min.length() : max.length();
 }
-void Scale::calc_tick(int height) {
+void flw::chart::Scale::calc_tick(int height) {
     const double RANGE  = diff();
     int          kludge = 0;
     _tick  = 0.0;
@@ -4809,7 +4806,7 @@ void Scale::calc_tick(int height) {
         }
     }
 }
-void Scale::debug(const char* name) const {
+void flw::chart::Scale::debug(const char* name) const {
 #ifdef DEBUG
     printf("\t\t---------------------------------------------\n");
     printf("\t\tScale: %s\n", name);
@@ -4825,13 +4822,13 @@ void Scale::debug(const char* name) const {
     (void) name;
 #endif
 }
-double Scale::diff() const {
+double flw::chart::Scale::diff() const {
     if (std::isfinite(_min) == false || std::isfinite(_max) == false) {
         return 0.0;
     }
     return _max - _min;
 }
-void Scale::fix_height() {
+void flw::chart::Scale::fix_height() {
     if (std::isfinite(_min) == true && std::isfinite(_max) == true && _min < _max && fabs(_max - _min) < chart::MIN_VALUE) {
         if (_min >= 0.0) {
             _min *= 0.9;
@@ -4847,25 +4844,25 @@ void Scale::fix_height() {
         }
     }
 }
-std::optional<double> Scale::max() const {
+std::optional<double> flw::chart::Scale::max() const {
     if (std::isfinite(_max) == true) {
         return _max;
     }
     return std::nullopt;
 }
-std::optional<double> Scale::min() const {
+std::optional<double> flw::chart::Scale::min() const {
     if (std::isfinite(_min) == true) {
         return _min;
     }
     return std::nullopt;
 }
-void Scale::reset() {
+void flw::chart::Scale::reset() {
     _min   = INFINITY;
     _max   = INFINITY;
     _tick  = 0.0;
     _pixel = 0.0;
 }
-Chart::Chart(int X, int Y, int W, int H, const char* l) :
+flw::chart::Chart::Chart(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14),
 _CW(14) {
@@ -4887,32 +4884,32 @@ _CW(14) {
     add(_scroll);
     _scroll->type(FL_HORIZONTAL);
     _scroll->callback(Chart::_CallbackScrollbar, this);
-    _menu->add(_LABEL_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_LABEL_CLEAR,            0, _FLW_CHART_CB(reset()));
-    _menu->add(_LABEL_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
-    _menu->add(_LABEL_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
-    _menu->add(_LABEL_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_LINE,       0, _FLW_CHART_CB(setup_line()));
-    _menu->add(_LABEL_SETUP_MIN_CLAMP,  0, _FLW_CHART_CB(setup_clamp(true)));
-    _menu->add(_LABEL_SETUP_MAX_CLAMP,  0, _FLW_CHART_CB(setup_clamp(false)));
-    _menu->add(_LABEL_SETUP_SHOW,       0, _FLW_CHART_CB(setup_show_or_hide_lines()));
-    _menu->add(_LABEL_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
-    _menu->add(_LABEL_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
-    _menu->add(_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_line_to_csv()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_line_from_csv()));
-    _menu->add(_LABEL_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
-    _menu->add(_LABEL_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
-    _menu->add(_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
+    _menu->add(priv::_CHART_LABEL_SHOW_LABELS,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_CHART_LABEL_SHOW_HLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_CHART_LABEL_SHOW_VLINES,      0, _FLW_CHART_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_CLEAR,            0, _FLW_CHART_CB(reset()));
+    _menu->add(priv::_CHART_LABEL_SETUP_LABEL,      0, _FLW_CHART_CB(setup_label()));
+    _menu->add(priv::_CHART_LABEL_SETUP_AREA,       0, _FLW_CHART_CB(setup_area()));
+    _menu->add(priv::_CHART_LABEL_SETUP_RANGE,      0, _FLW_CHART_CB(setup_date_range()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_SETUP_LINE,       0, _FLW_CHART_CB(setup_line()));
+    _menu->add(priv::_CHART_LABEL_SETUP_MIN_CLAMP,  0, _FLW_CHART_CB(setup_clamp(true)));
+    _menu->add(priv::_CHART_LABEL_SETUP_MAX_CLAMP,  0, _FLW_CHART_CB(setup_clamp(false)));
+    _menu->add(priv::_CHART_LABEL_SETUP_SHOW,       0, _FLW_CHART_CB(setup_show_or_hide_lines()));
+    _menu->add(priv::_CHART_LABEL_SETUP_MOVE,       0, _FLW_CHART_CB(setup_move_lines()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_SETUP_DELETE,     0, _FLW_CHART_CB(setup_delete_lines()));
+    _menu->add(priv::_CHART_LABEL_ADD_LINE,         0, _FLW_CHART_CB(setup_create_line()));
+    _menu->add(priv::_CHART_LABEL_SAVE_CSV,         0, _FLW_CHART_CB(save_line_to_csv()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_ADD_CSV,          0, _FLW_CHART_CB(load_line_from_csv()));
+    _menu->add(priv::_CHART_LABEL_LOAD_JSON,        0, _FLW_CHART_CB(load_json()));
+    _menu->add(priv::_CHART_LABEL_SAVE_JSON,        0, _FLW_CHART_CB(save_json()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_PRINT,            0, _FLW_CHART_CB(print_to_postscript()));
+    _menu->add(priv::_CHART_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #ifdef DEBUG
-    _menu->add(_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_DEBUG,            0, _FLW_CHART_CB(debug()));
-    _menu->add(_LABEL_DEBUG_LINE,       0, _FLW_CHART_CB(debug_line()));
+    _menu->add(priv::_CHART_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()), FL_MENU_DIVIDER);
+    _menu->add(priv::_CHART_LABEL_DEBUG,            0, _FLW_CHART_CB(debug()));
+    _menu->add(priv::_CHART_LABEL_DEBUG_LINE,       0, _FLW_CHART_CB(debug_line()));
 #else
-    _menu->add(_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
+    _menu->add(priv::_CHART_LABEL_SAVE_PNG,         0, _FLW_CHART_CB(save_png()));
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
     _areas.push_back(Area(AreaNum::ONE));
@@ -4924,7 +4921,7 @@ _CW(14) {
     reset();
     update_pref();
 }
-void Chart::_calc_area_height() {
+void flw::chart::Chart::_calc_area_height() {
     auto last   = 0;
     auto addh   = 0;
     auto height = 0;
@@ -4933,7 +4930,7 @@ void Chart::_calc_area_height() {
     height        = h() - (_bottom_space + _top_space);
     for (size_t f = 1; f <= static_cast<size_t>(AreaNum::LAST); f++) {
         const auto& area = _areas[f];
-        if (area.percent() >= chart::_MIN_AREA_SIZE) {
+        if (area.percent() >= priv::_CHART_MIN_AREA_SIZE) {
             height -= flw::PREF_FIXED_FONTSIZE;
         }
     }
@@ -4942,7 +4939,7 @@ void Chart::_calc_area_height() {
     for (size_t f = 1; f <= static_cast<size_t>(AreaNum::LAST); f++) {
         auto& prev = _areas[f - 1];
         auto& area = _areas[f];
-        if (area.percent() >= chart::_MIN_AREA_SIZE) {
+        if (area.percent() >= priv::_CHART_MIN_AREA_SIZE) {
             area.rect().y(prev.rect().y() + prev.rect().h() + _CH);
             area.rect().h(static_cast<int>((_areas[f].percent() / 100.0) * height));
             addh += static_cast<int>(prev.rect().h());
@@ -4953,7 +4950,7 @@ void Chart::_calc_area_height() {
         _areas[last].rect().h(static_cast<int>(height - addh));
     }
 }
-void Chart::_calc_area_width() {
+void flw::chart::Chart::_calc_area_width() {
     const double width = w() - (_margin_left * _CH + _margin_right * _CH);
     _ticks = static_cast<int>(width / _tick_width);
     if (static_cast<int>(_dates.size()) > _ticks) {
@@ -4978,7 +4975,7 @@ void Chart::_calc_area_width() {
         area.rect().w(width);
     }
 }
-void Chart::_calc_dates() {
+void flw::chart::Chart::_calc_dates() {
     std::string min;
     std::string max;
     for (auto& area : _areas) {
@@ -5005,7 +5002,7 @@ void Chart::_calc_dates() {
         redraw();
     }
 }
-void Chart::_calc_margins() {
+void flw::chart::Chart::_calc_margins() {
     auto left  = 0;
     auto right = 0;
     for (auto& area : _areas) {
@@ -5048,7 +5045,7 @@ void Chart::_calc_margins() {
         }
     }
 }
-void Chart::_calc_ymin_ymax() {
+void flw::chart::Chart::_calc_ymin_ymax() {
     for (auto& area : _areas) {
         auto min_clamp = area.clamp_min();
         auto max_clamp = area.clamp_max();
@@ -5117,13 +5114,13 @@ void Chart::_calc_ymin_ymax() {
         area.right_scale().fix_height();
     }
 }
-void Chart::_calc_yscale() {
+void flw::chart::Chart::_calc_yscale() {
     for (auto& area : _areas) {
         area.left_scale().calc_tick(area.rect().h());
         area.right_scale().calc_tick(area.rect().h());
     }
 }
-bool Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
+bool flw::chart::Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
     (void) page;
     auto widget = static_cast<Fl_Widget*>(data);
     auto rect   = Fl_Rect(widget);
@@ -5132,18 +5129,18 @@ bool Chart::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
     widget->resize(rect.x(), rect.y(), rect.w(), rect.h());
     return false;
 }
-void Chart::_CallbackScrollbar(Fl_Widget* na, void* widget) {
+void flw::chart::Chart::_CallbackScrollbar(Fl_Widget* na, void* widget) {
     (void) na;
     auto self = static_cast<Chart*>(widget);
     self->_date_start = self->_scroll->value();
     self->init();
 }
-bool Chart::create_line(Algorithm formula, bool support) {
+bool flw::chart::Chart::create_line(Algorithm formula, bool support) {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         dlg::msg_alert("Chart", "Area or line has not been selected!");
         return false;
     }
-    else if (_area->size() >= Area::MAX_LINES) {
+    else if (_area->size() >= flw::chart::Area::MAX_LINES) {
         dlg::msg_alert("Chart", "Max supported line count reached!");
         return false;
     }
@@ -5295,7 +5292,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
         return false;
     }
     line1.set_data(vec1).set_label(label1).set_type(type1).set_align(line0->align()).set_color(FL_BLUE);
-    _LineSetup(top_window(), line1).run();
+    priv::_ChartLineSetup(top_window(), line1).run();
     _area->add_line(line1);
     if (vec2.size() > 0) {
         line2.set_data(vec2).set_label(label2).set_type(type2).set_align(line1.align()).set_color(FL_BLACK);
@@ -5308,7 +5305,7 @@ bool Chart::create_line(Algorithm formula, bool support) {
     init_new_data();
     return true;
 }
-void Chart::_create_tooltip(bool ctrl) {
+void flw::chart::Chart::_create_tooltip(bool ctrl) {
     int         X   = Fl::event_x();
     int         Y   = Fl::event_y();
     std::string old = _tooltip;
@@ -5381,7 +5378,7 @@ void Chart::_create_tooltip(bool ctrl) {
         redraw();
     }
 }
-void Chart::debug() const {
+void flw::chart::Chart::debug() const {
 #ifdef DEBUG
     Point first, last, start, end;
     if (_dates.size() > 0) {
@@ -5425,7 +5422,7 @@ void Chart::debug() const {
     fflush(stdout);
 #endif
 }
-void Chart::debug_line() const {
+void flw::chart::Chart::debug_line() const {
 #ifdef DEBUG
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return;
@@ -5461,7 +5458,7 @@ void Chart::debug_line() const {
     fflush(stdout);
 #endif
 }
-void Chart::draw() {
+void flw::chart::Chart::draw() {
 #ifdef DEBUG
 #endif
     if (_printing == true) {
@@ -5481,7 +5478,7 @@ void Chart::draw() {
     _draw_xlabels();
     _FLW_CHART_CLIP(fl_pop_clip())
     for (auto& area : _areas) {
-        if (area.percent() >= chart::_MIN_AREA_SIZE) {
+        if (area.percent() >= priv::_CHART_MIN_AREA_SIZE) {
             _FLW_CHART_CLIP(fl_push_clip(x(), y(), w(), h() - _scroll->h()))
             _draw_ver_lines(area);
             _draw_ylabels(area, FL_ALIGN_LEFT);
@@ -5500,7 +5497,7 @@ void Chart::draw() {
 #ifdef DEBUG
 #endif
 }
-void Chart::_draw_label() {
+void flw::chart::Chart::_draw_label() {
     if (_label == "") {
         return;
     }
@@ -5509,7 +5506,7 @@ void Chart::_draw_label() {
     fl_draw(_label.c_str(), x() + _areas[0].rect().x(), y(), _areas[0].rect().w(), _top_space, FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
     _FLW_CHART_DEBUG(fl_rect(x() + _areas[0].rect().x(), y(), _areas[0].rect().w() + 1, _top_space))
 }
-void Chart::_draw_lines(Area& area) {
+void flw::chart::Chart::_draw_lines(Area& area) {
     for (const auto& line : area.lines()) {
         const auto& scale = (line.align() == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale();
         if (line.size() > 0 && line.is_visible() == true && scale.diff() >= chart::MIN_VALUE) {
@@ -5588,7 +5585,7 @@ void Chart::_draw_lines(Area& area) {
         }
     }
 }
-void Chart::_draw_line_labels(Area& area) {
+void flw::chart::Chart::_draw_line_labels(Area& area) {
     if (_labels == false) {
         return;
     }
@@ -5605,7 +5602,7 @@ void Chart::_draw_line_labels(Area& area) {
     for (const auto& line : area.lines()) {
         int  ws    = 0;
         int  hs    = 0;
-        auto label = _LABEL_SYMBOL + line.label();
+        auto label = priv::_CHART_LABEL_SYMBOL + line.label();
         fl_measure(label.c_str(), ws, hs);
         if (line.align() == FL_ALIGN_LEFT) {
             left_h++;
@@ -5641,7 +5638,7 @@ void Chart::_draw_line_labels(Area& area) {
     if (left_w > 0 || right_w > 0) {
         size_t line_c = 0;
         for (auto& line : area.lines()) {
-            auto const label = (area.selected() == line_c++) ? _LABEL_SYMBOL + line.label() : line.label();
+            auto const label = (area.selected() == line_c++) ? priv::_CHART_LABEL_SYMBOL + line.label() : line.label();
             fl_color((line.is_visible() == false) ? FL_GRAY : line.color());
             if (line.align() == FL_ALIGN_LEFT) {
                 fl_draw(label.c_str(), LEFT_X + 4, left_y + 4, left_w - 8, fl_height(), FL_ALIGN_LEFT | FL_ALIGN_CLIP);
@@ -5658,7 +5655,7 @@ void Chart::_draw_line_labels(Area& area) {
         }
     }
 }
-void Chart::_draw_tooltip() {
+void flw::chart::Chart::_draw_tooltip() {
     if (_tooltip == "" || _area == nullptr) {
         return;
     }
@@ -5690,20 +5687,20 @@ void Chart::_draw_tooltip() {
     fl_draw(_tooltip.c_str(), x1 + 4, y1 + 4, ch * w1 - 8, ch * h1, FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | FL_ALIGN_TOP);
     _FLW_CHART_DEBUG(fl_rect(x1 + 4, y1 + 4, ch * w1 - 8, ch * h1))
 }
-void Chart::_draw_ver_lines(Area& area) {
+void flw::chart::Chart::_draw_ver_lines(Area& area) {
     if (_vertical == false) {
         return;
     }
     fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
     fl_line_style(FL_SOLID, 1);
-    for (size_t i = 0; i < Chart::MAX_VLINES; i++) {
+    for (size_t i = 0; i < flw::chart::Chart::MAX_VLINES; i++) {
         if (_ver_pos[i] < 0) {
             break;
         }
         fl_line(_ver_pos[i], y() + area.rect().y(), _ver_pos[i], y() + area.rect().b());
     }
 }
-void Chart::_draw_xlabels() {
+void flw::chart::Chart::_draw_xlabels() {
     fl_color(labelcolor());
     fl_line_style(FL_SOLID, 1);
     int        cw2      = 0;
@@ -5809,17 +5806,17 @@ void Chart::_draw_xlabels() {
             const double ADJUST = static_cast<double>((LEN / 2.0) * _CW);
             month = 4;
             fl_font(flw::PREF_FIXED_FONT, _CH);
-            fl_draw(buffer1, x1 - ADJUST, Y1 + _CH + chart::_TICK_SIZE * 2, ADJUST * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-            _FLW_CHART_DEBUG(fl_rect(x1 - ADJUST, Y1 + _CH + chart::_TICK_SIZE * 2, ADJUST * 2, _CH))
+            fl_draw(buffer1, x1 - ADJUST, Y1 + _CH + priv::_CHART_TICK_SIZE * 2, ADJUST * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            _FLW_CHART_DEBUG(fl_rect(x1 - ADJUST, Y1 + _CH + priv::_CHART_TICK_SIZE * 2, ADJUST * 2, _CH))
             x_last = x1 + ADJUST * 2 + _CW;
         }
-        if (*buffer2 != 0 && (cw2 * 2 + chart::_TICK_SIZE) < _tick_width) {
+        if (*buffer2 != 0 && (cw2 * 2 + priv::_CHART_TICK_SIZE) < _tick_width) {
             fl_font(flw::PREF_FIXED_FONT, CH2);
-            fl_draw(buffer2, x1 - cw2, Y1 + chart::_TICK_SIZE * 2, cw2 * 2, CH2, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-            _FLW_CHART_DEBUG(fl_rect(x1 - cw2, Y1 + chart::_TICK_SIZE * 2, cw2 * 2, CH2))
+            fl_draw(buffer2, x1 - cw2, Y1 + priv::_CHART_TICK_SIZE * 2, cw2 * 2, CH2, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            _FLW_CHART_DEBUG(fl_rect(x1 - cw2, Y1 + priv::_CHART_TICK_SIZE * 2, cw2 * 2, CH2))
             month = 1;
         }
-        fl_line(x1, Y1, x1, Y1 + chart::_TICK_SIZE * month);
+        fl_line(x1, Y1, x1, Y1 + priv::_CHART_TICK_SIZE * month);
         if (addv == true && ver_c < static_cast<int>(Chart::MAX_VLINES - 1)) {
             _ver_pos[ver_c++] = x1;
         }
@@ -5828,18 +5825,18 @@ void Chart::_draw_xlabels() {
     }
     _ver_pos[ver_c] = -1;
 }
-void Chart::_draw_ylabels(Area& area, Fl_Align align) {
+void flw::chart::Chart::_draw_ylabels(Area& area, Fl_Align align) {
     Scale& scale = (align == FL_ALIGN_LEFT) ? area.left_scale() : area.right_scale();
     if (scale.diff() < 0.0 || scale.pixel() * scale.tick() < 1.0) {
         return;
     }
     fl_font(flw::PREF_FIXED_FONT, _CH);
-    const int    TICK3  = chart::_TICK_SIZE * 3;
+    const int    TICK3  = priv::_CHART_TICK_SIZE * 3;
     const double Y_INC  = (scale.pixel() * scale.tick());
     const double Y_FR   = util::count_decimals(scale.tick());
     const int    CH     = _CH / 2;
     const int    WIDTH  = (align == FL_ALIGN_LEFT ? area.rect().x() - TICK3 : w() - area.rect().r() - TICK3 - 1);
-    const int    X1     = (align == FL_ALIGN_LEFT ? x() + chart::_TICK_SIZE : 0);
+    const int    X1     = (align == FL_ALIGN_LEFT ? x() + priv::_CHART_TICK_SIZE : 0);
     double       y1     = area.rect().b();
     double       y_last = 10'000;
     double       y_val  = scale.min().value();
@@ -5850,28 +5847,28 @@ void Chart::_draw_ylabels(Area& area, Fl_Align align) {
             if (align == FL_ALIGN_LEFT) {
                 const int R = x() + area.rect().x();
                 fl_color(labelcolor());
-                fl_line(R - chart::_TICK_SIZE, Y2, R, Y2);
+                fl_line(R - priv::_CHART_TICK_SIZE, Y2, R, Y2);
                 fl_draw(LABEL.c_str(), X1 + 1, Y2 - CH, WIDTH, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
                 _FLW_CHART_DEBUG(fl_rect(X1 + 1, Y2 - CH, WIDTH, _CH))
             }
             else {
                 const int R = x() + area.rect().r();
                 fl_color(labelcolor());
-                fl_line(R, Y2, R + chart::_TICK_SIZE, Y2);
-                fl_draw(LABEL.c_str(), R + chart::_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                _FLW_CHART_DEBUG(fl_rect(R + chart::_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH))
+                fl_line(R, Y2, R + priv::_CHART_TICK_SIZE, Y2);
+                fl_draw(LABEL.c_str(), R + priv::_CHART_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                _FLW_CHART_DEBUG(fl_rect(R + priv::_CHART_TICK_SIZE * 2, Y2 - CH, WIDTH, _CH))
             }
-            if (_horizontal == true && Y2 > y() + area.rect().y() + chart::_TICK_SIZE) {
+            if (_horizontal == true && Y2 > y() + area.rect().y() + priv::_CHART_TICK_SIZE) {
                 fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
                 fl_line(x() + area.rect().x(), Y2, x() + area.rect().r(), Y2);
             }
-            y_last = y1 - _CH - chart::_TICK_SIZE;
+            y_last = y1 - _CH - priv::_CHART_TICK_SIZE;
         }
         y1    -= Y_INC;
         y_val += scale.tick();
     }
 }
-Area* Chart::_get_active_area(int X, int Y) {
+flw::chart::Area* flw::chart::Chart::_get_active_area(int X, int Y) {
     for (auto& area : _areas) {
         if (area.percent() >= 10 &&
             X >= x() + area.rect().x() &&
@@ -5883,7 +5880,7 @@ Area* Chart::_get_active_area(int X, int Y) {
     }
     return nullptr;
 }
-int Chart::handle(int event) {
+int flw::chart::Chart::handle(int event) {
     static bool LEFT = false;
     if (event == FL_PUSH) {
         const int x = Fl::event_x();
@@ -5969,14 +5966,14 @@ int Chart::handle(int event) {
                     static_cast<Fl_Slider*>(_scroll)->value(pos + adj);
                 }
             }
-            Chart::_CallbackScrollbar(0, this);
+            flw::chart::Chart::_CallbackScrollbar(0, this);
             Fl::event_clicks(0);
             return 1;
         }
     }
     return Fl_Group::handle(event);
 }
-void Chart::_init(bool calc_dates) {
+void flw::chart::Chart::_init(bool calc_dates) {
 #ifdef DEBUG
 #endif
     unsigned kludge = 0;
@@ -5986,8 +5983,8 @@ void Chart::_init(bool calc_dates) {
     if (calc_dates == true) {
         WaitCursor wc;
         _calc_dates();
-        _margin_left  = chart::_MIN_MARGIN;
-        _margin_right = chart::_MIN_MARGIN;
+        _margin_left  = priv::_CHART_MIN_MARGIN;
+        _margin_right = priv::_CHART_MIN_MARGIN;
         kludge++;
     }
     while (kludge <= 1) {
@@ -6003,7 +6000,7 @@ void Chart::_init(bool calc_dates) {
 #ifdef DEBUG
 #endif
 }
-StringVector Chart::_label_array(const Area& area, LabelType labeltype) const {
+flw::StringVector flw::chart::Chart::_label_array(const Area& area, LabelType labeltype) const {
     auto res = StringVector();
     for (const auto& l : area.lines()) {
         std::string s;
@@ -6021,14 +6018,14 @@ StringVector Chart::_label_array(const Area& area, LabelType labeltype) const {
     }
     return res;
 }
-bool Chart::load_json() {
+bool flw::chart::Chart::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
     if (util::is_empty(filename) == true) {
         return false;
     }
     return load_json(filename);
 }
-bool Chart::load_json(const std::string& filename) {
+bool flw::chart::Chart::load_json(const std::string& filename) {
     #define _FLW_CHART_ERROR(X) { dlg::msg_alert("Chart", util::format("Illegal chart value at pos %u", (X)->pos())); reset(); return false; }
     _filename = "";
     reset();
@@ -6134,8 +6131,8 @@ bool Chart::load_json(const std::string& filename) {
     _filename = filename;
     return true;
 }
-bool Chart::load_line_from_csv() {
-    if (_area == nullptr || _area->size() >= Area::MAX_LINES) {
+bool flw::chart::Chart::load_line_from_csv() {
+    if (_area == nullptr || _area->size() >= flw::chart::Area::MAX_LINES) {
         dlg::msg_alert("Chart", "Max line count reached!");
         return false;
     }
@@ -6150,12 +6147,12 @@ bool Chart::load_line_from_csv() {
     }
     auto line = Line(vec, filename);
     line.set_color(FL_BLUE);
-    _LineSetup(top_window(), line).run();
+    priv::_ChartLineSetup(top_window(), line).run();
     _area->add_line(line);
     init_new_data();
     return true;
 }
-bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination) {
+bool flw::chart::Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum destination) {
     if (area == nullptr || index >= area->size()) {
         return false;
     }
@@ -6177,13 +6174,13 @@ bool Chart::_move_or_delete_line(Area* area, size_t index, bool move, AreaNum de
     _area->delete_line(index);
     return true;
 }
-void Chart::print_to_postscript() {
+void flw::chart::Chart::print_to_postscript() {
     _printing = true;
-    dlg::print_page("Chart", Chart::_CallbackPrinter, this);
+    dlg::print_page("Chart", flw::chart::Chart::_CallbackPrinter, this);
     _printing = false;
     redraw();
 }
-void Chart::reset() {
+void flw::chart::Chart::reset() {
     static_cast<Fl_Valuator*>(_scroll)->value(0);
     _block_dates.clear();
     _dates.clear();
@@ -6196,8 +6193,8 @@ void Chart::reset() {
     _bottom_space = 0;
     _date_start   = 0;
     _filename     = "";
-    _margin_left  = chart::_MIN_MARGIN;
-    _margin_right = chart::_MIN_MARGIN;
+    _margin_left  = priv::_CHART_MIN_MARGIN;
+    _margin_right = priv::_CHART_MIN_MARGIN;
     _old          = Fl_Rect();
     _printing     = false;
     _ticks        = 0;
@@ -6214,7 +6211,7 @@ void Chart::reset() {
     set_ver_lines();
     init();
 }
-void Chart::resize(int X, int Y, int W, int H) {
+void flw::chart::Chart::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {
         return;
     }
@@ -6223,14 +6220,14 @@ void Chart::resize(int X, int Y, int W, int H) {
     _old = Fl_Rect(this);
     init();
 }
-bool Chart::save_json() {
+bool flw::chart::Chart::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
     if (util::is_empty(filename) == true) {
         return false;
     }
     return save_json(filename);
 }
-bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
+bool flw::chart::Chart::save_json(const std::string& filename, double max_diff_high_low) {
     auto wc  = WaitCursor();
     auto jsb = gnu::json::Builder();
     try {
@@ -6303,7 +6300,7 @@ bool Chart::save_json(const std::string& filename, double max_diff_high_low) {
         return false;
     }
 }
-bool Chart::save_line_to_csv() {
+bool flw::chart::Chart::save_line_to_csv() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return false;
     }
@@ -6338,10 +6335,10 @@ bool Chart::save_line_to_csv() {
         return Point::SaveCSV(data, filename);
     }
 }
-bool Chart::save_png() {
+bool flw::chart::Chart::save_png() {
     return util::png_save(top_window(), "", x() + 1,  y() + 1,  w() - 2,  h() - _scroll->h() - 1);
 }
-bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsigned area4, unsigned area5) {
+bool flw::chart::Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsigned area4, unsigned area5) {
     _area = nullptr;
     _areas[0].set_percent(100);
     _areas[1].set_percent(0);
@@ -6375,7 +6372,7 @@ bool Chart::set_area_size(unsigned area1, unsigned area2, unsigned area3, unsign
     }
     return false;
 }
-void Chart::setup_area() {
+void flw::chart::Chart::setup_area() {
     auto list = StringVector() = {"One", "Two Equal Size", "Two (60%, 40%)", "Three Equal Size", "Three (50%, 25%, 25%)", "Four Equal Size", "Four (40%, 20%, 20%, 20%)", "Five Equal Size", "Five (40%, 15%, 15%, 15%, 15%)"};
     switch (dlg::select_choice("Chart", "Select number of chart areas", list, 0)) {
         case 0:
@@ -6410,7 +6407,7 @@ void Chart::setup_area() {
     }
     init();
 }
-void Chart::setup_clamp(bool min) {
+void flw::chart::Chart::setup_clamp(bool min) {
     if (_area == nullptr) {
         return;
     }
@@ -6430,12 +6427,12 @@ void Chart::setup_clamp(bool min) {
     }
     init();
 }
-void Chart::setup_create_line() {
+void flw::chart::Chart::setup_create_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         dlg::msg_alert("Chart", "Area or line has not been selected!");
         return;
     }
-    else if (_area->size() >= Area::MAX_LINES) {
+    else if (_area->size() >= flw::chart::Area::MAX_LINES) {
         dlg::msg_alert("Chart", "Max line count reached!");
         return;
     }
@@ -6502,7 +6499,7 @@ void Chart::setup_create_line() {
             break;
     }
 }
-void Chart::setup_date_range() {
+void flw::chart::Chart::setup_date_range() {
     auto list = StringVector() = {"Day", "Weekday", "Friday", "Sunday", "Month", "Hour", "Minute", "Second"};
     auto sel  = dlg::select_choice("Chart", "Select date tange type.", list, static_cast<int>(_date_range));
     if (sel == -1) {
@@ -6511,7 +6508,7 @@ void Chart::setup_date_range() {
     _date_range = static_cast<DateRange>(sel);
     init_new_data();
 }
-void Chart::setup_delete_lines() {
+void flw::chart::Chart::setup_delete_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
@@ -6528,22 +6525,22 @@ void Chart::setup_delete_lines() {
     }
     init_new_data();
 }
-void Chart::setup_label() {
+void flw::chart::Chart::setup_label() {
     auto answer = dlg::input("Chart", "Enter label.", _label);
     if (answer == flw::labels::CANCEL) {
         return;
     }
     init();
 }
-void Chart::setup_line() {
+void flw::chart::Chart::setup_line() {
     if (_area == nullptr || _area->selected_line() == nullptr) {
         return;
     }
     auto line = const_cast<Line*>(_area->selected_line());
-    _LineSetup(top_window(), *line).run();
+    priv::_ChartLineSetup(top_window(), *line).run();
     init_new_data();
 }
-void Chart::setup_move_lines() {
+void flw::chart::Chart::setup_move_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
@@ -6565,7 +6562,7 @@ void Chart::setup_move_lines() {
     }
     init_new_data();
 }
-void Chart::setup_show_or_hide_lines() {
+void flw::chart::Chart::setup_show_or_hide_lines() {
     if (_area == nullptr || _area->size() == 0) {
         return;
     }
@@ -6580,56 +6577,54 @@ void Chart::setup_show_or_hide_lines() {
     }
     init_new_data();
 }
-void Chart::setup_view_options() {
-    _labels     = menu::item_value(_menu, _LABEL_SHOW_LABELS);
-    _vertical   = menu::item_value(_menu, _LABEL_SHOW_VLINES);
-    _horizontal = menu::item_value(_menu, _LABEL_SHOW_HLINES);
+void flw::chart::Chart::setup_view_options() {
+    _labels     = menu::item_value(_menu, priv::_CHART_LABEL_SHOW_LABELS);
+    _vertical   = menu::item_value(_menu, priv::_CHART_LABEL_SHOW_VLINES);
+    _horizontal = menu::item_value(_menu, priv::_CHART_LABEL_SHOW_HLINES);
     redraw();
 }
-void Chart::_show_menu() {
+void flw::chart::Chart::_show_menu() {
     if (_disable_menu == true) {
         return;
     }
-    menu::enable_item(_menu, _LABEL_ADD_CSV, false);
-    menu::enable_item(_menu, _LABEL_ADD_LINE, false);
-    menu::enable_item(_menu, _LABEL_SAVE_CSV, false);
-    menu::enable_item(_menu, _LABEL_SETUP_DELETE, false);
-    menu::enable_item(_menu, _LABEL_SETUP_LINE, false);
-    menu::enable_item(_menu, _LABEL_SETUP_MAX_CLAMP, false);
-    menu::enable_item(_menu, _LABEL_SETUP_MIN_CLAMP, false);
-    menu::enable_item(_menu, _LABEL_SETUP_MOVE, false);
-    menu::enable_item(_menu, _LABEL_SETUP_SHOW, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_ADD_CSV, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_ADD_LINE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SAVE_CSV, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_DELETE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_LINE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MAX_CLAMP, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MIN_CLAMP, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MOVE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_SHOW, false);
 #ifdef DEBUG
-    menu::enable_item(_menu, _LABEL_DEBUG_LINE, false);
+    menu::enable_item(_menu, priv::_CHART_LABEL_DEBUG_LINE, false);
 #endif
-    menu::set_item(_menu, _LABEL_SHOW_HLINES, _horizontal);
-    menu::set_item(_menu, _LABEL_SHOW_LABELS, _labels);
-    menu::set_item(_menu, _LABEL_SHOW_VLINES, _vertical);
+    menu::set_item(_menu, priv::_CHART_LABEL_SHOW_HLINES, _horizontal);
+    menu::set_item(_menu, priv::_CHART_LABEL_SHOW_LABELS, _labels);
+    menu::set_item(_menu, priv::_CHART_LABEL_SHOW_VLINES, _vertical);
     if (_area != nullptr) {
-        menu::enable_item(_menu, _LABEL_ADD_CSV, true);
+        menu::enable_item(_menu, priv::_CHART_LABEL_ADD_CSV, true);
         if (_area->size() > 0) {
-            menu::enable_item(_menu, _LABEL_SETUP_DELETE, true);
-            menu::enable_item(_menu, _LABEL_SETUP_MOVE, true);
-            menu::enable_item(_menu, _LABEL_SETUP_SHOW, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_DELETE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MOVE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_SHOW, true);
         }
         if (_area->selected_line() != nullptr && _area->selected_line()->size() > 0) {
-            menu::enable_item(_menu, _LABEL_ADD_LINE, true);
-            menu::enable_item(_menu, _LABEL_SAVE_CSV, true);
-            menu::enable_item(_menu, _LABEL_SETUP_LINE, true);
-            menu::enable_item(_menu, _LABEL_SETUP_MAX_CLAMP, true);
-            menu::enable_item(_menu, _LABEL_SETUP_MIN_CLAMP, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_ADD_LINE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SAVE_CSV, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_LINE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MAX_CLAMP, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_SETUP_MIN_CLAMP, true);
 #ifdef DEBUG
-            menu::enable_item(_menu, _LABEL_DEBUG_LINE, true);
+            menu::enable_item(_menu, priv::_CHART_LABEL_DEBUG_LINE, true);
 #endif
         }
     }
     _menu->popup();
 }
-void Chart::update_pref() {
+void flw::chart::Chart::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
-}
-}
 }
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Double_Window.H>
@@ -7008,15 +7003,6 @@ bool flw::dlg::date(const std::string& title, gnu::Date& date, int W, int H) {
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Text_Editor.H>
 namespace flw {
-void dlg::center_fl_message_dialog() {
-    int X, Y, W, H;
-    Fl::screen_xywh(X, Y, W, H);
-    fl_message_position(W / 2, H / 2, 1);
-}
-void dlg::panic(const std::string& message) {
-    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
-    exit(1);
-}
 namespace priv {
 class _DlgHtml : public Fl_Double_Window {
     Fl_Help_View*               _html;
@@ -7063,12 +7049,6 @@ public:
         }
     }
 };
-}
-void dlg::html(const std::string& title, const std::string& text, int W, int H) {
-    priv::_DlgHtml dlg(title, text, W, H);
-    dlg.run();
-}
-namespace priv {
 class _DlgList : public Fl_Double_Window {
     SVGButton*                  _close;
     GridGroup*                  _grid;
@@ -7128,21 +7108,6 @@ public:
         }
     }
 };
-}
-void dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, list, "", fixed_font, W, H);
-    dlg.run();
-}
-void dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
-    priv::_DlgList dlg(title, list2, "", fixed_font, W, H);
-    dlg.run();
-}
-void dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, W, H);
-    dlg.run();
-}
-namespace priv {
 class _DlgMsg : public Fl_Double_Window {
     Fl_Box*                     _label;
     SVGButton*                  _b1;
@@ -7412,76 +7377,6 @@ public:
         return _res;
     }
 };
-}
-std::string dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
-    auto res = dlg.run();
-    if (res == labels::OK) {
-        value = dlg.input();
-    }
-    return res;
-}
-std::string dlg::input_double(const std::string& title, const std::string& message, double& value, int W, int H) {
-    char num[500];
-    snprintf(num, 500, "%g", value);
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
-    auto res = dlg.run();
-    if (res == labels::OK) {
-        auto tmp = value;
-        tmp = util::to_double(dlg.input());
-        if (std::isinf(tmp) == false) {
-            value = tmp;
-        }
-    }
-    return res;
-}
-std::string dlg::input_int(const std::string& title, const std::string& message, int64_t& value, int W, int H) {
-    char num[100];
-    snprintf(num, 100, "%lld", static_cast<long long int>(value));
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
-    auto res = dlg.run();
-    if (res == labels::OK) {
-        value = util::to_int(dlg.input(), value);
-    }
-    return res;
-}
-std::string dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
-    auto res = dlg.run();
-    if (res == labels::OK) {
-        value = dlg.input();
-    }
-    return res;
-}
-std::string dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
-    auto res = dlg.run();
-    if (res == labels::OK) {
-        value = dlg.input();
-    }
-    return res;
-}
-void dlg::msg(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
-    dlg.run();
-}
-void dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
-    dlg.run();
-}
-std::string dlg::msg_ask(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, const std::string& b3, const std::string& b4, const std::string& b5, int W, int H) {
-    priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
-    return dlg.run();
-}
-void dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
-    dlg.run();
-}
-std::string dlg::msg_warning(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, int W, int H) {
-    priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
-    return dlg.run();
-}
-namespace priv {
 class _DlgPassword : public Fl_Double_Window {
 public:
     enum class Mode {
@@ -7493,11 +7388,13 @@ public:
 private:
     Fl_Button*                  _browse;
     Fl_Button*                  _cancel;
-    SVGButton*                  _close;
+    Fl_Button*                  _show;
+    Fl_Box*                     _caps;
     Fl_Input*                   _file;
     Fl_Input*                   _password1;
     Fl_Input*                   _password2;
     GridGroup*                  _grid;
+    SVGButton*                  _close;
     Mode                        _mode;
     bool                        _ret;
     bool                        _run;
@@ -7507,24 +7404,31 @@ public:
         end();
         _browse    = new Fl_Button(0, 0, 0, 0, labels::BROWSE.c_str());
         _cancel    = new Fl_Button(0, 0, 0, 0, "");
+        _caps      = new Fl_Box(0, 0, 0, 0, "");
         _close     = new SVGButton(0, 0, 0, 0, "", icons::BACK, true);
         _file      = new Fl_Output(0, 0, 0, 0, "Key file");
         _grid      = new GridGroup(0, 0, w(), h());
         _password1 = new Fl_Secret_Input(0, 0, 0, 0, "Password");
         _password2 = new Fl_Secret_Input(0, 0, 0, 0, "Enter password again");
+        _show      = new Fl_Button(0, 0, 0, 0, "&Show");
         _mode      = mode;
         _ret       = false;
         _run       = false;
         _grid->add(_password1,  1,   3,  -1,  4);
         _grid->add(_password2,  1,  10,  -1,  4);
         _grid->add(_file,       1,  17,  -1,  4);
-        _grid->add(_browse,   -51,  -5,  16,  4);
+        _grid->add(_caps,       1,  -5,  10,  4);
+        _grid->add(_browse,   -68,  -5,  16,  4);
+        _grid->add(_show,     -51,  -5,  16,  4);
         _grid->add(_cancel,   -34,  -5,  16,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
         _browse->callback(_DlgPassword::Callback, this);
+        _browse->tooltip("Show file dialog and select a key file.");
         _cancel->callback(_DlgPassword::Callback, this);
         _cancel->copy_label(labels::CANCEL.c_str());
+        _caps->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+        _caps->labelcolor(FL_DARK_RED);
         _close->callback(_DlgPassword::Callback, this);
         _close->copy_label(labels::OK.c_str());
         _close->deactivate();
@@ -7542,17 +7446,21 @@ public:
         _password2->textfont(flw::PREF_FIXED_FONT);
         _password2->textsize(flw::PREF_FONTSIZE);
         _password2->when(FL_WHEN_CHANGED);
-        auto W = flw::PREF_FONTSIZE * 40;
+        _show->callback(_DlgPassword::Callback, this);
+        _show->tooltip("Show or hide password.");
+        auto W = flw::PREF_FONTSIZE * 42;
         auto H = flw::PREF_FONTSIZE * 13.5;
         if (_mode == Mode::PASSWORD) {
             _password2->hide();
             _browse->hide();
             _file->hide();
+            W = flw::PREF_FONTSIZE * 40;
             H = flw::PREF_FONTSIZE * 6.5;
         }
         else if (_mode == Mode::PASSWORD_CONFIRM) {
             _browse->hide();
             _file->hide();
+            W = flw::PREF_FONTSIZE * 40;
             H = flw::PREF_FONTSIZE * 10;
         }
         else if (_mode == Mode::PASSWORD_WITH_FILE) {
@@ -7576,6 +7484,11 @@ public:
             self->_run = false;
             self->hide();
         }
+        else if (w == self->_close) {
+            self->_ret = true;
+            self->_run = false;
+            self->hide();
+        }
         else if (w == self->_password1) {
             self->check();
         }
@@ -7592,16 +7505,32 @@ public:
             }
             self->check();
         }
-        else if (w == self->_close) {
-            self->_ret = true;
-            self->_run = false;
-            self->hide();
+        else if (w == self->_show) {
+            if (self->_show->label() == std::string("&Hide")) {
+                self->_show->label("&Show");
+                self->_password1->input_type(FL_SECRET_INPUT);
+                self->_password2->input_type(FL_SECRET_INPUT);
+                self->_password1->take_focus();
+            }
+            else {
+                self->_show->label("&Hide");
+                self->_password1->input_type(FL_NORMAL_INPUT);
+                self->_password2->input_type(FL_NORMAL_INPUT);
+                self->_password1->take_focus();
+            }
+            Fl::redraw();
         }
     }
     void check() {
         auto p1 = _password1->value();
         auto p2 = _password2->value();
         auto f  = _file->value();
+        if (Fl::event_state() & FL_CAPS_LOCK) {
+            _caps->label("Caps On");
+        }
+        else {
+            _caps->label("");
+        }
         if (_mode == Mode::PASSWORD) {
             if (strlen(p1) > 0) {
                 _close->activate();
@@ -7658,26 +7587,6 @@ public:
         return _ret;
     }
 };
-}
-bool dlg::password(const std::string& title, std::string& password) {
-    std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD);
-    return dlg.run(password, file);
-}
-bool dlg::password_confirm(const std::string& title, std::string& password) {
-    std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
-    return dlg.run(password, file);
-}
-bool dlg::password_confirm_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
-    return dlg.run(password, file);
-}
-bool dlg::password_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
-    return dlg.run(password, file);
-}
-namespace priv {
 class _DlgSelectCheckBoxes : public Fl_Double_Window {
     Fl_Button*                  _all;
     Fl_Button*                  _cancel;
@@ -7782,12 +7691,6 @@ public:
         return res;
     }
 };
-}
-StringVector dlg::select_checkboxes(const std::string& title, const StringVector& list) {
-    priv::_DlgSelectCheckBoxes dlg(title, list);
-    return dlg.run();
-}
-namespace priv {
 class _DlgSelectChoice : public Fl_Double_Window {
     Fl_Box*                     _label;
     Fl_Button*                  _cancel;
@@ -7858,12 +7761,6 @@ public:
         return _ret;
     }
 };
-}
-int dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
-    priv::_DlgSelectChoice dlg(title, message, list, selected);
-    return dlg.run();
-}
-namespace priv {
 class _DlgSelectString : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Input*                   _filter;
@@ -8021,16 +7918,6 @@ public:
         return -1;
     }
 };
-}
-int dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
-    return dlg.run();
-}
-int dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
-    return dlg.run();
-}
-namespace priv {
 class _DlgSlider : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Hor_Value_Slider*        _slider;
@@ -8095,12 +7982,6 @@ public:
         return _ret;
     }
 };
-}
-bool dlg::slider(const std::string& title, double min, double max, double& value, double step) {
-    priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
-    return dlg.run();
-}
-namespace priv {
 class _DlgText : public Fl_Double_Window {
     Fl_Button*                  _cancel;
     Fl_Button*                  _save;
@@ -8197,11 +8078,135 @@ public:
     }
 };
 }
-void dlg::text(const std::string& title, const std::string& text, int W, int H) {
+}
+void flw::dlg::html(const std::string& title, const std::string& text, int W, int H) {
+    priv::_DlgHtml dlg(title, text, W, H);
+    dlg.run();
+}
+void flw::dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
+    priv::_DlgList dlg(title, list, "", fixed_font, W, H);
+    dlg.run();
+}
+void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    priv::_DlgList dlg(title, list2, "", fixed_font, W, H);
+    dlg.run();
+}
+void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
+    priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, W, H);
+    dlg.run();
+}
+std::string flw::dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
+    auto res = dlg.run();
+    if (res == labels::OK) {
+        value = dlg.input();
+    }
+    return res;
+}
+std::string flw::dlg::input_double(const std::string& title, const std::string& message, double& value, int W, int H) {
+    char num[500];
+    snprintf(num, 500, "%g", value);
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
+    auto res = dlg.run();
+    if (res == labels::OK) {
+        auto tmp = value;
+        tmp = util::to_double(dlg.input());
+        if (std::isinf(tmp) == false) {
+            value = tmp;
+        }
+    }
+    return res;
+}
+std::string flw::dlg::input_int(const std::string& title, const std::string& message, int64_t& value, int W, int H) {
+    char num[100];
+    snprintf(num, 100, "%lld", static_cast<long long int>(value));
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
+    auto res = dlg.run();
+    if (res == labels::OK) {
+        value = util::to_int(dlg.input(), value);
+    }
+    return res;
+}
+std::string flw::dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
+    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
+    auto res = dlg.run();
+    if (res == labels::OK) {
+        value = dlg.input();
+    }
+    return res;
+}
+std::string flw::dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
+    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
+    auto res = dlg.run();
+    if (res == labels::OK) {
+        value = dlg.input();
+    }
+    return res;
+}
+void flw::dlg::msg(const std::string& title, const std::string& message, int W, int H) {
+    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
+    dlg.run();
+}
+void flw::dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
+    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
+    dlg.run();
+}
+std::string flw::dlg::msg_ask(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, const std::string& b3, const std::string& b4, const std::string& b5, int W, int H) {
+    priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
+    return dlg.run();
+}
+void flw::dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
+    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
+    dlg.run();
+}
+std::string flw::dlg::msg_warning(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, int W, int H) {
+    priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
+    return dlg.run();
+}
+bool flw::dlg::password(const std::string& title, std::string& password) {
+    std::string file;
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD);
+    return dlg.run(password, file);
+}
+bool flw::dlg::password_confirm(const std::string& title, std::string& password) {
+    std::string file;
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
+    return dlg.run(password, file);
+}
+bool flw::dlg::password_confirm_and_file(const std::string& title, std::string& password, std::string& file) {
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
+    return dlg.run(password, file);
+}
+bool flw::dlg::password_and_file(const std::string& title, std::string& password, std::string& file) {
+    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
+    return dlg.run(password, file);
+}
+flw::StringVector flw::dlg::select_checkboxes(const std::string& title, const StringVector& list) {
+    priv::_DlgSelectCheckBoxes dlg(title, list);
+    return dlg.run();
+}
+int flw::dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
+    priv::_DlgSelectChoice dlg(title, message, list, selected);
+    return dlg.run();
+}
+int flw::dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
+    priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
+    return dlg.run();
+}
+int flw::dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
+    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
+    return dlg.run();
+}
+bool flw::dlg::slider(const std::string& title, double min, double max, double& value, double step) {
+    priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
+    return dlg.run();
+}
+void flw::dlg::text(const std::string& title, const std::string& text, int W, int H) {
     priv::_DlgText dlg(title.c_str(), text.c_str(), false, W, H);
     dlg.run();
 }
-bool dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
+bool flw::dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
     auto dlg = priv::_DlgText(title.c_str(), text.c_str(), true, W, H);
     auto res = dlg.run();
     if (res == nullptr) {
@@ -8211,6 +8216,14 @@ bool dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
     free(res);
     return true;
 }
+void flw::dlg::center_fl_message_dialog() {
+    int X, Y, W, H;
+    Fl::screen_xywh(X, Y, W, H);
+    fl_message_position(W / 2, H / 2, 1);
+}
+void flw::dlg::panic(const std::string& message) {
+    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
+    exit(1);
 }
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
@@ -8245,11 +8258,11 @@ you will have a good life.
 A good life is not measured by any biblical span.”
 ― Ernest Hemingway, For Whom the Bell Tolls
 )";
-class _FontLabel : public Fl_Box {
+class _FontDialogLabel : public Fl_Box {
 public:
     int font;
     int size;
-    _FontLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
+    _FontDialogLabel(int x, int y, int w, int h) : Fl_Box(x, y, w, h, _FONTDIALOG_LABEL.c_str()) {
         font = FL_HELVETICA;
         size = 14;
         align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
@@ -8302,7 +8315,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == self->_fonts) {
         auto row = self->_fonts->value();
         if (row > 0) {
-            static_cast<priv::_FontLabel*>(self->_label)->font = row - 1;
+            static_cast<priv::_FontDialogLabel*>(self->_label)->font = row - 1;
         }
         self->_activate();
         Fl::redraw();
@@ -8323,7 +8336,7 @@ void flw::FontDialog::Callback(Fl_Widget* w, void* o) {
     else if (w == self->_sizes) {
         auto row = self->_sizes->value();
         if (row > 0) {
-            static_cast<priv::_FontLabel*>(self->_label)->size = row + 5;
+            static_cast<priv::_FontDialogLabel*>(self->_label)->size = row + 5;
         }
         self->_activate();
         Fl::redraw();
@@ -8334,7 +8347,7 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     _cancel   = new SVGButton(0, 0, 0, 0, labels::CANCEL);
     _fonts    = new ScrollBrowser(12);
     _grid     = new GridGroup();
-    _label    = new priv::_FontLabel(0, 0, 0, 0);
+    _label    = new priv::_FontDialogLabel(0, 0, 0, 0);
     _select   = new SVGButton(0, 0, 0, 0, labels::SELECT, icons::BACK, true);
     _sizes    = new ScrollBrowser(6);
     _font     = -1;
@@ -8354,8 +8367,8 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     _fonts->callback(FontDialog::Callback, this);
     _fonts->textsize(flw::PREF_FONTSIZE);
     _fonts->when(FL_WHEN_CHANGED);
-    static_cast<priv::_FontLabel*>(_label)->font = font;
-    static_cast<priv::_FontLabel*>(_label)->size = fontsize;
+    static_cast<priv::_FontDialogLabel*>(_label)->font = font;
+    static_cast<priv::_FontDialogLabel*>(_label)->size = fontsize;
     _select->callback(FontDialog::Callback, this);
     _select->labelfont(flw::PREF_FONT);
     _select->labelsize(flw::PREF_FONTSIZE);
@@ -8380,12 +8393,12 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     if (fontsize >= 6 && fontsize <= 72) {
         _sizes->value(fontsize - 5);
         _sizes->middleline(fontsize - 5);
-        static_cast<priv::_FontLabel*>(_label)->font = fontsize;
+        static_cast<priv::_FontDialogLabel*>(_label)->font = fontsize;
     }
     else {
         _sizes->value(14 - 5);
         _sizes->middleline(14 - 5);
-        static_cast<priv::_FontLabel*>(_label)->font = 14;
+        static_cast<priv::_FontDialogLabel*>(_label)->font = 14;
     }
     if (fontname != "") {
         _select_name(fontname);
@@ -8393,7 +8406,7 @@ void flw::FontDialog::_create(Fl_Font font, const std::string& fontname, Fl_Font
     else if (font >= 0 && font < _fonts->size()) {
         _fonts->value(font + 1);
         _fonts->middleline(font + 1);
-        static_cast<priv::_FontLabel*>(_label)->font = font;
+        static_cast<priv::_FontDialogLabel*>(_label)->font = font;
     }
     else {
         _fonts->value(1);
@@ -8425,13 +8438,13 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
         if (fontname == font_without_style) {
             _fonts->value(count);
             _fonts->middleline(count);
-            static_cast<priv::_FontLabel*>(_label)->font = count - 1;
+            static_cast<priv::_FontDialogLabel*>(_label)->font = count - 1;
             return;
         }
         count++;
     }
     _fonts->value(1);
-    static_cast<priv::_FontLabel*>(_label)->font = 0;
+    static_cast<priv::_FontDialogLabel*>(_label)->font = 0;
 }
 bool flw::dlg::font(const std::string& title, Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default) {
     auto dlg = flw::FontDialog(font, fontsize, title, limit_to_default);
@@ -8477,22 +8490,23 @@ struct _GridGroupChild {
     }
 };
 }
-GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+}
+flw::GridGroup::GridGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
     clip_children(1);
     resizable(nullptr);
     _size = 0;
 }
-GridGroup::~GridGroup() {
+flw::GridGroup::~GridGroup() {
     for (auto v : _widgets) {
         delete static_cast<priv::_GridGroupChild*>(v);
     }
 }
-void GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
+void flw::GridGroup::add(Fl_Widget* widget, int X, int Y, int W, int H, Fl_Widget* F) {
     _widgets.push_back(new priv::_GridGroupChild(widget, F, X, Y, W, H));
     Fl_Group::add(widget);
 }
-void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
+void flw::GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     for (auto& v : _widgets) {
         auto child = static_cast<priv::_GridGroupChild*>(v);
         if (child->widget == widget) {
@@ -8504,11 +8518,11 @@ void GridGroup::adjust(Fl_Widget* widget, int L, int R, int T, int B) {
     fprintf(stderr, "Error: flw::GridGroup::adjust() failed to find widget (label=%s)!\n", widget->label());
 #endif
 }
-void GridGroup::clear() {
+void flw::GridGroup::clear() {
     _widgets.clear();
     Fl_Group::clear();
 }
-int GridGroup::handle(int event) {
+int flw::GridGroup::handle(int event) {
     if (event == FL_KEYDOWN && Fl::event_key() == FL_Tab) {
         if (children() > 0) {
             Fl_Widget* first   = nullptr;
@@ -8529,7 +8543,7 @@ int GridGroup::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
+void flw::GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
     for (auto& v : _widgets) {
         auto child = static_cast<priv::_GridGroupChild*>(v);
         auto g = child->widget->as_group();
@@ -8549,7 +8563,7 @@ void GridGroup::_last_active_widget(Fl_Widget** first, Fl_Widget** last) {
         }
     }
 }
-Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
+Fl_Widget* flw::GridGroup::remove(Fl_Widget* widget) {
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
         auto child = static_cast<priv::_GridGroupChild*>(*it);
         if (child->widget == widget) {
@@ -8560,11 +8574,11 @@ Fl_Widget* GridGroup::remove(Fl_Widget* widget) {
         }
     }
 #ifdef DEBUG
-    fprintf(stderr, "Error: GridGroup::remove can't find widget!\n");
+    fprintf(stderr, "Error: flw::GridGroup::remove can't find widget!\n");
 #endif
     return nullptr;
 }
-void GridGroup::resize(int X, int Y, int W, int H) {
+void flw::GridGroup::resize(int X, int Y, int W, int H) {
     Fl_Widget::resize(X, Y, W, H);
     if (children() == 0 || W == 0 || H == 0 || visible() == 0) {
         return;
@@ -8620,7 +8634,7 @@ void GridGroup::resize(int X, int Y, int W, int H) {
         }
     }
 }
-void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
+void flw::GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
     for (auto& v : _widgets) {
         auto child = static_cast<priv::_GridGroupChild*>(v);
         if (child->widget == widget) {
@@ -8631,7 +8645,6 @@ void GridGroup::resize(Fl_Widget* widget, int X, int Y, int W, int H) {
 #ifdef DEBUG
     fprintf(stderr, "Error: flw::GridGroup::resize() failed to find widget (label=%s)!\n", widget->label());
 #endif
-}
 }
 namespace flw {
 namespace priv {
@@ -9683,39 +9696,39 @@ void flw::LogDisplay::value(const char* text) {
 #include <FL/fl_draw.H>
 #include <FL/fl_show_colormap.H>
 namespace flw {
-namespace plot {
-#define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
+namespace priv {
 #define _FLW_PLOT_DEBUG(X)
 #define _FLW_PLOT_CLIP(X) { X; }
-static const char* const _LABEL_ADD_LINE     = "Create Line...";
-static const char* const _LABEL_CLEAR        = "Clear Plot";
-static const char* const _LABEL_LOAD_CVS     = "Add Line from CVS...";
-static const char* const _LABEL_LOAD_JSON    = "Load plot from JSON...";
-static const char* const _LABEL_PRINT        = "Print to PostScript File...";
-static const char* const _LABEL_SAVE_CVS     = "Save Line to CVS...";
-static const char* const _LABEL_SAVE_JSON    = "Save Plot to JSON...";
-static const char* const _LABEL_SAVE_PNG     = "Save to PNG File...";
-static const char* const _LABEL_SETUP_DELETE = "Delete Lines...";
-static const char* const _LABEL_SETUP_HLINES = "Show Horizontal Lines";
-static const char* const _LABEL_SETUP_LABEL  = "Label...";
-static const char* const _LABEL_SETUP_LABELS = "Show Line Labels";
-static const char* const _LABEL_SETUP_LINE   = "Line Properties...";
-static const char* const _LABEL_SETUP_MAXX   = "Set Max X...";
-static const char* const _LABEL_SETUP_MAXY   = "Set Max Y...";
-static const char* const _LABEL_SETUP_MINX   = "Set Min X...";
-static const char* const _LABEL_SETUP_MINY   = "Set Min Y...";
-static const char* const _LABEL_SETUP_SHOW   = "Show or Hide Lines...";
-static const char* const _LABEL_SETUP_VLINES = "Show Vertical Lines";
-static const char* const _LABEL_SETUP_XLABEL = "X Label...";
-static const char* const _LABEL_SETUP_YLABEL = "Y Label...";
-static const int         _TICK_SIZE     = 4;
+#define _FLW_PLOT_CB(X)    [](Fl_Widget*, void* o) { static_cast<Plot*>(o)->X; }, this
+static const char* const _PLOT_LABEL_ADD_LINE     = "Create Line...";
+static const char* const _PLOT_LABEL_CLEAR        = "Clear Plot";
+static const char* const _PLOT_LABEL_LOAD_CVS     = "Add Line from CVS...";
+static const char* const _PLOT_LABEL_LOAD_JSON    = "Load plot from JSON...";
+static const char* const _PLOT_LABEL_PRINT        = "Print to PostScript File...";
+static const char* const _PLOT_LABEL_SAVE_CVS     = "Save Line to CVS...";
+static const char* const _PLOT_LABEL_SAVE_JSON    = "Save Plot to JSON...";
+static const char* const _PLOT_LABEL_SAVE_PNG     = "Save to PNG File...";
+static const char* const _PLOT_LABEL_SETUP_DELETE = "Delete Lines...";
+static const char* const _PLOT_LABEL_SETUP_HLINES = "Show Horizontal Lines";
+static const char* const _PLOT_LABEL_SETUP_LABEL  = "Label...";
+static const char* const _PLOT_LABEL_SETUP_LABELS = "Show Line Labels";
+static const char* const _PLOT_LABEL_SETUP_LINE   = "Line Properties...";
+static const char* const _PLOT_LABEL_SETUP_MAXX   = "Set Max X...";
+static const char* const _PLOT_LABEL_SETUP_MAXY   = "Set Max Y...";
+static const char* const _PLOT_LABEL_SETUP_MINX   = "Set Min X...";
+static const char* const _PLOT_LABEL_SETUP_MINY   = "Set Min Y...";
+static const char* const _PLOT_LABEL_SETUP_SHOW   = "Show or Hide Lines...";
+static const char* const _PLOT_LABEL_SETUP_VLINES = "Show Vertical Lines";
+static const char* const _PLOT_LABEL_SETUP_XLABEL = "X Label...";
+static const char* const _PLOT_LABEL_SETUP_YLABEL = "Y Label...";
+static const int         _PLOT_TICK_SIZE          = 4;
 #ifdef DEBUG
-static const char* const _LABEL_DEBUG        = "Debug";
-static const char* const _LABEL_DEBUG_LINE   = "Debug Line";
+static const char* const _PLOT_LABEL_DEBUG        = "Debug";
+static const char* const _PLOT_LABEL_DEBUG_LINE   = "Debug Line";
 #endif
-class _LineSetup : public Fl_Double_Window {
+class _PlotLineSetup : public Fl_Double_Window {
 public:
-    Line&                       _line;
+    plot::Line&                 _line;
     Fl_Button*                  _close;
     Fl_Button*                  _color;
     Fl_Choice*                  _type;
@@ -9724,7 +9737,7 @@ public:
     GridGroup*                  _grid;
     bool                        _run;
 public:
-    _LineSetup(Fl_Window* parent, Line& line) :
+    _PlotLineSetup(Fl_Window* parent, plot::Line& line) :
     Fl_Double_Window(0, 0, 10, 10, "Plot - Line Properties"),
     _line(line) {
         end();
@@ -9742,9 +9755,9 @@ public:
         _grid->add(_width,     12,  16,  -1,  4);
         _grid->add(_close,    -17,  -5,  16,  4);
         add(_grid);
-        _close->callback(_LineSetup::Callback, this);
+        _close->callback(_PlotLineSetup::Callback, this);
         _color->align(FL_ALIGN_LEFT);
-        _color->callback(_LineSetup::Callback, this);
+        _color->callback(_PlotLineSetup::Callback, this);
         _label->textfont(flw::PREF_FONT);
         _label->textsize(flw::PREF_FONTSIZE);
         _type->add("Line");
@@ -9758,23 +9771,23 @@ public:
         _type->textfont(flw::PREF_FONT);
         _type->textsize(flw::PREF_FONTSIZE);
         _width->align(FL_ALIGN_LEFT);
-        _width->callback(_LineSetup::Callback, this);
+        _width->callback(_PlotLineSetup::Callback, this);
         _width->precision(0);
         _width->range(0, plot::MAX_LINE_WIDTH);
         _width->value(_line.width());
         _width->tooltip("Set line width or circle/square size.");
         resizable(_grid);
         util::labelfont(this);
-        callback(_LineSetup::Callback, this);
+        callback(_PlotLineSetup::Callback, this);
         size(30 * flw::PREF_FONTSIZE, 14 * flw::PREF_FONTSIZE);
         set_modal();
         util::center_window(this, parent);
         _grid->do_layout();
-        _LineSetup::Callback(_width, this);
+        _PlotLineSetup::Callback(_width, this);
         update_widgets();
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_LineSetup*>(o);
+        auto self = static_cast<_PlotLineSetup*>(o);
         if (w == self) {
         }
         else if (w == self->_color) {
@@ -9803,30 +9816,32 @@ public:
         _line.set_label(_label->value());
         _line.set_width(_width->value());
         _line.set_color(_color->color());
-        if (_type->value() == 0)      _line.set_type(LineType::LINE);
-        else if (_type->value() == 1) _line.set_type(LineType::LINE_DASH);
-        else if (_type->value() == 2) _line.set_type(LineType::LINE_DOT);
-        else if (_type->value() == 3) _line.set_type(LineType::LINE_WITH_SQUARE);
-        else if (_type->value() == 4) _line.set_type(LineType::VECTOR);
-        else if (_type->value() == 5) _line.set_type(LineType::CIRCLE);
-        else if (_type->value() == 6) _line.set_type(LineType::FILLED_CIRCLE);
-        else if (_type->value() == 7) _line.set_type(LineType::SQUARE);
+        if (_type->value() == 0)      _line.set_type(plot::LineType::LINE);
+        else if (_type->value() == 1) _line.set_type(plot::LineType::LINE_DASH);
+        else if (_type->value() == 2) _line.set_type(plot::LineType::LINE_DOT);
+        else if (_type->value() == 3) _line.set_type(plot::LineType::LINE_WITH_SQUARE);
+        else if (_type->value() == 4) _line.set_type(plot::LineType::VECTOR);
+        else if (_type->value() == 5) _line.set_type(plot::LineType::CIRCLE);
+        else if (_type->value() == 6) _line.set_type(plot::LineType::FILLED_CIRCLE);
+        else if (_type->value() == 7) _line.set_type(plot::LineType::SQUARE);
     }
     void update_widgets() {
         _label->value(_line.label().c_str());
         _color->color(_line.color());
-        _LineSetup::Callback(_width, this);
-        if (_line.type() == LineType::LINE)                  _type->value(0);
-        else if (_line.type() == LineType::LINE_DASH)        _type->value(1);
-        else if (_line.type() == LineType::LINE_DOT)         _type->value(2);
-        else if (_line.type() == LineType::LINE_WITH_SQUARE) _type->value(3);
-        else if (_line.type() == LineType::VECTOR)           _type->value(4);
-        else if (_line.type() == LineType::CIRCLE)           _type->value(5);
-        else if (_line.type() == LineType::FILLED_CIRCLE)    _type->value(6);
-        else if (_line.type() == LineType::SQUARE)           _type->value(7);
+        _PlotLineSetup::Callback(_width, this);
+        if (_line.type() == plot::LineType::LINE)                  _type->value(0);
+        else if (_line.type() == plot::LineType::LINE_DASH)        _type->value(1);
+        else if (_line.type() == plot::LineType::LINE_DOT)         _type->value(2);
+        else if (_line.type() == plot::LineType::LINE_WITH_SQUARE) _type->value(3);
+        else if (_line.type() == plot::LineType::VECTOR)           _type->value(4);
+        else if (_line.type() == plot::LineType::CIRCLE)           _type->value(5);
+        else if (_line.type() == plot::LineType::FILLED_CIRCLE)    _type->value(6);
+        else if (_line.type() == plot::LineType::SQUARE)           _type->value(7);
     }
 };
-Point::Point(double X, double Y) {
+}
+}
+flw::plot::Point::Point(double X, double Y) {
     x = y = INFINITY;
     if (std::isfinite(X) == true &&
         std::isfinite(Y) == true &&
@@ -9836,7 +9851,7 @@ Point::Point(double X, double Y) {
         y = Y;
     }
 }
-void Point::debug(int i) const {
+void flw::plot::Point::debug(int i) const {
 #ifdef DEBUG
     auto X = gnu::json::format_number(x);
     auto Y = gnu::json::format_number(y);
@@ -9850,7 +9865,7 @@ void Point::debug(int i) const {
     (void) i;
 #endif
 }
-void Point::Debug(const PointVector& in) {
+void flw::plot::Point::Debug(const PointVector& in) {
 #ifdef DEBUG
     printf("\nPointVector(%u)\n", static_cast<unsigned>(in.size()));
     int c = 0;
@@ -9862,7 +9877,7 @@ void Point::Debug(const PointVector& in) {
     (void) in;
 #endif
 }
-PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) {
+flw::plot::PointVector flw::plot::Point::LoadCSV(const std::string& filename, const std::string& sep) {
     auto buf = gnu::file::read(filename);
     if (buf.size() < 3) {
         return PointVector();
@@ -9881,7 +9896,7 @@ PointVector Point::LoadCSV(const std::string& filename, const std::string& sep) 
     }
     return res;
 }
-bool Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y) {
+bool flw::plot::Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& min_y, double& max_y) {
     bool init = false;
     min_x = max_x = min_y = max_y = INFINITY;
     for (const auto& data : in) {
@@ -9909,7 +9924,7 @@ bool Point::MinMax(const PointVector& in, double& min_x, double& max_x, double& 
     }
     return std::isfinite(min_x) && std::isfinite(max_x) && std::isfinite(min_y) && std::isfinite(max_y);
 }
-PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value) {
+flw::plot::PointVector flw::plot::Point::Modify(const PointVector& in, plot::Modifier modify, plot::Target target, double value) {
     PointVector res;
     if (fabs(value) < plot::MIN_VALUE || fabs(value) > plot::MAX_VALUE) {
         return res;
@@ -9964,7 +9979,7 @@ PointVector Point::Modify(const PointVector& in, plot::Modifier modify, plot::Ta
     }
     return res;
 }
-bool Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
+bool flw::plot::Point::SaveCSV(const PointVector& in, const std::string& filename, const std::string& sep) {
     std::string csv;
     csv.reserve(in.size() * 20 + 256);
     for (const auto& data : in) {
@@ -9974,17 +9989,17 @@ bool Point::SaveCSV(const PointVector& in, const std::string& filename, const st
     }
     return gnu::file::write(filename, csv.c_str(), csv.size());
 }
-PointVector Point::Swap(const PointVector& in) {
+flw::plot::PointVector flw::plot::Point::Swap(const PointVector& in) {
     PointVector res;
     for (const auto& data : in) {
         res.push_back(Point(data.y, data.x));
     }
     return res;
 }
-Line::Line() {
+flw::plot::Line::Line() {
     reset();
 }
-Line::Line(const PointVector& data, const std::string& label, LineType type, Fl_Color color, unsigned width) {
+flw::plot::Line::Line(const PointVector& data, const std::string& label, LineType type, Fl_Color color, unsigned width) {
     _color   = color;
     _data    = data;
     _label   = label;
@@ -9992,10 +10007,10 @@ Line::Line(const PointVector& data, const std::string& label, LineType type, Fl_
     _visible = true;
     _width   = (width > 0 && width <= plot::MAX_LINE_WIDTH) ? width : 1;
 }
-void Line::debug() const {
+void flw::plot::Line::debug() const {
 #ifdef DEBUG
     double minx, maxx, miny, maxy;
-    Point::MinMax(_data, minx, maxx, miny, maxy);
+    flw::plot::Point::MinMax(_data, minx, maxx, miny, maxy);
     printf("\t------------------------------------------\n");
     printf("\tLine:\n");
     printf("\t\tcolor   = %u\n", _color);
@@ -10012,7 +10027,7 @@ void Line::debug() const {
     fflush(stdout);
 #endif
 }
-void Line::reset() {
+void flw::plot::Line::reset() {
     _color   = FL_BLUE;
     _label   = "";
     _rect    = Fl_Rect();
@@ -10021,7 +10036,7 @@ void Line::reset() {
     _width   = 1;
     _data.clear();
 }
-Line& Line::set_type_from_string(const std::string& val) {
+flw::plot::Line& flw::plot::Line::set_type_from_string(const std::string& val) {
     if (val == "LINE_DASH")             _type = LineType::LINE_DASH;
     else if (val == "LINE_DOT")         _type = LineType::LINE_DOT;
     else if (val == "LINE_WITH_SQUARE") _type = LineType::LINE_WITH_SQUARE;
@@ -10032,11 +10047,11 @@ Line& Line::set_type_from_string(const std::string& val) {
     else                                _type = LineType::LINE;
     return *this;
 }
-std::string Line::type_to_string() const {
+std::string flw::plot::Line::type_to_string() const {
     static const std::string NAMES[] = { "LINE", "LINE_DASH", "LINE_DOT", "LINE_WITH_SQUARE", "VECTOR", "CIRCLE", "FILLED_CIRCLE", "SQUARE", "", "", };
     return NAMES[static_cast<size_t>(_type)];
 }
-void Scale::calc_tick(double pixels) {
+void flw::plot::Scale::calc_tick(double pixels) {
     _tick  = 0.0;
     _pixel = 0.0;
     _fr    = 0;
@@ -10081,7 +10096,7 @@ void Scale::calc_tick(double pixels) {
         }
     }
 }
-void Scale::debug(const char* s) const {
+void flw::plot::Scale::debug(const char* s) const {
 #ifdef DEBUG
     printf("\t------------------------------------------\n");
     printf("\tScale: %s\n", s);
@@ -10100,7 +10115,7 @@ void Scale::debug(const char* s) const {
     (void) s;
 #endif
 }
-void Scale::measure_labels(int cw, bool custom) {
+void flw::plot::Scale::measure_labels(int cw, bool custom) {
     if (_labels.size() > 0 && custom == true) {
         _lwidth = 0;
         for (const auto& l : _labels) {
@@ -10117,7 +10132,7 @@ void Scale::measure_labels(int cw, bool custom) {
         _lwidth = (l1.length() > l2.length()) ? l1.length() * cw : l2.length() * cw;
     }
 }
-void Scale::reset() {
+void flw::plot::Scale::reset() {
     _color  = FL_FOREGROUND_COLOR;
     _fr     = 0;
     _label  = "";
@@ -10127,7 +10142,7 @@ void Scale::reset() {
     _tick   = 0.0;
     reset_min_max();
 }
-Plot::Plot(int X, int Y, int W, int H, const char* l) :
+flw::plot::Plot::Plot(int X, int Y, int W, int H, const char* l) :
 Fl_Group(X, Y, W, H, l),
 _CH(14), _CW(14) {
     end();
@@ -10142,47 +10157,47 @@ _CH(14), _CW(14) {
     );
     _menu = new Fl_Menu_Button(0, 0, 0, 0);
     add(_menu);
-    _menu->add(_LABEL_SETUP_LABELS,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SETUP_HLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
-    _menu->add(_LABEL_SETUP_VLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
-    _menu->add(_LABEL_CLEAR,         0, _FLW_PLOT_CB(reset()));
-    _menu->add(_LABEL_SETUP_LABEL,   0, _FLW_PLOT_CB(setup_label(plot::Label::MAIN)));
-    _menu->add(_LABEL_SETUP_XLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::X)));
-    _menu->add(_LABEL_SETUP_YLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::Y)));
-    _menu->add(_LABEL_SETUP_MINX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINX)));
-    _menu->add(_LABEL_SETUP_MAXX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXX)));
-    _menu->add(_LABEL_SETUP_MINY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINY)));
-    _menu->add(_LABEL_SETUP_MAXY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXY)), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_LINE,    0, _FLW_PLOT_CB(setup_line()));
-    _menu->add(_LABEL_ADD_LINE,      0, _FLW_PLOT_CB(setup_create_line()));
-    _menu->add(_LABEL_LOAD_CVS,      0, _FLW_PLOT_CB(load_line_from_csv()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SETUP_SHOW,    0, _FLW_PLOT_CB(setup_show_or_hide_lines()));
-    _menu->add(_LABEL_SETUP_DELETE,  0, _FLW_PLOT_CB(setup_delete_lines()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_SAVE_CVS,      0, _FLW_PLOT_CB(save_line_to_csv()));
-    _menu->add(_LABEL_SAVE_JSON,     0, _FLW_PLOT_CB(save_json()));
-    _menu->add(_LABEL_LOAD_JSON,     0, _FLW_PLOT_CB(load_json()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_PRINT,         0, _FLW_PLOT_CB(print_to_postscript()));
-    _menu->add(_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
+    _menu->add(priv::_PLOT_LABEL_SETUP_LABELS,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_PLOT_LABEL_SETUP_HLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE);
+    _menu->add(priv::_PLOT_LABEL_SETUP_VLINES,  0, _FLW_PLOT_CB(setup_view_options()), FL_MENU_TOGGLE | FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_CLEAR,         0, _FLW_PLOT_CB(reset()));
+    _menu->add(priv::_PLOT_LABEL_SETUP_LABEL,   0, _FLW_PLOT_CB(setup_label(plot::Label::MAIN)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_XLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::X)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_YLABEL,  0, _FLW_PLOT_CB(setup_label(plot::Label::Y)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MINX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINX)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MAXX,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXX)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MINY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MINY)));
+    _menu->add(priv::_PLOT_LABEL_SETUP_MAXY,    0, _FLW_PLOT_CB(setup_clamp(plot::Clamp::MAXY)), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_SETUP_LINE,    0, _FLW_PLOT_CB(setup_line()));
+    _menu->add(priv::_PLOT_LABEL_ADD_LINE,      0, _FLW_PLOT_CB(setup_create_line()));
+    _menu->add(priv::_PLOT_LABEL_LOAD_CVS,      0, _FLW_PLOT_CB(load_line_from_csv()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_SETUP_SHOW,    0, _FLW_PLOT_CB(setup_show_or_hide_lines()));
+    _menu->add(priv::_PLOT_LABEL_SETUP_DELETE,  0, _FLW_PLOT_CB(setup_delete_lines()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_SAVE_CVS,      0, _FLW_PLOT_CB(save_line_to_csv()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_JSON,     0, _FLW_PLOT_CB(save_json()));
+    _menu->add(priv::_PLOT_LABEL_LOAD_JSON,     0, _FLW_PLOT_CB(load_json()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_PRINT,         0, _FLW_PLOT_CB(print_to_postscript()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
 #ifdef DEBUG
-    _menu->add(_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()), FL_MENU_DIVIDER);
-    _menu->add(_LABEL_DEBUG,         0, _FLW_PLOT_CB(debug()));
-    _menu->add(_LABEL_DEBUG_LINE,    0, _FLW_PLOT_CB(debug_line()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()), FL_MENU_DIVIDER);
+    _menu->add(priv::_PLOT_LABEL_DEBUG,         0, _FLW_PLOT_CB(debug()));
+    _menu->add(priv::_PLOT_LABEL_DEBUG_LINE,    0, _FLW_PLOT_CB(debug_line()));
 #else
-    _menu->add(_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
+    _menu->add(priv::_PLOT_LABEL_SAVE_PNG,      0, _FLW_PLOT_CB(save_png()));
 #endif
     _menu->type(Fl_Menu_Button::POPUP3);
     _disable_menu = false;
     reset();
     update_pref();
 }
-bool Plot::add_line(const Line& line) {
+bool flw::plot::Plot::add_line(const Line& line) {
     if (_lines.size() >= plot::MAX_LINES) {
         return false;
     }
     _lines.push_back(line);
     return true;
 }
-void Plot::_calc_min_max() {
+void flw::plot::Plot::_calc_min_max() {
     _x.reset_min_max();
     _y.reset_min_max();
     for (const auto& line : _lines) {
@@ -10228,7 +10243,7 @@ void Plot::_calc_min_max() {
         }
     }
 }
-bool Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
+bool flw::plot::Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
     (void) page;
     auto widget = static_cast<Fl_Widget*>(data);
     auto rect   = Fl_Rect(widget);
@@ -10237,7 +10252,7 @@ bool Plot::_CallbackPrinter(void* data, int pw, int ph, unsigned page) {
     widget->resize(rect.x(), rect.y(), rect.w(), rect.h());
     return false;
 }
-bool Plot::create_line(Algorithm alg) {
+bool flw::plot::Plot::create_line(Algorithm alg) {
     if (_selected_line >= _lines.size()) {
         dlg::msg_alert("Plot", "Line has not been selected!");
         return false;
@@ -10267,11 +10282,11 @@ bool Plot::create_line(Algorithm alg) {
         }
         list   = StringVector() = {"Only X", "Only Y", "Both X && Y"};
         ans    = dlg::select_choice("Plot", "Select target.", list, 0);
-        vec1   = Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
+        vec1   = flw::plot::Point::Modify(line0.data(), modify, (ans == 0) ? plot::Target::X : (ans == 1) ? plot::Target::Y : plot::Target::X_AND_Y, value);
         label1 = util::format("Modified %s", line0.label().c_str());
     }
     else if (alg == Algorithm::SWAP) {
-        vec1   = Point::Swap(line0.data());
+        vec1   = flw::plot::Point::Swap(line0.data());
         label1 = util::format("%s swapped X/Y", line0.label().c_str());
     }
     if (vec1.size() == 0) {
@@ -10279,12 +10294,12 @@ bool Plot::create_line(Algorithm alg) {
         return false;
     }
     auto line1 = Line(vec1, label1);
-    _LineSetup(top_window(), line1).run();
+    priv::_PlotLineSetup(top_window(), line1).run();
     _lines.push_back(line1);
     init_new_data();
     return true;
 }
-StringVector Plot::_create_check_labels(bool def) const {
+flw::StringVector flw::plot::Plot::_create_check_labels(bool def) const {
     StringVector res;
     for (const auto& l : _lines) {
         std::string s = (def == true && l.is_visible() == true) ? "1" : "0";
@@ -10293,7 +10308,7 @@ StringVector Plot::_create_check_labels(bool def) const {
     }
     return res;
 }
-void Plot::_create_tooltip() {
+void flw::plot::Plot::_create_tooltip() {
     const int   X   = Fl::event_x();
     const int   Y   = Fl::event_y();
     std::string old = _tooltip;
@@ -10337,7 +10352,7 @@ void Plot::_create_tooltip() {
         redraw();
     }
 }
-void Plot::debug() const {
+void flw::plot::Plot::debug() const {
 #ifdef DEBUG
     printf("\n-----------------------------------------------------\n");
     printf("Plot:\n");
@@ -10363,15 +10378,15 @@ void Plot::debug() const {
     fflush(stdout);
 #endif
 }
-void Plot::debug_line() const {
+void flw::plot::Plot::debug_line() const {
 #ifdef DEBUG
     if (_selected_line >= _lines.size()) {
         return;
     }
-    Point::Debug(_lines[_selected_line].data());
+    flw::plot::Point::Debug(_lines[_selected_line].data());
 #endif
 }
-void Plot::delete_line(size_t index) {
+void flw::plot::Plot::delete_line(size_t index) {
     size_t count = 0;
     for (auto it = _lines.begin(); it != _lines.end(); ++it) {
         if (index == count) {
@@ -10387,7 +10402,7 @@ void Plot::delete_line(size_t index) {
         count++;
     }
 }
-void Plot::draw() {
+void flw::plot::Plot::draw() {
 #ifdef DEBUG
 #endif
     if (_printing == true) {
@@ -10434,7 +10449,7 @@ DRAW_RECTANGLE:
 #ifdef DEBUG
 #endif
 }
-void Plot::_draw_labels() {
+void flw::plot::Plot::_draw_labels() {
     const int CH = _CH / 2;
     if (_x.label() != "") {
         fl_color(_x.color());
@@ -10460,7 +10475,7 @@ void Plot::_draw_labels() {
         _FLW_PLOT_DEBUG(fl_rect(_area.x(), y(),  _area.w(), _CH * 3 + 1))
     }
 }
-void Plot::_draw_line_labels() {
+void flw::plot::Plot::_draw_line_labels() {
     static const std::string SYMBOL = "@-> ";
     if (_labels == false) {
         return;
@@ -10498,7 +10513,7 @@ void Plot::_draw_line_labels() {
         }
     }
 }
-void Plot::_draw_lines() {
+void flw::plot::Plot::_draw_lines() {
     const int X1     = _area.x();
     const int Y1     = _area.b() - 1;
     size_t    line_c = -1;
@@ -10578,7 +10593,7 @@ void Plot::_draw_lines() {
         }
     }
 }
-void Plot::_draw_tooltip() {
+void flw::plot::Plot::_draw_tooltip() {
     if (_tooltip == "") {
         return;
     }
@@ -10610,7 +10625,7 @@ void Plot::_draw_tooltip() {
     fl_draw(_tooltip.c_str(), x1 + 2, y1, W - 4, H, FL_ALIGN_LEFT | FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | FL_ALIGN_TOP);
     fl_line_style(0);
 }
-void Plot::_draw_xlabels() {
+void flw::plot::Plot::_draw_xlabels() {
     fl_font(flw::PREF_FIXED_FONT, _CH);
     double       x1     = _area.x();
     const int    Y      = _area.b();
@@ -10629,17 +10644,17 @@ void Plot::_draw_xlabels() {
                 fl_color(fl_color_average(FL_FOREGROUND_COLOR, FL_BACKGROUND2_COLOR, 0.2));
                 fl_line(x1, _area.y() + 1, x1, _area.b() - 2);
             }
-            _FLW_PLOT_DEBUG(fl_rect(x1 - TW, Y + _TICK_SIZE * 2, TW * 2, _CH, FL_FOREGROUND_COLOR))
+            _FLW_PLOT_DEBUG(fl_rect(x1 - TW, Y + priv::_PLOT_TICK_SIZE * 2, TW * 2, _CH, FL_FOREGROUND_COLOR))
             fl_color(FL_FOREGROUND_COLOR);
-            fl_line(x1, Y, x1, Y + _TICK_SIZE);
-            fl_draw(label.c_str(), x1 - TW, Y + _TICK_SIZE * 2, TW * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+            fl_line(x1, Y, x1, Y + priv::_PLOT_TICK_SIZE);
+            fl_draw(label.c_str(), x1 - TW, Y + priv::_PLOT_TICK_SIZE * 2, TW * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
             x_last = x1 + TW + _CH;
         }
         x1    += X_INC;
         x_val += _x.tick();
     }
 }
-void Plot::_draw_xlabels_custom() {
+void flw::plot::Plot::_draw_xlabels_custom() {
     fl_color(FL_FOREGROUND_COLOR);
     fl_font(flw::PREF_FIXED_FONT, _CH);
     size_t label_c = 0;
@@ -10653,19 +10668,19 @@ void Plot::_draw_xlabels_custom() {
             std::string label = _x.custom_labels()[label_c++];
             const int   X     = _area.x() + static_cast<int>((data.x - _x.min()) * _x.pixel());
             const int   W     = label.length() * _CW / 2;
-            fl_line(X, _area.b(), X, _area.b() + _TICK_SIZE);
+            fl_line(X, _area.b(), X, _area.b() + priv::_PLOT_TICK_SIZE);
             if (X - W >= x_last && label != "") {
-                _FLW_PLOT_DEBUG(fl_rect(X - W, _area.b() + _TICK_SIZE * 2, W * 2, _CH))
-                fl_draw(label.c_str(), X - W, _area.b() + _TICK_SIZE * 2, W * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                x_last = X + W + _TICK_SIZE;
+                _FLW_PLOT_DEBUG(fl_rect(X - W, _area.b() + priv::_PLOT_TICK_SIZE * 2, W * 2, _CH))
+                fl_draw(label.c_str(), X - W, _area.b() + priv::_PLOT_TICK_SIZE * 2, W * 2, _CH, FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                x_last = X + W + priv::_PLOT_TICK_SIZE;
             }
         }
     }
 }
-void Plot::_draw_ylabels() {
+void flw::plot::Plot::_draw_ylabels() {
     fl_font(flw::PREF_FIXED_FONT, _CH);
     const int X      = x() + (_y.label() != "" ? _CH * 2 : 0);
-    const int W      = _area.x() - X - _TICK_SIZE * 3;
+    const int W      = _area.x() - X - priv::_PLOT_TICK_SIZE * 3;
     const int CH     = _CH / 2;
     double    y1     = _area.b() - 1.0;
     double    y_tick = _y.tick();
@@ -10683,20 +10698,20 @@ void Plot::_draw_ylabels() {
                 fl_line(_area.x() + 1, y1, _area.r() - 2, y1);
             }
             fl_color(FL_FOREGROUND_COLOR);
-            fl_line(_area.x(), y1, _area.x() - _TICK_SIZE, y1);
-            fl_draw(label.c_str(), X + _TICK_SIZE, y1 - CH, W, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-            _FLW_PLOT_DEBUG(fl_rect(X + _TICK_SIZE, y1 - CH, W, _CH, FL_FOREGROUND_COLOR))
-            y_last = y1 - _CH - _TICK_SIZE;
+            fl_line(_area.x(), y1, _area.x() - priv::_PLOT_TICK_SIZE, y1);
+            fl_draw(label.c_str(), X + priv::_PLOT_TICK_SIZE, y1 - CH, W, _CH, FL_ALIGN_RIGHT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+            _FLW_PLOT_DEBUG(fl_rect(X + priv::_PLOT_TICK_SIZE, y1 - CH, W, _CH, FL_FOREGROUND_COLOR))
+            y_last = y1 - _CH - priv::_PLOT_TICK_SIZE;
         }
         y1    -= y_inc;
         y_val += y_tick;
     }
 }
-void Plot::_draw_ylabels_custom() {
+void flw::plot::Plot::_draw_ylabels_custom() {
     fl_color(FL_FOREGROUND_COLOR);
     fl_font(flw::PREF_FIXED_FONT, _CH);
-    const int  X       = x() + (_y.label() != "" ? _CH * 2 : _TICK_SIZE);
-    const int  W       = _area.x() - X - _TICK_SIZE * 3;
+    const int  X       = x() + (_y.label() != "" ? _CH * 2 : priv::_PLOT_TICK_SIZE);
+    const int  W       = _area.x() - X - priv::_PLOT_TICK_SIZE * 3;
     const int  CH      = fl_height() / 2;
     size_t     label_c = 0;
     size_t     data_c  = 0;
@@ -10708,16 +10723,16 @@ void Plot::_draw_ylabels_custom() {
         if (data_c++ % 2 == 1) {
             const int   Y     = _area.b() - 1 - static_cast<int>((data.y - _y.min()) * _y.pixel());
             std::string label = _y.custom_labels()[label_c++];
-            fl_line(_area.x(), Y, _area.x() - _TICK_SIZE, Y);
+            fl_line(_area.x(), Y, _area.x() - priv::_PLOT_TICK_SIZE, Y);
             if (y_last > Y && label != "") {
-                fl_draw(label.c_str(), X + _TICK_SIZE, Y - CH, W, fl_height(), FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-                _FLW_PLOT_DEBUG(fl_rect(X + _TICK_SIZE, Y - CH, W, fl_height(), FL_FOREGROUND_COLOR))
-                y_last = Y - fl_height() - _TICK_SIZE;
+                fl_draw(label.c_str(), X + priv::_PLOT_TICK_SIZE, Y - CH, W, fl_height(), FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+                _FLW_PLOT_DEBUG(fl_rect(X + priv::_PLOT_TICK_SIZE, Y - CH, W, fl_height(), FL_FOREGROUND_COLOR))
+                y_last = Y - fl_height() - priv::_PLOT_TICK_SIZE;
             }
         }
     }
 }
-int Plot::handle(int event) {
+int flw::plot::Plot::handle(int event) {
     if (event == FL_PUSH) {
         auto b = Fl::event_button();
         if (b == FL_LEFT_MOUSE) {
@@ -10760,7 +10775,7 @@ int Plot::handle(int event) {
     }
     return Fl_Group::handle(event);
 }
-void Plot::_init(bool new_data) {
+void flw::plot::Plot::_init(bool new_data) {
     fl_font(flw::PREF_FIXED_FONT, flw::PREF_FIXED_FONTSIZE);
     *const_cast<int*>(&_CW) = fl_width("X");
     *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
@@ -10772,7 +10787,7 @@ void Plot::_init(bool new_data) {
         _y.measure_labels(_CW, _lines.size() > 0 ? _lines[0].is_vector() : false);
     }
     auto move_x   = (_y.label() != "") ? _CH * 2 : 0;
-    auto shrink_h = (_x.label() != "") ? _CH * 2 + _TICK_SIZE * 2 : _CH;
+    auto shrink_h = (_x.label() != "") ? _CH * 2 + priv::_PLOT_TICK_SIZE * 2 : _CH;
     _area.x(x() + (_CH * 2) + _y.label_width() + move_x);
     _area.w(w() - (_area.x() - x()) - _CH * 2);
     if (_label != "") {
@@ -10787,14 +10802,14 @@ void Plot::_init(bool new_data) {
     _y.calc_tick(_area.h() - 1);
     redraw();
 }
-bool Plot::load_json() {
+bool flw::plot::Plot::load_json() {
     auto filename = util::to_string(fl_file_chooser("Select JSON File", "All Files (*)\tJSON Files (*.json)", ""));
     if (util::is_empty(filename) == true) {
         return false;
     }
     return load_json(filename);
 }
-bool Plot::load_json(const std::string& filename) {
+bool flw::plot::Plot::load_json(const std::string& filename) {
 #define _FLW_PLOT_ERROR(X) { dlg::msg_alert("Plot", util::format("Illegal plot value at pos %u", (X)->pos())); reset(); return false; }
     _filename = "";
     reset();
@@ -10889,7 +10904,7 @@ bool Plot::load_json(const std::string& filename) {
     _filename = filename;
     return true;
 }
-bool Plot::load_line_from_csv() {
+bool flw::plot::Plot::load_line_from_csv() {
     if (_lines.size() >= plot::MAX_LINES) {
         dlg::msg_alert("Plot", "Max line count reached!");
         return false;
@@ -10898,24 +10913,24 @@ bool Plot::load_line_from_csv() {
     if (util::is_empty(filename) == true) {
         return false;
     }
-    auto vec = Point::LoadCSV(filename);
+    auto vec = flw::plot::Point::LoadCSV(filename);
     if (vec.size() == 0) {
         dlg::msg_alert("Plot", "To few data values!");
         return false;
     }
     auto line = Line(vec, filename);
-    _LineSetup(top_window(), line).run();
+    priv::_PlotLineSetup(top_window(), line).run();
     _lines.push_back(line);
     init_new_data();
     return true;
 }
-void Plot::print_to_postscript() {
+void flw::plot::Plot::print_to_postscript() {
     _printing = true;
-    dlg::print_page("Plot", Plot::_CallbackPrinter, this);
+    dlg::print_page("Plot", flw::plot::Plot::_CallbackPrinter, this);
     _printing = false;
     redraw();
 }
-void Plot::reset() {
+void flw::plot::Plot::reset() {
     *const_cast<int*>(&_CW) = flw::PREF_FIXED_FONTSIZE;
     *const_cast<int*>(&_CH) = flw::PREF_FIXED_FONTSIZE;
     _area           = Fl_Rect();
@@ -10938,7 +10953,7 @@ void Plot::reset() {
     update_pref();
     init();
 }
-void Plot::resize(int X, int Y, int W, int H) {
+void flw::plot::Plot::resize(int X, int Y, int W, int H) {
     if (_old.w() == W && _old.h() == H) {
         return;
     }
@@ -10946,14 +10961,14 @@ void Plot::resize(int X, int Y, int W, int H) {
     _old = Fl_Rect(this);
     init();
 }
-bool Plot::save_json() {
+bool flw::plot::Plot::save_json() {
     auto filename = util::to_string(fl_file_chooser("Save To JSON File", "All Files (*)\tJSON Files (*.json)", ""));
     if (util::is_empty(filename) == true) {
         return false;
     }
     return save_json(filename);
 }
-bool Plot::save_json(const std::string& filename) {
+bool flw::plot::Plot::save_json(const std::string& filename) {
     auto wc  = WaitCursor();
     auto jsb = gnu::json::Builder();
     try {
@@ -11018,7 +11033,7 @@ bool Plot::save_json(const std::string& filename) {
         return false;
     }
 }
-bool Plot::save_line_to_csv() {
+bool flw::plot::Plot::save_line_to_csv() {
     if (_lines.size() == 0 || _selected_line >= _lines.size()) {
         return false;
     }
@@ -11026,12 +11041,12 @@ bool Plot::save_line_to_csv() {
     if (util::is_empty(filename) == true) {
         return false;
     }
-    return Point::SaveCSV(_lines[_selected_line].data(), filename);
+    return flw::plot::Point::SaveCSV(_lines[_selected_line].data(), filename);
 }
-bool Plot::save_png() {
+bool flw::plot::Plot::save_png() {
     return flw::util::png_save(window(), "", x(),  y(),  w(),  h());
 }
-void Plot::setup_clamp(Clamp clamp) {
+void flw::plot::Plot::setup_clamp(Clamp clamp) {
     double      val = 0.0;
     std::string info;
     switch (clamp) {
@@ -11072,7 +11087,7 @@ void Plot::setup_clamp(Clamp clamp) {
     }
     init_new_data();
 }
-void Plot::setup_create_line() {
+void flw::plot::Plot::setup_create_line() {
     if (_selected_line >= _lines.size()) {
         dlg::msg_alert("Plot", "Select a line first!");
         return;
@@ -11096,7 +11111,7 @@ void Plot::setup_create_line() {
             break;
     }
 }
-void Plot::setup_delete_lines() {
+void flw::plot::Plot::setup_delete_lines() {
     if (_lines.size() == 0) {
         return;
     }
@@ -11113,7 +11128,7 @@ void Plot::setup_delete_lines() {
     }
     init_new_data();
 }
-void Plot::setup_label(Label val) {
+void flw::plot::Plot::setup_label(Label val) {
     std::string l, answer;
     switch (val) {
         case plot::Label::MAIN:
@@ -11145,15 +11160,15 @@ void Plot::setup_label(Label val) {
     }
     init();
 }
-void Plot::setup_line() {
+void flw::plot::Plot::setup_line() {
     if (_lines.size() == 0 || _selected_line >= _lines.size()) {
         return;
     }
     auto& line = _lines[_selected_line];
-    _LineSetup(top_window(), line).run();
+    priv::_PlotLineSetup(top_window(), line).run();
     redraw();
 }
-void Plot::setup_show_or_hide_lines() {
+void flw::plot::Plot::setup_show_or_hide_lines() {
     if (_lines.size() == 0) {
         return;
     }
@@ -11167,48 +11182,46 @@ void Plot::setup_show_or_hide_lines() {
     }
     init_new_data();
 }
-void Plot::setup_view_options() {
-    _labels     = menu::item_value(_menu, _LABEL_SETUP_LABELS);
-    _horizontal = menu::item_value(_menu, _LABEL_SETUP_HLINES);
-    _vertical   = menu::item_value(_menu, _LABEL_SETUP_VLINES);
+void flw::plot::Plot::setup_view_options() {
+    _labels     = menu::item_value(_menu, priv::_PLOT_LABEL_SETUP_LABELS);
+    _horizontal = menu::item_value(_menu, priv::_PLOT_LABEL_SETUP_HLINES);
+    _vertical   = menu::item_value(_menu, priv::_PLOT_LABEL_SETUP_VLINES);
     redraw();
 }
-void Plot::_show_menu() {
+void flw::plot::Plot::_show_menu() {
     if (_disable_menu == true) {
         return;
     }
-    menu::set_item(_menu, _LABEL_SETUP_LABELS, _labels);
-    menu::set_item(_menu, _LABEL_SETUP_HLINES, _horizontal);
-    menu::set_item(_menu, _LABEL_SETUP_VLINES, _vertical);
+    menu::set_item(_menu, priv::_PLOT_LABEL_SETUP_LABELS, _labels);
+    menu::set_item(_menu, priv::_PLOT_LABEL_SETUP_HLINES, _horizontal);
+    menu::set_item(_menu, priv::_PLOT_LABEL_SETUP_VLINES, _vertical);
     if (_lines.size() == 0) {
-        menu::enable_item(_menu, _LABEL_ADD_LINE, false);
-        menu::enable_item(_menu, _LABEL_SAVE_CVS, false);
-        menu::enable_item(_menu, _LABEL_SETUP_DELETE, false);
-        menu::enable_item(_menu, _LABEL_SETUP_LINE, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXX, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXY, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MINX, false);
-        menu::enable_item(_menu, _LABEL_SETUP_MINY, false);
-        menu::enable_item(_menu, _LABEL_SETUP_SHOW, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_ADD_LINE, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SAVE_CVS, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_DELETE, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_LINE, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXX, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXY, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINX, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINY, false);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_SHOW, false);
     }
     else {
-        menu::enable_item(_menu, _LABEL_ADD_LINE, true);
-        menu::enable_item(_menu, _LABEL_SAVE_CVS, true);
-        menu::enable_item(_menu, _LABEL_SETUP_DELETE, true);
-        menu::enable_item(_menu, _LABEL_SETUP_LINE, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXX, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MAXY, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MINX, true);
-        menu::enable_item(_menu, _LABEL_SETUP_MINY, true);
-        menu::enable_item(_menu, _LABEL_SETUP_SHOW, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_ADD_LINE, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SAVE_CVS, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_DELETE, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_LINE, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXX, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MAXY, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINX, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_MINY, true);
+        menu::enable_item(_menu, priv::_PLOT_LABEL_SETUP_SHOW, true);
     }
     _menu->popup();
 }
-void Plot::update_pref() {
+void flw::plot::Plot::update_pref() {
     _menu->textfont(flw::PREF_FONT);
     _menu->textsize(flw::PREF_FONTSIZE);
-}
-}
 }
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Check_Button.H>
@@ -11940,9 +11953,7 @@ void flw::ProgressDialog::value(double value) {
         _progress->value(value);
     }
 }
-namespace flw {
-namespace util {
-RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, const std::string& base_label, const std::string& clear_label) {
+flw::util::RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, const std::string& base_label, const std::string& clear_label) {
     _menu     = menu;
     _callback = callback;
     _base     = base_label;
@@ -11951,7 +11962,7 @@ RecentMenu::RecentMenu(Fl_Menu_* menu, Fl_Callback* callback, void* userdata, co
     _max      = 10;
     _menu->add((_base + _clear).c_str(), 0, RecentMenu::_Callback, this, FL_MENU_DIVIDER);
 }
-void RecentMenu::_add(const std::string& item, bool append) {
+void flw::util::RecentMenu::_add(const std::string& item, bool append) {
     if (item == "") {
         _items.clear();
     }
@@ -11970,7 +11981,7 @@ void RecentMenu::_add(const std::string& item, bool append) {
         _menu->add((_base + "/" + flw::util::fix_menu_string(f)).c_str(), 0, _callback, _user);
     }
 }
-size_t RecentMenu::_add_string(StringVector& items, size_t max_size, const std::string& string) {
+size_t flw::util::RecentMenu::_add_string(StringVector& items, size_t max_size, const std::string& string) {
     for (auto it = items.begin(); it != items.end(); ++it) {
         if (*it == string) {
             items.erase(it);
@@ -11983,10 +11994,10 @@ size_t RecentMenu::_add_string(StringVector& items, size_t max_size, const std::
     }
     return items.size();
 }
-void RecentMenu::_Callback(Fl_Widget*, void* o) {
+void flw::util::RecentMenu::_Callback(Fl_Widget*, void* o) {
     static_cast<RecentMenu*>(o)->_add("", false);
 }
-size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const std::string& string) {
+size_t flw::util::RecentMenu::_insert_string(StringVector& items, size_t max_size, const std::string& string) {
     for (auto it = items.begin(); it != items.end(); ++it) {
         if (*it == string) {
             items.erase(it);
@@ -11999,13 +12010,13 @@ size_t RecentMenu::_insert_string(StringVector& items, size_t max_size, const st
     }
     return items.size();
 }
-void RecentMenu::items(const StringVector& names) {
+void flw::util::RecentMenu::items(const StringVector& names) {
     auto res = StringVector();
     for (const auto& name : names) {
         _add(name, true);
     }
 }
-void RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
+void flw::util::RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
     auto index = 1;
     char buffer[1000];
     while (index <= 100) {
@@ -12017,14 +12028,12 @@ void RecentMenu::load_pref(Fl_Preferences& pref, const std::string& base_name) {
         _add(buffer, true);
     }
 }
-void RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
+void flw::util::RecentMenu::save_pref(Fl_Preferences& pref, const std::string& base_name) {
     auto index = 1;
     for (const auto& s : _items) {
         pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), s.c_str());
     }
     pref.set(flw::util::format("%s%d", base_name.c_str(), index++).c_str(), "");
-}
-}
 }
 namespace flw {
 namespace priv {
@@ -12032,7 +12041,8 @@ static const std::string _SCROLLBROWSER_MENU_ALL  = "Copy all Lines";
 static const std::string _SCROLLBROWSER_MENU_LINE = "Copy Current Line";
 static const std::string _SCROLLBROWSER_TOOLTIP   = "Right click to show the menu.";
 }
-ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
+}
+flw::ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* l) : Fl_Hold_Browser(X, Y, W, H, l) {
     end();
     _menu      = new Fl_Menu_Button(0, 0, 0, 0);
     _flag_move = true;
@@ -12045,7 +12055,7 @@ ScrollBrowser::ScrollBrowser(int lines, int X, int Y, int W, int H, const char* 
     tooltip(priv::_SCROLLBROWSER_TOOLTIP.c_str());
     update_pref();
 }
-void ScrollBrowser::Callback(Fl_Widget*, void* o) {
+void flw::ScrollBrowser::Callback(Fl_Widget*, void* o) {
     auto self  = static_cast<ScrollBrowser*>(o);
     auto txt   = self->_menu->text();
     auto label = std::string((txt != nullptr) ? txt : "");
@@ -12067,7 +12077,7 @@ void ScrollBrowser::Callback(Fl_Widget*, void* o) {
         Fl::copy(clip.c_str(), clip.length(), 2);
     }
 }
-int ScrollBrowser::handle(int event) {
+int flw::ScrollBrowser::handle(int event) {
     if (event == FL_MOUSEWHEEL) {
         if (_flag_move == true) {
             #ifdef DEBUG
@@ -12125,7 +12135,7 @@ int ScrollBrowser::handle(int event) {
     }
     return Fl_Hold_Browser::handle(event);
 }
-void ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
+void flw::ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     labelfont(flw::PREF_FONT);
     labelsize(flw::PREF_FONTSIZE);
     textfont(text_font);
@@ -12133,6 +12143,121 @@ void ScrollBrowser::update_pref(Fl_Font text_font, Fl_Fontsize text_size) {
     _menu->textfont(text_font);
     _menu->textsize(text_size);
 }
+flw::SettingsDialog::SettingsDialog(const std::string& title, int W, int H) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W, flw::PREF_FONTSIZE * H) {
+    end();
+    _cancel = new Fl_Button(0, 0, 0, 0, labels::CANCEL.c_str());
+    _grid   = new flw::GridGroup(0, 0, w(), h());
+    _label  = new Fl_Box(0, 0, 0, 0);
+    _ok     = new SVGButton(0, 0, 0, 0, labels::OK, icons::CONFIRM, false, false, SVGButton::Pos::RIGHT);
+    _reset  = new Fl_Button(0, 0, 0, 0, "Reset to Default");
+    _undo   = new Fl_Button(0, 0, 0, 0, "Undo Changes");
+    _tabs   = new flw::TabsGroup();
+    _ret    = false;
+    _run    = false;
+    _grid->add(_tabs,      1,   1,  -1, -16);
+    _grid->add(_label,     1, -15,  -1,   9);
+    _grid->add(_reset,   -76,  -5,  18,   4);
+    _grid->add(_undo,    -57,  -5,  18,   4);
+    _grid->add(_cancel,  -38,  -5,  18,   4);
+    _grid->add(_ok,      -19,  -5,  18,   4);
+    add(_grid);
+    _cancel->callback(SettingsDialog::Callback, this);
+    _cancel->tooltip("Close dialog but save no settings.");
+    _label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_TOP);
+    _label->box(FL_BORDER_BOX);
+    _ok->callback(SettingsDialog::Callback, this);
+    _ok->tooltip("Close dialog and update all settings.");
+    _reset->callback(SettingsDialog::Callback, this);
+    _reset->tooltip("Reset all settings to default values in current page.");
+    _tabs->callback(SettingsDialog::Callback, this);
+    _undo->callback(SettingsDialog::Callback, this);
+    _undo->tooltip("Undo all changes to settings in current page.");
+    util::labelfont(this);
+    callback(SettingsDialog::Callback, this);
+    copy_label(title.c_str());
+    set_modal();
+    resizable(_grid);
+    _grid->resize(0, 0, w(), h());
+}
+void flw::SettingsDialog::add_page(const std::string& label, table::SettingsTable* table, table::SettingsTable* after) {
+    _tabs->add(label, table, after);
+    table->active_cell();
+    table->set_dialog(this);
+}
+void flw::SettingsDialog::insert_page(const std::string& label, table::SettingsTable* table, table::SettingsTable* before) {
+    _tabs->insert(label, table, before);
+    table->active_cell();
+    table->set_dialog(this);
+}
+void flw::SettingsDialog::Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<SettingsDialog*>(o);
+    if (w == self) {
+    }
+    else if (w == self->_tabs) {
+        self->message("");
+    }
+    else if (w == self->_cancel) {
+        self->_ret = false;
+        self->_run = false;
+        self->hide();
+    }
+    else if (w == self->_ok) {
+        for (int f = 0; f < self->_tabs->tabs(); f++) {
+            auto row  = 0;
+            auto page = static_cast<table::SettingsTable*>(self->_tabs->tab(f));
+            auto err  = page->validate_data(row);
+            if (err != "") {
+                self->_tabs->value(page);
+                if (row > 0 && row <= page->rows()) {
+                    page->active_cell(row, 1);
+                }
+                self->message(err, FL_DARK_RED);
+                return;
+            }
+        }
+        for (int f = 0; f < self->_tabs->tabs(); f++) {
+            auto page = static_cast<table::SettingsTable*>(self->_tabs->tab(f));
+            page->get_data();
+        }
+        self->_ret = true;
+        self->_run = false;
+    }
+    else if (w == self->_reset) {
+        auto page = self->_tabs->value();
+        if (page != nullptr) {
+            static_cast<table::SettingsTable*>(page)->set_def_data();
+            page->take_focus();
+            Fl::redraw();
+        }
+    }
+    else if (w == self->_undo) {
+        auto page = self->_tabs->value();
+        if (page != nullptr) {
+            static_cast<table::SettingsTable*>(page)->set_data();
+            page->take_focus();
+            Fl::redraw();
+        }
+    }
+}
+void flw::SettingsDialog::message(const std::string& msg, Fl_Color color) {
+    _label->labelcolor(color);
+    _label->copy_label(msg.c_str());
+}
+flw::table::SettingsTable* flw::SettingsDialog::page(int num) {
+    return static_cast<table::SettingsTable*>(_tabs->child(num));
+}
+bool flw::SettingsDialog::run() {
+    _ret = false;
+    _run = true;
+    _tabs->value(_tabs->tab(0));
+    util::center_window(this, flw::PREF_WINDOW);
+    show();
+    while (_run == true) {
+        Fl::wait();
+        Fl::flush();
+    }
+    return _ret;
 }
 #include <FL/fl_draw.H>
 flw::SplitGroup::SplitGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
@@ -12419,10 +12544,10 @@ bool flw::SVGButton::set_icon(const std::string& l, const std::string& svg, Pos 
     else if (pos == Pos::UNDER) {
         al = FL_ALIGN_IMAGE_BACKDROP;
     }
-    if (size < 1.5) {
-        size = 1.5;
+    if (size < 1.0) {
+        size = 1.0;
     }
-    if (size > 5.0) {
+    else if (size > 5.0) {
         size = 5.0;
     }
     if (svg != "") {
@@ -12440,12 +12565,10 @@ bool flw::SVGButton::set_icon(const std::string& l, const std::string& svg, Pos 
     }
     return false;
 }
-#include <stdarg.h>
-namespace flw {
-namespace table {
-Table::Table(int rows, int cols, int X, int Y, int W, int H, const char* l) : Editor(X, Y, W, H, l) {
-    rows    = rows < 1 ? 1 : rows;
-    cols    = cols < 1 ? 1 : cols;
+#include <cassert>
+flw::table::Table::Table(int rows, int cols, int X, int Y, int W, int H, const char* l) : Editor(X, Y, W, H, l) {
+    rows = (rows < 1) ? 1 : rows;
+    cols = (cols < 1) ? 1 : cols;
     Table::size(rows, cols);
     lines(true, true);
     header(true, true);
@@ -12454,7 +12577,7 @@ Table::Table(int rows, int cols, int X, int Y, int W, int H, const char* l) : Ed
     resize_column_width(true);
     expand_last_column(true);
 }
-StringVector Table::cell_choice(int row, int col) {
+flw::StringVector flw::table::Table::cell_choice(int row, int col) {
     _cell_choices.clear();
     auto choices = _get_string(_cell_choice, row, col);
     if (choices != "") {
@@ -12462,20 +12585,21 @@ StringVector Table::cell_choice(int row, int col) {
     }
     return _cell_choices;
 }
-int Table::_get_int(StringHash& hash, int row, int col, int def) {
+int flw::table::Table::_get_int(StringHash& hash, int row, int col, int def) {
     auto value = _get_string(hash, row, col);
-    return value != "" ? atoi(value.c_str()) : def;
+    auto res   = util::to_int(value, def);
+    return static_cast<int>(res);
 }
-std::string Table::_get_key(int row, int col) {
+std::string flw::table::Table::_get_key(int row, int col) {
     char key[100];
     snprintf(key, 100, "r%dc%d", row, col);
     return key;
 }
-std::string Table::_get_string(StringHash& hash, int row, int col, const std::string& def) {
+std::string flw::table::Table::_get_string(StringHash& hash, int row, int col, const std::string& def) {
     auto search = hash.find(_get_key(row, col));
     return search != hash.end() ? search->second.c_str() : def;
 }
-void Table::reset() {
+void flw::table::Table::reset() {
     _cell_align.clear();
     _cell_choice.clear();
     _cell_color.clear();
@@ -12486,32 +12610,53 @@ void Table::reset() {
     _cell_value.clear();
     _cell_width.clear();
 }
-void Table::_set_int(StringHash& hash, int row, int col, int value) {
+void flw::table::Table::_set_int(StringHash& hash, int row, int col, int value) {
     char value2[100];
     sprintf(value2, "%d", value);
     hash[_get_key(row, col)] = value2;
 }
-void Table::size(int rows, int cols) {
+void flw::table::Table::size(int rows, int cols) {
     if (rows > 0 && cols > 0) {
         reset();
         Editor::size(rows, cols);
     }
 }
+flw::table::SettingsTable::SettingsTable(int rows) :
+flw::table::Table(rows, 1) {
+    assert(rows >= 0 && rows <= 32'768);
+    _dlg = nullptr;
+    size(rows, 1);
+    cell_width(0, flw::PREF_FONTSIZE * 16);
+    cell_width(1, flw::PREF_FONTSIZE * 4);
+    draw_inactive_lighter(true);
+    expand_last_column(true);
+    header(true, false);
+    height(flw::PREF_FONTSIZE + 8);
+    lines(true, true);
+    resize_column_width(true);
+    select_mode(table::Select::CELL);
+    tooltip("");
 }
+void flw::table::SettingsTable::message(const std::string& msg, Fl_Color color) {
+    if (_dlg == nullptr) {
+        return;
+    }
+    _dlg->message(msg, color);
 }
 #include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Return_Button.H>
 #include <FL/Fl_Scrollbar.H>
+#include <FL/Fl_Tooltip.H>
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 namespace flw {
-namespace table {
-static constexpr const char* HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
-class _Scrollbar : public Fl_Scrollbar {
+namespace priv {
+static constexpr const char* _TABLE_HELP_TEXT = "Press CTRL + 'g' to show go to cell dialog.\nPress CTRL + 'f' to show find text dialog.";
+class _TableScrollbar : public Fl_Scrollbar {
 public:
-    _Scrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
+    _TableScrollbar(int X, int Y, int W, int H) : Fl_Scrollbar(X, Y, W, H) {
     }
     int handle(int event) override {
         if (event == FL_FOCUS ||
@@ -12523,14 +12668,14 @@ public:
         return Fl_Scrollbar::handle(event);
     }
 };
-class _GotoDialog : public Fl_Double_Window {
+class _TableGotoDialog : public Fl_Double_Window {
     Fl_Int_Input*                   _row;
     Fl_Int_Input*                   _col;
     GridGroup*                      _grid;
     bool                            _ret;
     bool                            _run;
 public:
-    _GotoDialog(int row, int col) :
+    _TableGotoDialog(int row, int col) :
     Fl_Double_Window(0, 0, 10, 10, "Goto Cell") {
         end();
         _col  = new Fl_Int_Input(0, 0, 0, 0, "Column:");
@@ -12542,13 +12687,13 @@ public:
         _grid->add(_col,   1, 10,  -1,   4);
         add(_grid);
         _row->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-        _row->callback(_GotoDialog::Callback, this);
+        _row->callback(priv::_TableGotoDialog::Callback, this);
         _row->labelsize(flw::PREF_FONTSIZE);
         _row->textfont(flw::PREF_FIXED_FONT);
         _row->textsize(flw::PREF_FONTSIZE);
         _row->when(FL_WHEN_ENTER_KEY_ALWAYS);
         _col->align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
-        _col->callback(_GotoDialog::Callback, this);
+        _col->callback(priv::_TableGotoDialog::Callback, this);
         _col->labelsize(flw::PREF_FONTSIZE);
         _col->textfont(flw::PREF_FIXED_FONT);
         _col->textsize(flw::PREF_FONTSIZE);
@@ -12558,13 +12703,13 @@ public:
         _row->value(b);
         sprintf(b, "%d", col > 0 ? col : 1);
         _col->value(b);
-        callback(_GotoDialog::Callback, this);
+        callback(priv::_TableGotoDialog::Callback, this);
         set_modal();
         resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 16, flw::PREF_FONTSIZE * 8);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_GotoDialog*>(o);
+        auto self = static_cast<priv::_TableGotoDialog*>(o);
         if (w == self) {
             self->_run = false;
             self->hide();
@@ -12592,22 +12737,22 @@ public:
         return _ret;
     }
 };
-class _FindDialog : public Fl_Double_Window {
+class _TableFindDialog : public Fl_Double_Window {
     Fl_Input*                   _find;
-    Fl_Button*                  _next;
+    SVGButton*                  _next;
     Fl_Button*                  _prev;
     Fl_Button*                  _close;
     GridGroup*                  _grid;
-    Display*                    _table;
+    table::Display*             _table;
     bool                        _repeat;
     bool                        _run;
 public:
-    _FindDialog(Display* table) :
+    _TableFindDialog(flw::table::Display* table) :
     Fl_Double_Window(0, 0, 10, 10, "Table - Find Text") {
         end();
         _close  = new Fl_Button(0, 0, 0, 0, labels::CLOSE.c_str());
         _grid   = new GridGroup(0, 0, w(), h());
-        _next   = new Fl_Return_Button(0, 0, 0, 0, labels::NEXT.c_str());
+        _next   = new SVGButton(0, 0, 0, 0, labels::NEXT, flw::icons::BACK, true);
         _prev   = new Fl_Button(0, 0, 0, 0, labels::PREV.c_str());
         _find   = new Fl_Input(0, 0, 0, 0, "Find:");
         _table  = table;
@@ -12618,26 +12763,26 @@ public:
         _grid->add(_next,   -34, -5,  16,   4);
         _grid->add(_close,  -17, -5,  16,   4);
         add(_grid);
-        _close->callback(_FindDialog::Callback, this);
+        _close->callback(priv::_TableFindDialog::Callback, this);
         _close->labelsize(flw::PREF_FONTSIZE);
-        _next->callback(_FindDialog::Callback, this);
+        _next->callback(priv::_TableFindDialog::Callback, this);
         _next->labelsize(flw::PREF_FONTSIZE);
-        _prev->callback(_FindDialog::Callback, this);
+        _prev->callback(priv::_TableFindDialog::Callback, this);
         _prev->labelsize(flw::PREF_FONTSIZE);
         _find->align(FL_ALIGN_LEFT);
-        _find->callback(_FindDialog::Callback, this);
+        _find->callback(priv::_TableFindDialog::Callback, this);
         _find->labelsize(flw::PREF_FONTSIZE);
         _find->textfont(flw::PREF_FIXED_FONT);
         _find->textsize(flw::PREF_FONTSIZE);
         _find->value(_table->_find.c_str());
         _find->when(FL_WHEN_ENTER_KEY_ALWAYS);
-        callback(_FindDialog::Callback, this);
+        callback(priv::_TableFindDialog::Callback, this);
         set_modal();
         resizable(_grid);
         resize(0, 0, flw::PREF_FONTSIZE * 35, flw::PREF_FONTSIZE * 6);
     }
     static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_FindDialog*>(o);
+        auto self = static_cast<priv::_TableFindDialog*>(o);
         if (w == self) {
             self->_run = false;
             self->hide();
@@ -12738,10 +12883,12 @@ public:
         }
     }
 };
-Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
+}
+}
+flw::table::Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l) {
     end();
-    _hor  = new _Scrollbar(0, 0, 0, 0);
-    _ver  = new _Scrollbar(0, 0, 0, 0);
+    _hor  = new priv::_TableScrollbar(0, 0, 0, 0);
+    _ver  = new priv::_TableScrollbar(0, 0, 0, 0);
     _edit = nullptr;
     add(_ver);
     add(_hor);
@@ -12752,14 +12899,14 @@ Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, 
     _ver->linesize(10);
     resizable(nullptr);
     box(FL_BORDER_BOX);
-    color(FL_BACKGROUND_COLOR);
+    color(FL_BACKGROUND2_COLOR);
     selection_color(FL_SELECTION_COLOR);
-    tooltip(table::HELP_TEXT);
+    tooltip(priv::_TABLE_HELP_TEXT);
     clip_children(1);
     util::labelfont(this);
     reset();
 }
-void Display::active_cell(int row, int col, bool show) {
+void flw::table::Display::active_cell(int row, int col, bool show) {
     auto send = false;
     if (_rows == 0 || row < 1 || row > _rows || _cols == 0 || col < 1 || col > _cols) {
         row = -1;
@@ -12772,24 +12919,23 @@ void Display::active_cell(int row, int col, bool show) {
     _curr_col = col;
     if (send == true) {
         _set_event(_curr_row, _curr_col, Event::CURSOR);
-        do_callback();
     }
     redraw();
     if (show == true && _curr_row > 0 && _curr_col > 0) {
         show_cell(_curr_row, _curr_col);
     }
 }
-void Display::_CallbackVer(Fl_Widget*, void* o) {
+void flw::table::Display::_CallbackVer(Fl_Widget*, void* o) {
     auto table = static_cast<Display*>(o);
     table->_start_col = table->_hor->value();
     table->redraw();
 }
-void Display::_CallbackHor(Fl_Widget*, void* o) {
+void flw::table::Display::_CallbackHor(Fl_Widget*, void* o) {
     auto table = static_cast<Display*>(o);
     table->_start_row = table->_ver->value();
     table->redraw();
 }
-int Display::_cell_height(int Y) {
+int flw::table::Display::_cell_height(int Y) {
     auto y2 = y() + h() - _hor->h();
     if (Y + _height >= y2) {
         return y2 - Y;
@@ -12798,7 +12944,7 @@ int Display::_cell_height(int Y) {
         return _height;
     }
 }
-int Display::_cell_width(int col, int X) {
+int flw::table::Display::_cell_width(int col, int X) {
     auto cw  = cell_width(col);
     auto min = _height;
     if (cw < min) {
@@ -12818,21 +12964,21 @@ int Display::_cell_width(int col, int X) {
     }
     return cw;
 }
-void Display::cmd_copy() {
+void flw::table::Display::cmd_copy() {
     auto val = cell_value(_curr_row, _curr_col);
     Fl::copy(val.c_str(), static_cast<int>(val.length()), 1);
 }
-void Display::cmd_find() {
-    auto dlg = _FindDialog(this);
+void flw::table::Display::cmd_find() {
+    auto dlg = priv::_TableFindDialog(this);
     dlg.run(window());
 }
-void Display::cmd_goto() {
-    auto dlg = _GotoDialog(_curr_row, _curr_col);
+void flw::table::Display::cmd_goto() {
+    auto dlg = priv::_TableGotoDialog(_curr_row, _curr_col);
     if (dlg.run(window()) == true) {
         active_cell(dlg.row(), dlg.col(), true);
     }
 }
-void Display::debug() const {
+void flw::table::Display::debug() const {
 #ifdef DEBUG
     printf("flw::Display:\n");
     printf("    rows            = %4d\n", _rows);
@@ -12857,23 +13003,24 @@ void Display::debug() const {
     printf("    disable_ver     = %4d\n", _disable_ver);
 #endif
 }
-void Display::draw() {
+void flw::table::Display::draw() {
     if (_edit != nullptr) {
         _edit->resize(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
+    fl_line_style(0);
     _update_scrollbars();
     Fl_Group::draw();
     if (_ver->visible() != 0 && _hor->visible() != 0) {
-        fl_push_clip(x() + 1, y() + 1, w() - 2 - _ver->w(), h() - 2 - _hor->h());
+        fl_push_clip(x(), y(), w() - _ver->w() - 1, h() - _hor->h() - 1);
     }
     else if (_ver->visible() != 0) {
-        fl_push_clip(x() + 1, y() + 1, w() - 2 - _ver->w(), h() - 2);
+        fl_push_clip(x(), y(), w() - _ver->w() - 1, h());
     }
     else if (_hor->visible() != 0) {
-        fl_push_clip(x() + 1, y() + 1, w() - 2, h() - 2 - _hor->h());
+        fl_push_clip(x(), y(), w(), h() - _hor->h() - 1);
     }
     else {
-        fl_push_clip(x() + 1, y() + 1, w() - 2, h() - 2);
+        fl_push_clip(x(), y(), w(), h());
     }
     auto w1 = w() - _ver->w();
     auto y1 = y();
@@ -12890,78 +13037,81 @@ void Display::draw() {
         }
     }
     if (_edit != nullptr) {
-        fl_color(fl_lighter(FL_FOREGROUND_COLOR));
+        fl_color(FL_FOREGROUND_COLOR);
         fl_rect(_current_cell[0], _current_cell[1], _current_cell[2] + 1, _current_cell[3] + 1);
     }
     fl_pop_clip();
+    fl_line_style(0);
+    fl_rect(x(), y(), w(), h(), FL_FOREGROUND_COLOR);
 }
-void Display::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
-    fl_push_clip(X, Y, W + 1, H);
-    auto align    = cell_align(row, col);
-    auto textfont = cell_textfont(row, col);
-    auto textsize = cell_textsize(row, col);
-    auto val      = cell_value(row, col);
-    auto space    = (align & FL_ALIGN_RIGHT) ? 6 : 4;
-    if (row > 0 && col > 0) {
-        auto color     = cell_color(row, col);
-        auto textcolor = cell_textcolor(row, col);
+void flw::table::Display::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+    auto align     = cell_align(row, col);
+    auto textcolor = cell_textcolor(row, col);
+    auto textfont  = cell_textfont(row, col);
+    auto textsize  = cell_textsize(row, col);
+    auto val       = cell_value(row, col);
+    auto space     = (align & FL_ALIGN_RIGHT) ? 6 : 4;
+    align |= FL_ALIGN_CLIP;
+    if (row < 0 || col < 0) {
+    }
+    else if (row == 0 || col == 0) {
+        fl_rectf(X, Y, W, H, FL_DARK1);
+        fl_rect(X, Y, W + 1, H + 1, FL_DARK3);
+        fl_color(textcolor);
+        fl_font(textfont, textsize);
+        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
+    }
+    else {
+        auto color = cell_color(row, col);
         if (current == true) {
             color     = selection_color();
-            textcolor = fl_contrast(FL_FOREGROUND_COLOR, color);
+            textcolor = fl_contrast(textcolor, color);
         }
         fl_color(color);
-        fl_rectf(X + 1, Y, W + 1, H);
+        fl_rectf(X + 1, Y + 1, W - 1, H - 1);
         fl_font(textfont, textsize);
         fl_color(textcolor);
         _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
-        fl_color(FL_DARK3);
-        if (ver == true) {
-            fl_line(X, Y, X, Y + H);
-            fl_line(X + W, Y, X + W, Y + H);
+        if (ver == true || (col == _cols && hor == true)) {
+            fl_color(FL_DARK1);
+            fl_line(X + W, Y + 1, X + W, Y + H);
         }
-        if (hor == true) {
-            fl_line(X, Y, X + W, Y);
-            fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
+        if (hor == true || (row == _rows && ver == true)) {
+            fl_color(FL_DARK1);
+            fl_line(X+1, Y + H, X + W, Y + H);
         }
     }
-    else {
-        fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
-        fl_font(textfont, textsize);
-        fl_color(FL_FOREGROUND_COLOR);
-        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
-    }
-    fl_pop_clip();
 }
-void Display::_draw_row(int row, int W, int Y, int H) {
+void flw::table::Display::_draw_row(int row, int W, int Y, int H) {
     auto x1 = x();
     auto x2 = x() + W;
-    for (auto c = (_show_row_header ? 0 : _start_col); c <= _cols; c++) {
-        auto cw = _cell_width(c, x1);
-        if (row > 0 && c > 0 && row == _curr_row && c == _curr_col) {
+    for (auto col = (_show_row_header ? 0 : _start_col); col <= _cols; col++) {
+        auto cw = _cell_width(col, x1);
+        if (row > 0 && col > 0 && row == _curr_row && col == _curr_col) {
             _current_cell[0] = x1;
             _current_cell[1] = Y;
             _current_cell[2] = cw;
             _current_cell[3] = H;
             if (_edit == nullptr) {
-                _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != Select::NO);
+                _draw_cell(row, col, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, _select != Select::NO);
             }
         }
         else if (row > 0 && row == _curr_row && _select == Select::ROW) {
-            _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, true);
+            _draw_cell(row, col, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, true);
         }
         else {
-            _draw_cell(row, c, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, false);
+            _draw_cell(row, col, x1, Y, cw, H, _show_ver_lines, _show_hor_lines, false);
         }
         x1 += cw;
         if (x1 >= x2) {
             break;
         }
-        else if (c == 0) {
-            c = _start_col - 1;
+        else if (col == 0) {
+            col = _start_col - 1;
         }
     }
 }
-void Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
+void flw::table::Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Align align) {
     if (align == FL_ALIGN_CENTER || align == FL_ALIGN_RIGHT) {
         if (fl_width(string) > W) {
             align = FL_ALIGN_LEFT;
@@ -12969,7 +13119,7 @@ void Display::_draw_text(const char* string, int X, int Y, int W, int H, Fl_Alig
     }
     fl_draw(string, X, Y, W, H, align);
 }
-int Display::_ev_keyboard_down(bool only_append_insert) {
+int flw::table::Display::_ev_keyboard_down(bool only_append_insert) {
     auto key   = Fl::event_key();
     auto cmd   = Fl::event_command() != 0;
     auto shift = Fl::event_shift() != 0;
@@ -12978,17 +13128,14 @@ int Display::_ev_keyboard_down(bool only_append_insert) {
         }
         else if (cmd == true && key == 'a') {
             _set_event(_curr_row, _curr_col, (shift == true) ? Event::APPEND_COLUMN : Event::APPEND_ROW);
-            do_callback();
             return 1;
         }
         else if (cmd == true && key == 'i') {
             _set_event(_curr_row, _curr_col, (shift == true) ? Event::INSERT_COLUMN : Event::INSERT_ROW);
-            do_callback();
             return 1;
         }
         else if (cmd == true && key == 'd') {
             _set_event(_curr_row, _curr_col, (shift == true) ? Event::DELETE_COLUMN : Event::DELETE_ROW);
-            do_callback();
             return 1;
         }
     }
@@ -13064,22 +13211,19 @@ int Display::_ev_keyboard_down(bool only_append_insert) {
     }
     else if (cmd == true && key == 'a') {
         _set_event(_curr_row, _curr_col, (shift == true) ? Event::APPEND_COLUMN : Event::APPEND_ROW);
-        do_callback();
         return 1;
     }
     else if (cmd == true && key == 'i') {
         _set_event(_curr_row, _curr_col, (shift == true) ? Event::INSERT_COLUMN : Event::INSERT_ROW);
-        do_callback();
         return 1;
     }
     else if (cmd == true && key == 'd') {
         _set_event(_curr_row, _curr_col, (shift == true) ? Event::DELETE_COLUMN : Event::DELETE_ROW);
-        do_callback();
         return 1;
     }
     return 0;
 }
-int Display::_ev_mouse_click () {
+int flw::table::Display::_ev_mouse_click () {
     if (Fl::event_button1() && _drag == true) {
         return 1;
     }
@@ -13093,11 +13237,9 @@ int Display::_ev_mouse_click () {
     }
     if (r == 0 && c >= 1) {
         _set_event(r, c, (Fl::event_ctrl() != 0) ? Event::COLUMN_CTRL : Event::COLUMN);
-        do_callback();
     }
     else if (c == 0 && r >= 1) {
         _set_event(r, c, (Fl::event_ctrl() != 0) ? Event::ROW_CTRL : Event::ROW);
-        do_callback();
     }
     else if (r == -1 || c == -1) {
         if (r == -1 && _hor->visible() != 0 && Fl::event_y() >= _hor->y()) {
@@ -13116,7 +13258,7 @@ int Display::_ev_mouse_click () {
     }
     return 2;
 }
-int Display::_ev_mouse_drag() {
+int flw::table::Display::_ev_mouse_drag() {
     if (_drag == false) {
         return 2;
     }
@@ -13142,12 +13284,12 @@ int Display::_ev_mouse_drag() {
     }
     return 2;
 }
-int Display::_ev_mouse_move() {
+int flw::table::Display::_ev_mouse_move() {
     auto mx = Fl::event_x();
-    auto x1 = x() + (_show_row_header ? _cell_width(0) : 0);
+    auto x1 = x() + (_show_row_header == true ? _cell_width(0) : 0);
     auto x2 = x() + w() - _ver->w();
-    if (_resize) {
-        if (_show_row_header && mx > (x1 - 3) && mx < (x1 + 4)) {
+    if (_resize == true) {
+        if (_show_row_header == true && mx > (x1 - 3) && mx < (x1 + 4)) {
             _resize_col = 0;
             _drag       = true;
             fl_cursor(FL_CURSOR_WE);
@@ -13175,7 +13317,7 @@ int Display::_ev_mouse_move() {
     _resize_col = -1;
     return 2;
 }
-void Display::_get_cell_below_mouse(int& row, int& col) {
+void flw::table::Display::_get_cell_below_mouse(int& row, int& col) {
     row = -1;
     col = -1;
     auto my = Fl::event_y();
@@ -13218,7 +13360,7 @@ void Display::_get_cell_below_mouse(int& row, int& col) {
         }
     }
 }
-int Display::handle(int event) {
+int flw::table::Display::handle(int event) {
     auto ret = 2;
     if (_rows > 0 && _cols > 0) {
         if (event == FL_FOCUS) {
@@ -13253,17 +13395,17 @@ int Display::handle(int event) {
         return Fl_Group::handle(event);
     }
 }
-void Display::header(bool row, bool col) {
+void flw::table::Display::header(bool row, bool col) {
     _show_row_header = row;
     _show_col_header = col;
     redraw();
 }
-void Display::lines(bool ver, bool hor) {
+void flw::table::Display::lines(bool ver, bool hor) {
     _show_ver_lines = ver;
     _show_hor_lines = hor;
     redraw();
 }
-void Display::_move_cursor(Move move) {
+void flw::table::Display::_move_cursor(Move move) {
     if (_edit == nullptr && _rows > 0 && _cols > 0 && _select != Select::NO) {
         auto r     = _curr_row;
         auto c     = _curr_col;
@@ -13343,7 +13485,7 @@ void Display::_move_cursor(Move move) {
         }
     }
 }
-void Display::reset() {
+void flw::table::Display::reset() {
     _cols            = 0;
     _curr_col        = -1;
     _curr_row        = -1;
@@ -13374,7 +13516,14 @@ void Display::reset() {
     _find            = "";
     redraw();
 }
-void Display::show_cell(int row, int col) {
+void flw::table::Display::_set_event(int row, int col, Event event) {
+    _event_row = row;
+    _event_col = col;
+    _event     = event;
+    do_callback();
+    cell_event(row, col, event);
+}
+void flw::table::Display::show_cell(int row, int col) {
     if (_rows > 0 && row > 0 && row <= _rows) {
         auto rc = (h() - Fl::scrollbar_size() - (_show_col_header ? _height : 0)) / _height;
         if (row <= _start_row) {
@@ -13411,7 +13560,7 @@ void Display::show_cell(int row, int col) {
     }
     redraw();
 }
-void Display::size(int rows, int cols) {
+void flw::table::Display::size(int rows, int cols) {
     if (rows < 0 || _cols < 0) {
         return;
     }
@@ -13422,10 +13571,9 @@ void Display::size(int rows, int cols) {
     _start_row = 1;
     _start_col = 1;
     _set_event(_curr_row, _curr_col, Event::SIZE);
-    do_callback();
     redraw();
 }
-void Display::_update_scrollbars() {
+void flw::table::Display::_update_scrollbars() {
     if (_rows > 0 && _cols > 0) {
         if (_disable_hor == true) {
             _hor->hide();
@@ -13495,8 +13643,6 @@ void Display::_update_scrollbars() {
     _ver->Fl_Valuator::value(_start_row);
     _hor->Fl_Valuator::value(_start_col);
 }
-}
-}
 #include <errno.h>
 #include <cmath>
 #include <FL/Fl_Check_Button.H>
@@ -13505,38 +13651,148 @@ void Display::_update_scrollbars() {
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Input_Choice.H>
+#include <FL/Fl_Hor_Slider.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Secret_Input.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/fl_draw.H>
 namespace flw {
-namespace table {
-static const std::string DEC_SMALL      = "-";
-static const std::string DEC_MEDIUM     = "--";
-static const std::string DEC_LARGE      = "---";
-static const std::string INC_SMALL      = "+";
-static const std::string INC_MEDIUM     = "++";
-static const std::string INC_LARGE      = "+++";
-std::string              EditColorLabel = "Table - Set Color";
-std::string              EditDateLabel  = "Table - Select Date";
-std::string              EditDirLabel   = "Table - Select Directory";
-std::string              EditFileLabel  = "Table - Select File";
-std::string              EditListLabel  = "Table - Select String";
-std::string              EditTextLabel  = "Table - Edit Text";
-std::string format_slider(double val, double min, double max, double step) {
-    static char result[2000];
-    snprintf(result, 2000, "%.4f %.4f %.4f %.4f", val, min, max, step);
+namespace priv {
+static const std::string _TABLE_DEC_SMALL  = "-";
+static const std::string _TABLE_DEC_MEDIUM = "--";
+static const std::string _TABLE_DEC_LARGE  = "---";
+static const std::string _TABLE_INC_SMALL  = "+";
+static const std::string _TABLE_INC_MEDIUM = "++";
+static const std::string _TABLE_INC_LARGE  = "+++";
+static int _table_decimals(table::Format format) {
+    if (format == flw::table::Format::DEC_1) {
+        return 1;
+    }
+    else if (format == flw::table::Format::DEC_2) {
+        return 2;
+    }
+    else if (format == flw::table::Format::DEC_3) {
+        return 3;
+    }
+    else if (format == flw::table::Format::DEC_4) {
+        return 4;
+    }
+    else if (format == flw::table::Format::DEC_5) {
+        return 5;
+    }
+    else if (format == flw::table::Format::DEC_6) {
+        return 6;
+    }
+    else if (format == flw::table::Format::DEC_7) {
+        return 7;
+    }
+    else if (format == flw::table::Format::DEC_8) {
+        return 8;
+    }
+    else if (format == flw::table::Format::DEFAULT || format == flw::table::Format::DEC_DEF) {
+        return -1;
+    }
+    else {
+        return 0;
+    }
+}
+static std::string _table_format_number(const std::string& val, table::Format format) {
+    char tmp[500];
+    if (format == flw::table::Format::DEFAULT || format == flw::table::Format::INT_DEF) {
+        auto num = util::to_int(val);
+        snprintf(tmp, 500, "%lld", static_cast<long long int>(num));
+        return tmp;
+    }
+    else if (format == flw::table::Format::INT_SEP1) {
+        auto num = util::to_int(val);
+        return util::format_int(num);
+    }
+    else if (format == flw::table::Format::INT_SEP2) {
+        auto num = util::to_int(val);
+        return util::format_int(num, '\'');
+    }
+    else {
+        auto dec = priv::_table_decimals(format);
+        auto num = util::to_double(val);
+        if (std::isinf(num) == true) {
+            return "inf";
+        }
+        else if (dec == -1) {
+            snprintf(tmp, 500, "%f", num);
+        }
+        else {
+            snprintf(tmp, 500, "%.*f", dec, num);
+        }
+        return tmp;
+    }
+}
+static double _table_max_num_length(double n1, double n2, int decimals) {
+    char tmp[500];
+    int  l1 = 0;
+    int  l2 = 0;
+    if (decimals >= 0 && decimals <= 8) {
+        snprintf(tmp, 500, "%.*f", decimals, n1);
+        l1 = fl_width(tmp);
+        snprintf(tmp, 500, "%.*f", decimals, n2);
+        l2 = fl_width(tmp);
+    }
+    else {
+        snprintf(tmp, 500, "%f", n1);
+        l1 = fl_width(tmp);
+        snprintf(tmp, 500, "%f", n2);
+        l2 = fl_width(tmp);
+    }
+    return l1 > l2 ? l1 : l2;
+}
+}
+}
+std::string flw::table::EditColorLabel = "Table - Set Color";
+std::string flw::table::EditDateLabel  = "Table - Select Date";
+std::string flw::table::EditDirLabel   = "Table - Select Directory";
+std::string flw::table::EditFileLabel  = "Table - Select File";
+std::string flw::table::EditListLabel  = "Table - Select String";
+std::string flw::table::EditTextLabel  = "Table - Edit Text";
+std::string flw::table::format_slider(double val, double min, double max, double step) {
+    char result[2000];
+    snprintf(result, 2000, "%f %f %f %f", val, min, max, step);
     return result;
 }
-Editor::Editor(int X, int Y, int W, int H, const char* l) : Display(X, Y, W, H, l) {
-    Editor::reset();
+std::string flw::table::format_slider2(int64_t val, int64_t min, int64_t max, int64_t step) {
+    char result[2000];
+    snprintf(result, 2000, "%lld %lld %lld %lld", static_cast<long long>(val), static_cast<long long>(min), static_cast<long long>(max), static_cast<long long>(step));
+    return result;
 }
-void Editor::cmd_cut() {
+double flw::table::get_slider(const std::string& slider_string, double def) {
+    double nums[4];
+    if (util::to_doubles(slider_string, nums, 4) != 4) {
+        return def;
+    }
+    return nums[0];
+}
+int64_t flw::table::get_slider2(const std::string& slider_string, int64_t def) {
+    double nums[4];
+    if (util::to_doubles(slider_string, nums, 4) != 4) {
+        return def;
+    }
+    return static_cast<int64_t>(nums[0]);
+}
+flw::table::Editor::Editor(int X, int Y, int W, int H, const char* l) : Display(X, Y, W, H, l) {
+    flw::table::Editor::reset();
+}
+Fl_Color flw::table::Editor::cell_textcolor(int row, int col) {
+    if (_ro == true && row > 0 && col > 0 && cell_edit(row, col) == false) {
+        return fl_inactive(FL_FOREGROUND_COLOR);
+    }
+    else {
+        return Display::cell_textcolor(row, col);
+    }
+}
+void flw::table::Editor::cmd_cut() {
     auto val = cell_value(_curr_row, _curr_col);
     Fl::copy(val.c_str(), static_cast<int>(val.length()), 1);
     cmd_delete();
 }
-void Editor::cmd_delete() {
+void flw::table::Editor::cmd_delete() {
     if (_curr_row > 0 && _curr_col > 0) {
         auto edit = cell_edit(_curr_row, _curr_col);
         if (edit == true) {
@@ -13572,61 +13828,51 @@ void Editor::cmd_delete() {
             }
             if (set == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
                 redraw();
             }
         }
     }
 }
-void Editor::cmd_paste() {
+void flw::table::Editor::cmd_paste() {
     Fl::paste(*this, 1);
 }
-void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
-    fl_push_clip(X, Y, W + 1, H);
-    auto align     = cell_align(row, col);
-    auto textcolor = cell_textcolor(row, col);
-    auto textfont  = cell_textfont(row, col);
-    auto textsize  = cell_textsize(row, col);
-    auto val       = cell_value(row, col);
+void flw::table::Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, bool hor, bool current) {
+    auto align      = cell_align(row, col);
+    auto textcolor  = cell_textcolor(row, col);
+    auto textcolor2 = cell_textcolor(row, col);
+    auto textfont   = cell_textfont(row, col);
+    auto textsize   = cell_textsize(row, col);
+    auto val        = cell_value(row, col);
+    auto space      = 6;
+    align |= FL_ALIGN_CLIP;
     if (row < 0 || col < 0) {
     }
     else if (row == 0 || col == 0) {
-        fl_draw_box(FL_THIN_UP_BOX, X, Y, W + 1, H + (row == _rows ? 0 : 1), FL_BACKGROUND_COLOR);
+        fl_rectf(X, Y, W, H, FL_DARK1);
+        fl_rect(X, Y, W + 1, H + 1, FL_DARK3);
+        fl_color(textcolor);
         fl_font(textfont, textsize);
-        fl_color(FL_FOREGROUND_COLOR);
-        _draw_text(val.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
+        _draw_text(val.c_str(), X + space, Y + 2, W - space * 2, H - 4, align);
     }
     else {
         auto format = cell_format(row, col);
         auto type   = cell_type(row, col);
         auto color  = cell_color(row, col);
-        char buffer[100];
         if (current == true) {
             color     = selection_color();
             textcolor = fl_contrast(FL_FOREGROUND_COLOR, color);
         }
-        fl_rectf(X + 1, Y, W + 1, H, color);
+        if (color != FL_BACKGROUND2_COLOR) {
+            fl_rectf(X + 1, Y + 1, W - 1, H - 1, color);
+        }
         if (type == Type::SECRET) {
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            if (format == Format::SECRET_DOT) {
+            if (format == Format::DEFAULT || format == Format::SECRET_DEF) {
                 fl_draw("••••••", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
             }
-            else {
+            else if (format == Format::SECRET_STAR) {
                 fl_draw("******", X + 4, Y + 2, W - 8, H - 4, align, 0, 1);
-            }
-        }
-        else if (type == Type::SLIDER) {
-            double nums[4];
-            if (util::to_doubles(val, nums, 4) == 4) {
-                auto range = 0.0;
-                if ((nums[2] - nums[1]) > 0.0001) {
-                    range = (nums[0] - nums[1]) / (nums[2] - nums[1]);
-                }
-                auto width = static_cast<int>(range * (W - 3));
-                if (width > 0) {
-                    fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, width, H - 3, textcolor);
-                }
             }
         }
         else if (type == Type::COLOR) {
@@ -13652,78 +13898,48 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             auto bw  = textsize;
             auto y_1 = Y + (H / 2) - (bw / 2);
             auto x_1 = 0;
-            if (align == FL_ALIGN_RIGHT) {
-                x_1 = X + W - bw - 6;
+            fl_font(textfont, textsize);
+            fl_color(textcolor);
+            if (align & FL_ALIGN_RIGHT) {
+                x_1 = X + W - bw - space;
+                if (val.length() > 1) {
+                    _draw_text(val.c_str() + 1, X + space, Y + 2, W - space * 3 - bw, H - 4, align | FL_ALIGN_RIGHT);
+                }
             }
-            else if (align == FL_ALIGN_CENTER) {
+            else if (align & FL_ALIGN_LEFT) {
+                x_1 = X + space;
+                if (val.length() > 1) {
+                    _draw_text(val.c_str() + 1, x_1 + bw + space, Y + 2, W - space * 3 - bw, H - 4, align | FL_ALIGN_LEFT);
+                }
+            }
+            else {
                 x_1 = X + (W / 2) - (bw / 2);
             }
-            else if (align == FL_ALIGN_LEFT) {
-                x_1 = X + 6;
-            }
-            fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_WHITE);
+            fl_draw_box(FL_DOWN_BOX, x_1, y_1, bw, bw, FL_BACKGROUND2_COLOR);
             if (*val.c_str() == '1') {
                 Fl_Rect r(x_1, y_1, bw - 1, bw - 1);
                 fl_draw_check(r, selection_color());
             }
         }
-        else if (type == Type::INTEGER) {
-            auto num = util::to_int(val, 0);
+        else if (type == Type::INTEGER || type == Type::NUMBER || type == Type::VSLIDER) {
+            auto s = priv::_table_format_number(val, format);
             fl_font(textfont, textsize);
             fl_color(textcolor);
-            if (format == Format::INT_SEP) {
-                auto s = util::format_int(num);
-                _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
-            }
-            else {
-                snprintf(buffer, 100, "%lld", (long long int) num);
-                _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
-            }
+            _draw_text(s.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
-        else if (type == Type::NUMBER || type == Type::VSLIDER) {
-            auto num = util::to_double(val);
-            if (type == Type::VSLIDER) {
-                double nums[1];
-                if (util::to_doubles(val, nums, 1) == 1) {
-                    num = nums[0];
+        else if (type == Type::SLIDER) {
+            double nums[4];
+            if (util::to_doubles(val, nums, 4) == 4) {
+                auto range = 0.0;
+                auto diff  = nums[2] - nums[1];
+                if (diff > 0.0001) {
+                    range = (nums[0] - nums[1]) / diff;
+                }
+                auto width = static_cast<int>(range * (W - 3));
+                if (width > 0) {
+                    fl_draw_box(FL_FLAT_BOX, X + 2, Y + 2, width, H - 3, textcolor2);
                 }
             }
-            if (std::isinf(num) == true) {
-                snprintf(buffer, 100, "%s", "inf");
-            }
-            else if (format == Format::DEC_0) {
-                snprintf(buffer, 100, "%.0f", num);
-            }
-            else if (format == Format::DEC_1) {
-                snprintf(buffer, 100, "%.1f", num);
-            }
-            else if (format == Format::DEC_2) {
-                snprintf(buffer, 100, "%.2f", num);
-            }
-            else if (format == Format::DEC_3) {
-                snprintf(buffer, 100, "%.3f", num);
-            }
-            else if (format == Format::DEC_4) {
-                snprintf(buffer, 100, "%.4f", num);
-            }
-            else if (format == Format::DEC_5) {
-                snprintf(buffer, 100, "%.5f", num);
-            }
-            else if (format == Format::DEC_6) {
-                snprintf(buffer, 100, "%.6f", num);
-            }
-            else if (format == Format::DEC_7) {
-                snprintf(buffer, 100, "%.7f", num);
-            }
-            else if (format == Format::DEC_8) {
-                snprintf(buffer, 100, "%.8f", num);
-            }
-            else {
-                snprintf(buffer, 100, "%f", num);
-            }
-            fl_font(textfont, textsize);
-            fl_color(textcolor);
-            _draw_text(buffer, X + 4, Y + 2, W - 8, H - 4, align);
         }
         else if (type == Type::MTEXT) {
             auto tmp = std::string();
@@ -13752,23 +13968,20 @@ void Editor::_draw_cell(int row, int col, int X, int Y, int W, int H, bool ver, 
             fl_color(textcolor);
             _draw_text(val.c_str(), X + 4, Y + 2, W - 8, H - 4, align);
         }
-        fl_color(FL_DARK3);
-        if (ver == true) {
-            fl_line(X, Y, X, Y + H);
-            fl_line(X + W, Y, X + W, Y + H);
+        if (ver == true || (col == _cols && hor == true)) {
+            fl_color(FL_DARK1);
+            fl_line(X + W, Y + 1, X + W, Y + H);
         }
-        if (hor == true) {
-            fl_line(X, Y, X + W, Y);
-            fl_line(X, Y + H - (row == _rows ? 1 : 0), X + W, Y + H - (row == _rows ? 1 : 0));
+        if (hor == true || (row == _rows && ver == true)) {
+            fl_color(FL_DARK1);
+            fl_line(X+1, Y + H, X + W, Y + H);
         }
     }
-    fl_pop_clip();
 }
-void Editor::_edit_create() {
+void flw::table::Editor::_edit_create() {
     auto rend      = cell_type(_curr_row, _curr_col);
     auto align     = cell_align(_curr_row, _curr_col);
-    auto color     = cell_color(_curr_row, _curr_col);
-    auto textcolor = FL_FOREGROUND_COLOR;
+    auto format    = cell_format(_curr_row, _curr_col);
     auto textfont  = cell_textfont(_curr_row, _curr_col);
     auto textsize  = cell_textsize(_curr_row, _curr_col);
     auto val       = cell_value(_curr_row, _curr_col);
@@ -13791,9 +14004,7 @@ void Editor::_edit_create() {
         }
         w->align(align);
         w->box(FL_BORDER_BOX);
-        w->color(color);
         w->labelsize(textsize);
-        w->textcolor(textcolor);
         w->textfont(textfont);
         w->textsize(textsize);
         w->value(val.c_str());
@@ -13803,40 +14014,55 @@ void Editor::_edit_create() {
     else if (rend == Type::BOOLEAN) {
         auto w = new Fl_Check_Button(0, 0, 0, 0);
         w->box(FL_BORDER_BOX);
-        w->color(color);
-        w->labelcolor(textcolor);
         w->labelsize(textsize);
         w->value(*val.c_str() == '1' ? 1 : 0);
+        w->box(FL_BORDER_BOX);
+        if (val.length() > 1) {
+            w->copy_label(val.c_str() + 1);
+        }
         _edit = w;
     }
     else if (rend == Type::SLIDER) {
-        auto w = (Fl_Slider*) nullptr;
+        auto w = (Fl_Value_Slider*) nullptr;
         double nums[4];
         if (util::to_doubles(val, nums, 4) == 4) {
-            w = new Fl_Slider(0, 0, 0, 0);
-            w->color(color);
-            w->selection_color(textcolor);
+            w = new Fl_Value_Slider(0, 0, 200, 20);
+            w->color(FL_BACKGROUND2_COLOR);
+            w->selection_color(FL_BACKGROUND_COLOR);
             w->range(nums[1], nums[2]);
             w->step(nums[3]);
             w->value(nums[0]);
             w->type(FL_HOR_FILL_SLIDER);
             w->box(FL_BORDER_BOX);
+            w->textfont(textfont);
+            w->textsize(textsize);
+            fl_font(textfont, textsize);
+            auto width = priv::_table_max_num_length(nums[1], nums[2], priv::_table_decimals(format));
+            if (width > w->value_width() - 4) {
+                w->value_width(width + 8);
+            }
             _edit = w;
         }
     }
     else if (rend == Type::VSLIDER) {
-        auto w = (Fl_Slider*) nullptr;
+        auto w = (Fl_Value_Slider*) nullptr;
         double nums[4];
         if (util::to_doubles(val, nums, 4) == 4) {
-            w = new Fl_Value_Slider(0, 0, 0, 0);
-            w->color(color);
-            w->selection_color(textcolor);
+            w = new Fl_Value_Slider(0, 0, 200, 20);
+            w->color(FL_BACKGROUND2_COLOR);
+            w->selection_color(FL_BACKGROUND_COLOR);
             w->range(nums[1], nums[2]);
             w->step(nums[3]);
             w->value(nums[0]);
-            w->type(FL_HOR_FILL_SLIDER);
+            w->type(FL_HOR_SLIDER);
             w->box(FL_BORDER_BOX);
-            static_cast<Fl_Value_Slider*>(w)->textsize(textsize * 0.8);
+            w->textfont(textfont);
+            w->textsize(textsize);
+            fl_font(textfont, textsize);
+            auto width = priv::_table_max_num_length(nums[1], nums[2], priv::_table_decimals(format));
+            if (width > w->value_width() - 4) {
+                w->value_width(width + 8);
+            }
             _edit = w;
         }
     }
@@ -13847,7 +14073,6 @@ void Editor::_edit_create() {
             auto select = (size_t) 0;
             w->align(align);
             w->box(FL_BORDER_BOX);
-            w->down_box(FL_BORDER_BOX);
             w->labelsize(textsize);
             w->textfont(textfont);
             w->textsize(textsize);
@@ -13866,9 +14091,7 @@ void Editor::_edit_create() {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
             auto w = new Fl_Input_Choice(0, 0, 0, 0);
-            w->box(FL_NO_BOX);
-            w->down_box(FL_BORDER_BOX);
-            w->input()->box(FL_BORDER_BOX);
+            w->box(FL_BORDER_BOX);
             w->input()->textfont(textfont);
             w->input()->textsize(textsize);
             w->labelsize(textsize);
@@ -13898,34 +14121,33 @@ void Editor::_edit_create() {
         }
     }
 }
-void Editor::_edit_quick(const std::string& key) {
+void flw::table::Editor::_edit_quick(const std::string& key) {
     auto rend = cell_type(_curr_row, _curr_col);
     auto val  = cell_value(_curr_row, _curr_col);
     char buffer[100];
     if (rend == Type::INTEGER) {
         auto num = util::to_int(val, 0);
-        if (key == table::INC_SMALL) {
+        if (key == priv::_TABLE_INC_SMALL) {
             num++;
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             num += 10;
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             num += 100;
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             num--;
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             num -= 10;
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             num -= 100;
         }
         snprintf(buffer, 100, "%lld", static_cast<long long int>(num));
         if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::NUMBER) {
@@ -13933,102 +14155,99 @@ void Editor::_edit_quick(const std::string& key) {
         if (std::isinf(num) == true) {
             num = 0.0;
         }
-        else if (key == table::INC_SMALL) {
+        else if (key == priv::_TABLE_INC_SMALL) {
             num += 0.1;
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             num += 1.0;
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             num += 10.0;
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             num -= 0.1;
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             num -= 1.0;
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             num -= 10.0;
         }
         snprintf(buffer, 100, "%f", num);
         if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::COLOR) {
         auto color = static_cast<int>(util::to_int(val, 0));
-        if (key == table::INC_SMALL) {
+        if (key == priv::_TABLE_INC_SMALL) {
             color++;
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             color += 8;
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             color += 24;
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             color--;
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             color -= 8;
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             color -= 24;
         }
         color = color % 256;
         snprintf(buffer, 100, "%d", color);
         if ((_force_events == true || val != buffer) && cell_value(_curr_row, _curr_col, buffer) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::DATE) {
         auto date = gnu::Date(val);
-        if (key == table::INC_SMALL) {
+        if (key == priv::_TABLE_INC_SMALL) {
             date.add_days(1);
         }
-        else if (key == table::INC_MEDIUM) {
+        else if (key == priv::_TABLE_INC_MEDIUM) {
             date.add_months(1);
         }
-        else if (key == table::INC_LARGE) {
+        else if (key == priv::_TABLE_INC_LARGE) {
             date.add_years(1);
         }
-        else if (key == table::DEC_SMALL) {
+        else if (key == priv::_TABLE_DEC_SMALL) {
             date.add_days(-1);
         }
-        else if (key == table::DEC_MEDIUM) {
+        else if (key == priv::_TABLE_DEC_MEDIUM) {
             date.add_months(-1);
         }
-        else if (key == table::DEC_LARGE) {
+        else if (key == priv::_TABLE_DEC_LARGE) {
             date.add_years(-1);
         }
         auto string = date.format(gnu::Date::Format::ISO_LONG);
         if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::SLIDER || rend == Type::VSLIDER) {
         double nums[4];
         if (util::to_doubles(val, nums, 4) == 4) {
-            if (key == table::INC_SMALL) {
+            if (key == priv::_TABLE_INC_SMALL) {
                 nums[0] += nums[3];
             }
-            else if (key == table::INC_MEDIUM) {
+            else if (key == priv::_TABLE_INC_MEDIUM) {
                 nums[0] += (nums[3] * 10);
             }
-            else if (key == table::INC_LARGE) {
+            else if (key == priv::_TABLE_INC_LARGE) {
                 nums[0] += (nums[3] * 100);
             }
-            else if (key == table::DEC_SMALL) {
+            else if (key == priv::_TABLE_DEC_SMALL) {
                 nums[0] -= nums[3];
             }
-            else if (key == table::DEC_MEDIUM) {
+            else if (key == priv::_TABLE_DEC_MEDIUM) {
                 nums[0] -= (nums[3] * 10);
             }
-            else if (key == table::DEC_LARGE) {
+            else if (key == priv::_TABLE_DEC_LARGE) {
                 nums[0] -= (nums[3] * 100);
             }
             if (nums[0] < nums[1]) {
@@ -14040,12 +14259,11 @@ void Editor::_edit_quick(const std::string& key) {
             auto val2 = table::format_slider(nums[0], nums[1], nums[2], nums[3]);
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
         }
     }
 }
-void Editor::_edit_show_dlg() {
+void flw::table::Editor::_edit_show_dlg() {
     auto rend = cell_type(_curr_row, _curr_col);
     auto val  = cell_value(_curr_row, _curr_col);
     if (rend == Type::COLOR) {
@@ -14060,7 +14278,6 @@ void Editor::_edit_show_dlg() {
             snprintf(buffer, 100, "%u", color2);
             if ((_force_events == true || color1 != color2) && cell_value(_curr_row, _curr_col, buffer) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
         }
     }
@@ -14068,14 +14285,12 @@ void Editor::_edit_show_dlg() {
         auto result = util::to_string(fl_file_chooser(table::EditFileLabel.c_str(), "", val.c_str(), 0));
         if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::DIR) {
         auto result = util::to_string(fl_dir_chooser(table::EditDirLabel.c_str(), val.c_str()));
         if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::DATE) {
@@ -14085,7 +14300,6 @@ void Editor::_edit_show_dlg() {
         auto string = date1.format(gnu::Date::Format::ISO_LONG);
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
         }
     }
     else if (rend == Type::LIST) {
@@ -14096,7 +14310,6 @@ void Editor::_edit_show_dlg() {
                 const auto& string = choices[row];
                 if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
                     _set_event(_curr_row, _curr_col, Event::CHANGED);
-                    do_callback();
                 }
             }
         }
@@ -14106,12 +14319,11 @@ void Editor::_edit_show_dlg() {
         if (dlg::text_edit(table::EditTextLabel, val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
         }
     }
 }
-void Editor::_edit_start(const std::string& key) {
+void flw::table::Editor::_edit_start(const std::string& key) {
     if (_select != Select::NO && _edit == nullptr && _curr_row >= 1 && _curr_col >= 1 && cell_edit(_curr_row, _curr_col)) {
         Fl::event_clicks(0);
         Fl::event_is_click(0);
@@ -14133,7 +14345,7 @@ void Editor::_edit_start(const std::string& key) {
         redraw();
     }
 }
-void Editor::_edit_stop(bool save) {
+void flw::table::Editor::_edit_stop(bool save) {
     if (_edit != nullptr) {
         auto type = cell_type(_curr_row, _curr_col);
         auto val  = cell_value(_curr_row, _curr_col);
@@ -14165,16 +14377,17 @@ void Editor::_edit_stop(bool save) {
             }
             else if (type == Type::BOOLEAN) {
                 auto button = static_cast<Fl_Check_Button*>(_edit);
+                auto label  = util::to_string(button->label());
                 auto val2   = std::string("0");
                 if (button->value() != 0) {
                     val2 = "1";
                 }
-                if (val == val2) {
+                if (*val.c_str() == *val2.c_str()) {
                     stop = true;
                     save = false;
                 }
                 else {
-                    stop = cell_value(_curr_row, _curr_col, val2);
+                    stop = cell_value(_curr_row, _curr_col, val2 + label);
                 }
             }
             else if (type == Type::SLIDER || type == Type::VSLIDER) {
@@ -14223,7 +14436,6 @@ void Editor::_edit_stop(bool save) {
             _current_cell[3] = 0;
             if (_force_events == true || save == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
-                do_callback();
             }
             Fl::check();
             Fl::focus(this);
@@ -14235,7 +14447,7 @@ void Editor::_edit_stop(bool save) {
         }
     }
 }
-int Editor::_ev_keyboard_down2() {
+int flw::table::Editor::_ev_keyboard_down2() {
     auto key   = Fl::event_key();
     auto text  = std::string(Fl::event_text());
     auto alt   = Fl::event_alt() != 0;
@@ -14271,34 +14483,34 @@ int Editor::_ev_keyboard_down2() {
             cmd_paste();
             return 1;
         }
-        else if (alt == true && shift == true && (key == '+' || text == table::INC_SMALL || key == FL_KP + '+')) {
-            _edit_start(table::INC_LARGE);
+        else if (alt == true && shift == true && (key == '+' || text == priv::_TABLE_INC_SMALL || key == FL_KP + '+')) {
+            _edit_start(priv::_TABLE_INC_LARGE);
             return 1;
         }
-        else if (alt == true && (key == '+' || text == table::INC_SMALL || key == FL_KP + '+')) {
-            _edit_start(table::INC_MEDIUM);
+        else if (alt == true && (key == '+' || text == priv::_TABLE_INC_SMALL || key == FL_KP + '+')) {
+            _edit_start(priv::_TABLE_INC_MEDIUM);
             return 1;
         }
-        else if (key == '+' || text == table::INC_SMALL || key == FL_KP + '+') {
-            _edit_start(table::INC_SMALL);
+        else if (key == '+' || text == priv::_TABLE_INC_SMALL || key == FL_KP + '+') {
+            _edit_start(priv::_TABLE_INC_SMALL);
             return 1;
         }
-        else if (alt == true && shift == true && (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-')) {
-            _edit_start(table::DEC_LARGE);
+        else if (alt == true && shift == true && (key == '-' || text == priv::_TABLE_DEC_SMALL || key == FL_KP + '-')) {
+            _edit_start(priv::_TABLE_DEC_LARGE);
             return 1;
         }
-        else if (alt == true && (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-')) {
-            _edit_start(table::DEC_MEDIUM);
+        else if (alt == true && (key == '-' || text == priv::_TABLE_DEC_SMALL || key == FL_KP + '-')) {
+            _edit_start(priv::_TABLE_DEC_MEDIUM);
             return 1;
         }
-        else if (key == '-' || text == table::DEC_SMALL || key == FL_KP + '-') {
-            _edit_start(table::DEC_SMALL);
+        else if (key == '-' || text == priv::_TABLE_DEC_SMALL || key == FL_KP + '-') {
+            _edit_start(priv::_TABLE_DEC_SMALL);
             return 1;
         }
     }
     return 0;
 }
-int Editor::_ev_mouse_click2() {
+int flw::table::Editor::_ev_mouse_click2() {
     auto row         = 0;
     auto col         = 0;
     auto current_row = _curr_row;
@@ -14314,7 +14526,7 @@ int Editor::_ev_mouse_click2() {
     }
     return 2;
 }
-int Editor::_ev_paste() {
+int flw::table::Editor::_ev_paste() {
     auto text = util::to_string(Fl::event_text());
     if (_curr_row > 0 && _curr_col > 0 && text != "") {
         auto        type = cell_type(_curr_row, _curr_col);
@@ -14386,13 +14598,12 @@ int Editor::_ev_paste() {
         }
         if ((_force_events == true || val != text) && cell_value(_curr_row, _curr_col, text) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
-            do_callback();
             redraw();
         }
     }
     return 1;
 }
-std::string Editor::_get_find_value(int row, int col) {
+std::string flw::table::Editor::_get_find_value(int row, int col) {
     auto type = cell_type(row, col);
     auto val  = cell_value(row, col);
     if (type == Type::SLIDER || type == Type::VSLIDER) {
@@ -14403,7 +14614,7 @@ std::string Editor::_get_find_value(int row, int col) {
     }
     return val;
 }
-int Editor::handle(int event) {
+int flw::table::Editor::handle(int event) {
     auto ret = 2;
     if (_rows > 0 && _cols > 0) {
         if (event == FL_UNFOCUS) {
@@ -14430,13 +14641,12 @@ int Editor::handle(int event) {
         return Display::handle(event);
     }
 }
-void Editor::reset() {
+void flw::table::Editor::reset() {
     Display::reset();
-    _force_events = false;
     _edit2        = nullptr;
     _edit3        = nullptr;
-}
-}
+    _force_events = false;
+    _ro           = false;
 }
 #include <FL/Fl_Scroll.H>
 #include <FL/Fl_Toggle_Button.H>
@@ -14512,12 +14722,17 @@ flw::TabsGroup::TabsGroup(int X, int Y, int W, int H, const char* l) : Fl_Group(
     update_pref();
 }
 void flw::TabsGroup::_activate(Fl_Widget* widget) {
+    if (widget == nullptr) {
+        return;
+    }
     auto count   = 0;
     auto current = _active1;
+    auto shown   = true;
     _active1 = -1;
     for (auto button : _widgets) {
         auto b = static_cast<priv::_TabsGroupButton*>(button);
         if (b == widget || b->widget == widget) {
+            shown = b->widget->visible();
             _active1 = count;
             _active2 = (current != _active1) ? current : _active2;
             b->value(1);
@@ -14557,6 +14772,9 @@ void flw::TabsGroup::_activate(Fl_Widget* widget) {
     }
     _resize_active_widget();
     Fl::redraw();
+    if (shown == false) {
+        do_callback(FL_REASON_SELECTED);
+    }
 }
 Fl_Widget* flw::TabsGroup::_active_button() {
     return _active1 >= 0 && _active1 < static_cast<int>(_widgets.size()) ?
@@ -14599,7 +14817,7 @@ void flw::TabsGroup::CallbackScrollbar(Fl_Widget*, void* object) {
     self->_tabs->redraw_label();
 }
 Fl_Widget* flw::TabsGroup::child(int index) const {
-    return index >= 0 && index < static_cast<int>(_widgets.size()) ?
+    return (index >= 0 && index < static_cast<int>(_widgets.size())) ?
         static_cast<priv::_TabsGroupButton*>(_widgets[index])->widget :
         nullptr;
 }
@@ -15115,6 +15333,9 @@ void flw::TabsGroup::tab_color(Fl_Color color) {
         b->selection_color(_color);
     }
 }
+std::string flw::TabsGroup::tab_label() {
+    return tab_label(value());
+}
 std::string flw::TabsGroup::tab_label(const Fl_Widget* widget) {
     auto num = find(widget);
     if (num == -1) {
@@ -15185,7 +15406,6 @@ void flw::TabsGroup::value(int num) {
 #include <FL/fl_ask.H>
 #ifdef _WIN32
     #include <FL/x.H>
-#else
 #endif
 namespace flw {
 namespace priv {
@@ -15195,7 +15415,7 @@ static unsigned char _THEME_OLD_B[256]  = { 0 };
 static bool          _THEME_IS_DARK     = false;
 static bool          _THEME_SAVED_COLOR = false;
 static int           _THEME_SCROLLSIZE  = Fl::scrollbar_size();
-const StringVector _PREF_THEMES = {
+const StringVector _THEME_ALT = {
     "default",
     "gleam",
     "blue_gleam",
@@ -15211,22 +15431,22 @@ const StringVector _PREF_THEMES = {
     "tan_plastic",
 };
 enum {
-    THEME_DEFAULT,
-    THEME_GLEAM,
-    THEME_GLEAM_BLUE,
-    THEME_GLEAM_DARK,
-    THEME_GLEAM_TAN,
-    THEME_GTK,
-    THEME_GTK_BLUE,
-    THEME_GTK_DARK,
-    THEME_GTK_TAN,
-    THEME_OXY,
-    THEME_OXY_TAN,
-    THEME_PLASTIC,
-    THEME_PLASTIC_TAN,
-    THEME_NIL,
+    _THEME_DEFAULT,
+    _THEME_GLEAM,
+    _THEME_GLEAM_BLUE,
+    _THEME_GLEAM_DARK,
+    _THEME_GLEAM_TAN,
+    _THEME_GTK,
+    _THEME_GTK_BLUE,
+    _THEME_GTK_DARK,
+    _THEME_GTK_TAN,
+    _THEME_OXY,
+    _THEME_OXY_TAN,
+    _THEME_PLASTIC,
+    _THEME_PLASTIC_TAN,
+    _THEME_NIL,
 };
-static void _additional_colors(bool dark) {
+static void _theme_additional_colors(bool dark) {
     color::BEIGE            = fl_rgb_color(245, 245, 220);
     color::CHOCOLATE        = fl_rgb_color(210, 105,  30);
     color::CRIMSON          = fl_rgb_color(220,  20,  60);
@@ -15266,46 +15486,36 @@ static void _additional_colors(bool dark) {
         color::VIOLET           = fl_darker(color::VIOLET);
     }
 }
-static void _blue_colors() {
-    Fl::set_color(0,   228, 228, 228);
-    Fl::set_color(7,    79,  86,  94);
-    Fl::set_color(8,   108, 113, 125);
-    Fl::set_color(15,  241, 196,  126);
-    Fl::set_color(56,    0,   0,   0);
-    Fl::background(48, 56, 65);
+static void _theme_blue_colors() {
+    Fl::set_color ( 0, 255, 255, 255);
+    Fl::set_color ( 7,  79,  86,  94);
+    Fl::set_color ( 8, 108, 113, 125);
+    Fl::set_color (15, 172, 140,  90);
+    Fl::background(36,  44,  53);
     unsigned char r = 0;
-    unsigned char g = 0;
-    unsigned char b = 0;
-    for (int f = 32; f < 49; f++) {
+    unsigned char g = 9;
+    unsigned char b = 18;
+    Fl::set_color(32, r, g, b);
+    for (int f = 33; f < 49; f++) {
+        r += 2;
+        g += 2;
+        b += 2;
         Fl::set_color(f, r, g, b);
-        if (f == 32) {
-            r = 0;
-            g = 9;
-            b = 18;
-        }
-        else {
-            r += 2 + (f < 44);
-            g += 2 + (f < 44);
-            b += 2 + (f < 44);
-        }
     }
 }
-static void _dark_colors() {
-    Fl::set_color(0,   200, 200, 200);
-    Fl::set_color(7,    64,  64,  64);
-    Fl::set_color(8,   100, 100, 100);
-    Fl::set_color(15,  177, 227, 177);
-    Fl::set_color(56,    0,   0,   0);
-    Fl::set_color(49, 43, 43, 43);
-    Fl::background(43, 43, 43);
+static void _theme_dark_colors() {
+    Fl::set_color ( 0, 255, 255, 255);
+    Fl::set_color ( 7,  64,  64,  64);
+    Fl::set_color ( 8, 100, 100, 100);
+    Fl::set_color (15, 107, 138, 107);
+    Fl::background(36,  36,  36);
     unsigned char c = 0;
     for (int f = 32; f < 49; f++) {
         Fl::set_color(f, c, c, c);
         c += 2;
-        if (f > 40) c++;
     }
 }
-static void _make_default_colors_darker() {
+static void _theme_make_default_colors_darker() {
     Fl::set_color(FL_GREEN, fl_darker(Fl::get_color(FL_GREEN)));
     Fl::set_color(FL_DARK_GREEN, fl_darker(Fl::get_color(FL_DARK_GREEN)));
     Fl::set_color(FL_RED, fl_darker(Fl::get_color(FL_RED)));
@@ -15319,169 +15529,171 @@ static void _make_default_colors_darker() {
     Fl::set_color(FL_MAGENTA, fl_darker(Fl::get_color(FL_MAGENTA)));
     Fl::set_color(FL_DARK_MAGENTA, fl_darker(Fl::get_color(FL_DARK_MAGENTA)));
 }
-static void _restore_colors() {
-    if (priv::_THEME_SAVED_COLOR == true) {
-        for (int f = 0; f < 256; f++) {
-            Fl::set_color(f, priv::_THEME_OLD_R[f], priv::_THEME_OLD_G[f], priv::_THEME_OLD_B[f]);
-        }
-    }
-}
-static void _save_colors() {
+static void _theme_restore_colors() {
     if (priv::_THEME_SAVED_COLOR == false) {
-        for (int f = 0; f < 256; f++) {
-            unsigned char r1, g1, b1;
-            Fl::get_color(f, r1, g1, b1);
-            priv::_THEME_OLD_R[f] = r1;
-            priv::_THEME_OLD_G[f] = g1;
-            priv::_THEME_OLD_B[f] = b1;
-        }
-        priv::_THEME_SAVED_COLOR = true;
+        return;
+    }
+    for (int f = 0; f < 256; f++) {
+        Fl::set_color(f, priv::_THEME_OLD_R[f], priv::_THEME_OLD_G[f], priv::_THEME_OLD_B[f]);
     }
 }
-static void _tan_colors() {
+static void _theme_save_colors() {
+    if (priv::_THEME_SAVED_COLOR == true) {
+        return;
+    }
+    for (int f = 0; f < 256; f++) {
+        unsigned char r1, g1, b1;
+        Fl::get_color(f, r1, g1, b1);
+        priv::_THEME_OLD_R[f] = r1;
+        priv::_THEME_OLD_G[f] = g1;
+        priv::_THEME_OLD_B[f] = b1;
+    }
+    priv::_THEME_SAVED_COLOR = true;
+}
+static void _theme_tan_colors() {
     Fl::set_color(0,     0,   0,   0);
     Fl::set_color(7,   255, 255, 255);
     Fl::set_color(8,    85,  85,  85);
     Fl::set_color(15,  188, 114,  50);
     Fl::background(206, 202, 187);
 }
-void _load_default() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_default() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("none");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_DEFAULT];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_DEFAULT];
     priv::_THEME_IS_DARK = false;
 }
-void _load_gleam() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_gleam() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM];
     priv::_THEME_IS_DARK = false;
 }
-void _load_gleam_blue() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_blue_colors();
-    priv::_additional_colors(true);
+void _theme_load_gleam_blue() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_blue_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 101, 117, 125);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_BLUE];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM_BLUE];
     priv::_THEME_IS_DARK = true;
 }
-void _load_gleam_dark() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_dark_colors();
-    priv::_additional_colors(true);
+void _theme_load_gleam_dark() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_dark_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 112, 112, 112);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_DARK];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM_DARK];
     priv::_THEME_IS_DARK = true;
 }
-void _load_gleam_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_gleam_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gleam");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GLEAM_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GLEAM_TAN];
     priv::_THEME_IS_DARK = false;
 }
-void _load_gtk() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_gtk() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK];
     priv::_THEME_IS_DARK = false;
 }
-void _load_gtk_blue() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_blue_colors();
-    priv::_additional_colors(true);
+void _theme_load_gtk_blue() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_blue_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 101, 117, 125);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_BLUE];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK_BLUE];
     priv::_THEME_IS_DARK = true;
 }
-void _load_gtk_dark() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_make_default_colors_darker();
-    priv::_dark_colors();
-    priv::_additional_colors(true);
+void _theme_load_gtk_dark() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_make_default_colors_darker();
+    priv::_theme_dark_colors();
+    priv::_theme_additional_colors(true);
     Fl::set_color(255, 112, 112, 112);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_DARK];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK_DARK];
     priv::_THEME_IS_DARK = true;
 }
-void _load_gtk_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_gtk_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("gtk+");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_GTK_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_GTK_TAN];
     priv::_THEME_IS_DARK = false;
 }
-void _load_oxy() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_oxy() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_OXY];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_OXY];
     priv::_THEME_IS_DARK = false;
 }
-void _load_oxy_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_oxy_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("oxy");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_OXY_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_OXY_TAN];
     priv::_THEME_IS_DARK = false;
 }
-void _load_plastic() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_additional_colors(false);
+void _theme_load_plastic() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_PLASTIC];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_PLASTIC];
     priv::_THEME_IS_DARK = false;
 }
-void _load_plastic_tan() {
-    priv::_save_colors();
-    priv::_restore_colors();
-    priv::_tan_colors();
-    priv::_additional_colors(false);
+void _theme_load_plastic_tan() {
+    priv::_theme_save_colors();
+    priv::_theme_restore_colors();
+    priv::_theme_tan_colors();
+    priv::_theme_additional_colors(false);
     Fl::scheme("plastic");
     Fl::redraw();
-    flw::PREF_THEME = flw::PREF_THEMES[priv::THEME_PLASTIC_TAN];
+    flw::PREF_THEME = flw::PREF_THEMES[priv::_THEME_PLASTIC_TAN];
     priv::_THEME_IS_DARK = false;
 }
-void _scrollbar() {
+void _theme_scrollbar() {
     if (flw::PREF_FONTSIZE < 12 || flw::PREF_FONTSIZE > 16) {
-        auto f = (double) flw::PREF_FONTSIZE / 14.0;
-        auto s = (int) (f * priv::_THEME_SCROLLSIZE);
+        auto f = static_cast<double>(flw::PREF_FONTSIZE / 14.0);
+        auto s = static_cast<int>(f * priv::_THEME_SCROLLSIZE);
         Fl::scrollbar_size(s);
     }
     else if (priv::_THEME_SCROLLSIZE > 0) {
@@ -15613,44 +15825,44 @@ public:
         }
         else if (w == self->_theme) {
             auto row = self->_theme->value() - 1;
-            if (row == priv::THEME_GLEAM) {
-                priv::_load_gleam();
+            if (row == priv::_THEME_GLEAM) {
+                priv::_theme_load_gleam();
             }
-            else if (row == priv::THEME_GLEAM_BLUE) {
-                priv::_load_gleam_blue();
+            else if (row == priv::_THEME_GLEAM_BLUE) {
+                priv::_theme_load_gleam_blue();
             }
-            else if (row == priv::THEME_GLEAM_DARK) {
-                priv::_load_gleam_dark();
+            else if (row == priv::_THEME_GLEAM_DARK) {
+                priv::_theme_load_gleam_dark();
             }
-            else if (row == priv::THEME_GLEAM_TAN) {
-                priv::_load_gleam_tan();
+            else if (row == priv::_THEME_GLEAM_TAN) {
+                priv::_theme_load_gleam_tan();
             }
-            else if (row == priv::THEME_GTK) {
-                priv::_load_gtk();
+            else if (row == priv::_THEME_GTK) {
+                priv::_theme_load_gtk();
             }
-            else if (row == priv::THEME_GTK_BLUE) {
-                priv::_load_gtk_blue();
+            else if (row == priv::_THEME_GTK_BLUE) {
+                priv::_theme_load_gtk_blue();
             }
-            else if (row == priv::THEME_GTK_DARK) {
-                priv::_load_gtk_dark();
+            else if (row == priv::_THEME_GTK_DARK) {
+                priv::_theme_load_gtk_dark();
             }
-            else if (row == priv::THEME_GTK_TAN) {
-                priv::_load_gtk_tan();
+            else if (row == priv::_THEME_GTK_TAN) {
+                priv::_theme_load_gtk_tan();
             }
-            else if (row == priv::THEME_OXY) {
-                priv::_load_oxy();
+            else if (row == priv::_THEME_OXY) {
+                priv::_theme_load_oxy();
             }
-            else if (row == priv::THEME_OXY_TAN) {
-                priv::_load_oxy_tan();
+            else if (row == priv::_THEME_OXY_TAN) {
+                priv::_theme_load_oxy_tan();
             }
-            else if (row == priv::THEME_PLASTIC) {
-                priv::_load_plastic();
+            else if (row == priv::_THEME_PLASTIC) {
+                priv::_theme_load_plastic();
             }
-            else if (row == priv::THEME_PLASTIC_TAN) {
-                priv::_load_plastic_tan();
+            else if (row == priv::_THEME_PLASTIC_TAN) {
+                priv::_theme_load_plastic_tan();
             }
             else {
-                priv::_load_default();
+                priv::_theme_load_default();
             }
             self->update_pref();
         }
@@ -15682,8 +15894,8 @@ public:
         _fixed_label->labelsize(flw::PREF_FIXED_FONTSIZE);
         _theme->textfont(flw::PREF_FONT);
         _theme->textsize(flw::PREF_FONTSIZE);
-        priv::_scrollbar();
-        for (int f = 0; f < priv::THEME_NIL; f++) {
+        priv::_theme_scrollbar();
+        for (int f = 0; f < priv::_THEME_NIL; f++) {
             if (flw::PREF_THEME == flw::PREF_THEMES[f]) {
                 _theme->value(f + 1);
                 break;
@@ -15713,10 +15925,10 @@ Fl_Color flw::color::TEAL             = fl_rgb_color(  0, 128, 128);
 Fl_Color flw::color::TURQUOISE        = fl_rgb_color( 64, 224, 208);
 Fl_Color flw::color::VIOLET           = fl_rgb_color(238, 130, 238);
 bool flw::theme::is_dark() {
-    if (flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GLEAM_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GLEAM_DARK] ||
-        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GTK_BLUE] ||
-        flw::PREF_THEME == flw::PREF_THEMES[priv::THEME_GTK_DARK]) {
+    if (flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GLEAM_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GLEAM_DARK] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GTK_BLUE] ||
+        flw::PREF_THEME == flw::PREF_THEMES[priv::_THEME_GTK_DARK]) {
         return true;
     }
     else {
@@ -15727,49 +15939,49 @@ bool flw::theme::load(const std::string& name) {
     if (priv::_THEME_SCROLLSIZE == 0) {
         priv::_THEME_SCROLLSIZE = Fl::scrollbar_size();
     }
-    if (name == flw::PREF_THEMES[priv::THEME_DEFAULT] || name == priv::_PREF_THEMES[priv::THEME_DEFAULT]) {
-        priv::_load_default();
+    if (name == flw::PREF_THEMES[priv::_THEME_DEFAULT] || name == priv::_THEME_ALT[priv::_THEME_DEFAULT]) {
+        priv::_theme_load_default();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM] || name == priv::_PREF_THEMES[priv::THEME_GLEAM]) {
-        priv::_load_gleam();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM] || name == priv::_THEME_ALT[priv::_THEME_GLEAM]) {
+        priv::_theme_load_gleam();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_BLUE] || name == priv::_PREF_THEMES[priv::THEME_GLEAM_BLUE]) {
-        priv::_load_gleam_blue();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM_BLUE] || name == priv::_THEME_ALT[priv::_THEME_GLEAM_BLUE]) {
+        priv::_theme_load_gleam_blue();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_DARK] || name == priv::_PREF_THEMES[priv::THEME_GLEAM_DARK]) {
-        priv::_load_gleam_dark();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM_DARK] || name == priv::_THEME_ALT[priv::_THEME_GLEAM_DARK]) {
+        priv::_theme_load_gleam_dark();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GLEAM_TAN] || name == priv::_PREF_THEMES[priv::THEME_GLEAM_TAN]) {
-        priv::_load_gleam_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GLEAM_TAN] || name == priv::_THEME_ALT[priv::_THEME_GLEAM_TAN]) {
+        priv::_theme_load_gleam_tan();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK] || name == priv::_PREF_THEMES[priv::THEME_GTK]) {
-        priv::_load_gtk();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK] || name == priv::_THEME_ALT[priv::_THEME_GTK]) {
+        priv::_theme_load_gtk();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK_BLUE] || name == priv::_PREF_THEMES[priv::THEME_GTK_BLUE]) {
-        priv::_load_gtk_blue();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK_BLUE] || name == priv::_THEME_ALT[priv::_THEME_GTK_BLUE]) {
+        priv::_theme_load_gtk_blue();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK_DARK] || name == priv::_PREF_THEMES[priv::THEME_GTK_DARK]) {
-        priv::_load_gtk_dark();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK_DARK] || name == priv::_THEME_ALT[priv::_THEME_GTK_DARK]) {
+        priv::_theme_load_gtk_dark();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_GTK_TAN] || name == priv::_PREF_THEMES[priv::THEME_GTK_TAN]) {
-        priv::_load_gtk_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_GTK_TAN] || name == priv::_THEME_ALT[priv::_THEME_GTK_TAN]) {
+        priv::_theme_load_gtk_tan();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_OXY] || name == priv::_PREF_THEMES[priv::THEME_OXY]) {
-        priv::_load_oxy();
+    else if (name == flw::PREF_THEMES[priv::_THEME_OXY] || name == priv::_THEME_ALT[priv::_THEME_OXY]) {
+        priv::_theme_load_oxy();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_OXY_TAN] || name == priv::_PREF_THEMES[priv::THEME_OXY_TAN]) {
-        priv::_load_oxy_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_OXY_TAN] || name == priv::_THEME_ALT[priv::_THEME_OXY_TAN]) {
+        priv::_theme_load_oxy_tan();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_PLASTIC] || name == priv::_PREF_THEMES[priv::THEME_PLASTIC]) {
-        priv::_load_plastic();
+    else if (name == flw::PREF_THEMES[priv::_THEME_PLASTIC] || name == priv::_THEME_ALT[priv::_THEME_PLASTIC]) {
+        priv::_theme_load_plastic();
     }
-    else if (name == flw::PREF_THEMES[priv::THEME_PLASTIC_TAN] || name == priv::_PREF_THEMES[priv::THEME_PLASTIC_TAN]) {
-        priv::_load_plastic_tan();
+    else if (name == flw::PREF_THEMES[priv::_THEME_PLASTIC_TAN] || name == priv::_THEME_ALT[priv::_THEME_PLASTIC_TAN]) {
+        priv::_theme_load_plastic_tan();
     }
     else {
         return false;
     }
-    priv::_scrollbar();
+    priv::_theme_scrollbar();
     return true;
 }
 Fl_Font flw::theme::load_font(const std::string& requested_font) {
@@ -15880,7 +16092,7 @@ double flw::theme::load_theme_from_pref(Fl_Preferences& pref, unsigned screen_nu
     load(buffer);
     Fl_Tooltip::font(flw::PREF_FONT);
     Fl_Tooltip::size(flw::PREF_FONTSIZE);
-    priv::_scrollbar();
+    priv::_theme_scrollbar();
     auto so = 0;
     auto sv = 0.0;
     auto def_scaling = Fl::screen_scale(screen_num);
