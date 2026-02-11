@@ -4,7 +4,6 @@ CXXFLAGS += $(FLTK_CXXFLAGS)
 CXXFLAGS += -DFLW_USE_PNG
 CXXFLAGS += -I..
 LDFLAGS  += $(FLTK_IMAGE_LDFLAGS)
-INC       = -Isrc
 
 #-------------------------------------------------------------------------------
 
@@ -23,6 +22,7 @@ all: flw.o \
 	tableeditor.exe \
 	tabsgroup.exe \
 	toolgroup.exe \
+	settingsdialog.exe \
 
 #-------------------------------------------------------------------------------
 
@@ -60,6 +60,9 @@ plot.exe: plot.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 recentmenu.exe: recentmenu.cpp flw.o
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
+
+settingsdialog.exe: settingsdialog.cpp flw.o
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(INC) $(LDFLAGS)
 
 splitgroup.exe: splitgroup.cpp flw.o
@@ -113,6 +116,9 @@ plot: plot.exe
 
 recentmenu: recentmenu.exe
 	./recentmenu.exe
+
+settingsdialog: settingsdialog.exe
+	./settingsdialog.exe
 
 splitgroup: splitgroup.exe
 	./splitgroup.exe

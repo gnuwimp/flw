@@ -107,7 +107,7 @@ void password_example() {
 
 //------------------------------------------------------------------------------
 // [flw::dlg::print_page_callback example]
-bool print_callback(void*, int pw, int ph, int page) {
+bool print_callback(void*, int pw, int ph, unsigned page) {
     char b[100];
     snprintf(b, 100, "%d", page);
 
