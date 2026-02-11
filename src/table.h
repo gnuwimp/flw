@@ -17,7 +17,20 @@
 
 namespace flw {
 
+class SettingsDialog;
+
 namespace table {
+
+/*
+ *      _______    _     _
+ *     |__   __|  | |   | |
+ *        | | __ _| |__ | | ___
+ *        | |/ _` | '_ \| |/ _ \
+ *        | | (_| | |_) | |  __/
+ *        |_|\__,_|_.__/|_|\___|
+ *
+ *
+ */
 
 /** @brief Table editor widget with embedded data storage.
 *
@@ -38,19 +51,19 @@ public:
                                     { _set_int(_cell_align, row, col, (int) align); } ///< @brief Set cell alignment.
     StringVector                cell_choice(int row, int col) override;
     void                        cell_choice(int row, int col, const std::string& value)
-                                    { _set_string(_cell_choice, row, col, value); } ///< @brief Set cell choice. @param[in] row  Row number. @param[in] col  Column number. @param[in] value  A string with tab between every choice.
+                                    { _set_string(_cell_choice, row, col, value); } ///< @brief Set cell choice list. @param[in] row  Row number. @param[in] col  Column number. @param[in] value  A string with choices separated with a tab "\t".
     Fl_Color                    cell_color(int row, int col) override
                                     { return (Fl_Color) _get_int(_cell_color, row, col, Editor::cell_color(row, col)); } ///< @brief Get cell color.
     void                        cell_color(int row, int col, Fl_Color color)
                                     { _set_int(_cell_color, row, col, (int) color); } ///< @brief Set cell color.
     bool                        cell_edit(int row, int col) override
-                                    { return static_cast<bool>(_get_int(_cell_edit, row, col, 0)); } ///< @brief Is cell editable.
+                                    { return static_cast<bool>(_get_int(_cell_edit, row, col, 0)); } ///< @brief Is cell editable?
     void                        cell_edit(int row, int col, bool value)
                                     { _set_int(_cell_edit, row, col, static_cast<int>(value)); } ///< @brief Set if cell is editable.
     Format                      cell_format(int row, int col) override
                                     { return static_cast<Format>(_get_int(_cell_format, row, col, static_cast<int>(Format::DEFAULT))); } ///< @brief Get value format.
     void                        cell_format(int row, int col, Format value)
-                                    { _set_int(_cell_format, row, col, (int) value); } ///< @brief Set value format.
+                                    { _set_int(_cell_format, row, col, static_cast<int>(value)); } ///< @brief Set formatting option of the value.
     Type                        cell_type(int row, int col) override
                                     { return static_cast<Type>(_get_int(_cell_type, row, col, static_cast<int>(Type::TEXT))); } ///< @brief Get value type.
     void                        cell_type(int row, int col, Type type)
@@ -78,16 +91,49 @@ protected:
     virtual void                _set_string(StringHash& hash, int row, int col, const std::string& value)
                                     { hash[_get_key(row, col)] = value; } ///< @brief Set string value in hash.
 
-    StringHash                  _cell_align;        // Cell alignment values.
-    StringHash                  _cell_choice;       // Cell choices.
-    StringHash                  _cell_color;        // Cell colors.
-    StringHash                  _cell_edit;         // Cell edit status.
-    StringHash                  _cell_format;       // Cell value format.
-    StringHash                  _cell_textcolor;    // Cell text color.
-    StringHash                  _cell_type;         // Cell data type.
-    StringHash                  _cell_value;        // Cell values.
-    StringHash                  _cell_width;        // Column widths.
-    StringVector                _cell_choices;      // Choices for current editor.
+    StringHash                  _cell_align;        ///< @brief Cell alignment values.
+    StringHash                  _cell_choice;       ///< @brief Cell choices.
+    StringHash                  _cell_color;        ///< @brief Cell colors.
+    StringHash                  _cell_edit;         ///< @brief Is cell editable?
+    StringHash                  _cell_format;       ///< @brief Cell value format.
+    StringHash                  _cell_textcolor;    ///< @brief Cell text color.
+    StringHash                  _cell_type;         ///< @brief Cell data type.
+    StringHash                  _cell_value;        ///< @brief Cell values.
+    StringHash                  _cell_width;        ///< @brief Column widths.
+    StringVector                _cell_choices;      ///< @brief Choice list for current editor.
+};
+
+/*
+ *       _____      _   _   _              _______    _     _
+ *      / ____|    | | | | (_)            |__   __|  | |   | |
+ *     | (___   ___| |_| |_ _ _ __   __ _ ___| | __ _| |__ | | ___
+ *      \___ \ / _ \ __| __| | '_ \ / _` / __| |/ _` | '_ \| |/ _ \
+ *      ____) |  __/ |_| |_| | | | | (_| \__ \ | (_| | |_) | |  __/
+ *     |_____/ \___|\__|\__|_|_| |_|\__, |___/_|\__,_|_.__/|_|\___|
+ *                                   __/ |
+ *                                  |___/
+ */
+
+/** @brief A table for flw::SettingsDialog.
+*
+* A derived class must inherit all virtual methods.
+*
+* @snippet settingsdialog.cpp flw::table::SettingsTable example
+* @image html settingsdialog.png
+*/
+class SettingsTable : public Table {
+public:
+                                SettingsTable(int rows);
+    virtual void                get_data() = 0; ///< @brief Set user data.
+    void                        message(const std::string& msg, Fl_Color color = FL_FOREGROUND_COLOR);
+    virtual void                set_data() = 0; ///< @brief Set table data from user data.
+    virtual void                set_def_data() = 0; ///< @brief Set default data to table.
+    void                        set_dialog(SettingsDialog* dlg)
+                                    { _dlg = dlg; } ///< @brief Set dialog, this is done when this table is added to SettingsDialog (so table can call message(). @param[in] dlg  The dialog that owns this object.
+    virtual std::string         validate_data(int& row) = 0; ///< @brief Validate user data. @param[out] row  What row caused the error, if set that row will be selected. @return Return an error string or empty string if all data are valid.
+
+private:
+    SettingsDialog*             _dlg;   ///< @brief Pointer to owner so table can set message string.
 };
 
 } // table

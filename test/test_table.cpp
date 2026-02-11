@@ -102,7 +102,7 @@ public:
                     table->cell_align(r, c, FL_ALIGN_RIGHT);
                 }
 
-                if (c < 20) {
+                if (c != 14) {
                     table->cell_edit(r, c, true);
                 }
             }
@@ -120,7 +120,7 @@ public:
             table->cell_type(r, 11, table::Type::SLIDER);
             table->cell_type(r, 12, table::Type::LIST);
 
-            table->cell_format(r, 2, table::Format::INT_SEP);
+            table->cell_format(r, 2, table::Format::INT_SEP2);
             table->cell_format(r, 3, table::Format::DEC_2);
 
             table->cell_choice(r, 5, CHOICES);
@@ -160,7 +160,7 @@ public:
         table->cell_value(0, 12, "LIST");
 
         for (int c = 13; c <= cols; c++) {
-            if (c < 20) {
+            if (c != 14) {
                 table->cell_value(0, c, "?");
             }
             else {
