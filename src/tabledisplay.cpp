@@ -1129,7 +1129,7 @@ void flw::table::Display::_move_cursor(Move move) {
         auto r     = _curr_row;
         auto c     = _curr_col;
         auto range = (int) ((h() - _hor->h() - (_show_row_header ? _height : 0)) / _height);
-
+FLW_PRINTV((int) move)
         if (r < 1) {
             r = 1;
         }

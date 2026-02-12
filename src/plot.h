@@ -110,7 +110,7 @@ enum class Target {
  */
 
 struct Point;
-typedef std::vector<Point> PointVector;
+typedef std::vector<Point> PointVector;     ///< @brief A vector with data points.
 
 /** @brief Point class represent one data point with X and Y values.
 *

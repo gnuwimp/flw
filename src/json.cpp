@@ -1646,9 +1646,6 @@ std::string gnu::json::Builder::encode(Encode option) const {
     if (_root == nullptr) {
         throw std::string("Error: empty json.");
     }
-    else if (_name != "") {
-        throw std::string("Error: unused name value <" + _name + ">.");
-    }
 
     auto j = json::encode(*_root, option);
 

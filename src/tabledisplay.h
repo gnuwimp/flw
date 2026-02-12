@@ -147,21 +147,24 @@ public:
     virtual void                size(int rows, int cols);
 
 protected:
+    /** @brief Values for moving the cursor with the keyboard.
+    *
+    */
     enum class Move {
-                                DOWN,
-                                FIRST_COL,
-                                FIRST_ROW,
-                                LAST_COL,
-                                LAST_ROW,
-                                LEFT,
-                                PAGE_DOWN,
-                                PAGE_UP,
-                                RIGHT,
-                                SCROLL_DOWN,
-                                SCROLL_LEFT,
-                                SCROLL_RIGHT,
-                                SCROLL_UP,
-                                UP,
+                                DOWN,               ///< @brief Move cursor down (down arrow).
+                                FIRST_COL,          ///< @brief Move cursor to first column (home).
+                                FIRST_ROW,          ///< @brief Move cursor to first row (ctrl + pageup).
+                                LAST_COL,           ///< @brief Move cursor to last column (end).
+                                LAST_ROW,           ///< @brief Move cursor to last row (ctril + pagedown).
+                                LEFT,               ///< @brief Move cursor to the left (left arrow).
+                                PAGE_DOWN,          ///< @brief Move cursor a page down (pagedown).
+                                PAGE_UP,            ///< @brief Move cursor a page up (pageup).
+                                RIGHT,              ///< @brief Move cursor to the right (right arrow).
+                                SCROLL_DOWN,        ///< @brief Move cursor down a few rows (ctrl + down).
+                                SCROLL_LEFT,        ///< @brief Move cursor to left a few columns (ctrl + left).
+                                SCROLL_RIGHT,       ///< @brief Move cursor to right a few columns (ctrl + right).
+                                SCROLL_UP,          ///< @brief Move cursor up a few rows (ctrl + up).
+                                UP,                 ///< @brief Move cursor up (up arrow).
     };
 
     int                         _cell_height(int Y = -1);

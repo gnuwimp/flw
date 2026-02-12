@@ -53,12 +53,12 @@ enum class Encode : uint8_t {
                                 FLAT,       ///< @brief No indentation and no newlines.
 };
 
-static const size_t             MAX_DEPTH = 32;
+static const size_t             MAX_DEPTH = 32; ///< @brief Max depth of json structure.
 
 class JS;
 
-typedef std::map<std::string, JS*> JSObject;
-typedef std::vector<JS*> JSArray;
+typedef std::map<std::string, JS*> JSObject;    ///< @brief An json object that is an hash with JS values and a string for the field name.
+typedef std::vector<JS*>           JSArray;     ///< @brief An json array which contains JS objects.
 
 size_t                          count_utf8(const char* p);
 JS                              decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
@@ -202,13 +202,13 @@ private:
     JS*                         _parent;    ///< @brief Parent of value.
     char*                       _name;      ///< @brief Name of json value.
 
-    union {                                 ///< @brief Union of all possible json values, only one can exist at the same time, null has no value.
+    union {                                 
         JSArray*                _va;
         JSObject*               _vo;
         bool                    _vb;
         double                  _vn;
         char*                   _vs;
-    };
+    };                                      ///< @brief Union of all possible json values, only one can exist at the same time, null has no value.
 };
 
 /*
@@ -238,7 +238,7 @@ public:
                                     { return add(json); } ///< @brief Add json value to current parent.
     Builder&                    add(JS* json);
     void                        clear()
-                                    { delete _root; _root = _current = nullptr; _name = ""; } ///< @brief Delete all values.
+                                    { delete _root; _root = _current = nullptr; } ///< @brief Delete all values.
     std::string                 encode(Encode option = Encode::DEFAULT) const;
     Builder&                    end();
     const JS*                   root() const
@@ -255,9 +255,8 @@ public:
     static JS*                  MakeString(const std::string& vs, const char* name = "", bool escape = true);
 
 private:
-    JS*                         _current;
-    JS*                         _root;
-    std::string                 _name;
+    JS*                         _current;   ///< @brief Current node.
+    JS*                         _root;      ///< @brief Root node.
 };
 
 } // json

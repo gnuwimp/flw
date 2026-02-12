@@ -72,13 +72,13 @@ private:
 
     static void                 _Callback(Fl_Widget*, void* o);
 
-    std::string                 _base;
-    Fl_Callback*                _callback;
-    std::string                 _clear;
-    StringVector                _items;
-    size_t                      _max;
-    Fl_Menu_*                   _menu;
-    void*                       _user;
+    std::string                 _base;          ///< @brief Base label for the menu.
+    Fl_Callback*                _callback;      ///< @brief Callback for menu items.
+    std::string                 _clear;         ///< @brief Label for clearing all recent items.
+    StringVector                _items;         ///< @brief All recent names.
+    size_t                      _max;           ///< @brief Max nmumber of recent items.
+    Fl_Menu_*                   _menu;          ///< @brief Menu object that own recent items.
+    void*                       _user;          ///< @brief User data for callbacks.
 };
 
 } // util

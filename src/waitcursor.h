@@ -28,7 +28,7 @@ namespace flw {
 *
 */
 class WaitCursor {
-    static WaitCursor*          WAITCURSOR;
+    static WaitCursor*          WAITCURSOR; ///< @brief Only one cursor can be created at the same time.
 
 public:
                                 WaitCursor();

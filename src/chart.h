@@ -33,9 +33,9 @@ class  Area;
 struct Point;
 class  Line;
 
-typedef std::vector<Point> PointVector;
-typedef std::vector<Line>  LineVector;
-typedef std::vector<Area>  AreaVector;
+typedef std::vector<Point> PointVector;     ///< @brief A vector with data points.
+typedef std::vector<Line>  LineVector;      ///< @brief A vector with chart lines.
+typedef std::vector<Area>  AreaVector;      ///< @brief A vector with chart areas.
 
 static constexpr const double MAX_VALUE      = 9223372036854775807.0;   ///< @brief Max number value.
 static constexpr const double MIN_VALUE      = 0.0000001;               ///< @brief Min (abs) number value.

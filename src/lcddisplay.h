@@ -84,15 +84,15 @@ public:
 private:
     void                        _draw(unsigned a, int x, int y, int w, int h);
 
-    Fl_Align                    _align;
-    Fl_Color                    _seg_color;
-    std::string                 _value;
-    int                         _dot_size;
-    int                         _seg_gap;
-    int                         _thick;
-    int                         _unit_gap;
-    int                         _unit_h;
-    int                         _unit_w;
+    Fl_Align                    _align;         ///< @brief Label align.
+    Fl_Color                    _seg_color;     ///< @brief LCD color.
+    std::string                 _value;         ///< @brief Value.
+    int                         _dot_size;      ///< @brief Dot size in pixels.
+    int                         _seg_gap;       ///< @brief Gap between segments.
+    int                         _thick;         ///< @brief Thickness of segments.
+    int                         _unit_gap;      ///< @brief Gap between characters.
+    int                         _unit_h;        ///< @brief Height of characters (pixels).
+    int                         _unit_w;        ///< @brief Width of characters (pixels).
 };
 
 }

@@ -177,12 +177,12 @@ public:
                                     { return a.compare(b) < 0; } ///< @brief Compare two dates.
 
 private:
-    short                       _year;
-    char                        _month;
-    char                        _day;
-    char                        _hour;
-    char                        _min;
-    char                        _sec;
+    short                       _year;      ///< @brief Year from 1 - 9999.
+    char                        _month;     ///< @brief Month from 1 - 12.
+    char                        _day;       ///< @brief Day from 1 - 31.
+    char                        _hour;      ///< @brief Hour from 0 - 23.
+    char                        _min;       ///< @brief Minute from 0 - 59.
+    char                        _sec;       ///< @brief Second from 0 - 59.
 };
 
 } // gnu

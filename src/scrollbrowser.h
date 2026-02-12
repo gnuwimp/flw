@@ -69,10 +69,10 @@ public:
     static void                 Callback(Fl_Widget*, void*);
 
 private:
-    Fl_Menu_Button*             _menu;
-    bool                        _flag_menu;
-    bool                        _flag_move;
-    int                         _scroll;
+    Fl_Menu_Button*             _menu;          ///< @brief Popup menu.
+    bool                        _flag_menu;     ///< @brief True to enable menu.
+    bool                        _flag_move;     ///< @brief True to enable scrol mode.
+    int                         _scroll;        ///< @brief Number of lines to scroll.
 };
 
 } // flw
