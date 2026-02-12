@@ -196,13 +196,13 @@ private:
     static ssize_t              COUNT;
     static ssize_t              MAX;
 
-    bool                        _inl;       // To create values inline without newlines.
-    Type                        _type;      // JSON type.
-    uint32_t                    _pos;       // Position in json buffer.
-    JS*                         _parent;    // Parent of value.
-    char*                       _name;      // Name of json value.
+    bool                        _inl;       ///< @brief To create values inline without newlines.
+    Type                        _type;      ///< @brief JSON type.
+    uint32_t                    _pos;       ///< @brief Position in json buffer.
+    JS*                         _parent;    ///< @brief Parent of value.
+    char*                       _name;      ///< @brief Name of json value.
 
-    union {                                 // Union of all possible json values, only one can exist at the same time, null has no value.
+    union {                                 ///< @brief Union of all possible json values, only one can exist at the same time, null has no value.
         JSArray*                _va;
         JSObject*               _vo;
         bool                    _vb;

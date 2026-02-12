@@ -58,13 +58,13 @@ public:
 private:
     static void                 Callback(Fl_Widget* w, void* o);
 
-    Fl_Button*                  _cancel;    // Cancel work button.
-    Fl_Hold_Browser*            _label;     // Message label.
-    Fl_Hor_Fill_Slider*         _progress;  // Optional pprogress bar.
-    Fl_Toggle_Button*           _pause;     // Pause button.
-    GridGroup*                  _grid;      // Layout manager.
-    bool                        _ret;       // Return value from update().
-    unsigned                    _last;      // Last refresh window time.
+    Fl_Button*                  _cancel;    ///< @brief Cancel work button.
+    Fl_Hold_Browser*            _label;     ///< @brief Message label.
+    Fl_Hor_Fill_Slider*         _progress;  ///< @brief Optional pprogress bar.
+    Fl_Toggle_Button*           _pause;     ///< @brief Pause button.
+    GridGroup*                  _grid;      ///< @brief Layout manager.
+    bool                        _ret;       ///< @brief Return value from update().
+    unsigned                    _last;      ///< @brief Last refresh window time.
 };
 
 } // flw

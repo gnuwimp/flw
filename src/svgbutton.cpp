@@ -195,7 +195,6 @@ bool flw::SVGButton::set_icon(const std::string& l, const std::string& svg, Pos 
 
     if (svg != "") {
         if (util::icon(this, svg, flw::PREF_FONTSIZE * size) == true) {
-        //if (util::icon(this, svg, 12) == true) {
             align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE | FL_ALIGN_CLIP | al);
             label_image_spacing(SVGButton::SPACING);
             return true;

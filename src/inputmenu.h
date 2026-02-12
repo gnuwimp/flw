@@ -74,8 +74,8 @@ private:
     static void                 _CallbackInput(Fl_Widget*, void*);
     static void                 _CallbackMenu(Fl_Widget*, void*);
 
-    priv::_InputMenu*           _input; // Input widget.
-    Fl_Menu_Button*             _menu;  // Menu button with a list of values to select from.
+    priv::_InputMenu*           _input; ///< @brief Input widget.
+    Fl_Menu_Button*             _menu;  ///< @brief Menu button with a list of values to select from.
 };
 
 } // flw

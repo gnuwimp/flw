@@ -57,8 +57,8 @@ public:
 private:
     void                        _last_active_widget(Fl_Widget** first, Fl_Widget** last);
 
-    VoidVector                  _widgets;   // Array with _GridGroupChild objects.
-    int                         _size;      // Grid size in pixels.
+    VoidVector                  _widgets;   ///< @brief Array with _GridGroupChild objects.
+    int                         _size;      ///< @brief Grid size in pixels.
 };
 
 } // flw

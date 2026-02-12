@@ -71,15 +71,15 @@ public:
 private:
     static void                 Callback(Fl_Widget* w, void* o);
 
-    Fl_Box*                     _label;     // Message label.
-    Fl_Button*                  _cancel;    // Cancel work button.
-    Fl_Button*                  _ok;        // Close dialog and update settings.
-    Fl_Button*                  _reset;     // Reset data to default.
-    Fl_Button*                  _undo;      // Restore data from start.
-    GridGroup*                  _grid;      // Layout manager.
-    TabsGroup*                  _tabs;      // Tab pages.
-    bool                        _ret;       // Return value from update().
-    bool                        _run;       // Last refresh window time.
+    Fl_Box*                     _label;     ///< @brief Message label.
+    Fl_Button*                  _cancel;    ///< @brief Cancel work button.
+    Fl_Button*                  _ok;        ///< @brief Close dialog and update settings.
+    Fl_Button*                  _reset;     ///< @brief Reset data to default.
+    Fl_Button*                  _undo;      ///< @brief Restore data from start.
+    GridGroup*                  _grid;      ///< @brief Layout manager.
+    TabsGroup*                  _tabs;      ///< @brief Tab pages.
+    bool                        _ret;       ///< @brief Return value from update().
+    bool                        _run;       ///< @brief Last refresh window time.
 };
 
 } // flw

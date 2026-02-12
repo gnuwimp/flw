@@ -183,8 +183,8 @@ public:
     static Buf                  RemoveCR(const char* buffer, size_t size);
 
 private:
-    char*                       _str;   // Buffer memory.
-    size_t                      _size;  // Number of bytes.
+    char*                       _str;   ///< @brief Buffer memory.
+    size_t                      _size;  ///< @brief Number of bytes.
 
 };
 
@@ -261,16 +261,16 @@ public:
     std::string                 type_name() const;
 
 private:
-    Type                        _type;          // File type.
-    bool                        _link;          // Is it an soft link?
-    int                         _mode;          // File mode, different values on unix/windows.
-    int64_t                     _ctime;         // Created time.
-    int64_t                     _mtime;         // Modified time.
-    int64_t                     _size;          // Size in bytes.
-    std::string                 _ext;           // File extension.
-    std::string                 _filename;      // Full filename.
-    std::string                 _name;          // Only the filename and extension.
-    std::string                 _path;          // Path to file, empty if root.
+    Type                        _type;          ///< @brief File type.
+    bool                        _link;          ///< @brief Is it an soft link?
+    int                         _mode;          ///< @brief File mode, different values on unix/windows.
+    int64_t                     _ctime;         ///< @brief Created time.
+    int64_t                     _mtime;         ///< @brief Modified time.
+    int64_t                     _size;          ///< @brief Size in bytes.
+    std::string                 _ext;           ///< @brief File extension.
+    std::string                 _filename;      ///< @brief Full filename.
+    std::string                 _name;          ///< @brief Only the filename and extension.
+    std::string                 _path;          ///< @brief Path to file, empty if root.
 };
 
 } // file

@@ -260,15 +260,15 @@ public:
                                     { return _tick; } ///< @brief Get value between every tick.
 
 private:
-    Fl_Color                    _color;     // Label color.
-    StringVector                _labels;    // Custom labels.
-    double                      _max;       // Max scale value.
-    double                      _min;       // Min scale value.
-    double                      _pixel;     // Numerical value between every pixel.
-    double                      _tick;      // Value between every tick.
-    int                         _fr;        // Number of decimals for the value labels.
-    size_t                      _lwidth;    // Max label width.
-    std::string                 _label;     // Long label below or to the left of scale values.
+    Fl_Color                    _color;     ///< @brief Label color.
+    StringVector                _labels;    ///< @brief Custom labels.
+    double                      _max;       ///< @brief Max scale value.
+    double                      _min;       ///< @brief Min scale value.
+    double                      _pixel;     ///< @brief Numerical value between every pixel.
+    double                      _tick;      ///< @brief Value between every tick.
+    int                         _fr;        ///< @brief Number of decimals for the value labels.
+    size_t                      _lwidth;    ///< @brief Max label width.
+    std::string                 _label;     ///< @brief Long label below or to the left of scale values.
 };
 
 /*
@@ -370,28 +370,28 @@ private:
     static bool                 _CallbackPrinter(void* data, int pw, int ph, unsigned page);
     static void                 _CallbackToggle(Fl_Widget*, void* widget);
 
-    Fl_Menu_Button*             _menu;                  // Menu object.
-    Fl_Rect                     _area;                  // Plot area rectangle.
-    Fl_Rect                     _old;                   // For skipping resizes.
-    LineVector                  _lines;                 // All plotlines.
-    Scale                       _x;                     // X scale object.
-    Scale                       _y;                     // Y scale object.
-    bool                        _disable_menu;          // True to disable popup menu.
-    bool                        _horizontal;            // True to show horizontal lines
-    bool                        _labels;                // True to draw line labels.
-    bool                        _printing;              // Used when printing.
-    bool                        _vertical;              // True to show vertical lines.
-    const int                   _CH;                    // Character height in pixels.
-    const int                   _CW;                    // Character width in pixels.
-    double                      _max_x;                 // Max X value.
-    double                      _max_y;                 // Max Y value.
-    double                      _min_x;                 // Min X value.
-    double                      _min_y;                 // Min Y value.
-    size_t                      _selected_line;         // Selected line index in vector.
-    size_t                      _selected_point;        // Selected point index in selected line.
-    std::string                 _filename;              // Last used filename.
-    std::string                 _label;                 // Main label.
-    std::string                 _tooltip;               // Tooltip text with numerical values.
+    Fl_Menu_Button*             _menu;                  ///< @brief Menu object.
+    Fl_Rect                     _area;                  ///< @brief Plot area rectangle.
+    Fl_Rect                     _old;                   ///< @brief For skipping resizes.
+    LineVector                  _lines;                 ///< @brief All plotlines.
+    Scale                       _x;                     ///< @brief X scale object.
+    Scale                       _y;                     ///< @brief Y scale object.
+    bool                        _disable_menu;          ///< @brief True to disable popup menu.
+    bool                        _horizontal;            ///< @brief True to show horizontal lines
+    bool                        _labels;                ///< @brief True to draw line labels.
+    bool                        _printing;              ///< @brief Used when printing.
+    bool                        _vertical;              ///< @brief True to show vertical lines.
+    const int                   _CH;                    ///< @brief Character height in pixels.
+    const int                   _CW;                    ///< @brief Character width in pixels.
+    double                      _max_x;                 ///< @brief Max X value.
+    double                      _max_y;                 ///< @brief Max Y value.
+    double                      _min_x;                 ///< @brief Min X value.
+    double                      _min_y;                 ///< @brief Min Y value.
+    size_t                      _selected_line;         ///< @brief Selected line index in vector.
+    size_t                      _selected_point;        ///< @brief Selected point index in selected line.
+    std::string                 _filename;              ///< @brief Last used filename.
+    std::string                 _label;                 ///< @brief Main label.
+    std::string                 _tooltip;               ///< @brief Tooltip text with numerical values.
 
 };
 

@@ -65,17 +65,17 @@ private:
 
     static void                 Callback(Fl_Widget* w, void* o);
 
-    Fl_Box*                     _label;     // Sample text label.
-    Fl_Button*                  _cancel;    // Cancel button.
-    SVGButton*                  _select;    // Select and close dialog button.
-    GridGroup*                  _grid;      // Layout manager.
-    ScrollBrowser*              _fonts;     // Font list.
-    ScrollBrowser*              _sizes;     // Font size list.
-    bool                        _ret;       // Return value.
-    bool                        _run;       // Run flag.
-    int                         _font;      // Selected font.
-    int                         _fontsize;  // Selected font size.
-    std::string                 _fontname;  // Selected font name.
+    Fl_Box*                     _label;     ///< @brief Sample text label.
+    Fl_Button*                  _cancel;    ///< @brief Cancel button.
+    SVGButton*                  _select;    ///< @brief Select and close dialog button.
+    GridGroup*                  _grid;      ///< @brief Layout manager.
+    ScrollBrowser*              _fonts;     ///< @brief Font list.
+    ScrollBrowser*              _sizes;     ///< @brief Font size list.
+    bool                        _ret;       ///< @brief Return value.
+    bool                        _run;       ///< @brief Run flag.
+    int                         _font;      ///< @brief Selected font.
+    int                         _fontsize;  ///< @brief Selected font size.
+    std::string                 _fontname;  ///< @brief Selected font name.
 };
 
 namespace dlg {

@@ -1828,7 +1828,7 @@ void flw::dlg::msg_alert(const std::string& title, const std::string& message, i
 * You can show 1 to 5 buttons to choose from.\n
 * Any button label can be empty and it will be hidden.\n
 *
-* @see dlg::button() on how to add a icon.\n
+* @see flw::SVGButton() on how to add a icon.\n
 *
 * @param[in] title    Dialog title.
 * @param[in] message  Message text.

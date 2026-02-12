@@ -73,8 +73,8 @@ public:
                                     { _return = value; } ///< @brief Set return property.
 
 private:
-    bool                        _dark;      // Dark color for the active button color.
-    bool                        _return;    // If true then it is an return button.
+    bool                        _dark;      ///< @brief Dark color for the active button color.
+    bool                        _return;    ///< @brief If true then it is an return button.
 };
 
 }

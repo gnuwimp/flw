@@ -73,9 +73,9 @@ public:
     void                        size(unsigned size);
 
 private:
-    Pos                         _pos;       // Layout option.
-    VoidVector                  _widgets;   // Vector of _ToolGroupChild objects.
-    bool                        _expand;    // Expand last widget option.
+    Pos                         _pos;       ///< @brief Layout option.
+    VoidVector                  _widgets;   ///< @brief Vector of _ToolGroupChild objects.
+    bool                        _expand;    ///< @brief Expand last widget option.
 };
 
 }

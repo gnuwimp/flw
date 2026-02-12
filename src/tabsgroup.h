@@ -148,26 +148,26 @@ private:
     void                        _resize_left_right(int X, int Y, int W, int H);
     void                        _resize_top_bottom(int X, int Y, int W, int H);
 
-    Fl_Boxtype                  _down_box;  // Box type for tab buttons.
-    Fl_Boxtype                  _up_box;    // Box type for tab buttons.
-    Fl_Color                    _color;     // Tab color, default FL_SELECTION_COLOR.
-    Fl_Group*                   _tabs;      // Area for tab buttons.
-    Fl_Rect                     _area;      // Area for widgets.
-    Fl_Scrollbar*               _scroll;    // Scrollbar for scrolling tabs if they are to large to fit.
-    Pos                         _tab_pos;   // Tab placement.
-    WidgetVector                _widgets;   // Vector with _TabsGroupButton objects.
-    bool                        _keyboard;  // False to disable keyboard shortcuts.
-    bool                        _drag;      // True if drag event.
-    int                         _active1;   // Active widget index.
-    int                         _active2;   // Previous active widget.
-    int                         _e;         // East border around child widget.
-    int                         _n;         // North border around child widget.
-    int                         _s;         // South border around child widget.
-    int                         _space;     // Space between tab buttons.
-    int                         _visible;   // Number of visible tabs.
-    int                         _w;         // West border around child widget.
-    int                         _width1;    // Width of EAST/WEST tab buttons, used also for mouse drags.
-    int                         _width2;    // Max width of NORTH/SOUTH buttons in characters.
+    Fl_Boxtype                  _down_box;  ///< @brief Box type for tab buttons.
+    Fl_Boxtype                  _up_box;    ///< @brief Box type for tab buttons.
+    Fl_Color                    _color;     ///< @brief Tab color, default FL_SELECTION_COLOR.
+    Fl_Group*                   _tabs;      ///< @brief Area for tab buttons.
+    Fl_Rect                     _area;      ///< @brief Area for widgets.
+    Fl_Scrollbar*               _scroll;    ///< @brief Scrollbar for scrolling tabs if they are to large to fit.
+    Pos                         _tab_pos;   ///< @brief Tab placement.
+    WidgetVector                _widgets;   ///< @brief Vector with _TabsGroupButton objects.
+    bool                        _keyboard;  ///< @brief False to disable keyboard shortcuts.
+    bool                        _drag;      ///< @brief True if drag event.
+    int                         _active1;   ///< @brief Active widget index.
+    int                         _active2;   ///< @brief Previous active widget.
+    int                         _e;         ///< @brief East border around child widget.
+    int                         _n;         ///< @brief North border around child widget.
+    int                         _s;         ///< @brief South border around child widget.
+    int                         _space;     ///< @brief Space between tab buttons.
+    int                         _visible;   ///< @brief Number of visible tabs.
+    int                         _w;         ///< @brief West border around child widget.
+    int                         _width1;    ///< @brief Width of EAST/WEST tab buttons, used also for mouse drags.
+    int                         _width2;    ///< @brief Max width of NORTH/SOUTH buttons in characters.
 };
 
 } // flw

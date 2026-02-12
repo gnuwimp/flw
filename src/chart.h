@@ -134,10 +134,10 @@ enum class AreaNum {
 * Use the constructor so the date will be converted to "YYYYMMMMDD HHMMSS" (Date::FORMAT::ISO_TIME).\n
 */
 struct Point {
-    std::string                 date;       // Date value that should be in the format of "YYYYMMDD HH:MM:SS".
-    double                      close;      // Close value, should be within max/min range.
-    double                      high;       // Largest value.
-    double                      low;        // Smallest value.
+    std::string                 date;       ///< @brief Date value that should be in the format of "YYYYMMDD HH:MM:SS".
+    double                      close;      ///< @brief Close value, should be within max/min range.
+    double                      high;       ///< @brief Largest value.
+    double                      low;        ///< @brief Smallest value.
 
     explicit                    Point();
     explicit                    Point(const std::string& date, double value = 0.0);
@@ -228,14 +228,14 @@ public:
                                     { return _width; } ///< @brief Get line width.
 
 private:
-    PointVector                 _data;      // Vector with data points.
-    Fl_Align                    _align;     // Side of scale, left or right.
-    Fl_Color                    _color;     // Line color.
-    Fl_Rect                     _rect;      // Label rectangle.
-    LineType                    _type;      // What line type to draw.
-    bool                        _visible;   // Visible or not.
-    std::string                 _label;     // Line label.
-    unsigned                    _width;     // Line size.
+    PointVector                 _data;      ///< @brief Vector with data points.
+    Fl_Align                    _align;     ///< @brief Side of scale, left or right.
+    Fl_Color                    _color;     ///< @brief Line color.
+    Fl_Rect                     _rect;      ///< @brief Label rectangle.
+    LineType                    _type;      ///< @brief What line type to draw.
+    bool                        _visible;   ///< @brief Visible or not.
+    std::string                 _label;     ///< @brief Line label.
+    unsigned                    _width;     ///< @brief Line size.
 };
 
 /*
@@ -274,10 +274,10 @@ public:
     double                      tick() const
                                     { return _tick; } ///< @brief Get y value between every y tick.
 private:
-    double                      _max;       // Max y scale value.
-    double                      _min;       // Min y scale value.
-    double                      _pixel;     // Y value for one pixel.
-    double                      _tick;      // Value between every y tick.
+    double                      _max;       ///< @brief Max y scale value.
+    double                      _min;       ///< @brief Min y scale value.
+    double                      _pixel;     ///< @brief Y value for one pixel.
+    double                      _tick;      ///< @brief Value between every y tick.
 };
 
 /*
@@ -339,15 +339,15 @@ public:
 
 private:
 
-    AreaNum                     _area;          // Area index.
-    LineVector                  _lines;         // Vector with Line objects.
-    Scale                       _left;          // Left y scale.
-    Scale                       _right;         // Right y scale.
-    Fl_Rect                     _rect;          // Area rectangle.
-    double                      _clamp_max;     // Max clamp value, default to INFINITY.
-    double                      _clamp_min;     // Min clamp value, default to INFINITY.
-    int                         _percent;       // Size as a percent value from 10 to 100.
-    size_t                      _selected;      // Selected chart line index in _lines.
+    AreaNum                     _area;          ///< @brief Area index.
+    LineVector                  _lines;         ///< @brief Vector with Line objects.
+    Scale                       _left;          ///< @brief Left y scale.
+    Scale                       _right;         ///< @brief Right y scale.
+    Fl_Rect                     _rect;          ///< @brief Area rectangle.
+    double                      _clamp_max;     ///< @brief Max clamp value, default to INFINITY.
+    double                      _clamp_min;     ///< @brief Min clamp value, default to INFINITY.
+    int                         _percent;       ///< @brief Size as a percent value from 10 to 100.
+    size_t                      _selected;      ///< @brief Selected chart line index in _lines.
 
 };
 
@@ -480,33 +480,33 @@ private:
     static bool                 _CallbackPrinter(void* data, int pw, int ph, unsigned page);
     static void                 _CallbackScrollbar(Fl_Widget*, void* widget);
 
-    Area*                       _area;                  // Active area, set in handle() when area is clicked.
-    AreaVector                  _areas;                 // Area objects, all are using same DateRange.
-    DateRange                   _date_range;            // What kind of date serie that are generated.
-    PointVector                 _block_dates;           // Vector with dates that are removed from the date list.
-    PointVector                 _dates;                 // Vector with dates from first to last date according to _date_range.
-    Fl_Menu_Button*             _menu;                  // Popup menu.
-    Fl_Rect                     _old;                   // Block resizes.
-    Fl_Scrollbar*               _scroll;                // Horizontal scroll bar.
-    bool                        _disable_menu;          // Flag to disable popup menu.
-    bool                        _horizontal;            // Horizontal support lines.
-    bool                        _labels;                // Line labels.
-    bool                        _printing;              // Used when printing.
-    bool                        _vertical;              // Vertical support lines.
-    const int                   _CH;                    // Font height.
-    const int                   _CW;                    // Font width.
-    double                      _alt_size;              // Alternative size for day labels.
-    int                         _bottom_space;          // Bottom space from last area to h() in pixels.
-    int                         _date_start;            // Index in _dates vector for first date to display, changed by the scrollbar.
-    int                         _margin_left;           // Width of left y scale in characters.
-    int                         _margin_right;          // Width of right y scale in characters.
-    int                         _tick_width;            // Number of pixels for every tick.
-    int                         _ticks;                 // Number of ticks in the view.
-    int                         _top_space;             // Top space from y() to first area in pixels.
-    int                         _ver_pos[MAX_VLINES];   // Save x pos for vertical lines.
-    std::string                 _filename;              // Last used filename.
-    std::string                 _label;                 // Top label.
-    std::string                 _tooltip;               // For the popup tooltip when pressing lb inside area.
+    Area*                       _area;                  ///< @brief Active area, set in handle() when area is clicked.
+    AreaVector                  _areas;                 ///< @brief Area objects, all are using same DateRange.
+    DateRange                   _date_range;            ///< @brief What kind of date serie that are generated.
+    PointVector                 _block_dates;           ///< @brief Vector with dates that are removed from the date list.
+    PointVector                 _dates;                 ///< @brief Vector with dates from first to last date according to _date_range.
+    Fl_Menu_Button*             _menu;                  ///< @brief Popup menu.
+    Fl_Rect                     _old;                   ///< @brief Block resizes.
+    Fl_Scrollbar*               _scroll;                ///< @brief Horizontal scroll bar.
+    bool                        _disable_menu;          ///< @brief Flag to disable popup menu.
+    bool                        _horizontal;            ///< @brief Horizontal support lines.
+    bool                        _labels;                ///< @brief Line labels.
+    bool                        _printing;              ///< @brief Used when printing.
+    bool                        _vertical;              ///< @brief Vertical support lines.
+    const int                   _CH;                    ///< @brief Font height.
+    const int                   _CW;                    ///< @brief Font width.
+    double                      _alt_size;              ///< @brief Alternative size for day labels.
+    int                         _bottom_space;          ///< @brief Bottom space from last area to h() in pixels.
+    int                         _date_start;            ///< @brief Index in _dates vector for first date to display, changed by the scrollbar.
+    int                         _margin_left;           ///< @brief Width of left y scale in characters.
+    int                         _margin_right;          ///< @brief Width of right y scale in characters.
+    int                         _tick_width;            ///< @brief Number of pixels for every tick.
+    int                         _ticks;                 ///< @brief Number of ticks in the view.
+    int                         _top_space;             ///< @brief Top space from y() to first area in pixels.
+    int                         _ver_pos[MAX_VLINES];   ///< @brief Save x pos for vertical lines.
+    std::string                 _filename;              ///< @brief Last used filename.
+    std::string                 _label;                 ///< @brief Top label.
+    std::string                 _tooltip;               ///< @brief For the popup tooltip when pressing lb inside area.
 };
 
 } // namespace chart
