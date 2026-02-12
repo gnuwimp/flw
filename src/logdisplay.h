@@ -17,6 +17,10 @@
 
 namespace flw {
 
+namespace priv {
+    struct _LogDisplayBuffer;
+}
+
 /*
  *      _                 _____  _           _
  *     | |               |  __ \(_)         | |
@@ -117,28 +121,14 @@ protected:
 
 private:
     const char*                 _check_text(const char* text);
-    char                        _style_char(size_t pos) const
-                                    { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; } ///< @brief Get character. @param[in] pos  Valid index. @return Color code or 0 if index is out of range.
+    char                        _style_char(size_t pos) const;
 
-    /** @brief Keep data while parsing (private).
-    * @private
-    */
-    struct _Tmp {
-        char*                   buf;
-        size_t                  len;
-        size_t                  pos;
-        size_t                  size;
-
-                                _Tmp();
-                                ~_Tmp();
-    };
-
-    Fl_Text_Buffer*             _buffer;
-    std::string                 _find;
-    bool                        _lock_colors;
-    std::string                 _json;
-    Fl_Text_Buffer*             _style;
-    _Tmp*                       _tmp;
+    Fl_Text_Buffer*             _buffer;        ///< @brief Text buffer object.
+    Fl_Text_Buffer*             _style;         ///< @brief Style buffer.
+    bool                        _lock_colors;   ///< @brief True to lock colors from this point in line.
+    priv::_LogDisplayBuffer*    _tmp;           ///< @brief Buffer that own the text during parsing.
+    std::string                 _find;          ///< @brief Find text string.
+    std::string                 _json;          ///< @brief JSON for setting colors.
 };
 
 }

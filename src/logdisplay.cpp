@@ -240,6 +240,39 @@ Ctrl + 'e' to edit style string.
 )";
 
 /*
+ *           _                 _____  _           _             ____         __  __
+ *          | |               |  __ \(_)         | |           |  _ \       / _|/ _|
+ *          | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _| |_) |_   _| |_| |_ ___ _ __
+ *          | |    / _ \ / _` | |  | | / __| '_ \| |/ _` | | | |  _ <| | | |  _|  _/ _ \ '__|
+ *          | |___| (_) | (_| | |__| | \__ \ |_) | | (_| | |_| | |_) | |_| | | | ||  __/ |
+ *          |______\___/ \__, |_____/|_|___/ .__/|_|\__,_|\__, |____/ \__,_|_| |_| \___|_|
+ *      ______            __/ |            | |             __/ |
+ *     |______|          |___/             |_|            |___/
+ */
+
+
+/** @brief Buffer data.
+* @private
+*/
+struct _LogDisplayBuffer {
+    char*                   buf;    ///< @brief Text buffer.
+    size_t                  line;   ///< @brief Current line length.
+    size_t                  pos;    ///< @brief Current pos in buffer.
+    size_t                  size;   ///< @brief Text length.
+
+    _LogDisplayBuffer() {
+        buf  = nullptr;
+        line = 0;
+        pos  = 0;
+        size = 0;
+    }
+
+    ~_LogDisplayBuffer() {
+        free(buf);
+    }
+};
+
+/*
  *           _                 _____  _           _              _____ _         _
  *          | |               |  __ \(_)         | |            / ____| |       | |
  *          | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _| (___ | |_ _   _| | ___
@@ -420,34 +453,6 @@ static char* _logdisplay_win_to_unix(const char* string) {
 
 } // flw::priv
 } // flw
-
-/*
- *      _                 _____  _           _                _______
- *     | |               |  __ \(_)         | |            _ |__   __|
- *     | |     ___   __ _| |  | |_ ___ _ __ | | __ _ _   _(_|_) | |_ __ ___  _ __
- *     | |    / _ \ / _` | |  | | / __| '_ \| |/ _` | | | |     | | '_ ` _ \| '_ \
- *     | |___| (_) | (_| | |__| | \__ \ |_) | | (_| | |_| |_ _  | | | | | | | |_) |
- *     |______\___/ \__, |_____/|_|___/ .__/|_|\__,_|\__, (_|_) |_|_| |_| |_| .__/
- *                   __/ |            | |             __/ |                 | |
- *                  |___/             |_|            |___/                  |_|
- */
-
- /** @brief Create tmp struct.
-* @private
-*/
-flw::LogDisplay::_Tmp::_Tmp() {
-    buf  = nullptr;
-    len  = 0;
-    pos  = 0;
-    size = 0;
-}
-
-/** @brief
-* @private
-*/
-flw::LogDisplay::_Tmp::~_Tmp() {
-    free(buf);
-}
 
 /*
  *      _                 _____  _           _
@@ -738,7 +743,7 @@ void flw::LogDisplay::style(const std::string& json) {
     auto ds = (json != "") ? priv::_logdisplay_parse_json(json) : std::vector<priv::_LogDisplayStyle>();
 
     _json      = json;
-    _tmp       = new _Tmp();
+    _tmp       = new priv::_LogDisplayBuffer();
     _tmp->size = _buffer->length();
     _tmp->buf  = static_cast<char*>(calloc(_tmp->size + 1, 1));
 
@@ -749,7 +754,7 @@ void flw::LogDisplay::style(const std::string& json) {
         while (_tmp->pos < (size_t) _buffer->length()) {
             auto line = _buffer->line_text(_tmp->pos);
 
-            _tmp->len = strlen(line);
+            _tmp->line = strlen(line);
 
             if (_json == "") {
                 line_cb(row, line);
@@ -790,7 +795,7 @@ void flw::LogDisplay::style(const std::string& json) {
                 }
             }
 
-            _tmp->pos += _tmp->len + 1;
+            _tmp->pos += _tmp->line + 1;
             row += 1;
             free(line);
         }
@@ -829,6 +834,15 @@ void flw::LogDisplay::style_between(const std::string& line, const std::string& 
     }
 }
 
+/** @brief Get character.
+*
+* @param[in] pos  Valid index. @return Color code or 0 if index is out of range.
+*/
+char flw::LogDisplay::_style_char(size_t pos) const {
+    pos += _tmp->pos;
+    return (pos < _tmp->size) ? _tmp->buf[pos] : 0;
+}
+
 /** @brief Set color between two indexes.
 *
 * Start and stop are positions in current line.
@@ -843,7 +857,7 @@ void flw::LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color co
     start += _tmp->pos;
     stop  += _tmp->pos;
 
-    while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->len) {
+    while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->line) {
         if (_lock_colors == false || _tmp->buf[start] == static_cast<char>(Color::FOREGROUND)) {
             _tmp->buf[start] = static_cast<char>(color);
         }
