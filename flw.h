@@ -351,7 +351,7 @@ enum class Encode : uint8_t {
 static const size_t             MAX_DEPTH = 32;
 class JS;
 typedef std::map<std::string, JS*> JSObject;
-typedef std::vector<JS*> JSArray;
+typedef std::vector<JS*>           JSArray;
 size_t                          count_utf8(const char* p);
 JS                              decode(const char* json, size_t len, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
 JS                              decode(const std::string& json, bool ignore_trailing_comma = false, bool ignore_duplicates = false, bool ignore_utf_check = false);
@@ -485,7 +485,7 @@ public:
                                     { return add(json); }
     Builder&                    add(JS* json);
     void                        clear()
-                                    { delete _root; _root = _current = nullptr; _name = ""; }
+                                    { delete _root; _root = _current = nullptr; }
     std::string                 encode(Encode option = Encode::DEFAULT) const;
     Builder&                    end();
     const JS*                   root() const
@@ -502,7 +502,6 @@ public:
 private:
     JS*                         _current;
     JS*                         _root;
-    std::string                 _name;
 };
 }
 }
@@ -1412,6 +1411,9 @@ private:
 }
 #include <FL/Fl_Text_Display.H>
 namespace flw {
+namespace priv {
+    struct _LogDisplayBuffer;
+}
 class LogDisplay : public Fl_Text_Display {
 public:
     enum class Color {
@@ -1475,22 +1477,13 @@ protected:
     void                        style_string(const std::string& line, const std::string& word1, LogDisplay::Color color, size_t count = 0);
 private:
     const char*                 _check_text(const char* text);
-    char                        _style_char(size_t pos) const
-                                    { pos += _tmp->pos; return (pos < _tmp->size) ? _tmp->buf[pos] : 0; }
-    struct _Tmp {
-        char*                   buf;
-        size_t                  len;
-        size_t                  pos;
-        size_t                  size;
-                                _Tmp();
-                                ~_Tmp();
-    };
+    char                        _style_char(size_t pos) const;
     Fl_Text_Buffer*             _buffer;
-    std::string                 _find;
-    bool                        _lock_colors;
-    std::string                 _json;
     Fl_Text_Buffer*             _style;
-    _Tmp*                       _tmp;
+    bool                        _lock_colors;
+    priv::_LogDisplayBuffer*    _tmp;
+    std::string                 _find;
+    std::string                 _json;
 };
 }
 #include <cmath>

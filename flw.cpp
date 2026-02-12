@@ -2941,9 +2941,6 @@ std::string gnu::json::Builder::encode(Encode option) const {
     if (_root == nullptr) {
         throw std::string("Error: empty json.");
     }
-    else if (_name != "") {
-        throw std::string("Error: unused name value <" + _name + ">.");
-    }
     auto j = json::encode(*_root, option);
     if (j.find("error") == 0) {
         throw j;
@@ -9243,6 +9240,21 @@ Shift + F3 to search for previous word.
 Ctrl + 'h' to display style string help.
 Ctrl + 'e' to edit style string.
 )";
+struct _LogDisplayBuffer {
+    char*                   buf;
+    size_t                  line;
+    size_t                  pos;
+    size_t                  size;
+    _LogDisplayBuffer() {
+        buf  = nullptr;
+        line = 0;
+        pos  = 0;
+        size = 0;
+    }
+    ~_LogDisplayBuffer() {
+        free(buf);
+    }
+};
 struct _LogDisplayStyle {
     enum STYLE {
                                 EMPTY,
@@ -9376,15 +9388,6 @@ static char* _logdisplay_win_to_unix(const char* string) {
 }
 }
 }
-flw::LogDisplay::_Tmp::_Tmp() {
-    buf  = nullptr;
-    len  = 0;
-    pos  = 0;
-    size = 0;
-}
-flw::LogDisplay::_Tmp::~_Tmp() {
-    free(buf);
-}
 flw::LogDisplay::LogDisplay(int X, int Y, int W, int H, const char *l) : Fl_Text_Display(X, Y, W, H, l) {
     _buffer      = new Fl_Text_Buffer();
     _style       = new Fl_Text_Buffer();
@@ -9505,7 +9508,7 @@ void flw::LogDisplay::save_file() {
 void flw::LogDisplay::style(const std::string& json) {
     auto ds = (json != "") ? priv::_logdisplay_parse_json(json) : std::vector<priv::_LogDisplayStyle>();
     _json      = json;
-    _tmp       = new _Tmp();
+    _tmp       = new priv::_LogDisplayBuffer();
     _tmp->size = _buffer->length();
     _tmp->buf  = static_cast<char*>(calloc(_tmp->size + 1, 1));
     if (_tmp->buf != nullptr) {
@@ -9513,7 +9516,7 @@ void flw::LogDisplay::style(const std::string& json) {
         memset(_tmp->buf, 'A', _tmp->size);
         while (_tmp->pos < (size_t) _buffer->length()) {
             auto line = _buffer->line_text(_tmp->pos);
-            _tmp->len = strlen(line);
+            _tmp->line = strlen(line);
             if (_json == "") {
                 line_cb(row, line);
             }
@@ -9551,7 +9554,7 @@ void flw::LogDisplay::style(const std::string& json) {
                     }
                 }
             }
-            _tmp->pos += _tmp->len + 1;
+            _tmp->pos += _tmp->line + 1;
             row += 1;
             free(line);
         }
@@ -9576,11 +9579,15 @@ void flw::LogDisplay::style_between(const std::string& line, const std::string& 
         }
     }
 }
+char flw::LogDisplay::_style_char(size_t pos) const {
+    pos += _tmp->pos;
+    return (pos < _tmp->size) ? _tmp->buf[pos] : 0;
+}
 void flw::LogDisplay::style_line(size_t start, size_t stop, LogDisplay::Color color) {
     assert(_tmp);
     start += _tmp->pos;
     stop  += _tmp->pos;
-    while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->len) {
+    while (start <= stop && start < _tmp->size && start < _tmp->pos + _tmp->line) {
         if (_lock_colors == false || _tmp->buf[start] == static_cast<char>(Color::FOREGROUND)) {
             _tmp->buf[start] = static_cast<char>(color);
         }
@@ -13410,6 +13417,7 @@ void flw::table::Display::_move_cursor(Move move) {
         auto r     = _curr_row;
         auto c     = _curr_col;
         auto range = (int) ((h() - _hor->h() - (_show_row_header ? _height : 0)) / _height);
+FLW_PRINTV((int) move)
         if (r < 1) {
             r = 1;
         }
