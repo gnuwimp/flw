@@ -55,10 +55,11 @@ public:
     *
     * @param[in] title   Dialog title.
     * @param[in] text    HTML text.
+    * @param[in] modal   True to make dialog modal.
     * @param[in] W       Width in characters.
     * @param[in] H       Height in characters.
     */
-    _DlgHtml(const std::string& title, const std::string& text, int W, int H) :
+    _DlgHtml(const std::string& title, const std::string& text, bool modal, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
 
@@ -80,7 +81,11 @@ public:
 
         callback(_DlgHtml::Callback, this);
         copy_label(title.c_str());
-        set_modal();
+
+        if (modal == true) {
+            set_modal();
+        }
+
         resizable(_grid);
         util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
@@ -141,10 +146,11 @@ public:
     * @param[in] list        String list.
     * @param[in] file        String file.
     * @param[in] fixed_font  Width in characters.
+    * @param[in] modal       True to make dialog modal.
     * @param[in] W           Width in characters.
     * @param[in] H           Height in characters.
     */
-    _DlgList(const std::string& title, const StringVector& list, const std::string& file, bool fixed_font = false, int W = 50, int H = 20) :
+    _DlgList(const std::string& title, const StringVector& list, const std::string& file, bool fixed_font, bool modal, int W, int H) :
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
 
@@ -173,7 +179,11 @@ public:
 
         callback(_DlgList::Callback, this);
         copy_label(title.c_str());
-        set_modal();
+
+        if (modal == true) {
+            set_modal();
+        }
+
         resizable(_grid);
         util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
@@ -272,16 +282,15 @@ public:
         const char*         value = nullptr,
         const std::string&  input = ""
     ) : Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
-        end();
 
         _b1     = new SVGButton(0, 0, 0, 0, b1);
         _b2     = new SVGButton(0, 0, 0, 0, b2);
         _b3     = new SVGButton(0, 0, 0, 0, b3);
         _b4     = new SVGButton(0, 0, 0, 0, b4);
         _b5     = new SVGButton(0, 0, 0, 0, b5);
-        _grid   = new GridGroup(0, 0, w(), h());
         _icon   = new Fl_Button(0, 0, 0, 0);
         _label  = new Fl_Box(0, 0, 0, 0);
+        _grid   = new GridGroup(0, 0, w(), h());
         _run    = false;
         _escape = 0;
 
@@ -1601,59 +1610,26 @@ public:
 * @image html html_dialog.png
 */
 void flw::dlg::html(const std::string& title, const std::string& text, int W, int H) {
-    priv::_DlgHtml dlg(title, text, W, H);
+    flw::priv::_DlgHtml dlg(title, text, true, W, H);
     dlg.run();
 }
 
-/** @brief Show a dialog with a list of strings.
+/** @brief Show a html view dialog.
 *
-* @see Fl_Browser::format_char() for formatting characters.\n
+* Only basic html 2 tags are supported.
 *
-* @param[in] title       Dialog title.
-* @param[in] list        List of strings.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
+* @param[in] title   Dialog title.
+* @param[in] text    HTML text.
+* @param[in] W       Width in characters.
+* @param[in] H       Height in characters.
 *
-* @snippet dialog.cpp flw::dlg::list example
-* @image html list_dialog.png
+* @return Dialog window.
+*
+* @snippet dialog.cpp flw::dlg::html example
+* @image html html_dialog.png
 */
-void flw::dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, list, "", fixed_font, W, H);
-    dlg.run();
-}
-
-/** @brief Show a dialog with a browser/list widget.
-*
-* @see Fl_Browser::format_char() for formatting characters.\n
-* This function splits a string on newline.\n
-*
-* @param[in] title       Dialog title.
-* @param[in] list        String list.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
-*/
-void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
-    priv::_DlgList dlg(title, list2, "", fixed_font, W, H);
-    dlg.run();
-}
-
-/** @brief Show a dialog with a browser/list widget.
-*
-* @see Fl_Browser::format_char() for formatting characters.\n
-* This function loads a list of string from a file.\n
-*
-* @param[in] title       Dialog title.
-* @param[in] file        Filename to load.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
-*/
-void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, W, H);
-    dlg.run();
+Fl_Window* flw::dlg::html_window(const std::string& title, const std::string& text, int W, int H) {
+    return new flw::priv::_DlgHtml(title, text, false, W, H);
 }
 
 /** @brief Show an text input dialog.
@@ -1671,7 +1647,7 @@ void flw::dlg::list_file(const std::string& title, const std::string& file, bool
 * @image html dlg_input.png
 */
 std::string flw::dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
     auto res = dlg.run();
 
     if (res == labels::OK) {
@@ -1698,7 +1674,7 @@ std::string flw::dlg::input_double(const std::string& title, const std::string& 
     char num[500];
     snprintf(num, 500, "%g", value);
 
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
     auto res = dlg.run();
 
     if (res == labels::OK) {
@@ -1730,7 +1706,7 @@ std::string flw::dlg::input_int(const std::string& title, const std::string& mes
     char num[100];
     snprintf(num, 100, "%lld", static_cast<long long int>(value));
 
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
     auto res = dlg.run();
 
     if (res == labels::OK) {
@@ -1758,7 +1734,7 @@ std::string flw::dlg::input_int(const std::string& title, const std::string& mes
 * @image html dlg_input_multi.png
 */
 std::string flw::dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
     auto res = dlg.run();
 
     if (res == labels::OK) {
@@ -1783,7 +1759,7 @@ std::string flw::dlg::input_multi(const std::string& title, const std::string& m
 * @image html dlg_input_secret.png
 */
 std::string flw::dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
+    flw::priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
     auto res = dlg.run();
 
     if (res == labels::OK) {
@@ -1791,6 +1767,75 @@ std::string flw::dlg::input_secret(const std::string& title, const std::string& 
     }
 
     return res;
+}
+
+/** @brief Show a dialog with a list of strings.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] list        List of strings.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*
+* @snippet dialog.cpp flw::dlg::list example
+* @image html list_dialog.png
+*/
+void flw::dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
+    flw::priv::_DlgList dlg(title, list, "", fixed_font, true, W, H);
+    dlg.run();
+}
+
+/** @brief Show a dialog with a browser/list widget.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+* This function splits a string on newline.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] list        String list.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*/
+void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    flw::priv::_DlgList dlg(title, list2, "", fixed_font, true, W, H);
+    dlg.run();
+}
+
+/** @brief Show a dialog with a browser/list widget.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+* This function loads a list of string from a file.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] file        Filename to load.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*/
+void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
+    flw::priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, true, W, H);
+    dlg.run();
+}
+
+/** @brief Show a dialog with a browser/list widget.
+*
+* @see Fl_Browser::format_char() for formatting characters.\n
+* This function splits a string on newline.\n
+*
+* @param[in] title       Dialog title.
+* @param[in] list        String list.
+* @param[in] fixed_font  True to use a fixed font.
+* @param[in] W           Width in characters.
+* @param[in] H           Height in characters.
+*
+* @return Dialog window.
+*/
+Fl_Window* flw::dlg::list_window(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    return new flw::priv::_DlgList(title, list2, "", fixed_font, false, W, H);
 }
 
 /** @brief Show an dialog with a message icon.
@@ -1805,7 +1850,7 @@ std::string flw::dlg::input_secret(const std::string& title, const std::string& 
 * @image html dlg_msg.png
 */
 void flw::dlg::msg(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 
@@ -1819,7 +1864,7 @@ void flw::dlg::msg(const std::string& title, const std::string& message, int W, 
 * @image html dlg_msg_alert.png
 */
 void flw::dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 
@@ -1845,7 +1890,7 @@ void flw::dlg::msg_alert(const std::string& title, const std::string& message, i
 * @image html dlg_msg_ask.png
 */
 std::string flw::dlg::msg_ask(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, const std::string& b3, const std::string& b4, const std::string& b5, int W, int H) {
-    priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
+    flw::priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
     return dlg.run();
 }
 
@@ -1857,7 +1902,7 @@ std::string flw::dlg::msg_ask(const std::string& title, const std::string& messa
 * @param[in] H        Height in characters.
 */
 void flw::dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 
@@ -1876,7 +1921,7 @@ void flw::dlg::msg_error(const std::string& title, const std::string& message, i
 * @return Activated button label without the optional icon character.
 */
 std::string flw::dlg::msg_warning(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, int W, int H) {
-    priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
     return dlg.run();
 }
 
@@ -1889,7 +1934,7 @@ std::string flw::dlg::msg_warning(const std::string& title, const std::string& m
 */
 bool flw::dlg::password(const std::string& title, std::string& password) {
     std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD);
     return dlg.run(password, file);
 }
 
@@ -1902,7 +1947,7 @@ bool flw::dlg::password(const std::string& title, std::string& password) {
 */
 bool flw::dlg::password_confirm(const std::string& title, std::string& password) {
     std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
     return dlg.run(password, file);
 }
 
@@ -1920,7 +1965,7 @@ bool flw::dlg::password_confirm(const std::string& title, std::string& password)
 * @image html password_dialog.png
 */
 bool flw::dlg::password_confirm_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
     return dlg.run(password, file);
 }
 
@@ -1935,7 +1980,7 @@ bool flw::dlg::password_confirm_and_file(const std::string& title, std::string& 
 * @return True if ok has been pressed and password and/or file argument has been set.
 */
 bool flw::dlg::password_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
     return dlg.run(password, file);
 }
 
@@ -1954,7 +1999,7 @@ bool flw::dlg::password_and_file(const std::string& title, std::string& password
 * @image html select_checkboxes_dialog.png
 */
 flw::StringVector flw::dlg::select_checkboxes(const std::string& title, const StringVector& list) {
-    priv::_DlgSelectCheckBoxes dlg(title, list);
+    flw::priv::_DlgSelectCheckBoxes dlg(title, list);
     return dlg.run();
 }
 
@@ -1971,7 +2016,7 @@ flw::StringVector flw::dlg::select_checkboxes(const std::string& title, const St
 * @image html select_choice_dialog.png
 */
 int flw::dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
-    priv::_DlgSelectChoice dlg(title, message, list, selected);
+    flw::priv::_DlgSelectChoice dlg(title, message, list, selected);
     return dlg.run();
 }
 
@@ -1990,7 +2035,7 @@ int flw::dlg::select_choice(const std::string& title, const std::string& message
 * @return Selected index in input vector.
 */
 int flw::dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
+    flw::priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 
@@ -2012,7 +2057,7 @@ int flw::dlg::select_string(const std::string& title, const StringVector& list, 
 * @image html select_string_dialog.png
 */
 int flw::dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
+    flw::priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 
@@ -2030,7 +2075,7 @@ int flw::dlg::select_string(const std::string& title, const StringVector& list, 
 * @image html slider_dialog.png
 */
 bool flw::dlg::slider(const std::string& title, double min, double max, double& value, double step) {
-    priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
+    flw::priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
     return dlg.run();
 }
 
@@ -2042,7 +2087,7 @@ bool flw::dlg::slider(const std::string& title, double min, double max, double& 
 * @param[in] H       Height in characters.
 */
 void flw::dlg::text(const std::string& title, const std::string& text, int W, int H) {
-    priv::_DlgText dlg(title.c_str(), text.c_str(), false, W, H);
+    flw::priv::_DlgText dlg(title.c_str(), text.c_str(), false, W, H);
     dlg.run();
 }
 
@@ -2059,7 +2104,7 @@ void flw::dlg::text(const std::string& title, const std::string& text, int W, in
 * @image html text_edit_dialog.png
 */
 bool flw::dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
-    auto dlg = priv::_DlgText(title.c_str(), text.c_str(), true, W, H);
+    auto dlg = flw::priv::_DlgText(title.c_str(), text.c_str(), true, W, H);
     auto res = dlg.run();
 
     if (res == nullptr) {

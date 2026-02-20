@@ -36,6 +36,7 @@ namespace dlg {
 
 void                            center_fl_message_dialog();
 void                            html(const std::string& title, const std::string& text, int W = 40, int H = 23);
+Fl_Window*                      html_window(const std::string& title, const std::string& text, int W = 40, int H = 23);
 std::string                     input(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 10);
 std::string                     input_double(const std::string& title, const std::string& message, double& value, int W = 40, int H = 10);
 std::string                     input_int(const std::string& title, const std::string& message, int64_t& value, int W = 40, int H = 10);
@@ -44,6 +45,7 @@ std::string                     input_secret(const std::string& title, const std
 void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, int W = 40, int H = 23);
+Fl_Window*                      list_window(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            msg(const std::string& title, const std::string& message, int W = 40, int H = 7);
 void                            msg_alert(const std::string& title, const std::string& message, int W = 40, int H = 7);
 std::string                     msg_ask(const std::string& title, const std::string& message, const std::string& b1 = labels::YES, const std::string& b2 = labels::NO, const std::string& b3 = "", const std::string& b4 = "", const std::string& b5 = "", int W = 40, int H = 7);

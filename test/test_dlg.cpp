@@ -152,8 +152,25 @@ void test_font_small() {
 
 //------------------------------------------------------------------------------
 void test_html() {
-    auto html = "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text";
-    dlg::html("flw::dlg::html", html);
+    {
+        auto win1 = dlg::html_window("flw::dlg::html - 1", "<h1>Hello World Window 1</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
+        auto win2 = dlg::html_window("flw::dlg::html - 2", "<h1>Hello World Window 2</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
+
+        win1->show();
+        win2->show();
+
+        while (win1->shown() || win2->shown()) {
+            Fl::wait();
+            Fl::flush();
+        }
+
+        delete win1;
+        delete win2;
+    }
+    
+    {
+        dlg::html("flw::dlg::html", "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -180,9 +197,27 @@ void test_input() {
 
 //------------------------------------------------------------------------------
 void test_list() {
-    dlg::list("flw::dlg::list", HAMLET_LIST);
-    dlg::list("flw::dlg::list - Fixed Font", HAMLET_LIST, true);
-    dlg::list_file("flw::dlg::list_file - File", "test/browser.txt", true);
+    {
+        auto win1 = dlg::list_window("flw::dlg::list_window - 1", HAMLET_LIST);
+        auto win2 = dlg::list_window("flw::dlg::list_window - 2", HAMLET_LIST);
+
+        win1->show();
+        win2->show();
+
+        while (win1->shown() || win2->shown()) {
+            Fl::wait();
+            Fl::flush();
+        }
+
+        delete win1;
+        delete win2;
+    }
+    
+    {
+        dlg::list("flw::dlg::list", HAMLET_LIST);
+        dlg::list("flw::dlg::list - Fixed Font", HAMLET_LIST, true);
+        dlg::list_file("flw::dlg::list_file - File", "test/browser.txt", true);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -190,14 +225,15 @@ void test_message() {
     //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE);
     //dlg::msg_alert("flw::dlg::msg_alert", LONG_LINE2);
 
-    //dlg::msg("flw::dlg::msg", TWO_LINE);
+    dlg::msg("flw::dlg::msg", TWO_LINE);
 
-    //dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
-    //dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
-    //dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
+    dlg::msg_alert("flw::dlg::msg_alert", TWO_LINE);
+    dlg::msg_alert("flw::dlg::msg_alert", FIVE_LINE);
+    dlg::msg_error("flw::dlg::msg_error", TWO_LINE);
 
-    //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", ""))
+    //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", "")) // No label so it is not shown.
     //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "LEFT:LEFT", "RIGHT:RIGHT", "UP:!UP", "DOWN:DOWN", ""))
+    
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "CANCEL:^CANCEL", "DEL:^DEL", "BACK:!^BACK", "No Dark Bg", "CONFIRM:^CONFIRM"))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
@@ -255,11 +291,11 @@ void test_print1() {
         system("rm -f print_page_to_file.ps");
         FLW_PRINT(postscript::print_page_to_file("print_page_to_file.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, test_print_a, nullptr));
         system("okular print_page_to_file.ps");
-        
+
         system("rm -f print_pages_to_file.ps");
         FLW_PRINT(postscript::print_pages_to_file("print_pages_to_file.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, test_print_b, nullptr, 23, 35));
         system("okular print_pages_to_file.ps");
-        
+
         FLW_PRINT(postscript::print_pages_to_file("print_pages_to_file2.ps", Fl_Paged_Device::Page_Format::A4, Fl_Paged_Device::Page_Layout::PORTRAIT, test_print_b, nullptr, 1, 0));
     }
 }
@@ -270,11 +306,11 @@ void test_print2() {
         system("rm -f output.ps");
         dlg::print_page("flw::dlg::print - One Page", test_print_a);
         system("okular output.ps");
-        
+
         system("rm -f output.ps");
         dlg::print_page("flw::dlg::print - Many Pages", test_print_b, nullptr, 10, 30);
         system("okular output.ps");
-        
+
         system("rm -f output.ps");
         dlg::print_page("flw::dlg::print - Stop On Page 6", test_print_c, nullptr, 1, 11);
         system("okular output.ps");
@@ -287,7 +323,7 @@ void test_print3() {
 
     while (r >= 0) {
         system("rm -f output.ps");
-        
+
     #ifdef _WIN32
         dlg::center_fl_message_dialog();
         r = fl_choice_n("%s", "Print Long Lines", "Print Hamlet", "Print UTF8", "Print some test texts.\nSome fonts might have issues.");
@@ -542,7 +578,7 @@ void test_svg() {
     new SVGButton(size * 7, size * 0, size, size, "icons::ERR",     icons::ERR,     false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 8, size * 0, size, size, "icons::FORWARD", icons::FORWARD, false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 9, size * 0, size, size, "icons::INFO",    icons::INFO,    false, true, SVGButton::Pos::ABOVE, 3.0);
-    
+
     new SVGButton(size * 0, size * 1, size, size, "icons::LEFT",    icons::LEFT,    false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 1, size * 1, size, size, "icons::PASSWORD",icons::PASSWORD,false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 2, size * 1, size, size, "icons::PAUSE",   icons::PAUSE,   false, true, SVGButton::Pos::ABOVE, 3.0);
@@ -552,13 +588,13 @@ void test_svg() {
     new SVGButton(size * 6, size * 1, size, size, "icons::STOP",    icons::STOP,    false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 7, size * 1, size, size, "icons::UP",      icons::UP,      false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 8, size * 1, size, size, "icons::WARNING", icons::WARNING, false, true, SVGButton::Pos::ABOVE, 3.0);
-    
+
     new SVGButton(size * 0, size * 2, size, size, "RIGHT",          icons::ALERT,   false, false, SVGButton::Pos::RIGHT, 4.0);
     new SVGButton(size * 1, size * 2, size, size, "LEFT",           icons::ALERT,   false, false, SVGButton::Pos::LEFT, 4.0);
     new SVGButton(size * 2, size * 2, size, size, "ABOVE",          icons::ALERT,   false, false, SVGButton::Pos::ABOVE, 4.0);
     new SVGButton(size * 3, size * 2, size, size, "BELOW",          icons::ALERT,   false, false, SVGButton::Pos::BELOW, 4.0);
     new SVGButton(size * 4, size * 2, size, size, "UNDER",          icons::ALERT,   false, false, SVGButton::Pos::UNDER, 4.0);
-    
+
     auto b = new SVGButton(w / 2 - 150, h - 300, 300, 300, "WARNING", icons::WARNING, false, false, SVGButton::Pos::ABOVE, 7.0);
 
     util::labelfont(&win);
