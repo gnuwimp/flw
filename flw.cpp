@@ -7007,7 +7007,7 @@ class _DlgHtml : public Fl_Double_Window {
     GridGroup*                  _grid;
     bool                        _run;
 public:
-    _DlgHtml(const std::string& title, const std::string& text, int W, int H) :
+    _DlgHtml(const std::string& title, const std::string& text, bool modal, int W, int H) :
     Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
         end();
         _close = new SVGButton(0, 0, 0, 0, labels::CLOSE, icons::BACK, true);
@@ -7025,7 +7025,9 @@ public:
         _html->value(text.c_str());
         callback(_DlgHtml::Callback, this);
         copy_label(title.c_str());
-        set_modal();
+        if (modal == true) {
+            set_modal();
+        }
         resizable(_grid);
         util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
@@ -7052,7 +7054,7 @@ class _DlgList : public Fl_Double_Window {
     ScrollBrowser*              _list;
     bool                        _run;
 public:
-    _DlgList(const std::string& title, const StringVector& list, const std::string& file, bool fixed_font = false, int W = 50, int H = 20) :
+    _DlgList(const std::string& title, const StringVector& list, const std::string& file, bool fixed_font, bool modal, int W, int H) :
     Fl_Double_Window(0, 0, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * W, (fixed_font ? flw::PREF_FIXED_FONTSIZE : flw::PREF_FONTSIZE) * H) {
         end();
         _close = new SVGButton(0, 0, 0, 0, labels::CLOSE, icons::BACK, true);
@@ -7076,7 +7078,9 @@ public:
         }
         callback(_DlgList::Callback, this);
         copy_label(title.c_str());
-        set_modal();
+        if (modal == true) {
+            set_modal();
+        }
         resizable(_grid);
         util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
@@ -7133,15 +7137,14 @@ public:
         const char*         value = nullptr,
         const std::string&  input = ""
     ) : Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
-        end();
         _b1     = new SVGButton(0, 0, 0, 0, b1);
         _b2     = new SVGButton(0, 0, 0, 0, b2);
         _b3     = new SVGButton(0, 0, 0, 0, b3);
         _b4     = new SVGButton(0, 0, 0, 0, b4);
         _b5     = new SVGButton(0, 0, 0, 0, b5);
-        _grid   = new GridGroup(0, 0, w(), h());
         _icon   = new Fl_Button(0, 0, 0, 0);
         _label  = new Fl_Box(0, 0, 0, 0);
+        _grid   = new GridGroup(0, 0, w(), h());
         _run    = false;
         _escape = 0;
         auto multi = false;
@@ -8077,24 +8080,14 @@ public:
 }
 }
 void flw::dlg::html(const std::string& title, const std::string& text, int W, int H) {
-    priv::_DlgHtml dlg(title, text, W, H);
+    flw::priv::_DlgHtml dlg(title, text, true, W, H);
     dlg.run();
 }
-void flw::dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, list, "", fixed_font, W, H);
-    dlg.run();
-}
-void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
-    priv::_DlgList dlg(title, list2, "", fixed_font, W, H);
-    dlg.run();
-}
-void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
-    priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, W, H);
-    dlg.run();
+Fl_Window* flw::dlg::html_window(const std::string& title, const std::string& text, int W, int H) {
+    return new flw::priv::_DlgHtml(title, text, false, W, H);
 }
 std::string flw::dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
     auto res = dlg.run();
     if (res == labels::OK) {
         value = dlg.input();
@@ -8104,7 +8097,7 @@ std::string flw::dlg::input(const std::string& title, const std::string& message
 std::string flw::dlg::input_double(const std::string& title, const std::string& message, double& value, int W, int H) {
     char num[500];
     snprintf(num, 500, "%g", value);
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Float_Input");
     auto res = dlg.run();
     if (res == labels::OK) {
         auto tmp = value;
@@ -8118,7 +8111,7 @@ std::string flw::dlg::input_double(const std::string& title, const std::string& 
 std::string flw::dlg::input_int(const std::string& title, const std::string& message, int64_t& value, int W, int H) {
     char num[100];
     snprintf(num, 100, "%lld", static_cast<long long int>(value));
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
     auto res = dlg.run();
     if (res == labels::OK) {
         value = util::to_int(dlg.input(), value);
@@ -8126,7 +8119,7 @@ std::string flw::dlg::input_int(const std::string& title, const std::string& mes
     return res;
 }
 std::string flw::dlg::input_multi(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
+    flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Multiline_Input");
     auto res = dlg.run();
     if (res == labels::OK) {
         value = dlg.input();
@@ -8134,77 +8127,94 @@ std::string flw::dlg::input_multi(const std::string& title, const std::string& m
     return res;
 }
 std::string flw::dlg::input_secret(const std::string& title, const std::string& message, std::string& value, int W, int H) {
-    priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
+    flw::priv::_DlgMsg dlg(icons::PASSWORD, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Secret_Input");
     auto res = dlg.run();
     if (res == labels::OK) {
         value = dlg.input();
     }
     return res;
 }
+void flw::dlg::list(const std::string& title, const StringVector& list, bool fixed_font, int W, int H) {
+    flw::priv::_DlgList dlg(title, list, "", fixed_font, true, W, H);
+    dlg.run();
+}
+void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    flw::priv::_DlgList dlg(title, list2, "", fixed_font, true, W, H);
+    dlg.run();
+}
+void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
+    flw::priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, true, W, H);
+    dlg.run();
+}
+Fl_Window* flw::dlg::list_window(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
+    auto list2 = util::split_string( list, "\n");
+    return new flw::priv::_DlgList(title, list2, "", fixed_font, false, W, H);
+}
 void flw::dlg::msg(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 void flw::dlg::msg_alert(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::ALERT, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 std::string flw::dlg::msg_ask(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, const std::string& b3, const std::string& b4, const std::string& b5, int W, int H) {
-    priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
+    flw::priv::_DlgMsg dlg(icons::QUESTION, title, message, b1, b2, b3, b4, b5, W, H);
     return dlg.run();
 }
 void flw::dlg::msg_error(const std::string& title, const std::string& message, int W, int H) {
-    priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::ERR, title, message, labels::CLOSE, "", "", "", "", W, H);
     dlg.run();
 }
 std::string flw::dlg::msg_warning(const std::string& title, const std::string& message, const std::string& b1, const std::string& b2, int W, int H) {
-    priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
+    flw::priv::_DlgMsg dlg(icons::WARNING, title, message, b1, b2, "", "", "", W, H);
     return dlg.run();
 }
 bool flw::dlg::password(const std::string& title, std::string& password) {
     std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD);
     return dlg.run(password, file);
 }
 bool flw::dlg::password_confirm(const std::string& title, std::string& password) {
     std::string file;
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD_CONFIRM);
     return dlg.run(password, file);
 }
 bool flw::dlg::password_confirm_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD_CONFIRM_WITH_FILE);
     return dlg.run(password, file);
 }
 bool flw::dlg::password_and_file(const std::string& title, std::string& password, std::string& file) {
-    priv::_DlgPassword dlg(title.c_str(), priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
+    flw::priv::_DlgPassword dlg(title.c_str(), flw::priv::_DlgPassword::Mode::PASSWORD_WITH_FILE);
     return dlg.run(password, file);
 }
 flw::StringVector flw::dlg::select_checkboxes(const std::string& title, const StringVector& list) {
-    priv::_DlgSelectCheckBoxes dlg(title, list);
+    flw::priv::_DlgSelectCheckBoxes dlg(title, list);
     return dlg.run();
 }
 int flw::dlg::select_choice(const std::string& title, const std::string& message, const StringVector& list, int selected) {
-    priv::_DlgSelectChoice dlg(title, message, list, selected);
+    flw::priv::_DlgSelectChoice dlg(title, message, list, selected);
     return dlg.run();
 }
 int flw::dlg::select_string(const std::string& title, const StringVector& list, int selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
+    flw::priv::_DlgSelectString dlg(title.c_str(), list, selected_row, "", fixed_font, W, H);
     return dlg.run();
 }
 int flw::dlg::select_string(const std::string& title, const StringVector& list, const std::string& selected_row, bool fixed_font, int W, int H) {
-    priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
+    flw::priv::_DlgSelectString dlg(title.c_str(), list, -1, selected_row, fixed_font, W, H);
     return dlg.run();
 }
 bool flw::dlg::slider(const std::string& title, double min, double max, double& value, double step) {
-    priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
+    flw::priv::_DlgSlider dlg(title.c_str(), min, max, value, step);
     return dlg.run();
 }
 void flw::dlg::text(const std::string& title, const std::string& text, int W, int H) {
-    priv::_DlgText dlg(title.c_str(), text.c_str(), false, W, H);
+    flw::priv::_DlgText dlg(title.c_str(), text.c_str(), false, W, H);
     dlg.run();
 }
 bool flw::dlg::text_edit(const std::string& title, std::string& text, int W, int H) {
-    auto dlg = priv::_DlgText(title.c_str(), text.c_str(), true, W, H);
+    auto dlg = flw::priv::_DlgText(title.c_str(), text.c_str(), true, W, H);
     auto res = dlg.run();
     if (res == nullptr) {
         return false;
@@ -12913,7 +12923,7 @@ flw::table::Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Gro
     util::labelfont(this);
     reset();
 }
-void flw::table::Display::active_cell(int row, int col, bool show) {
+void flw::table::Display::active_cell(int row, int col, bool show, bool ctrl) {
     auto send = false;
     if (_rows == 0 || row < 1 || row > _rows || _cols == 0 || col < 1 || col > _cols) {
         row = -1;
@@ -12925,7 +12935,7 @@ void flw::table::Display::active_cell(int row, int col, bool show) {
     _curr_row = row;
     _curr_col = col;
     if (send == true) {
-        _set_event(_curr_row, _curr_col, Event::CURSOR);
+        _set_event(_curr_row, _curr_col, ctrl == false ? Event::CURSOR : Event::CURSOR_CTRL);
     }
     redraw();
     if (show == true && _curr_row > 0 && _curr_col > 0) {
@@ -13231,7 +13241,10 @@ int flw::table::Display::_ev_keyboard_down(bool only_append_insert) {
     return 0;
 }
 int flw::table::Display::_ev_mouse_click () {
-    if (Fl::event_button1() && _drag == true) {
+    if (Fl::event_button1() == 0) {
+        return 2;
+    }
+    else if (_drag == true) {
         return 1;
     }
     auto r  = 0;
@@ -13261,7 +13274,7 @@ int flw::table::Display::_ev_mouse_click () {
         }
     }
     else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != Select::NO) {
-        active_cell(r, c);
+        active_cell(r, c, false, Fl::event_ctrl() != 0);
     }
     return 2;
 }
@@ -13417,7 +13430,6 @@ void flw::table::Display::_move_cursor(Move move) {
         auto r     = _curr_row;
         auto c     = _curr_col;
         auto range = (int) ((h() - _hor->h() - (_show_row_header ? _height : 0)) / _height);
-FLW_PRINTV((int) move)
         if (r < 1) {
             r = 1;
         }
@@ -13578,7 +13590,9 @@ void flw::table::Display::size(int rows, int cols) {
     _curr_col  = 1;
     _start_row = 1;
     _start_col = 1;
-    _set_event(_curr_row, _curr_col, Event::SIZE);
+    if (rows != _rows || cols != _cols) {
+        _set_event(_curr_row, _curr_col, Event::SIZE);
+    }
     redraw();
 }
 void flw::table::Display::_update_scrollbars() {
@@ -13706,7 +13720,7 @@ static int _table_decimals(table::Format format) {
 }
 static std::string _table_format_number(const std::string& val, table::Format format) {
     char tmp[500];
-    if (format == flw::table::Format::DEFAULT || format == flw::table::Format::INT_DEF) {
+    if (format == flw::table::Format::INT_DEF) {
         auto num = util::to_int(val);
         snprintf(tmp, 500, "%lld", static_cast<long long int>(num));
         return tmp;
@@ -13754,12 +13768,12 @@ static double _table_max_num_length(double n1, double n2, int decimals) {
 }
 }
 }
-std::string flw::table::EditColorLabel = "Table - Set Color";
-std::string flw::table::EditDateLabel  = "Table - Select Date";
-std::string flw::table::EditDirLabel   = "Table - Select Directory";
-std::string flw::table::EditFileLabel  = "Table - Select File";
-std::string flw::table::EditListLabel  = "Table - Select String";
-std::string flw::table::EditTextLabel  = "Table - Edit Text";
+std::string flw::table::DLG_COLOR_TITLE = "Set Color";
+std::string flw::table::DLG_DATE_TITLE  = "Pick Date";
+std::string flw::table::DLG_DIR_TITLE   = "Pick Directory";
+std::string flw::table::DLG_FILE_TITLE  = "Pick File";
+std::string flw::table::DLG_LIST_TITLE  = "Pick String";
+std::string flw::table::DLG_TEXT_TITLE  = "Edit Text";
 std::string flw::table::format_slider(double val, double min, double max, double step) {
     char result[2000];
     snprintf(result, 2000, "%f %f %f %f", val, min, max, step);
@@ -14280,7 +14294,7 @@ void flw::table::Editor::_edit_show_dlg() {
         auto blue   = (uchar) 0;
         auto color1 = static_cast<Fl_Color>(util::to_int(val, 0));
         Fl::get_color(color1, red, green, blue);
-        if (fl_color_chooser(table::EditColorLabel.c_str(), red, green, blue, 2) != 0) {
+        if (fl_color_chooser(table::DLG_COLOR_TITLE.c_str(), red, green, blue, 2) != 0) {
             auto color2 = fl_rgb_color(red, green, blue);
             char buffer[100];
             snprintf(buffer, 100, "%u", color2);
@@ -14290,21 +14304,21 @@ void flw::table::Editor::_edit_show_dlg() {
         }
     }
     else if (rend == Type::FILE) {
-        auto result = util::to_string(fl_file_chooser(table::EditFileLabel.c_str(), "", val.c_str(), 0));
-        if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
+        auto result = util::to_string(fl_file_chooser(table::DLG_FILE_TITLE.c_str(), "", val.c_str(), 0));
+        if ((_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
         }
     }
     else if (rend == Type::DIR) {
-        auto result = util::to_string(fl_dir_chooser(table::EditDirLabel.c_str(), val.c_str()));
-        if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
+        auto result = util::to_string(fl_dir_chooser(table::DLG_DIR_TITLE.c_str(), val.c_str()));
+        if ((_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
         }
     }
     else if (rend == Type::DATE) {
         auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
-        auto result = flw::dlg::date(table::EditDateLabel, date1);
+        auto result = flw::dlg::date(table::DLG_DATE_TITLE, date1);
         auto string = date1.format(gnu::Date::Format::ISO_LONG);
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
@@ -14313,7 +14327,7 @@ void flw::table::Editor::_edit_show_dlg() {
     else if (rend == Type::LIST) {
         auto choices = cell_choice(_curr_row, _curr_col);
         if (choices.size() > 0) {
-            auto row = dlg::select_string(table::EditListLabel, choices, val);
+            auto row = dlg::select_string(table::DLG_LIST_TITLE, choices, val);
             if (row >= 0) {
                 const auto& string = choices[row];
                 if ((_force_events == true || string != val) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
@@ -14324,7 +14338,7 @@ void flw::table::Editor::_edit_show_dlg() {
     }
     else if (rend == Type::MTEXT) {
         auto val2 = val;
-        if (dlg::text_edit(table::EditTextLabel, val2) == true) {
+        if (dlg::text_edit(table::DLG_TEXT_TITLE, val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
             }

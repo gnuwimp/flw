@@ -1248,6 +1248,7 @@ namespace flw {
 namespace dlg {
 void                            center_fl_message_dialog();
 void                            html(const std::string& title, const std::string& text, int W = 40, int H = 23);
+Fl_Window*                      html_window(const std::string& title, const std::string& text, int W = 40, int H = 23);
 std::string                     input(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 10);
 std::string                     input_double(const std::string& title, const std::string& message, double& value, int W = 40, int H = 10);
 std::string                     input_int(const std::string& title, const std::string& message, int64_t& value, int W = 40, int H = 10);
@@ -1256,6 +1257,7 @@ std::string                     input_secret(const std::string& title, const std
 void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, int W = 40, int H = 23);
+Fl_Window*                      list_window(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            msg(const std::string& title, const std::string& message, int W = 40, int H = 7);
 void                            msg_alert(const std::string& title, const std::string& message, int W = 40, int H = 7);
 std::string                     msg_ask(const std::string& title, const std::string& message, const std::string& b1 = labels::YES, const std::string& b2 = labels::NO, const std::string& b3 = "", const std::string& b4 = "", const std::string& b5 = "", int W = 40, int H = 7);
@@ -2049,6 +2051,7 @@ enum class Event {
     UNDEFINED,
     CHANGED,
     CURSOR,
+    CURSOR_CTRL,
     COLUMN,
     COLUMN_CTRL,
     ROW,
@@ -2065,7 +2068,7 @@ class Display : public Fl_Group {
     friend class priv::_TableFindDialog;
 public:
     explicit                    Display(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        active_cell(int row = -1, int col = -1, bool show = false);
+    void                        active_cell(int row = -1, int col = -1, bool show = false, bool ctrl = false);
     virtual Fl_Align            cell_align(int row, int col)
                                         { (void) row; (void) col; return FL_ALIGN_LEFT; }
     virtual Fl_Color            cell_color(int row, int col)
@@ -2227,12 +2230,12 @@ enum class Type {
     LIST,
     MTEXT,
 };
-extern std::string EditColorLabel;
-extern std::string EditDateLabel;
-extern std::string EditDirLabel;
-extern std::string EditFileLabel;
-extern std::string EditListLabel;
-extern std::string EditTextLabel;
+extern std::string DLG_COLOR_TITLE;
+extern std::string DLG_DATE_TITLE;
+extern std::string DLG_DIR_TITLE;
+extern std::string DLG_FILE_TITLE;
+extern std::string DLG_LIST_TITLE;
+extern std::string DLG_TEXT_TITLE;
 std::string format_slider(double val, double min, double max, double step);
 std::string format_slider2(int64_t val, int64_t min, int64_t max, int64_t step);
 double      get_slider(const std::string& slider_string, double def = 0.0);
