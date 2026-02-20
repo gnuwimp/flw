@@ -46,6 +46,7 @@ enum class Event {
     UNDEFINED,      ///< @brief No event.
     CHANGED,        ///< @brief Data has been changed.
     CURSOR,         ///< @brief Cursor has been moved (current cell has been changed).
+    CURSOR_CTRL,    ///< @brief Cursor has been moved by ctrl + click.
     COLUMN,         ///< @brief Column header has been clicked.
     COLUMN_CTRL,    ///< @brief Column header has been clicked and ctrl key has been pressed.
     ROW,            ///< @brief Row header has been clicked.
@@ -87,7 +88,7 @@ class Display : public Fl_Group {
 
 public:
     explicit                    Display(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
-    void                        active_cell(int row = -1, int col = -1, bool show = false);
+    void                        active_cell(int row = -1, int col = -1, bool show = false, bool ctrl = false);
     virtual Fl_Align            cell_align(int row, int col)
                                         { (void) row; (void) col; return FL_ALIGN_LEFT; } ///< @brief Get alignment for cell.
     virtual Fl_Color            cell_color(int row, int col)
@@ -215,7 +216,7 @@ protected:
     int                         _start_row;             ///< @brief First visible row.
 };
 
-} // table
+} // flw::table
 } // flw
 
 // MKALGAM_OFF

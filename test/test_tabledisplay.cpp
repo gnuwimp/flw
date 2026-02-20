@@ -261,49 +261,55 @@ public:
 
     //------------------------------------------------------------------------------
     static void Callback(Fl_Widget*, void* v) {
-        table::Display* table = (table::Display*) v;
+        auto table = (table::Display*) v;
+        auto event = table->event();
+        auto row   = table->event_row();
+        auto col   = table->event_col();
 
-        if (table->event() == table::Event::UNDEFINED) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::UNDEFINED\n", table->event_row(), table->event_col());
+        if (event == table::Event::UNDEFINED) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::UNDEFINED\n", row, col);
         }
-        else if (table->event() == table::Event::CHANGED) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CHANGED\n", table->event_row(), table->event_col());
+        else if (event == table::Event::CHANGED) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CHANGED\n", row, col);
         }
-        else if (table->event() == table::Event::CURSOR) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CURSOR\n", table->event_row(), table->event_col());
+        else if (event == table::Event::CURSOR) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CURSOR\n", row, col);
         }
-        else if (table->event() == table::Event::COLUMN) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::COLUMN\n", table->event_row(), table->event_col());
+        else if (event == table::Event::CURSOR_CTRL) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::CURSOR_CTRL\n", row, col);
         }
-        else if (table->event() == table::Event::COLUMN_CTRL) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::COLUMN_CTRL\n", table->event_row(), table->event_col());
+        else if (event == table::Event::COLUMN) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::COLUMN\n", row, col);
         }
-        else if (table->event() == table::Event::ROW) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::ROW\n", table->event_row(), table->event_col());
+        else if (event == table::Event::COLUMN_CTRL) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::COLUMN_CTRL\n", row, col);
         }
-        else if (table->event() == table::Event::ROW_CTRL) {
-            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::ROW_CTRL\n", table->event_row(), table->event_col());
+        else if (event == table::Event::ROW) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::ROW\n", row, col);
         }
-        else if (table->event() == table::Event::SIZE) {
+        else if (event == table::Event::ROW_CTRL) {
+            fprintf(stderr, "Callback: row=%4d, col=%4d  =>  table::Event::ROW_CTRL\n", row, col);
+        }
+        else if (event == table::Event::SIZE) {
             fprintf(stderr, "Callback: rows=%4d, columns=%4d => table::Event::SIZE\n", table->rows(), table->columns());
         }
-        else if (table->event() == table::Event::APPEND_ROW) {
-            fprintf(stderr, "Callback: row=   %4d => table::Event::APPEND_ROW\n", table->event_row());
+        else if (event == table::Event::APPEND_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => table::Event::APPEND_ROW\n", row);
         }
-        else if (table->event() == table::Event::APPEND_COLUMN) {
-            fprintf(stderr, "Callback: column=%4d => table::Event::APPEND_COLUMN\n", table->event_col());
+        else if (event == table::Event::APPEND_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => table::Event::APPEND_COLUMN\n", col);
         }
-        else if (table->event() == table::Event::INSERT_ROW) {
-            fprintf(stderr, "Callback: row=   %4d => table::Event::INSERT_ROW\n", table->event_row());
+        else if (event == table::Event::INSERT_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => table::Event::INSERT_ROW\n", row);
         }
-        else if (table->event() == table::Event::INSERT_COLUMN) {
-            fprintf(stderr, "Callback: column=%4d => table::Event::INSERT_COLUMN\n", table->event_col());
+        else if (event == table::Event::INSERT_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => table::Event::INSERT_COLUMN\n", col);
         }
-        else if (table->event() == table::Event::DELETE_ROW) {
-            fprintf(stderr, "Callback: row=   %4d => table::Event::DELETE_ROW\n", table->event_row());
+        else if (event == table::Event::DELETE_ROW) {
+            fprintf(stderr, "Callback: row=   %4d => table::Event::DELETE_ROW\n", row);
         }
-        else if (table->event() == table::Event::DELETE_COLUMN) {
-            fprintf(stderr, "Callback: column=%4d => table::Event::DELETE_COLUMN\n", table->event_col());
+        else if (event == table::Event::DELETE_COLUMN) {
+            fprintf(stderr, "Callback: column=%4d => table::Event::DELETE_COLUMN\n", col);
         }
 
         fflush(stderr);

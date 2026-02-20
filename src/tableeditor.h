@@ -64,12 +64,12 @@ enum class Type {
     MTEXT,          ///< @brief Multiline text field with a text dialog for editing.
 };
 
-extern std::string EditColorLabel;
-extern std::string EditDateLabel;
-extern std::string EditDirLabel;
-extern std::string EditFileLabel;
-extern std::string EditListLabel;
-extern std::string EditTextLabel;
+extern std::string DLG_COLOR_TITLE;
+extern std::string DLG_DATE_TITLE;
+extern std::string DLG_DIR_TITLE;
+extern std::string DLG_FILE_TITLE;
+extern std::string DLG_LIST_TITLE;
+extern std::string DLG_TEXT_TITLE;
 
 std::string format_slider(double val, double min, double max, double step);
 std::string format_slider2(int64_t val, int64_t min, int64_t max, int64_t step);
@@ -143,7 +143,7 @@ protected:
     bool                        _ro;            ///< @brief True to turn on lighter text for read only cells, unless cell_textcolor() is overriden.
 };
 
-} // table
+} // flw::table
 } // flw
 
 // MKALGAM_OFF

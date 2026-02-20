@@ -87,7 +87,7 @@ static int _table_decimals(table::Format format) {
 static std::string _table_format_number(const std::string& val, table::Format format) {
     char tmp[500];
 
-    if (format == flw::table::Format::DEFAULT || format == flw::table::Format::INT_DEF) {
+    if (format == flw::table::Format::INT_DEF) {
         auto num = util::to_int(val);
         snprintf(tmp, 500, "%lld", static_cast<long long int>(num));
         return tmp;
@@ -154,12 +154,12 @@ static double _table_max_num_length(double n1, double n2, int decimals) {
 } // flw::priv
 } // flw
 
-std::string flw::table::EditColorLabel = "Table - Set Color";
-std::string flw::table::EditDateLabel  = "Table - Select Date";
-std::string flw::table::EditDirLabel   = "Table - Select Directory";
-std::string flw::table::EditFileLabel  = "Table - Select File";
-std::string flw::table::EditListLabel  = "Table - Select String";
-std::string flw::table::EditTextLabel  = "Table - Edit Text";
+std::string flw::table::DLG_COLOR_TITLE = "Set Color";
+std::string flw::table::DLG_DATE_TITLE  = "Pick Date";
+std::string flw::table::DLG_DIR_TITLE   = "Pick Directory";
+std::string flw::table::DLG_FILE_TITLE  = "Pick File";
+std::string flw::table::DLG_LIST_TITLE  = "Pick String";
+std::string flw::table::DLG_TEXT_TITLE  = "Edit Text";
 
 /** @brief Format a string with 4 numbers for the slider widgets.
 *
@@ -881,7 +881,7 @@ void flw::table::Editor::_edit_show_dlg() {
 
         Fl::get_color(color1, red, green, blue);
 
-        if (fl_color_chooser(table::EditColorLabel.c_str(), red, green, blue, 2) != 0) {
+        if (fl_color_chooser(table::DLG_COLOR_TITLE.c_str(), red, green, blue, 2) != 0) {
             auto color2 = fl_rgb_color(red, green, blue);
             char buffer[100];
 
@@ -894,23 +894,23 @@ void flw::table::Editor::_edit_show_dlg() {
 
     }
     else if (rend == Type::FILE) {
-        auto result = util::to_string(fl_file_chooser(table::EditFileLabel.c_str(), "", val.c_str(), 0));
+        auto result = util::to_string(fl_file_chooser(table::DLG_FILE_TITLE.c_str(), "", val.c_str(), 0));
 
-        if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
+        if ((_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
         }
     }
     else if (rend == Type::DIR) {
-        auto result = util::to_string(fl_dir_chooser(table::EditDirLabel.c_str(), val.c_str()));
+        auto result = util::to_string(fl_dir_chooser(table::DLG_DIR_TITLE.c_str(), val.c_str()));
 
-        if (result != "" && (_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
+        if ((_force_events == true || val != result) && cell_value(_curr_row, _curr_col, result) == true) {
             _set_event(_curr_row, _curr_col, Event::CHANGED);
         }
     }
     else if (rend == Type::DATE) {
         auto date1  = gnu::Date(val);
         auto date2  = gnu::Date(date1);
-        auto result = flw::dlg::date(table::EditDateLabel, date1);
+        auto result = flw::dlg::date(table::DLG_DATE_TITLE, date1);
         auto string = date1.format(gnu::Date::Format::ISO_LONG);
 
         if ((_force_events == true || (result == true && date1 != date2)) && cell_value(_curr_row, _curr_col, string.c_str()) == true) {
@@ -921,7 +921,7 @@ void flw::table::Editor::_edit_show_dlg() {
         auto choices = cell_choice(_curr_row, _curr_col);
 
         if (choices.size() > 0) {
-            auto row = dlg::select_string(table::EditListLabel, choices, val);
+            auto row = dlg::select_string(table::DLG_LIST_TITLE, choices, val);
 
             if (row >= 0) {
                 const auto& string = choices[row];
@@ -935,7 +935,7 @@ void flw::table::Editor::_edit_show_dlg() {
     else if (rend == Type::MTEXT) {
         auto val2 = val;
 
-        if (dlg::text_edit(table::EditTextLabel, val2) == true) {
+        if (dlg::text_edit(table::DLG_TEXT_TITLE, val2) == true) {
             if ((_force_events == true || val != val2) && cell_value(_curr_row, _curr_col, val2.c_str()) == true) {
                 _set_event(_curr_row, _curr_col, Event::CHANGED);
             }

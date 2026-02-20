@@ -428,8 +428,9 @@ flw::table::Display::Display(int X, int Y, int W, int H, const char* l) : Fl_Gro
 * @param[in] row   Row number.
 * @param[in] col   Column number.
 * @param[in] show  True to show cell.
+* @param[in] ctrl  True if cell has been mouse clicked with ctrl key pressed.
 */
-void flw::table::Display::active_cell(int row, int col, bool show) {
+void flw::table::Display::active_cell(int row, int col, bool show, bool ctrl) {
     auto send = false;
 
     if (_rows == 0 || row < 1 || row > _rows || _cols == 0 || col < 1 || col > _cols) {
@@ -445,7 +446,7 @@ void flw::table::Display::active_cell(int row, int col, bool show) {
     _curr_col = col;
 
     if (send == true) {
-        _set_event(_curr_row, _curr_col, Event::CURSOR);
+        _set_event(_curr_row, _curr_col, ctrl == false ? Event::CURSOR : Event::CURSOR_CTRL);
     }
 
     redraw();
@@ -875,7 +876,10 @@ int flw::table::Display::_ev_keyboard_down(bool only_append_insert) {
 * @return 0 or 1 if event is handled, 2 to send event to parent.
 */
 int flw::table::Display::_ev_mouse_click () {
-    if (Fl::event_button1() && _drag == true) {
+    if (Fl::event_button1() == 0) {
+        return 2;
+    }
+    else if (_drag == true) {
         return 1;
     }
 
@@ -909,7 +913,7 @@ int flw::table::Display::_ev_mouse_click () {
         }
     }
     else if (r >= 1 && c >= 1 && (r != cr || c != cc) && _select != Select::NO) { // Set new current cell and send event.
-        active_cell(r, c);
+        active_cell(r, c, false, Fl::event_ctrl() != 0);
     }
 
     return 2;
@@ -1129,7 +1133,7 @@ void flw::table::Display::_move_cursor(Move move) {
         auto r     = _curr_row;
         auto c     = _curr_col;
         auto range = (int) ((h() - _hor->h() - (_show_row_header ? _height : 0)) / _height);
-FLW_PRINTV((int) move)
+
         if (r < 1) {
             r = 1;
         }
@@ -1328,6 +1332,8 @@ void flw::table::Display::show_cell(int row, int col) {
 
 /** @brief Set table size.
 *
+* If input size is different from existing size it will send Event::SIZE.
+*
 * @param[in] rows  Number of rows.
 * @param[in] cols  Number of columns.
 */
@@ -1343,7 +1349,10 @@ void flw::table::Display::size(int rows, int cols) {
     _start_row = 1;
     _start_col = 1;
 
-    _set_event(_curr_row, _curr_col, Event::SIZE);
+    if (rows != _rows || cols != _cols) {
+        _set_event(_curr_row, _curr_col, Event::SIZE);
+    }
+
     redraw();
 }
 
