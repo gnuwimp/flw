@@ -48,8 +48,8 @@ class InputMenu : public Fl_Group {
 public:
                                 InputMenu(int X = 0, int Y = 0, int W = 0, int H = 0, const char* l = nullptr);
     void                        clear();
-    Fl_Input*                   input() ///< @brief Get input widget.
-                                    { return reinterpret_cast<Fl_Input*>(_input); }
+    Fl_Input*                   input()
+                                    { return reinterpret_cast<Fl_Input*>(_input); } ///< @brief Get input widget.
     void                        insert(const std::string& string, unsigned max_list_len);
     Fl_Menu_Button*             menu()
                                     { return _menu; } ///< @brief Get menu widget.
