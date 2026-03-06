@@ -115,7 +115,7 @@ public:
                                     { return TabsGroup::remove(find(widget)); } ///< @brief Remove widget and return it.
     void                        resize(int X, int Y, int W, int H) override;
     void                        show_tabs();
-    void                        sort(bool ascending = true, bool casecompare = false);
+    void                        sort(bool ascending = true, bool casecompare = false, bool tooltip = false);
     Fl_Widget*                  tab(int index) const
                                     { return child(index); } ///< @brief Return tab widgets. @param[in] index  Child index. @return Widget or NULL.
     int                         tabs() const
@@ -130,7 +130,7 @@ public:
     void                        tab_pos(Pos pos, int space = TabsGroup::DEFAULT_SPACE);
     int                         swap(int from, int to);
     std::string                 tooltip(Fl_Widget* widget) const;
-    void                        tooltip(const std::string& label, Fl_Widget* widget);
+    void                        tooltip(const std::string& tooltip, Fl_Widget* widget);
     void                        update_pref(Fl_Font font = flw::PREF_FONT, Fl_Fontsize fontsize = flw::PREF_FONTSIZE);
     Fl_Widget*                  value() const;
     void                        value(int num);

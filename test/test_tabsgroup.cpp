@@ -399,10 +399,10 @@ public:
             delete TEST2->tabs->remove(TEST2->tabs->value());
         }
         else if (w == TEST2->b13) {
-            TEST2->tabs->sort(true, false);
+            TEST2->tabs->sort(true, false, false);
         }
         else if (w == TEST2->b14) {
-            TEST2->tabs->sort(false, false);
+            TEST2->tabs->sort(false, false, false);
         }
         else if (w == TEST2->b5) {
             TEST2->tabs->tab_pos(TabsGroup::Pos::TOP);
@@ -495,6 +495,9 @@ public:
             else {
                 assert(false);
             }
+            
+            snprintf(l, 100, "Tooltip for %02d", count - 1);
+            tabs->tooltip(l, t);
         }
 
         tabs->do_layout();
