@@ -38,6 +38,7 @@ class SVGButton;
 /** @brief A dialog for selecting font and font size.
 *
 * flw::theme::load_fonts() will be called automatically.\n
+* It is always shown in modal mode.\n
 *
 * @snippet dialog.cpp flw::FontDialog example
 * @image html font_dialog.png
@@ -79,9 +80,10 @@ private:
 };
 
 namespace dlg {
-    bool                        font(const std::string& title, Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
-}
 
+    bool                        font(const std::string& title, Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
+
+} // flw::dlg
 } // flw
 
 // MKALGAM_OFF

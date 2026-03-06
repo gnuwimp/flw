@@ -4,11 +4,21 @@
 #ifndef FLW_TEST_H
 #define FLW_TEST_H
 
+
 const std::string THREE_LINE = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles";
 const std::string TWO_LINE   = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune";
 const std::string LONG_LINE  = "Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles";
 const std::string LONG_LINE2 = "Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troublesWhether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles Whether 'tis nobler in the mind to suffer, The slings and arrows of outrageous fortune, Or to take arms against a sea of troubles";
 const std::string FIVE_LINE  = "Whether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles,\nIs sicklied o'er with the pale cast of thought,\nWith this regard their currents turn awry, And lose the name of action.--Soft you now!";
+
+/*
+ *      _    _          __  __ _      ______ _______
+ *     | |  | |   /\   |  \/  | |    |  ____|__   __|
+ *     | |__| |  /  \  | \  / | |    | |__     | |
+ *     |  __  | / /\ \ | |\/| | |    |  __|    | |
+ *     | |  | |/ ____ \| |  | | |____| |____   | |
+ *     |_|  |_/_/    \_\_|  |_|______|______|  |_|
+ */
 
 const std::string HAMLET_LIST = R"(@l@bTo be, or not to be: that is the question:
 
@@ -91,6 +101,17 @@ Be all my sins remember'd!
 - William Shakespeare, Hamlet
 )";
 
+/*
+ *      _      ____  _   _  _____ _______ ________   _________
+ *     | |    / __ \| \ | |/ ____|__   __|  ____\ \ / /__   __|
+ *     | |   | |  | |  \| | |  __   | |  | |__   \ V /   | |
+ *     | |   | |  | | . ` | | |_ |  | |  |  __|   > <    | |
+ *     | |___| |__| | |\  | |__| |  | |  | |____ / . \   | |
+ *     |______\____/|_| \_|\_____|  |_|  |______/_/ \_\  |_|
+ *                             ______
+ *                            |______|
+ */
+
 const std::string LONG_TEXT = "To be, or not to be: that is the question:\n\
 \n\
           1         2         3         4         5         6         7         8         9         0         1         2         3         4         5\n\
@@ -109,6 +130,17 @@ Be all my sins remember'd! \n\
 \n\
 - William Shakespeare, Hamlet\n\
 ";
+
+/*
+ *      _    _ _______ ______ ___ _______ ________   _________
+ *     | |  | |__   __|  ____/ _ \__   __|  ____\ \ / /__   __|
+ *     | |  | |  | |  | |__ | (_) | | |  | |__   \ V /   | |
+ *     | |  | |  | |  |  __| > _ <  | |  |  __|   > <    | |
+ *     | |__| |  | |  | |   | (_) | | |  | |____ / . \   | |
+ *      \____/   |_|  |_|    \___/  |_|  |______/_/ \_\  |_|
+ *                             ______
+ *                            |______|
+ */
 
 const std::string UTF8_TEXT = R"(UTF-8 encoded sample plain-text file
 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -180,7 +212,7 @@ Greek (in Polytonic):
   Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν, ὦ ἄνδρες ᾿Αθηναῖοι,
   ὅταν τ᾿ εἰς τὰ πράγματα ἀποβλέψω καὶ ὅταν πρὸς τοὺς
   λόγους οὓς ἀκούω· τοὺς μὲν γὰρ λόγους περὶ τοῦ
-  τιμωρήσασθαι Φίλιππον ὁρῶ γιγνομένους, τὰ δὲ πράγματ᾿ 
+  τιμωρήσασθαι Φίλιππον ὁρῶ γιγνομένους, τὰ δὲ πράγματ᾿
   εἰς τοῦτο προήκοντα,  ὥσθ᾿ ὅπως μὴ πεισόμεθ᾿ αὐτοὶ
   πρότερον κακῶς σκέψασθαι δέον. οὐδέν οὖν ἄλλο μοι δοκοῦσιν
   οἱ τὰ τοιαῦτα λέγοντες ἢ τὴν ὑπόθεσιν, περὶ ἧς βουλεύεσθαι,
@@ -277,7 +309,7 @@ Braille:
   ⠱⠁⠞⠑⠧⠻ ⠁⠃⠳⠞ ⠹⠁⠞⠲ ⡹⠑ ⠗⠑⠛⠊⠌⠻ ⠕⠋ ⠙⠊⠎ ⠃⠥⠗⠊⠁⠇ ⠺⠁⠎
   ⠎⠊⠛⠝⠫ ⠃⠹ ⠹⠑ ⠊⠇⠻⠛⠹⠍⠁⠝⠂ ⠹⠑ ⠊⠇⠻⠅⠂ ⠹⠑ ⠥⠝⠙⠻⠞⠁⠅⠻⠂
   ⠁⠝⠙ ⠹⠑ ⠡⠊⠑⠋ ⠍⠳⠗⠝⠻⠲ ⡎⠊⠗⠕⠕⠛⠑ ⠎⠊⠛⠝⠫ ⠊⠞⠲ ⡁⠝⠙
-  ⡎⠊⠗⠕⠕⠛⠑⠰⠎ ⠝⠁⠍⠑ ⠺⠁⠎ ⠛⠕⠕⠙ ⠥⠏⠕⠝ ⠰⡡⠁⠝⠛⠑⠂ ⠋⠕⠗ ⠁⠝⠹⠹⠔⠛ ⠙⠑ 
+  ⡎⠊⠗⠕⠕⠛⠑⠰⠎ ⠝⠁⠍⠑ ⠺⠁⠎ ⠛⠕⠕⠙ ⠥⠏⠕⠝ ⠰⡡⠁⠝⠛⠑⠂ ⠋⠕⠗ ⠁⠝⠹⠹⠔⠛ ⠙⠑
   ⠡⠕⠎⠑ ⠞⠕ ⠏⠥⠞ ⠙⠊⠎ ⠙⠁⠝⠙ ⠞⠕⠲
 
   ⡕⠇⠙ ⡍⠜⠇⠑⠹ ⠺⠁⠎ ⠁⠎ ⠙⠑⠁⠙ ⠁⠎ ⠁ ⠙⠕⠕⠗⠤⠝⠁⠊⠇⠲
@@ -285,8 +317,8 @@ Braille:
   ⡍⠔⠙⠖ ⡊ ⠙⠕⠝⠰⠞ ⠍⠑⠁⠝ ⠞⠕ ⠎⠁⠹ ⠹⠁⠞ ⡊ ⠅⠝⠪⠂ ⠕⠋ ⠍⠹
   ⠪⠝ ⠅⠝⠪⠇⠫⠛⠑⠂ ⠱⠁⠞ ⠹⠻⠑ ⠊⠎ ⠏⠜⠞⠊⠊⠥⠇⠜⠇⠹ ⠙⠑⠁⠙ ⠁⠃⠳⠞
   ⠁ ⠙⠕⠕⠗⠤⠝⠁⠊⠇⠲ ⡊ ⠍⠊⠣⠞ ⠙⠁⠧⠑ ⠃⠑⠲ ⠔⠊⠇⠔⠫⠂ ⠍⠹⠎⠑⠇⠋⠂ ⠞⠕
-  ⠗⠑⠛⠜⠙ ⠁ ⠊⠕⠋⠋⠔⠤⠝⠁⠊⠇ ⠁⠎ ⠹⠑ ⠙⠑⠁⠙⠑⠌ ⠏⠊⠑⠊⠑ ⠕⠋ ⠊⠗⠕⠝⠍⠕⠝⠛⠻⠹ 
-  ⠔ ⠹⠑ ⠞⠗⠁⠙⠑⠲ ⡃⠥⠞ ⠹⠑ ⠺⠊⠎⠙⠕⠍ ⠕⠋ ⠳⠗ ⠁⠝⠊⠑⠌⠕⠗⠎ 
+  ⠗⠑⠛⠜⠙ ⠁ ⠊⠕⠋⠋⠔⠤⠝⠁⠊⠇ ⠁⠎ ⠹⠑ ⠙⠑⠁⠙⠑⠌ ⠏⠊⠑⠊⠑ ⠕⠋ ⠊⠗⠕⠝⠍⠕⠝⠛⠻⠹
+  ⠔ ⠹⠑ ⠞⠗⠁⠙⠑⠲ ⡃⠥⠞ ⠹⠑ ⠺⠊⠎⠙⠕⠍ ⠕⠋ ⠳⠗ ⠁⠝⠊⠑⠌⠕⠗⠎
   ⠊⠎ ⠔ ⠹⠑ ⠎⠊⠍⠊⠇⠑⠆ ⠁⠝⠙ ⠍⠹ ⠥⠝⠙⠁⠇⠇⠪⠫ ⠙⠁⠝⠙⠎
   ⠩⠁⠇⠇ ⠝⠕⠞ ⠙⠊⠌⠥⠗⠃ ⠊⠞⠂ ⠕⠗ ⠹⠑ ⡊⠳⠝⠞⠗⠹⠰⠎ ⠙⠕⠝⠑ ⠋⠕⠗⠲ ⡹⠳
   ⠺⠊⠇⠇ ⠹⠻⠑⠋⠕⠗⠑ ⠏⠻⠍⠊⠞ ⠍⠑ ⠞⠕ ⠗⠑⠏⠑⠁⠞⠂ ⠑⠍⠏⠙⠁⠞⠊⠊⠁⠇⠇⠹⠂ ⠹⠁⠞
@@ -314,6 +346,263 @@ Box drawing alignment tests:                                          █
   ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎
   ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏
   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
+)";
+
+/*
+ *      _    _ _______ __  __ _     __
+ *     | |  | |__   __|  \/  | |   /_ |
+ *     | |__| |  | |  | \  / | |    | |
+ *     |  __  |  | |  | |\/| | |    | |
+ *     | |  | |  | |  | |  | | |____| |
+ *     |_|  |_|  |_|  |_|  |_|______|_|
+ */
+
+const std::string HTML1 = R"(
+<html>
+    <head>
+        <title>GNU GENERAL PUBLIC LICENSE I</title>
+        <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    </head>
+<body>
+<p>
+                    <h1>GNU GENERAL PUBLIC LICENSE (Part I)</h1>
+
+<ul>
+<li><a href="One">Page 1</a>
+<li><a href="Two">Page 2</a>
+<li><a href="Three">Page 3</a>
+<li><a href="Four">Page 4 - Missing</a>
+<!--li><a href="test_files/page2.html">File 2</a>
+<li><a href="test_files/page5.html">File 5 - Missing</a-->
+<li><a href="http://www.gnu.org/philosophy/why-not-lgpl.html">GNU.org</a>
+</ul>
+
+<p>
+<pre>
+                       <b>Version 3, 29 June 2007</b>
+
+ Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+<p>
+<pre>
+                            <b>Preamble</b>
+
+  The GNU General Public License is a free, copyleft license for
+software and other kinds of works.
+
+  The licenses for most software and other practical works are designed
+to take away your freedom to share and change the works.  By contrast,
+the GNU General Public License is intended to guarantee your freedom to
+share and change all versions of a program--to make sure it remains free
+software for all its users.  We, the Free Software Foundation, use the
+GNU General Public License for most of our software; it applies also to
+any other work released this way by its authors.  You can apply it to
+your programs, too.
+
+<p>
+<pre>
+  When we speak of free software, we are referring to freedom, not
+price.  Our General Public Licenses are designed to make sure that you
+have the freedom to distribute copies of free software (and charge for
+them if you wish), that you receive source code or can get it if you
+want it, that you can change the software or use pieces of it in new
+free programs, and that you know you can do these things.
+
+<p>
+<pre><b>The End</b>
+  You should also get your employer (if you work as a programmer) or school,
+if any, to sign a "copyright disclaimer" for the program, if necessary.
+For more information on this, and how to apply and follow the GNU GPL, see
+<a href="http://www.gnu.org/licenses/>Licenses</a>.
+
+</body>
+</html>
+)";
+
+/*
+ *      _    _ _______ __  __ _      ___
+ *     | |  | |__   __|  \/  | |    |__ \
+ *     | |__| |  | |  | \  / | |       ) |
+ *     |  __  |  | |  | |\/| | |      / /
+ *     | |  | |  | |  | |  | | |____ / /_
+ *     |_|  |_|  |_|  |_|  |_|______|____|
+ */
+
+const std::string HTML2 = R"(
+<html>
+    <head>
+        <title>GNU GENERAL PUBLIC LICENSE II</title>
+        <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    </head>
+<body>
+<p>
+                    <h1>GNU GENERAL PUBLIC LICENSE (Part II)</h1>
+
+<ul>
+<li><a href="One">Page 1</a>
+<li><a href="Two">Page 2</a>
+<li><a href="Three">Page 3</a>
+</ul>
+
+<img src="documentation/images/fltk.png" alt="FLTK logo">
+
+<p>
+<pre>
+  To protect your rights, we need to prevent others from denying you
+these rights or asking you to surrender the rights.  Therefore, you have
+certain responsibilities if you distribute copies of the software, or if
+you modify it: responsibilities to respect the freedom of others.
+
+<p>
+<pre>
+  For example, if you distribute copies of such a program, whether
+gratis or for a fee, you must pass on to the recipients the same
+freedoms that you received.  You must make sure that they, too, receive
+or can get the source code.  And you must show them these terms so they
+know their rights.
+
+<p>
+<pre>
+  Developers that use the GNU GPL protect your rights with two steps:
+(1) assert copyright on the software, and (2) offer you this License
+giving you legal permission to copy, distribute and/or modify it.
+
+<p>
+<pre>
+  For the developers' and authors' protection, the GPL clearly explains
+that there is no warranty for this free software.  For both users' and
+authors' sake, the GPL requires that modified versions be marked as
+changed, so that their problems will not be attributed erroneously to
+authors of previous versions.
+
+<p>
+<pre>
+  Some devices are designed to deny users access to install or run
+modified versions of the software inside them, although the manufacturer
+can do so.  This is fundamentally incompatible with the aim of
+protecting users' freedom to change the software.  The systematic
+pattern of such abuse occurs in the area of products for individuals to
+use, which is precisely where it is most unacceptable.  Therefore, we
+have designed this version of the GPL to prohibit the practice for those
+products.  If such problems arise substantially in other domains, we
+stand ready to extend this provision to those domains in future versions
+of the GPL, as needed to protect the freedom of users.
+
+<p>
+<pre>
+  Finally, every program is threatened constantly by software patents.
+States should not allow patents to restrict development and use of
+software on general-purpose computers, but in those that do, we wish to
+avoid the special danger that patents applied to a free program could
+make it effectively proprietary.  To prevent this, the GPL assures that
+patents cannot be used to render the program non-free.
+
+<p>
+<pre>
+  The precise terms and conditions for copying, distribution and
+modification follow.
+
+<p>
+<pre><b>The End</b>
+  You should also get your employer (if you work as a programmer) or school,
+if any, to sign a "copyright disclaimer" for the program, if necessary.
+For more information on this, and how to apply and follow the GNU GPL, see
+<a href="http://www.gnu.org/licenses/>Licenses</a>.
+
+</body>
+</html>
+)";
+
+/*
+ *      _    _ _______ __  __ _      ____
+ *     | |  | |__   __|  \/  | |    |___ \
+ *     | |__| |  | |  | \  / | |      __) |
+ *     |  __  |  | |  | |\/| | |     |__ <
+ *     | |  | |  | |  | |  | | |____ ___) |
+ *     |_|  |_|  |_|  |_|  |_|______|____/
+ */
+
+const std::string HTML3 = R"(
+<html>
+    <head>
+        <title>TERMS AND CONDITIONS III</title>
+        <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    </head>
+<body>
+<p>
+                    <h1>TERMS AND CONDITIONS (Part III)</h1>
+
+<ul>
+<li><a href="One">Page 1</a>
+<li><a href="Two">Page 2</a>
+<li><a href="Three">Page 3</a>
+</ul>
+
+<p>
+<pre>
+  <b>0. Definitions.</b>
+
+<p>
+<pre>
+  "This License" refers to version 3 of the GNU General Public License.
+  "Copyright" also means copyright-like laws that apply to other kinds of
+works, such as semiconductor masks.
+
+<p>
+<pre>
+  "The Program" refers to any copyrightable work licensed under this
+License.  Each licensee is addressed as "you".  "Licensees" and
+"recipients" may be individuals or organizations.
+
+<p>
+<pre>
+  To "modify" a work means to copy from or adapt all or part of the work
+in a fashion requiring copyright permission, other than the making of an
+exact copy.  The resulting work is called a "modified version" of the
+earlier work or a work "based on" the earlier work.
+
+<p>
+<pre>
+  A "covered work" means either the unmodified Program or a work based
+on the Program.
+
+<p>
+<pre>
+  To "propagate" a work means to do anything with it that, without
+permission, would make you directly or secondarily liable for
+infringement under applicable copyright law, except executing it on a
+computer or modifying a private copy.  Propagation includes copying,
+distribution (with or without modification), making available to the
+public, and in some countries other activities as well.
+
+<p>
+<pre>
+  To "convey" a work means any kind of propagation that enables other
+parties to make or receive copies.  Mere interaction with a user through
+a computer network, with no transfer of a copy, is not conveying.
+
+<p>
+<pre>
+  An interactive user interface displays "Appropriate Legal Notices"
+to the extent that it includes a convenient and prominently visible
+feature that (1) displays an appropriate copyright notice, and (2)
+tells the user that there is no warranty for the work (except to the
+extent that warranties are provided), that licensees may convey the
+work under this License, and how to view a copy of this License.  If
+the interface presents a list of user commands or options, such as a
+menu, a prominent item in the list meets this criterion.
+
+<p>
+<pre><b>The End</b>
+  You should also get your employer (if you work as a programmer) or school,
+if any, to sign a "copyright disclaimer" for the program, if necessary.
+For more information on this, and how to apply and follow the GNU GPL, see
+<a href="http://www.gnu.org/licenses/>Licenses</a>.
+
+</body>
+</html>
 )";
 
 #endif

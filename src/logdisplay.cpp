@@ -288,7 +288,7 @@ struct _LogDisplayBuffer {
 *
 */
 struct _LogDisplayStyle {
-    enum STYLE {
+    enum Style {
                                 EMPTY,
                                 BETWEEN,
                                 CUSTOM,
@@ -301,7 +301,7 @@ struct _LogDisplayStyle {
     };
 
     LogDisplay::Color           color;
-    STYLE                       style;
+    Style                       style;
     bool                        inclusive;
     bool                        on;
     size_t                      count;

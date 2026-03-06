@@ -510,6 +510,8 @@ private:
 #include <vector>
 #include <FL/Fl_Menu_.H>
 #ifdef DEBUG
+    #define FLW_FUNC_NAME                   std::string asdfghj_ = __PRETTY_FUNCTION__; if (asdfghj_.find("__PRETTY_FUNCTION__=") == 0) asdfghj_ = asdfghj_.substr(20);
+    #define FLW_FUNC_ALIGN                  std::setw(64) << std::left <<
     #include <iostream>
     #include <iomanip>
     #define FLW_LINE                        { ::printf("\033[31m%6u: \033[34m%s::%s\033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
@@ -521,22 +523,22 @@ private:
     #define FLW_CYAN                        { ::printf("\033[7m\033[36m%6u: %s::%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
     #define FLW_RGB                         { ::printf("\033[7m\033[31m%6u: \033[32m%s::\033[34m%s  \033[0m\n", __LINE__, __FILE__, __func__); fflush(stdout); }
     #define FLW_PRINT(...)                  FLW_PRINT_MACRO(__VA_ARGS__, FLW_PRINT7, FLW_PRINT6, FLW_PRINT5, FLW_PRINT4, FLW_PRINT3, FLW_PRINT2, FLW_PRINT1)(__VA_ARGS__);
-    #define FLW_PRINT1(A)                   { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << std::endl; fflush(stdout); }
-    #define FLW_PRINT2(A,B)                 { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m" << std::endl; fflush(stdout); }
-    #define FLW_PRINT3(A,B,C)               { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << "" << std::endl; fflush(stdout); }
-    #define FLW_PRINT4(A,B,C,D)             { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m" << std::endl; fflush(stdout); }
-    #define FLW_PRINT5(A,B,C,D,E)           { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m,  5=" << (E) << std::endl; fflush(stdout); }
-    #define FLW_PRINT6(A,B,C,D,E,F)         { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m,  5=" << (E) << ",  \033[32m6=" << (F) << "\033[0m " << std::endl; fflush(stdout); }
-    #define FLW_PRINT7(A,B,C,D,E,F,G)       { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m 1=" << (A) << ",  \033[32m2=" << (B) << "\033[0m,  3=" << (C) << ",  \033[32m4=" << (D) << "\033[0m,  5=" << (E) << ",  \033[32m6=" << (F) << "\033[0m,  7=" << (G) << std::endl; fflush(stdout); }
+    #define FLW_PRINT1(A)                   { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|" << std::endl; fflush(stdout); }
+    #define FLW_PRINT2(A,B)                 { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|,  \033[32m2 => |" << (B) << "|\033[0m" << std::endl; fflush(stdout); }
+    #define FLW_PRINT3(A,B,C)               { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|,  \033[32m2 => |" << (B) << "|\033[0m,  3 => |" << (C) << "|" << std::endl; fflush(stdout); }
+    #define FLW_PRINT4(A,B,C,D)             { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|,  \033[32m2 => |" << (B) << "|\033[0m,  3 => |" << (C) << "|,  \033[32m4 => |" << (D) << "|\033[0m" << std::endl; fflush(stdout); }
+    #define FLW_PRINT5(A,B,C,D,E)           { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|,  \033[32m2 => |" << (B) << "|\033[0m,  3 => |" << (C) << "|,  \033[32m4 => |" << (D) << "|\033[0m,  5 => |" << (E) << "|" << std::endl; fflush(stdout); }
+    #define FLW_PRINT6(A,B,C,D,E,F)         { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|,  \033[32m2 => |" << (B) << "|\033[0m,  3 => |" << (C) << "|,  \033[32m4 => |" << (D) << "|\033[0m,  5 => |" << (E) << "|,  \033[32m6 => |" << (F) << "|\033[0m " << std::endl; fflush(stdout); }
+    #define FLW_PRINT7(A,B,C,D,E,F,G)       { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m 1 => |" << (A) << "|,  \033[32m2 => |" << (B) << "|\033[0m,  3 => |" << (C) << "|,  \033[32m4 => |" << (D) << "|\033[0m,  5 => |" << (E) << "|,  \033[32m6 => |" << (F) << "|\033[0m,  7 => |" << (G) << "|" << std::endl; fflush(stdout); }
     #define FLW_PRINT_MACRO(A,B,C,D,E,F,G,N,...) N
     #define FLW_PRINTV(...)                 FLW_PRINTV_MACRO(__VA_ARGS__, FLW_PRINTV7, FLW_PRINTV6, FLW_PRINTV5, FLW_PRINTV4, FLW_PRINTV3, FLW_PRINTV2, FLW_PRINTV1)(__VA_ARGS__);
-    #define FLW_PRINTV1(A)                  { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << "" << std::endl; fflush(stdout); }
-    #define FLW_PRINTV2(A,B)                { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m" << std::endl; fflush(stdout); }
-    #define FLW_PRINTV3(A,B,C)              { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << "" << std::endl; fflush(stdout); }
-    #define FLW_PRINTV4(A,B,C,D)            { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m" << std::endl; fflush(stdout); }
-    #define FLW_PRINTV5(A,B,C,D,E)          { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m,  " #E "=" << (E) << "" << std::endl; fflush(stdout); }
-    #define FLW_PRINTV6(A,B,C,D,E,F)        { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m,  " #E "=" << (E) << ",  \033[32m" #F "=" << (F) << "\033[0m" << std::endl; fflush(stdout); }
-    #define FLW_PRINTV7(A,B,C,D,E,F,G)      { std::cout << "\033[31m" << std::setw(6) << __LINE__ << ": \033[34m" << __func__ << ":\033[0m " #A "=" << (A) << ",  \033[32m" #B "=" << (B) << "\033[0m,  " #C "=" << (C) << ",  \033[32m" #D "=" << (D) << "\033[0m,  " #E "=" << (E) << ",  \033[32m" #F "=" << (F) << "\033[0m,  " #G "=" << (G) << "" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV1(A)                  { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV2(A,B)                { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|,  \033[32m" #B " => |" << (B) << "|\033[0m" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV3(A,B,C)              { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|,  \033[32m" #B " => |" << (B) << "|\033[0m,  " #C " => |" << (C) << "|" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV4(A,B,C,D)            { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|,  \033[32m" #B " => |" << (B) << "|\033[0m,  " #C " => |" << (C) << "|,  \033[32m" #D " => |" << (D) << "|\033[0m" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV5(A,B,C,D,E)          { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|,  \033[32m" #B " => |" << (B) << "|\033[0m,  " #C " => |" << (C) << "|,  \033[32m" #D " => |" << (D) << "|\033[0m,  " #E " => |" << (E) << "|" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV6(A,B,C,D,E,F)        { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|,  \033[32m" #B " => |" << (B) << "|\033[0m,  " #C " => |" << (C) << "|,  \033[32m" #D " => |" << (D) << "|\033[0m,  " #E " => |" << (E) << "|,  \033[32m" #F " => |" << (F) << "|\033[0m" << std::endl; fflush(stdout); }
+    #define FLW_PRINTV7(A,B,C,D,E,F,G)      { FLW_FUNC_NAME std::cout << "\033[31m" << std::setw(6) << std::right << __LINE__ << ": \033[34m" << FLW_FUNC_ALIGN asdfghj_ << "\033[0m " #A " => |" << (A) << "|,  \033[32m" #B " => |" << (B) << "|\033[0m,  " #C " => |" << (C) << "|,  \033[32m" #D " => |" << (D) << "|\033[0m,  " #E " => |" << (E) << "|,  \033[32m" #F " => |" << (F) << "|\033[0m,  " #G " => |" << (G) << "|" << std::endl; fflush(stdout); }
     #define FLW_PRINTV_MACRO(A,B,C,D,E,F,G,N,...) N
     #define FLW_PRINTD(...)                 FLW_PRINTD_MACRO(__VA_ARGS__, FLW_PRINTD4, FLW_PRINTD3, FLW_PRINTD2, FLW_PRINTD1)(__VA_ARGS__);
     #define FLW_PRINTD1(A)                  { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %.10f\n", __LINE__, __func__, #A, static_cast<double>(A)); fflush(stdout); }
@@ -550,6 +552,7 @@ private:
     #define FLW_PRINTDS3(A,B,C)             { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s,  \033[32m%s = %s\033[0m,  %s = %s\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str()); fflush(stdout); }
     #define FLW_PRINTDS4(A,B,C,D)           { ::printf("\033[31m%6d: \033[34m%s:\033[0m  %s = %s,  \033[32m%s = %s\033[0m,  %s = %s,  \033[32m%s = %s\033[0m\n", __LINE__, __func__, #A, flw::util::format_double(static_cast<double>(A), 0, '\'').c_str(), #B, flw::util::format_double(static_cast<double>(B), 0, '\'').c_str(), #C, flw::util::format_double(static_cast<double>(C), 0, '\'').c_str(), #D, flw::util::format_double(static_cast<double>(D), 0, '\'').c_str()); fflush(stdout); }
     #define FLW_PRINTDS_MACRO(A,B,C,D,N,...) N
+    #define FLW_PRINT_VECTOR(A)             { printf("Vector(%d) => \"%s:%s\"/%d\n", (int) A.size(), __FILE__, __func__, __LINE__); for (auto& v : A) { std::cout << "\t" << v << std::endl; } }
     #define FLW_NL                          { ::printf("\n"); fflush(stdout); }
     #define FLW_ASSERT(X,Y)                 if ((X) == 0) fl_alert("assert in %s on line %d: %s", __func__, __LINE__, Y);
     #define FLW_TEST(X,Y)                   flw::debug::test(X,Y,__LINE__,__func__);
@@ -568,6 +571,7 @@ private:
     #define FLW_PRINTV(...)
     #define FLW_PRINTD(...)
     #define FLW_PRINTDS(...)
+    #define FLW_PRINT_VECTOR(A)
     #define FLW_NL
     #define FLW_ASSERT(X,Y)
     #define FLW_TEST(X,Y)
@@ -575,10 +579,10 @@ private:
     #define FLW_TEST_TRUE(X)
 #endif
 namespace flw {
-typedef std::map<std::string, std::string> StringHash;
-typedef std::vector<std::string> StringVector;
-typedef std::vector<void*> VoidVector;
-typedef std::vector<Fl_Widget*> WidgetVector;
+typedef std::map<std::string, std::string>  StringHash;
+typedef std::vector<std::string>            StringVector;
+typedef std::vector<void*>                  VoidVector;
+typedef std::vector<Fl_Widget*>             WidgetVector;
 extern int                      PREF_FIXED_FONT;
 extern std::string              PREF_FIXED_FONTNAME;
 extern int                      PREF_FIXED_FONTSIZE;
@@ -605,15 +609,22 @@ namespace icons {
     extern std::string          CANCEL;
     extern std::string          CONFIRM;
     extern std::string          DEL;
+    extern std::string          DIVIDE;
     extern std::string          DOWN;
     extern std::string          EDIT;
+    extern std::string          EQUAL;
     extern std::string          ERR;
     extern std::string          FORWARD;
+    extern std::string          HOME;
     extern std::string          INFO;
     extern std::string          LEFT;
+    extern std::string          MINUS;
+    extern std::string          MULTI;
     extern std::string          PASSWORD;
     extern std::string          PAUSE;
+    extern std::string          PERCENT;
     extern std::string          PLAY;
+    extern std::string          PLUS;
     extern std::string          QUESTION;
     extern std::string          RIGHT;
     extern std::string          STOP;
@@ -651,6 +662,7 @@ namespace util {
     void                        center_window(Fl_Window* window, Fl_Window* parent = nullptr);
     double                      clock();
     int                         count_decimals(double number);
+    std::string                 file_ext(const std::string& filename, bool tolower = false);
     Fl_Widget*                  find_widget(Fl_Group* group, const std::string& label);
     std::string                 fix_menu_string(const std::string& label);
     std::string                 format(const char* format, ...);
@@ -664,6 +676,8 @@ namespace util {
     bool                        png_save(Fl_Window* window, const std::string& opt_name = "", int X = 0, int Y = 0, int W = 0, int H = 0);
     std::string                 remove_browser_format(const std::string& text);
     std::string&                replace_string(std::string& string, const std::string& find, const std::string& replace);
+    static inline std::string   replace_string_const(const std::string& string, const std::string& find, const std::string& replace)
+                                    { auto s = string; replace_string(s, find, replace); return s; }
     void                        sleep(unsigned milli);
     StringVector                split_string(const std::string& string, const std::string& split);
     std::string                 substr(const std::string& string, std::string::size_type pos, std::string::size_type size = std::string::npos);
@@ -1244,11 +1258,10 @@ namespace dlg {
 }
 }
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Help_Dialog.H>
 namespace flw {
 namespace dlg {
 void                            center_fl_message_dialog();
-void                            html(const std::string& title, const std::string& text, int W = 40, int H = 23);
-Fl_Window*                      html_window(const std::string& title, const std::string& text, int W = 40, int H = 23);
 std::string                     input(const std::string& title, const std::string& message, std::string& value, int W = 40, int H = 10);
 std::string                     input_double(const std::string& title, const std::string& message, double& value, int W = 40, int H = 10);
 std::string                     input_int(const std::string& title, const std::string& message, int64_t& value, int W = 40, int H = 10);
@@ -1257,7 +1270,6 @@ std::string                     input_secret(const std::string& title, const std
 void                            list(const std::string& title, const StringVector& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            list_file(const std::string& title, const std::string& file, bool fixed_font = false, int W = 40, int H = 23);
-Fl_Window*                      list_window(const std::string& title, const std::string& list, bool fixed_font = false, int W = 40, int H = 23);
 void                            msg(const std::string& title, const std::string& message, int W = 40, int H = 7);
 void                            msg_alert(const std::string& title, const std::string& message, int W = 40, int H = 7);
 std::string                     msg_ask(const std::string& title, const std::string& message, const std::string& b1 = labels::YES, const std::string& b2 = labels::NO, const std::string& b3 = "", const std::string& b4 = "", const std::string& b5 = "", int W = 40, int H = 7);
@@ -1273,8 +1285,8 @@ int                             select_choice(const std::string& title, const st
 int                             select_string(const std::string& title, const StringVector& list, int select_row = -1, bool fixed_font = false, int W = 40, int H = 23);
 int                             select_string(const std::string& title, const StringVector& list, const std::string& select_row, bool fixed_font = false, int W = 40, int H = 23);
 bool                            slider(const std::string& title, double min, double max, double& value, double step = 1.0);
-void                            text(const std::string& title, const std::string& text, int W = 40, int H = 23);
-bool                            text_edit(const std::string& title, std::string& text, int W = 40, int H = 23);
+void                            text(const std::string& title, const std::string& text, int W = 60, int H = 50);
+bool                            text_edit(const std::string& title, std::string& text, int W = 60, int H = 50);
 }
 }
 #include <FL/Fl_Double_Window.H>
@@ -1318,6 +1330,60 @@ private:
 };
 namespace dlg {
     bool                        font(const std::string& title, Fl_Font& font, Fl_Fontsize& fontsize, std::string& fontname, bool limit_to_default = false);
+}
+}
+#include <FL/Fl_Double_Window.H>
+class Fl_Button;
+class Fl_Help_View;
+class Fl_Input;
+namespace flw {
+class GridGroup;
+class InputMenu;
+class SVGButton;
+class HTMLDialog : public Fl_Double_Window {
+public:
+                                HTMLDialog(int W = 60, int H = 50);
+                                ~HTMLDialog()
+                                    { _html->value(""); }
+    void                        add_page(const std::string& name, const std::string& page);
+    void                        clear_pages();
+    int                         handle(int event) override;
+    void                        load_page(const std::string& file);
+    void                        run(bool modal = true);
+private:
+    void                        _copy_text();
+    void                        _debug() const;
+    void                        _find();
+    void                        _go_back();
+    void                        _go_forward();
+    void                        _go_home();
+    const char*                 _go_link(const char* uri);
+    void                        _set_font_size(int size);
+    void                        _set_page(const std::string& page, bool clear_links2);
+    void                        _update_buttons();
+    static void                 _Callback(Fl_Widget* w, void* o);
+    static const char*          _CallbackLink(Fl_Widget*, const char* uri);
+    Fl_Button*                  _close;
+    Fl_Button*                  _copy;
+    Fl_Help_View*               _html;
+    InputMenu*                  _input;
+    bool                        _run;
+    flw::GridGroup*             _grid;
+    flw::SVGButton*             _back;
+    flw::SVGButton*             _forward;
+    flw::SVGButton*             _dec;
+    flw::SVGButton*             _home;
+    flw::SVGButton*             _inc;
+    flw::SVGButton*             _top;
+    flw::SVGButton*             _view;
+    flw::StringHash             _pages;
+    flw::StringVector           _links1;
+    flw::StringVector           _links2;
+    int                         _pos;
+};
+namespace dlg {
+void                            html(const std::string& text, int W = 60, int H = 50);
+void                            html_file(const std::string& file, int W = 60, int H = 50);
 }
 }
 #include <FL/Fl_Group.H>

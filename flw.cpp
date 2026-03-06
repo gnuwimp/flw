@@ -884,7 +884,7 @@ static void _file_split_paths(const std::string& filename, std::string& path, st
     if (pos2 != std::string::npos && pos2 != 0) {
         ext = priv::_file_substr(name, pos2 + 1);
     }
-    if (path.back() == ':') {
+    if (path.length() > 1 && path.back() == ':') {
         path += sep;
         return;
     }
@@ -1114,6 +1114,7 @@ bool gnu::file::copy(const std::string& from, const std::string& to, CallbackCop
         }
         if (write != nullptr) {
             fclose(write);
+            file::remove(to);
         }
         free(buf);
         return false;
@@ -3206,12 +3207,28 @@ std::string flw::icons::DEL = R"(
 	v-16.8c0-4.4-3.6-7.6-7.6-7.6H136.8z"/>
 </svg>
 )";
+std::string flw::icons::DIVIDE = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg fill="#000000" height="800px" width="800px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 viewBox="0 0 42 42" xml:space="preserve">
+<g>
+	<path d="M37.059,16H26H16H4.941C2.224,16,0,18.282,0,21s2.224,5,4.941,5H16h10h11.059C39.776,26,42,23.718,42,21
+		S39.776,16,37.059,16z"/>
+	<circle cx="21" cy="6" r="5"/>
+	<circle cx="21" cy="36" r="5"/>
+</g>
+</svg>
+)";
 std::string flw::icons::DOWN = R"(
 <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="48" height="48" fill="white" fill-opacity="0.01"/>
 <path d="M7.05322 10.0003L29.0532 10.0003V4.00032L7.05322 4.00032V10.0003Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M29.0531 10.0003C35.5721 17.1232 39.3127 21.2512 40.2749 22.3841C41.7183 24.0835 41.1122 26.0043 37.5001 26.0043C33.8879 26.0043 31.8047 20.7189 29.0531 20.7189C29.0367 20.7155 29.0356 27.4746 29.0498 40.9963C29.0515 42.6536 27.7094 43.9986 26.0521 44.0003L26.0489 44.0003C24.3898 44.0003 23.0447 42.6553 23.0447 40.9962V32.9867C15.072 31.7779 10.7374 31.111 10.0411 30.9859C8.99656 30.7984 7.05308 29.8014 7.05308 26.9323C7.05308 25.0196 7.05308 20.0423 7.05308 10.0003L29.0531 10.0003Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M29.0531 10.0003C35.5721 17.1232 39.3127 21.2512 40.2749 22.3841C41.7183 24.0835 41.1122 26.0043 37.5001
+26.0043C33.8879 26.0043 31.8047 20.7189 29.0531 20.7189C29.0367 20.7155 29.0356 27.4746 29.0498 40.9963C29.0515 42.6536 27.7094 43.9986 26.0521 44.0003L26.0489
+44.0003C24.3898 44.0003 23.0447 42.6553 23.0447 40.9962V32.9867C15.072 31.7779 10.7374 31.111 10.0411 30.9859C8.99656 30.7984 7.05308 29.8014 7.05308 26.9323C7.05308
+25.0196 7.05308 20.0423 7.05308 10.0003L29.0531 10.0003Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
 </svg>
 )";
 std::string flw::icons::EDIT = R"(
@@ -3221,19 +3238,37 @@ std::string flw::icons::EDIT = R"(
 <path d="M823.3 938.8H229.4c-71.6 0-129.8-58.2-129.8-129.8V215.1c0-71.6 58.2-129.8 129.8-129.8h297c23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7h-297c-24.5 0-44.4 19.9-44.4
 44.4V809c0 24.5 19.9 44.4 44.4 44.4h593.9c24.5 0 44.4-19.9 44.4-44.4V512c0-23.6 19.1-42.7 42.7-42.7s42.7 19.1 42.7 42.7v297c0 71.6-58.2 129.8-129.8 129.8z" fill="#3688FF" />
 <path d="M483 756.5c-1.8 0-3.5-0.1-5.3-0.3l-134.5-16.8c-19.4-2.4-34.6-17.7-37-37l-16.8-134.5c-1.6-13.1 2.9-26.2 12.2-35.5l374.6-374.6c51.1-51.1 134.2-51.1 185.3 0l26.3 26.3c24.8
-24.7 38.4 57.6 38.4 92.7 0 35-13.6 67.9-38.4 92.7L513.2 744c-8.1 8.1-19 12.5-30.2 12.5z m-96.3-97.7l80.8 10.1 359.8-359.8c8.6-8.6 13.4-20.1 13.4-32.3 0-12.2-4.8-23.7-13.4-32.3L801 218.2c-17.9-17.8-46.8-17.8-64.6 0L376.6 578l10.1 80.8z" fill="#5F6379" /></svg>
+24.7 38.4 57.6 38.4 92.7 0 35-13.6 67.9-38.4 92.7L513.2 744c-8.1 8.1-19 12.5-30.2 12.5z m-96.3-97.7l80.8 10.1 359.8-359.8c8.6-8.6 13.4-20.1 13.4-32.3 0-12.2-4.8-23.7-13.4-32.3L801
+218.2c-17.9-17.8-46.8-17.8-64.6 0L376.6 578l10.1 80.8z"
+fill="#5F6379" /></svg>
+)";
+std::string flw::icons::EQUAL = R"(
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg fill="#000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
+<path d="M0,144v85.3h512V144H0z M0,400h512v-85.3H0V400z"/>
+</svg>
 )";
 std::string flw::icons::ERR = R"(
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="800px" height="800px" version="1.1" viewBox="0 0 512 512" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
 <circle cx="256" cy="256" r="245.8" fill="#FF757C"/>
-<polygon points="395.56 164.04 347.96 116.44 256 208.4 164.04 116.44 116.44 164.04 208.4 256 116.44 347.96 164.04 395.56 256 303.6 347.96 395.56 395.56 347.96 303.6 256" fill="#F2F2F2"/>
+<polygon points="395.56 164.04 347.96 116.44 256 208.4 164.04 116.44 116.44 164.04 208.4 256 116.44 347.96 164.04 395.56 256
+303.6 347.96 395.56 395.56 347.96 303.6 256" fill="#F2F2F2"/>
 <g fill="#4D4D4D">
-	<path d="M256,512c-68.38,0-132.667-26.628-181.02-74.98S0,324.38,0,256S26.628,123.333,74.98,74.98   S187.62,0,256,0s132.667,26.628,181.02,74.98S512,187.62,512,256s-26.628,132.667-74.98,181.02S324.38,512,256,512z M256,20.398   C126.089,20.398,20.398,126.089,20.398,256S126.089,491.602,256,491.602S491.602,385.911,491.602,256S385.911,20.398,256,20.398z"/>
-	<path d="m347.96 405.76c-2.61 0-5.221-0.996-7.212-2.987l-84.75-84.75-84.749 84.75c-3.983 3.982-10.441 3.982-14.425 0l-47.599-47.599c-3.983-3.983-3.983-10.441 0-14.425l84.751-84.748-84.75-84.749c-3.983-3.983-3.983-10.441 0-14.425l47.599-47.599c3.983-3.982 10.441-3.982 14.425 0l84.748 84.751 84.749-84.75c3.983-3.982 10.441-3.982 14.425 0l47.599
-	47.599c3.983 3.983 3.983 10.441 0 14.425l-84.751 84.748 84.75 84.749c3.983 3.983 3.983 10.441 0 14.425l-47.599 47.599c-1.991 1.991-4.601 2.986-7.211 2.986zm-91.962-112.36c2.61 0 5.221 0.996 7.212 2.987l84.749 84.75 33.175-33.175-84.75-84.749c-3.983-3.983-3.983-10.441 0-14.425l84.75-84.749-33.175-33.175-84.749 84.75c-3.983 3.982-10.441 3.982-14.425
-	0l-84.749-84.75-33.175 33.175 84.75 84.749c3.983 3.983 3.983 10.441 0 14.425l-84.75 84.749 33.175 33.175 84.749-84.75c1.992-1.99 4.603-2.987 7.213-2.987z"/>
+	<path d="M256,512c-68.38,0-132.667-26.628-181.02-74.98S0,324.38,0,256S26.628,123.333,74.98,74.98
+	S187.62,0,256,0s132.667,26.628,181.02,74.98S512,187.62,512,256s-26.628,132.667-74.98,181.02S324.38,512,256,512z M256,20.398
+	C126.089,20.398,20.398,126.089,20.398,256S126.089,491.602,256,491.602S491.602,385.911,491.602,256S385.911,20.398,256,20.398z"/>
+	<path d="m347.96 405.76c-2.61 0-5.221-0.996-7.212-2.987l-84.75-84.75-84.749 84.75c-3.983 3.982-10.441
+	3.982-14.425 0l-47.599-47.599c-3.983-3.983-3.983-10.441 0-14.425l84.751-84.748-84.75-84.749c-3.983-3.983-3.983-10.441 0-14.425l47.599-47.599c3.983-3.982
+	10.441-3.982 14.425 0l84.748 84.751 84.749-84.75c3.983-3.982 10.441-3.982 14.425 0l47.599 47.599c3.983 3.983 3.983 10.441 0
+	14.425l-84.751 84.748 84.75 84.749c3.983 3.983 3.983 10.441 0 14.425l-47.599 47.599c-1.991 1.991-4.601 2.986-7.211 2.986zm-91.962-112.36c2.61
+	0 5.221 0.996 7.212 2.987l84.749 84.75 33.175-33.175-84.75-84.749c-3.983-3.983-3.983-10.441 0-14.425l84.75-84.749-33.175-33.175-84.749 84.75c-3.983
+	3.982-10.441 3.982-14.425 0l-84.749-84.75-33.175 33.175 84.75 84.749c3.983 3.983 3.983 10.441 0 14.425l-84.75 84.749 33.175
+	33.175 84.749-84.75c1.992-1.99 4.603-2.987 7.213-2.987z"/>
 </g>
 </svg>
 )";
@@ -3259,21 +3294,58 @@ std::string flw::icons::FORWARD = R"(
 	l144.1-89.788L326.239,217.62z"/>
 </svg>
 )";
+std::string flw::icons::HOME = R"(
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 -0.5 21 21" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<title>home [#1391]</title>
+<desc>Created with Sketch.</desc>
+<defs>
+</defs>
+<g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+<g id="Dribbble-Light-Preview" transform="translate(-419.000000, -720.000000) " fill="#000000">
+<g id="icons" transform="translate(56.000000, 160.000000) ">
+<path d="M379.79996,578 L376.649968,578 L376.649968,574 L370.349983,574 L370.349983,578 L367.19999,578
+L367.19999,568.813 L373.489475,562.823 L379.79996,568.832 L379.79996,578 Z M381.899955,568.004 L381.899955,568
+L381.899955,568 L373.502075,560 L363,569.992 L364.481546,571.406 L365.099995,570.813
+L365.099995,580 L372.449978,580 L372.449978,576 L374.549973,576 L374.549973,580 L381.899955,580
+L381.899955,579.997 L381.899955,570.832 L382.514204,571.416 L384.001,570.002 L381.899955,568.004 Z"
+id="home-[#1391]">
+</path>
+</g>
+</g>
+</g>
+</svg>
+)";
 std::string flw::icons::INFO = R"(
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="800px" height="800px" version="1.1" viewBox="0 0 512 512" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
 <circle cx="256" cy="256" r="245.8" fill="#BCC987"/>
 <g fill="#FFE6B8">
-	<path d="m256 411.54c-14.082 0-25.498-11.416-25.498-25.498v-177.47c0-14.082 11.416-25.498 25.498-25.498s25.498 11.416 25.498 25.498v177.47c0 14.082-11.416 25.498-25.498 25.498z"/>
-	<path d="m256 151.46c-6.711 0-13.28-2.723-18.033-7.466-4.742-4.753-7.465-11.321-7.465-18.032s2.723-13.29 7.465-18.033c4.753-4.742 11.322-7.465 18.033-7.465s13.279 2.723 18.032 7.465c4.743 4.743 7.466 11.322 7.466 18.033s-2.723 13.279-7.466 18.032c-4.753 4.743-11.321 7.466-18.032 7.466z"/>
+	<path d="m256 411.54c-14.082 0-25.498-11.416-25.498-25.498v-177.47c0-14.082 11.416-25.498 25.498-25.498s25.498 11.416 25.498 25.498v177.47c0
+	14.082-11.416 25.498-25.498 25.498z"/>
+	<path d="m256 151.46c-6.711 0-13.28-2.723-18.033-7.466-4.742-4.753-7.465-11.321-7.465-18.032s2.723-13.29 7.465-18.033c4.753-4.742 11.322-7.465
+	18.033-7.465s13.279 2.723 18.032
+	7.465c4.743 4.743 7.466 11.322 7.466 18.033s-2.723 13.279-7.466 18.032c-4.753 4.743-11.321 7.466-18.032 7.466z"/>
 </g>
 <g fill="#4D3D36">
-	<path d="M256,512c-68.381,0-132.667-26.628-181.019-74.981C26.628,388.667,0,324.381,0,256   S26.628,123.333,74.981,74.981C123.333,26.628,187.619,0,256,0s132.667,26.628,181.019,74.981C485.372,123.333,512,187.619,512,256   s-26.628,132.667-74.981,181.019C388.667,485.372,324.381,512,256,512z M256,20.398C126.089,20.398,20.398,126.089,20.398,256   S126.089,491.602,256,491.602S491.602,385.911,491.602,256S385.911,20.398,256,20.398z"/>
+	<path d="M256,512c-68.381,0-132.667-26.628-181.019-74.981C26.628,388.667,0,324.381,0,256   S26.628,123.333,74.981,74.981C123.333,26.628,187.619,0,256,
+	0s132.667,26.628,181.019,
+	74.981C485.372,123.333,512,187.619,512,256
+	s-26.628,132.667-74.981,181.019C388.667,485.372,324.381,512,256,512z M256,20.398C126.089,20.398,20.398,126.089,20.398,256   S126.089,491.602,256,491.602S491.602,
+	385.911,491.602,
+	256S385.911,20.398,256,20.398z"/>
 
 
-	<path d="m256 421.74c-19.683 0-35.697-16.014-35.697-35.697v-177.47c0-19.683 16.014-35.697 35.697-35.697s35.697 16.014 35.697 35.697v177.47c0 19.683-16.014 35.697-35.697 35.697zm0-228.46c-8.436 0-15.299 6.863-15.299 15.299v177.47c0 8.436 6.863 15.299 15.299 15.299s15.299-6.863 15.299-15.299v-177.47c0-8.436-6.863-15.299-15.299-15.299z"/>
-	<path d="m256 161.66c-9.386 0-18.585-3.807-25.237-10.446-6.654-6.668-10.46-15.867-10.46-25.251 0-9.4 3.809-18.6 10.451-25.244 6.662-6.647 15.861-10.453 25.246-10.453 9.384 0 18.583 3.806 25.235 10.444 6.653 6.652 10.462 15.853 10.462 25.253 0 9.385-3.807 18.584-10.446 25.236-6.667 6.654-15.866 10.461-25.251 10.461zm0-50.996c-4.025 0-7.972 1.636-10.829 4.486-2.836 2.837-4.469 6.781-4.469 10.813 0 4.024 1.636 7.971 4.486 10.829 2.841 2.834 6.788 4.47 10.813 4.47 4.024 0 7.97-1.636 10.827-4.486 2.835-2.843 4.471-6.789 4.471-10.813 0-4.031-1.633-7.974-4.479-10.82-2.849-2.843-6.796-4.479-10.82-4.479z"/>
+	<path d="m256 421.74c-19.683 0-35.697-16.014-35.697-35.697v-177.47c0-19.683 16.014-35.697 35.697-35.697s35.697 16.014 35.697 35.697v177.47c0 19.683-16.014
+	35.697-35.697 35.697zm0-228.46c-8.436 0-15.299 6.863-15.299 15.299v177.47c0
+	8.436 6.863 15.299 15.299 15.299s15.299-6.863 15.299-15.299v-177.47c0-8.436-6.863-15.299-15.299-15.299z"/>
+	<path d="m256 161.66c-9.386 0-18.585-3.807-25.237-10.446-6.654-6.668-10.46-15.867-10.46-25.251 0-9.4 3.809-18.6 10.451-25.244 6.662-6.647 15.861-10.453 25.246-10.453 9.384 0
+	18.583 3.806 25.235 10.444 6.653 6.652 10.462
+	15.853 10.462 25.253 0 9.385-3.807 18.584-10.446 25.236-6.667 6.654-15.866 10.461-25.251 10.461zm0-50.996c-4.025 0-7.972 1.636-10.829 4.486-2.836 2.837-4.469 6.781-4.469
+	10.813 0 4.024 1.636 7.971 4.486
+	10.829 2.841 2.834 6.788 4.47 10.813 4.47 4.024 0 7.97-1.636 10.827-4.486 2.835-2.843 4.471-6.789 4.471-10.813 0-4.031-1.633-7.974-4.479-10.82-2.849-2.843-6.796-4.479-10.82-4.479z"/>
 </g>
 </svg>
 )";
@@ -3282,7 +3354,46 @@ std::string flw::icons::LEFT = R"(
 <svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="48" height="48" fill="white" fill-opacity="0.01"/>
 <path d="M44 40.9998V18.9998H38V40.9998H44Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M38 19C30.8948 12.4302 26.7757 8.66342 25.6428 7.69966C23.9433 6.25403 22.0226 6.86106 22.0226 10.4789C22.0226 14.0967 27.2864 16.2441 27.2864 19C27.2898 19.0164 20.529 19.0175 7.00404 19.0033C5.3467 19.0015 4.00175 20.3437 4 22.001C4 22.0021 4 22.0031 4 22.0042C4 23.6633 5.34501 25.0083 7.00417 25.0083H14.0165C15.2234 32.9769 15.8893 37.3099 16.0144 38.0073C16.2019 39.0535 17.199 41 20.068 41C21.9807 41 27.9581 41 38 41V19Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M38 19C30.8948 12.4302 26.7757 8.66342 25.6428 7.69966C23.9433 6.25403 22.0226 6.86106 22.0226
+10.4789C22.0226 14.0967 27.2864 16.2441 27.2864 19C27.2898 19.0164
+20.529 19.0175 7.00404 19.0033C5.3467 19.0015 4.00175 20.3437 4 22.001C4 22.0021 4 22.0031 4 22.0042C4 23.6633 5.34501 25.0083 7.00417 25.0083H14.0165C15.2234
+32.9769 15.8893 37.3099 16.0144 38.0073C16.2019 39.0535
+17.199 41 20.068 41C21.9807 41 27.9581 41 38 41V19Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+</svg>
+)";
+std::string flw::icons::MINUS = R"(
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 -12 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+
+    <title>minus</title>
+    <desc>Created with Sketch Beta.</desc>
+    <defs>
+
+</defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="Icon-Set-Filled" sketch:type="MSLayerGroup" transform="translate(-414.000000, -1049.000000) " fill="#000000">
+            <path d="M442,1049 L418,1049 C415.791,1049 414,1050.79 414,1053 C414,1055.21 415.791,1057 418,1057 L442,1057 C444.209,1057 446,1055.21 446,1053
+            C446,1050.79 444.209,1049 442,1049" id="minus" sketch:type="MSShapeGroup">
+
+</path>
+        </g>
+    </g>
+</svg>
+)";
+std::string flw::icons::MULTI = R"(
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg height="800px" width="800px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 viewBox="0 0 11.328 11.328" xml:space="preserve">
+<g>
+	<path style="fill:#030104;" d="M11.145,9.085L7.723,5.664l3.422-3.421c0.243-0.244,0.243-0.64,0-0.883L9.967,0.183
+		c-0.244-0.244-0.64-0.244-0.883,0L5.662,3.604l-3.42-3.421c-0.244-0.244-0.639-0.244-0.883,0L0.183,1.36
+		c-0.243,0.244-0.243,0.639,0,0.883l3.421,3.421L0.183,9.085c-0.243,0.244-0.243,0.639,0,0.883l1.177,1.178
+		c0.244,0.243,0.639,0.243,0.883,0l3.42-3.422l3.422,3.422c0.243,0.243,0.639,0.243,0.883,0l1.178-1.178
+		C11.389,9.724,11.389,9.329,11.145,9.085z"/>
+</g>
 </svg>
 )";
 std::string flw::icons::PASSWORD = R"(
@@ -3296,8 +3407,11 @@ fill="#FFF200" /><path d="M661.95456 171.87328C622.099456 128.39424 568.96512 10
 42.984448-61.10208 100.01408-61.10208 160.584704h40.96C342.585344 229.318656 418.737152 145.408 512.340992 145.408c93.60384 0 169.756672 83.91168 169.756672
 187.051008h40.96c0-60.5696-21.699584-117.600256-61.10208-160.58368M512.340992 730.22464c-28.653568 0-51.881984-23.228416-51.881984-51.883008 0-28.653568 23.228416-51.881984
 51.881984-51.881984 28.654592 0 51.883008 23.228416 51.883008 51.881984 0 28.654592-23.228416 51.883008-51.883008 51.883008m276.584448-276.707328H235.75552C159.3344 453.517312
-97.28 515.393536 97.28 591.720448v190.537728c0 76.196864 61.99808 138.203136 138.47552 138.203136h553.16992c76.42112 0 138.47552-61.876224 138.47552-138.203136V591.720448c0-76.19584-61.997056-138.203136-138.47552-138.203136M512.340992
-771.18464c51.193856 0 92.843008-41.649152 92.843008-92.843008 0-51.192832-41.649152-92.841984-92.843008-92.841984s-92.841984 41.649152-92.841984 92.841984c0 51.193856 41.648128 92.843008 92.841984 92.843008m276.584448-276.707328c53.77024 0 97.51552 43.623424 97.51552 97.243136v190.537728c0 53.619712-43.74528 97.243136-97.51552 97.243136H235.75552c-53.77024 0-97.516544-43.6224-97.516544-97.243136V591.720448c0-53.619712 43.74528-97.243136 97.51552-97.243136h553.16992" fill="#000000" /></svg>
+97.28 515.393536 97.28 591.720448v190.537728c0 76.196864 61.99808 138.203136 138.47552 138.203136h553.16992c76.42112 0
+138.47552-61.876224 138.47552-138.203136V591.720448c0-76.19584-61.997056-138.203136-138.47552-138.203136M512.340992
+771.18464c51.193856 0 92.843008-41.649152 92.843008-92.843008 0-51.192832-41.649152-92.841984-92.843008-92.841984s-92.841984 41.649152-92.841984 92.841984c0
+51.193856 41.648128 92.843008 92.841984 92.843008m276.584448-276.707328c53.77024 0 97.51552 43.623424 97.51552 97.243136v190.537728c0 53.619712-43.74528 97.243136-97.51552
+97.243136H235.75552c-53.77024 0-97.516544-43.6224-97.516544-97.243136V591.720448c0-53.619712 43.74528-97.243136 97.51552-97.243136h553.16992" fill="#000000" /></svg>
 )";
 std::string flw::icons::PAUSE = R"(
 <?xml version="1.0" encoding="iso-8859-1"?>
@@ -3322,14 +3436,45 @@ std::string flw::icons::PAUSE = R"(
 	c0-4.4-3.2-8-7.6-8H208z"/>
 </svg>
 )";
+std::string flw::icons::PERCENT = R"(
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7 4C7 5.65685 5.65685 7 4 7C2.34315 7 1 5.65685 1 4C1 2.34315 2.34315 1 4 1C5.65685 1 7 2.34315 7 4Z" fill="#000000"/>
+<path d="M14.7071 2.70711L2.70711 14.7071L1.29289 13.2929L13.2929 1.29289L14.7071 2.70711Z" fill="#000000"/>
+<path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="#000000"/>
+</svg>
+)";
 std::string flw::icons::PLAY = R"(
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="800px" height="800px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
   <g id="Group_17" data-name="Group 17" transform="translate(-776 -253) ">
-    <circle id="Ellipse_5" data-name="Ellipse 5" cx="15" cy="15" r="15" transform="translate(777 254) " fill="#e8f7f9" stroke="#333" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+    <circle id="Ellipse_5" data-name="Ellipse 5" cx="15" cy="15" r="15" transform="translate(777 254) " fill="#e8f7f9" stroke="#333" stroke-linecap="round"
+    stroke-linejoin="round" stroke-width="2"/>
     <path id="Path_20" data-name="Path 20" d="M788,274l10-5-10-5Z" fill="#ffc2c2" stroke="#333" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
   </g>
+</svg>
+)";
+std::string flw::icons::PLUS = R"(
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+
+    <title>plus</title>
+    <desc>Created with Sketch Beta.</desc>
+    <defs>
+
+</defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="Icon-Set-Filled" sketch:type="MSLayerGroup" transform="translate(-362.000000, -1037.000000) " fill="#000000">
+            <path d="M390,1049 L382,1049 L382,1041 C382,1038.79 380.209,1037 378,1037 C375.791,1037 374,1038.79 374,1041 L374,1049 L366,1049 C363.791,1049 362,1050.79 362,1053
+            C362,1055.21 363.791,1057 366,1057 L374,1057 L374,1065 C374,1067.21 375.791,1069 378,1069 C380.209,1069 382,1067.21 382,1065 L382,1057 L390,1057 C392.209,1057
+            394,1055.21 394,1053 C394,1050.79 392.209,1049 390,1049"
+            id="plus" sketch:type="MSShapeGroup">
+</path>
+        </g>
+    </g>
 </svg>
 )";
 std::string flw::icons::QUESTION = R"(
@@ -3364,7 +3509,10 @@ std::string flw::icons::RIGHT = R"(
 <svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="48" height="48" fill="white" fill-opacity="0.01"/>
 <path d="M10.0266 40.9736L10.0266 18.9736H4.02661L4.02661 40.9736H10.0266Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M10.0266 18.9736C17.1495 12.4546 21.2774 8.71403 22.4104 7.75178C24.1098 6.30839 26.0306 6.91448 26.0306 10.5266C26.0306 14.1388 20.7452 16.222 20.7452 18.9736C20.7418 18.99 27.5009 18.9911 41.0226 18.9769C42.6799 18.9752 44.0249 20.3173 44.0266 21.9746L44.0266 21.9778C44.0266 23.637 42.6816 24.982 41.0224 24.982H33.013C31.8042 32.9547 31.1373 37.2893 31.0122 37.9856C30.8247 39.0302 29.8276 40.9736 26.9586 40.9736C25.0459 40.9736 20.0686 40.9736 10.0266 40.9736V18.9736Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10.0266 18.9736C17.1495 12.4546 21.2774 8.71403 22.4104 7.75178C24.1098 6.30839 26.0306 6.91448 26.0306 10.5266C26.0306
+14.1388 20.7452 16.222 20.7452 18.9736C20.7418 18.99 27.5009 18.9911 41.0226 18.9769C42.6799 18.9752 44.0249 20.3173 44.0266 21.9746L44.0266 21.9778C44.0266 23.637 42.6816
+24.982 41.0224 24.982H33.013C31.8042 32.9547 31.1373 37.2893 31.0122 37.9856C30.8247 39.0302 29.8276 40.9736 26.9586 40.9736C25.0459 40.9736 20.0686 40.9736 10.0266
+40.9736V18.9736Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
 </svg>
 )";
 std::string flw::icons::STOP = R"(
@@ -3374,7 +3522,8 @@ std::string flw::icons::STOP = R"(
 <circle cx="253.2" cy="253.2" r="249.2" fill="#80b3ff"/>
 <path d="m349.2 331.6c0 12-9.6 21.6-21.6 21.6h-152.8c-12 0-21.6-9.6-21.6-21.6v-152.8c0-12 9.6-21.6 21.6-21.6h152.8c12 0 21.6 9.6 21.6 21.6v152.8z" fill="#F4EFEF"/>
 <path d="M253.2,506.4C113.6,506.4,0,392.8,0,253.2S113.6,0,253.2,0s253.2,113.6,253.2,253.2S392.8,506.4,253.2,506.4z M253.2,8  C118,8,8,118,8,253.2s110,245.2,245.2,245.2s245.2-110,245.2-245.2S388.4,8,253.2,8z"/>
-<path d="m323.6 357.2h-152.8c-14 0-25.6-11.6-25.6-25.6v-152.8c0-14 11.6-25.6 25.6-25.6h152.8c14 0 25.6 11.6 25.6 25.6v152.8c0 14-11.6 25.6-25.6 25.6zm-152.8-196c-9.6 0-17.6 8-17.6 17.6v152.8c0 9.6 8 17.6 17.6 17.6h152.8c9.6 0 17.6-8 17.6-17.6v-152.8c0-9.6-8-17.6-17.6-17.6h-152.8z"/>
+<path d="m323.6 357.2h-152.8c-14 0-25.6-11.6-25.6-25.6v-152.8c0-14 11.6-25.6 25.6-25.6h152.8c14 0 25.6 11.6 25.6 25.6v152.8c0 14-11.6 25.6-25.6 25.6zm-152.8-196c-9.6 0-17.6 8-17.6
+17.6v152.8c0 9.6 8 17.6 17.6 17.6h152.8c9.6 0 17.6-8 17.6-17.6v-152.8c0-9.6-8-17.6-17.6-17.6h-152.8z"/>
 </svg>
 )";
 std::string flw::icons::UP = R"(
@@ -3382,7 +3531,10 @@ std::string flw::icons::UP = R"(
 <svg width="800px" height="800px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="48" height="48" fill="white" fill-opacity="0.01"/>
 <path d="M41 38.0001H19V44.0001H41V38.0001Z" fill="#2F88FF" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M19.0001 38.0001C12.4812 30.8772 8.74054 26.7493 7.77829 25.6164C6.33491 23.9169 6.941 21.9962 10.5532 21.9962C14.1653 21.9962 16.2485 27.2816 19.0001 27.2816C19.0165 27.285 19.0176 20.5258 19.0034 7.00418C19.0017 5.34683 20.3438 4.00188 22.0012 4.00014L22.0043 4.00014C23.6635 4.00014 25.0085 5.34515 25.0085 7.0043V15.0137C32.9813 16.2226 37.3158 16.8895 38.0122 17.0145C39.0567 17.2021 41.0001 18.1991 41.0001 21.0682C41.0001 22.9809 41.0001 27.9582 41.0001 38.0001H19.0001Z" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M19.0001 38.0001C12.4812 30.8772 8.74054 26.7493 7.77829 25.6164C6.33491 23.9169 6.941 21.9962 10.5532 21.9962C14.1653 21.9962
+16.2485 27.2816 19.0001 27.2816C19.0165 27.285 19.0176 20.5258 19.0034 7.00418C19.0017 5.34683 20.3438 4.00188 22.0012 4.00014L22.0043 4.00014C23.6635 4.00014 25.0085 5.34515
+25.0085 7.0043V15.0137C32.9813 16.2226 37.3158 16.8895 38.0122 17.0145C39.0567 17.2021 41.0001 18.1991 41.0001 21.0682C41.0001 22.9809 41.0001 27.9582 41.0001 38.0001H19.0001Z"
+stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
 </svg>
 )";
 std::string flw::icons::WARNING = R"(
@@ -3554,6 +3706,36 @@ int flw::util::count_decimals(double num) {
         end--;
     }
     res = strlen(buffer) - 2;
+    return res;
+}
+std::string flw::util::file_ext(const std::string& filename, bool tolower) {
+    auto res   = std::string();
+    auto slash = filename.rfind('/');
+    auto back  = filename.rfind('\\');
+    auto dot   = filename.rfind('.');
+    auto last  = (size_t) 0;
+    if (dot == std::string::npos) {
+        return "";
+    }
+    if (slash != std::string::npos && back != std::string::npos) {
+        last = (slash > back) ? slash : back;
+    }
+    else if (back != std::string::npos) {
+        last = back;
+    }
+    else {
+        last = slash;
+    }
+    if (last != std::string::npos && last > dot) {
+        return "";
+    }
+    res = filename.substr(dot + 1);
+    if (res != "" && tolower == true) {
+        auto b = static_cast<char*>(calloc(res.length() * 4, 1));
+        fl_utf_tolower(reinterpret_cast<const unsigned char*>(res.c_str()), res.length(), b);
+        res = b;
+        free(b);
+    }
     return res;
 }
 Fl_Widget* flw::util::find_widget(Fl_Group* group, const std::string& label) {
@@ -6990,7 +7172,6 @@ bool flw::dlg::date(const std::string& title, gnu::Date& date, int W, int H) {
 #include <cmath>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
-#include <FL/Fl_Help_View.H>
 #include <FL/Fl_Hor_Value_Slider.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Multiline_Input.H>
@@ -7001,53 +7182,6 @@ bool flw::dlg::date(const std::string& title, gnu::Date& date, int W, int H) {
 #include <FL/Fl_Text_Editor.H>
 namespace flw {
 namespace priv {
-class _DlgHtml : public Fl_Double_Window {
-    Fl_Help_View*               _html;
-    SVGButton*                  _close;
-    GridGroup*                  _grid;
-    bool                        _run;
-public:
-    _DlgHtml(const std::string& title, const std::string& text, bool modal, int W, int H) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
-        end();
-        _close = new SVGButton(0, 0, 0, 0, labels::CLOSE, icons::BACK, true);
-        _grid  = new GridGroup(0, 0, w(), h());
-        _html  = new Fl_Help_View(0, 0, 0, 0);
-        _run   = false;
-        _grid->add(_html,    1,  1, -1, -6);
-        _grid->add(_close, -17, -5, 16,  4);
-        add(_grid);
-        _close->callback(_DlgHtml::Callback, this);
-        _close->labelfont(flw::PREF_FONT);
-        _close->labelsize(flw::PREF_FONTSIZE);
-        _html->textfont(flw::PREF_FONT);
-        _html->textsize(flw::PREF_FONTSIZE);
-        _html->value(text.c_str());
-        callback(_DlgHtml::Callback, this);
-        copy_label(title.c_str());
-        if (modal == true) {
-            set_modal();
-        }
-        resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
-        _grid->do_layout();
-    }
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgHtml*>(o);
-        if (w == self || w == self->_close) {
-            self->_run = false;
-            self->hide();
-        }
-    }
-    void run() {
-        _run = true;
-        show();
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-    }
-};
 class _DlgList : public Fl_Double_Window {
     SVGButton*                  _close;
     GridGroup*                  _grid;
@@ -7065,8 +7199,6 @@ public:
         _grid->add(_close,  -17,  -5,  16,   4);
         add(_grid);
         _close->callback(_DlgList::Callback, this);
-        _close->labelfont(flw::PREF_FONT);
-        _close->labelsize(flw::PREF_FONTSIZE);
         _list->take_focus();
         if (fixed_font == true) {
             _list->textfont(flw::PREF_FIXED_FONT);
@@ -7081,8 +7213,9 @@ public:
         if (modal == true) {
             set_modal();
         }
+        flw::util::labelfont(this);
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
         if (list.size() > 0) {
             for (const auto& s : list) {
@@ -7169,7 +7302,7 @@ public:
         else {
             _input = new Fl_Input(0, 0, 0, 0);
         }
-        util::icon(_icon, type, flw::PREF_FONTSIZE * 4);
+        flw::util::icon(_icon, type, flw::PREF_FONTSIZE * 4);
         count = count + (b1 != "");
         count = count + (b2 != "");
         count = count + (b3 != "");
@@ -7307,7 +7440,7 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         _grid->do_layout();
         {
             fl_font(flw::PREF_FONT, flw::PREF_FONTSIZE);
@@ -7347,7 +7480,7 @@ public:
                 _grid->do_layout();
             }
         }
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgMsg*>(o);
@@ -7358,7 +7491,7 @@ public:
         else if (w == self->_b1 || w == self->_b2 || w == self->_b3 || w == self->_b4 || w == self->_b5) {
             self->_run = false;
             self->hide();
-            self->_res = util::trim(w->label());
+            self->_res = flw::util::trim(w->label());
         }
     }
     std::string input() {
@@ -7469,12 +7602,12 @@ public:
             H = flw::PREF_FONTSIZE * 10;
         }
         resizable(_grid);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgPassword::Callback, this);
         copy_label(title.c_str());
         size(W, H);
         set_modal();
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
     static void Callback(Fl_Widget* w, void* o) {
@@ -7581,9 +7714,9 @@ public:
             file = _file->value();
             password = _password1->value();
         }
-        util::zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
-        util::zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
-        util::zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
+        flw::util::zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
+        flw::util::zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
+        flw::util::zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
         return _ret;
     }
 };
@@ -7632,12 +7765,12 @@ public:
         _invert->callback(_DlgSelectCheckBoxes::Callback, this);
         _none->callback(_DlgSelectCheckBoxes::Callback, this);
         _scroll->box(FL_BORDER_BOX);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSelectCheckBoxes::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
     }
     static void Callback(Fl_Widget* w, void* o) {
         auto self = static_cast<_DlgSelectCheckBoxes*>(o);
@@ -7725,18 +7858,18 @@ public:
         _choice->textfont(flw::PREF_FONT);
         _choice->textsize(flw::PREF_FONTSIZE);
         _choice->value(selected);
-        util::icon(_icon, icons::RIGHT, flw::PREF_FONTSIZE * 4);
+        flw::util::icon(_icon, icons::RIGHT, flw::PREF_FONTSIZE * 4);
         _icon->box(FL_BORDER_BOX);
         _label->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_CLIP);
         _label->copy_label(message.c_str());
         _label->box(FL_BORDER_BOX);
         _ok->callback(_DlgSelectChoice::Callback, this);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSelectChoice::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
     static void Callback(Fl_Widget* w, void* o) {
@@ -7824,13 +7957,13 @@ public:
             }
         }
         _filter->take_focus();
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSelectString::Callback, this);
         copy_label(title.c_str());
         activate_button();
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
     void activate_button() {
@@ -7950,12 +8083,12 @@ public:
         _slider->step(step);
         _slider->textfont(flw::PREF_FONT);
         _slider->textsize(flw::PREF_FONTSIZE);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSlider::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
         _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
     }
@@ -8007,6 +8140,7 @@ public:
         _run    = false;
         if (edit == false) {
             _cancel->hide();
+            add(_cancel);
             _grid->add(_text,     1,   1,  -1,  -6);
             _grid->add(_save,   -34,  -5,  16,   4);
             _grid->add(_close,  -17,  -5,  16,   4);
@@ -8035,12 +8169,12 @@ public:
         _text->take_focus();
         _text->textfont(flw::PREF_FIXED_FONT);
         _text->textsize(flw::PREF_FIXED_FONTSIZE);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgText::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
     ~_DlgText() {
@@ -8056,7 +8190,7 @@ public:
         else if (w == self->_save) {
             auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
             if (filename != nullptr && self->_buffer->savefile(filename) != 0) {
-                dlg::msg_alert("Save Error", util::format("Failed to save text to %s", filename));
+                dlg::msg_alert("Save Error", flw::util::format("Failed to save text to %s", filename));
             }
         }
         else if (w == self->_close) {
@@ -8079,12 +8213,10 @@ public:
 };
 }
 }
-void flw::dlg::html(const std::string& title, const std::string& text, int W, int H) {
-    flw::priv::_DlgHtml dlg(title, text, true, W, H);
-    dlg.run();
-}
-Fl_Window* flw::dlg::html_window(const std::string& title, const std::string& text, int W, int H) {
-    return new flw::priv::_DlgHtml(title, text, false, W, H);
+void flw::dlg::center_fl_message_dialog() {
+    int X, Y, W, H;
+    Fl::screen_xywh(X, Y, W, H);
+    fl_message_position(W / 2, H / 2, 1);
 }
 std::string flw::dlg::input(const std::string& title, const std::string& message, std::string& value, int W, int H) {
     flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, value.c_str(), "Fl_Input");
@@ -8101,7 +8233,7 @@ std::string flw::dlg::input_double(const std::string& title, const std::string& 
     auto res = dlg.run();
     if (res == labels::OK) {
         auto tmp = value;
-        tmp = util::to_double(dlg.input());
+        tmp = flw::util::to_double(dlg.input());
         if (std::isinf(tmp) == false) {
             value = tmp;
         }
@@ -8114,7 +8246,7 @@ std::string flw::dlg::input_int(const std::string& title, const std::string& mes
     flw::priv::_DlgMsg dlg(icons::EDIT, title, message, labels::OK, labels::CANCEL, "", "", "", W, H, num, "Fl_Int_Input");
     auto res = dlg.run();
     if (res == labels::OK) {
-        value = util::to_int(dlg.input(), value);
+        value = flw::util::to_int(dlg.input(), value);
     }
     return res;
 }
@@ -8139,17 +8271,13 @@ void flw::dlg::list(const std::string& title, const StringVector& list, bool fix
     dlg.run();
 }
 void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
+    auto list2 = flw::util::split_string( list, "\n");
     flw::priv::_DlgList dlg(title, list2, "", fixed_font, true, W, H);
     dlg.run();
 }
 void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
     flw::priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, true, W, H);
     dlg.run();
-}
-Fl_Window* flw::dlg::list_window(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
-    return new flw::priv::_DlgList(title, list2, "", fixed_font, false, W, H);
 }
 void flw::dlg::msg(const std::string& title, const std::string& message, int W, int H) {
     flw::priv::_DlgMsg dlg(icons::INFO, title, message, labels::CLOSE, "", "", "", "", W, H);
@@ -8223,13 +8351,8 @@ bool flw::dlg::text_edit(const std::string& title, std::string& text, int W, int
     free(res);
     return true;
 }
-void flw::dlg::center_fl_message_dialog() {
-    int X, Y, W, H;
-    Fl::screen_xywh(X, Y, W, H);
-    fl_message_position(W / 2, H / 2, 1);
-}
 void flw::dlg::panic(const std::string& message) {
-    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
+    dlg::msg_error("Application Error", flw::util::format("PANIC! I have to quit\n%s", message.c_str()));
     exit(1);
 }
 #include <FL/Fl_Box.H>
@@ -8462,6 +8585,380 @@ bool flw::dlg::font(const std::string& title, Fl_Font& font, Fl_Fontsize& fontsi
     fontsize = dlg.fontsize();
     fontname = dlg.fontname();
     return true;
+}
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Help_View.H>
+#include <FL/Fl_Shared_Image.H>
+flw::HTMLDialog::HTMLDialog(int W, int H) :
+Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
+    end();
+    fl_register_images();
+    _close   = new Fl_Button(0, 0, 0, 0, labels::CLOSE.c_str());
+    _copy    = new Fl_Button(0, 0, 0, 0, "Copy");
+    _back    = new SVGButton(0, 0, 0, 0, "", icons::LEFT, false, false, SVGButton::Pos::UNDER);
+    _dec     = new SVGButton(0, 0, 0, 0, "", icons::MINUS, false, false, SVGButton::Pos::UNDER);
+    _forward = new SVGButton(0, 0, 0, 0, "", icons::RIGHT, false, false, SVGButton::Pos::UNDER);
+    _grid    = new GridGroup(0, 0, w(), h());
+    _home    = new SVGButton(0, 0, 0, 0, "", icons::HOME, false, false, SVGButton::Pos::UNDER);
+    _html    = new Fl_Help_View(0, 0, 0, 0);
+    _inc     = new SVGButton(0, 0, 0, 0, "", icons::PLUS, false, false, SVGButton::Pos::UNDER);
+    _input   = new InputMenu(0, 0, 0, 0);
+    _top     = new SVGButton(0, 0, 0, 0, "", icons::UP, false, false, SVGButton::Pos::UNDER);
+    _view    = new SVGButton(0, 0, 0, 0, "", icons::EDIT, false, false, SVGButton::Pos::UNDER);
+    _pos     = 0;
+    _run     = false;
+    _grid->add(_input,      1,  1,  -1,  4);
+    _grid->add(_html,       1,  6,  -1, -6);
+    _grid->add(_view,     -69, -5,   4,  4);
+    _grid->add(_dec,      -64, -5,   4,  4);
+    _grid->add(_inc,      -59, -5,   4,  4);
+    _grid->add(_back,     -54, -5,   4,  4);
+    _grid->add(_forward,  -49, -5,   4,  4);
+    _grid->add(_top,      -44, -5,   4,  4);
+    _grid->add(_home,     -39, -5,   4,  4);
+    _grid->add(_copy,     -34, -5,  16,  4);
+    _grid->add(_close,    -17, -5,  16,  4);
+    add(_grid);
+    _back->callback(HTMLDialog::_Callback, this);
+    _back->tooltip("Go back to previous page in history.");
+    _close->callback(HTMLDialog::_Callback, this);
+    _copy->callback(HTMLDialog::_Callback, this);
+    _copy->tooltip("Copy selected text or all text if no text is selected.");
+    _dec->callback(HTMLDialog::_Callback, this);
+    _dec->tooltip("Decrease font size.");
+    _forward->callback(HTMLDialog::_Callback, this);
+    _forward->tooltip("Go to next page in history.");
+    _html->link(HTMLDialog::_CallbackLink);
+    _html->textfont(flw::PREF_FONT);
+    _html->user_data(this);
+    _home->callback(HTMLDialog::_Callback, this);
+    _home->tooltip("Go to to start page.");
+    _inc->callback(HTMLDialog::_Callback, this);
+    _inc->tooltip("Increase font size.");
+    _input->callback(HTMLDialog::_Callback, this);
+    _input->tooltip("Enter search text to find text in paragraphs.\nPress ctrl + enter to search from the start.");
+    _input->when(FL_WHEN_ENTER_KEY_ALWAYS);
+    _top->callback(HTMLDialog::_Callback, this);
+    _top->tooltip("Jump to top of page.");
+    _view->callback(HTMLDialog::_Callback, this);
+    _view->tooltip("View html for current page.");
+    flw::util::labelfont(this);
+    _input->update_pref(flw::PREF_FONT, flw::PREF_FONTSIZE);
+    _set_font_size(flw::PREF_FONTSIZE);
+    callback(HTMLDialog::_Callback, this);
+    resizable(_grid);
+    _grid->do_layout();
+    flw::util::center_window(this, flw::PREF_WINDOW);
+    _input->take_focus();
+    clear_pages();
+#ifdef DEBUG
+    _input->insert("debug", 20);
+#endif
+}
+void flw::HTMLDialog::add_page(const std::string& name, const std::string& page) {
+    if (_pages.size() == 0) {
+        _links1.clear();
+        _links2.clear();
+        _pages[name] = page;
+        _set_page(name, true);
+    }
+    else {
+        _pages[name] = page;
+    }
+}
+void flw::HTMLDialog::_Callback(Fl_Widget* w, void* o) {
+    auto self = static_cast<HTMLDialog*>(o);
+    if (w == self || w == self->_close) {
+        self->_run = false;
+        self->hide();
+    }
+    else if (w == self->_back) {
+        self->_go_back();
+        self->_input->take_focus();
+    }
+    else if (w == self->_copy) {
+        self->_copy_text();
+    }
+    else if (w == self->_dec) {
+        self->_set_font_size(self->_html->labelsize() - 2);
+    }
+    else if (w == self->_forward) {
+        self->_go_forward();
+        self->_input->take_focus();
+    }
+    else if (w == self->_home) {
+        self->_go_home();
+        self->_input->take_focus();
+    }
+    else if (w == self->_inc) {
+        self->_set_font_size(self->_html->labelsize() + 2);
+        self->_input->take_focus();
+    }
+    else if (w == self->_input) {
+        self->_find();
+    }
+    else if (w == self->_top) {
+        self->_pos = 0;
+        self->_html->topline(0);
+        self->_input->take_focus();
+    }
+    else if (w == self->_view) {
+        dlg::text("HTML", util::to_string(self->_html->value()));
+    }
+    self->_update_buttons();
+}
+const char* flw::HTMLDialog::_CallbackLink(Fl_Widget* w, const char* uri) {
+    return static_cast<HTMLDialog*>(w->user_data())->_go_link(uri);
+}
+void flw::HTMLDialog::clear_pages() {
+    _pages.clear();
+    _links1.clear();
+    _links2.clear();
+    _update_buttons();
+}
+void flw::HTMLDialog::_copy_text() {
+    if (_html->text_selected() == 0) {
+        _html->select_all();
+        _html->copy();
+        _html->clear_selection();
+    }
+    else {
+        _html->copy();
+    }
+}
+void flw::HTMLDialog::_debug() const {
+#ifdef DEBUG
+    puts("\nflw::HTMLDialog:");
+    printf("    pos     = %d\n", _pos);
+    printf("    dir     = %s\n", _html->directory());
+    printf("    file    = %s\n", _html->filename());
+    auto e = 1;
+    printf("============= %d Pages\n", (int) _pages.size());
+    for (auto& t : _pages) {
+        printf("      %05d = %s\n", (int) t.second.length(), t.first.c_str());
+    }
+    printf("============= History <---\n");
+    e = 1;
+    for (auto& l : _links1) {
+        printf("         %02d = %s\n", e++, l.c_str());
+    }
+    printf("============= History --->\n");
+    e = (int) (_links1.size() + _links2.size());
+    for (auto& l : _links2) {
+        printf("         %02d = %s\n", e--, l.c_str());
+    }
+    puts("");
+    fflush(stdout);
+#endif
+}
+void flw::HTMLDialog::_find() {
+    if (_input->value() == "") {
+        return;
+    }
+#ifdef DEBUG
+    else if (_input->value() == std::string("debug")) {
+        _debug();
+        return;
+    }
+#endif
+    if (Fl::event_ctrl() != 0) {
+        _pos = 0;
+    }
+    _pos = _html->find(_input->value().c_str(), _pos + 1);
+    _input->insert(_input->value(), 20);
+}
+void flw::HTMLDialog::_go_back() {
+    if (_links1.size() < 2) {
+        return;
+    }
+    if (_pages.size() == 0) {
+        _links2.push_back(_links1.back());
+        _links1.pop_back();
+        auto l = _links1.back();
+        _links1.pop_back();
+        auto tmp = _links2;
+        _html->load(l.c_str());
+        _links2 = tmp;
+    }
+    else {
+        _links2.push_back(_links1.back());
+        _links1.pop_back();
+        auto l = _links1.back();
+        _links1.pop_back();
+        _set_page(l, false);
+    }
+}
+void flw::HTMLDialog::_go_forward() {
+    if (_links2.size() == 0) {
+        return;
+    }
+    if (_pages.size() == 0) {
+        auto l = _links2.back();
+        _links2.pop_back();
+        auto tmp = _links2;
+        _html->load(l.c_str());
+        _links2 = tmp;
+    }
+    else {
+        auto l = _links2.back();
+        _links2.pop_back();
+        _set_page(l, false);
+    }
+}
+void flw::HTMLDialog::_go_home() {
+    if (_links1.size() == 0) {
+        return;
+    }
+    if (_pages.size() == 0) {
+        _html->load(_links1[0].c_str());
+    }
+    else {
+        _set_page(_links1[0], true);
+    }
+}
+const char* flw::HTMLDialog::_go_link(const char* link) {
+    if (_pages.size() > 0) {
+        auto link2 = std::string(link);
+        auto path  = link2.rfind("/");
+        auto key   = (path != std::string::npos) ? link2.substr(path + 1) : link2;
+        if (_pages.find(key) != _pages.end()) {
+            _set_page(key, true);
+            return nullptr;
+        }
+        auto e = util::file_ext(link, true);
+        if (e == "" || e == "html" || e == "htm") {
+            _links1.push_back(link);
+            _links2.clear();
+            _update_buttons();
+        }
+        return link;
+    }
+    else {
+        auto e = util::file_ext(link, true);
+        if (e == "html" || e == "htm") {
+            if (_links1.size() == 0) {
+                _links1.push_back(link);
+            }
+            else if (_links1.size() > 0 && _links1.back() != link) {
+                _links1.push_back(link);
+            }
+            _links2.clear();
+        }
+        _update_buttons();
+        return link;
+    }
+}
+int flw::HTMLDialog::handle(int event) {
+    if (event == FL_PUSH) {
+        if (Fl::event_button4() != 0 && _back->active() != 0) {
+            _go_back();
+            _update_buttons();
+        }
+        else if (Fl::event_button5() != 0 && _forward->active() != 0) {
+            _go_forward();
+            _update_buttons();
+        }
+    }
+    return Fl_Double_Window::handle(event);
+}
+void flw::HTMLDialog::load_page(const std::string& file) {
+    clear_pages();
+    _html->load(gnu::file::File(file, true).c_str());
+    _update_buttons();
+}
+void flw::HTMLDialog::run(bool modal) {
+    _run = true;
+    if (modal == true) {
+        set_modal();
+    }
+    show();
+    while (_run == true) {
+        Fl::wait();
+        Fl::flush();
+    }
+    clear_modal_states();
+}
+void flw::HTMLDialog::_set_font_size(int size) {
+    if (size > 36) {
+        size = 36;
+    }
+    else if (size < 10) {
+        size = 10;
+    }
+    _html->scrollbar()->linesize(size * 8);
+    _html->labelsize(size);
+    _html->textsize(size);
+}
+void flw::HTMLDialog::_set_page(const std::string& page, bool clear_links2) {
+    auto find = _pages.find(page);
+    if (find != _pages.end()) {
+        _html->value(find->second.c_str());
+    }
+    else {
+        _html->load(page.c_str());
+    }
+    if (_links1.size() == 0) {
+        _links1.push_back(page);
+    }
+    else if (_links1.size() > 0 && _links1.back() != page) {
+        _links1.push_back(page);
+    }
+    if (clear_links2 == true) {
+        _links2.clear();
+    }
+   _update_buttons();
+}
+void flw::HTMLDialog::_update_buttons() {
+    if (_links1.size() == 0) {
+        _home->deactivate();
+    }
+    else if (_links1.back() == _links1.front()) {
+        _home->deactivate();
+    }
+    else {
+        _home->activate();
+    }
+    if (_links1.size() < 2) {
+        _back->deactivate();
+    }
+    else {
+        _back->activate();
+    }
+    if (_links2.size() == 0) {
+        _forward->deactivate();
+    }
+    else {
+        _forward->activate();
+    }
+    if (_html->labelsize() <= 10) {
+        _dec->deactivate();
+    }
+    else {
+        _dec->activate();
+    }
+    if (_html->labelsize() >= 36) {
+        _inc->deactivate();
+    }
+    else {
+        _inc->activate();
+    }
+    if (_html->title() != nullptr) {
+        copy_label(_html->title());
+    }
+    else {
+        copy_label("");
+    }
+}
+void flw::dlg::html(const std::string& html, int W, int H) {
+    HTMLDialog dlg(W, H);
+    dlg.add_page("home", html);
+    dlg.run();
+}
+void flw::dlg::html_file(const std::string& file, int W, int H) {
+    HTMLDialog dlg(W, H);
+    dlg.load_page(file);
+    dlg.run();
 }
 namespace flw {
 namespace priv {
@@ -9266,7 +9763,7 @@ struct _LogDisplayBuffer {
     }
 };
 struct _LogDisplayStyle {
-    enum STYLE {
+    enum Style {
                                 EMPTY,
                                 BETWEEN,
                                 CUSTOM,
@@ -9278,7 +9775,7 @@ struct _LogDisplayStyle {
                                 STRING,
     };
     LogDisplay::Color           color;
-    STYLE                       style;
+    Style                       style;
     bool                        inclusive;
     bool                        on;
     size_t                      count;

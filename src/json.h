@@ -24,7 +24,7 @@
 
 namespace gnu {
 
-/** @brief JSON helper functions.
+/** @brief JSON library for parsing and creating json documents.
 *
 * json::decode() decodes buffer to one root JS object.\n
 * json::encode() encodes one root JS object to json string.\n
@@ -75,8 +75,6 @@ std::string                     unescape(const char* string);
  *      _   | |\___ \
  *     | |__| |____) |
  *      \____/|_____/
- *
- *
  */
 
 /** @brief JSON value.
@@ -202,7 +200,7 @@ private:
     JS*                         _parent;    ///< @brief Parent of value.
     char*                       _name;      ///< @brief Name of json value.
 
-    union {                                 
+    union {
         JSArray*                _va;
         JSObject*               _vo;
         bool                    _vb;
@@ -218,8 +216,6 @@ private:
  *     |  _ <| | | | | |/ _` |/ _ \ '__|
  *     | |_) | |_| | | | (_| |  __/ |
  *     |____/ \__,_|_|_|\__,_|\___|_|
- *
- *
  */
 
 /** @brief A JSON builder class.

@@ -361,7 +361,18 @@ void flw::FontDialog::_select_name(const std::string& fontname) {
     static_cast<priv::_FontDialogLabel*>(_label)->font = 0;
 }
 
-/** @brief Create and show font dialog.
+/*
+ *          _ _
+ *         | | |
+ *       __| | | __ _
+ *      / _` | |/ _` |
+ *     | (_| | | (_| |
+ *      \__,_|_|\__, |
+ *               __/ |
+ *              |___/
+ */
+
+/** @brief Create and show font dialog in modal mode.
 *
 * Input values are not updated if user press cancel.
 *

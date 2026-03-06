@@ -8,6 +8,7 @@
     #include "dlg.h"
     #include "file.h"
     #include "fontdialog.h"
+    #include "htmldialog.h"
     #include "postscript.h"
     #include "progressdialog.h"
     #include "svgbutton.h"
@@ -153,23 +154,46 @@ void test_font_small() {
 //------------------------------------------------------------------------------
 void test_html() {
     {
-        auto win1 = dlg::html_window("flw::dlg::html - 1", "<h1>Hello World Window 1</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
-        auto win2 = dlg::html_window("flw::dlg::html - 2", "<h1>Hello World Window 2</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
+        //auto win1 = new HTMLDialog();
+        //auto win2 = new HTMLDialog();
 
-        win1->show();
-        win2->show();
+        //win1->label("Non Modal");
+        //win2->label("Modal");
+        //win1->show();
+        //win2->run();
 
-        while (win1->shown() || win2->shown()) {
-            Fl::wait();
-            Fl::flush();
-        }
+        //win2->label("Modal => Non Modal");
+        //win1->hide();
+        //win1->label("Non Modal => Modal");
+        //win2->show();
+        //win1->run();
 
-        delete win1;
-        delete win2;
+        //delete win1;
+        //delete win2;
     }
-    
+
     {
-        dlg::html("flw::dlg::html", "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
+        //auto dlg = new HTMLDialog();
+        ////dlg->add_page("One", HTML1);
+        ////dlg->load_page("test_files/page2.html");
+        //dlg->load_page("test_files/page1.html");
+        //dlg->show();
+        //dlg->run();
+        //delete dlg;
+    }
+
+    {
+        auto dlg = new HTMLDialog();
+        dlg->add_page("One", HTML1);
+        dlg->add_page("Two", HTML2);
+        dlg->add_page("Three", HTML3);
+        dlg->run();
+        delete dlg;
+    }
+
+    {
+        //dlg::html(HTML1);
+        //dlg::html_file("test_files/page1.html");
     }
 }
 
@@ -198,22 +222,6 @@ void test_input() {
 //------------------------------------------------------------------------------
 void test_list() {
     {
-        auto win1 = dlg::list_window("flw::dlg::list_window - 1", HAMLET_LIST);
-        auto win2 = dlg::list_window("flw::dlg::list_window - 2", HAMLET_LIST);
-
-        win1->show();
-        win2->show();
-
-        while (win1->shown() || win2->shown()) {
-            Fl::wait();
-            Fl::flush();
-        }
-
-        delete win1;
-        delete win2;
-    }
-    
-    {
         dlg::list("flw::dlg::list", HAMLET_LIST);
         dlg::list("flw::dlg::list - Fixed Font", HAMLET_LIST, true);
         dlg::list_file("flw::dlg::list_file - File", "test/browser.txt", true);
@@ -233,7 +241,7 @@ void test_message() {
 
     //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", "EMPTY", "", "", "")) // No label so it is not shown.
     //FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "LEFT:LEFT", "RIGHT:RIGHT", "UP:!UP", "DOWN:DOWN", ""))
-    
+
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "CANCEL:^CANCEL", "DEL:^DEL", "BACK:!^BACK", "No Dark Bg", "CONFIRM:^CONFIRM"))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "One", "", "Two", "Three"))
     FLW_PRINTV(dlg::msg_ask("flw::dlg::msg_ask", TWO_LINE, "", "", "One"))
@@ -563,7 +571,7 @@ void test_slider() {
 void test_svg() {
     auto size = flw::PREF_FONTSIZE * 9;
     auto w    = size * 10;
-    auto h    = size * 6;
+    auto h    = size * 7;
     auto win  = Fl_Double_Window(0, 0, w, h);
 
     //SVGButton::SPACING = 0; // 8 is the default.
@@ -589,11 +597,19 @@ void test_svg() {
     new SVGButton(size * 7, size * 1, size, size, "icons::UP",      icons::UP,      false, true, SVGButton::Pos::ABOVE, 3.0);
     new SVGButton(size * 8, size * 1, size, size, "icons::WARNING", icons::WARNING, false, true, SVGButton::Pos::ABOVE, 3.0);
 
-    new SVGButton(size * 0, size * 2, size, size, "RIGHT",          icons::ALERT,   false, false, SVGButton::Pos::RIGHT, 4.0);
-    new SVGButton(size * 1, size * 2, size, size, "LEFT",           icons::ALERT,   false, false, SVGButton::Pos::LEFT, 4.0);
-    new SVGButton(size * 2, size * 2, size, size, "ABOVE",          icons::ALERT,   false, false, SVGButton::Pos::ABOVE, 4.0);
-    new SVGButton(size * 3, size * 2, size, size, "BELOW",          icons::ALERT,   false, false, SVGButton::Pos::BELOW, 4.0);
-    new SVGButton(size * 4, size * 2, size, size, "UNDER",          icons::ALERT,   false, false, SVGButton::Pos::UNDER, 4.0);
+    new SVGButton(size * 0, size * 2, size, size, "icons::MINUS",   icons::MINUS,   false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 1, size * 2, size, size, "icons::PLUS",    icons::PLUS,    false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 2, size * 2, size, size, "icons::MULTI",   icons::MULTI,   false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 3, size * 2, size, size, "icons::DIVIDE",  icons::DIVIDE,  false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 4, size * 2, size, size, "icons::EQUAL",   icons::EQUAL,   false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 5, size * 2, size, size, "icons::PERCENT", icons::PERCENT, false, true, SVGButton::Pos::ABOVE, 3.0);
+    new SVGButton(size * 6, size * 2, size, size, "icons::HOME",    icons::HOME,    false, true, SVGButton::Pos::ABOVE, 3.0);
+
+    new SVGButton(size * 0, size * 3, size, size, "RIGHT",          icons::ALERT,   false, false, SVGButton::Pos::RIGHT, 4.0);
+    new SVGButton(size * 1, size * 3, size, size, "LEFT",           icons::ALERT,   false, false, SVGButton::Pos::LEFT, 4.0);
+    new SVGButton(size * 2, size * 3, size, size, "ABOVE",          icons::ALERT,   false, false, SVGButton::Pos::ABOVE, 4.0);
+    new SVGButton(size * 3, size * 3, size, size, "BELOW",          icons::ALERT,   false, false, SVGButton::Pos::BELOW, 4.0);
+    new SVGButton(size * 4, size * 3, size, size, "UNDER",          icons::ALERT,   false, false, SVGButton::Pos::UNDER, 4.0);
 
     auto b = new SVGButton(w / 2 - 150, h - 300, 300, 300, "WARNING", icons::WARNING, false, false, SVGButton::Pos::ABOVE, 7.0);
 
@@ -648,7 +664,7 @@ int main(int argc, const char** argv) {
     puts("    print4     => flw::postscript::PrintText");
     puts("    print5     => flw::dlg::print_text(flw.c/.h)");
     puts("    progress   => flw::ProgressDialog");
-    puts("    pwd        => flw::dlg::password...");
+    puts("    pwd        => flw::dlg::password()");
     puts("    slider     => flw::dlg::slider()");
     puts("    string     => flw::dlg::select_string()");
     puts("    svg        => flw::SVGButton");

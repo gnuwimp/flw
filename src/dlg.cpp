@@ -16,7 +16,6 @@
 #include <cmath>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Float_Input.H>
-#include <FL/Fl_Help_View.H>
 #include <FL/Fl_Hor_Value_Slider.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Multiline_Input.H>
@@ -28,94 +27,6 @@
 
 namespace flw {
 namespace priv {
-
-/*
- *           _____  _       _    _ _             _
- *          |  __ \| |     | |  | | |           | |
- *          | |  | | | __ _| |__| | |_ _ __ ___ | |
- *          | |  | | |/ _` |  __  | __| '_ ` _ \| |
- *          | |__| | | (_| | |  | | |_| | | | | | |
- *          |_____/|_|\__, |_|  |_|\__|_| |_| |_|_|
- *      ______         __/ |
- *     |______|       |___/
- */
-
-
-/** @brief HTML dialog.
-* @private
-*/
-class _DlgHtml : public Fl_Double_Window {
-    Fl_Help_View*               _html;  // HTML widget.
-    SVGButton*                  _close; // Close button.
-    GridGroup*                  _grid;  // layout widget.
-    bool                        _run;   // Run flag.
-
-public:
-    /** @brief Create window.
-    *
-    * @param[in] title   Dialog title.
-    * @param[in] text    HTML text.
-    * @param[in] modal   True to make dialog modal.
-    * @param[in] W       Width in characters.
-    * @param[in] H       Height in characters.
-    */
-    _DlgHtml(const std::string& title, const std::string& text, bool modal, int W, int H) :
-    Fl_Double_Window(0, 0, flw::PREF_FONTSIZE * W,flw::PREF_FONTSIZE * H) {
-        end();
-
-        _close = new SVGButton(0, 0, 0, 0, labels::CLOSE, icons::BACK, true);
-        _grid  = new GridGroup(0, 0, w(), h());
-        _html  = new Fl_Help_View(0, 0, 0, 0);
-        _run   = false;
-
-        _grid->add(_html,    1,  1, -1, -6);
-        _grid->add(_close, -17, -5, 16,  4);
-        add(_grid);
-
-        _close->callback(_DlgHtml::Callback, this);
-        _close->labelfont(flw::PREF_FONT);
-        _close->labelsize(flw::PREF_FONTSIZE);
-        _html->textfont(flw::PREF_FONT);
-        _html->textsize(flw::PREF_FONTSIZE);
-        _html->value(text.c_str());
-
-        callback(_DlgHtml::Callback, this);
-        copy_label(title.c_str());
-
-        if (modal == true) {
-            set_modal();
-        }
-
-        resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
-        _grid->do_layout();
-    }
-
-    /** @brief Callback for all widgets.
-    *
-    */
-    static void Callback(Fl_Widget* w, void* o) {
-        auto self = static_cast<_DlgHtml*>(o);
-
-        if (w == self || w == self->_close) {
-            self->_run = false;
-            self->hide();
-        }
-    }
-
-    /** @brief Run dialog.
-    *
-    */
-    void run() {
-        _run = true;
-        show();
-
-        while (_run == true) {
-            Fl::wait();
-            Fl::flush();
-        }
-    }
-};
 
 /*
  *           _____  _       _      _     _
@@ -164,8 +75,6 @@ public:
         add(_grid);
 
         _close->callback(_DlgList::Callback, this);
-        _close->labelfont(flw::PREF_FONT);
-        _close->labelsize(flw::PREF_FONTSIZE);
         _list->take_focus();
 
         if (fixed_font == true) {
@@ -184,8 +93,9 @@ public:
             set_modal();
         }
 
+        flw::util::labelfont(this);
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
 
         if (list.size() > 0) {
@@ -320,7 +230,7 @@ public:
 
         // Create top left icon.
 
-        util::icon(_icon, type, flw::PREF_FONTSIZE * 4);
+        flw::util::icon(_icon, type, flw::PREF_FONTSIZE * 4);
 
         // Fix width depending on how many buttons there will be.
 
@@ -491,7 +401,7 @@ public:
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         _grid->do_layout();
 
         { // Try to resize label and window if it is to wide or if there are to many buttons (only valid for msg_ask()).
@@ -543,7 +453,7 @@ public:
             }
         }
 
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
     }
 
     /** @brief Callback for all widgets.
@@ -559,7 +469,7 @@ public:
         else if (w == self->_b1 || w == self->_b2 || w == self->_b3 || w == self->_b4 || w == self->_b5) {
             self->_run = false;
             self->hide();
-            self->_res = util::trim(w->label());
+            self->_res = flw::util::trim(w->label());
         }
     }
 
@@ -714,12 +624,12 @@ public:
         }
 
         resizable(_grid);
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgPassword::Callback, this);
         copy_label(title.c_str());
         size(W, H);
         set_modal();
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -847,9 +757,9 @@ public:
             password = _password1->value();
         }
 
-        util::zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
-        util::zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
-        util::zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
+        flw::util::zero_memory(const_cast<char*>(_password1->value()), strlen(_password1->value()));
+        flw::util::zero_memory(const_cast<char*>(_password2->value()), strlen(_password2->value()));
+        flw::util::zero_memory(const_cast<char*>(_file->value()), strlen(_file->value()));
 
         return _ret;
     }
@@ -925,12 +835,12 @@ public:
         _none->callback(_DlgSelectCheckBoxes::Callback, this);
         _scroll->box(FL_BORDER_BOX);
 
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSelectCheckBoxes::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
     }
 
     /** @brief Callback for all widgets.
@@ -1064,19 +974,19 @@ public:
         _choice->textfont(flw::PREF_FONT);
         _choice->textsize(flw::PREF_FONTSIZE);
         _choice->value(selected);
-        util::icon(_icon, icons::RIGHT, flw::PREF_FONTSIZE * 4);
+        flw::util::icon(_icon, icons::RIGHT, flw::PREF_FONTSIZE * 4);
         _icon->box(FL_BORDER_BOX);
         _label->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_CLIP);
         _label->copy_label(message.c_str());
         _label->box(FL_BORDER_BOX);
         _ok->callback(_DlgSelectChoice::Callback, this);
 
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSelectChoice::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -1211,13 +1121,13 @@ public:
         }
 
         _filter->take_focus();
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSelectString::Callback, this);
         copy_label(title.c_str());
         activate_button();
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -1398,12 +1308,12 @@ public:
         _slider->textfont(flw::PREF_FONT);
         _slider->textsize(flw::PREF_FONTSIZE);
 
-        util::labelfont(this);
+        flw::util::labelfont(this);
         callback(_DlgSlider::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
         _slider->value_width((max >= 100'000) ? flw::PREF_FONTSIZE * 10 : flw::PREF_FONTSIZE * 6);
     }
@@ -1492,6 +1402,7 @@ public:
 
         if (edit == false) {
             _cancel->hide();
+            add(_cancel);
             _grid->add(_text,     1,   1,  -1,  -6);
             _grid->add(_save,   -34,  -5,  16,   4);
             _grid->add(_close,  -17,  -5,  16,   4);
@@ -1522,13 +1433,13 @@ public:
         _text->take_focus();
         _text->textfont(flw::PREF_FIXED_FONT);
         _text->textsize(flw::PREF_FIXED_FONTSIZE);
-        util::labelfont(this);
+        flw::util::labelfont(this);
 
         callback(_DlgText::Callback, this);
         copy_label(title.c_str());
         set_modal();
         resizable(_grid);
-        util::center_window(this, flw::PREF_WINDOW);
+        flw::util::center_window(this, flw::PREF_WINDOW);
         _grid->do_layout();
     }
 
@@ -1554,7 +1465,7 @@ public:
             auto filename = fl_file_chooser("Select Destination File", nullptr, nullptr, 0);
 
             if (filename != nullptr && self->_buffer->savefile(filename) != 0) {
-                dlg::msg_alert("Save Error", util::format("Failed to save text to %s", filename));
+                dlg::msg_alert("Save Error", flw::util::format("Failed to save text to %s", filename));
             }
         }
         else if (w == self->_close) {
@@ -1587,49 +1498,23 @@ public:
 } // flw
 
 /*
- *       __ _                 _ _
- *      / _| |         _ _   | | |
- *     | |_| |_      _(_|_)__| | | __ _
- *     |  _| \ \ /\ / /   / _` | |/ _` |
- *     | | | |\ V  V / _ | (_| | | (_| |
- *     |_| |_| \_/\_/ (_|_)__,_|_|\__, |
- *                                 __/ |
- *                                |___/
+ *          _ _
+ *         | | |
+ *       __| | | __ _
+ *      / _` | |/ _` |
+ *     | (_| | | (_| |
+ *      \__,_|_|\__, |
+ *               __/ |
+ *              |___/
  */
 
-/** @brief Show a html view dialog.
+/** @brief Put fl_message dialogs at the centre of the desktop.
 *
-* Only basic html 2 tags are supported.
-*
-* @param[in] title   Dialog title.
-* @param[in] text    HTML text.
-* @param[in] W       Width in characters.
-* @param[in] H       Height in characters.
-*
-* @snippet dialog.cpp flw::dlg::html example
-* @image html html_dialog.png
 */
-void flw::dlg::html(const std::string& title, const std::string& text, int W, int H) {
-    flw::priv::_DlgHtml dlg(title, text, true, W, H);
-    dlg.run();
-}
-
-/** @brief Show a html view dialog.
-*
-* Only basic html 2 tags are supported.
-*
-* @param[in] title   Dialog title.
-* @param[in] text    HTML text.
-* @param[in] W       Width in characters.
-* @param[in] H       Height in characters.
-*
-* @return Dialog window.
-*
-* @snippet dialog.cpp flw::dlg::html example
-* @image html html_dialog.png
-*/
-Fl_Window* flw::dlg::html_window(const std::string& title, const std::string& text, int W, int H) {
-    return new flw::priv::_DlgHtml(title, text, false, W, H);
+void flw::dlg::center_fl_message_dialog() {
+    int X, Y, W, H;
+    Fl::screen_xywh(X, Y, W, H);
+    fl_message_position(W / 2, H / 2, 1);
 }
 
 /** @brief Show an text input dialog.
@@ -1679,7 +1564,7 @@ std::string flw::dlg::input_double(const std::string& title, const std::string& 
 
     if (res == labels::OK) {
         auto tmp = value;
-        tmp = util::to_double(dlg.input());
+        tmp = flw::util::to_double(dlg.input());
 
         if (std::isinf(tmp) == false) {
             value = tmp;
@@ -1710,7 +1595,7 @@ std::string flw::dlg::input_int(const std::string& title, const std::string& mes
     auto res = dlg.run();
 
     if (res == labels::OK) {
-        value = util::to_int(dlg.input(), value);
+        value = flw::util::to_int(dlg.input(), value);
     }
 
     return res;
@@ -1799,7 +1684,7 @@ void flw::dlg::list(const std::string& title, const StringVector& list, bool fix
 * @param[in] H           Height in characters.
 */
 void flw::dlg::list(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
+    auto list2 = flw::util::split_string( list, "\n");
     flw::priv::_DlgList dlg(title, list2, "", fixed_font, true, W, H);
     dlg.run();
 }
@@ -1818,24 +1703,6 @@ void flw::dlg::list(const std::string& title, const std::string& list, bool fixe
 void flw::dlg::list_file(const std::string& title, const std::string& file, bool fixed_font, int W, int H) {
     flw::priv::_DlgList dlg(title, flw::StringVector(), file, fixed_font, true, W, H);
     dlg.run();
-}
-
-/** @brief Show a dialog with a browser/list widget.
-*
-* @see Fl_Browser::format_char() for formatting characters.\n
-* This function splits a string on newline.\n
-*
-* @param[in] title       Dialog title.
-* @param[in] list        String list.
-* @param[in] fixed_font  True to use a fixed font.
-* @param[in] W           Width in characters.
-* @param[in] H           Height in characters.
-*
-* @return Dialog window.
-*/
-Fl_Window* flw::dlg::list_window(const std::string& title, const std::string& list, bool fixed_font, int W, int H) {
-    auto list2 = util::split_string( list, "\n");
-    return new flw::priv::_DlgList(title, list2, "", fixed_font, false, W, H);
 }
 
 /** @brief Show an dialog with a message icon.
@@ -2116,21 +1983,12 @@ bool flw::dlg::text_edit(const std::string& title, std::string& text, int W, int
     return true;
 }
 
-/** @brief Put fl_message dialogs at the centre of the desktop.
-*
-*/
-void flw::dlg::center_fl_message_dialog() {
-    int X, Y, W, H;
-    Fl::screen_xywh(X, Y, W, H);
-    fl_message_position(W / 2, H / 2, 1);
-}
-
 /** @brief Show an dialog with message and then exit the program.
 *
 * @param[in] message  Message string.
 */
 void flw::dlg::panic(const std::string& message) {
-    dlg::msg_error("Application Error", util::format("PANIC! I have to quit\n%s", message.c_str()));
+    dlg::msg_error("Application Error", flw::util::format("PANIC! I have to quit\n%s", message.c_str()));
     exit(1);
 }
 

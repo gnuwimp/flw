@@ -63,12 +63,105 @@ void font_example2() {
 }
 
 //------------------------------------------------------------------------------
-void html_example() {
+void html_example1() {
     // [flw::dlg::html example]
 
-    flw::dlg::html("flw::dlg::html()", "<h1>Hello World</h1><ul><li>Hello<li>World</ul>This is some text<br>And more text");
+    flw::dlg::html(
+        "<html><head><title>Hello World</title></head>"
+        "<h1>Hello World</h1>"
+        "<ul><li>Hello<li>World</ul>"
+        "<p>"
+        "This is some text<br>And more text"
+    );
 
     // [flw::dlg::html example]
+}
+
+//------------------------------------------------------------------------------
+void html_example2() {
+    // [flw::HTMLDialog example]
+    
+    const std::string HTML1 = R"(
+<html>
+    <head>
+        <title>First Page</title>
+        <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    </head>
+<body>
+<p>
+<h1>Page 1</h1>
+
+<ul>
+    <li><a href="Two">Page Two</a>
+    <li><a href="http://www.fltk.org">FLTK</a>
+</ul>
+
+<p>
+<pre>
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, 
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+Ut enim ad minim veniam, quis nostrud exercitation ullamco,
+ laboris nisi ut aliquip ex ea commodo consequat. 
+Duis aute irure dolor in reprehenderit in voluptate 
+velit esse cillum dolore eu fugiat nulla pariatur. 
+Excepteur sint occaecat cupidatat non proident, 
+sunt in culpa qui officia deserunt mollit anim id est laborum.
+</body>
+</html>
+)";
+    
+    const std::string HTML2 = R"(
+<html>
+    <head>
+        <title>Second Page</title>
+        <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    </head>
+<body>
+<p>
+<h1>Page 2</h1>
+
+<ul>
+    <li><a href="One">Page One</a>
+</ul>
+
+<img src="../documentation/images/fltk.png" alt="FLTK logo">
+
+<p>
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+</body>
+</html>
+)";
+    
+    const std::string HOME = R"(
+<html>
+    <head>
+        <title>Home</title>
+        <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    </head>
+<body>
+<p>
+<h1>Home</h1>
+<li><a href="One">Page One</a>
+<li><a href="Two">Page Two</a>
+</ul>
+</body>
+</html>
+)";
+    
+    auto dlg = flw::HTMLDialog();
+
+    // Add three html pages.
+    dlg.add_page("Home", HOME);
+    dlg.add_page("One", HTML1);
+    dlg.add_page("Two", HTML2);
+    
+    dlg.show();
+    Fl::run();
+
+    // [flw::HTMLDialog example]
 }
 
 //------------------------------------------------------------------------------
@@ -329,7 +422,8 @@ int main() {
     date_example();
     font_example1();
     font_example2();
-    html_example();
+    html_example1();
+    html_example2();
     list_example();
     password_example();
     print_example1();

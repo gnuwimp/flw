@@ -22,17 +22,6 @@
 namespace gnu {
 namespace priv {
 
-/*
- *                 _            _
- *                (_)          | |
- *      _ __  _ __ ___   ____ _| |_ ___
- *     | '_ \| '__| \ \ / / _` | __/ _ \
- *     | |_) | |  | |\ V / (_| | ||  __/
- *     | .__/|_|  |_| \_/ \__,_|\__\___|
- *     | |
- *     |_|
- */
-
 #define _GNU_JSON_ERROR(X,Y) priv::_json_format_error(__LINE__, static_cast<unsigned>(X), Y)
 #define _GNU_JSON_FREE_STRINGS(X,Y) free(X); free(Y); X = Y = nullptr;
 
@@ -1027,8 +1016,6 @@ std::string gnu::json::unescape(const char* string) {
  *      _   | |\___ \
  *     | |__| |____) |
  *      \____/|_____/
- *
- *
  */
 
 ssize_t gnu::json::JS::COUNT = 0;
@@ -1572,8 +1559,6 @@ const gnu::json::JSArray gnu::json::JS::vo_to_va() const {
  *     |  _ <| | | | | |/ _` |/ _ \ '__|
  *     | |_) | |_| | | | (_| |  __/ |
  *     |____/ \__,_|_|_|\__,_|\___|_|
- *
- *
  */
 
 /** @brief Add json value,

@@ -302,7 +302,7 @@ static void _file_split_paths(const std::string& filename, std::string& path, st
         ext = priv::_file_substr(name, pos2 + 1);
     }
 
-    if (path.back() == ':') {
+    if (path.length() > 1 && path.back() == ':') {
         path += sep;
         return;
     }
@@ -688,6 +688,7 @@ bool gnu::file::copy(const std::string& from, const std::string& to, CallbackCop
 
         if (write != nullptr) {
             fclose(write);
+            file::remove(to);
         }
 
         free(buf);
