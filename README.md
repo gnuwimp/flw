@@ -23,6 +23,7 @@ Widget classes:
 * flw::DateChooser - Show month date view.
 * flw::FontDialog - A dialog for selecting font and font size.
 * flw::GridGroup - A layout widget using a grid.
+* flw::HTMLDialog - An html 2.0 dialog.
 * flw::InputMenu - Similar to Fl_Input_Choice, but can keep track of an history list.
 * flw::LCDDisplay - 7 segment display.
 * flw::ProgressDialog - A dialog with a message list and a progress bar for time consuming work.
@@ -42,7 +43,7 @@ Widget classes:
 Dialog functions:
 * flw::dlg::font() - A dialog for selecting font and font size.
 * flw::dlg::date() - Show a date selection dialog.
-* flw::dlg::html() - Show text in a html view.
+* flw::dlg::html*() - Show html text in a dialog.
 * flw::dlg::input*() - Some input dialogs.
 * flw::dlg::list*() - Show a list of strings.
 * flw::dlg::msg*() - Some message dialogs.
@@ -64,6 +65,9 @@ Date dialog<br>
 
 Font dialog<br>
 <img src="documentation/images/font_dialog.png"/>
+
+HTML dialog<br>
+<img src="documentation/images/html_dialog.png"/>
 
 Password dialog<br>
 <img src="documentation/images/password_dialog.png"/>
