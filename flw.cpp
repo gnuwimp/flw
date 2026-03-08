@@ -15757,20 +15757,36 @@ void flw::TabsGroup::show_tabs() {
     _tabs->show();
     do_layout();
 }
-void flw::TabsGroup::sort(bool ascending, bool casecompare) {
+void flw::TabsGroup::sort(bool ascending, bool casecompare, bool tooltip) {
     auto pack = const_cast<Fl_Widget**>(_tabs->array());
     auto butt = _active_button();
-    if (ascending == true && casecompare == true) {
-        std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return strcmp(a->label(), b->label()) < 0; });
+    if (tooltip == true) {
+        if (ascending == true && casecompare == true) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return a->tooltip() && b->tooltip() && strcmp(a->tooltip(), b->tooltip()) < 0; });
+        }
+        else if (ascending == true && casecompare == false) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return a->tooltip() && b->tooltip() && strcmp(a->tooltip(), b->tooltip()) < 0; });
+        }
+        else if (ascending == false && casecompare == true) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return a->tooltip() && b->tooltip() && strcmp(b->tooltip(), a->tooltip()) < 0; });
+        }
+        else if (ascending == false && casecompare == false) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return a->tooltip() && b->tooltip() && strcmp(b->tooltip(), a->tooltip()) < 0; });
+        }
     }
-    else if (ascending == true && casecompare == false) {
-        std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return fl_utf_strcasecmp(a->label(), b->label()) < 0; });
-    }
-    else if (ascending == false && casecompare == true) {
-        std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return strcmp(b->label(), a->label()) < 0; });
-    }
-    else if (ascending == false && casecompare == false) {
-        std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return fl_utf_strcasecmp(b->label(), a->label()) < 0; });
+    else {
+        if (ascending == true && casecompare == true) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return strcmp(a->label(), b->label()) < 0; });
+        }
+        else if (ascending == true && casecompare == false) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return fl_utf_strcasecmp(a->label(), b->label()) < 0; });
+        }
+        else if (ascending == false && casecompare == true) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return strcmp(b->label(), a->label()) < 0; });
+        }
+        else if (ascending == false && casecompare == false) {
+            std::sort(_widgets.begin(), _widgets.end(), [](const Fl_Widget* a, const Fl_Widget* b) { return fl_utf_strcasecmp(b->label(), a->label()) < 0; });
+        }
     }
     for (int f = 1; f < _tabs->children(); f++) {
         pack[f] = _widgets[f - 1];
